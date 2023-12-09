@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.4.0"
 regex = "1.10.2"
-xkb-parser = { path = "/home/eivind/Public/code/xkb-parser" }
+xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }

@@ -28,7 +28,7 @@ struct Modifiers {
 
 #[derive(Debug, Clone)]
 pub struct Keymap {
-    map: HashMap<CharModifier, HashMap<u32, char>>, // length of CharModifiers
+    map: HashMap<CharModifier, HashMap<u32, char>>,
     modifiers: Modifiers
 }
 
