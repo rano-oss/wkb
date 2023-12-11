@@ -6,7 +6,7 @@ Goals:
 - A complete replacement for the used parts of xkb. Meaning just evdev and no geometry support etc.
 - Creating a new more intuitive keyboard format that is serializable(TOML, JSON, etc)
 
-Todo list:
+Todo list(tentative):
 - [x] Keymap
 - [ ] Keymap functions 
 - [ ] Compositing
