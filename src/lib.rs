@@ -25,7 +25,7 @@ pub enum CharModifier {
     AltGrAndShift,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Copy)]
 struct Modifiers {
     alt: bool,
     shift: bool,
@@ -64,12 +64,29 @@ pub struct WKB {
 }
 
 fn parse_include(input: &str) -> (String, Option<String>) {
-    let re = Regex::new(r"^([\w]+)(?:\(([\w]+)\))?$").unwrap();
+    let re = Regex::new(r"([\w]+)(?:\(([\w\-]+)\))?$").unwrap();
     let capture = re.captures(input).unwrap();
     (
         capture.get(1).map(|m| m.as_str().to_string()).unwrap(),
         capture.get(2).map(|m| m.as_str().to_string()),
     )
+}
+
+fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
+    let number = &s[1..];
+
+    u32::from_str_radix(number, 16)
+        .ok()
+        .and_then(std::char::from_u32)
+}
+
+fn hex_string_to_unicode_char(s: &str) -> Option<char> {
+    let split_pos = s.char_indices().nth_back(4).unwrap().0;
+    let number = &s[split_pos..];
+
+    u32::from_str_radix(number, 16)
+        .ok()
+        .and_then(std::char::from_u32)
 }
 
 impl WKB {
@@ -277,33 +294,34 @@ impl WKB {
                                 values.iter().for_each(|v| {
                                     if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
                                         for (i, v) in key.values.iter().enumerate() {
-                                            if locale == "keypad" && i >= self.level_keypadmap.len()
+                                            if locale != "keypad" && i >= self.level_keymap.len() {
+                                                self.level_keymap.insert(i, HashMap::new());
+                                            } else if locale == "keypad"
+                                                && i >= self.level_keypadmap.len()
                                             {
-                                                match i {
-                                                    _ => self
-                                                        .level_keypadmap
-                                                        .insert(i, HashMap::new()),
-                                                }
-                                            } else if locale != "keypad"
-                                                && i >= self.level_keymap.len()
-                                            {
-                                                match i {
-                                                    // 0 => self
-                                                    //     .level_keymap
-                                                    //     .insert(i, DEFAULT_LEVEL1_MAP.clone()),
-                                                    // 1 => self
-                                                    //     .level_keymap
-                                                    //     .insert(i, DEFAULT_LEVEL2_MAP.clone()),
-                                                    // 2 => self
-                                                    //     .level_keymap
-                                                    //     .insert(i, DEFAULT_LEVEL3_MAP.clone()),
-                                                    _ => {
-                                                        self.level_keymap.insert(i, HashMap::new())
-                                                    }
-                                                }
+                                                self.level_keypadmap.insert(i, HashMap::new());
                                             }
-                                            let single_char =
-                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
+                                            let mut chars = v.chars();
+                                            let count = chars.clone().count();
+                                            let first_char = chars.next();
+                                            let is_hex = chars.all(|c| c.is_ascii_hexdigit());
+                                            let mut chars = v.chars();
+                                            chars.next();
+                                            let second_char = chars.next();
+                                            let single_char = if count == 1
+                                                && first_char.is_some_and(|c| c.is_alphanumeric())
+                                            {
+                                                first_char
+                                            } else if first_char.is_some_and(|c| c == 'U') && is_hex
+                                            {
+                                                unicode_string_to_unicode_char(v)
+                                            } else if first_char.is_some_and(|c| c == '0')
+                                                && second_char.is_some_and(|c| c == 'x')
+                                            {
+                                                hex_string_to_unicode_char(v)
+                                            } else {
+                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
+                                            };
                                             if let Some(single_char) = single_char {
                                                 if locale == "keypad" {
                                                     self.level_keypadmap[i]
