@@ -260,7 +260,20 @@ impl WKB {
         let xkb = parse(&string_file).expect("neither names nor file set");
         xkb.definitions.iter().for_each(|d| match &d.directive {
             Directive::XkbSymbols(src) => {
-                self.layouts.push(src.name.content.to_string());
+                let name = src.name.content.to_string();
+                if ![
+                    "sun_type6",
+                    "sun_type6_de",
+                    "sun_type6_fr",
+                    "sun_type6_suncompat",
+                    "sun_type7_suncompat",
+                    "suncompat",
+                    "sun_type7",
+                ]
+                .contains(&name.as_str())
+                {
+                    self.layouts.push(src.name.content.to_string());
+                }
             }
             _ => {}
         })
@@ -277,6 +290,8 @@ impl WKB {
                     src.value.iter().for_each(|si| {
                         if let XkbSymbolsItem::Include(Include { name }) = si {
                             let (locale, layout) = parse_include(name);
+                            // println!("{}", locale);
+                            // println!("{:?}", layout);
                             if layout.is_none() {
                                 self.map(path, locale, Some("basic".to_string()));
                             } else {
@@ -292,7 +307,17 @@ impl WKB {
                             // ph has AB00 which does not exists in evdev...
                             if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
                                 values.iter().for_each(|v| {
-                                    if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
+                                    if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
+                                        if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
+                                            for (i, v) in key.values.values.iter().enumerate() {
+                                                let single_char =
+                                                    XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
+                                                if let Some(char) = single_char {
+                                                    self.level_keymap[i].insert(*evdev_code, char);
+                                                }
+                                            }
+                                        }
+                                    } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
                                         for (i, v) in key.values.iter().enumerate() {
                                             if locale != "keypad" && i >= self.level_keymap.len() {
                                                 self.level_keymap.insert(i, HashMap::new());
@@ -301,6 +326,7 @@ impl WKB {
                                             {
                                                 self.level_keypadmap.insert(i, HashMap::new());
                                             }
+
                                             let mut chars = v.chars();
                                             let count = chars.clone().count();
                                             let first_char = chars.next();
@@ -323,7 +349,7 @@ impl WKB {
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
                                             };
                                             if let Some(single_char) = single_char {
-                                                if locale == "keypad" {
+                                                if locale == "keypad" || locale == "kpdl" {
                                                     self.level_keypadmap[i]
                                                         .insert(*evdev_code, single_char);
                                                 } else {
