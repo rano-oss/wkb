@@ -15,22 +15,13 @@ mod default_keymap;
 pub mod evdev_xkb;
 mod xkb_utf8;
 
-// TODO: replace this with proper modifiers from xkbcommon
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CharModifier {
-    None,
-    Shift,
-    CapsLock,
-    AltGr,
-    AltGrAndShift,
-}
-
 #[derive(Debug, Clone, Default, Copy)]
 struct Modifiers {
     alt: bool,
     shift: bool,
     caps_lock: bool,
     alt_gr: bool,
+    num_lock: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -47,7 +38,6 @@ pub enum FeedResult {
     Accepted,
 }
 
-type Keymap = HashMap<CharModifier, HashMap<u32, char>>;
 type LevelKeymap = Vec<HashMap<u32, char>>;
 type LevelKeypadmap = Vec<HashMap<u32, char>>;
 
@@ -55,7 +45,6 @@ type LevelKeypadmap = Vec<HashMap<u32, char>>;
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
-    keymap: Keymap,
     level_keymap: LevelKeymap,
     level_keypadmap: LevelKeypadmap,
     modifiers: Modifiers,
@@ -92,22 +81,30 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
 impl WKB {
     pub fn new_from_fd(fd: OwnedFd) -> Self {
         let path = Path::new("/usr/share/X11/xkb/symbols/");
+        let level_keypadmap = vec![
+            DEFAULT_LEVEL1_KEYPADMAP.clone(),
+            DEFAULT_LEVEL2_KEYPADMAP.clone(),
+            DEFAULT_LEVEL3_KEYPADMAP.clone(),
+            DEFAULT_LEVEL4_KEYPADMAP.clone(),
+        ];
         let level_keymap = vec![
             DEFAULT_LEVEL1_MAP.clone(),
             DEFAULT_LEVEL2_MAP.clone(),
             DEFAULT_LEVEL3_MAP.clone(),
+            DEFAULT_LEVEL4_MAP.clone(),
         ];
         let mut wkb = Self {
             layouts: Vec::new(),
             layout: String::new(),
-            keymap: HashMap::new(),
             modifiers: Modifiers::default(),
             compose_status: ComposeStatus::Idle,
             level_keymap,
-            level_keypadmap: Vec::new(),
+            level_keypadmap,
             compose_char: char::default(),
         };
         wkb.read_layouts(path, None, Some(fd));
+        wkb.layout = wkb.layouts()[0].clone();
+        // wkb.map(path, locale, None);
         wkb
     }
 
@@ -128,7 +125,6 @@ impl WKB {
         let mut wkb = Self {
             layouts: Vec::new(),
             layout: String::new(),
-            keymap: HashMap::new(),
             modifiers: Modifiers::default(),
             compose_status: ComposeStatus::Idle,
             level_keymap,
@@ -170,10 +166,8 @@ impl WKB {
                 caps_lock: false,
                 alt_gr: false,
                 alt: false,
-            } => {
-                let mods_map = self.keymap.get(&CharModifier::None).unwrap();
-                mods_map.get(&evdev_code).copied()
-            }
+                num_lock: false,
+            } => self.level_key(evdev_code, 0),
             _ => None,
         }
     }
@@ -242,10 +236,6 @@ impl WKB {
 
     pub fn level_keypadmap(&self) -> LevelKeypadmap {
         self.level_keypadmap.clone()
-    }
-
-    pub fn keymap(&self) -> Keymap {
-        self.keymap.clone()
     }
 
     fn read_layouts(&mut self, path: &Path, locale: Option<String>, fd: Option<OwnedFd>) {
