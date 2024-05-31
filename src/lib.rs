@@ -1,4 +1,10 @@
-use std::{collections::HashMap, fs::File, io::Read, os::fd::OwnedFd, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    io::Read,
+    os::fd::OwnedFd,
+    path::Path,
+};
 
 use default_keymap::{
     DEFAULT_LEVEL1_KEYPADMAP, DEFAULT_LEVEL1_MAP, DEFAULT_LEVEL2_KEYPADMAP, DEFAULT_LEVEL2_MAP,
@@ -6,22 +12,60 @@ use default_keymap::{
 };
 use evdev_xkb::XKBCODES_EVDEV;
 use regex::Regex;
+use repeat::REPEAT_KEYS;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
     parse,
 };
 use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 mod default_keymap;
-pub mod evdev_xkb;
+mod evdev_xkb;
+mod repeat;
 mod xkb_utf8;
 
-#[derive(Debug, Clone, Default, Copy)]
-struct Modifiers {
-    alt: bool,
-    shift: bool,
-    caps_lock: bool,
-    alt_gr: bool,
-    num_lock: bool,
+#[derive(Debug, Clone, Copy)]
+enum Mods {
+    Ctrl {
+        pressed: bool,
+        level: usize,
+    },
+    Alt {
+        pressed: bool,
+        level: usize,
+    },
+    AltGr {
+        pressed: bool,
+        level: usize,
+    },
+    Shift {
+        pressed: bool,
+        level: usize,
+    },
+    CapsLock {
+        pressed: bool,
+        locked: bool,
+        level: usize,
+    },
+    NumLock {
+        pressed: bool,
+        locked: bool,
+        level: usize,
+    },
+    Super {
+        pressed: bool,
+        level: usize,
+    },
+    ScrollLock {
+        pressed: bool,
+        locked: bool,
+        level: usize,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum KeyDirection {
+    Up,
+    Down,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -41,15 +85,38 @@ pub enum FeedResult {
 type LevelKeymap = Vec<HashMap<u32, char>>;
 type LevelKeypadmap = Vec<HashMap<u32, char>>;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum ModifierType {
+    Press,
+    Lock,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct Mod {
+    name: String,
+    level: usize,
+    mod_type: ModifierType,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+struct Levels {
+    level2: usize,
+    level3: usize,
+    level5: usize,
+}
+
 #[derive(Debug, Clone)]
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
     level_keymap: LevelKeymap,
     level_keypadmap: LevelKeypadmap,
-    modifiers: Modifiers,
+    level_modifiers: HashMap<u32, Mod>,
     compose_status: ComposeStatus,
     compose_char: char,
+    pressed_levels: Levels,
+    locked_levels: Levels,
+    pressed_keys: HashSet<u32>,
 }
 
 fn parse_include(input: &str) -> (String, Option<String>) {
@@ -79,34 +146,60 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
 }
 
 impl WKB {
-    pub fn new_from_fd(fd: OwnedFd) -> Self {
-        let path = Path::new("/usr/share/X11/xkb/symbols/");
-        let level_keypadmap = vec![
-            DEFAULT_LEVEL1_KEYPADMAP.clone(),
-            DEFAULT_LEVEL2_KEYPADMAP.clone(),
-            DEFAULT_LEVEL3_KEYPADMAP.clone(),
-            DEFAULT_LEVEL4_KEYPADMAP.clone(),
-        ];
-        let level_keymap = vec![
-            DEFAULT_LEVEL1_MAP.clone(),
-            DEFAULT_LEVEL2_MAP.clone(),
-            DEFAULT_LEVEL3_MAP.clone(),
-            DEFAULT_LEVEL4_MAP.clone(),
-        ];
-        let mut wkb = Self {
-            layouts: Vec::new(),
-            layout: String::new(),
-            modifiers: Modifiers::default(),
-            compose_status: ComposeStatus::Idle,
-            level_keymap,
-            level_keypadmap,
-            compose_char: char::default(),
-        };
-        wkb.read_layouts(path, None, Some(fd));
-        wkb.layout = wkb.layouts()[0].clone();
-        // wkb.map(path, locale, None);
-        wkb
-    }
+    // pub fn new_from_fd(fd: OwnedFd) -> Self {
+    //     let path = Path::new("/usr/share/X11/xkb/symbols/");
+    //     let level_keypadmap = vec![
+    //         DEFAULT_LEVEL1_KEYPADMAP.clone(),
+    //         DEFAULT_LEVEL2_KEYPADMAP.clone(),
+    //         DEFAULT_LEVEL3_KEYPADMAP.clone(),
+    //         DEFAULT_LEVEL4_KEYPADMAP.clone(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //     ];
+    //     let level_keymap = vec![
+    //         DEFAULT_LEVEL1_MAP.clone(),
+    //         DEFAULT_LEVEL2_MAP.clone(),
+    //         DEFAULT_LEVEL3_MAP.clone(),
+    //         DEFAULT_LEVEL4_MAP.clone(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //         HashMap::new(),
+    //     ];
+    //     let mut wkb = Self {
+    //         layouts: Vec::new(),
+    //         layout: String::new(),
+    //         modifier_map: HashMap::from([
+    //             (
+    //                 42,
+    //                 Mod {
+    //                     name: "LeftShift".to_string(),
+    //                     level: 2,
+    //                     mod_type: ModifierType::Press,
+    //                 },
+    //             ),
+    //             (
+    //                 54,
+    //                 Mod {
+    //                     name: "RightShift".to_string(),
+    //                     level: 2,
+    //                     mod_type: ModifierType::Press,
+    //                 },
+    //             ),
+    //         ]),
+    //         compose_status: ComposeStatus::Idle,
+    //         level_keymap,
+    //         level_keypadmap,
+    //         compose_char: char::default(),
+    //         levels: Vec::with_capacity(3)
+    //     };
+    //     wkb.read_layouts(path, None, Some(fd));
+    //     wkb.layout = wkb.layouts()[0].clone();
+    //     // wkb.map(path, locale, None);
+    //     wkb
+    // }
 
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         let path = Path::new("/usr/share/X11/xkb/symbols/");
@@ -115,21 +208,49 @@ impl WKB {
             DEFAULT_LEVEL2_KEYPADMAP.clone(),
             DEFAULT_LEVEL3_KEYPADMAP.clone(),
             DEFAULT_LEVEL4_KEYPADMAP.clone(),
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
         ];
         let level_keymap = vec![
             DEFAULT_LEVEL1_MAP.clone(),
             DEFAULT_LEVEL2_MAP.clone(),
             DEFAULT_LEVEL3_MAP.clone(),
             DEFAULT_LEVEL4_MAP.clone(),
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
+            HashMap::new(),
         ];
         let mut wkb = Self {
             layouts: Vec::new(),
             layout: String::new(),
-            modifiers: Modifiers::default(),
+            level_modifiers: HashMap::from([
+                (
+                    42,
+                    Mod {
+                        name: "LeftShift".to_string(),
+                        level: 2,
+                        mod_type: ModifierType::Press,
+                    },
+                ),
+                (
+                    54,
+                    Mod {
+                        name: "RightShift".to_string(),
+                        level: 2,
+                        mod_type: ModifierType::Press,
+                    },
+                ),
+            ]),
             compose_status: ComposeStatus::Idle,
             level_keymap,
             level_keypadmap,
             compose_char: char::default(),
+            pressed_levels: Levels::default(),
+            locked_levels: Levels::default(),
+            pressed_keys: HashSet::new(),
         };
         wkb.read_layouts(path, Some(locale.clone()), None);
         wkb.layout = if let Some(layout) = layout {
@@ -159,51 +280,91 @@ impl WKB {
         }
     }
 
-    pub fn key(&self, evdev_code: u32) -> Option<char> {
-        match self.modifiers {
-            Modifiers {
-                shift: false,
-                caps_lock: false,
-                alt_gr: false,
-                alt: false,
-                num_lock: false,
-            } => self.level_key(evdev_code, 0),
-            _ => None,
+    pub fn key_repeats(&self, evdev_code: u32) -> bool {
+        REPEAT_KEYS.get(&evdev_code).is_some()
+    }
+
+    pub fn utf8(&self, evdev_code: u32) -> Option<char> {
+        let level5 = self.pressed_levels.level5 != 0 || self.locked_levels.level5 != 0;
+        let level3 = self.pressed_levels.level3 != 0 || self.locked_levels.level3 != 0;
+        let level2 = self.pressed_levels.level2 != 0 || self.locked_levels.level2 != 0;
+        let utf8 = if level5 && level3 && level2 {
+            self.level_key(evdev_code, 7)
+        } else if level5 && level3 {
+            self.level_key(evdev_code, 6)
+        } else if level5 && level2 {
+            self.level_key(evdev_code, 5)
+        } else if level5 {
+            self.level_key(evdev_code, 4)
+        } else if level3 && level2 {
+            self.level_key(evdev_code, 3)
+        } else if level3 {
+            self.level_key(evdev_code, 2)
+        } else if level2 {
+            self.level_key(evdev_code, 1)
+        } else {
+            self.level_key(evdev_code, 0)
+        };
+        utf8
+    }
+
+    pub fn update_key(&mut self, evdev_code: u32, direction: KeyDirection) {
+        let modifier = self.level_modifiers.get(&evdev_code);
+        if let Some(modifier) = modifier {
+            match (direction, modifier.mod_type, modifier.level) {
+                (KeyDirection::Down, ModifierType::Press, 2) => self.pressed_levels.level2 += 1,
+                (KeyDirection::Up, ModifierType::Press, 2) => self.pressed_levels.level2 -= 1,
+                (KeyDirection::Down, ModifierType::Press, 3) => self.pressed_levels.level3 += 1,
+                (KeyDirection::Up, ModifierType::Press, 3) => self.pressed_levels.level3 -= 1,
+                (KeyDirection::Down, ModifierType::Press, 5) => self.pressed_levels.level5 += 1,
+                (KeyDirection::Up, ModifierType::Press, 5) => self.pressed_levels.level5 -= 1,
+                (KeyDirection::Down, ModifierType::Lock, 5) => {
+                    if self.locked_levels.level5 == 0 {
+                        self.locked_levels.level5 += 1;
+                    }
+                }
+                (KeyDirection::Up, ModifierType::Lock, 5) => {
+                    if self.locked_levels.level5 == 1 {
+                        self.locked_levels.level5 -= 1;
+                    }
+                }
+                (_, _, _) => unreachable!(),
+            };
+        } else {
+            match direction {
+                KeyDirection::Up => self.pressed_keys.remove(&evdev_code),
+                KeyDirection::Down => self.pressed_keys.insert(evdev_code),
+            };
         }
     }
 
-    pub fn compose_feed(&mut self, evdev_code: u32) -> FeedResult {
-        if let Some(character) = self.key(evdev_code) {
-            if unicode_normalization::char::is_combining_mark(character) {
-                match self.compose_status {
-                    ComposeStatus::Idle | ComposeStatus::Composed | ComposeStatus::Cancelled => {
-                        self.compose_char = character;
-                        self.compose_status = ComposeStatus::Composing;
-                        FeedResult::Accepted
-                    }
-                    ComposeStatus::Composing => {
-                        if let Some(character) =
-                            unicode_normalization::char::compose(character, self.compose_char)
-                        {
-                            self.compose_char = character;
-                            FeedResult::Accepted
-                        } else {
-                            self.compose_status = ComposeStatus::Cancelled;
-                            FeedResult::Ignored
-                        }
-                    }
-                }
-            } else if self.compose_status == ComposeStatus::Composing {
-                if let Some(character) =
-                    unicode_normalization::char::compose(character, self.compose_char)
-                {
-                    self.compose_status = ComposeStatus::Composed;
+    pub fn compose_feed(&mut self, character: char) -> FeedResult {
+        if unicode_normalization::char::is_combining_mark(character) {
+            match self.compose_status {
+                ComposeStatus::Idle | ComposeStatus::Composed | ComposeStatus::Cancelled => {
                     self.compose_char = character;
+                    self.compose_status = ComposeStatus::Composing;
                     FeedResult::Accepted
-                } else {
-                    self.compose_status = ComposeStatus::Cancelled;
-                    FeedResult::Ignored
                 }
+                ComposeStatus::Composing => {
+                    if let Some(character) =
+                        unicode_normalization::char::compose(character, self.compose_char)
+                    {
+                        self.compose_char = character;
+                        FeedResult::Accepted
+                    } else {
+                        self.compose_status = ComposeStatus::Cancelled;
+                        FeedResult::Ignored
+                    }
+                }
+            }
+        } else if self.compose_status == ComposeStatus::Composing {
+            if let Some(character) =
+                unicode_normalization::char::compose(character, self.compose_char)
+            {
+                self.compose_status = ComposeStatus::Composed;
+                self.compose_char = character;
+                FeedResult::Accepted
             } else {
                 self.compose_status = ComposeStatus::Cancelled;
                 FeedResult::Ignored
@@ -272,7 +433,6 @@ impl WKB {
     fn map(&mut self, path: &Path, locale: String, layout: Option<String>) {
         let file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
         let xkb = parse(&file).unwrap();
-
         xkb.definitions.iter().for_each(|d| {
             if let Directive::XkbSymbols(src) = &d.directive {
                 let layout = layout.clone().unwrap_or(self.current_layout());
@@ -280,8 +440,6 @@ impl WKB {
                     src.value.iter().for_each(|si| {
                         if let XkbSymbolsItem::Include(Include { name }) = si {
                             let (locale, layout) = parse_include(name);
-                            // println!("{}", locale);
-                            // println!("{:?}", layout);
                             if layout.is_none() {
                                 self.map(path, locale, Some("basic".to_string()));
                             } else {
@@ -309,14 +467,6 @@ impl WKB {
                                         }
                                     } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
                                         for (i, v) in key.values.iter().enumerate() {
-                                            if locale != "keypad" && i >= self.level_keymap.len() {
-                                                self.level_keymap.insert(i, HashMap::new());
-                                            } else if locale == "keypad"
-                                                && i >= self.level_keypadmap.len()
-                                            {
-                                                self.level_keypadmap.insert(i, HashMap::new());
-                                            }
-
                                             let mut chars = v.chars();
                                             let count = chars.clone().count();
                                             let first_char = chars.next();
@@ -339,7 +489,11 @@ impl WKB {
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
                                             };
                                             if let Some(single_char) = single_char {
-                                                if locale == "keypad" || locale == "kpdl" {
+                                                if
+                                                // locale == "keypad"
+                                                //     || locale == "kpdl"
+                                                //     ||
+                                                id.content.starts_with("KP") {
                                                     self.level_keypadmap[i]
                                                         .insert(*evdev_code, single_char);
                                                 } else {
@@ -347,7 +501,113 @@ impl WKB {
                                                         .insert(*evdev_code, single_char);
                                                 }
                                             } else {
-                                                // println!("{:?}", v);
+                                                match layout.as_str() {
+                                                    "ralt_switch" => {
+                                                        self.level_modifiers.insert(
+                                                            100,
+                                                            Mod {
+                                                                name: "AltGr".to_string(),
+                                                                level: 3,
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "lalt_switch" => {
+                                                        self.level_modifiers.insert(
+                                                            56,
+                                                            Mod {
+                                                                name: "Alt".to_string(),
+                                                                level: 3,
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "enter_switch" => {
+                                                        self.level_modifiers.insert(
+                                                            96,
+                                                            Mod {
+                                                                name: "KeyPadEnter".to_string(),
+                                                                level: 3,
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "bksl_switch" => {
+                                                        self.level_modifiers.insert(
+                                                            43,
+                                                            Mod {
+                                                                name: "Backslash".to_string(),
+                                                                level: 3,
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "rctrl_switch" | "switch" => {
+                                                        self.level_modifiers.insert(
+                                                            97,
+                                                            Mod {
+                                                                name: "RightCtrl".to_string(),
+                                                                level: if locale == "level3" {
+                                                                    3
+                                                                } else {
+                                                                    5
+                                                                },
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "caps_switch" => {
+                                                        self.level_modifiers.insert(
+                                                            58,
+                                                            Mod {
+                                                                name: "CapsLock".to_string(),
+                                                                level: if locale == "level3" {
+                                                                    3
+                                                                } else {
+                                                                    5
+                                                                },
+                                                                mod_type: ModifierType::Press,
+                                                            },
+                                                        );
+                                                    }
+                                                    "lock" => {
+                                                        self.level_modifiers.insert(
+                                                            199,
+                                                            Mod {
+                                                                name: "Hypr".to_string(),
+                                                                level: 5,
+                                                                mod_type: ModifierType::Lock,
+                                                            },
+                                                        );
+                                                    }
+                                                    "ralt_switch_lock" => {
+                                                        self.level_modifiers.insert(
+                                                            100,
+                                                            Mod {
+                                                                name: "AltGr".to_string(),
+                                                                level: 5,
+                                                                mod_type: ModifierType::Lock,
+                                                            },
+                                                        );
+                                                    }
+                                                    "lsgt_switch_lock" => {
+                                                        self.level_modifiers.insert(
+                                                            86,
+                                                            Mod {
+                                                                name: "LessGreater".to_string(),
+                                                                level: 5,
+                                                                mod_type: ModifierType::Lock,
+                                                            },
+                                                        );
+                                                    }
+                                                    _ => {
+                                                        if !v.contains("VoidSymbol") {
+                                                            // println!("{:?}", v);
+                                                            // println!("{}", *evdev_code);
+                                                            // println!("{}", layout);
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }

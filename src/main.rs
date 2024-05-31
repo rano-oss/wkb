@@ -1,29 +1,41 @@
-// use std::path::Path;
-
-// use wkb::WKB;
+// use wkb::repeat::REPEAT_KEYS;
 use xkbcommon::xkb::{self, Keycode};
 
 fn main() {
-    // let hx = hex::decode("01D513");
-    // match hx {
-    //     Ok(s) => {
-    //         println!("{:?}", s);
+    // let lang = [
+    //     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
+    //     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
+    //     "eg", "epo", "es", "et", "eu", "fi", "fo", "fr", "gb", "ge", "gh", "gn", "gr", "hr", "hu",
+    //     "id", "ie", "il", "in", "iq", "ir", "is", "it", "jp", "ke", "kg", "kh", "kr", "kz", "la",
+    //     "lk", "lt", "lv", "ma", "md", "me", "mk", "ml", "mm", "mn", "mt", "mv", "my", "latam",
+    //     "latin", "ng", "nl", "no", "np", "nz", "ph", "pk", "pl", "pt", "ro", "rs", "ru", "se",
+    //     "tg", "th", "tj", "tm", "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk",
+    //     "trans", "sn",
+    // ];
+    // let lang = ["cn"];
+    // for locale in lang {
+    //     println!("{}", locale);
+    //     let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
+    //     for layout in wkb.layouts() {
+    //         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    //         let xkb = xkb_new_from_names(locale.to_string(), Some(layout));
+    //         for level in 0..8 {
+    //             for i in 0..701 {
+    //                 let k1 = wkb.level_key(i as u32, level);
+    //                 let mut k2 = xkb
+    //                     .key_get_syms_by_level(Keycode::new(i as u32 + 8), 0, level as u32)
+    //                     .first()
+    //                     .map(|k| k.key_char().unwrap_or_default());
+    //                 if k2.unwrap_or_default() == '\0' {
+    //                     k2 = None;
+    //                 }
+    //                 if k1 != k2 && k2 != None {
+    //                     println!("{:?}, {:?}, {}", k1, k2, i);
+    //                 }
+    //             }
+    //         }
     //     }
-    //     _ => {}
     // }
-    // let u = string_to_unicode_char("U1D513");
-    // println!("{:?}", u);
-    // let file_name = std::env::args().nth(1).expect("USAGE: debug <FILE>");
-    // let wkb = WKB::new_from_names("keypad".to_string(), None);
-    // let wkb = WKB::new_from_names(file_name, None);
-    // // keymap.map(Path::new("test/"), file_name, None);
-    // keymap.map(Path::new("/usr/share/X11/xkb/symbols/"), "no".to_string(), None);
-    // let key = keymap.key(31);|
-    // println!("{:?}", key);
-    // println!("{:?}", wkb.layouts());
-    // println!("{:?}", wkb.layouts().len());
-    // println!("{:?}", wkb.level_keymap());
-
     let lang = [
         "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
         "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -34,29 +46,27 @@ fn main() {
         "tg", "th", "tj", "tm", "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk",
         "trans", "sn",
     ];
-    // let level = 3;
     for locale in lang {
-        println!("{}", locale);
+        // println!("{}", locale);
         let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-        // println!("{:?}", wkb.level_keymap());
         for layout in wkb.layouts() {
-            // println!("{:?}", layout);
-            let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
-            let xkb = xkb_new_from_names(locale.to_string(), Some(layout));
-            for i in 1..701 {
-                for level in 0..8 {
-                    let k1 = wkb.level_key(i as u32, level);
-                    let mut k2 = xkb
-                        .key_get_syms_by_level(Keycode::new(i as u32 + 8), 0, level as u32)
-                        .first()
-                        .map(|k| k.key_char().unwrap_or_default());
-                    if k2.unwrap_or_default() == '\0' {
-                        k2 = None;
-                    }
-                    if k1 != k2 && k2 != None {
-                        println!("{:?}, {:?}, {}", k1, k2, i);
-                    }
-                }
+            // let layouts = wkb.layouts();
+            // let layout = layouts.first().unwrap();
+            let xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
+            // let mut state = xkb::State::new(&xkb);
+            for i in 0..701 {
+                // state.update_key(Keycode::new(42 as u32 + 8), xkb::KeyDirection::Down);
+                // state.update_key(Keycode::new(58 as u32 + 8), xkb::KeyDirection::Down);
+                // let syms = state.key_get_one_sym(Keycode::new(i as u32 + 8));
+                // let syms = state.key_get_utf8(Keycode::new(i as u32 + 8));
+                // if syms.len() > 1 {
+                // println!("{:?}", syms);
+                // }
+                // if xkb.key_repeats(Keycode::new(i as u32 + 8)) != REPEAT_KEYS.get(&i).is_some() {
+                println!("{}", locale);
+                println!("{}", layout);
+                println!("{},", i)
+                // }
             }
         }
     }

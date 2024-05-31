@@ -10,6 +10,7 @@ lazy_static::lazy_static! {
         ("KP_Separator", ','),
         ("KP_Decimal", '.'),
         ("KP_Enter", '\r'),
+        ("KP_Delete", '\u{7f}'),
         ("KP_0", '0'),
         ("KP_1", '1'),
         ("KP_2", '2'),
