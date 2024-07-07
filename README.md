@@ -13,3 +13,6 @@ Todo list(tentative):
 - [ ] fuzzing with xkb 
 - [ ] use phf instead of static hashmaps
 - [x] Repeat keys
+- [x] Level keys
+- [ ] State keys
+- [ ] Modifier support
