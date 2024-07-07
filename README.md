@@ -10,9 +10,10 @@ Todo list(tentative):
 - [x] Keymap
 - [x] Keymap functions 
 - [ ] Compositing
-- [ ] fuzzing with xkb 
+- [x] Testing with xkb 
 - [ ] use phf instead of static hashmaps
 - [x] Repeat keys
 - [x] Level keys
 - [ ] State keys
 - [ ] Modifier support
+- [ ] Fuzzing of some kind?
