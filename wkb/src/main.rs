@@ -47,12 +47,12 @@ fn main() {
         "trans", "sn",
     ];
     for locale in lang {
-        // println!("{}", locale);
+        println!("{}", locale);
         let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
         for layout in wkb.layouts() {
-            // let layouts = wkb.layouts();
-            // let layout = layouts.first().unwrap();
+            println!("{} :", layout);
             let xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
+            let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
             // let mut state = xkb::State::new(&xkb);
             for i in 0..701 {
                 // state.update_key(Keycode::new(42 as u32 + 8), xkb::KeyDirection::Down);
@@ -62,12 +62,11 @@ fn main() {
                 // if syms.len() > 1 {
                 // println!("{:?}", syms);
                 // }
-                // if xkb.key_repeats(Keycode::new(i as u32 + 8)) != REPEAT_KEYS.get(&i).is_some() {
-                println!("{}", locale);
-                println!("{}", layout);
-                println!("{},", i)
-                // }
+                if xkb.key_repeats(Keycode::new(i as u32 + 8)) != wkb.key_repeats(i) {
+                    print!("{},", i)
+                }
             }
+            print!("\n");
         }
     }
 }

@@ -8,7 +8,8 @@ Goals:
 
 Todo list(tentative):
 - [x] Keymap
-- [ ] Keymap functions 
+- [x] Keymap functions 
 - [ ] Compositing
 - [ ] fuzzing with xkb 
 - [ ] use phf instead of static hashmaps
+- [x] Repeat keys

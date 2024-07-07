@@ -13,6 +13,7 @@ use default_keymap::{
 use evdev_xkb::XKBCODES_EVDEV;
 use regex::Regex;
 use repeat::REPEAT_KEYS;
+use repeat_default::REPEAT_DEFAULT;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
     parse,
@@ -21,6 +22,7 @@ use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 mod default_keymap;
 mod evdev_xkb;
 mod repeat;
+mod repeat_default;
 mod xkb_utf8;
 
 #[derive(Debug, Clone, Copy)]
@@ -117,6 +119,40 @@ pub struct WKB {
     pressed_levels: Levels,
     locked_levels: Levels,
     pressed_keys: HashSet<u32>,
+    repeat_keys: HashSet<u32>,
+}
+
+fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
+    let mut string_file = String::new();
+    if let Some(fd) = fd {
+        let mut file = File::from(fd);
+        file.read_to_string(&mut string_file)
+            .expect("Could not read file");
+    } else if let Some(locale) = locale {
+        string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
+    }
+    let xkb = parse(&string_file).expect("neither names nor file set");
+    let mut layouts = Vec::new();
+    xkb.definitions.iter().for_each(|d| match &d.directive {
+        Directive::XkbSymbols(src) => {
+            let name = src.name.content.to_string();
+            if ![
+                "sun_type6",
+                "sun_type6_de",
+                "sun_type6_fr",
+                "sun_type6_suncompat",
+                "sun_type7_suncompat",
+                "suncompat",
+                "sun_type7",
+            ]
+            .contains(&name.as_str())
+            {
+                layouts.push(src.name.content.to_string());
+            }
+        }
+        _ => {}
+    });
+    layouts
 }
 
 fn parse_include(input: &str) -> (String, Option<String>) {
@@ -223,9 +259,25 @@ impl WKB {
             HashMap::new(),
             HashMap::new(),
         ];
+        let layouts = read_layouts(path, Some(locale.clone()), None);
+        let layout = if let Some(layout) = layout {
+            layout
+        } else {
+            layouts[0].clone()
+        };
+        let repeat_keys = if let Some(locale) = REPEAT_KEYS.get(&locale.as_str()) {
+            if let Some(layout) = locale.get(&layout.as_str()) {
+                layout.clone()
+            } else {
+                REPEAT_DEFAULT.clone()
+            }
+        } else {
+            REPEAT_DEFAULT.clone()
+        };
+
         let mut wkb = Self {
-            layouts: Vec::new(),
-            layout: String::new(),
+            layouts,
+            layout,
             level_modifiers: HashMap::from([
                 (
                     42,
@@ -251,12 +303,7 @@ impl WKB {
             pressed_levels: Levels::default(),
             locked_levels: Levels::default(),
             pressed_keys: HashSet::new(),
-        };
-        wkb.read_layouts(path, Some(locale.clone()), None);
-        wkb.layout = if let Some(layout) = layout {
-            layout
-        } else {
-            wkb.layouts()[0].clone()
+            repeat_keys,
         };
         wkb.map(path, locale, None);
         wkb
@@ -281,7 +328,7 @@ impl WKB {
     }
 
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
-        REPEAT_KEYS.get(&evdev_code).is_some()
+        self.repeat_keys.get(&evdev_code).is_some()
     }
 
     pub fn utf8(&self, evdev_code: u32) -> Option<char> {
@@ -397,37 +444,6 @@ impl WKB {
 
     pub fn level_keypadmap(&self) -> LevelKeypadmap {
         self.level_keypadmap.clone()
-    }
-
-    fn read_layouts(&mut self, path: &Path, locale: Option<String>, fd: Option<OwnedFd>) {
-        let mut string_file = String::new();
-        if let Some(fd) = fd {
-            let mut file = File::from(fd);
-            file.read_to_string(&mut string_file)
-                .expect("Could not read file");
-        } else if let Some(locale) = locale {
-            string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
-        }
-        let xkb = parse(&string_file).expect("neither names nor file set");
-        xkb.definitions.iter().for_each(|d| match &d.directive {
-            Directive::XkbSymbols(src) => {
-                let name = src.name.content.to_string();
-                if ![
-                    "sun_type6",
-                    "sun_type6_de",
-                    "sun_type6_fr",
-                    "sun_type6_suncompat",
-                    "sun_type7_suncompat",
-                    "suncompat",
-                    "sun_type7",
-                ]
-                .contains(&name.as_str())
-                {
-                    self.layouts.push(src.name.content.to_string());
-                }
-            }
-            _ => {}
-        })
     }
 
     fn map(&mut self, path: &Path, locale: String, layout: Option<String>) {
