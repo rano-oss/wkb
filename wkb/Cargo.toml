@@ -9,10 +9,10 @@ edition = "2021"
 hex = "0.4.3"
 lazy_static = "1.4.0"
 regex = "1.10.2"
-test-case = "3.3.1"
 unicode-normalization = "0.1.22"
 xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }
 xkbcommon = "0.7.0"
 
-[build-dependencies]
+[dev-dependencies]
+test-case = "3.3.1"
 xkbcommon = "0.7.0"
