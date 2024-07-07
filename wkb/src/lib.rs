@@ -470,6 +470,16 @@ impl WKB {
                             // Why not just unwrap here? Surely there shouldn't be any symbols not defined in evdev...
                             // ph has AB00 which does not exists in evdev...
                             if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
+                                let evdev_code =
+                                    match (locale.as_str(), layout.as_str(), evdev_code) {
+                                        ("de", "ru", 21) => 44,
+                                        ("de", "ru", 44) => 21,
+                                        ("de", "ru-recom", 21) => 44,
+                                        ("de", "ru-recom", 44) => 21,
+                                        ("de", "ru-translit", 21) => 44,
+                                        ("de", "ru-translit", 44) => 21,
+                                        _ => *evdev_code,
+                                    };
                                 values.iter().for_each(|v| {
                                     if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                         if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
@@ -477,7 +487,7 @@ impl WKB {
                                                 let single_char =
                                                     XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
                                                 if let Some(char) = single_char {
-                                                    self.level_keymap[i].insert(*evdev_code, char);
+                                                    self.level_keymap[i].insert(evdev_code, char);
                                                 }
                                             }
                                         }
@@ -511,10 +521,10 @@ impl WKB {
                                                 //     ||
                                                 id.content.starts_with("KP") {
                                                     self.level_keypadmap[i]
-                                                        .insert(*evdev_code, single_char);
+                                                        .insert(evdev_code, single_char);
                                                 } else {
                                                     self.level_keymap[i]
-                                                        .insert(*evdev_code, single_char);
+                                                        .insert(evdev_code, single_char);
                                                 }
                                             } else {
                                                 match layout.as_str() {
