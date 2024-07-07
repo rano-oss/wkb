@@ -13,9 +13,11 @@ Todo list(tentative):
 - [x] Testing with xkb 
 - [x] Repeat keys
 - [x] Level keys
-- [ ] State keys
-- [ ] Modifier support
+- [x] Modifier support
 - [ ] Fuzzing of some kind?
+- [ ] Caps Lock support
+- [ ] Num Lock support
+- [ ] Scroll Lock support
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps

@@ -25,43 +25,29 @@ mod repeat;
 mod repeat_default;
 mod xkb_utf8;
 
-#[derive(Debug, Clone, Copy)]
-enum Mods {
-    Ctrl {
-        pressed: bool,
-        level: usize,
-    },
-    Alt {
-        pressed: bool,
-        level: usize,
-    },
-    AltGr {
-        pressed: bool,
-        level: usize,
-    },
-    Shift {
-        pressed: bool,
-        level: usize,
-    },
-    CapsLock {
-        pressed: bool,
-        locked: bool,
-        level: usize,
-    },
-    NumLock {
-        pressed: bool,
-        locked: bool,
-        level: usize,
-    },
-    Super {
-        pressed: bool,
-        level: usize,
-    },
-    ScrollLock {
-        pressed: bool,
-        locked: bool,
-        level: usize,
-    },
+#[derive(Debug, Clone, Copy, Default)]
+struct Modifier {
+    pressed: bool,
+    // level: usize,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct LockedModifier {
+    pressed: bool,
+    locked: u8,
+    // level: usize,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct Modifiers {
+    ctrl: Modifier,
+    alt: Modifier,
+    alt_gr: Modifier,
+    shift: Modifier,
+    logo: Modifier,
+    caps_lock: LockedModifier,
+    num_lock: LockedModifier,
+    scroll_lock: LockedModifier,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -120,6 +106,7 @@ pub struct WKB {
     locked_levels: Levels,
     pressed_keys: HashSet<u32>,
     repeat_keys: HashSet<u32>,
+    modifiers: Modifiers,
 }
 
 fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
@@ -249,6 +236,7 @@ impl WKB {
             locked_levels: Levels::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
+            modifiers: Modifiers::default(),
         };
         wkb.map(path, locale, None);
         wkb
@@ -300,6 +288,55 @@ impl WKB {
     }
 
     pub fn update_key(&mut self, evdev_code: u32, direction: KeyDirection) {
+        match (evdev_code, direction) {
+            (29 | 97, KeyDirection::Down) => self.modifiers.ctrl.pressed = true,
+            (29 | 97, KeyDirection::Up) => self.modifiers.ctrl.pressed = false,
+            (42 | 54, KeyDirection::Down) => self.modifiers.shift.pressed = true,
+            (42 | 54, KeyDirection::Up) => self.modifiers.shift.pressed = false,
+            (56, KeyDirection::Down) => self.modifiers.alt.pressed = true,
+            (56, KeyDirection::Up) => self.modifiers.alt.pressed = false,
+            (100, KeyDirection::Down) => self.modifiers.alt_gr.pressed = true,
+            (100, KeyDirection::Up) => self.modifiers.alt_gr.pressed = false,
+            (125, KeyDirection::Down) => self.modifiers.logo.pressed = true,
+            (125, KeyDirection::Up) => self.modifiers.logo.pressed = false,
+            (58, KeyDirection::Down) => {
+                self.modifiers.caps_lock.pressed = true;
+                if self.modifiers.caps_lock.locked == 0 {
+                    self.modifiers.caps_lock.locked = 2;
+                }
+            }
+            (58, KeyDirection::Up) => {
+                self.modifiers.caps_lock.pressed = false;
+                if self.modifiers.caps_lock.locked > 0 {
+                    self.modifiers.caps_lock.locked -= 1;
+                }
+            }
+            (69, KeyDirection::Down) => {
+                self.modifiers.num_lock.pressed = true;
+                if self.modifiers.num_lock.locked == 0 {
+                    self.modifiers.num_lock.locked = 2;
+                }
+            }
+            (69, KeyDirection::Up) => {
+                self.modifiers.num_lock.pressed = false;
+                if self.modifiers.num_lock.locked > 0 {
+                    self.modifiers.num_lock.locked -= 1;
+                }
+            }
+            (70, KeyDirection::Down) => {
+                self.modifiers.scroll_lock.pressed = true;
+                if self.modifiers.scroll_lock.locked == 0 {
+                    self.modifiers.scroll_lock.locked = 2;
+                }
+            }
+            (70, KeyDirection::Up) => {
+                self.modifiers.scroll_lock.pressed = false;
+                if self.modifiers.scroll_lock.locked > 0 {
+                    self.modifiers.scroll_lock.locked -= 1;
+                }
+            }
+            (_, _) => (),
+        };
         let modifier = self.level_modifiers.get(&evdev_code);
         if let Some(modifier) = modifier {
             match (direction, modifier.mod_type, modifier.level) {
@@ -311,11 +348,11 @@ impl WKB {
                 (KeyDirection::Up, ModifierType::Press, 5) => self.pressed_levels.level5 -= 1,
                 (KeyDirection::Down, ModifierType::Lock, 5) => {
                     if self.locked_levels.level5 == 0 {
-                        self.locked_levels.level5 += 1;
+                        self.locked_levels.level5 += 2;
                     }
                 }
                 (KeyDirection::Up, ModifierType::Lock, 5) => {
-                    if self.locked_levels.level5 == 1 {
+                    if self.locked_levels.level5 > 0 {
                         self.locked_levels.level5 -= 1;
                     }
                 }
@@ -459,11 +496,7 @@ impl WKB {
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
                                             };
                                             if let Some(single_char) = single_char {
-                                                if
-                                                // locale == "keypad"
-                                                //     || locale == "kpdl"
-                                                //     ||
-                                                id.content.starts_with("KP") {
+                                                if id.content.starts_with("KP") {
                                                     self.level_keypadmap[i]
                                                         .insert(evdev_code, single_char);
                                                 } else {
