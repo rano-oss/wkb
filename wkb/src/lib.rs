@@ -182,61 +182,6 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
 }
 
 impl WKB {
-    // pub fn new_from_fd(fd: OwnedFd) -> Self {
-    //     let path = Path::new("/usr/share/X11/xkb/symbols/");
-    //     let level_keypadmap = vec![
-    //         DEFAULT_LEVEL1_KEYPADMAP.clone(),
-    //         DEFAULT_LEVEL2_KEYPADMAP.clone(),
-    //         DEFAULT_LEVEL3_KEYPADMAP.clone(),
-    //         DEFAULT_LEVEL4_KEYPADMAP.clone(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //     ];
-    //     let level_keymap = vec![
-    //         DEFAULT_LEVEL1_MAP.clone(),
-    //         DEFAULT_LEVEL2_MAP.clone(),
-    //         DEFAULT_LEVEL3_MAP.clone(),
-    //         DEFAULT_LEVEL4_MAP.clone(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //         HashMap::new(),
-    //     ];
-    //     let mut wkb = Self {
-    //         layouts: Vec::new(),
-    //         layout: String::new(),
-    //         modifier_map: HashMap::from([
-    //             (
-    //                 42,
-    //                 Mod {
-    //                     name: "LeftShift".to_string(),
-    //                     level: 2,
-    //                     mod_type: ModifierType::Press,
-    //                 },
-    //             ),
-    //             (
-    //                 54,
-    //                 Mod {
-    //                     name: "RightShift".to_string(),
-    //                     level: 2,
-    //                     mod_type: ModifierType::Press,
-    //                 },
-    //             ),
-    //         ]),
-    //         compose_status: ComposeStatus::Idle,
-    //         level_keymap,
-    //         level_keypadmap,
-    //         compose_char: char::default(),
-    //         levels: Vec::with_capacity(3)
-    //     };
-    //     wkb.read_layouts(path, None, Some(fd));
-    //     wkb.layout = wkb.layouts()[0].clone();
-    //     // wkb.map(path, locale, None);
-    //     wkb
-    // }
-
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         let path = Path::new("/usr/share/X11/xkb/symbols/");
         let level_keypadmap = vec![
@@ -335,7 +280,7 @@ impl WKB {
         let level5 = self.pressed_levels.level5 != 0 || self.locked_levels.level5 != 0;
         let level3 = self.pressed_levels.level3 != 0 || self.locked_levels.level3 != 0;
         let level2 = self.pressed_levels.level2 != 0 || self.locked_levels.level2 != 0;
-        let utf8 = if level5 && level3 && level2 {
+        if level5 && level3 && level2 {
             self.level_key(evdev_code, 7)
         } else if level5 && level3 {
             self.level_key(evdev_code, 6)
@@ -351,8 +296,7 @@ impl WKB {
             self.level_key(evdev_code, 1)
         } else {
             self.level_key(evdev_code, 0)
-        };
-        utf8
+        }
     }
 
     pub fn update_key(&mut self, evdev_code: u32, direction: KeyDirection) {
