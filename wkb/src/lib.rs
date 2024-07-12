@@ -28,26 +28,147 @@ mod xkb_utf8;
 #[derive(Debug, Clone, Copy, Default)]
 struct Modifier {
     pressed: bool,
-    // level: usize,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct LockedModifier {
+struct LockModifier {
     pressed: bool,
     locked: u8,
-    // level: usize,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 struct Modifiers {
-    ctrl: Modifier,
+    left_ctrl: Modifier,
+    right_ctrl: Modifier,
     alt: Modifier,
     alt_gr: Modifier,
-    shift: Modifier,
+    left_shift: Modifier,
+    right_shift: Modifier,
     logo: Modifier,
-    caps_lock: LockedModifier,
-    num_lock: LockedModifier,
-    scroll_lock: LockedModifier,
+    caps_lock: LockModifier,
+    num_lock: LockModifier,
+    scroll_lock: LockModifier,
+    level2: ((u32, Modifier), (u32, Modifier)),
+    level3: (u32, Modifier),
+    level5: (u32, Modifier),
+    level5lock: (u32, LockModifier),
+}
+
+impl Modifiers {
+    fn level5(&self) -> bool {
+        self.level5.1.pressed || self.level5lock.1.locked > 0
+    }
+
+    fn level3(&self) -> bool {
+        self.level3.1.pressed
+    }
+
+    fn level2(&self) -> bool {
+        self.level2.0 .1.pressed || self.level2.1 .1.pressed
+    }
+
+    fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+        let mut updated = false;
+        if self.level2.0 .0 == evdev_code {
+            match key_direction {
+                KeyDirection::Down => self.level2.0 .1.pressed = true,
+                KeyDirection::Up => self.level2.0 .1.pressed = false,
+            }
+            updated = true;
+        } else if self.level2.1 .0 == evdev_code {
+            match key_direction {
+                KeyDirection::Down => self.level2.1 .1.pressed = true,
+                KeyDirection::Up => self.level2.1 .1.pressed = false,
+            }
+            updated = true;
+        } else if self.level3.0 == evdev_code {
+            match key_direction {
+                KeyDirection::Down => self.level3.1.pressed = true,
+                KeyDirection::Up => self.level3.1.pressed = false,
+            }
+            updated = true;
+        } else if self.level5.0 == evdev_code {
+            match key_direction {
+                KeyDirection::Down => self.level5.1.pressed = true,
+                KeyDirection::Up => self.level5.1.pressed = false,
+            }
+            updated = true;
+        } else if self.level5lock.0 == evdev_code {
+            match key_direction {
+                KeyDirection::Down => {
+                    self.level5lock.1.pressed = true;
+                    if self.level5lock.1.locked == 0 {
+                        self.level5lock.1.locked = 2;
+                    }
+                }
+                KeyDirection::Up => {
+                    self.level5lock.1.pressed = false;
+                    if self.level5lock.1.locked == 0 {
+                        self.level5lock.1.locked -= 1;
+                    }
+                }
+            }
+            updated = true;
+        }
+        match (evdev_code, key_direction) {
+            (29, KeyDirection::Down) => self.left_ctrl.pressed = true,
+            (29, KeyDirection::Up) => self.left_ctrl.pressed = false,
+            (42, KeyDirection::Down) => self.left_shift.pressed = true,
+            (42, KeyDirection::Up) => self.left_shift.pressed = false,
+            (54, KeyDirection::Down) => self.right_shift.pressed = true,
+            (54, KeyDirection::Up) => self.right_shift.pressed = false,
+            (97, KeyDirection::Down) => self.right_ctrl.pressed = true,
+            (97, KeyDirection::Up) => self.right_ctrl.pressed = false,
+            (56, KeyDirection::Down) => self.alt.pressed = true,
+            (56, KeyDirection::Up) => self.alt.pressed = false,
+            (100, KeyDirection::Down) => self.alt_gr.pressed = true,
+            (100, KeyDirection::Up) => self.alt_gr.pressed = false,
+            (125, KeyDirection::Down) => self.logo.pressed = true,
+            (125, KeyDirection::Up) => self.logo.pressed = false,
+            (58, KeyDirection::Down) => {
+                self.caps_lock.pressed = true;
+                if self.caps_lock.locked == 0 {
+                    self.caps_lock.locked = 2;
+                }
+            }
+            (58, KeyDirection::Up) => {
+                self.caps_lock.pressed = false;
+                if self.caps_lock.locked > 0 {
+                    self.caps_lock.locked -= 1;
+                }
+            }
+            (69, KeyDirection::Down) => {
+                self.num_lock.pressed = true;
+                if self.num_lock.locked == 0 {
+                    self.num_lock.locked = 2;
+                }
+            }
+            (69, KeyDirection::Up) => {
+                self.num_lock.pressed = false;
+                if self.num_lock.locked > 0 {
+                    self.num_lock.locked -= 1;
+                }
+            }
+            (70, KeyDirection::Down) => {
+                self.scroll_lock.pressed = true;
+                if self.scroll_lock.locked == 0 {
+                    self.scroll_lock.locked = 2;
+                }
+            }
+            (70, KeyDirection::Up) => {
+                self.scroll_lock.pressed = false;
+                if self.scroll_lock.locked > 0 {
+                    self.scroll_lock.locked -= 1;
+                }
+            }
+            (_, _) => {
+                if !updated {
+                    return false;
+                }
+            }
+        };
+        true
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -73,37 +194,14 @@ pub enum FeedResult {
 type LevelKeymap = Vec<HashMap<u32, char>>;
 type LevelKeypadmap = Vec<HashMap<u32, char>>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum ModifierType {
-    Press,
-    Lock,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Mod {
-    name: String,
-    level: usize,
-    mod_type: ModifierType,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-struct Levels {
-    level2: usize,
-    level3: usize,
-    level5: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
     level_keymap: LevelKeymap,
     level_keypadmap: LevelKeypadmap,
-    level_modifiers: HashMap<u32, Mod>,
     compose_status: ComposeStatus,
     compose_char: char,
-    pressed_levels: Levels,
-    locked_levels: Levels,
     pressed_keys: HashSet<u32>,
     repeat_keys: HashSet<u32>,
     modifiers: Modifiers,
@@ -206,37 +304,18 @@ impl WKB {
         } else {
             REPEAT_DEFAULT.clone()
         };
-
+        let mut modifiers = Modifiers::default();
+        modifiers.level2 = ((42, Modifier::default()), (54, Modifier::default()));
         let mut wkb = Self {
             layouts,
             layout,
-            level_modifiers: HashMap::from([
-                (
-                    42,
-                    Mod {
-                        name: "LeftShift".to_string(),
-                        level: 2,
-                        mod_type: ModifierType::Press,
-                    },
-                ),
-                (
-                    54,
-                    Mod {
-                        name: "RightShift".to_string(),
-                        level: 2,
-                        mod_type: ModifierType::Press,
-                    },
-                ),
-            ]),
             compose_status: ComposeStatus::Idle,
             level_keymap,
             level_keypadmap,
             compose_char: char::default(),
-            pressed_levels: Levels::default(),
-            locked_levels: Levels::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
-            modifiers: Modifiers::default(),
+            modifiers,
         };
         wkb.map(path, locale, None);
         wkb
@@ -265,9 +344,9 @@ impl WKB {
     }
 
     pub fn utf8(&self, evdev_code: u32) -> Option<char> {
-        let level5 = self.pressed_levels.level5 != 0 || self.locked_levels.level5 != 0;
-        let level3 = self.pressed_levels.level3 != 0 || self.locked_levels.level3 != 0;
-        let level2 = self.pressed_levels.level2 != 0 || self.locked_levels.level2 != 0;
+        let level5 = self.modifiers.level5();
+        let level3 = self.modifiers.level3();
+        let level2 = self.modifiers.level2();
         if level5 && level3 && level2 {
             self.level_key(evdev_code, 7)
         } else if level5 && level3 {
@@ -281,85 +360,25 @@ impl WKB {
         } else if level3 {
             self.level_key(evdev_code, 2)
         } else if level2 {
-            self.level_key(evdev_code, 1)
+            if self.modifiers.caps_lock.locked > 0 {
+                self.level_key(evdev_code, 1)
+                    .map(|c| c.to_ascii_lowercase())
+            } else {
+                self.level_key(evdev_code, 1)
+            }
         } else {
-            self.level_key(evdev_code, 0)
+            if self.modifiers.caps_lock.locked > 0 {
+                self.level_key(evdev_code, 0)
+                    .map(|c| c.to_ascii_uppercase())
+            } else {
+                self.level_key(evdev_code, 0)
+            }
         }
     }
 
-    pub fn update_key(&mut self, evdev_code: u32, direction: KeyDirection) {
-        match (evdev_code, direction) {
-            (29 | 97, KeyDirection::Down) => self.modifiers.ctrl.pressed = true,
-            (29 | 97, KeyDirection::Up) => self.modifiers.ctrl.pressed = false,
-            (42 | 54, KeyDirection::Down) => self.modifiers.shift.pressed = true,
-            (42 | 54, KeyDirection::Up) => self.modifiers.shift.pressed = false,
-            (56, KeyDirection::Down) => self.modifiers.alt.pressed = true,
-            (56, KeyDirection::Up) => self.modifiers.alt.pressed = false,
-            (100, KeyDirection::Down) => self.modifiers.alt_gr.pressed = true,
-            (100, KeyDirection::Up) => self.modifiers.alt_gr.pressed = false,
-            (125, KeyDirection::Down) => self.modifiers.logo.pressed = true,
-            (125, KeyDirection::Up) => self.modifiers.logo.pressed = false,
-            (58, KeyDirection::Down) => {
-                self.modifiers.caps_lock.pressed = true;
-                if self.modifiers.caps_lock.locked == 0 {
-                    self.modifiers.caps_lock.locked = 2;
-                }
-            }
-            (58, KeyDirection::Up) => {
-                self.modifiers.caps_lock.pressed = false;
-                if self.modifiers.caps_lock.locked > 0 {
-                    self.modifiers.caps_lock.locked -= 1;
-                }
-            }
-            (69, KeyDirection::Down) => {
-                self.modifiers.num_lock.pressed = true;
-                if self.modifiers.num_lock.locked == 0 {
-                    self.modifiers.num_lock.locked = 2;
-                }
-            }
-            (69, KeyDirection::Up) => {
-                self.modifiers.num_lock.pressed = false;
-                if self.modifiers.num_lock.locked > 0 {
-                    self.modifiers.num_lock.locked -= 1;
-                }
-            }
-            (70, KeyDirection::Down) => {
-                self.modifiers.scroll_lock.pressed = true;
-                if self.modifiers.scroll_lock.locked == 0 {
-                    self.modifiers.scroll_lock.locked = 2;
-                }
-            }
-            (70, KeyDirection::Up) => {
-                self.modifiers.scroll_lock.pressed = false;
-                if self.modifiers.scroll_lock.locked > 0 {
-                    self.modifiers.scroll_lock.locked -= 1;
-                }
-            }
-            (_, _) => (),
-        };
-        let modifier = self.level_modifiers.get(&evdev_code);
-        if let Some(modifier) = modifier {
-            match (direction, modifier.mod_type, modifier.level) {
-                (KeyDirection::Down, ModifierType::Press, 2) => self.pressed_levels.level2 += 1,
-                (KeyDirection::Up, ModifierType::Press, 2) => self.pressed_levels.level2 -= 1,
-                (KeyDirection::Down, ModifierType::Press, 3) => self.pressed_levels.level3 += 1,
-                (KeyDirection::Up, ModifierType::Press, 3) => self.pressed_levels.level3 -= 1,
-                (KeyDirection::Down, ModifierType::Press, 5) => self.pressed_levels.level5 += 1,
-                (KeyDirection::Up, ModifierType::Press, 5) => self.pressed_levels.level5 -= 1,
-                (KeyDirection::Down, ModifierType::Lock, 5) => {
-                    if self.locked_levels.level5 == 0 {
-                        self.locked_levels.level5 += 2;
-                    }
-                }
-                (KeyDirection::Up, ModifierType::Lock, 5) => {
-                    if self.locked_levels.level5 > 0 {
-                        self.locked_levels.level5 -= 1;
-                    }
-                }
-                (_, _, _) => unreachable!(),
-            };
-        } else {
-            match direction {
+    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) {
+        if !self.modifiers.set_state(evdev_code, key_direction) {
+            match key_direction {
                 KeyDirection::Up => self.pressed_keys.remove(&evdev_code),
                 KeyDirection::Down => self.pressed_keys.insert(evdev_code),
             };
@@ -506,102 +525,51 @@ impl WKB {
                                             } else {
                                                 match layout.as_str() {
                                                     "ralt_switch" => {
-                                                        self.level_modifiers.insert(
-                                                            100,
-                                                            Mod {
-                                                                name: "AltGr".to_string(),
-                                                                level: 3,
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        self.modifiers.level3 =
+                                                            (100, Modifier::default());
                                                     }
                                                     "lalt_switch" => {
-                                                        self.level_modifiers.insert(
-                                                            56,
-                                                            Mod {
-                                                                name: "Alt".to_string(),
-                                                                level: 3,
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        self.modifiers.level3 =
+                                                            (56, Modifier::default());
                                                     }
                                                     "enter_switch" => {
-                                                        self.level_modifiers.insert(
-                                                            96,
-                                                            Mod {
-                                                                name: "KeyPadEnter".to_string(),
-                                                                level: 3,
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        self.modifiers.level3 =
+                                                            (96, Modifier::default());
                                                     }
                                                     "bksl_switch" => {
-                                                        self.level_modifiers.insert(
-                                                            43,
-                                                            Mod {
-                                                                name: "Backslash".to_string(),
-                                                                level: 3,
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        self.modifiers.level3 =
+                                                            (43, Modifier::default());
                                                     }
                                                     "rctrl_switch" | "switch" => {
-                                                        self.level_modifiers.insert(
-                                                            97,
-                                                            Mod {
-                                                                name: "RightCtrl".to_string(),
-                                                                level: if locale == "level3" {
-                                                                    3
-                                                                } else {
-                                                                    5
-                                                                },
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        if locale == "level3" {
+                                                            self.modifiers.level3 =
+                                                                (97, Modifier::default());
+                                                        } else {
+                                                            self.modifiers.level5 =
+                                                                (97, Modifier::default());
+                                                        };
                                                     }
                                                     "caps_switch" => {
-                                                        self.level_modifiers.insert(
-                                                            58,
-                                                            Mod {
-                                                                name: "CapsLock".to_string(),
-                                                                level: if locale == "level3" {
-                                                                    3
-                                                                } else {
-                                                                    5
-                                                                },
-                                                                mod_type: ModifierType::Press,
-                                                            },
-                                                        );
+                                                        if locale == "level3" {
+                                                            self.modifiers.level3 =
+                                                                (58, Modifier::default());
+                                                        } else {
+                                                            self.modifiers.level5 =
+                                                                (58, Modifier::default());
+                                                        };
                                                     }
                                                     "lock" => {
-                                                        self.level_modifiers.insert(
-                                                            199,
-                                                            Mod {
-                                                                name: "Hypr".to_string(),
-                                                                level: 5,
-                                                                mod_type: ModifierType::Lock,
-                                                            },
-                                                        );
+                                                        // Hypr
+                                                        self.modifiers.level5lock =
+                                                            (199, LockModifier::default());
                                                     }
                                                     "ralt_switch_lock" => {
-                                                        self.level_modifiers.insert(
-                                                            100,
-                                                            Mod {
-                                                                name: "AltGr".to_string(),
-                                                                level: 5,
-                                                                mod_type: ModifierType::Lock,
-                                                            },
-                                                        );
+                                                        self.modifiers.level5lock =
+                                                            (100, LockModifier::default());
                                                     }
                                                     "lsgt_switch_lock" => {
-                                                        self.level_modifiers.insert(
-                                                            86,
-                                                            Mod {
-                                                                name: "LessGreater".to_string(),
-                                                                level: 5,
-                                                                mod_type: ModifierType::Lock,
-                                                            },
-                                                        );
+                                                        self.modifiers.level5lock =
+                                                            (86, LockModifier::default());
                                                     }
                                                     _ => {
                                                         if !v.contains("VoidSymbol") {
