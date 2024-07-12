@@ -15,7 +15,7 @@ Todo list(tentative):
 - [x] Level keys
 - [x] Modifier support
 - [ ] Fuzzing of some kind?
-- [ ] Caps Lock support
+- [x] Caps Lock support
 - [ ] Num Lock support
 - [ ] Scroll Lock support
 
