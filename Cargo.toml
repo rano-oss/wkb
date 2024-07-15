@@ -16,3 +16,7 @@ xkbcommon = "0.7.0"
 [dev-dependencies]
 test-case = "3.3.1"
 xkbcommon = "0.7.0"
+
+[build-dependencies]
+xkbcommon = "0.7.0"
+xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }

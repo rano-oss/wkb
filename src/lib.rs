@@ -347,7 +347,20 @@ impl WKB {
         let level5 = self.modifiers.level5();
         let level3 = self.modifiers.level3();
         let level2 = self.modifiers.level2();
-        if level5 && level3 && level2 {
+        if [
+            71, 72, 73, // 7, 8, 9
+            75, 76, 77, //4, 5, 6
+            79, 80, 81, // 1, 2, 3
+            82, // 0
+        ]
+        .contains(&evdev_code)
+        {
+            if self.modifiers.num_lock.locked > 0 && !level2 && !level3 && !level5 {
+                self.level_key(evdev_code, 1)
+            } else {
+                self.level_key(evdev_code, 0)
+            }
+        } else if level5 && level3 && level2 {
             self.level_key(evdev_code, 7)
         } else if level5 && level3 {
             self.level_key(evdev_code, 6)

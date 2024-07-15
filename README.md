@@ -16,8 +16,10 @@ Todo list(tentative):
 - [x] Modifier support
 - [ ] Fuzzing of some kind?
 - [x] Caps Lock support
-- [ ] Num Lock support
-- [ ] Scroll Lock support
+- [x] Num Lock support
+- [x] Scroll Lock support
+- [ ] Writing tests for new features
+- [ ] Add wayland specific functions
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps
