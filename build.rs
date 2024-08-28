@@ -15,8 +15,8 @@ fn main() -> std::io::Result<()> {
     let dest_path = Path::new(&out_dir).join("repeat.rs");
     let file = File::create(&dest_path)?;
     let mut file = LineWriter::new(file);
-    file.write_all(b"use std::collections::{HashMap, HashSet};\n")?;
-    file.write_all(b"\n")?;
+    // file.write_all(b"use std::collections::{HashMap, HashSet};\n")?;
+    // file.write_all(b"\n")?;
     file.write_all(b"lazy_static::lazy_static! {\n")?;
     file.write_all(
         b"    pub static ref REPEAT_KEYS: HashMap<&'static str, HashMap<&'static str, HashSet<u32>>> =[\n"

@@ -12,8 +12,7 @@ use default_keymap::{
 };
 use evdev_xkb::XKBCODES_EVDEV;
 use regex::Regex;
-use repeat::REPEAT_KEYS;
-use repeat_default::REPEAT_DEFAULT;
+use repeat::REPEAT_DEFAULT;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
     parse,
@@ -22,8 +21,8 @@ use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 mod default_keymap;
 mod evdev_xkb;
 mod repeat;
-mod repeat_default;
 mod xkb_utf8;
+include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone, Copy, Default)]
 struct Modifier {
@@ -161,13 +160,9 @@ impl Modifiers {
                     self.scroll_lock.locked -= 1;
                 }
             }
-            (_, _) => {
-                if !updated {
-                    return false;
-                }
-            }
+            (_, _) => return updated,
         };
-        true
+        updated
     }
 }
 
@@ -369,9 +364,19 @@ impl WKB {
         } else if level5 {
             self.level_key(evdev_code, 4)
         } else if level3 && level2 {
-            self.level_key(evdev_code, 3)
+            if self.modifiers.caps_lock.locked > 0 {
+                self.level_key(evdev_code, 3)
+                    .map(|c| c.to_ascii_uppercase())
+            } else {
+                self.level_key(evdev_code, 3)
+            }
         } else if level3 {
-            self.level_key(evdev_code, 2)
+            if self.modifiers.caps_lock.locked > 0 {
+                self.level_key(evdev_code, 2)
+                    .map(|c| c.to_ascii_uppercase())
+            } else {
+                self.level_key(evdev_code, 2)
+            }
         } else if level2 {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 1)
@@ -459,6 +464,9 @@ impl WKB {
         self.level_keypadmap.clone()
     }
 
+    // This recursive function from hell is currently used only to map xkb
+    // hopefully xkb files can be depricated one day so one does not have to work
+    // with this cursed file format.
     fn map(&mut self, path: &Path, locale: String, layout: Option<String>) {
         let file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
         let xkb = parse(&file).unwrap();
