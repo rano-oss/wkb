@@ -7,8 +7,7 @@ use std::{
 };
 
 use default_keymap::{
-    DEFAULT_LEVEL1_KEYPADMAP, DEFAULT_LEVEL1_MAP, DEFAULT_LEVEL2_KEYPADMAP, DEFAULT_LEVEL2_MAP,
-    DEFAULT_LEVEL3_KEYPADMAP, DEFAULT_LEVEL3_MAP, DEFAULT_LEVEL4_KEYPADMAP, DEFAULT_LEVEL4_MAP,
+    DEFAULT_LEVEL1_MAP, DEFAULT_LEVEL2_MAP, DEFAULT_LEVEL3_MAP, DEFAULT_LEVEL4_MAP,
 };
 use evdev_xkb::XKBCODES_EVDEV;
 use regex::Regex;
@@ -36,7 +35,7 @@ struct LockModifier {
 }
 
 #[derive(Debug, Clone, Default)]
-struct Modifiers {
+pub struct Modifiers {
     left_ctrl: Modifier,
     right_ctrl: Modifier,
     alt: Modifier,
@@ -54,6 +53,16 @@ struct Modifiers {
 }
 
 impl Modifiers {
+    pub fn evdev_codes(&self) -> Vec<u32> {
+        vec![
+            self.level2.0 .0,
+            self.level2.1 .0,
+            self.level3.0,
+            self.level5.0,
+            self.level5lock.0,
+        ]
+    }
+
     fn level5(&self) -> bool {
         self.level5.1.pressed || self.level5lock.1.locked > 0
     }
@@ -187,19 +196,18 @@ pub enum FeedResult {
 }
 
 type LevelKeymap = Vec<HashMap<u32, char>>;
-type LevelKeypadmap = Vec<HashMap<u32, char>>;
 
 #[derive(Debug, Clone)]
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
     level_keymap: LevelKeymap,
-    level_keypadmap: LevelKeypadmap,
+    // level_keypadmap: LevelKeypadmap,
     compose_status: ComposeStatus,
     compose_char: char,
     pressed_keys: HashSet<u32>,
     repeat_keys: HashSet<u32>,
-    modifiers: Modifiers,
+    pub modifiers: Modifiers,
 }
 
 fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
@@ -264,16 +272,6 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
 impl WKB {
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         let path = Path::new("/usr/share/X11/xkb/symbols/");
-        let level_keypadmap = vec![
-            DEFAULT_LEVEL1_KEYPADMAP.clone(),
-            DEFAULT_LEVEL2_KEYPADMAP.clone(),
-            DEFAULT_LEVEL3_KEYPADMAP.clone(),
-            DEFAULT_LEVEL4_KEYPADMAP.clone(),
-            HashMap::new(),
-            HashMap::new(),
-            HashMap::new(),
-            HashMap::new(),
-        ];
         let level_keymap = vec![
             DEFAULT_LEVEL1_MAP.clone(),
             DEFAULT_LEVEL2_MAP.clone(),
@@ -306,7 +304,6 @@ impl WKB {
             layout,
             compose_status: ComposeStatus::Idle,
             level_keymap,
-            level_keypadmap,
             compose_char: char::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
@@ -319,12 +316,6 @@ impl WKB {
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
         if let Some(character) = self
             .level_keymap
-            .get(level_index)
-            .and_then(|hm| hm.get(&evdev_code).copied())
-        {
-            Some(character)
-        } else if let Some(character) = self
-            .level_keypadmap
             .get(level_index)
             .and_then(|hm| hm.get(&evdev_code).copied())
         {
@@ -349,12 +340,12 @@ impl WKB {
             82, // 0
         ]
         .contains(&evdev_code)
+            && self.modifiers.num_lock.locked > 0
+            && !level2
+            && !level3
+            && !level5
         {
-            if self.modifiers.num_lock.locked > 0 && !level2 && !level3 && !level5 {
-                self.level_key(evdev_code, 1)
-            } else {
-                self.level_key(evdev_code, 0)
-            }
+            self.level_key(evdev_code, 1)
         } else if level5 && level3 && level2 {
             self.level_key(evdev_code, 7)
         } else if level5 && level3 {
@@ -366,28 +357,28 @@ impl WKB {
         } else if level3 && level2 {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 3)
-                    .map(|c| c.to_ascii_uppercase())
+                    .map(|c| c.to_uppercase().last().unwrap())
             } else {
                 self.level_key(evdev_code, 3)
             }
         } else if level3 {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 2)
-                    .map(|c| c.to_ascii_uppercase())
+                    .map(|c| c.to_uppercase().last().unwrap())
             } else {
                 self.level_key(evdev_code, 2)
             }
         } else if level2 {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 1)
-                    .map(|c| c.to_ascii_lowercase())
+                    .map(|c| c.to_lowercase().last().unwrap())
             } else {
                 self.level_key(evdev_code, 1)
             }
         } else {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 0)
-                    .map(|c| c.to_ascii_uppercase())
+                    .map(|c| c.to_uppercase().last().unwrap())
             } else {
                 self.level_key(evdev_code, 0)
             }
@@ -458,10 +449,6 @@ impl WKB {
 
     pub fn level_keymap(&self) -> LevelKeymap {
         self.level_keymap.clone()
-    }
-
-    pub fn level_keypadmap(&self) -> LevelKeypadmap {
-        self.level_keypadmap.clone()
     }
 
     // This recursive function from hell is currently used only to map xkb
@@ -536,13 +523,8 @@ impl WKB {
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
                                             };
                                             if let Some(single_char) = single_char {
-                                                if id.content.starts_with("KP") {
-                                                    self.level_keypadmap[i]
-                                                        .insert(evdev_code, single_char);
-                                                } else {
-                                                    self.level_keymap[i]
-                                                        .insert(evdev_code, single_char);
-                                                }
+                                                self.level_keymap[i]
+                                                    .insert(evdev_code, single_char);
                                             } else {
                                                 match layout.as_str() {
                                                     "ralt_switch" => {
@@ -610,5 +592,10 @@ impl WKB {
                 }
             }
         });
+        for (code, value) in self.level_keymap[0].clone() {
+            if self.level_keymap[1].get(&code).is_none() {
+                self.level_keymap[1].insert(code, value);
+            }
+        }
     }
 }

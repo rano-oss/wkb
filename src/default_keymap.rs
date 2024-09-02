@@ -17,31 +17,6 @@ lazy_static::lazy_static! {
         (180,')'),
         (434, '$'),
         (435, '€'),
-    ].into();
-}
-
-lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL2_MAP: HashMap<u32, char> = [
-        (14, '\u{8}'),
-        (43, '|'),
-        (86,'>'),
-    ].into();
-}
-
-lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL3_MAP: HashMap<u32, char> = [
-        (86, '|'),
-    ].into();
-}
-
-lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL4_MAP: HashMap<u32, char> = [
-        (86, '¦'),
-    ].into();
-}
-
-lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL1_KEYPADMAP: HashMap<u32, char> = [
         (55, '*'),
         (74, '-'),
         (78, '+'),
@@ -52,7 +27,22 @@ lazy_static::lazy_static! {
 }
 
 lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL2_KEYPADMAP: HashMap<u32, char> = [
+    pub static ref DEFAULT_LEVEL2_MAP: HashMap<u32, char> = [
+        (1, '\u{1b}'),
+        (14, '\u{8}'),
+        (28,'\r'),
+        (43, '|'),
+        (57,'\u{20}'),
+        (86,'>'),
+        (96, '\u{d}'),
+        (101,'\n'),
+        (111, '\u{7f}'),
+        (117,'='),
+        (118, '±'),
+        (179, '('),
+        (180,')'),
+        (434, '$'),
+        (435, '€'),
         (55, '*'),
         (71, '7'),
         (72, '8'),
@@ -73,7 +63,8 @@ lazy_static::lazy_static! {
 }
 
 lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL3_KEYPADMAP: HashMap<u32, char> = [
+    pub static ref DEFAULT_LEVEL3_MAP: HashMap<u32, char> = [
+        (86, '|'),
         (55, '*'),
         (74, '-'),
         (78, '+'),
@@ -82,7 +73,8 @@ lazy_static::lazy_static! {
 }
 
 lazy_static::lazy_static! {
-    pub static ref DEFAULT_LEVEL4_KEYPADMAP: HashMap<u32, char> = [
+    pub static ref DEFAULT_LEVEL4_MAP: HashMap<u32, char> = [
+        (86, '¦'),
         (55, '*'),
         (74, '-'),
         (78, '+'),
