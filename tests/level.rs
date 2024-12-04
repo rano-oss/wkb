@@ -31,6 +31,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
 fn level_keys(locale: &str, level: usize) {
     let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
     for layout in wkb.layouts() {
+        println!("{:?}", layout);
         let xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
         for i in 0..701 {
@@ -41,6 +42,9 @@ fn level_keys(locale: &str, level: usize) {
                 .map(|k| k.key_char().unwrap_or_default());
             if k2.unwrap_or_default() == '\0' {
                 k2 = None;
+            }
+            if k1 != k2 && k2 != None {
+                println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
             }
             assert!(k1 == k2 || k2 == None);
         }

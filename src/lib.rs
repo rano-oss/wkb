@@ -6,9 +6,7 @@ use std::{
     path::Path,
 };
 
-use default_keymap::{
-    DEFAULT_LEVEL1_MAP, DEFAULT_LEVEL2_MAP, DEFAULT_LEVEL3_MAP, DEFAULT_LEVEL4_MAP,
-};
+use default_keymap::DEFAULT_MAP;
 use evdev_xkb::XKBCODES_EVDEV;
 use regex::Regex;
 use repeat::REPEAT_DEFAULT;
@@ -44,6 +42,8 @@ pub struct Modifiers {
     right_shift: Modifier,
     logo: Modifier,
     caps_lock: LockModifier,
+    caps_lock_disabled: bool,
+    right_left_shift_caps: bool,
     num_lock: LockModifier,
     scroll_lock: LockModifier,
     level2: ((u32, Modifier), (u32, Modifier)),
@@ -195,21 +195,6 @@ pub enum FeedResult {
     Accepted,
 }
 
-type LevelKeymap = Vec<HashMap<u32, char>>;
-
-#[derive(Debug, Clone)]
-pub struct WKB {
-    layouts: Vec<String>,
-    layout: String,
-    level_keymap: LevelKeymap,
-    // level_keypadmap: LevelKeypadmap,
-    compose_status: ComposeStatus,
-    compose_char: char,
-    pressed_keys: HashSet<u32>,
-    repeat_keys: HashSet<u32>,
-    pub modifiers: Modifiers,
-}
-
 fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
     let mut string_file = String::new();
     if let Some(fd) = fd {
@@ -269,19 +254,39 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
         .and_then(std::char::from_u32)
 }
 
+fn to_uppercase(c: char, custom_uppercase_map: Option<HashMap<char, char>>) -> char {
+    if let Some(uppercase_map) = custom_uppercase_map {
+        if let Some(uc) = uppercase_map.get(&c) {
+            return *uc;
+        }
+    }
+    let uc = c.to_uppercase();
+    if uc.len() > 1 {
+        return c;
+    }
+    uc.last().unwrap()
+}
+
+type LevelKeymap = [HashMap<u32, char>; 8];
+
+#[derive(Debug, Clone)]
+pub struct WKB {
+    layouts: Vec<String>,
+    layout: String,
+    level_keymap: LevelKeymap,
+    compose_status: ComposeStatus,
+    compose_char: char,
+    pressed_keys: HashSet<u32>,
+    repeat_keys: HashSet<u32>,
+    custom_uppercase_map: Option<HashMap<char, char>>,
+    caps_level2: Option<Vec<u32>>,
+    pub modifiers: Modifiers,
+}
+
 impl WKB {
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         let path = Path::new("/usr/share/X11/xkb/symbols/");
-        let level_keymap = vec![
-            DEFAULT_LEVEL1_MAP.clone(),
-            DEFAULT_LEVEL2_MAP.clone(),
-            DEFAULT_LEVEL3_MAP.clone(),
-            DEFAULT_LEVEL4_MAP.clone(),
-            HashMap::new(),
-            HashMap::new(),
-            HashMap::new(),
-            HashMap::new(),
-        ];
+        let level_keymap: [HashMap<u32, char>; 8] = core::array::from_fn(|_| HashMap::new());
         let layouts = read_layouts(path, Some(locale.clone()), None);
         let layout = if let Some(layout) = layout {
             layout
@@ -301,15 +306,18 @@ impl WKB {
         modifiers.level2 = ((42, Modifier::default()), (54, Modifier::default()));
         let mut wkb = Self {
             layouts,
-            layout,
+            layout: layout.clone(),
             compose_status: ComposeStatus::Idle,
             level_keymap,
             compose_char: char::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
+            custom_uppercase_map: None,
+            caps_level2: None,
             modifiers,
         };
-        wkb.map(path, locale, None);
+        wkb.map(path, locale.clone(), Some(layout.clone()));
+        wkb.fix_xkb_edge_cases(locale, Some(layout));
         wkb
     }
 
@@ -341,7 +349,7 @@ impl WKB {
         ]
         .contains(&evdev_code)
             && self.modifiers.num_lock.locked > 0
-            && !level2
+            // && !level2
             && !level3
             && !level5
         {
@@ -362,12 +370,12 @@ impl WKB {
                 self.level_key(evdev_code, 3)
             }
         } else if level3 {
-            if self.modifiers.caps_lock.locked > 0 {
-                self.level_key(evdev_code, 2)
-                    .map(|c| c.to_uppercase().last().unwrap())
-            } else {
-                self.level_key(evdev_code, 2)
-            }
+            // if self.modifiers.caps_lock.locked > 0 {
+            //     self.level_key(evdev_code, 2)
+            //         .map(|c| c.to_uppercase().last().unwrap())
+            // } else {
+            self.level_key(evdev_code, 2)
+            // }
         } else if level2 {
             if self.modifiers.caps_lock.locked > 0 {
                 self.level_key(evdev_code, 1)
@@ -376,9 +384,19 @@ impl WKB {
                 self.level_key(evdev_code, 1)
             }
         } else {
-            if self.modifiers.caps_lock.locked > 0 {
+            if (self.modifiers.caps_lock.locked > 0
+                || (self.modifiers.right_left_shift_caps
+                    && self.modifiers.right_shift.pressed
+                    && self.modifiers.left_shift.pressed))
+                && !self.modifiers.caps_lock_disabled
+            {
+                if let Some(caps_level2_list) = &self.caps_level2 {
+                    if caps_level2_list.contains(&evdev_code) {
+                        return self.level_key(evdev_code, 1);
+                    }
+                }
                 self.level_key(evdev_code, 0)
-                    .map(|c| c.to_uppercase().last().unwrap())
+                    .map(|c| to_uppercase(c, self.custom_uppercase_map.clone()))
             } else {
                 self.level_key(evdev_code, 0)
             }
@@ -454,6 +472,222 @@ impl WKB {
     // This recursive function from hell is currently used only to map xkb
     // hopefully xkb files can be depricated one day so one does not have to work
     // with this cursed file format.
+    fn fix_xkb_edge_cases(&mut self, locale: String, layout: Option<String>) {
+        match (locale.as_str(), &layout.as_deref()) {
+            ("at", Some("basic"))
+            | ("at", Some("nodeadkeys"))
+            | ("de", Some("basic"))
+            | ("de", Some("deadtilde"))
+            | ("de", Some("neo_base"))
+            | ("de", Some("deadgraveacute"))
+            | ("de", Some("deadacute"))
+            | ("de", Some("ro"))
+            | ("de", Some("ro_nodeadkeys"))
+            | ("de", Some("dsb_qwertz"))
+            | ("de", Some("qwerty"))
+            | ("de", Some("ru"))
+            | ("de", Some("pl"))
+            | ("de", Some("tr"))
+            | ("de", Some("hu"))
+            | ("de", Some("adnw_base"))
+            | ("de", Some("koy_base"))
+            | ("de", Some("bone_base"))
+            | ("de", Some("bone_eszett_home_base"))
+            | ("de", Some("neo_qwertz_base"))
+            | ("de", Some("neo_qwerty_base"))
+            | ("it", Some("lldde"))
+            | ("de", Some("nodeadkeys")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ß', 'ẞ')]));
+            }
+            ("tr", Some("basic"))
+            | ("tr", Some("e"))
+            | ("gh", Some("hausa"))
+            | ("ua", Some("crh"))
+            | ("ua", Some("crh_f"))
+            | ("ro", Some("crh_dobruja"))
+            | ("tr", Some("f")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('i', 'İ')]));
+            }
+            ("ng", Some("hausa")) | ("gh", Some("fula")) | ("tr", Some("us")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ı', 'İ')]));
+            }
+            ("md", Some("gag")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ı', 'ı')]));
+            }
+            ("hu", Some("oldhunlig")) => {
+                self.caps_level2 = Some(vec![2, 3, 4, 5, 6, 7, 41, 51, 52, 53]);
+            }
+            ("hu", Some("oldhun_base")) => {
+                self.caps_level2 = Some(vec![51, 52, 53]);
+            }
+            ("hu", Some("oldhun_origin")) | ("hu", Some("oldhun_lig")) => {
+                self.caps_level2 = Some(vec![2, 3, 4, 5, 6, 7, 41]);
+            }
+            ("kz", Some("ext")) => self.caps_level2 = Some(vec![2, 7, 8, 43]),
+            ("fr", Some("bepo")) | ("fr", Some("bepo_latin9")) | ("fr", Some("bepo_afnor")) => {
+                self.custom_uppercase_map = Some(HashMap::from([
+                    ('"', '1'),
+                    ('«', '2'),
+                    ('»', '3'),
+                    ('(', '4'),
+                    (')', '5'),
+                    ('@', '6'),
+                    ('+', '7'),
+                    ('-', '8'),
+                    ('/', '9'),
+                    ('*', '0'),
+                ]));
+            }
+            ("kz", Some("latin")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('v', 'M')]));
+            }
+            ("us", Some("chr")) => {
+                self.caps_level2 = Some(vec![
+                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                    25, 26, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47,
+                    48, 49, 50, 51, 52, 53,
+                ])
+            }
+            ("il", Some("si2")) | ("il", Some("basic")) => {
+                self.caps_level2 = Some(vec![
+                    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+                    44, 45, 46, 47, 48, 49, 50, 51, 52,
+                ])
+            }
+            ("il", Some("phonetic")) => {
+                self.caps_level2 = Some(vec![20, 25, 33, 37, 39, 46, 49, 50, 51, 52])
+            }
+            ("il", Some("biblical")) => {
+                self.caps_level2 = Some(vec![
+                    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                    26, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48,
+                    49, 50, 51, 52, 53,
+                ])
+            }
+            ("il", Some("biblicalSIL")) => {
+                self.caps_level2 = Some(vec![
+                    2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 16, 18, 21, 24, 25, 26, 27, 30, 31, 33, 36,
+                    37, 39, 40, 41, 46, 49, 50, 51, 52, 53,
+                ])
+            }
+            // ("ie", Some("ogam_is434")) => {
+            //     self.caps_level2 = Some(vec![
+            //         5, 8, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37,
+            //         38, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 86,
+            //     ])
+            // }
+            ("pl", Some("dvp")) | ("us", Some("dvp")) => {
+                self.caps_level2 = Some(vec![3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 40])
+            }
+            ("in", Some("tamilnet_TAB")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ø', 'Á'), ('ù', 'Â')]))
+            }
+            ("lk", Some("tam_TAB")) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ø', 'Á'), ('ù', 'Â')]))
+            }
+            ("in", Some("iipa")) => self.custom_uppercase_map = Some(HashMap::from([('b', 'Y')])),
+            ("us", Some("colemak"))
+            | ("us", Some("colemak_dh"))
+            | ("us", Some("colemak_dh_wide"))
+            | ("us", Some("colemak_dh_iso"))
+            | ("us", Some("colemak_dh_wide_iso"))
+            | ("us", Some("colemak_dh_ortho"))
+            | ("us", Some("workman"))
+            | ("us", Some("workman-intl"))
+            | ("us", Some("workman-p"))
+            | ("al", Some("veqilharxhi"))
+            | ("ge", Some("basic"))
+            | ("ge", Some("ru"))
+            | ("fr", Some("geo"))
+            | ("pt", Some("colemak"))
+            | ("pl", Some("colemak"))
+            | ("pl", Some("colemak_dh_ansi"))
+            | ("pl", Some("colemak_dh"))
+            | ("gr", Some("colemak"))
+            | (_, Some("rulemak"))
+            | ("jp", Some("106"))
+            | ("lt", Some("lekp"))
+            | ("jp", Some("common"))
+            | ("gb", Some("colemak")) => {
+                self.modifiers.caps_lock_disabled = true;
+            }
+            ("gr", Some(_)) => {
+                self.custom_uppercase_map = Some(HashMap::from([('ς', 'ς')]));
+            }
+            // There seems to be syntax for adding symbols twice if it is the only one on two levels
+            // this seems to fix that problem...
+            ("tr", Some("ku")) | ("tr", Some("ku_f")) => self.custom_uppercase_map = None,
+            ("pl", Some("glagolica")) => {
+                self.level_keymap[1].insert(43, '|');
+            }
+            ("pl", _)
+            | ("bqn", _)
+            | ("ancient", _)
+            | ("ru", _)
+            | ("tg", _)
+            | ("pk", _)
+            | ("lt", _)
+            | ("in", _)
+            | ("ma", _)
+            | ("dz", _)
+            | ("gn", _)
+            | ("la", _)
+            | ("fr", Some("azerty"))
+            | ("apl", Some("dyalog_base"))
+            | ("apl", Some("common"))
+            | ("apl", Some("unified"))
+            | ("apl", Some("sax"))
+            | ("apl", Some("aplx"))
+            | ("jp", Some("kana"))
+            | ("jp", Some("hztg_escape")) => {
+                for (code, value) in self.level_keymap[0].clone() {
+                    if self.level_keymap[1].get(&code).is_none() {
+                        self.level_keymap[1].insert(code, value);
+                    }
+                }
+            }
+            ("us", Some("3l")) | ("us", Some("3l-cros")) | ("us", Some("norman")) => {
+                self.modifiers.caps_lock_disabled = true;
+                for (code, value) in self.level_keymap[0].clone() {
+                    if self.level_keymap[1].get(&code).is_none() {
+                        self.level_keymap[1].insert(code, value);
+                    }
+                }
+            }
+            ("jp", Some("OADG109A")) => {
+                self.modifiers.caps_lock_disabled = true;
+                for (code, value) in self.level_keymap[0].clone() {
+                    if self.level_keymap[1].get(&code).is_none() {
+                        self.level_keymap[1].insert(code, value);
+                    }
+                }
+            }
+            ("us", Some("3l-emacs")) => {
+                self.level_keymap[1].insert(15, '\t');
+            }
+            ("apl", Some("dyalog_codes")) => {
+                self.level_keymap[1].insert(103, '\u{f820}');
+                self.level_keymap[1].insert(108, '\u{f81f}');
+            }
+            ("ie", Some("ogam")) => {
+                for (code, value) in self.level_keymap[0].clone() {
+                    if self.level_keymap[1].get(&code).is_none() {
+                        self.level_keymap[1].insert(code, value);
+                    }
+                }
+                self.level_keymap[1].insert(43, '\u{1680}');
+            }
+            _ => {}
+        }
+        for i in 0..5 {
+            for (code, value) in &DEFAULT_MAP[i] {
+                if self.level_keymap[i].get(&code).is_none() {
+                    self.level_keymap[i].insert(*code, *value);
+                }
+            }
+        }
+    }
+
     fn map(&mut self, path: &Path, locale: String, layout: Option<String>) {
         let file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
         let xkb = parse(&file).unwrap();
@@ -478,6 +712,7 @@ impl WKB {
                             // Why not just unwrap here? Surely there shouldn't be any symbols not defined in evdev...
                             // ph has AB00 which does not exists in evdev...
                             if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
+                                //snowflake special case of bad design I don't want to support any other way!
                                 let evdev_code =
                                     match (locale.as_str(), layout.as_str(), evdev_code) {
                                         ("de", "ru", 21) => 44,
@@ -574,12 +809,16 @@ impl WKB {
                                                         self.modifiers.level5lock =
                                                             (86, LockModifier::default());
                                                     }
+                                                    "lshift_both_shiftlock"
+                                                    | "rshift_both_shiftlock" => {
+                                                        self.modifiers.right_left_shift_caps = true
+                                                    }
                                                     _ => {
-                                                        if !v.contains("VoidSymbol") {
-                                                            // println!("{:?}", v);
-                                                            // println!("{}", *evdev_code);
-                                                            // println!("{}", layout);
-                                                        }
+                                                        // if !v.contains("VoidSymbol") {
+                                                        // println!("{:?}", v);
+                                                        // println!("{}", *evdev_code);
+                                                        println!("{}", layout);
+                                                        // }
                                                     }
                                                 }
                                             }
@@ -592,10 +831,5 @@ impl WKB {
                 }
             }
         });
-        for (code, value) in self.level_keymap[0].clone() {
-            if self.level_keymap[1].get(&code).is_none() {
-                self.level_keymap[1].insert(code, value);
-            }
-        }
     }
 }
