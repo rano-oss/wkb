@@ -19,34 +19,47 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     xkb::State::new(&keymap)
 }
 
-fn test_all_keys(wkb: WKB, xkb: xkb::State) {
+fn test_all_keys(mut wkb: WKB, xkb: xkb::State) {
     for i in 0..701 {
-        let k1 = if let Some(utf8) = wkb.utf8(i) {
-            utf8.to_string()
-        } else {
-            String::new()
-        };
+        let k1 = wkb.utf8(i);
         let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-        if k1 != k2 {
-            println!(
-                "{}: wkb: {}, xkb: {:x}",
-                i,
-                k1,
-                k2.chars().last().unwrap_or_default() as u32
-            );
+        if k1 != k2.chars().last() && !k2.is_empty() {
+            println!("wkb: {:?}, xkb: {:?}, {}", k1, k2.chars().last(), i);
         }
+        // let k1 = if let Some(utf8) = wkb.utf8(i) {
+        //     utf8.to_string()
+        // } else {
+        //     String::new()
+        // };
+        // let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
+        // if k1 != k2 {
+        //         println!("wkb: {:?}, xkb: {:?}, {}", k1, k2.chars().last(), i);
+        //     println!(
+        //         "{}: wkb: {}, xkb: {:x}",
+        //         i,
+        //         k1,
+        //         k2.chars().last().unwrap_or_default() as u32
+        //     );
+        // }
     }
 }
 
 fn main() {
-    let lang = "it".to_string();
-    let layout = "geo".to_string();
+    let lang = "jp".to_string();
+    let layout = "106".to_string();
     let mut xkb = xkb_new_from_names(lang.clone(), Some(layout.clone()));
     let mut wkb = wkb::WKB::new_from_names(lang, Some(layout));
+    // level 2
+    // let i = wkb.modifiers.level2shift.0 .0;
+    // xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+    // wkb.update_key(i, wkb::KeyDirection::Down);
+    // caps
     xkb.update_key(Keycode::new(58 as u32 + 8), xkb::KeyDirection::Down);
     wkb.update_key(58, wkb::KeyDirection::Down);
-    // println!("{:?}", wkb.modifiers);
+    println!("{:?}", wkb.level_keymap().clone());
+    println!("{:?}", wkb.modifiers);
     test_all_keys(wkb, xkb);
+
     // let lang = [
     //     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
     //     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -74,12 +87,12 @@ fn main() {
     //         // println!("{}", layout);
     //         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
     //         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
-    //         let state_modifiers = wkb.modifiers.evdev_codes();
+    //         // let state_modifiers = wkb.modifiers.evdev_codes();
     //         // level 2
-    //         let i = state_modifiers[0];
-    //         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-    //         wkb.update_key(i, wkb::KeyDirection::Down);
-    //         test_all_keys(wkb, xkb);
+    //         // let i = state_modifiers[0];
+    //         // xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+    //         // wkb.update_key(i, wkb::KeyDirection::Down);
+    //         // test_all_keys(wkb, xkb);
     //     }
     // }
 }
