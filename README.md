@@ -9,16 +9,16 @@ Goals:
 Todo list(tentative):
 - [x] Keymap
 - [x] Keymap functions 
-- [ ] Compositing
+- [ ] Composing
 - [x] Testing with xkb 
 - [x] Repeat keys
 - [x] Level keys
 - [x] Modifier support
 - [ ] Fuzzing of some kind?
-- [x] Caps Lock support
-- [x] Num Lock support
-- [x] Scroll Lock support
-- [ ] Writing tests for new features
+- [x] Modifier support
+- [x] Level keys tests
+- [x] State keys tests
+- [ ] Num_lock, Caps_lock tests
 - [ ] Add wayland specific functions
 
 Performance improvements(?):

@@ -45,20 +45,20 @@ fn test_all_keys(mut wkb: WKB, xkb: xkb::State) {
 }
 
 fn main() {
-    let lang = "jp".to_string();
-    let layout = "106".to_string();
+    let lang = "ca".to_string();
+    let layout = "fr-legacy".to_string();
     let mut xkb = xkb_new_from_names(lang.clone(), Some(layout.clone()));
     let mut wkb = wkb::WKB::new_from_names(lang, Some(layout));
+
     // level 2
     // let i = wkb.modifiers.level2shift.0 .0;
     // xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
     // wkb.update_key(i, wkb::KeyDirection::Down);
     // caps
-    xkb.update_key(Keycode::new(58 as u32 + 8), xkb::KeyDirection::Down);
-    wkb.update_key(58, wkb::KeyDirection::Down);
     println!("{:?}", wkb.level_keymap().clone());
     println!("{:?}", wkb.modifiers);
-    test_all_keys(wkb, xkb);
+    println!("{:?}", wkb.level_keymap.len());
+    // test_all_keys(wkb, xkb);
 
     // let lang = [
     //     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",

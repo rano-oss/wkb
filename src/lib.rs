@@ -56,7 +56,7 @@ pub struct Modifiers {
     pub level3shift: ((u32, Modifier), Option<(u32, Modifier)>),
     level3lock: (u32, LockModifier),
     level3latch: (u32, LatchModifier),
-    level5shift: (u32, Modifier),
+    pub level5shift: (u32, Modifier),
     level5lock: (u32, LockModifier),
     level5latch: (u32, LatchModifier),
     compose_key: (u32, Modifier),
@@ -603,7 +603,6 @@ impl WKB {
             | ("de", Some("hu"))
             | ("de", Some("e1"))
             | ("de", Some("e2"))
-            | ("de", Some("T3"))
             | ("de", Some("dvorak"))
             | ("de", Some("adnw_base"))
             | ("de", Some("koy_base"))
@@ -671,8 +670,12 @@ impl WKB {
                 self.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 41]);
             }
             ("kz", Some("ext")) => self.caps_is_level2 = Some(vec![2, 7, 8, 43]),
-            ("fr", Some("bepo")) | ("fr", Some("bepo_latin9")) | ("fr", Some("bepo_afnor")) => {
+            ("fr", Some("bepo")) => {
                 self.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+            }
+            ("fr", Some("bepo_afnor")) => {
+                self.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+                self.level_keymap.resize(4, BTreeMap::new());
             }
             ("fr", Some("dvorak")) => {
                 self.caps_is_level2 =
@@ -707,11 +710,6 @@ impl WKB {
                 ])
             }
             ("il", Some("biblicalSIL")) => {
-                for (code, value) in self.level_keymap[0].clone() {
-                    if self.level_keymap[1].get(&code).is_none() {
-                        self.level_keymap[1].insert(code, value);
-                    }
-                }
                 self.caps_is_level2 = Some(vec![
                     2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 16, 18, 21, 24, 25, 26, 27, 30, 31, 33, 36,
                     37, 39, 40, 41, 46, 49, 50, 51, 52, 53,
@@ -728,26 +726,6 @@ impl WKB {
             ("in", Some("tamilnet_TAB")) | ("lk", Some("tam_TAB")) => {
                 self.modifiers.caps_lock_disabled = true;
                 self.modifiers.caps_lock_level2_disabled = true;
-                self.custom_case_map = Some(HashMap::from([('ø', 'Á'), ('ù', 'Â')]));
-                self.level_keymap[1].insert(4, 'û');
-                self.level_keymap[1].insert(5, 'ü');
-                self.level_keymap[1].insert(6, 'ý');
-                self.level_keymap[1].insert(7, 'þ');
-                self.level_keymap[1].insert(8, 'ÿ');
-            }
-            ("lk", Some("tam_unicode")) => {
-                self.level_keymap[1].insert(21, 'ல');
-                self.level_keymap[1].insert(22, 'ர');
-                self.level_keymap[1].insert(30, 'ய');
-                self.level_keymap[1].insert(31, 'ள');
-                self.level_keymap[1].insert(32, 'ன');
-                self.level_keymap[1].insert(33, 'க');
-                self.level_keymap[1].insert(34, 'ப');
-                self.level_keymap[1].insert(36, 'த');
-                self.level_keymap[1].insert(37, 'ம');
-                self.level_keymap[1].insert(38, 'ட');
-                self.level_keymap[1].insert(40, 'ங');
-                self.level_keymap[1].insert(44, 'ண');
             }
             ("in", Some("tamilnet_TSCII")) => {
                 self.custom_case_map = Some(HashMap::from([('þ', 'þ')]));
@@ -775,128 +753,32 @@ impl WKB {
                     17, 18, 20, 22, 24, 25, 26, 27, 30, 31, 32, 37, 38, 39, 40, 44, 48, 51,
                 ]);
             }
-            // ("us", Some("colemak"))
-            // | ("us", Some("colemak_dh"))
-            // | ("us", Some("colemak_dh_wide"))
-            // | ("us", Some("colemak_dh_iso"))
-            // | ("us", Some("colemak_dh_wide_iso"))
-            // | ("us", Some("colemak_dh_ortho"))
-            // | ("us", Some("workman"))
-            // | ("us", Some("workman-intl"))
-            // | ("us", Some("workman-p"))
-            // | ("pt", Some("colemak"))
-            // | ("no", Some("colemak_dh"))
-            // | ("no", Some("colemak_dh_wide"))
-            // | ("pl", Some("colemak"))
-            // | ("pl", Some("colemak_dh_ansi"))
-            // | ("pl", Some("colemak_dh"))
-            // | ("gr", Some("colemak"))
-            // | ("gb", Some("colemak_dh"))
-            // | ("gb", Some("colemak")) => {
-            //     self.modifiers.caps_lock_disabled = true;
-            //     self.modifiers.caps_lock_level2_disabled = true;
-            // }
-            // ("jp", Some("dvorak")) => {
-            //     self.level_keymap[1].insert(11, '0');
-            //     self.modifiers.caps_lock_disabled = true;
-            // }
-            ("lt", Some("lekp")) | ("lt", Some("lekpa")) => {
-                self.level_keymap[1].insert(58, '\u{8}');
-            }
             ("gr", Some(_)) => {
-                self.custom_case_map = Some(HashMap::from([('ς', 'Σ')])); //TODO: Do I need this?
                 self.caps_is_level2 = Some(vec![17]);
             }
-            ("tr", Some("ku")) | ("tr", Some("ku_f")) => self.custom_case_map = None,
             ("pl", Some("glagolica")) => {
                 self.modifiers.caps_lock_level2_disabled = true;
-                self.level_keymap[1].insert(43, '|');
-                self.level_keymap[1].insert(40, 'Ⰶ');
-            }
-            ("ru", Some("rulemak")) => {
-                self.level_keymap[1].insert(58, '\u{8}');
-                self.modifiers.caps_lock_disabled = true;
-                self.modifiers.caps_lock_level2_disabled = true;
-            }
-            ("tr", Some("otk")) => {
-                self.level_keymap[1].insert(37, '𐰢');
-                self.level_keymap[1].insert(50, '𐰾');
+                let value = *self.level_keymap[0].get(&40).unwrap();
+                self.level_keymap[1].insert(40, value);
             }
             ("cd", _) | ("ml", Some("us-mac")) => self.modifiers.caps_lock_level2_disabled = true,
-            // There seems to be syntax for adding symbols twice if it is the only one on two levels
-            // this seems to fix that problem...
-            // ("pl", _)
-            // | ("ancient", _)
-            // | ("ru", _)
-            // | ("tg", _)
-            // | ("pk", _)
-            // | ("lt", _)
-            // | ("in", _)
-            // | ("ma", _)
-            // | ("dz", _)
-            // | ("gn", _)
-            // | ("la", _)
-            // | ("fr", Some("azerty")) => {
-            //     for (code, value) in self.level_keymap[0].clone() {
-            //         if self.level_keymap[1].get(&code).is_none() {
-            //             self.level_keymap[1].insert(code, value);
-            //         }
-            //     }
-            // }
-            // ("apl", Some("dyalog")) => {
-            //     for (code, value) in self.level_keymap[0].clone() {
-            //         if self.level_keymap[1].get(&code).is_none() {
-            //             self.level_keymap[1].insert(code, value);
-            //         }
-            //     }
-            //     self.level_keymap[1].insert(55, '*');
-            //     self.level_keymap[1].insert(74, '-');
-            //     self.level_keymap[1].insert(78, '+');
-            //     self.level_keymap[1].insert(98, '/');
-            // }
-            // ("us", Some("3l")) | ("us", Some("3l-cros")) | ("us", Some("norman")) => {
-            //     self.modifiers.caps_lock_disabled = true;
-            //     self.modifiers.caps_lock_level2_disabled = true;
-            //     for (code, value) in self.level_keymap[0].clone() {
-            //         if self.level_keymap[1].get(&code).is_none() {
-            //             self.level_keymap[1].insert(code, value);
-            //         }
-            //     }
-            // }
-            // ("jp", Some("OADG109A")) => {
-            //     self.modifiers.caps_lock_disabled = true;
-            //     for (code, value) in self.level_keymap[0].clone() {
-            //         if self.level_keymap[1].get(&code).is_none() {
-            //             self.level_keymap[1].insert(code, value);
-            //         }
-            //     }
-            // }
-            ("us", Some("3l-emacs")) => {
-                self.modifiers.caps_lock_disabled = true;
-                // self.level_keymap[1].insert(2, '1');
-                // self.level_keymap[1].insert(3, '2');
-                // self.level_keymap[1].insert(4, '3');
-                // self.level_keymap[1].insert(5, '4');
-                // self.level_keymap[1].insert(6, '5');
-                // self.level_keymap[1].insert(7, '6');
-                // self.level_keymap[1].insert(8, '7');
-                // self.level_keymap[1].insert(9, '8');
-                // self.level_keymap[1].insert(10, '9');
-                // self.level_keymap[1].insert(11, '0');
-                // self.level_keymap[1].insert(15, '\t');
+            ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
+                for i in 16..=25 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                }
+                for i in 30..=38 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                }
+                for i in 44..=50 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                }
             }
-            // ("apl", Some("dyalog_codes")) => {
-            //     self.level_keymap[1].insert(103, '\u{f820}');
-            //     self.level_keymap[1].insert(108, '\u{f81f}');
-            // }
-            // ("ie", Some("ogam")) => {
-            //     for (code, value) in self.level_keymap[0].clone() {
-            //         if self.level_keymap[1].get(&code).is_none() {
-            //             self.level_keymap[1].insert(code, value);
-            //         }
-            //     }
-            //     self.level_keymap[1].insert(43, '\u{1680}');
-            // }
+            ("ie", Some("ogam")) => {
+                self.level_keymap[1].insert(43, '\u{1680}');
+            }
             ("ie", Some("ogam_is434")) => {
                 for (code, value) in self.level_keymap[2].clone() {
                     if self.level_keymap[3].get(&code).is_none() {
@@ -905,16 +787,178 @@ impl WKB {
                 }
                 for (code, value) in self.level_keymap[0].clone() {
                     if [2, 3, 4, 6, 7, 9, 10, 11, 12, 13].contains(&code) {
-                        let value1 = *self.level_keymap[1].get(&code).unwrap();
                         self.level_keymap[2].insert(code, value);
-                        self.level_keymap[3].insert(code, value1);
+                        let value = *self.level_keymap[1].get(&code).unwrap();
+                        self.level_keymap[3].insert(code, value);
                     }
                 }
             }
+            ("si", Some(_)) => {
+                let value = *self.level_keymap[0].get(&41).unwrap();
+                self.level_keymap[2].insert(41, value);
+                let value = *self.level_keymap[1].get(&41).unwrap();
+                self.level_keymap[3].insert(41, value);
+            }
+            ("se", Some("rus")) => {
+                let value = *self.level_keymap[0].get(&13).unwrap();
+                self.level_keymap[2].insert(13, value);
+                let value = *self.level_keymap[1].get(&13).unwrap();
+                self.level_keymap[3].insert(13, value);
+                for i in 16..=27 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[2].insert(i, value);
+                    let value = *self.level_keymap[1].get(&i).unwrap();
+                    self.level_keymap[3].insert(i, value);
+                }
+                for i in 30..=41 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[2].insert(i, value);
+                    let value = *self.level_keymap[1].get(&i).unwrap();
+                    self.level_keymap[3].insert(i, value);
+                }
+                for i in 43..=50 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[2].insert(i, value);
+                    let value = *self.level_keymap[1].get(&i).unwrap();
+                    self.level_keymap[3].insert(i, value);
+                }
+                let value = *self.level_keymap[0].get(&86).unwrap();
+                self.level_keymap[2].insert(86, value);
+                let value = *self.level_keymap[1].get(&86).unwrap();
+                self.level_keymap[3].insert(86, value);
+            }
+            ("us", Some("3l")) => {
+                for i in 2..=11 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                    self.level_keymap[3].insert(i, value);
+                }
+                let value = *self.level_keymap[0].get(&15).unwrap();
+                self.level_keymap[1].insert(15, value);
+                self.level_keymap[2].insert(15, value);
+                self.level_keymap[3].insert(15, value);
+                self.level_keymap[4].insert(15, value);
+                let value = *self.level_keymap[0].get(&58).unwrap();
+                self.level_keymap[1].insert(58, value);
+                self.level_keymap[3].insert(58, value);
+                let value = *self.level_keymap[0].get(&86).unwrap();
+                self.level_keymap[4].insert(86, value);
+                let value = *self.level_keymap[1].get(&86).unwrap();
+                self.level_keymap[5].insert(86, value);
+                let value = *self.level_keymap[2].get(&86).unwrap();
+                self.level_keymap[6].insert(86, value);
+            }
+            ("us", Some("3l-cros")) => {
+                for i in 2..=11 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                    self.level_keymap[3].insert(i, value);
+                }
+                let value = *self.level_keymap[0].get(&15).unwrap();
+                self.level_keymap[1].insert(15, value);
+                self.level_keymap[2].insert(15, value);
+                self.level_keymap[3].insert(15, value);
+                self.level_keymap[4].insert(15, value);
+                let value = *self.level_keymap[0].get(&58).unwrap();
+                self.level_keymap[1].insert(58, value);
+                self.level_keymap[3].insert(58, value);
+                let value = *self.level_keymap[0].get(&86).unwrap();
+                self.level_keymap[4].insert(86, value);
+                let value = *self.level_keymap[1].get(&86).unwrap();
+                self.level_keymap[5].insert(86, value);
+                let value = *self.level_keymap[2].get(&86).unwrap();
+                self.level_keymap[6].insert(86, value);
+                let value = *self.level_keymap[0].get(&125).unwrap();
+                self.level_keymap[1].insert(125, value);
+                self.level_keymap[3].insert(125, value);
+            }
+            ("us", Some("3l-emacs")) => {
+                for i in 2..=11 {
+                    let value = *self.level_keymap[0].get(&i).unwrap();
+                    self.level_keymap[1].insert(i, value);
+                    self.level_keymap[3].insert(i, value);
+                }
+                let value = *self.level_keymap[0].get(&15).unwrap();
+                self.level_keymap[1].insert(15, value);
+                self.level_keymap[3].insert(15, value);
+                let value = *self.level_keymap[0].get(&86).unwrap();
+                self.level_keymap[4].insert(86, value);
+                let value = *self.level_keymap[1].get(&86).unwrap();
+                self.level_keymap[5].insert(86, value);
+                let value = *self.level_keymap[2].get(&86).unwrap();
+                self.level_keymap[6].insert(86, value);
+            }
+            ("fr", Some("bepo_latin9")) => {
+                self.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+                let value = *self.level_keymap[2].get(&55).unwrap();
+                self.level_keymap[3].insert(55, value);
+                let value = *self.level_keymap[2].get(&98).unwrap();
+                self.level_keymap[3].insert(98, value);
+            }
+            ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
+                let value = *self.level_keymap[2].get(&55).unwrap();
+                self.level_keymap[3].insert(55, value);
+                let value = *self.level_keymap[2].get(&98).unwrap();
+                self.level_keymap[3].insert(98, value);
+            }
+            ("fr", Some("mac")) => {
+                let value = *self.level_keymap[0].get(&83).unwrap();
+                self.level_keymap[3].insert(83, value);
+            }
+            ("fr", Some("azerty")) => {
+                // let value = *self.level_keymap[0].get(&83).unwrap();
+                // self.level_keymap[3].insert(83, value);
+            }
+            ("de", Some("T3")) => {
+                self.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
+                self.level_keymap[3].insert(2, 'ʹ');
+                self.level_keymap[3].insert(3, 'ʺ');
+                self.level_keymap[3].insert(4, 'ʿ');
+                self.level_keymap[3].insert(5, 'ʾ');
+                self.level_keymap[3].insert(6, 'ˁ');
+                self.level_keymap[3].insert(7, 'ˀ');
+                self.level_keymap[3].insert(8, '{');
+                self.level_keymap[3].insert(9, '}');
+                self.level_keymap[3].insert(10, '[');
+                self.level_keymap[3].insert(11, ']');
+                self.level_keymap[3].insert(12, 'ʻ');
+                self.level_keymap[3].insert(13, '¬');
+                self.level_keymap[3].insert(15, '\t');
+                self.level_keymap[3].insert(16, '\u{30d}');
+                self.level_keymap[3].insert(27, '@');
+                self.level_keymap[3].insert(30, '\u{329}');
+                self.level_keymap[3].insert(35, '\u{332}');
+                self.level_keymap[3].insert(38, '\u{338}');
+                self.level_keymap[3].insert(39, '°');
+                self.level_keymap[3].insert(40, '′');
+                self.level_keymap[3].insert(41, '|');
+                self.level_keymap[3].insert(43, '″');
+                self.level_keymap[3].insert(44, '«');
+                self.level_keymap[3].insert(45, '»');
+                self.level_keymap[3].insert(46, '―');
+                self.level_keymap[3].insert(47, '‹');
+                self.level_keymap[3].insert(48, '›');
+                self.level_keymap[3].insert(49, '–');
+                self.level_keymap[3].insert(50, '—');
+                self.level_keymap[3].insert(51, '$');
+                self.level_keymap[3].insert(52, '#');
+                self.level_keymap[3].insert(53, '‑');
+                self.level_keymap[3].insert(57, '\u{a0}');
+                // self.level_keymap[3].insert(86, '¦');
+            }
             _ => {}
         }
+        if self.level_keymap.len() > 1 {
+            for (code, value) in self.level_keymap[0].clone() {
+                if self.level_keymap[1].get(&code).is_none() {
+                    self.level_keymap[1].insert(code, value);
+                }
+            }
+        }
         for i in 0..self.level_keymap.len() {
-            let next = std::cmp::min(i + 1, self.level_keymap.len() - 1);
+            let next_large = std::cmp::min(i + 2, self.level_keymap.len() - 1);
+            let next_small = std::cmp::min(i + 1, self.level_keymap.len() - 1);
+            let next = std::cmp::max(next_small, next_large);
             if next > i {
                 for (code, value) in &self.level_keymap[i].clone() {
                     if self.level_keymap[next].get(&code).is_none() {
@@ -1000,6 +1044,8 @@ impl WKB {
         if id == "CAPS" {
             if key.values.first().is_some_and(|k| k.content == "BackSpace") {
                 self.modifiers.remap.insert(*evdev_code, 14);
+                let value = *self.level_keymap[0].get(&14).unwrap();
+                self.level_keymap[1].insert(58, value);
             } else if key.values.first().is_some_and(|k| k.content == "Tab") {
                 self.modifiers.remap.insert(*evdev_code, 15);
             }
@@ -1100,13 +1146,12 @@ impl WKB {
                             }
                         } else if !v.contains("NoSymbol")
                             && !v.contains("any")
-                            // && !v.contains("none")
                             && !v.contains("VoidSymbol")
                         {
-                            println!("{:?}", v);
-                            println!("{}", *evdev_code);
-                            println!("{}", layout);
-                            println!("{}", id);
+                            // println!("{:?}", v);
+                            // println!("{}", *evdev_code);
+                            // println!("{}", layout);
+                            // println!("{}", id);
                         }
                     }
                 }
@@ -1137,18 +1182,6 @@ impl WKB {
                 //     "lsgt_switch_lock" => {
                 //         self.modifiers.level5lock = (86, LockModifier::default());
                 //     }
-                //     "lshift_both_shiftlock" | "rshift_both_shiftlock" => {
-                //         self.modifiers.right_left_shift_caps = true
-                //     }
-                //     _ => {
-                //         if !v.contains("NoSymbol") {
-                //             println!("{:?}", v);
-                //             println!("{}", *evdev_code);
-                //             println!("{}", layout);
-                //             println!("{}", id);
-                //         }
-                //     }
-                // }
             }
         }
     }

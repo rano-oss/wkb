@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 lazy_static::lazy_static! {
     pub static ref DEFAULT_MAP: [BTreeMap<u32, char>;8] = [
