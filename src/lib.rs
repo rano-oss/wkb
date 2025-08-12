@@ -438,8 +438,8 @@ impl WKB {
     }
 
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
-        let level5 = self.modifiers.level5();
-        let level3 = self.modifiers.level3();
+        let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
+        let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
         if [
             71, 72, 73, // 7, 8, 9
@@ -944,7 +944,6 @@ impl WKB {
                 self.level_keymap[3].insert(52, '#');
                 self.level_keymap[3].insert(53, '‑');
                 self.level_keymap[3].insert(57, '\u{a0}');
-                // self.level_keymap[3].insert(86, '¦');
             }
             _ => {}
         }

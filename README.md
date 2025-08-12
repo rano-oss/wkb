@@ -9,17 +9,20 @@ Goals:
 Todo list(tentative):
 - [x] Keymap
 - [x] Keymap functions 
-- [ ] Composing
-- [x] Testing with xkb 
-- [x] Repeat keys
 - [x] Level keys
-- [x] Modifier support
-- [ ] Fuzzing of some kind?
+- [x] Repeat keys
 - [x] Modifier support
 - [x] Level keys tests
 - [x] State keys tests
-- [ ] Num_lock, Caps_lock tests
+- [ ] Num_lock tests
+- [ ] Caps_lock tests
+- [ ] Composing
+  - [ ] Compose Key
+  - [ ] Compose support boolean
+  - [ ] Compose Automagic
+  - [ ] Tests
 - [ ] Add wayland specific functions
+- [ ] Lightbulbs
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps
