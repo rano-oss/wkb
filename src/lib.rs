@@ -8,6 +8,7 @@ use std::{
 
 use default_keymap::DEFAULT_MAP;
 use evdev_xkb::XKBCODES_EVDEV;
+use modifiers::*;
 use regex::Regex;
 use repeat::REPEAT_DEFAULT;
 use xkb_parser::{
@@ -17,6 +18,7 @@ use xkb_parser::{
 use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 mod default_keymap;
 mod evdev_xkb;
+pub mod modifiers;
 mod repeat;
 mod xkb_utf8;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
@@ -30,6 +32,25 @@ pub struct Modifier {
 struct LockModifier {
     pressed: bool,
     locked: u8,
+}
+
+impl LockModifier {
+    fn update(&mut self, key_direction: KeyDirection) {
+        match key_direction {
+            KeyDirection::Down => {
+                self.pressed = true;
+                if self.locked == 0 {
+                    self.locked = 2;
+                }
+            }
+            KeyDirection::Up => {
+                self.pressed = false;
+                if self.locked != 0 {
+                    self.locked -= 1;
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -48,22 +69,22 @@ pub struct Modifiers {
     left_shift: Modifier,
     right_shift: Modifier,
     logo: Modifier,
-    caps_lock: LockModifier,
+    caps_lock: (LockModifier, Option<Vec<u32>>),
     num_lock: LockModifier,
     scroll_lock: LockModifier,
-    pub level2shift: ((u32, Modifier), (u32, Modifier)),
+    level2shift: ((u32, Modifier), (u32, Modifier)),
     level2lock: (u32, LockModifier),
-    pub level3shift: ((u32, Modifier), Option<(u32, Modifier)>),
+    // level2latch: (u32, LatchModifier),
+    level3shift: ((u32, Modifier), Option<(u32, Modifier)>),
     level3lock: (u32, LockModifier),
     level3latch: (u32, LatchModifier),
-    pub level5shift: (u32, Modifier),
-    level5lock: (u32, LockModifier),
+    level5shift: (u32, Modifier),
+    level5lock: (u32, LockModifier, Vec<u32>),
     level5latch: (u32, LatchModifier),
     compose_key: (u32, Modifier),
     caps_lock_disabled: bool,
     caps_lock_level2_disabled: bool,
     right_left_shift_caps: bool,
-    shift_caps: bool,
 }
 
 impl Modifiers {
@@ -79,7 +100,47 @@ impl Modifiers {
     }
 
     fn level2(&self) -> bool {
-        self.level2shift.0 .1.pressed || self.level2shift.1 .1.pressed
+        self.level2shift.0 .1.pressed
+            || self.level2shift.1 .1.pressed
+            || self.level2lock.1.locked > 0
+    }
+
+    pub fn level2_code(&self) -> u32 {
+        if self.level2shift.0 .0 != 0 {
+            self.level2shift.0 .0
+        } else if self.level2shift.1 .0 != 0 {
+            self.level2shift.1 .0
+        } else if self.level2lock.0 != 0 {
+            self.level2lock.0
+        } else {
+            0
+        }
+    }
+
+    pub fn level3_code(&self) -> u32 {
+        if self.level3shift.0 .0 != 0 {
+            self.level3shift.0 .0
+        } else if self.level3shift.1.is_some_and(|l3s| l3s.0 != 0) {
+            self.level3shift.1.unwrap().0
+        } else if self.level3lock.0 != 0 {
+            self.level3lock.0
+        } else if self.level3latch.0 != 0 {
+            self.level3lock.0
+        } else {
+            0
+        }
+    }
+
+    pub fn level5_code(&self) -> u32 {
+        if self.level5shift.0 != 0 {
+            self.level5shift.0
+        } else if self.level5lock.0 != 0 {
+            self.level5lock.0
+        } else if self.level5latch.0 != 0 {
+            self.level5lock.0
+        } else {
+            0
+        }
     }
 
     fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
@@ -88,6 +149,17 @@ impl Modifiers {
         } else {
             evdev_code
         };
+        let level = match (self.level2(), self.level3(), self.level5()) {
+            (true, true, true) => 7,
+            (true, true, false) => 6,
+            (true, false, true) => 5,
+            (true, false, false) => 4,
+            (false, true, true) => 3,
+            (false, true, false) => 2,
+            (false, false, true) => 1,
+            (false, false, false) => 0,
+        };
+        println!("level: {:?}", level);
         let mut updated = false;
         if self.level2shift.0 .0 == evdev_code {
             match key_direction {
@@ -101,6 +173,9 @@ impl Modifiers {
                 KeyDirection::Up => self.level2shift.1 .1.pressed = false,
             }
             updated = true;
+        } else if self.level2lock.0 == evdev_code {
+            self.level2lock.1.update(key_direction);
+            updated = true;
         } else if self.level3shift.0 .0 == evdev_code {
             match key_direction {
                 KeyDirection::Down => self.level3shift.0 .1.pressed = true,
@@ -108,20 +183,7 @@ impl Modifiers {
             }
             updated = true;
         } else if self.level3lock.0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => {
-                    self.level3lock.1.pressed = true;
-                    if self.level3lock.1.locked == 0 {
-                        self.level3lock.1.locked = 2;
-                    }
-                }
-                KeyDirection::Up => {
-                    self.level3lock.1.pressed = false;
-                    if self.level3lock.1.locked != 0 {
-                        self.level3lock.1.locked -= 1;
-                    }
-                }
-            }
+            self.level3lock.1.update(key_direction);
             updated = true;
         } else if self.level3latch.0 == evdev_code {
             match key_direction {
@@ -139,19 +201,8 @@ impl Modifiers {
             }
             updated = true;
         } else if self.level5lock.0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => {
-                    self.level5lock.1.pressed = true;
-                    if self.level5lock.1.locked == 0 {
-                        self.level5lock.1.locked = 2;
-                    }
-                }
-                KeyDirection::Up => {
-                    self.level5lock.1.pressed = false;
-                    if self.level5lock.1.locked != 0 {
-                        self.level5lock.1.locked -= 1;
-                    }
-                }
+            if self.level5lock.2.is_empty() || self.level5lock.2.contains(&level) {
+                self.level5lock.1.update(key_direction);
             }
             updated = true;
         } else if self.level5latch.0 == evdev_code {
@@ -165,88 +216,87 @@ impl Modifiers {
             updated = true;
         }
         match (evdev_code, key_direction) {
-            (29, KeyDirection::Down) => self.left_ctrl.pressed = true,
-            (29, KeyDirection::Up) => self.left_ctrl.pressed = false,
-            (42, KeyDirection::Down) => {
+            (LEFT_CTRL, KeyDirection::Down) => self.left_ctrl.pressed = true,
+            (LEFT_CTRL, KeyDirection::Up) => self.left_ctrl.pressed = false,
+            (LEFT_SHIFT, KeyDirection::Down) => {
                 self.left_shift.pressed = true;
-                if (self.right_left_shift_caps
+                if self.right_left_shift_caps
                     && self.right_shift.pressed
                     && self.left_shift.pressed
-                    || self.shift_caps && self.caps_lock.pressed)
-                    && self.caps_lock.locked == 0
+                    && self.caps_lock.0.locked == 0
                 {
-                    self.caps_lock.locked = 1;
+                    self.caps_lock.0.locked = 1;
                 } else if self.right_left_shift_caps
                     && self.right_shift.pressed
                     && self.left_shift.pressed
-                    || self.shift_caps && self.caps_lock.pressed
                 {
-                    self.caps_lock.locked = 0;
+                    self.caps_lock.0.locked = 0;
                 }
             }
-            (42, KeyDirection::Up) => self.left_shift.pressed = false,
-            (54, KeyDirection::Down) => {
+            (LEFT_SHIFT, KeyDirection::Up) => self.left_shift.pressed = false,
+            (RIGHT_SHIFT, KeyDirection::Down) => {
                 self.right_shift.pressed = true;
-                if (self.right_left_shift_caps
-                    && self.right_shift.pressed
-                    && self.left_shift.pressed
-                    || self.shift_caps && self.caps_lock.pressed)
-                    && self.caps_lock.locked == 0
+                if self.right_left_shift_caps && self.right_shift.pressed && self.left_shift.pressed
                 {
-                    self.caps_lock.locked = 1;
+                    self.caps_lock.0.locked = 1;
                 } else if self.right_left_shift_caps
                     && self.right_shift.pressed
                     && self.left_shift.pressed
-                    || self.shift_caps && self.caps_lock.pressed
                 {
-                    self.caps_lock.locked = 0;
+                    self.caps_lock.0.locked = 0;
                 }
             }
-            (54, KeyDirection::Up) => self.right_shift.pressed = false,
-            (97, KeyDirection::Down) => self.right_ctrl.pressed = true,
-            (97, KeyDirection::Up) => self.right_ctrl.pressed = false,
-            (56, KeyDirection::Down) => self.alt.pressed = true,
-            (56, KeyDirection::Up) => self.alt.pressed = false,
-            (100, KeyDirection::Down) => self.alt_gr.pressed = true,
-            (100, KeyDirection::Up) => self.alt_gr.pressed = false,
-            (125, KeyDirection::Down) => self.logo.pressed = true,
-            (125, KeyDirection::Up) => self.logo.pressed = false,
-            (58, KeyDirection::Down) => {
-                self.caps_lock.pressed = true;
-                if self.shift_caps && self.right_shift.pressed || self.left_shift.pressed {
-                    self.caps_lock.locked = 1;
-                } else if self.caps_lock.locked == 0
-                    && !self.right_left_shift_caps
-                    && !self.shift_caps
+            (RIGHT_SHIFT, KeyDirection::Up) => self.right_shift.pressed = false,
+            (RIGHT_CTRL, KeyDirection::Down) => self.right_ctrl.pressed = true,
+            (RIGHT_CTRL, KeyDirection::Up) => self.right_ctrl.pressed = false,
+            (ALT, KeyDirection::Down) => self.alt.pressed = true,
+            (ALT, KeyDirection::Up) => self.alt.pressed = false,
+            (ALTGR, KeyDirection::Down) => self.alt_gr.pressed = true,
+            (ALTGR, KeyDirection::Up) => self.alt_gr.pressed = false,
+            (LOGO, KeyDirection::Down) => self.logo.pressed = true,
+            (LOGO, KeyDirection::Up) => self.logo.pressed = false,
+            (CAPS_LOCK, KeyDirection::Down) => {
+                self.caps_lock.0.pressed = true;
+                if self
+                    .caps_lock
+                    .1
+                    .as_ref()
+                    .is_some_and(|l| l.contains(&level))
                 {
-                    self.caps_lock.locked = 2;
+                    if self.caps_lock.0.locked == 0 {
+                        self.caps_lock.0.locked = 1;
+                    } else {
+                        self.caps_lock.0.locked = 0;
+                    }
+                } else if self.caps_lock.0.locked == 0 && !self.right_left_shift_caps {
+                    self.caps_lock.0.locked = 2;
                 }
             }
-            (58, KeyDirection::Up) => {
-                self.caps_lock.pressed = false;
-                if self.caps_lock.locked > 0 && !self.right_left_shift_caps {
-                    self.caps_lock.locked -= 1;
+            (CAPS_LOCK, KeyDirection::Up) => {
+                self.caps_lock.0.pressed = false;
+                if self.caps_lock.0.locked > 0 && !self.right_left_shift_caps {
+                    self.caps_lock.0.locked -= 1;
                 }
             }
-            (69, KeyDirection::Down) => {
+            (NUM_LOCK, KeyDirection::Down) => {
                 self.num_lock.pressed = true;
                 if self.num_lock.locked == 0 {
                     self.num_lock.locked = 2;
                 }
             }
-            (69, KeyDirection::Up) => {
+            (NUM_LOCK, KeyDirection::Up) => {
                 self.num_lock.pressed = false;
                 if self.num_lock.locked > 0 {
                     self.num_lock.locked -= 1;
                 }
             }
-            (70, KeyDirection::Down) => {
+            (SCROLL_LOCK, KeyDirection::Down) => {
                 self.scroll_lock.pressed = true;
                 if self.scroll_lock.locked == 0 {
                     self.scroll_lock.locked = 2;
                 }
             }
-            (70, KeyDirection::Up) => {
+            (SCROLL_LOCK, KeyDirection::Up) => {
                 self.scroll_lock.pressed = false;
                 if self.scroll_lock.locked > 0 {
                     self.scroll_lock.locked -= 1;
@@ -382,6 +432,7 @@ pub struct WKB {
     pub custom_case_map: Option<HashMap<char, char>>, // TODO public?
     caps_is_level2: Option<Vec<u32>>,
     pub modifiers: Modifiers,
+    num_lock_keys: Vec<u32>,
 }
 
 impl WKB {
@@ -415,6 +466,12 @@ impl WKB {
             custom_case_map: None,
             caps_is_level2: None,
             modifiers,
+            num_lock_keys: vec![
+                71, 72, 73, // 7, 8, 9
+                75, 76, 77, // 4, 5, 6
+                79, 80, 81, // 1, 2, 3
+                82, 83, // 0, .
+            ],
         };
         wkb.map_xkb(path, locale.clone(), Some(layout.clone()));
         wkb.fix_xkb_edge_cases(locale, Some(layout));
@@ -441,15 +498,7 @@ impl WKB {
         let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
         let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
-        if [
-            71, 72, 73, // 7, 8, 9
-            75, 76, 77, // 4, 5, 6
-            79, 80, 81, // 1, 2, 3
-            82, 83, // 0, .
-        ]
-        .contains(&evdev_code)
-            && self.modifiers.num_lock.locked > 0
-        {
+        if self.num_lock_keys.contains(&evdev_code) && self.modifiers.num_lock.locked > 0 {
             self.level_key(evdev_code, 1)
         } else if level5 && level3 && level2 {
             self.modifiers.level3latch.1.latched = false;
@@ -478,7 +527,7 @@ impl WKB {
             self.level_key(evdev_code, 2)
             // }
         } else if level2 {
-            if self.modifiers.caps_lock.locked > 0 && !self.modifiers.caps_lock_level2_disabled {
+            if self.modifiers.caps_lock.0.locked > 0 && !self.modifiers.caps_lock_level2_disabled {
                 if let Some(caps_level2_list) = &self.caps_is_level2 {
                     if caps_level2_list.contains(&evdev_code) {
                         return self.level_key(evdev_code, 0);
@@ -490,7 +539,7 @@ impl WKB {
                 self.level_key(evdev_code, 1)
             }
         } else {
-            if self.modifiers.caps_lock.locked > 0 && !self.modifiers.caps_lock_disabled {
+            if self.modifiers.caps_lock.0.locked > 0 && !self.modifiers.caps_lock_disabled {
                 if let Some(caps_level2_list) = &self.caps_is_level2 {
                     if caps_level2_list.contains(&evdev_code) {
                         return self.level_key(evdev_code, 1);
@@ -590,7 +639,6 @@ impl WKB {
             | ("de", Some("mac"))
             | ("de", Some("mac_nodeadkeys"))
             | ("de", Some("deadtilde"))
-            | ("de", Some("neo_base"))
             | ("de", Some("deadgraveacute"))
             | ("de", Some("deadacute"))
             | ("de", Some("ro"))
@@ -604,12 +652,6 @@ impl WKB {
             | ("de", Some("e1"))
             | ("de", Some("e2"))
             | ("de", Some("dvorak"))
-            | ("de", Some("adnw_base"))
-            | ("de", Some("koy_base"))
-            | ("de", Some("bone_base"))
-            | ("de", Some("bone_eszett_home_base"))
-            | ("de", Some("neo_qwertz_base"))
-            | ("de", Some("neo_qwerty_base"))
             | ("it", Some("lldde"))
             | ("cz", Some("ucw"))
             | ("de", Some("nodeadkeys")) => {
@@ -945,6 +987,67 @@ impl WKB {
                 self.level_keymap[3].insert(53, '‑');
                 self.level_keymap[3].insert(57, '\u{a0}');
             }
+            ("brai", Some("home_row"))
+            | ("brai", Some("right_hand"))
+            | ("brai", Some("keypad"))
+            | ("apl", Some("common"))
+            | ("apl", Some("dyalog_box"))
+            | ("kr", Some("hw_keys"))
+            | ("jp", Some("hztg_escape"))
+            | ("brai", Some("right_hand_invert")) => {
+                self.level_keymap.push(BTreeMap::from([
+                    (43, '|'),
+                    (71, '7'),
+                    (72, '8'),
+                    (73, '9'),
+                    (75, '4'),
+                    (76, '5'),
+                    (77, '6'),
+                    (78, '+'),
+                    (79, '1'),
+                    (80, '2'),
+                    (81, '3'),
+                    (82, '0'),
+                    (83, '.'),
+                    (86, '>'),
+                ]));
+            }
+            ("am", Some("eastern")) | ("am", Some("western")) | ("am", Some("eastern-alt")) => {
+                self.num_lock_keys.push(2);
+                self.num_lock_keys.push(5);
+                self.num_lock_keys.push(6);
+                self.num_lock_keys.push(7);
+            }
+            ("cm", Some("azerty")) => {
+                self.num_lock_keys.push(2);
+                self.num_lock_keys.push(3);
+                self.num_lock_keys.push(4);
+                self.num_lock_keys.push(5);
+                self.num_lock_keys.push(6);
+                self.num_lock_keys.push(7);
+                self.num_lock_keys.push(8);
+                self.num_lock_keys.push(9);
+                self.num_lock_keys.push(10);
+                self.num_lock_keys.push(11);
+            }
+            ("la", Some("stea")) => self.num_lock_keys.retain(|k| k != &83),
+            ("de", Some("neo_base"))
+            | ("de", Some("neo"))
+            | ("de", Some("neo_qwerty_base"))
+            | ("de", Some("neo_qwerty"))
+            | ("de", Some("neo_qwertz_base"))
+            | ("de", Some("neo_qwertz"))
+            | ("de", Some("bone_base"))
+            | ("de", Some("bone_eszett_home_base"))
+            | ("de", Some("bone_eszett_home"))
+            | ("de", Some("bone"))
+            | ("de", Some("koy_base"))
+            | ("de", Some("koy"))
+            | ("de", Some("adnw_base"))
+            | ("de", Some("adnw")) => {
+                self.num_lock_keys = Vec::new();
+                self.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
+            }
             _ => {}
         }
         if self.level_keymap.len() > 1 {
@@ -1078,7 +1181,7 @@ impl WKB {
             } else {
                 match (v.content, layout.as_str()) {
                     ("Eisu_toggle", _) => {
-                        self.modifiers.shift_caps = true;
+                        self.modifiers.caps_lock.1 = Some(vec![1]);
                     }
                     ("Control_L", _) => {
                         if id == "CAPS" {
@@ -1105,7 +1208,17 @@ impl WKB {
                         self.modifiers.level5shift = (*evdev_code, Modifier::default());
                     }
                     ("ISO_Level5_Lock", _) => {
-                        self.modifiers.level5lock = (*evdev_code, LockModifier::default());
+                        if key.values.iter().count() > 1 {
+                            if self.modifiers.level5lock.2.is_empty() {
+                                self.modifiers.level5lock =
+                                    (*evdev_code, LockModifier::default(), vec![i as u32]);
+                            } else {
+                                self.modifiers.level5lock.2.push(i as u32)
+                            }
+                        } else {
+                            self.modifiers.level5lock =
+                                (*evdev_code, LockModifier::default(), Vec::new());
+                        }
                     }
                     ("ISO_Level5_Latch", _) => {
                         self.modifiers.level5latch = (*evdev_code, LatchModifier::default());
@@ -1147,10 +1260,10 @@ impl WKB {
                             && !v.contains("any")
                             && !v.contains("VoidSymbol")
                         {
-                            // println!("{:?}", v);
-                            // println!("{}", *evdev_code);
-                            // println!("{}", layout);
-                            // println!("{}", id);
+                            println!("{:?}", v);
+                            println!("{}", *evdev_code);
+                            println!("{}", layout);
+                            println!("{}", id);
                         }
                     }
                 }

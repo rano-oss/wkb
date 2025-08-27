@@ -1,0 +1,10 @@
+pub const LEFT_CTRL: u32 = 29;
+pub const LEFT_SHIFT: u32 = 42;
+pub const RIGHT_SHIFT: u32 = 54;
+pub const RIGHT_CTRL: u32 = 97;
+pub const ALT: u32 = 56;
+pub const ALTGR: u32 = 100;
+pub const LOGO: u32 = 125;
+pub const CAPS_LOCK: u32 = 58;
+pub const NUM_LOCK: u32 = 69;
+pub const SCROLL_LOCK: u32 = 70;

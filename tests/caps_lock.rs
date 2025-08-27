@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkb::{self, WKB};
+use wkb::{self, modifiers::CAPS_LOCK};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -38,8 +38,8 @@ fn caps_lock(locale: &str) {
             continue;
         }
         // caps
-        xkb.update_key(Keycode::new(58 as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(58, wkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
         for i in 0..701 {
             let k1 = wkb.utf8(i);
             let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
@@ -104,13 +104,13 @@ fn level2_caps(locale: &str) {
             continue;
         }
         // level 2
-        let i = wkb.modifiers.level2shift.0 .0;
+        let i = wkb.modifiers.level2_code();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // caps
         if locale != "us" || layout.as_str() != "3l-emacs" {
-            xkb.update_key(Keycode::new(58 as u32 + 8), xkb::KeyDirection::Down);
-            wkb.update_key(58, wkb::KeyDirection::Down);
+            xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+            wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
         }
         for i in 0..701 {
             let k1 = wkb.utf8(i);
