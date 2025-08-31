@@ -1,8 +1,4 @@
-use wkb::{
-    self,
-    modifiers::{LEFT_SHIFT, NUM_LOCK},
-    WKB,
-};
+use wkb::{self, WKB};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -47,11 +43,11 @@ fn main() {
     // test_all_keys(wkb, xkb);
 
     // level 5
-    let i = wkb.modifiers.level5_code();
+    let i = wkb.modifiers.level5_code().unwrap();
     xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
     wkb.update_key(i, wkb::KeyDirection::Down);
     // level 3
-    let i = wkb.modifiers.level3_code();
+    let i = wkb.modifiers.level3_code().unwrap();
     xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
     wkb.update_key(i, wkb::KeyDirection::Down);
     println!("{:?}", wkb.modifiers);

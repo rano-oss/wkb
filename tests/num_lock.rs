@@ -28,13 +28,14 @@ fn test_all_keys(mut wkb: WKB, xkb: xkb::State, layout: String) {
         if k1 != k2.chars().last() && !k2.is_empty() {
             println!("{}", layout);
             println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
-            println!("{:?}", wkb.level_keymap);
+            // println!("{:?}", wkb.level_keymap);
+            println!("{:?}", wkb.modifiers);
         }
         assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }
 }
 
-#[ignore]
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -60,7 +61,7 @@ fn default(locale: &str) {
     }
 }
 
-#[ignore]
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd","be", "bg", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -80,7 +81,7 @@ fn level2(locale: &str) {
             continue;
         }
         // level 2
-        let i = wkb.modifiers.level2_code();
+        let i = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock
@@ -138,6 +139,7 @@ fn level2(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -153,13 +155,11 @@ fn level3(locale: &str) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         // level 3
-        if wkb.level_keymap.len() < 3 || wkb.modifiers.level3_code() == 0 {
+        if wkb.level_keymap.len() < 3 || wkb.modifiers.level3_code().is_none() {
+            println!("{}", layout);
             continue;
         }
-        if wkb.modifiers.level3_code() == 0 {
-            println!("{}", layout);
-        }
-        let i = wkb.modifiers.level3_code();
+        let i = wkb.modifiers.level3_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock
@@ -188,6 +188,7 @@ fn level3(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -203,14 +204,14 @@ fn level4(locale: &str) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
         // level 4
-        if wkb.level_keymap.len() < 4 || wkb.modifiers.level3_code() == 0 {
+        if wkb.level_keymap.len() < 4 || wkb.modifiers.level3_code().is_none() {
             continue;
         }
-        let i = wkb.modifiers.level3_code();
+        let i = wkb.modifiers.level3_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
 
-        let i = wkb.modifiers.level2_code();
+        let i = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock
@@ -231,6 +232,7 @@ fn level4(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -247,10 +249,10 @@ fn level5(locale: &str) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
         // level 5
-        if wkb.level_keymap.len() < 5 || wkb.modifiers.level5_code() == 0 {
+        if wkb.level_keymap.len() < 5 || wkb.modifiers.level5_code().is_none() {
             continue;
         }
-        let i = wkb.modifiers.level5_code();
+        let i = wkb.modifiers.level5_code().unwrap();
         // assert!(i != 0);
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
@@ -261,6 +263,7 @@ fn level5(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -276,15 +279,15 @@ fn level6(locale: &str) {
         println!("{}", layout);
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
-        if wkb.level_keymap.len() < 6 || wkb.modifiers.level5_code() == 0 {
+        if wkb.level_keymap.len() < 6 || wkb.modifiers.level5_code().is_none() {
             continue;
         }
         // level 5
-        let i = wkb.modifiers.level5_code();
+        let i = wkb.modifiers.level5_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // level 2
-        let i = wkb.modifiers.level2_code();
+        let i = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock
@@ -294,6 +297,7 @@ fn level6(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -308,15 +312,15 @@ fn level7(locale: &str) {
     for layout in wkb.layouts() {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
-        if wkb.level_keymap.len() < 7 || wkb.modifiers.level5_code() == 0 {
+        if wkb.level_keymap.len() < 7 || wkb.modifiers.level5_code().is_none() {
             continue;
         }
         // level 5
-        let i = wkb.modifiers.level5_code();
+        let i = wkb.modifiers.level5_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // level 3
-        let i = wkb.modifiers.level3_code();
+        let i = wkb.modifiers.level3_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock
@@ -326,6 +330,7 @@ fn level7(locale: &str) {
     }
 }
 
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "bg", "be", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -341,19 +346,19 @@ fn level8(locale: &str) {
         println!("{}", layout);
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
-        if wkb.level_keymap.len() < 8 || wkb.modifiers.level5_code() == 0 {
+        if wkb.level_keymap.len() < 8 || wkb.modifiers.level5_code().is_none() {
             continue;
         }
         // level 5
-        let i = wkb.modifiers.level5_code();
+        let i = wkb.modifiers.level5_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // level 3
-        let i = wkb.modifiers.level3_code();
+        let i = wkb.modifiers.level3_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // level 2
-        let i = wkb.modifiers.level2_code();
+        let i = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // NumLock

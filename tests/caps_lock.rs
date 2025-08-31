@@ -104,7 +104,7 @@ fn level2_caps(locale: &str) {
             continue;
         }
         // level 2
-        let i = wkb.modifiers.level2_code();
+        let i = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // caps

@@ -23,291 +23,6 @@ mod repeat;
 mod xkb_utf8;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Modifier {
-    pressed: bool,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-struct LockModifier {
-    pressed: bool,
-    locked: u8,
-}
-
-impl LockModifier {
-    fn update(&mut self, key_direction: KeyDirection) {
-        match key_direction {
-            KeyDirection::Down => {
-                self.pressed = true;
-                if self.locked == 0 {
-                    self.locked = 2;
-                }
-            }
-            KeyDirection::Up => {
-                self.pressed = false;
-                if self.locked != 0 {
-                    self.locked -= 1;
-                }
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-struct LatchModifier {
-    pressed: bool,
-    latched: bool,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct Modifiers {
-    remap: HashMap<u32, u32>,
-    left_ctrl: Modifier,
-    right_ctrl: Modifier,
-    alt: Modifier,
-    alt_gr: Modifier,
-    left_shift: Modifier,
-    right_shift: Modifier,
-    logo: Modifier,
-    caps_lock: (LockModifier, Option<Vec<u32>>),
-    num_lock: LockModifier,
-    scroll_lock: LockModifier,
-    level2shift: ((u32, Modifier), (u32, Modifier)),
-    level2lock: (u32, LockModifier),
-    // level2latch: (u32, LatchModifier),
-    level3shift: ((u32, Modifier), Option<(u32, Modifier)>),
-    level3lock: (u32, LockModifier),
-    level3latch: (u32, LatchModifier),
-    level5shift: (u32, Modifier),
-    level5lock: (u32, LockModifier, Vec<u32>),
-    level5latch: (u32, LatchModifier),
-    compose_key: (u32, Modifier),
-    caps_lock_disabled: bool,
-    caps_lock_level2_disabled: bool,
-    right_left_shift_caps: bool,
-}
-
-impl Modifiers {
-    fn level5(&self) -> bool {
-        self.level5shift.1.pressed || self.level5lock.1.locked > 0 || self.level5latch.1.latched
-    }
-
-    fn level3(&self) -> bool {
-        self.level3shift.0 .1.pressed
-            || self.level3shift.1.is_some_and(|s| s.1.pressed)
-            || self.level3lock.1.locked > 0
-            || self.level3latch.1.latched
-    }
-
-    fn level2(&self) -> bool {
-        self.level2shift.0 .1.pressed
-            || self.level2shift.1 .1.pressed
-            || self.level2lock.1.locked > 0
-    }
-
-    pub fn level2_code(&self) -> u32 {
-        if self.level2shift.0 .0 != 0 {
-            self.level2shift.0 .0
-        } else if self.level2shift.1 .0 != 0 {
-            self.level2shift.1 .0
-        } else if self.level2lock.0 != 0 {
-            self.level2lock.0
-        } else {
-            0
-        }
-    }
-
-    pub fn level3_code(&self) -> u32 {
-        if self.level3shift.0 .0 != 0 {
-            self.level3shift.0 .0
-        } else if self.level3shift.1.is_some_and(|l3s| l3s.0 != 0) {
-            self.level3shift.1.unwrap().0
-        } else if self.level3lock.0 != 0 {
-            self.level3lock.0
-        } else if self.level3latch.0 != 0 {
-            self.level3lock.0
-        } else {
-            0
-        }
-    }
-
-    pub fn level5_code(&self) -> u32 {
-        if self.level5shift.0 != 0 {
-            self.level5shift.0
-        } else if self.level5lock.0 != 0 {
-            self.level5lock.0
-        } else if self.level5latch.0 != 0 {
-            self.level5lock.0
-        } else {
-            0
-        }
-    }
-
-    fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let evdev_code = if let Some(code) = self.remap.get(&evdev_code) {
-            *code
-        } else {
-            evdev_code
-        };
-        let level = match (self.level2(), self.level3(), self.level5()) {
-            (true, true, true) => 7,
-            (true, true, false) => 6,
-            (true, false, true) => 5,
-            (true, false, false) => 4,
-            (false, true, true) => 3,
-            (false, true, false) => 2,
-            (false, false, true) => 1,
-            (false, false, false) => 0,
-        };
-        println!("level: {:?}", level);
-        let mut updated = false;
-        if self.level2shift.0 .0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => self.level2shift.0 .1.pressed = true,
-                KeyDirection::Up => self.level2shift.0 .1.pressed = false,
-            }
-            updated = true;
-        } else if self.level2shift.1 .0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => self.level2shift.1 .1.pressed = true,
-                KeyDirection::Up => self.level2shift.1 .1.pressed = false,
-            }
-            updated = true;
-        } else if self.level2lock.0 == evdev_code {
-            self.level2lock.1.update(key_direction);
-            updated = true;
-        } else if self.level3shift.0 .0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => self.level3shift.0 .1.pressed = true,
-                KeyDirection::Up => self.level3shift.0 .1.pressed = false,
-            }
-            updated = true;
-        } else if self.level3lock.0 == evdev_code {
-            self.level3lock.1.update(key_direction);
-            updated = true;
-        } else if self.level3latch.0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => {
-                    self.level3latch.1.pressed = true;
-                    self.level3latch.1.latched = true;
-                }
-                KeyDirection::Up => self.level3latch.1.pressed = false,
-            }
-            updated = true;
-        } else if self.level5shift.0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => self.level5shift.1.pressed = true,
-                KeyDirection::Up => self.level5shift.1.pressed = false,
-            }
-            updated = true;
-        } else if self.level5lock.0 == evdev_code {
-            if self.level5lock.2.is_empty() || self.level5lock.2.contains(&level) {
-                self.level5lock.1.update(key_direction);
-            }
-            updated = true;
-        } else if self.level5latch.0 == evdev_code {
-            match key_direction {
-                KeyDirection::Down => {
-                    self.level5latch.1.pressed = true;
-                    self.level5latch.1.latched = true;
-                }
-                KeyDirection::Up => self.level5latch.1.pressed = false,
-            }
-            updated = true;
-        }
-        match (evdev_code, key_direction) {
-            (LEFT_CTRL, KeyDirection::Down) => self.left_ctrl.pressed = true,
-            (LEFT_CTRL, KeyDirection::Up) => self.left_ctrl.pressed = false,
-            (LEFT_SHIFT, KeyDirection::Down) => {
-                self.left_shift.pressed = true;
-                if self.right_left_shift_caps
-                    && self.right_shift.pressed
-                    && self.left_shift.pressed
-                    && self.caps_lock.0.locked == 0
-                {
-                    self.caps_lock.0.locked = 1;
-                } else if self.right_left_shift_caps
-                    && self.right_shift.pressed
-                    && self.left_shift.pressed
-                {
-                    self.caps_lock.0.locked = 0;
-                }
-            }
-            (LEFT_SHIFT, KeyDirection::Up) => self.left_shift.pressed = false,
-            (RIGHT_SHIFT, KeyDirection::Down) => {
-                self.right_shift.pressed = true;
-                if self.right_left_shift_caps && self.right_shift.pressed && self.left_shift.pressed
-                {
-                    self.caps_lock.0.locked = 1;
-                } else if self.right_left_shift_caps
-                    && self.right_shift.pressed
-                    && self.left_shift.pressed
-                {
-                    self.caps_lock.0.locked = 0;
-                }
-            }
-            (RIGHT_SHIFT, KeyDirection::Up) => self.right_shift.pressed = false,
-            (RIGHT_CTRL, KeyDirection::Down) => self.right_ctrl.pressed = true,
-            (RIGHT_CTRL, KeyDirection::Up) => self.right_ctrl.pressed = false,
-            (ALT, KeyDirection::Down) => self.alt.pressed = true,
-            (ALT, KeyDirection::Up) => self.alt.pressed = false,
-            (ALTGR, KeyDirection::Down) => self.alt_gr.pressed = true,
-            (ALTGR, KeyDirection::Up) => self.alt_gr.pressed = false,
-            (LOGO, KeyDirection::Down) => self.logo.pressed = true,
-            (LOGO, KeyDirection::Up) => self.logo.pressed = false,
-            (CAPS_LOCK, KeyDirection::Down) => {
-                self.caps_lock.0.pressed = true;
-                if self
-                    .caps_lock
-                    .1
-                    .as_ref()
-                    .is_some_and(|l| l.contains(&level))
-                {
-                    if self.caps_lock.0.locked == 0 {
-                        self.caps_lock.0.locked = 1;
-                    } else {
-                        self.caps_lock.0.locked = 0;
-                    }
-                } else if self.caps_lock.0.locked == 0 && !self.right_left_shift_caps {
-                    self.caps_lock.0.locked = 2;
-                }
-            }
-            (CAPS_LOCK, KeyDirection::Up) => {
-                self.caps_lock.0.pressed = false;
-                if self.caps_lock.0.locked > 0 && !self.right_left_shift_caps {
-                    self.caps_lock.0.locked -= 1;
-                }
-            }
-            (NUM_LOCK, KeyDirection::Down) => {
-                self.num_lock.pressed = true;
-                if self.num_lock.locked == 0 {
-                    self.num_lock.locked = 2;
-                }
-            }
-            (NUM_LOCK, KeyDirection::Up) => {
-                self.num_lock.pressed = false;
-                if self.num_lock.locked > 0 {
-                    self.num_lock.locked -= 1;
-                }
-            }
-            (SCROLL_LOCK, KeyDirection::Down) => {
-                self.scroll_lock.pressed = true;
-                if self.scroll_lock.locked == 0 {
-                    self.scroll_lock.locked = 2;
-                }
-            }
-            (SCROLL_LOCK, KeyDirection::Up) => {
-                self.scroll_lock.pressed = false;
-                if self.scroll_lock.locked > 0 {
-                    self.scroll_lock.locked -= 1;
-                }
-            }
-            (_, _) => return updated,
-        };
-        updated
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KeyDirection {
     Up,
@@ -421,6 +136,301 @@ fn to_lowercase(c: char, custom_case_map: Option<HashMap<char, char>>) -> char {
 }
 
 #[derive(Debug, Clone)]
+pub struct Modifiers(pub BTreeMap<u32, Mod>);
+
+impl Default for Modifiers {
+    fn default() -> Self {
+        Self(BTreeMap::from([
+            (LEFT_CTRL, Mod::Single(ModKind::Modifier { pressed: false })),
+            (
+                RIGHT_CTRL,
+                Mod::Single(ModKind::Modifier { pressed: false }),
+            ),
+            (
+                LEFT_SHIFT,
+                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level2),
+            ),
+            (
+                RIGHT_SHIFT,
+                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level2),
+            ),
+            (ALT, Mod::Single(ModKind::Modifier { pressed: false })),
+            (ALTGR, Mod::Single(ModKind::Modifier { pressed: false })),
+            (LOGO, Mod::Single(ModKind::Modifier { pressed: false })),
+            (
+                CAPS_LOCK,
+                Mod::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                }),
+            ),
+            (
+                NUM_LOCK,
+                Mod::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                }),
+            ),
+            (
+                SCROLL_LOCK,
+                Mod::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                }),
+            ),
+        ]))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Mod {
+    Single(ModKind),
+    Type(ModKind, ModType),
+    OnLevelType(ModKind, ModType, Vec<u32>),
+    OnLevel(ModKind, Vec<u32>),
+    DualTypeOnLevel(ModKind, ModType, Vec<u32>, ModKind, ModType, Vec<u32>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModType {
+    Level2,
+    Level3,
+    Level5,
+    Compose,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ModKind {
+    Modifier { pressed: bool },
+    Lock { pressed: bool, locked: u8 },
+    Latch { pressed: bool, latched: bool },
+}
+
+impl ModKind {
+    pub fn update(&mut self, key_direction: KeyDirection) {
+        match self {
+            ModKind::Modifier { ref mut pressed } => match key_direction {
+                KeyDirection::Down => *pressed = true,
+                KeyDirection::Up => *pressed = false,
+            },
+            ModKind::Lock {
+                ref mut pressed,
+                ref mut locked,
+            } => match key_direction {
+                KeyDirection::Down => {
+                    *pressed = true;
+                    if *locked == 0 {
+                        *locked = 2;
+                    }
+                }
+                KeyDirection::Up => {
+                    *pressed = false;
+                    if *locked != 0 {
+                        *locked -= 1;
+                    }
+                }
+            },
+            ModKind::Latch {
+                ref mut pressed,
+                ref mut latched,
+            } => match key_direction {
+                KeyDirection::Down => {
+                    *pressed = true;
+                    *latched = true;
+                }
+                KeyDirection::Up => {
+                    *pressed = false;
+                }
+            },
+        }
+    }
+
+    fn unlatch(&mut self) {
+        match self {
+            ModKind::Latch {
+                pressed: _,
+                latched,
+            } => *latched = false,
+            _ => {}
+        }
+    }
+
+    fn pressed(&self) -> &bool {
+        match self {
+            ModKind::Modifier { pressed } => pressed,
+            ModKind::Lock { pressed, locked: _ } => pressed,
+            ModKind::Latch {
+                pressed,
+                latched: _,
+            } => pressed,
+        }
+    }
+
+    fn locked(&self) -> bool {
+        match self {
+            ModKind::Modifier { pressed: _ } => false,
+            ModKind::Lock { pressed: _, locked } => locked > &0,
+            ModKind::Latch {
+                pressed: _,
+                latched: _,
+            } => false,
+        }
+    }
+}
+
+impl Modifiers {
+    fn level(&self, mod_type: ModType) -> bool {
+        self.0
+            .values()
+            .find(|v| match v {
+                Mod::Type(modkind, m_t) | Mod::OnLevelType(modkind, m_t, _) if m_t == &mod_type => {
+                    match modkind {
+                        ModKind::Modifier { pressed } => *pressed,
+                        ModKind::Lock { pressed: _, locked } => locked > &0,
+                        ModKind::Latch {
+                            pressed: _,
+                            latched,
+                        } => *latched,
+                    }
+                }
+                Mod::DualTypeOnLevel(modkind1, m_t1, _, modkind2, m_t2, _) => {
+                    if m_t1 == &mod_type {
+                        match modkind1 {
+                            ModKind::Modifier { pressed } => *pressed,
+                            ModKind::Lock { pressed: _, locked } => locked > &0,
+                            ModKind::Latch {
+                                pressed: _,
+                                latched,
+                            } => *latched,
+                        }
+                    } else if m_t2 == &mod_type {
+                        match modkind2 {
+                            ModKind::Modifier { pressed } => *pressed,
+                            ModKind::Lock { pressed: _, locked } => locked > &0,
+                            ModKind::Latch {
+                                pressed: _,
+                                latched,
+                            } => *latched,
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            })
+            .is_some()
+    }
+
+    fn level5(&self) -> bool {
+        self.level(ModType::Level5)
+    }
+
+    fn level3(&self) -> bool {
+        self.level(ModType::Level3)
+    }
+
+    fn level2(&self) -> bool {
+        self.level(ModType::Level2)
+    }
+
+    fn level_code(&self, mod_type: ModType) -> Option<u32> {
+        self.0
+            .iter()
+            .find(|v| match v.1 {
+                Mod::Type(_, m_t) | Mod::OnLevelType(_, m_t, _) if m_t == &mod_type => true,
+                Mod::DualTypeOnLevel(_, m_t1, _, _, m_t2, _) => {
+                    m_t1 == &mod_type || m_t2 == &mod_type
+                }
+                _ => false,
+            })
+            .map(|kv| *kv.0)
+    }
+
+    pub fn level2_code(&self) -> Option<u32> {
+        self.level_code(ModType::Level2)
+    }
+
+    pub fn level3_code(&self) -> Option<u32> {
+        self.level_code(ModType::Level3)
+    }
+
+    pub fn level5_code(&self) -> Option<u32> {
+        self.level_code(ModType::Level5)
+    }
+
+    fn unlatch(&mut self) {
+        self.0.values_mut().for_each(|m| match m {
+            Mod::Single(modkind)
+            | Mod::Type(modkind, _)
+            | Mod::OnLevelType(modkind, _, _)
+            | Mod::OnLevel(modkind, _) => modkind.unlatch(),
+            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
+                modkind1.unlatch();
+                modkind2.unlatch();
+            }
+        });
+    }
+
+    fn pressed(&self, evdev_code: u32) -> bool {
+        self.0.get(&evdev_code).is_some_and(|m| match m {
+            Mod::Single(modkind) | Mod::Type(modkind, _) | Mod::OnLevelType(modkind, _, _) => {
+                *modkind.pressed()
+            }
+            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
+                *modkind1.pressed() || *modkind2.pressed()
+            }
+            Mod::OnLevel(modkind, _) => *modkind.pressed(),
+        })
+    }
+
+    fn locked(&self, evdev_code: u32) -> bool {
+        self.0.get(&evdev_code).is_some_and(|m| match m {
+            Mod::Single(modkind)
+            | Mod::Type(modkind, _)
+            | Mod::OnLevelType(modkind, _, _)
+            | Mod::OnLevel(modkind, _) => modkind.locked(),
+            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
+                modkind1.locked() || modkind2.locked()
+            }
+        })
+    }
+
+    fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+        let level = match (self.level5(), self.level3(), self.level2()) {
+            (true, true, true) => 7,
+            (true, true, false) => 6,
+            (true, false, true) => 5,
+            (true, false, false) => 4,
+            (false, true, true) => 3,
+            (false, true, false) => 2,
+            (false, false, true) => 1,
+            (false, false, false) => 0,
+        };
+        if let Some(modifier) = self.0.get_mut(&evdev_code) {
+            match modifier {
+                Mod::Single(modkind) => modkind.update(key_direction),
+                Mod::Type(modkind, _) => modkind.update(key_direction),
+                Mod::OnLevelType(modkind, _, on_level) | Mod::OnLevel(modkind, on_level) => {
+                    if on_level.contains(&level) {
+                        modkind.update(key_direction)
+                    }
+                }
+                Mod::DualTypeOnLevel(modkind1, _, on_level1, modkind2, _, on_level2) => {
+                    if on_level1.contains(&level) {
+                        modkind1.update(key_direction)
+                    } else if on_level2.contains(&level) {
+                        modkind2.update(key_direction)
+                    }
+                }
+            }
+            true
+        } else {
+            false
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
@@ -430,9 +440,13 @@ pub struct WKB {
     pressed_keys: HashSet<u32>,
     repeat_keys: HashSet<u32>,
     pub custom_case_map: Option<HashMap<char, char>>, // TODO public?
-    caps_is_level2: Option<Vec<u32>>,
     pub modifiers: Modifiers,
     num_lock_keys: Vec<u32>,
+    remap: HashMap<u32, u32>,
+    caps_is_level2: Option<Vec<u32>>,
+    caps_lock_disabled: bool,
+    caps_lock_level2_disabled: bool,
+    right_left_shift_caps: bool,
 }
 
 impl WKB {
@@ -453,8 +467,7 @@ impl WKB {
         } else {
             REPEAT_DEFAULT.clone()
         };
-        let mut modifiers = Modifiers::default();
-        modifiers.level2shift = ((42, Modifier::default()), (54, Modifier::default()));
+        let modifiers = Modifiers::default();
         let mut wkb = Self {
             layouts,
             layout: layout.clone(),
@@ -472,6 +485,10 @@ impl WKB {
                 79, 80, 81, // 1, 2, 3
                 82, 83, // 0, .
             ],
+            remap: HashMap::new(),
+            caps_lock_disabled: false,
+            caps_lock_level2_disabled: false,
+            right_left_shift_caps: false,
         };
         wkb.map_xkb(path, locale.clone(), Some(layout.clone()));
         wkb.fix_xkb_edge_cases(locale, Some(layout));
@@ -498,59 +515,30 @@ impl WKB {
         let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
         let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
-        if self.num_lock_keys.contains(&evdev_code) && self.modifiers.num_lock.locked > 0 {
+        let level_index = match (level5, level3, level2) {
+            (true, true, true) => 7,
+            (true, true, false) => 6,
+            (true, false, true) => 5,
+            (true, false, false) => 4,
+            (false, true, true) => 3,
+            (false, true, false) => 2,
+            (false, false, true) => 1,
+            (false, false, false) => 0,
+        };
+        if self.right_left_shift_caps
+            && self.modifiers.pressed(RIGHT_SHIFT)
+            && self.modifiers.pressed(LEFT_SHIFT)
+            || self.modifiers.locked(CAPS_LOCK)
+        {} //TODO: fix CAPS_LOCK improve!
+        let key = if self.num_lock_keys.contains(&evdev_code) && self.modifiers.locked(NUM_LOCK) {
             self.level_key(evdev_code, 1)
-        } else if level5 && level3 && level2 {
-            self.modifiers.level3latch.1.latched = false;
-            self.level_key(evdev_code, 7)
-        } else if level5 && level3 {
-            self.modifiers.level3latch.1.latched = false;
-            self.level_key(evdev_code, 6)
-        } else if level5 && level2 {
-            self.level_key(evdev_code, 5)
-        } else if level5 {
-            self.level_key(evdev_code, 4)
-        } else if level3 && level2 {
-            self.modifiers.level3latch.1.latched = false;
-            // if self.modifiers.caps_lock.locked > 0 {
-            //     self.level_key(evdev_code, 3)
-            //         .map(|c| c.to_uppercase().last().unwrap())
-            // } else {
-            self.level_key(evdev_code, 3)
-            // }
-        } else if level3 {
-            self.modifiers.level3latch.1.latched = false;
-            // if self.modifiers.caps_lock.locked > 0 {
-            //     self.level_key(evdev_code, 2)
-            //         .map(|c| c.to_uppercase().last().unwrap())
-            // } else {
-            self.level_key(evdev_code, 2)
-            // }
-        } else if level2 {
-            if self.modifiers.caps_lock.0.locked > 0 && !self.modifiers.caps_lock_level2_disabled {
-                if let Some(caps_level2_list) = &self.caps_is_level2 {
-                    if caps_level2_list.contains(&evdev_code) {
-                        return self.level_key(evdev_code, 0);
-                    }
-                }
-                self.level_key(evdev_code, 1)
-                    .map(|c| to_lowercase(c, self.custom_case_map.clone()))
-            } else {
-                self.level_key(evdev_code, 1)
-            }
         } else {
-            if self.modifiers.caps_lock.0.locked > 0 && !self.modifiers.caps_lock_disabled {
-                if let Some(caps_level2_list) = &self.caps_is_level2 {
-                    if caps_level2_list.contains(&evdev_code) {
-                        return self.level_key(evdev_code, 1);
-                    }
-                }
-                self.level_key(evdev_code, 0)
-                    .map(|c| to_uppercase(c, self.custom_case_map.clone()))
-            } else {
-                self.level_key(evdev_code, 0)
-            }
+            self.level_key(evdev_code, level_index)
+        };
+        if key.is_some() {
+            self.modifiers.unlatch()
         }
+        key
     }
 
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) {
@@ -734,7 +722,7 @@ impl WKB {
                     48, 49, 50, 51, 52, 53,
                 ])
             }
-            ("us", Some("mac")) => self.modifiers.caps_lock_level2_disabled = true,
+            ("us", Some("mac")) => self.caps_lock_level2_disabled = true,
             ("il", Some("si2")) | ("il", Some("basic")) => {
                 self.caps_is_level2 = Some(vec![
                     16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
@@ -766,12 +754,12 @@ impl WKB {
                 self.caps_is_level2 = Some(vec![3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 40])
             }
             ("in", Some("tamilnet_TAB")) | ("lk", Some("tam_TAB")) => {
-                self.modifiers.caps_lock_disabled = true;
-                self.modifiers.caps_lock_level2_disabled = true;
+                self.caps_lock_disabled = true;
+                self.caps_lock_level2_disabled = true;
             }
             ("in", Some("tamilnet_TSCII")) => {
                 self.custom_case_map = Some(HashMap::from([('þ', 'þ')]));
-                self.modifiers.caps_lock_level2_disabled = true;
+                self.caps_lock_level2_disabled = true;
             }
             ("in", Some("iipa")) => self.custom_case_map = Some(HashMap::from([('b', 'Y')])),
             ("ge", Some("qwerty")) | ("ge", Some("basic")) => {
@@ -799,11 +787,11 @@ impl WKB {
                 self.caps_is_level2 = Some(vec![17]);
             }
             ("pl", Some("glagolica")) => {
-                self.modifiers.caps_lock_level2_disabled = true;
+                self.caps_lock_level2_disabled = true;
                 let value = *self.level_keymap[0].get(&40).unwrap();
                 self.level_keymap[1].insert(40, value);
             }
-            ("cd", _) | ("ml", Some("us-mac")) => self.modifiers.caps_lock_level2_disabled = true,
+            ("cd", _) | ("ml", Some("us-mac")) => self.caps_lock_level2_disabled = true,
             ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
                 for i in 16..=25 {
                     let value = *self.level_keymap[0].get(&i).unwrap();
@@ -1145,11 +1133,11 @@ impl WKB {
     ) {
         if id == "CAPS" {
             if key.values.first().is_some_and(|k| k.content == "BackSpace") {
-                self.modifiers.remap.insert(*evdev_code, 14);
-                let value = *self.level_keymap[0].get(&14).unwrap();
-                self.level_keymap[1].insert(58, value);
+                self.remap.insert(*evdev_code, BACKSPACE);
+                let value = *self.level_keymap[0].get(&BACKSPACE).unwrap();
+                self.level_keymap[1].insert(CAPS_LOCK, value);
             } else if key.values.first().is_some_and(|k| k.content == "Tab") {
-                self.modifiers.remap.insert(*evdev_code, 15);
+                self.remap.insert(*evdev_code, TAB);
             }
         }
         for (i, v) in key.values.iter().enumerate() {
@@ -1157,7 +1145,7 @@ impl WKB {
                 self.level_keymap.push(DEFAULT_MAP[i].clone());
             }
             if let Some(remap_key_code) = XKBCODES_EVDEV.get(v.content) {
-                self.modifiers.remap.insert(*evdev_code, *remap_key_code);
+                self.remap.insert(*evdev_code, *remap_key_code);
             }
             let mut chars = v.chars();
             let count = chars.clone().count();
@@ -1181,71 +1169,160 @@ impl WKB {
             } else {
                 match (v.content, layout.as_str()) {
                     ("Eisu_toggle", _) => {
-                        self.modifiers.caps_lock.1 = Some(vec![1]);
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::OnLevel(
+                                ModKind::Lock {
+                                    pressed: false,
+                                    locked: 0,
+                                },
+                                vec![1],
+                            ),
+                        );
                     }
                     ("Control_L", _) => {
                         if id == "CAPS" {
-                            self.modifiers.remap.insert(*evdev_code, 29);
+                            self.remap.insert(*evdev_code, 29);
                         }
                     }
                     ("Shift_Lock", _) => {
-                        self.modifiers.level2lock = (*evdev_code, LockModifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(
+                                ModKind::Lock {
+                                    pressed: false,
+                                    locked: 0,
+                                },
+                                ModType::Level2,
+                            ),
+                        );
                     }
                     ("ISO_Level3_Shift", _) => {
-                        if self.modifiers.level3shift.0 .0 != 0 {
-                            self.modifiers.level3shift.1 = Some((*evdev_code, Modifier::default()))
-                        } else {
-                            self.modifiers.level3shift.0 = (*evdev_code, Modifier::default());
-                        }
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(
+                                ModKind::Lock {
+                                    pressed: false,
+                                    locked: 0,
+                                },
+                                ModType::Level3,
+                            ),
+                        );
                     }
                     ("ISO_Level3_Lock", _) => {
-                        self.modifiers.level3lock = (*evdev_code, LockModifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(
+                                ModKind::Lock {
+                                    pressed: false,
+                                    locked: 0,
+                                },
+                                ModType::Level3,
+                            ),
+                        );
                     }
                     ("ISO_Level3_Latch", _) => {
-                        self.modifiers.level3latch = (*evdev_code, LatchModifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(
+                                ModKind::Latch {
+                                    pressed: false,
+                                    latched: false,
+                                },
+                                ModType::Level3,
+                            ),
+                        );
                     }
                     ("ISO_Level5_Shift", _) => {
-                        self.modifiers.level5shift = (*evdev_code, Modifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level5),
+                        );
                     }
                     ("ISO_Level5_Lock", _) => {
                         if key.values.iter().count() > 1 {
-                            if self.modifiers.level5lock.2.is_empty() {
-                                self.modifiers.level5lock =
-                                    (*evdev_code, LockModifier::default(), vec![i as u32]);
-                            } else {
-                                self.modifiers.level5lock.2.push(i as u32)
+                            if self
+                                .modifiers
+                                .0
+                                .get_mut(evdev_code)
+                                .is_some_and(|m| match m {
+                                    Mod::OnLevelType(
+                                        ModKind::Lock {
+                                            pressed: _,
+                                            locked: _,
+                                        },
+                                        ModType::Level5,
+                                        levels,
+                                    ) => {
+                                        levels.push(i as u32);
+                                        false
+                                    }
+                                    _ => true,
+                                })
+                            {
+                                self.modifiers.0.insert(
+                                    *evdev_code,
+                                    Mod::OnLevelType(
+                                        ModKind::Lock {
+                                            pressed: false,
+                                            locked: 0,
+                                        },
+                                        ModType::Level5,
+                                        vec![i as u32],
+                                    ),
+                                );
                             }
                         } else {
-                            self.modifiers.level5lock =
-                                (*evdev_code, LockModifier::default(), Vec::new());
+                            self.modifiers.0.insert(
+                                *evdev_code,
+                                Mod::Type(
+                                    ModKind::Lock {
+                                        pressed: false,
+                                        locked: 0,
+                                    },
+                                    ModType::Level5,
+                                ),
+                            );
                         }
                     }
                     ("ISO_Level5_Latch", _) => {
-                        self.modifiers.level5latch = (*evdev_code, LatchModifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(
+                                ModKind::Latch {
+                                    pressed: false,
+                                    latched: false,
+                                },
+                                ModType::Level5,
+                            ),
+                        );
                     }
                     ("Multi_key", _) => {
-                        self.modifiers.compose_key = (*evdev_code, Modifier::default());
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Compose),
+                        );
                     }
                     (_, "rshift_both_shiftlock") | (_, "lshift_both_shiftlock") => {
-                        self.modifiers.right_left_shift_caps = true;
+                        self.right_left_shift_caps = true;
                     }
                     (_, "bksl_switch") => {
-                        if self.modifiers.level3shift.0 .0 != 0 {
-                            self.modifiers.level3shift.1 = Some((*evdev_code, Modifier::default()))
-                        } else {
-                            self.modifiers.level3shift.0 = (*evdev_code, Modifier::default());
-                        }
+                        self.modifiers.0.insert(
+                            *evdev_code,
+                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level3),
+                        );
                     }
                     (_, "caps_switch") => {
                         if locale == "level3" {
-                            if self.modifiers.level3shift.0 .0 != 0 {
-                                self.modifiers.level3shift.1 =
-                                    Some((*evdev_code, Modifier::default()))
-                            } else {
-                                self.modifiers.level3shift.0 = (*evdev_code, Modifier::default());
-                            }
+                            self.modifiers.0.insert(
+                                *evdev_code,
+                                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level3),
+                            );
                         } else {
-                            self.modifiers.level5shift = (58, Modifier::default());
+                            self.modifiers.0.insert(
+                                *evdev_code,
+                                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level5),
+                            );
                         };
                     }
                     _ => {
