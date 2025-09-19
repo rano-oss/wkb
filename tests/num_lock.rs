@@ -1,39 +1,12 @@
 use test_case::test_matrix;
-use wkb::{self, modifiers::NUM_LOCK, WKB};
+use wkb::{self, modifiers::NUM_LOCK};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
 };
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let keymap = xkb::Keymap::new_from_names(
-        &context,
-        "",
-        "",
-        &locale,
-        &layout.unwrap_or("".to_string()),
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkb::State::new(&keymap)
-}
-
-fn test_all_keys(mut wkb: WKB, xkb: xkb::State, layout: String) {
-    for i in 0..701 {
-        let k1 = wkb.utf8(i);
-        let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-
-        if k1 != k2.chars().last() && !k2.is_empty() {
-            println!("{}", layout);
-            println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
-            // println!("{:?}", wkb.level_keymap);
-            println!("{:?}", wkb.modifiers);
-        }
-        assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
-    }
-}
+mod common;
+use common::{test_all_keys, test_all_keys_detailed, xkb_new_from_names};
 
 // #[ignore]
 #[test_matrix([
@@ -87,55 +60,34 @@ fn level2(locale: &str) {
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
-        for i in 0..701 {
-            let k1 = wkb.utf8(i);
-            let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-            match (locale, layout.as_str(), i) {
+
+        // Define exception logic for level2 test
+        let level2_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
+            match (loc, lay, key) {
                 // Some of these layouts were basically bugged out in xkb
                 // so we just ignore them here, I checked an armenian keyboard online!
-                ("am", "eastern", 2) => assert!(true),
-                ("am", "eastern", 5..=7) => assert!(true),
-                ("am", "eastern-alt", 2) => assert!(true),
-                ("am", "eastern-alt", 5..=7) => assert!(true),
-                ("am", "western", 2) => assert!(true),
-                ("am", "western", 5..=7) => assert!(true),
+                ("am", "eastern", 2) => true,
+                ("am", "eastern", 5..=7) => true,
+                ("am", "eastern-alt", 2) => true,
+                ("am", "eastern-alt", 5..=7) => true,
+                ("am", "western", 2) => true,
+                ("am", "western", 5..=7) => true,
                 // This testcase are needed as there are bugs in xkb at least from reading wanted output in the
                 // fr and be files
-                ("be", "oss_latin9", 55) => assert!(true),
-                ("fr", "oss_latin9", 55) => assert!(true),
-                ("fr", "bepo_latin9", 55) => assert!(true),
-                ("fr", "mac", 83) => assert!(true),
-                ("apl", "dyalog", i) => {
-                    if [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(&i) {
-                        assert!(true);
-                    } else {
-                        assert!(k1 == k2.chars().last() || k2.chars().last().is_none())
-                    }
+                ("be", "oss_latin9", 55) => true,
+                ("fr", "oss_latin9", 55) => true,
+                ("fr", "bepo_latin9", 55) => true,
+                ("fr", "mac", 83) => true,
+                ("apl", "dyalog", k) => [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(&k),
+                ("apl", "dyalog_box", k) => {
+                    [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(&k)
                 }
-                ("apl", "dyalog_box", i) => {
-                    if [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(&i) {
-                        assert!(true);
-                    } else {
-                        assert!(k1 == k2.chars().last() || k2.chars().last().is_none())
-                    }
-                }
-                ("cm", "azerty", i) => {
-                    if [2, 3, 4, 5, 6, 7, 8, 9, 10, 11].contains(&i) {
-                        assert!(true);
-                    } else {
-                        assert!(k1 == k2.chars().last() || k2.chars().last().is_none())
-                    }
-                }
-                _ => {
-                    if k1 != k2.chars().last() && !k2.is_empty() {
-                        println!("wkb: {:?}, xkb: {:?}, {}", k1, k2.chars().last(), i);
-                        println!("{}", layout);
-                        println!("Keys{:?}", wkb.level_keymap());
-                    }
-                    assert!(k1 == k2.chars().last() || k2.chars().last().is_none())
-                }
+                ("cm", "azerty", k) => [2, 3, 4, 5, 6, 7, 8, 9, 10, 11].contains(&k),
+                _ => false,
             }
-        }
+        };
+
+        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&level2_exceptions));
     }
 }
 
@@ -165,26 +117,23 @@ fn level3(locale: &str) {
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
-        for i in 0..701 {
-            let k1 = wkb.utf8(i);
-            let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-            if k1 != k2.chars().last() && !k2.is_empty() {
-                println!("{}", layout.clone());
-                println!("wkb: {:?}, xkb: {:?}, {}", k1, k2.chars().last(), i);
-                println!("{:?}", wkb.level_keymap());
-            }
-            match (locale, layout.as_str(), i) {
+
+        // Define exception logic for level3 test
+        let level3_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
+            match (loc, lay, key) {
                 // This testcase are needed as there are bugs in xkb at least from reading wanted output in the
                 // fr and be files
-                ("be", "oss_latin9", 55) => assert!(true),
-                ("fr", "oss_latin9", 55) => assert!(true),
-                ("fr", "bepo_latin9", 55) => assert!(true),
-                ("be", "oss_latin9", 98) => assert!(true),
-                ("fr", "oss_latin9", 98) => assert!(true),
-                ("fr", "bepo_latin9", 98) => assert!(true),
-                _ => assert!(k1 == k2.chars().last() || k2.chars().last().is_none()),
+                ("be", "oss_latin9", 55) => true,
+                ("fr", "oss_latin9", 55) => true,
+                ("fr", "bepo_latin9", 55) => true,
+                ("be", "oss_latin9", 98) => true,
+                ("fr", "oss_latin9", 98) => true,
+                ("fr", "bepo_latin9", 98) => true,
+                _ => false,
             }
-        }
+        };
+
+        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&level3_exceptions));
     }
 }
 
@@ -217,18 +166,16 @@ fn level4(locale: &str) {
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
-        for i in 0..701 {
-            let k1 = wkb.utf8(i);
-            let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-            if k1 != k2.chars().last() && !k2.is_empty() {
-                println!("{}", layout);
-                println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
+
+        // Define exception logic for level4 test
+        let level4_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
+            match (loc, lay, key) {
+                ("de", "T3", 86) => true,
+                _ => false,
             }
-            match (locale, layout.as_str(), i) {
-                ("de", "T3", 86) => assert!(true),
-                _ => assert!(k1 == k2.chars().last() || k2.chars().last().is_none()),
-            }
-        }
+        };
+
+        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&level4_exceptions));
     }
 }
 

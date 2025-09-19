@@ -4,20 +4,9 @@ use xkbcommon::{
     self,
     xkb::{self, Keycode},
 };
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let keymap = xkb::Keymap::new_from_names(
-        &context,
-        "",
-        "",
-        &locale,
-        &layout.unwrap_or("".to_string()),
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkb::State::new(&keymap)
-}
+
+mod common;
+use common::{test_all_keys_detailed, xkb_new_from_names};
 
 #[ignore]
 #[test_matrix([
@@ -40,41 +29,31 @@ fn caps_lock(locale: &str) {
         // caps
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
-        for i in 0..701 {
-            let k1 = wkb.utf8(i);
-            let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-            if k1 != k2.chars().last() && !k2.is_empty() {
-                println!(
-                    "{:?} wkb: {:?} {:?}, xkb: {:?}, {}",
-                    layout,
-                    k1,
-                    wkb.level_key(i, 0),
-                    k2.chars().last(),
-                    i
-                );
-                // println!("Keys{:?}", wkb.level_keymap());
-            }
-            match (locale, layout.as_str(), i) {
-                ("ara", "mac-phonetic", 2..=11) => assert!(true),
+
+        // Define exception logic for this specific test
+        let caps_lock_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
+            match (loc, lay, key) {
+                ("ara", "mac-phonetic", 2..=11) => true,
                 // eg has inconsistent use so I go with my common sense
-                ("eg", "cop", 16..=26) => assert!(true),
-                ("eg", "cop", 30..=40) => assert!(true),
-                ("eg", "cop", 44..=50) => assert!(true),
-                ("eg", "cop", 53..=53) => assert!(true),
-                ("us", "3l-emacs", 3..=57) => assert!(true),
-                ("me", "latinunicodeyz", 45) => assert!(true), // TODO
-                _ => assert!(k1 == k2.chars().last() || k2.chars().last().is_none()), //
-                                                                // _ => {}
+                ("eg", "cop", 16..=26) => true,
+                ("eg", "cop", 30..=40) => true,
+                ("eg", "cop", 44..=50) => true,
+                ("eg", "cop", 53..=53) => true,
+                ("us", "3l-emacs", 3..=57) => true,
+                ("me", "latinunicodeyz", 45) => true, // TODO
+                _ => false,
             }
-        }
+        };
+
+        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&caps_lock_exceptions));
     }
     // assert!(false);
 }
 
 #[ignore]
 #[test_matrix([
-    "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", 
-    "be", 
+    "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd",
+    "be",
     "bg", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de",
     "dk", "dz", "ee", "eg", "epo", "es", "et", "eu", "fi", "fo", "fr", "gb",
@@ -112,67 +91,63 @@ fn level2_caps(locale: &str) {
             xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
             wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
         }
-        for i in 0..701 {
-            let k1 = wkb.utf8(i);
-            let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-            if k1 != k2.chars().last() && !k2.is_empty() {
-                println!("wkb: {:?}, xkb: {:?}, {}", k1, k2.chars().last(), i);
-                println!("{}", layout);
-                println!("Keys{:?}", wkb.level_keymap());
-            }
-            match (locale, layout.as_str(), i) {
+
+        // Define exception logic for level2_caps test
+        let level2_caps_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
+            match (loc, lay, key) {
                 // Some of these layouts were basically bugged out in xkb
                 // so we just ignore them here, I checked an armenian keyboard online!
-                ("am", "eastern", 2) => assert!(true),
-                ("am", "eastern", 5..=7) => assert!(true),
-                ("am", "eastern-alt", 2) => assert!(true),
-                ("am", "eastern-alt", 5..=7) => assert!(true),
-                ("am", "western", 2) => assert!(true),
-                ("am", "western", 5..=7) => assert!(true),
+                ("am", "eastern", 2) => true,
+                ("am", "eastern", 5..=7) => true,
+                ("am", "eastern-alt", 2) => true,
+                ("am", "eastern-alt", 5..=7) => true,
+                ("am", "western", 2) => true,
+                ("am", "western", 5..=7) => true,
                 // This testcase are needed as there are bugs in xkb at least from checking existing keyboards
-                ("by", "phonetic", 5) => assert!(true),
-                ("by", "phonetic", 7) => assert!(true),
+                ("by", "phonetic", 5) => true,
+                ("by", "phonetic", 7) => true,
                 // This testcase are needed as there are bugs in xkb at least from reading wanted output in the
                 // fr files
-                ("fr", "oss_latin9", 55) => assert!(true),
-                ("fr", "bepo_latin9", 55) => assert!(true),
-                ("fr", "mac", 83) => assert!(true),
-                ("be", "oss_latin9", 55) => assert!(true),
-                ("gr", "polytonic", 17) => assert!(true),
-                ("gr", "polytonic", 25) => assert!(true),
-                ("gr", "polytonic", 31) => assert!(true),
-                ("gr", "polytonic", 33) => assert!(true),
-                ("gr", "polytonic", 36) => assert!(true),
-                ("gr", "polytonic", 37) => assert!(true),
-                ("gr", "polytonic", 48) => assert!(true),
-                ("iq", "ku_ara", 16) => assert!(true),
-                ("iq", "ku_ara", 17) => assert!(true),
-                ("ir", "ku_ara", 16) => assert!(true),
-                ("ir", "ku_ara", 17) => assert!(true),
-                ("in", "iipa", 45) => assert!(true),
-                ("in", "iipa", 21) => assert!(true),
-                ("kz", "olpc", 43) => assert!(true),
-                ("kz", "latin", 47) => assert!(true),
-                ("lv", "adapted", 3) => assert!(true),
-                ("lv", "adapted", 5) => assert!(true),
-                ("lv", "adapted", 52) => assert!(true),
-                ("ru", "phonetic", 5) => assert!(true),
-                ("ru", "phonetic", 7) => assert!(true),
-                ("ru", "phonetic_winkeys", 5) => assert!(true),
-                ("ru", "phonetic_winkeys", 7) => assert!(true),
-                ("ru", "phonetic_YAZHERTY", 5) => assert!(true),
-                ("ru", "phonetic_YAZHERTY", 7) => assert!(true),
-                ("ru", "phonetic_dvorak", 5) => assert!(true),
-                ("ru", "phonetic_dvorak", 7) => assert!(true),
-                ("ru", "xal", i)
-                    if [4, 5, 7, 8, 9, 10, 17, 18, 19, 20, 26, 27, 40, 46, 51, 52].contains(&i) =>
+                ("fr", "oss_latin9", 55) => true,
+                ("fr", "bepo_latin9", 55) => true,
+                ("fr", "mac", 83) => true,
+                ("be", "oss_latin9", 55) => true,
+                ("gr", "polytonic", 17) => true,
+                ("gr", "polytonic", 25) => true,
+                ("gr", "polytonic", 31) => true,
+                ("gr", "polytonic", 33) => true,
+                ("gr", "polytonic", 36) => true,
+                ("gr", "polytonic", 37) => true,
+                ("gr", "polytonic", 48) => true,
+                ("iq", "ku_ara", 16) => true,
+                ("iq", "ku_ara", 17) => true,
+                ("ir", "ku_ara", 16) => true,
+                ("ir", "ku_ara", 17) => true,
+                ("in", "iipa", 45) => true,
+                ("in", "iipa", 21) => true,
+                ("kz", "olpc", 43) => true,
+                ("kz", "latin", 47) => true,
+                ("lv", "adapted", 3) => true,
+                ("lv", "adapted", 5) => true,
+                ("lv", "adapted", 52) => true,
+                ("ru", "phonetic", 5) => true,
+                ("ru", "phonetic", 7) => true,
+                ("ru", "phonetic_winkeys", 5) => true,
+                ("ru", "phonetic_winkeys", 7) => true,
+                ("ru", "phonetic_YAZHERTY", 5) => true,
+                ("ru", "phonetic_YAZHERTY", 7) => true,
+                ("ru", "phonetic_dvorak", 5) => true,
+                ("ru", "phonetic_dvorak", 7) => true,
+                ("ru", "xal", k)
+                    if [4, 5, 7, 8, 9, 10, 17, 18, 19, 20, 26, 27, 40, 46, 51, 52].contains(&k) =>
                 {
-                    assert!(true)
+                    true
                 }
-                ("ru", "bak", i) if [3, 4, 5, 6, 8, 9, 13, 41, 43].contains(&i) => assert!(true),
-                // _ => {} //
-                _ => assert!(k1 == k2.chars().last() || k2.chars().last().is_none()),
+                ("ru", "bak", k) if [3, 4, 5, 6, 8, 9, 13, 41, 43].contains(&k) => true,
+                _ => false,
             }
-        }
+        };
+
+        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&level2_caps_exceptions));
     }
 }

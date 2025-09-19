@@ -43,13 +43,15 @@ fn main() {
     // test_all_keys(wkb, xkb);
 
     // level 5
-    let i = wkb.modifiers.level5_code().unwrap();
-    xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-    wkb.update_key(i, wkb::KeyDirection::Down);
+    if let Some(i) = wkb.modifiers.level5_code() {
+        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+        wkb.update_key(i, wkb::KeyDirection::Down);
+    }
     // level 3
-    let i = wkb.modifiers.level3_code().unwrap();
-    xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-    wkb.update_key(i, wkb::KeyDirection::Down);
+    if let Some(i) = wkb.modifiers.level3_code() {
+        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+        wkb.update_key(i, wkb::KeyDirection::Down);
+    }
     println!("{:?}", wkb.modifiers);
     test_all_keys(wkb, xkb);
 }

@@ -8,7 +8,8 @@ use std::{
 
 use default_keymap::DEFAULT_MAP;
 use evdev_xkb::XKBCODES_EVDEV;
-use modifiers::*;
+pub use modifiers::KeyDirection;
+use modifiers::{level_index, ModKind, ModType, Modifiers, *};
 use regex::Regex;
 use repeat::REPEAT_DEFAULT;
 use xkb_parser::{
@@ -22,12 +23,6 @@ pub mod modifiers;
 mod repeat;
 mod xkb_utf8;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum KeyDirection {
-    Up,
-    Down,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ComposeStatus {
@@ -136,301 +131,6 @@ fn to_lowercase(c: char, custom_case_map: Option<HashMap<char, char>>) -> char {
 }
 
 #[derive(Debug, Clone)]
-pub struct Modifiers(pub BTreeMap<u32, Mod>);
-
-impl Default for Modifiers {
-    fn default() -> Self {
-        Self(BTreeMap::from([
-            (LEFT_CTRL, Mod::Single(ModKind::Modifier { pressed: false })),
-            (
-                RIGHT_CTRL,
-                Mod::Single(ModKind::Modifier { pressed: false }),
-            ),
-            (
-                LEFT_SHIFT,
-                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level2),
-            ),
-            (
-                RIGHT_SHIFT,
-                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level2),
-            ),
-            (ALT, Mod::Single(ModKind::Modifier { pressed: false })),
-            (ALTGR, Mod::Single(ModKind::Modifier { pressed: false })),
-            (LOGO, Mod::Single(ModKind::Modifier { pressed: false })),
-            (
-                CAPS_LOCK,
-                Mod::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                }),
-            ),
-            (
-                NUM_LOCK,
-                Mod::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                }),
-            ),
-            (
-                SCROLL_LOCK,
-                Mod::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                }),
-            ),
-        ]))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum Mod {
-    Single(ModKind),
-    Type(ModKind, ModType),
-    OnLevelType(ModKind, ModType, Vec<u32>),
-    OnLevel(ModKind, Vec<u32>),
-    DualTypeOnLevel(ModKind, ModType, Vec<u32>, ModKind, ModType, Vec<u32>),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ModType {
-    Level2,
-    Level3,
-    Level5,
-    Compose,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum ModKind {
-    Modifier { pressed: bool },
-    Lock { pressed: bool, locked: u8 },
-    Latch { pressed: bool, latched: bool },
-}
-
-impl ModKind {
-    pub fn update(&mut self, key_direction: KeyDirection) {
-        match self {
-            ModKind::Modifier { ref mut pressed } => match key_direction {
-                KeyDirection::Down => *pressed = true,
-                KeyDirection::Up => *pressed = false,
-            },
-            ModKind::Lock {
-                ref mut pressed,
-                ref mut locked,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    if *locked == 0 {
-                        *locked = 2;
-                    }
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                    if *locked != 0 {
-                        *locked -= 1;
-                    }
-                }
-            },
-            ModKind::Latch {
-                ref mut pressed,
-                ref mut latched,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    *latched = true;
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                }
-            },
-        }
-    }
-
-    fn unlatch(&mut self) {
-        match self {
-            ModKind::Latch {
-                pressed: _,
-                latched,
-            } => *latched = false,
-            _ => {}
-        }
-    }
-
-    fn pressed(&self) -> &bool {
-        match self {
-            ModKind::Modifier { pressed } => pressed,
-            ModKind::Lock { pressed, locked: _ } => pressed,
-            ModKind::Latch {
-                pressed,
-                latched: _,
-            } => pressed,
-        }
-    }
-
-    fn locked(&self) -> bool {
-        match self {
-            ModKind::Modifier { pressed: _ } => false,
-            ModKind::Lock { pressed: _, locked } => locked > &0,
-            ModKind::Latch {
-                pressed: _,
-                latched: _,
-            } => false,
-        }
-    }
-}
-
-impl Modifiers {
-    fn level(&self, mod_type: ModType) -> bool {
-        self.0
-            .values()
-            .find(|v| match v {
-                Mod::Type(modkind, m_t) | Mod::OnLevelType(modkind, m_t, _) if m_t == &mod_type => {
-                    match modkind {
-                        ModKind::Modifier { pressed } => *pressed,
-                        ModKind::Lock { pressed: _, locked } => locked > &0,
-                        ModKind::Latch {
-                            pressed: _,
-                            latched,
-                        } => *latched,
-                    }
-                }
-                Mod::DualTypeOnLevel(modkind1, m_t1, _, modkind2, m_t2, _) => {
-                    if m_t1 == &mod_type {
-                        match modkind1 {
-                            ModKind::Modifier { pressed } => *pressed,
-                            ModKind::Lock { pressed: _, locked } => locked > &0,
-                            ModKind::Latch {
-                                pressed: _,
-                                latched,
-                            } => *latched,
-                        }
-                    } else if m_t2 == &mod_type {
-                        match modkind2 {
-                            ModKind::Modifier { pressed } => *pressed,
-                            ModKind::Lock { pressed: _, locked } => locked > &0,
-                            ModKind::Latch {
-                                pressed: _,
-                                latched,
-                            } => *latched,
-                        }
-                    } else {
-                        false
-                    }
-                }
-                _ => false,
-            })
-            .is_some()
-    }
-
-    fn level5(&self) -> bool {
-        self.level(ModType::Level5)
-    }
-
-    fn level3(&self) -> bool {
-        self.level(ModType::Level3)
-    }
-
-    fn level2(&self) -> bool {
-        self.level(ModType::Level2)
-    }
-
-    fn level_code(&self, mod_type: ModType) -> Option<u32> {
-        self.0
-            .iter()
-            .find(|v| match v.1 {
-                Mod::Type(_, m_t) | Mod::OnLevelType(_, m_t, _) if m_t == &mod_type => true,
-                Mod::DualTypeOnLevel(_, m_t1, _, _, m_t2, _) => {
-                    m_t1 == &mod_type || m_t2 == &mod_type
-                }
-                _ => false,
-            })
-            .map(|kv| *kv.0)
-    }
-
-    pub fn level2_code(&self) -> Option<u32> {
-        self.level_code(ModType::Level2)
-    }
-
-    pub fn level3_code(&self) -> Option<u32> {
-        self.level_code(ModType::Level3)
-    }
-
-    pub fn level5_code(&self) -> Option<u32> {
-        self.level_code(ModType::Level5)
-    }
-
-    fn unlatch(&mut self) {
-        self.0.values_mut().for_each(|m| match m {
-            Mod::Single(modkind)
-            | Mod::Type(modkind, _)
-            | Mod::OnLevelType(modkind, _, _)
-            | Mod::OnLevel(modkind, _) => modkind.unlatch(),
-            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
-                modkind1.unlatch();
-                modkind2.unlatch();
-            }
-        });
-    }
-
-    fn pressed(&self, evdev_code: u32) -> bool {
-        self.0.get(&evdev_code).is_some_and(|m| match m {
-            Mod::Single(modkind) | Mod::Type(modkind, _) | Mod::OnLevelType(modkind, _, _) => {
-                *modkind.pressed()
-            }
-            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
-                *modkind1.pressed() || *modkind2.pressed()
-            }
-            Mod::OnLevel(modkind, _) => *modkind.pressed(),
-        })
-    }
-
-    fn locked(&self, evdev_code: u32) -> bool {
-        self.0.get(&evdev_code).is_some_and(|m| match m {
-            Mod::Single(modkind)
-            | Mod::Type(modkind, _)
-            | Mod::OnLevelType(modkind, _, _)
-            | Mod::OnLevel(modkind, _) => modkind.locked(),
-            Mod::DualTypeOnLevel(modkind1, _, _, modkind2, _, _) => {
-                modkind1.locked() || modkind2.locked()
-            }
-        })
-    }
-
-    fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let level = match (self.level5(), self.level3(), self.level2()) {
-            (true, true, true) => 7,
-            (true, true, false) => 6,
-            (true, false, true) => 5,
-            (true, false, false) => 4,
-            (false, true, true) => 3,
-            (false, true, false) => 2,
-            (false, false, true) => 1,
-            (false, false, false) => 0,
-        };
-        if let Some(modifier) = self.0.get_mut(&evdev_code) {
-            match modifier {
-                Mod::Single(modkind) => modkind.update(key_direction),
-                Mod::Type(modkind, _) => modkind.update(key_direction),
-                Mod::OnLevelType(modkind, _, on_level) | Mod::OnLevel(modkind, on_level) => {
-                    if on_level.contains(&level) {
-                        modkind.update(key_direction)
-                    }
-                }
-                Mod::DualTypeOnLevel(modkind1, _, on_level1, modkind2, _, on_level2) => {
-                    if on_level1.contains(&level) {
-                        modkind1.update(key_direction)
-                    } else if on_level2.contains(&level) {
-                        modkind2.update(key_direction)
-                    }
-                }
-            }
-            true
-        } else {
-            false
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct WKB {
     layouts: Vec<String>,
     layout: String,
@@ -515,16 +215,7 @@ impl WKB {
         let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
         let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
-        let level_index = match (level5, level3, level2) {
-            (true, true, true) => 7,
-            (true, true, false) => 6,
-            (true, false, true) => 5,
-            (true, false, false) => 4,
-            (false, true, true) => 3,
-            (false, true, false) => 2,
-            (false, false, true) => 1,
-            (false, false, false) => 0,
-        };
+        let level_index = level_index(level5, level3, level2);
         if self.right_left_shift_caps
             && self.modifiers.pressed(RIGHT_SHIFT)
             && self.modifiers.pressed(LEFT_SHIFT)
@@ -858,11 +549,26 @@ impl WKB {
                 self.level_keymap[3].insert(86, value);
             }
             ("us", Some("3l")) => {
-                for i in 2..=11 {
-                    let value = *self.level_keymap[0].get(&i).unwrap();
-                    self.level_keymap[1].insert(i, value);
-                    self.level_keymap[3].insert(i, value);
-                }
+                self.level_keymap[1].insert(2, '!');
+                self.level_keymap[1].insert(3, '@');
+                self.level_keymap[1].insert(4, '#');
+                self.level_keymap[1].insert(5, '$');
+                self.level_keymap[1].insert(6, '%');
+                self.level_keymap[1].insert(7, '^');
+                self.level_keymap[1].insert(8, '&');
+                self.level_keymap[1].insert(9, '*');
+                self.level_keymap[1].insert(10, '(');
+                self.level_keymap[1].insert(11, ')');
+                self.level_keymap[3].insert(2, '!');
+                self.level_keymap[3].insert(3, '@');
+                self.level_keymap[3].insert(4, '#');
+                self.level_keymap[3].insert(5, '$');
+                self.level_keymap[3].insert(6, '%');
+                self.level_keymap[3].insert(7, '^');
+                self.level_keymap[3].insert(8, '&');
+                self.level_keymap[3].insert(9, '*');
+                self.level_keymap[3].insert(10, '(');
+                self.level_keymap[3].insert(11, ')');
                 let value = *self.level_keymap[0].get(&15).unwrap();
                 self.level_keymap[1].insert(15, value);
                 self.level_keymap[2].insert(15, value);
@@ -879,11 +585,26 @@ impl WKB {
                 self.level_keymap[6].insert(86, value);
             }
             ("us", Some("3l-cros")) => {
-                for i in 2..=11 {
-                    let value = *self.level_keymap[0].get(&i).unwrap();
-                    self.level_keymap[1].insert(i, value);
-                    self.level_keymap[3].insert(i, value);
-                }
+                self.level_keymap[1].insert(2, '!');
+                self.level_keymap[1].insert(3, '@');
+                self.level_keymap[1].insert(4, '#');
+                self.level_keymap[1].insert(5, '$');
+                self.level_keymap[1].insert(6, '%');
+                self.level_keymap[1].insert(7, '^');
+                self.level_keymap[1].insert(8, '&');
+                self.level_keymap[1].insert(9, '*');
+                self.level_keymap[1].insert(10, '(');
+                self.level_keymap[1].insert(11, ')');
+                self.level_keymap[3].insert(2, '!');
+                self.level_keymap[3].insert(3, '@');
+                self.level_keymap[3].insert(4, '#');
+                self.level_keymap[3].insert(5, '$');
+                self.level_keymap[3].insert(6, '%');
+                self.level_keymap[3].insert(7, '^');
+                self.level_keymap[3].insert(8, '&');
+                self.level_keymap[3].insert(9, '*');
+                self.level_keymap[3].insert(10, '(');
+                self.level_keymap[3].insert(11, ')');
                 let value = *self.level_keymap[0].get(&15).unwrap();
                 self.level_keymap[1].insert(15, value);
                 self.level_keymap[2].insert(15, value);
@@ -903,11 +624,26 @@ impl WKB {
                 self.level_keymap[3].insert(125, value);
             }
             ("us", Some("3l-emacs")) => {
-                for i in 2..=11 {
-                    let value = *self.level_keymap[0].get(&i).unwrap();
-                    self.level_keymap[1].insert(i, value);
-                    self.level_keymap[3].insert(i, value);
-                }
+                self.level_keymap[1].insert(2, '!');
+                self.level_keymap[1].insert(3, '@');
+                self.level_keymap[1].insert(4, '#');
+                self.level_keymap[1].insert(5, '$');
+                self.level_keymap[1].insert(6, '%');
+                self.level_keymap[1].insert(7, '^');
+                self.level_keymap[1].insert(8, '&');
+                self.level_keymap[1].insert(9, '*');
+                self.level_keymap[1].insert(10, '(');
+                self.level_keymap[1].insert(11, ')');
+                self.level_keymap[3].insert(2, '!');
+                self.level_keymap[3].insert(3, '@');
+                self.level_keymap[3].insert(4, '#');
+                self.level_keymap[3].insert(5, '$');
+                self.level_keymap[3].insert(6, '%');
+                self.level_keymap[3].insert(7, '^');
+                self.level_keymap[3].insert(8, '&');
+                self.level_keymap[3].insert(9, '*');
+                self.level_keymap[3].insert(10, '(');
+                self.level_keymap[3].insert(11, ')');
                 let value = *self.level_keymap[0].get(&15).unwrap();
                 self.level_keymap[1].insert(15, value);
                 self.level_keymap[3].insert(15, value);
@@ -1169,15 +905,14 @@ impl WKB {
             } else {
                 match (v.content, layout.as_str()) {
                     ("Eisu_toggle", _) => {
-                        self.modifiers.0.insert(
+                        self.modifiers.insert(
                             *evdev_code,
-                            Mod::OnLevel(
-                                ModKind::Lock {
-                                    pressed: false,
-                                    locked: 0,
-                                },
-                                vec![1],
-                            ),
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::None,
+                            },
+                            1,
                         );
                     }
                     ("Control_L", _) => {
@@ -1186,142 +921,131 @@ impl WKB {
                         }
                     }
                     ("Shift_Lock", _) => {
-                        self.modifiers.0.insert(
+                        self.modifiers.insert(
                             *evdev_code,
-                            Mod::Type(
-                                ModKind::Lock {
-                                    pressed: false,
-                                    locked: 0,
-                                },
-                                ModType::Level2,
-                            ),
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level2,
+                            },
+                            i as u8,
                         );
-                    }
-                    ("ISO_Level3_Shift", _) => {
-                        self.modifiers.0.insert(
-                            *evdev_code,
-                            Mod::Type(
-                                ModKind::Lock {
-                                    pressed: false,
-                                    locked: 0,
-                                },
-                                ModType::Level3,
-                            ),
-                        );
-                    }
-                    ("ISO_Level3_Lock", _) => {
-                        self.modifiers.0.insert(
-                            *evdev_code,
-                            Mod::Type(
-                                ModKind::Lock {
-                                    pressed: false,
-                                    locked: 0,
-                                },
-                                ModType::Level3,
-                            ),
-                        );
-                    }
-                    ("ISO_Level3_Latch", _) => {
-                        self.modifiers.0.insert(
-                            *evdev_code,
-                            Mod::Type(
-                                ModKind::Latch {
-                                    pressed: false,
-                                    latched: false,
-                                },
-                                ModType::Level3,
-                            ),
-                        );
-                    }
-                    ("ISO_Level5_Shift", _) => {
-                        self.modifiers.0.insert(
-                            *evdev_code,
-                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level5),
-                        );
-                    }
-                    ("ISO_Level5_Lock", _) => {
-                        if key.values.iter().count() > 1 {
-                            if self
-                                .modifiers
-                                .0
-                                .get_mut(evdev_code)
-                                .is_some_and(|m| match m {
-                                    Mod::OnLevelType(
-                                        ModKind::Lock {
-                                            pressed: _,
-                                            locked: _,
-                                        },
-                                        ModType::Level5,
-                                        levels,
-                                    ) => {
-                                        levels.push(i as u32);
-                                        false
-                                    }
-                                    _ => true,
-                                })
-                            {
-                                self.modifiers.0.insert(
-                                    *evdev_code,
-                                    Mod::OnLevelType(
-                                        ModKind::Lock {
-                                            pressed: false,
-                                            locked: 0,
-                                        },
-                                        ModType::Level5,
-                                        vec![i as u32],
-                                    ),
-                                );
-                            }
-                        } else {
-                            self.modifiers.0.insert(
+                        for i in 2..self.level_keymap.len() {
+                            self.modifiers.insert(
                                 *evdev_code,
-                                Mod::Type(
-                                    ModKind::Lock {
-                                        pressed: false,
-                                        locked: 0,
-                                    },
-                                    ModType::Level5,
-                                ),
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type: ModType::Level2,
+                                },
+                                i as u8,
                             );
                         }
                     }
-                    ("ISO_Level5_Latch", _) => {
-                        self.modifiers.0.insert(
+                    ("ISO_Level3_Shift", _) => {
+                        self.modifiers.insert(
                             *evdev_code,
-                            Mod::Type(
-                                ModKind::Latch {
-                                    pressed: false,
-                                    latched: false,
-                                },
-                                ModType::Level5,
-                            ),
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level3_Lock", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level3_Latch", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Latch {
+                                pressed: false,
+                                latched: false,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level5_Shift", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Level5,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level5_Lock", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level5,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level5_Latch", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Latch {
+                                pressed: false,
+                                latched: false,
+                                mod_type: ModType::Level5,
+                            },
+                            i as u8,
                         );
                     }
                     ("Multi_key", _) => {
-                        self.modifiers.0.insert(
+                        self.modifiers.insert(
                             *evdev_code,
-                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Compose),
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Compose,
+                            },
+                            i as u8,
                         );
                     }
                     (_, "rshift_both_shiftlock") | (_, "lshift_both_shiftlock") => {
                         self.right_left_shift_caps = true;
                     }
                     (_, "bksl_switch") => {
-                        self.modifiers.0.insert(
+                        self.modifiers.insert(
                             *evdev_code,
-                            Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level3),
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
                         );
                     }
                     (_, "caps_switch") => {
                         if locale == "level3" {
-                            self.modifiers.0.insert(
+                            self.modifiers.insert(
                                 *evdev_code,
-                                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level3),
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type: ModType::Level3,
+                                },
+                                i as u8,
                             );
                         } else {
-                            self.modifiers.0.insert(
+                            self.modifiers.insert(
                                 *evdev_code,
-                                Mod::Type(ModKind::Modifier { pressed: false }, ModType::Level5),
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type: ModType::Level5,
+                                },
+                                i as u8,
                             );
                         };
                     }
@@ -1337,10 +1061,10 @@ impl WKB {
                             && !v.contains("any")
                             && !v.contains("VoidSymbol")
                         {
-                            println!("{:?}", v);
-                            println!("{}", *evdev_code);
-                            println!("{}", layout);
-                            println!("{}", id);
+                            // println!("{:?}", v);
+                            // println!("{}", *evdev_code);
+                            // println!("{}", layout);
+                            // println!("{}", id);
                         }
                     }
                 }
