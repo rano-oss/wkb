@@ -1,8 +1,4 @@
-use wkb::{
-    self,
-    modifiers::{LEFT_SHIFT, NUM_LOCK},
-    WKB,
-};
+use wkb::{self, WKB};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -35,7 +31,7 @@ fn test_all_keys(mut wkb: WKB, xkb: xkb::State) {
 
 fn main() {
     let lang = "de".to_string();
-    let layout = "neo_base".to_string();
+    let layout = "dvorak".to_string();
     let mut xkb = xkb_new_from_names(lang.clone(), Some(layout.clone()));
     let mut wkb = wkb::WKB::new_from_names(lang, Some(layout));
     // xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
@@ -46,14 +42,17 @@ fn main() {
     // wkb.update_key(LEFT_SHIFT, wkb::KeyDirection::Down);
     // test_all_keys(wkb, xkb);
 
+    println!("{}", wkb.modifiers);
     // level 5
-    let i = wkb.modifiers.level5_code();
-    xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-    wkb.update_key(i, wkb::KeyDirection::Down);
+    if let Some((i, _)) = wkb.modifiers.level5_code() {
+        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+        wkb.update_key(i, wkb::KeyDirection::Down);
+    }
     // level 3
-    let i = wkb.modifiers.level3_code();
-    xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-    wkb.update_key(i, wkb::KeyDirection::Down);
+    if let Some((i, _)) = wkb.modifiers.level3_code() {
+        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
+        wkb.update_key(i, wkb::KeyDirection::Down);
+    }
     println!("{:?}", wkb.modifiers);
     test_all_keys(wkb, xkb);
 }

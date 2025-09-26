@@ -1,23 +1,9 @@
 use test_case::test_matrix;
 use wkb;
-use xkbcommon::{
-    self,
-    xkb::{self, Keycode},
-};
+use xkbcommon::{self, xkb::Keycode};
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    xkb::Keymap::new_from_names(
-        &context,
-        "",
-        "",
-        &locale,
-        &layout.unwrap_or("".to_string()),
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap()
-}
+mod common;
+use common::xkb_new_keymap_from_names;
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
@@ -32,7 +18,7 @@ fn level_keys(locale: &str, level: usize) {
     let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
     for layout in wkb.layouts() {
         println!("{:?}", layout);
-        let xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
+        let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
         if wkb.level_keymap.len() <= level {
             assert!(true);
