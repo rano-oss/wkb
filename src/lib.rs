@@ -675,6 +675,16 @@ impl WKB {
                 // let value = *self.level_keymap[0].get(&83).unwrap();
                 // self.level_keymap[3].insert(83, value);
             }
+            ("fr", Some("afnor")) => {
+                for i in 0..2 {
+                    for (code, value) in &self.level_keymap[i].clone() {
+                        if self.level_keymap[i + 4].get(&code).is_none() {
+                            self.level_keymap[i + 4].insert(*code, *value);
+                        }
+                    }
+                }
+                self.level_keymap[4].insert(86, '<');
+            }
             ("de", Some("T3")) => {
                 self.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
                 self.level_keymap[3].insert(2, 'ʹ');
@@ -829,7 +839,6 @@ impl WKB {
                             // Why not just unwrap here? Surely there shouldn't be any symbols not defined in evdev...
                             // ph has AB00 which does not exists in evdev...
                             if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
-                                // println!("{:?} {:?}", values, id);
                                 values.iter().for_each(|v| {
                                     if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                         if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
@@ -920,6 +929,28 @@ impl WKB {
                             self.remap.insert(*evdev_code, 29);
                         }
                     }
+                    ("Shift_L", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level2,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("Shift_R", _) => {
+                        self.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level2,
+                            },
+                            i as u8,
+                        );
+                    }
                     ("Shift_Lock", _) => {
                         self.modifiers.insert(
                             *evdev_code,
@@ -930,16 +961,6 @@ impl WKB {
                             },
                             i as u8,
                         );
-                        for i in 2..self.level_keymap.len() {
-                            self.modifiers.insert(
-                                *evdev_code,
-                                ModKind::Pressed {
-                                    pressed: false,
-                                    mod_type: ModType::Level2,
-                                },
-                                i as u8,
-                            );
-                        }
                     }
                     ("ISO_Level3_Shift", _) => {
                         self.modifiers.insert(
@@ -1068,33 +1089,6 @@ impl WKB {
                         }
                     }
                 }
-                // match layout.as_str() {
-                //     "ralt_switch" => {
-                //         self.modifiers.level3 = (100, Modifier::default());
-                //     }
-                //     "lalt_switch" => {
-                //         self.modifiers.level3 = (56, Modifier::default());
-                //     }
-                //     "enter_switch" => {
-                //         self.modifiers.level3 = (96, Modifier::default());
-                //     }
-                //     "rctrl_switch" | "switch" => {
-                //         if locale == "level3" {
-                //             self.modifiers.level3 = (97, Modifier::default());
-                //         } else {
-                //             self.modifiers.level5 = (97, Modifier::default());
-                //         };
-                //     }
-                //     "lock" => {
-                //         // Hypr
-                //         self.modifiers.level5lock = (199, LockModifier::default());
-                //     }
-                //     "ralt_switch_lock" => {
-                //         self.modifiers.level5lock = (100, LockModifier::default());
-                //     }
-                //     "lsgt_switch_lock" => {
-                //         self.modifiers.level5lock = (86, LockModifier::default());
-                //     }
             }
         }
     }

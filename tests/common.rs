@@ -1,6 +1,10 @@
 //! Common test utilities shared across all test modules
 
-use wkb::{self, WKB};
+use wkb::{
+    self,
+    modifiers::{level_index, ALTGR},
+    KeyDirection, WKB,
+};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -38,20 +42,12 @@ pub fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb:
     .unwrap()
 }
 
-/// Test all keys comparing WKB and XKB implementations
-///
-/// This function compares the UTF-8 output of WKB and XKB for all keys (0-700)
-/// and asserts that they match, with debug output for mismatches.
-pub fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String) {
-    test_all_keys_with_exceptions(wkb, xkb, layout, &[])
-}
-
 /// Test all keys with specific exceptions for certain locale/layout/key combinations
 ///
 /// This version allows for specifying exceptions where WKB and XKB are expected to differ.
 /// The exceptions are specified as tuples of (locale, layout, key_range_or_single_key).
 #[allow(dead_code)]
-pub fn test_all_keys_with_exceptions(
+pub fn test_all_keys(
     wkb: WKB,
     xkb: xkb::State,
     layout: String,
@@ -71,9 +67,16 @@ pub fn test_all_keys_with_exceptions(
                 });
 
             if !is_exception {
+                let level = level_index(
+                    wkb.modifiers.level5(),
+                    wkb.modifiers.level3(),
+                    wkb.modifiers.level2(),
+                ) as usize;
                 println!("{}", layout);
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
-                println!("modifiers: {:?}", wkb.modifiers);
+                println!("level: {}", level);
+                println!("{}", wkb.modifiers);
+                println!("{:?}", wkb.level_keymap[level]);
             }
         }
 
@@ -128,42 +131,59 @@ pub fn multiple_keys(keys: Vec<u32>) -> KeyRange {
     KeyRange::Multiple(keys)
 }
 
-/// Test all keys with detailed debugging output similar to caps_lock test
-///
-/// This version provides more detailed output including level_key information
-/// and supports custom exception handling like the original caps_lock test.
-pub fn test_all_keys_detailed(
-    wkb: WKB,
-    xkb: xkb::State,
-    layout: String,
-    locale: &str,
-    custom_exceptions: Option<&dyn Fn(&str, &str, u32) -> bool>,
-) {
-    let mut wkb = wkb;
-    for i in 0..701 {
-        let k1 = wkb.utf8(i);
-        let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
-
-        if k1 != k2.chars().last() && !k2.is_empty() {
-            println!(
-                "{:?} wkb: {:?} {:?}, xkb: {:?}, {}",
-                layout,
-                k1,
-                wkb.level_key(i, 0),
-                k2.chars().last(),
-                i
-            );
+pub fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u8>) {
+    if let Some(level) = level {
+        let mut modifiers = Vec::new();
+        match level {
+            7 => {
+                modifiers.push(wkb.modifiers.level5_code().unwrap().0);
+                modifiers.push(wkb.modifiers.level3_code().unwrap().0);
+                modifiers.push(wkb.modifiers.level2_code().unwrap().0);
+            }
+            6 => {
+                modifiers.push(wkb.modifiers.level5_code().unwrap().0);
+                modifiers.push(wkb.modifiers.level3_code().unwrap().0);
+            }
+            5 => {
+                modifiers.push(wkb.modifiers.level5_code().unwrap().0);
+                modifiers.push(wkb.modifiers.level2_code().unwrap().0);
+            }
+            4 => {
+                modifiers.push(wkb.modifiers.level5_code().unwrap().0);
+            }
+            3 => {
+                modifiers.push(wkb.modifiers.level2_code().unwrap().0);
+                modifiers.push(wkb.modifiers.level3_code().unwrap_or((ALTGR, None)).0);
+            }
+            2 => {
+                modifiers.push(wkb.modifiers.level3_code().unwrap().0);
+            }
+            1 => {
+                modifiers.push(wkb.modifiers.level2_code().unwrap().0);
+            }
+            _ => {}
         }
-
-        // Apply custom exception logic if provided
-        let should_skip = if let Some(exception_fn) = custom_exceptions {
-            exception_fn(locale, &layout, i)
-        } else {
-            false
-        };
-
-        if !should_skip {
-            assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
+        // Press modifiers down
+        for &mod_code in &modifiers {
+            wkb.update_key(mod_code, KeyDirection::Down);
+            xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Down);
         }
+        // Press code down
+        wkb.update_key(code, KeyDirection::Down);
+        xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Down);
+        // Release modifiers up
+        for &mod_code in &modifiers {
+            wkb.update_key(mod_code, KeyDirection::Up);
+            xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Up);
+        }
+        for &mod_code in &modifiers {
+            wkb.update_key(mod_code, KeyDirection::Down);
+            xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Down);
+            wkb.update_key(mod_code, KeyDirection::Up);
+            xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Up);
+        }
+    } else {
+        xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Down);
+        wkb.update_key(code, wkb::KeyDirection::Down);
     }
 }

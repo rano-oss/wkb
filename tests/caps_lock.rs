@@ -6,7 +6,7 @@ use xkbcommon::{
 };
 
 mod common;
-use common::{test_all_keys_detailed, xkb_new_from_names};
+use common::{key_range, multiple_keys, single_key, test_all_keys, xkb_new_from_names};
 
 #[ignore]
 #[test_matrix([
@@ -30,22 +30,18 @@ fn caps_lock(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
 
-        // Define exception logic for this specific test
-        let caps_lock_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
-            match (loc, lay, key) {
-                ("ara", "mac-phonetic", 2..=11) => true,
-                // eg has inconsistent use so I go with my common sense
-                ("eg", "cop", 16..=26) => true,
-                ("eg", "cop", 30..=40) => true,
-                ("eg", "cop", 44..=50) => true,
-                ("eg", "cop", 53..=53) => true,
-                ("us", "3l-emacs", 3..=57) => true,
-                ("me", "latinunicodeyz", 45) => true, // TODO
-                _ => false,
-            }
-        };
+        // Define exception slice for this specific test
+        let caps_lock_exceptions = &[
+            ("ara", "mac-phonetic", key_range(2, 11)),
+            ("eg", "cop", key_range(16, 26)),
+            ("eg", "cop", key_range(30, 40)),
+            ("eg", "cop", key_range(44, 50)),
+            ("eg", "cop", single_key(53)),
+            ("us", "3l-emacs", key_range(3, 57)),
+            ("me", "latinunicodeyz", single_key(45)),
+        ];
 
-        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&caps_lock_exceptions));
+        test_all_keys(wkb, xkb, layout, caps_lock_exceptions);
     }
     // assert!(false);
 }
@@ -83,7 +79,7 @@ fn level2_caps(locale: &str) {
             continue;
         }
         // level 2
-        let i = wkb.modifiers.level2_code().unwrap();
+        let (i, _) = wkb.modifiers.level2_code().unwrap();
         xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(i, wkb::KeyDirection::Down);
         // caps
@@ -92,62 +88,60 @@ fn level2_caps(locale: &str) {
             wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
         }
 
-        // Define exception logic for level2_caps test
-        let level2_caps_exceptions = |loc: &str, lay: &str, key: u32| -> bool {
-            match (loc, lay, key) {
-                // Some of these layouts were basically bugged out in xkb
-                // so we just ignore them here, I checked an armenian keyboard online!
-                ("am", "eastern", 2) => true,
-                ("am", "eastern", 5..=7) => true,
-                ("am", "eastern-alt", 2) => true,
-                ("am", "eastern-alt", 5..=7) => true,
-                ("am", "western", 2) => true,
-                ("am", "western", 5..=7) => true,
-                // This testcase are needed as there are bugs in xkb at least from checking existing keyboards
-                ("by", "phonetic", 5) => true,
-                ("by", "phonetic", 7) => true,
-                // This testcase are needed as there are bugs in xkb at least from reading wanted output in the
-                // fr files
-                ("fr", "oss_latin9", 55) => true,
-                ("fr", "bepo_latin9", 55) => true,
-                ("fr", "mac", 83) => true,
-                ("be", "oss_latin9", 55) => true,
-                ("gr", "polytonic", 17) => true,
-                ("gr", "polytonic", 25) => true,
-                ("gr", "polytonic", 31) => true,
-                ("gr", "polytonic", 33) => true,
-                ("gr", "polytonic", 36) => true,
-                ("gr", "polytonic", 37) => true,
-                ("gr", "polytonic", 48) => true,
-                ("iq", "ku_ara", 16) => true,
-                ("iq", "ku_ara", 17) => true,
-                ("ir", "ku_ara", 16) => true,
-                ("ir", "ku_ara", 17) => true,
-                ("in", "iipa", 45) => true,
-                ("in", "iipa", 21) => true,
-                ("kz", "olpc", 43) => true,
-                ("kz", "latin", 47) => true,
-                ("lv", "adapted", 3) => true,
-                ("lv", "adapted", 5) => true,
-                ("lv", "adapted", 52) => true,
-                ("ru", "phonetic", 5) => true,
-                ("ru", "phonetic", 7) => true,
-                ("ru", "phonetic_winkeys", 5) => true,
-                ("ru", "phonetic_winkeys", 7) => true,
-                ("ru", "phonetic_YAZHERTY", 5) => true,
-                ("ru", "phonetic_YAZHERTY", 7) => true,
-                ("ru", "phonetic_dvorak", 5) => true,
-                ("ru", "phonetic_dvorak", 7) => true,
-                ("ru", "xal", k)
-                    if [4, 5, 7, 8, 9, 10, 17, 18, 19, 20, 26, 27, 40, 46, 51, 52].contains(&k) =>
-                {
-                    true
-                }
-                ("ru", "bak", k) if [3, 4, 5, 6, 8, 9, 13, 41, 43].contains(&k) => true,
-                _ => false,
-            }
-        };
+        // Define exception slice for level2_caps test
+        let level2_caps_exceptions = &[
+            ("am", "eastern", single_key(2)),
+            ("am", "eastern", key_range(5, 7)),
+            ("am", "eastern-alt", single_key(2)),
+            ("am", "eastern-alt", key_range(5, 7)),
+            ("am", "western", single_key(2)),
+            ("am", "western", key_range(5, 7)),
+            ("by", "phonetic", single_key(5)),
+            ("by", "phonetic", single_key(7)),
+            ("fr", "oss_latin9", single_key(55)),
+            ("fr", "bepo_latin9", single_key(55)),
+            ("fr", "mac", single_key(83)),
+            ("be", "oss_latin9", single_key(55)),
+            ("gr", "polytonic", single_key(17)),
+            ("gr", "polytonic", single_key(25)),
+            ("gr", "polytonic", single_key(31)),
+            ("gr", "polytonic", single_key(33)),
+            ("gr", "polytonic", single_key(36)),
+            ("gr", "polytonic", single_key(37)),
+            ("gr", "polytonic", single_key(48)),
+            ("iq", "ku_ara", single_key(16)),
+            ("iq", "ku_ara", single_key(17)),
+            ("ir", "ku_ara", single_key(16)),
+            ("ir", "ku_ara", single_key(17)),
+            ("in", "iipa", single_key(45)),
+            ("in", "iipa", single_key(21)),
+            ("kz", "olpc", single_key(43)),
+            ("kz", "latin", single_key(47)),
+            ("lv", "adapted", single_key(3)),
+            ("lv", "adapted", single_key(5)),
+            ("lv", "adapted", single_key(52)),
+            ("ru", "phonetic", single_key(5)),
+            ("ru", "phonetic", single_key(7)),
+            ("ru", "phonetic_winkeys", single_key(5)),
+            ("ru", "phonetic_winkeys", single_key(7)),
+            ("ru", "phonetic_YAZHERTY", single_key(5)),
+            ("ru", "phonetic_YAZHERTY", single_key(7)),
+            ("ru", "phonetic_dvorak", single_key(5)),
+            ("ru", "phonetic_dvorak", single_key(7)),
+            (
+                "ru",
+                "xal",
+                multiple_keys(vec![
+                    4, 5, 7, 8, 9, 10, 17, 18, 19, 20, 26, 27, 40, 46, 51, 52,
+                ]),
+            ),
+            (
+                "ru",
+                "bak",
+                multiple_keys(vec![3, 4, 5, 6, 8, 9, 13, 41, 43]),
+            ),
+        ];
 
-        test_all_keys_detailed(wkb, xkb, layout, locale, Some(&level2_caps_exceptions));
+        test_all_keys(wkb, xkb, layout, level2_caps_exceptions);
     }
 }

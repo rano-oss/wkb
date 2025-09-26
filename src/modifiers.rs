@@ -1,4 +1,8 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    backtrace::Backtrace,
+    collections::{BTreeMap, HashMap},
+    fmt,
+};
 
 // Key constants
 pub const LEFT_CTRL: u32 = 29;
@@ -183,11 +187,33 @@ impl ModKind {
 #[derive(Debug, Clone)]
 pub enum Modifier {
     Single(ModKind),
-    Leveled(HashMap<u8, ModKind>),
+    Leveled(BTreeMap<u8, ModKind>),
 }
 
 #[derive(Debug, Clone)]
 pub struct Modifiers(pub BTreeMap<u32, Modifier>);
+
+impl fmt::Display for Modifiers {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (code, modifier) in &self.0 {
+            write!(f, "code {}: ", code)?;
+            match modifier {
+                Modifier::Single(mod_kind) => {
+                    write!(f, "{:?}", mod_kind)?;
+                }
+                Modifier::Leveled(map) => {
+                    writeln!(f, "[")?;
+                    for (index, mod_kind) in map {
+                        writeln!(f, "   index {}: {:?}, ", index, mod_kind)?;
+                    }
+                    write!(f, "]")?;
+                }
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
 
 impl Default for Modifiers {
     fn default() -> Self {
@@ -274,9 +300,9 @@ impl Modifiers {
         match self.0.get_mut(&evdev_code) {
             Some(Modifier::Single(existing)) => {
                 if level == 0 {
-                    *existing = mod_kind;
+                    *existing = mod_kind.clone();
                 } else {
-                    let mut map = HashMap::new();
+                    let mut map = BTreeMap::new();
                     map.insert(0, existing.clone());
                     map.insert(level, mod_kind);
                     *self.0.get_mut(&evdev_code).unwrap() = Modifier::Leveled(map);
@@ -289,7 +315,7 @@ impl Modifiers {
                 if level == 0 {
                     self.0.insert(evdev_code, Modifier::Single(mod_kind));
                 } else {
-                    let mut map = HashMap::new();
+                    let mut map = BTreeMap::new();
                     map.insert(level, mod_kind);
                     self.0.insert(evdev_code, Modifier::Leveled(map));
                 }
@@ -331,27 +357,35 @@ impl Modifiers {
         self.level(ModType::Level2)
     }
 
-    pub fn level_code(&self, mod_type: ModType) -> Option<u32> {
-        self.0
-            .iter()
-            .find(|(_, modifier)| match modifier {
-                Modifier::Single(mod_kind) => mod_kind.get_modkind_from_modtype(mod_type).is_some(),
-                Modifier::Leveled(map) => map
-                    .values()
-                    .any(|mod_kind| mod_kind.get_modkind_from_modtype(mod_type).is_some()),
-            })
-            .map(|(code, _)| *code)
+    pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+        self.0.iter().find_map(|(code, modifier)| match modifier {
+            Modifier::Single(mod_kind) => {
+                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                    Some((*code, None))
+                } else {
+                    None
+                }
+            }
+            Modifier::Leveled(map) => {
+                for (level, mod_kind) in map {
+                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                        return Some((*code, Some(*level)));
+                    }
+                }
+                None
+            }
+        })
     }
 
-    pub fn level2_code(&self) -> Option<u32> {
+    pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
         self.level_code(ModType::Level2)
     }
 
-    pub fn level3_code(&self) -> Option<u32> {
+    pub fn level3_code(&self) -> Option<(u32, Option<u8>)> {
         self.level_code(ModType::Level3)
     }
 
-    pub fn level5_code(&self) -> Option<u32> {
+    pub fn level5_code(&self) -> Option<(u32, Option<u8>)> {
         self.level_code(ModType::Level5)
     }
 
@@ -395,6 +429,8 @@ impl Modifiers {
                 }
                 Modifier::Leveled(map) => {
                     if let Some(mod_kind) = map.get_mut(&level) {
+                        mod_kind.update(key_direction);
+                    } else if let Some(mod_kind) = map.get_mut(&0) {
                         mod_kind.update(key_direction);
                     } else {
                         return false;
