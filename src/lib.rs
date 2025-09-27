@@ -684,6 +684,10 @@ impl WKB {
                     }
                 }
                 self.level_keymap[4].insert(86, '<');
+                self.level_keymap[5].insert(55, '⋅');
+                self.level_keymap[5].insert(74, '−');
+                self.level_keymap[5].insert(86, '>');
+                self.level_keymap[5].insert(98, '∕');
             }
             ("de", Some("T3")) => {
                 self.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
@@ -751,6 +755,9 @@ impl WKB {
                 self.num_lock_keys.push(5);
                 self.num_lock_keys.push(6);
                 self.num_lock_keys.push(7);
+            }
+            ("ru", Some("ruintl_en")) => {
+                self.level_keymap[3].insert(36, 'Ø');
             }
             ("cm", Some("azerty")) => {
                 self.num_lock_keys.push(2);
