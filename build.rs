@@ -32,10 +32,13 @@ fn main() -> std::io::Result<()> {
         "trans", "sn",
     ];
     for locale in lang {
+        let layouts = match read_layouts(&path, Some(locale.to_string()), None) {
+            Some(l) => l,
+            None => continue,
+        };
         file.write_all(b"        (\"")?;
         file.write_all(locale.as_bytes())?;
         file.write_all(b"\", [\n")?;
-        let layouts = read_layouts(&path, Some(locale.to_string()), None);
         for layout in layouts {
             file.write_all(b"            (\"")?;
             file.write_all(layout.as_bytes())?;
@@ -72,16 +75,16 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
     .unwrap()
 }
 
-fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
+fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Option<Vec<String>> {
     let mut string_file = String::new();
     if let Some(fd) = fd {
         let mut file = File::from(fd);
-        file.read_to_string(&mut string_file)
-            .expect("Could not read file");
+        file.read_to_string(&mut string_file).ok()?;
     } else if let Some(locale) = locale {
-        string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
+        string_file = std::fs::read_to_string(&path.join(locale)).ok()?;
     }
-    let xkb = parse(&string_file).expect("neither names nor file set");
+    string_file = string_file.replace("symbols=[", "[");
+    let xkb = parse(&string_file).ok()?;
     let mut layouts = Vec::new();
     xkb.definitions.iter().for_each(|d| match &d.directive {
         Directive::XkbSymbols(src) => {
@@ -102,5 +105,5 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
         }
         _ => {}
     });
-    layouts
+    Some(layouts)
 }

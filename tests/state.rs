@@ -107,6 +107,7 @@ fn level3(locale: &str) {
             ("be", "oss_latin9", single_key(98)),
             ("fr", "oss_latin9", single_key(98)),
             ("fr", "bepo_latin9", single_key(98)),
+            ("ua", "winkeysenhanced", single_key(86)),
         ];
 
         test_all_keys(wkb, xkb, layout, level3_exceptions);
@@ -137,7 +138,10 @@ fn level4(locale: &str) {
         let (code, level) = wkb.modifiers.level2_code().unwrap();
         set_level(&mut wkb, &mut xkb, code, level);
 
-        let level4_exceptions = &[("de", "T3", single_key(86))];
+        let level4_exceptions = &[
+            ("de", "T3", single_key(86)),
+            ("ua", "winkeysenhanced", single_key(86)),
+        ];
 
         test_all_keys(wkb, xkb, layout, level4_exceptions);
     }

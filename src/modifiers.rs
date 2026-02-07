@@ -1,8 +1,4 @@
-use std::{
-    backtrace::Backtrace,
-    collections::{BTreeMap, HashMap},
-    fmt,
-};
+use std::{collections::BTreeMap, fmt};
 
 // Key constants
 pub const LEFT_CTRL: u32 = 29;

@@ -21,7 +21,7 @@ Todo list(tentative):
   - [ ] Compose support boolean
   - [ ] Compose Automagic
   - [ ] Tests
-- [ ] Add wayland specific functions
+- [x] Add wayland specific functions
 - [ ] Lightbulbs
 
 Performance improvements(?):

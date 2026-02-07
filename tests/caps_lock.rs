@@ -8,7 +8,7 @@ use xkbcommon::{
 mod common;
 use common::{key_range, multiple_keys, single_key, test_all_keys, xkb_new_from_names};
 
-#[ignore]
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -46,7 +46,7 @@ fn caps_lock(locale: &str) {
     // assert!(false);
 }
 
-#[ignore]
+// #[ignore]
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd",
     "be",
