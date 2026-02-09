@@ -22,7 +22,7 @@ Todo list(tentative):
   - [ ] Compose Automagic
   - [ ] Tests
 - [x] Add wayland specific functions
-- [ ] Lightbulbs
+- [x] Lightbulbs
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps

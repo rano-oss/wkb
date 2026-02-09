@@ -175,6 +175,20 @@ impl WKB {
         (depressed, latched, locked, group)
     }
 
+    pub fn leds_state(&self) -> u32 {
+        let mut leds = 0;
+        if self.modifiers.locked(NUM_LOCK) {
+            leds |= 1;
+        }
+        if self.modifiers.locked(CAPS_LOCK) {
+            leds |= 2;
+        }
+        if self.modifiers.locked(SCROLL_LOCK) {
+            leds |= 4;
+        }
+        leds
+    }
+
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
         if let Some(layout) = self.layouts.get(group as usize) {
             self.layout = layout.clone();
