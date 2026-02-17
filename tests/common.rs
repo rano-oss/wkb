@@ -47,8 +47,8 @@ pub fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb:
 /// This version allows for specifying exceptions where WKB and XKB are expected to differ.
 /// The exceptions are specified as tuples of (locale, layout, key_range_or_single_key).
 #[allow(dead_code)]
-pub fn test_all_keys(
-    wkb: WKB,
+pub fn test_all_keys<C: wkb::composer::Composer>(
+    wkb: WKB<C>,
     xkb: xkb::State,
     layout: String,
     exceptions: &[(&str, &str, KeyRange)],
@@ -131,7 +131,12 @@ pub fn multiple_keys(keys: Vec<u32>) -> KeyRange {
     KeyRange::Multiple(keys)
 }
 
-pub fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u8>) {
+pub fn set_level<C: wkb::composer::Composer>(
+    wkb: &mut WKB<C>,
+    xkb: &mut xkb::State,
+    code: u32,
+    level: Option<u8>,
+) {
     if let Some(level) = level {
         let mut modifiers = Vec::new();
         match level {

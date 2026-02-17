@@ -1,4 +1,4 @@
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 struct Node {
     next: Vec<(char, usize)>,
     emit: Option<char>,
@@ -18,10 +18,11 @@ pub enum ComposeState {
     Cancelled(String),
 }
 
-pub trait Composer {
+pub trait Composer: std::fmt::Debug {
     fn feed(&mut self, character: char) -> ComposeState;
 }
 
+#[derive(Debug, Clone)]
 pub struct ListComposer {
     nodes: Vec<Node>, // nodes[0] = root
     cur: usize,

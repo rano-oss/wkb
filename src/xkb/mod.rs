@@ -1,11 +1,15 @@
 use std::{
-    collections::{BTreeMap, HashMap},
-    fs::File,
-    io::Read,
+    collections::{BTreeMap, HashMap, HashSet},
+    fs::{self, File},
+    io::{self, BufRead, Read},
     os::fd::OwnedFd,
     path::Path,
 };
 
+use crate::composer::{Composer, ListComposer};
+use crate::modifiers::Modifiers;
+use crate::repeat::REPEAT_DEFAULT;
+use crate::REPEAT_KEYS;
 use regex::Regex;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
@@ -16,13 +20,102 @@ use crate::default_keymap::DEFAULT_MAP;
 use crate::modifiers::{ModKind, ModType, BACKSPACE, CAPS_LOCK, TAB};
 use crate::WKB;
 
+pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
+
 pub mod evdev_xkb;
 pub mod xkb_utf8;
 
 use evdev_xkb::XKBCODES_EVDEV;
 use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 
-pub fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
+fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
+    let compose_dir_path = Path::new("/usr/share/X11/locale/compose.dir");
+    if !compose_dir_path.exists() {
+        return None;
+    }
+
+    let file = fs::File::open(compose_dir_path).ok()?;
+    let reader = io::BufReader::new(file);
+
+    let mut compose_file_path = None;
+    for line in reader.lines() {
+        let line = line.ok()?;
+        if line.trim().starts_with('#') {
+            continue;
+        }
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 2 && parts[1] == locale {
+            compose_file_path = Some(parts[0].to_string());
+            break;
+        }
+    }
+
+    let compose_file_path = compose_file_path?;
+    let full_path = Path::new("/usr/share/X11/locale").join(compose_file_path);
+    let file = fs::File::open(full_path).ok()?;
+    let reader = io::BufReader::new(file);
+
+    let mut regular = ListComposer::new();
+    let mut compose_key = ListComposer::new();
+
+    for line in reader.lines() {
+        let line = line.ok()?;
+        if line.trim().starts_with('#') {
+            continue;
+        }
+        if let Some((keys_part, value_part)) = line.split_once(':') {
+            let keys_str = keys_part.trim();
+            let value_str = value_part.trim();
+
+            let mut keys: Vec<char> = Vec::new();
+            let mut is_multi_key = false;
+
+            for key in keys_str.split_whitespace() {
+                if key == "<Multi_key>" {
+                    if keys.is_empty() {
+                        is_multi_key = true;
+                    }
+                    continue;
+                }
+                let key_name = key.trim_start_matches('<').trim_end_matches('>');
+                if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(key_name) {
+                    keys.push(c);
+                } else if key_name.len() == 1 {
+                    keys.push(key_name.chars().next().unwrap());
+                }
+            }
+
+            if keys.is_empty() {
+                continue;
+            }
+
+            // Parse value
+            let out_char = if value_str.starts_with('"') && value_str.ends_with('"') {
+                let inner = &value_str[1..value_str.len() - 1];
+                // Handle basic escapes if needed, for now take chars
+                // If it's a string, ListComposer currently takes char.
+                // We'll take the first char if possible, or handle sequences if supported later.
+                // For most compose rules, it results in a single character.
+                inner.chars().next()
+            } else {
+                let val_name = value_str.trim();
+                XKBCODES_DEF_TO_UTF8.get(val_name).copied()
+            };
+
+            if let Some(out) = out_char {
+                if is_multi_key {
+                    compose_key.insert(&keys, out);
+                } else {
+                    regular.insert(&keys, out);
+                }
+            }
+        }
+    }
+
+    Some((regular, compose_key))
+}
+
+fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
     let mut string_file = String::new();
     if let Some(fd) = fd {
         let mut file = File::from(fd);
@@ -77,7 +170,7 @@ pub fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) ->
     layouts
 }
 
-pub fn parse_include(input: &str) -> (String, Option<String>) {
+fn parse_include(input: &str) -> (String, Option<String>) {
     let re = Regex::new(r"([\w]+)(?:\(([\w\-]+)\))?$").unwrap();
     let capture = re.captures(input).unwrap();
     (
@@ -86,7 +179,7 @@ pub fn parse_include(input: &str) -> (String, Option<String>) {
     )
 }
 
-pub fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
+fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
     let number = &s[1..];
 
     u32::from_str_radix(number, 16)
@@ -94,7 +187,7 @@ pub fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
         .and_then(std::char::from_u32)
 }
 
-pub fn hex_string_to_unicode_char(s: &str) -> Option<char> {
+fn hex_string_to_unicode_char(s: &str) -> Option<char> {
     let split_pos = s.char_indices().nth_back(4).unwrap().0;
     let number = &s[split_pos..];
 
@@ -103,15 +196,95 @@ pub fn hex_string_to_unicode_char(s: &str) -> Option<char> {
         .and_then(std::char::from_u32)
 }
 
-pub fn map_xkb(wkb: &mut WKB, path: &Path, locale: String, layout: Option<String>) {
+pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
+    let path = Path::new(XKB_SYMBOLS_PATH);
+    let layouts = read_layouts(path, Some(locale.clone()), None);
+    let layout = if let Some(layout) = layout {
+        layout
+    } else {
+        layouts[0].clone()
+    };
+    let (regular_composer, compose_key_composer) =
+        load_compose_table(&locale).unwrap_or_else(|| (ListComposer::new(), ListComposer::new()));
+
+    let mut wkb = new_wkb(
+        layouts,
+        layout.clone(),
+        Some(locale.clone()),
+        regular_composer,
+        compose_key_composer,
+    );
+    map_xkb(&mut wkb, path, locale.clone(), Some(layout.clone()));
+    fix_xkb_edge_cases(&mut wkb, locale, Some(layout));
+    wkb
+}
+
+pub fn new_from_string(string: String) -> WKB<ListComposer> {
+    let mut wkb = new_wkb(
+        Vec::new(),
+        "".to_string(),
+        None,
+        ListComposer::new(),
+        ListComposer::new(),
+    );
+    map_xkb_from_str(&mut wkb, &string, Path::new(XKB_SYMBOLS_PATH), None, None);
+    wkb
+}
+
+fn new_wkb(
+    layouts: Vec<String>,
+    layout: String,
+    locale: Option<String>,
+    regular_composer: ListComposer,
+    compose_key_composer: ListComposer,
+) -> WKB<ListComposer> {
+    let repeat_keys = if let Some(locale) = &locale {
+        if let Some(locale_map) = REPEAT_KEYS.get(locale.as_str()) {
+            if let Some(layout_set) = locale_map.get(layout.as_str()) {
+                layout_set.clone()
+            } else {
+                REPEAT_DEFAULT.clone()
+            }
+        } else {
+            REPEAT_DEFAULT.clone()
+        }
+    } else {
+        REPEAT_DEFAULT.clone()
+    };
+    WKB {
+        layouts,
+        layout,
+        locale,
+        regular_composer,
+        compose_key_composer,
+        level_keymap: Vec::with_capacity(8),
+        pressed_keys: HashSet::new(),
+        repeat_keys,
+        custom_case_map: None,
+        caps_is_level2: None,
+        modifiers: Modifiers::default(),
+        num_lock_keys: vec![
+            71, 72, 73, // 7, 8, 9
+            75, 76, 77, // 4, 5, 6
+            79, 80, 81, // 1, 2, 3
+            82, 83, // 0, .
+        ],
+        remap: HashMap::new(),
+        caps_lock_disabled: false,
+        caps_lock_level2_disabled: false,
+        right_left_shift_caps: false,
+    }
+}
+
+fn map_xkb<C: Composer>(wkb: &mut WKB<C>, path: &Path, locale: String, layout: Option<String>) {
     let Ok(file) = std::fs::read_to_string(&path.join(locale.clone())) else {
         return;
     };
     map_xkb_from_str(wkb, &file, path, Some(locale), layout);
 }
 
-pub fn map_xkb_from_str(
-    wkb: &mut WKB,
+fn map_xkb_from_str<C: Composer>(
+    wkb: &mut WKB<C>,
     file: &str,
     path: &Path,
     locale: Option<String>,
@@ -177,8 +350,8 @@ pub fn map_xkb_from_str(
     });
 }
 
-pub fn map_keys_and_modifiers(
-    wkb: &mut WKB,
+fn map_keys_and_modifiers<C: Composer>(
+    wkb: &mut WKB<C>,
     key: &xkb_parser::ast::KeyNames,
     evdev_code: &u32,
     layout: String,
@@ -396,7 +569,7 @@ pub fn map_keys_and_modifiers(
     }
 }
 
-pub fn fix_xkb_edge_cases(wkb: &mut WKB, locale: String, layout: Option<String>) {
+fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Option<String>) {
     //snowflake special case of bad design I don't want to support any other way!
     match (locale.as_str(), &layout.as_deref()) {
         ("de", Some("ru")) | ("de", Some("ru-recom")) | ("de", Some("ru-translit")) => {

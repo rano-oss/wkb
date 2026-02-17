@@ -1,14 +1,10 @@
-use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    path::Path,
-};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub use modifiers::KeyDirection;
-use modifiers::{level_index, Modifiers, *};
-use repeat::REPEAT_DEFAULT;
+use modifiers::{level_index, *};
 
-use composer::{ComposeState, Composer, UnicodeComposer};
-mod composer;
+pub use composer::{ComposeState, Composer, ListComposer, UnicodeComposer};
+pub mod composer;
 mod default_keymap;
 pub mod modifiers;
 mod repeat;
@@ -17,12 +13,13 @@ pub mod xkb;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
-pub struct WKB<C: Composer = UnicodeComposer> {
+pub struct WKB<C: Composer> {
     pub(crate) layouts: Vec<String>,
     pub(crate) layout: String,
     pub(crate) locale: Option<String>,
     pub level_keymap: Vec<BTreeMap<u32, char>>,
-    pub composer: C,
+    pub regular_composer: C,
+    pub compose_key_composer: C,
     pub(crate) pressed_keys: HashSet<u32>,
     pub(crate) repeat_keys: HashSet<u32>,
     pub custom_case_map: Option<HashMap<char, char>>,
@@ -35,92 +32,20 @@ pub struct WKB<C: Composer = UnicodeComposer> {
     pub(crate) right_left_shift_caps: bool,
 }
 
-impl WKB {
+impl WKB<ListComposer> {
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
-        let path = Path::new("/usr/share/X11/xkb/symbols/");
-        let layouts = xkb::read_layouts(path, Some(locale.clone()), None);
-        let layout = if let Some(layout) = layout {
-            layout
-        } else {
-            layouts[0].clone()
-        };
-        let repeat_keys = if let Some(locale_map) = REPEAT_KEYS.get(&locale.as_str()) {
-            if let Some(layout_set) = locale_map.get(&layout.as_str()) {
-                layout_set.clone()
-            } else {
-                REPEAT_DEFAULT.clone()
-            }
-        } else {
-            REPEAT_DEFAULT.clone()
-        };
-        let modifiers = Modifiers::default();
-        let mut wkb = Self {
-            layouts,
-            layout: layout.clone(),
-            locale: Some(locale.clone()),
-            composer: UnicodeComposer::new(),
-            level_keymap: Vec::with_capacity(8),
-            pressed_keys: HashSet::new(),
-            repeat_keys,
-            custom_case_map: None,
-            caps_is_level2: None,
-            modifiers,
-            num_lock_keys: vec![
-                71, 72, 73, // 7, 8, 9
-                75, 76, 77, // 4, 5, 6
-                79, 80, 81, // 1, 2, 3
-                82, 83, // 0, .
-            ],
-            remap: HashMap::new(),
-            caps_lock_disabled: false,
-            caps_lock_level2_disabled: false,
-            right_left_shift_caps: false,
-        };
-        xkb::map_xkb(&mut wkb, path, locale.clone(), Some(layout.clone()));
-        xkb::fix_xkb_edge_cases(&mut wkb, locale, Some(layout));
-        wkb
+        xkb::new_from_names(locale, layout)
     }
 
     pub fn new_from_string(string: String) -> Self {
-        let modifiers = Modifiers::default();
-        let repeat_keys = REPEAT_DEFAULT.clone();
-        let mut wkb = Self {
-            layouts: Vec::new(),
-            layout: "".to_string(),
-            locale: None,
-            composer: UnicodeComposer::new(),
-            level_keymap: Vec::with_capacity(8),
-            pressed_keys: HashSet::new(),
-            repeat_keys,
-            custom_case_map: None,
-            caps_is_level2: None,
-            modifiers,
-            num_lock_keys: vec![
-                71, 72, 73, // 7, 8, 9
-                75, 76, 77, // 4, 5, 6
-                79, 80, 81, // 1, 2, 3
-                82, 83, // 0, .
-            ],
-            remap: HashMap::new(),
-            caps_lock_disabled: false,
-            caps_lock_level2_disabled: false,
-            right_left_shift_caps: false,
-        };
-        xkb::map_xkb_from_str(
-            &mut wkb,
-            &string,
-            Path::new("/usr/share/X11/xkb/symbols/"),
-            None,
-            None,
-        );
-        wkb
+        xkb::new_from_string(string)
     }
 }
 
 impl<C: Composer> WKB<C> {
     pub fn get_keymap_string(&self) -> String {
         if let Some(locale) = &self.locale {
-            let path = Path::new("/usr/share/X11/xkb/symbols/");
+            let path = std::path::Path::new(xkb::XKB_SYMBOLS_PATH);
             std::fs::read_to_string(path.join(locale)).unwrap_or_default()
         } else {
             String::new()
@@ -277,7 +202,11 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn compose_feed(&mut self, character: char) -> ComposeState {
-        self.composer.feed(character)
+        if self.modifiers.level(ModType::Compose) {
+            self.compose_key_composer.feed(character)
+        } else {
+            self.regular_composer.feed(character)
+        }
     }
 
     pub fn layouts(&self) -> Vec<String> {

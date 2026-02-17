@@ -19,7 +19,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     xkb::State::new(&keymap)
 }
 
-fn test_all_keys(mut wkb: WKB, xkb: xkb::State) {
+fn test_all_keys<C: wkb::composer::Composer>(mut wkb: WKB<C>, xkb: xkb::State) {
     for i in 0..701 {
         let k1 = wkb.utf8(i);
         let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
