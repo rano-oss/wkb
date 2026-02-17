@@ -7,6 +7,8 @@ pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
 use repeat::REPEAT_DEFAULT;
 
+use composer::{ComposeState, Composer, UnicodeComposer};
+mod composer;
 mod default_keymap;
 pub mod modifiers;
 mod repeat;
@@ -14,28 +16,13 @@ pub mod xkb;
 
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ComposeStatus {
-    Idle,
-    Composing,
-    Composed,
-    Cancelled,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FeedResult {
-    Ignored,
-    Accepted,
-}
-
 #[derive(Debug, Clone)]
-pub struct WKB {
+pub struct WKB<C: Composer = UnicodeComposer> {
     pub(crate) layouts: Vec<String>,
     pub(crate) layout: String,
     pub(crate) locale: Option<String>,
     pub level_keymap: Vec<BTreeMap<u32, char>>,
-    pub(crate) compose_status: ComposeStatus,
-    pub(crate) compose_char: char,
+    pub composer: C,
     pub(crate) pressed_keys: HashSet<u32>,
     pub(crate) repeat_keys: HashSet<u32>,
     pub custom_case_map: Option<HashMap<char, char>>,
@@ -71,9 +58,8 @@ impl WKB {
             layouts,
             layout: layout.clone(),
             locale: Some(locale.clone()),
-            compose_status: ComposeStatus::Idle,
+            composer: UnicodeComposer::new(),
             level_keymap: Vec::with_capacity(8),
-            compose_char: char::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
             custom_case_map: None,
@@ -102,9 +88,8 @@ impl WKB {
             layouts: Vec::new(),
             layout: "".to_string(),
             locale: None,
-            compose_status: ComposeStatus::Idle,
+            composer: UnicodeComposer::new(),
             level_keymap: Vec::with_capacity(8),
-            compose_char: char::default(),
             pressed_keys: HashSet::new(),
             repeat_keys,
             custom_case_map: None,
@@ -130,7 +115,9 @@ impl WKB {
         );
         wkb
     }
+}
 
+impl<C: Composer> WKB<C> {
     pub fn get_keymap_string(&self) -> String {
         if let Some(locale) = &self.locale {
             let path = Path::new("/usr/share/X11/xkb/symbols/");
@@ -275,14 +262,13 @@ impl WKB {
         is_modifier
     }
 
-    pub fn process_key_event(&mut self, evdev_code: u32, pressed: bool) -> (Option<char>, bool) {
-        let direction = if pressed {
-            KeyDirection::Down
-        } else {
-            KeyDirection::Up
-        };
-        let is_modifier = self.update_key(evdev_code, direction);
-        let utf8 = if pressed && !is_modifier {
+    pub fn process_key_event(
+        &mut self,
+        evdev_code: u32,
+        key_direction: KeyDirection,
+    ) -> (Option<char>, bool) {
+        let is_modifier = self.update_key(evdev_code, key_direction);
+        let utf8 = if key_direction == KeyDirection::Down && !is_modifier {
             self.utf8(evdev_code)
         } else {
             None
@@ -290,49 +276,8 @@ impl WKB {
         (utf8, is_modifier)
     }
 
-    pub fn compose_feed(&mut self, character: char) -> FeedResult {
-        if unicode_normalization::char::is_combining_mark(character) {
-            match self.compose_status {
-                ComposeStatus::Idle | ComposeStatus::Composed | ComposeStatus::Cancelled => {
-                    self.compose_char = character;
-                    self.compose_status = ComposeStatus::Composing;
-                    FeedResult::Accepted
-                }
-                ComposeStatus::Composing => {
-                    if let Some(character) =
-                        unicode_normalization::char::compose(character, self.compose_char)
-                    {
-                        self.compose_char = character;
-                        FeedResult::Accepted
-                    } else {
-                        self.compose_status = ComposeStatus::Cancelled;
-                        FeedResult::Ignored
-                    }
-                }
-            }
-        } else if self.compose_status == ComposeStatus::Composing {
-            if let Some(character) =
-                unicode_normalization::char::compose(character, self.compose_char)
-            {
-                self.compose_status = ComposeStatus::Composed;
-                self.compose_char = character;
-                FeedResult::Accepted
-            } else {
-                self.compose_status = ComposeStatus::Cancelled;
-                FeedResult::Ignored
-            }
-        } else {
-            self.compose_status = ComposeStatus::Cancelled;
-            FeedResult::Ignored
-        }
-    }
-
-    pub fn compose_status(&self) -> ComposeStatus {
-        self.compose_status
-    }
-
-    pub fn compose_utf8(&self) -> char {
-        self.compose_char
+    pub fn compose_feed(&mut self, character: char) -> ComposeState {
+        self.composer.feed(character)
     }
 
     pub fn layouts(&self) -> Vec<String> {
