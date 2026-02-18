@@ -23,96 +23,340 @@ use crate::WKB;
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
 
 pub mod evdev_xkb;
+pub mod xkb_compose_map;
 pub mod xkb_utf8;
 
 use evdev_xkb::XKBCODES_EVDEV;
+use xkb_compose_map::XKB_COMPOSE_MAP;
 use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 
-fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
-    let compose_dir_path = Path::new("/usr/share/X11/locale/compose.dir");
-    if !compose_dir_path.exists() {
-        return None;
-    }
+const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
+/// Look up a locale name in `compose.dir` and return the compose file
+/// sub-path (e.g. `"en_US.UTF-8/Compose"`).  Returns `None` when no
+/// entry matches.
+fn lookup_compose_dir(locale: &str) -> Option<String> {
+    let compose_dir_path = Path::new(LOCALE_DIR).join("compose.dir");
     let file = fs::File::open(compose_dir_path).ok()?;
     let reader = io::BufReader::new(file);
 
-    let mut compose_file_path = None;
     for line in reader.lines() {
         let line = line.ok()?;
-        if line.trim().starts_with('#') {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        let parts: Vec<&str> = line.split_whitespace().collect();
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
         if parts.len() >= 2 && parts[1] == locale {
-            compose_file_path = Some(parts[0].to_string());
-            break;
+            return Some(parts[0].to_string());
         }
     }
+    None
+}
 
-    let compose_file_path = compose_file_path?;
-    let full_path = Path::new("/usr/share/X11/locale").join(compose_file_path);
-    let file = fs::File::open(full_path).ok()?;
+/// Resolve a short or partial locale name through
+/// `/usr/share/X11/locale/locale.alias`.
+///
+/// For example `"de"` → `"de_DE.ISO8859-1"`, `"ru"` → `"ru_RU.UTF-8"`.
+fn resolve_locale_alias(locale: &str) -> Option<String> {
+    let alias_path = Path::new(LOCALE_DIR).join("locale.alias");
+    let file = fs::File::open(alias_path).ok()?;
     let reader = io::BufReader::new(file);
 
-    let mut regular = ListComposer::new();
-    let mut compose_key = ListComposer::new();
-
     for line in reader.lines() {
         let line = line.ok()?;
-        if line.trim().starts_with('#') {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        if let Some((keys_part, value_part)) = line.split_once(':') {
-            let keys_str = keys_part.trim();
-            let value_str = value_part.trim();
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        if parts.len() >= 2 && parts[0] == locale {
+            return Some(parts[1].to_string());
+        }
+    }
+    None
+}
 
-            let mut keys: Vec<char> = Vec::new();
-            let mut is_multi_key = false;
+/// Load a compose table from a locale name by resolving it through
+/// `locale.alias` and `compose.dir`.
+///
+/// Resolution order:
+/// 1. Exact match in `compose.dir` (handles full locale names like
+///    `"en_US.UTF-8"`).
+/// 2. Resolve through `locale.alias` (handles short names like `"de"`
+///    → `"de_DE.ISO8859-1"`).  When the alias is a non-UTF-8 locale,
+///    **prefer the UTF-8 sibling** (e.g. `"de_DE.UTF-8"`) over the
+///    legacy locale so that modern compose tables are used.
+/// 3. Construct `"{lang}_{LANG}.UTF-8"` from a short code and try
+///    that in `compose.dir` (covers locales where locale.alias points
+///    nowhere useful).
+fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
+    let compose_file_path = resolve_compose_file(locale)?;
+    let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
+    Some(load_compose_from_path(&full_path))
+}
 
-            for key in keys_str.split_whitespace() {
-                if key == "<Multi_key>" {
-                    if keys.is_empty() {
-                        is_multi_key = true;
-                    }
-                    continue;
-                }
-                let key_name = key.trim_start_matches('<').trim_end_matches('>');
-                if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(key_name) {
-                    keys.push(c);
-                } else if key_name.len() == 1 {
-                    keys.push(key_name.chars().next().unwrap());
-                }
-            }
-
-            if keys.is_empty() {
-                continue;
-            }
-
-            // Parse value
-            let out_char = if value_str.starts_with('"') && value_str.ends_with('"') {
-                let inner = &value_str[1..value_str.len() - 1];
-                // Handle basic escapes if needed, for now take chars
-                // If it's a string, ListComposer currently takes char.
-                // We'll take the first char if possible, or handle sequences if supported later.
-                // For most compose rules, it results in a single character.
-                inner.chars().next()
-            } else {
-                let val_name = value_str.trim();
-                XKBCODES_DEF_TO_UTF8.get(val_name).copied()
-            };
-
-            if let Some(out) = out_char {
-                if is_multi_key {
-                    compose_key.insert(&keys, out);
-                } else {
-                    regular.insert(&keys, out);
-                }
-            }
+/// Resolve a locale name to the compose file sub-path (relative to
+/// `/usr/share/X11/locale/`) that should be used.
+///
+/// Returns e.g. `Some("en_US.UTF-8/Compose")` for locale `"de"`.
+/// Falls back to `"en_US.UTF-8"` when no locale-specific compose file
+/// can be found, matching xkbcommon's behaviour.  Returns `None` only
+/// if even the `en_US.UTF-8` fallback is missing (broken system).
+///
+/// This is the same resolution logic used by [`load_compose_table`],
+/// exposed publicly so tests can verify which compose file a given
+/// locale maps to.
+pub fn resolve_compose_file(locale: &str) -> Option<String> {
+    // 0. Hardcoded XKB layout name → compose.dir locale mapping
+    //    (covers layout names that locale.alias cannot resolve)
+    if let Some(&mapped_locale) = XKB_COMPOSE_MAP.get(locale) {
+        if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
+            return Some(compose_file);
         }
     }
 
-    Some((regular, compose_key))
+    // 1. Direct match
+    if let Some(compose_file) = lookup_compose_dir(locale) {
+        return Some(compose_file);
+    }
+
+    // 2. Resolve through locale.alias
+    if let Some(resolved) = resolve_locale_alias(locale) {
+        // 2a. If the alias resolved to a non-UTF-8 locale, try the
+        //     UTF-8 variant first so we get modern compose tables.
+        //     e.g. "de_DE.ISO8859-1" → "de_DE.UTF-8"
+        if let Some(dot_pos) = resolved.find('.') {
+            let base = &resolved[..dot_pos];
+            if !resolved[dot_pos..].eq_ignore_ascii_case(".UTF-8") {
+                let utf8_locale = format!("{}.UTF-8", base);
+                if let Some(compose_file) = lookup_compose_dir(&utf8_locale) {
+                    return Some(compose_file);
+                }
+            }
+        }
+
+        // 2b. Fall back to the alias locale itself
+        if let Some(compose_file) = lookup_compose_dir(&resolved) {
+            return Some(compose_file);
+        }
+    }
+
+    // 3. Heuristic: construct "{lang}_{LANG}.UTF-8" from a 2-3 letter code
+    //    e.g. "de" → "de_DE.UTF-8", "fr" → "fr_FR.UTF-8"
+    if locale.len() >= 2 && locale.len() <= 3 && locale.chars().all(|c| c.is_ascii_lowercase()) {
+        let upper = locale.to_ascii_uppercase();
+        let candidate = format!("{}_{}.UTF-8", locale, upper);
+        if let Some(compose_file) = lookup_compose_dir(&candidate) {
+            return Some(compose_file);
+        }
+    }
+
+    // 4. Final fallback: use en_US.UTF-8, matching xkbcommon behavior.
+    //    xkbcommon falls back to en_US.UTF-8 for any valid locale that
+    //    has no compose.dir entry, so we do the same rather than
+    //    maintaining a hardcoded list of fallback entries.
+    lookup_compose_dir("en_US.UTF-8")
+}
+
+/// Resolve a keysym name to a character.
+///
+/// Checks [`XKBCODES_DEF_TO_UTF8`] first, then handles single-character
+/// names (e.g. `a`, `Z`), and finally `Uxxxx` Unicode codepoint names
+/// (e.g. `U0226` → U+0226 Ȧ).
+fn resolve_keysym_char(name: &str) -> Option<char> {
+    if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(name) {
+        return Some(c);
+    }
+    if name.len() == 1 {
+        return name.chars().next();
+    }
+    // Handle Uxxxx / Uxxxxx / Uxxxxxx Unicode codepoint keysyms
+    if name.starts_with('U') && name.len() >= 5 && name.len() <= 7 {
+        let hex = &name[1..];
+        if hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            if let Ok(cp) = u32::from_str_radix(hex, 16) {
+                return char::from_u32(cp);
+            }
+        }
+    }
+    None
+}
+
+/// Load a compose file from the given path into a pair of
+/// [`ListComposer`]s (regular, compose-key).
+///
+/// Handles `include` directives recursively, skips entries where
+/// `Multi_key` appears in a non-first position, and falls back to
+/// resolving the keysym name after the quoted output string via
+/// [`XKBCODES_DEF_TO_UTF8`] when the quoted string contains an
+/// octal/hex escape or is empty.
+pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
+    let mut regular = ListComposer::new();
+    let mut compose_key = ListComposer::new();
+    parse_compose_into(path, &mut regular, &mut compose_key);
+    fix_compose_trie(&mut regular);
+    fix_compose_trie(&mut compose_key);
+    (regular, compose_key)
+}
+
+/// Post-process a compose trie to fix known issues that arise from
+/// flattening keysym-based compose entries into char-based entries.
+///
+/// 1. **Prefix conflicts**: when a shorter sequence (e.g. `U, comma`)
+///    has an emit value but also has children leading to longer
+///    sequences (e.g. `U, comma, E`), remove the shorter entry so
+///    that `feed()` keeps composing toward the longer match.  This
+///    matches xkbcommon's behaviour.
+///
+/// 2. **Keysym alias collision**: the keysyms `U223C` and `approximate`
+///    both resolve to char `∼` (U+223C).  The compose file maps
+///    `<Multi_key> <U223C> <slash>` → `≁` and
+///    `<Multi_key> <approximate> <slash>` → `≇`.  With last-wins
+///    insert semantics `≇` wins, but xkbcommon keeps them as separate
+///    keysym sequences and produces `≁` for the `U223C` keysym.
+///    Re-insert the xkbcommon-preferred entry so it wins.
+fn fix_compose_trie(composer: &mut ListComposer) {
+    // Fix 1: remove emit on entries that are prefixes of longer
+    // sequences (i.e. the node has children).  Walk every node: if it
+    // has both emit and children, clear emit.
+    // We need to use indices because we can't borrow mutably while
+    // iterating, but the node vec length is fixed after parsing.
+    for i in 0..composer.nodes.len() {
+        if !composer.nodes[i].next.is_empty() && composer.nodes[i].emit.is_some() {
+            composer.nodes[i].emit = None;
+        }
+    }
+
+    // Fix 2: keysym alias collision — force the xkbcommon-preferred
+    // value for `∼ /` → `≁` (U+2241 NOT TILDE).
+    composer.insert(&['∼', '/'], '≁');
+}
+
+/// Recursively parse a compose file into the given composers.
+fn parse_compose_into(path: &Path, regular: &mut ListComposer, compose_key: &mut ListComposer) {
+    let file = match fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return,
+    };
+    let reader = io::BufReader::new(file);
+
+    for line in reader.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => continue,
+        };
+        let trimmed = line.trim();
+
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        // Handle include directives recursively
+        if trimmed.starts_with("include") {
+            if let Some(start) = trimmed.find('"') {
+                if let Some(end) = trimmed[start + 1..].find('"') {
+                    let include_path = &trimmed[start + 1..start + 1 + end];
+                    parse_compose_into(Path::new(include_path), regular, compose_key);
+                }
+            }
+            continue;
+        }
+
+        if !trimmed.starts_with('<') {
+            continue;
+        }
+
+        // Parse: <key1> <key2> ... : "output" keysym_name # comment
+        let (keys_part, value_part) = match trimmed.split_once(':') {
+            Some(pair) => pair,
+            None => continue,
+        };
+
+        let keys_str = keys_part.trim();
+        let value_str = value_part.trim();
+
+        let mut keys: Vec<char> = Vec::new();
+        let mut is_multi_key = false;
+        let mut skip = false;
+
+        for token in keys_str.split_whitespace() {
+            let name = token.trim_start_matches('<').trim_end_matches('>');
+            if name == "Multi_key" {
+                if keys.is_empty() {
+                    is_multi_key = true;
+                } else {
+                    // Multi_key in a non-first position creates a hybrid
+                    // sequence we cannot represent.  Skip the entry.
+                    skip = true;
+                    break;
+                }
+                continue;
+            }
+            if let Some(c) = resolve_keysym_char(name) {
+                keys.push(c);
+            } else {
+                // Unresolvable keysym — skip entry
+                keys.clear();
+                break;
+            }
+        }
+
+        if skip || keys.is_empty() {
+            continue;
+        }
+
+        // Parse output: try quoted string first, fall back to keysym name
+        let out_char = parse_compose_output(value_str);
+
+        if let Some(out) = out_char {
+            if is_multi_key {
+                compose_key.insert(&keys, out);
+            } else {
+                regular.insert(&keys, out);
+            }
+        }
+    }
+}
+
+/// Extract the output character from the value part of a compose line.
+///
+/// Handles formats like:
+///   `"á"  aacute # LATIN SMALL LETTER A WITH ACUTE`
+///   `"\305"  Aring`
+///   `"á"`
+///
+/// Prefers the character from the quoted string when it is plain UTF-8.
+/// Falls back to resolving the keysym name (the token after the closing
+/// quote) via [`XKBCODES_DEF_TO_UTF8`].
+fn parse_compose_output(value_str: &str) -> Option<char> {
+    if !value_str.starts_with('"') {
+        // No quoted string — try the whole value as a keysym name
+        let name = value_str.trim();
+        return resolve_keysym_char(name);
+    }
+
+    let rest = &value_str[1..];
+    let end_quote = rest.find('"')?;
+    let inner = &rest[..end_quote];
+
+    // Accept the quoted character if it is NOT an octal/hex escape
+    if !inner.is_empty() && !inner.starts_with('\\') {
+        if let Some(c) = inner.chars().next() {
+            return Some(c);
+        }
+    }
+
+    // Fall back to the keysym name after the closing quote
+    let after_quote = rest[end_quote + 1..].trim();
+    if after_quote.is_empty() || after_quote.starts_with('#') {
+        return None;
+    }
+    let keysym_name = after_quote.split_whitespace().next()?;
+    if keysym_name.starts_with('#') {
+        return None;
+    }
+    resolve_keysym_char(keysym_name)
 }
 
 fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {

@@ -187,11 +187,7 @@ impl<C: Composer> WKB<C> {
         is_modifier
     }
 
-    pub fn process_key_event(
-        &mut self,
-        evdev_code: u32,
-        key_direction: KeyDirection,
-    ) -> (Option<char>, bool) {
+    pub fn key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> (Option<char>, bool) {
         let is_modifier = self.update_key(evdev_code, key_direction);
         let utf8 = if key_direction == KeyDirection::Down && !is_modifier {
             self.utf8(evdev_code)
@@ -199,6 +195,20 @@ impl<C: Composer> WKB<C> {
             None
         };
         (utf8, is_modifier)
+    }
+
+    pub fn key_compose(
+        &mut self,
+        evdev_code: u32,
+        key_direction: KeyDirection,
+    ) -> (Option<ComposeState>, bool) {
+        let is_modifier = self.update_key(evdev_code, key_direction);
+        let compose_state = if key_direction == KeyDirection::Down && !is_modifier {
+            self.utf8(evdev_code).map(|c| self.compose_feed(c))
+        } else {
+            None
+        };
+        (compose_state, is_modifier)
     }
 
     pub fn compose_feed(&mut self, character: char) -> ComposeState {

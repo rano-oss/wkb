@@ -1,7 +1,7 @@
 #[derive(Default, Debug, Clone)]
-struct Node {
-    next: Vec<(char, usize)>,
-    emit: Option<char>,
+pub(crate) struct Node {
+    pub(crate) next: Vec<(char, usize)>,
+    pub(crate) emit: Option<char>,
 }
 
 impl Node {
@@ -24,7 +24,7 @@ pub trait Composer: std::fmt::Debug {
 
 #[derive(Debug, Clone)]
 pub struct ListComposer {
-    nodes: Vec<Node>, // nodes[0] = root
+    pub(crate) nodes: Vec<Node>, // nodes[0] = root
     cur: usize,
     pending: Vec<char>,
 }

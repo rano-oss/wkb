@@ -16,13 +16,13 @@ Todo list(tentative):
 - [x] State keys tests
 - [ ] Num_lock tests
 - [ ] Caps_lock tests
-- [ ] Composing
-  - [ ] Compose Key
-  - [ ] Compose support boolean
-  - [ ] Compose Automagic
-  - [ ] Tests
+- [x] Composing
+  - [x] Compose Key
+  - [x] Compose Automagic
+  - [x] Tests
 - [x] Add wayland specific functions
 - [x] Lightbulbs
+- [ ] New keyboard format
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps
