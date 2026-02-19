@@ -187,14 +187,11 @@ pub enum Modifier {
 }
 
 #[derive(Debug, Clone)]
-pub struct Modifiers {
-    pub keys: BTreeMap<u32, Modifier>,
-    pub both_shift_caps: bool,
-}
+pub struct Modifiers(pub BTreeMap<u32, Modifier>);
 
 impl fmt::Display for Modifiers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (code, modifier) in &self.keys {
+        for (code, modifier) in &self.0 {
             write!(f, "code {}: ", code)?;
             match modifier {
                 Modifier::Single(mod_kind) => {
@@ -216,90 +213,87 @@ impl fmt::Display for Modifiers {
 
 impl Default for Modifiers {
     fn default() -> Self {
-        Self {
-            keys: BTreeMap::from([
-                (
-                    LEFT_CTRL,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    RIGHT_CTRL,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    LEFT_SHIFT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::Level2,
-                    }),
-                ),
-                (
-                    RIGHT_SHIFT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::Level2,
-                    }),
-                ),
-                (
-                    ALT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    ALTGR,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    LOGO,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    CAPS_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    NUM_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    SCROLL_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::None,
-                    }),
-                ),
-            ]),
-            both_shift_caps: false,
-        }
+        Self(BTreeMap::from([
+            (
+                LEFT_CTRL,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                RIGHT_CTRL,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                LEFT_SHIFT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::Level2,
+                }),
+            ),
+            (
+                RIGHT_SHIFT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::Level2,
+                }),
+            ),
+            (
+                ALT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                ALTGR,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                LOGO,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                CAPS_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                NUM_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                SCROLL_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::None,
+                }),
+            ),
+        ]))
     }
 }
 
 impl Modifiers {
     pub fn insert(&mut self, evdev_code: u32, mod_kind: ModKind, level: u8) {
-        match self.keys.get_mut(&evdev_code) {
+        match self.0.get_mut(&evdev_code) {
             Some(Modifier::Single(existing)) => {
                 if level == 0 {
                     *existing = mod_kind.clone();
@@ -307,7 +301,7 @@ impl Modifiers {
                     let mut map = BTreeMap::new();
                     map.insert(0, existing.clone());
                     map.insert(level, mod_kind);
-                    *self.keys.get_mut(&evdev_code).unwrap() = Modifier::Leveled(map);
+                    *self.0.get_mut(&evdev_code).unwrap() = Modifier::Leveled(map);
                 }
             }
             Some(Modifier::Leveled(map)) => {
@@ -315,18 +309,18 @@ impl Modifiers {
             }
             None => {
                 if level == 0 {
-                    self.keys.insert(evdev_code, Modifier::Single(mod_kind));
+                    self.0.insert(evdev_code, Modifier::Single(mod_kind));
                 } else {
                     let mut map = BTreeMap::new();
                     map.insert(level, mod_kind);
-                    self.keys.insert(evdev_code, Modifier::Leveled(map));
+                    self.0.insert(evdev_code, Modifier::Leveled(map));
                 }
             }
         }
     }
 
     pub fn level(&self, mod_type: ModType) -> bool {
-        self.keys
+        self.0
             .values()
             .find(|modifier| match modifier {
                 Modifier::Single(mod_kind) => {
@@ -360,25 +354,23 @@ impl Modifiers {
     }
 
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        self.keys
-            .iter()
-            .find_map(|(code, modifier)| match modifier {
-                Modifier::Single(mod_kind) => {
-                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                        Some((*code, None))
-                    } else {
-                        None
-                    }
-                }
-                Modifier::Leveled(map) => {
-                    for (level, mod_kind) in map {
-                        if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                            return Some((*code, Some(*level)));
-                        }
-                    }
+        self.0.iter().find_map(|(code, modifier)| match modifier {
+            Modifier::Single(mod_kind) => {
+                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                    Some((*code, None))
+                } else {
                     None
                 }
-            })
+            }
+            Modifier::Leveled(map) => {
+                for (level, mod_kind) in map {
+                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                        return Some((*code, Some(*level)));
+                    }
+                }
+                None
+            }
+        })
     }
 
     pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
@@ -394,7 +386,7 @@ impl Modifiers {
     }
 
     pub fn unlatch(&mut self) {
-        self.keys.values_mut().for_each(|modifier| match modifier {
+        self.0.values_mut().for_each(|modifier| match modifier {
             Modifier::Single(mod_kind) => {
                 mod_kind.unlatch();
             }
@@ -407,7 +399,7 @@ impl Modifiers {
     }
 
     pub fn pressed(&self, evdev_code: u32) -> bool {
-        self.keys
+        self.0
             .get(&evdev_code)
             .is_some_and(|modifier| match modifier {
                 Modifier::Single(mod_kind) => *mod_kind.pressed(),
@@ -416,7 +408,7 @@ impl Modifiers {
     }
 
     pub fn locked(&self, evdev_code: u32) -> bool {
-        self.keys
+        self.0
             .get(&evdev_code)
             .is_some_and(|modifier| match modifier {
                 Modifier::Single(mod_kind) => mod_kind.locked(),
@@ -425,21 +417,18 @@ impl Modifiers {
     }
 
     pub fn caps_active(&self) -> bool {
-        let caps_is_lock = matches!(
-            self.keys.get(&CAPS_LOCK),
+        matches!(
+            self.0.get(&CAPS_LOCK),
             Some(Modifier::Single(ModKind::Lock {
                 mod_type: ModType::None,
                 ..
             }))
-        );
-        caps_is_lock
-            && (self.locked(CAPS_LOCK)
-                || (self.both_shift_caps && self.pressed(RIGHT_SHIFT) && self.pressed(LEFT_SHIFT)))
+        ) && self.locked(CAPS_LOCK)
     }
 
     pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let level = level_index(self.level5(), self.level3(), self.level2()) as u8;
-        if let Some(modifier) = self.keys.get_mut(&evdev_code) {
+        if let Some(modifier) = self.0.get_mut(&evdev_code) {
             match modifier {
                 Modifier::Single(mod_kind) => {
                     mod_kind.update(key_direction);

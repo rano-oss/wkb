@@ -1214,12 +1214,12 @@ fn map_keys_and_modifiers<C: Composer>(
             wkb.level_keymap[1].insert(CAPS_LOCK, value);
             // Neutralize CAPS_LOCK modifier so is_caps_lock_modifier() returns false
             wkb.modifiers
-                .keys
+                .0
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         } else if key.values.first().is_some_and(|k| k.content == "Tab") {
             wkb.remap.insert(*evdev_code, TAB);
             wkb.modifiers
-                .keys
+                .0
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         }
     }
@@ -1291,27 +1291,15 @@ fn map_keys_and_modifiers<C: Composer>(
                     if id == "CAPS" {
                         wkb.remap.insert(*evdev_code, 29);
                         wkb.modifiers
-                            .keys
+                            .0
                             .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
                     }
                 }
-                ("Shift_L", _) => {
+                ("Shift_L", _) | ("Shift_R", _) => {
                     wkb.modifiers.insert(
                         *evdev_code,
-                        ModKind::Lock {
+                        ModKind::Pressed {
                             pressed: false,
-                            locked: 0,
-                            mod_type: ModType::Level2,
-                        },
-                        i as u8,
-                    );
-                }
-                ("Shift_R", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
                             mod_type: ModType::Level2,
                         },
                         i as u8,
@@ -1402,9 +1390,7 @@ fn map_keys_and_modifiers<C: Composer>(
                         i as u8,
                     );
                 }
-                (_, "rshift_both_shiftlock") | (_, "lshift_both_shiftlock") => {
-                    wkb.modifiers.both_shift_caps = true;
-                }
+
                 (_, "bksl_switch") => {
                     wkb.modifiers.insert(
                         *evdev_code,
