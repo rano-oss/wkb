@@ -10,6 +10,7 @@ use crate::composer::{Composer, ListComposer};
 use crate::modifiers::Modifiers;
 use crate::repeat::REPEAT_DEFAULT;
 use crate::REPEAT_KEYS;
+
 use regex::Regex;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
@@ -31,6 +32,198 @@ use xkb_compose_map::XKB_COMPOSE_MAP;
 use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
+
+/// Temporary state used only during XKB keymap construction.
+/// These fields are consumed by `build_caps_lock_table` and then discarded.
+struct XkbBuildState {
+    /// Per-(level, evdev_code) pairs whose keysyms originated from BMP
+    /// Unicode keysyms (XKB keysym range 0x01000000–0x0100FFFF, i.e.
+    /// `Uxxxx` or `0x0100xxxx` notation). xkbcommon does NOT apply caps
+    /// lock post-process uppercasing to these keysyms, unlike standard
+    /// named keysyms that map to the same codepoints. Tracked per-level
+    /// because a single key can mix standard and Unicode keysyms across
+    /// levels (e.g. `z` at level 0, `U0A01` at level 1).
+    bmp_unicode_keys: HashSet<(usize, u32)>,
+    /// Global default key type for this layout (from `key.type[group1] = "..."`).
+    default_key_type: Option<String>,
+    /// Per-key explicit type declarations (from `type[Group1] = "..."` within keys).
+    key_types: HashMap<u32, String>,
+}
+
+impl XkbBuildState {
+    fn new() -> Self {
+        Self {
+            bmp_unicode_keys: HashSet::new(),
+            default_key_type: None,
+            key_types: HashMap::new(),
+        }
+    }
+}
+
+/// Unicode simple uppercase mapping for characters where Rust's
+/// `char::to_uppercase()` (full case mapping) expands to multiple
+/// codepoints or doesn't map at all. xkbcommon's `xkb_keysym_to_upper`
+/// uses simple mapping from UnicodeData.txt, which includes mathematical
+/// alphanumeric symbols that Rust's standard library doesn't handle.
+fn simple_uppercase(c: char) -> Option<char> {
+    match c {
+        'ß' => Some('ẞ'), // U+00DF → U+1E9E
+        'ﬀ' => None,      // U+FB00: no simple uppercase
+        'ﬁ' => None,      // U+FB01: no simple uppercase
+        'ﬂ' => None,      // U+FB02: no simple uppercase
+        'ﬃ' => None,      // U+FB03: no simple uppercase
+        'ﬄ' => None,      // U+FB04: no simple uppercase
+        'ﬅ' => None,      // U+FB05: no simple uppercase
+        'ﬆ' => None,      // U+FB06: no simple uppercase
+        _ => math_uppercase(c),
+    }
+}
+
+/// Uppercase mapping for Mathematical Alphanumeric Symbols (U+1D400–U+1D7FF).
+///
+/// Rust's `char::to_uppercase()` doesn't handle these because they have
+/// `<font>` decomposition type, but xkbcommon's `xkb_keysym_to_upper`
+/// uses the Simple_Uppercase_Mapping from UnicodeData.txt which does
+/// include them. Each style (bold, italic, double-struck, etc.) has
+/// lowercase letters at a fixed offset from their uppercase counterparts,
+/// except where pre-existing Unicode characters replace some uppercase
+/// slots (e.g., ℂ U+2102 instead of 𝔺).
+fn math_uppercase(c: char) -> Option<char> {
+    let cp = c as u32;
+    // Mathematical Bold: a-z 1D41A–1D433 → A-Z 1D400–1D419
+    if (0x1D41A..=0x1D433).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Italic: a-z 1D44E–1D467 → A-Z 1D434–1D44D
+    // (h at 1D455 is replaced by ℎ U+210E, but lowercase h maps to 1D43B)
+    if (0x1D44E..=0x1D467).contains(&cp) {
+        let upper = cp - 26;
+        return char::from_u32(upper);
+    }
+    // Mathematical Bold Italic: a-z 1D482–1D49B → A-Z 1D468–1D481
+    if (0x1D482..=0x1D49B).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Script: a-z 1D4B6–1D4CF → A-Z 1D49C–1D4B5
+    // (gaps: B→ℬ U+212C, E→ℰ U+2130, F→ℱ U+2131, H→ℋ U+210B,
+    //  I→ℐ U+2110, L→ℒ U+2112, M→ℳ U+2133, R→ℛ U+211B,
+    //  e→ℯ U+212F, g→ℊ U+210A, o→ℴ U+2134)
+    if (0x1D4B6..=0x1D4CF).contains(&cp) {
+        let idx = cp - 0x1D4B6; // 0-based index (a=0..z=25)
+        let upper = match idx {
+            1 => 0x212C,  // b→ℬ (B is at U+212C)
+            4 => 0x2130,  // e→ℰ (E is at U+2130)
+            5 => 0x2131,  // f→ℱ (F is at U+2131)
+            7 => 0x210B,  // h→ℋ (H is at U+210B)
+            8 => 0x2110,  // i→ℐ (I is at U+2110)
+            11 => 0x2112, // l→ℒ (L is at U+2112)
+            12 => 0x2133, // m→ℳ (M is at U+2133)
+            17 => 0x211B, // r→ℛ (R is at U+211B)
+            _ => cp - 26,
+        };
+        return char::from_u32(upper);
+    }
+    // Mathematical Bold Script: a-z 1D4EA–1D503 → A-Z 1D4D0–1D4E9
+    if (0x1D4EA..=0x1D503).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Fraktur: a-z 1D51E–1D537 → A-Z 1D504–1D51D
+    // (gaps: C→ℭ U+212D, H→ℌ U+210C, I→ℑ U+2111, R→ℜ U+211C, Z→ℨ U+2128)
+    if (0x1D51E..=0x1D537).contains(&cp) {
+        let idx = cp - 0x1D51E;
+        let upper = match idx {
+            2 => 0x212D,  // c→ℭ
+            7 => 0x210C,  // h→ℌ
+            8 => 0x2111,  // i→ℑ
+            17 => 0x211C, // r→ℜ
+            25 => 0x2128, // z→ℨ
+            _ => cp - 26,
+        };
+        return char::from_u32(upper);
+    }
+    // Mathematical Double-Struck: a-z 1D552–1D56B → A-Z 1D538–1D551
+    // (gaps: C→ℂ U+2102, H→ℍ U+210D, N→ℕ U+2115, P→ℙ U+2119,
+    //  Q→ℚ U+211A, R→ℝ U+211D, Z→ℤ U+2124)
+    if (0x1D552..=0x1D56B).contains(&cp) {
+        let idx = cp - 0x1D552;
+        let upper = match idx {
+            2 => 0x2102,  // c→ℂ
+            7 => 0x210D,  // h→ℍ
+            13 => 0x2115, // n→ℕ
+            15 => 0x2119, // p→ℙ
+            16 => 0x211A, // q→ℚ
+            17 => 0x211D, // r→ℝ
+            25 => 0x2124, // z→ℤ
+            _ => cp - 26,
+        };
+        return char::from_u32(upper);
+    }
+    // Mathematical Bold Fraktur: a-z 1D586–1D59F → A-Z 1D56C–1D585
+    if (0x1D586..=0x1D59F).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif: a-z 1D5BA–1D5D3 → A-Z 1D5A0–1D5B9
+    if (0x1D5BA..=0x1D5D3).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif Bold: a-z 1D5EE–1D607 → A-Z 1D5D4–1D5ED
+    if (0x1D5EE..=0x1D607).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif Italic: a-z 1D622–1D63B → A-Z 1D608–1D621
+    if (0x1D622..=0x1D63B).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif Bold Italic: a-z 1D656–1D66F → A-Z 1D63C–1D655
+    if (0x1D656..=0x1D66F).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Monospace: a-z 1D68A–1D6A3 → A-Z 1D670–1D689
+    if (0x1D68A..=0x1D6A3).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Bold Greek: α-ω 1D6C2–1D6DA → Α-Ω 1D6A8–1D6C0
+    // (offset 26 for 25 letters, ϑ at 1D6DD, ϰ at 1D6DE etc. are extras)
+    if (0x1D6C2..=0x1D6DA).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Italic Greek: α-ω 1D6FC–1D714 → Α-Ω 1D6E2–1D6FA
+    if (0x1D6FC..=0x1D714).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Bold Italic Greek: α-ω 1D736–1D74E → Α-Ω 1D71C–1D734
+    if (0x1D736..=0x1D74E).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif Bold Greek: α-ω 1D770–1D788 → Α-Ω 1D756–1D76E
+    if (0x1D770..=0x1D788).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    // Mathematical Sans-Serif Bold Italic Greek: α-ω 1D7AA–1D7C2 → Α-Ω 1D790–1D7A8
+    if (0x1D7AA..=0x1D7C2).contains(&cp) {
+        return char::from_u32(cp - 26);
+    }
+    None
+}
+
+/// Apply uppercase for caps lock post-processing.
+/// Uses Unicode simple case mapping (single codepoint only), matching
+/// xkbcommon's `xkb_keysym_to_upper` behavior.
+fn caps_uppercase(c: char) -> char {
+    // Try standard uppercase — use it if it maps to a single codepoint
+    // that is different from the input.
+    let mut upper_iter = c.to_uppercase();
+    if let Some(upper) = upper_iter.next() {
+        if upper_iter.next().is_none() && upper != c {
+            return upper;
+        }
+    }
+    // Fallback: Unicode simple case mapping for chars where Rust's full
+    // case mapping expands to multiple codepoints, returns the same char
+    // (e.g., mathematical symbols), or a single uppercase codepoint
+    // exists (e.g., ß → ẞ, 𝕨 → 𝕎).
+    simple_uppercase(c).unwrap_or(c)
+}
 
 /// Look up a locale name in `compose.dir` and return the compose file
 /// sub-path (e.g. `"en_US.UTF-8/Compose"`).  Returns `None` when no
@@ -431,6 +624,17 @@ fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
         .and_then(std::char::from_u32)
 }
 
+/// Check whether a `Uxxxx` keysym string represents a Latin-1 Unicode keysym
+/// that xkbcommon would NOT normalise to a named keysym.
+///
+/// In practice this never returns `true`: xkbcommon normalises `Uxxxx` with
+/// codepoint ≤ 0xFF to the named keysym (which IS uppercased), and codepoints
+/// > 0xFF become Unicode keysyms where `xkb_keysym_to_upper` works correctly.
+/// So `Uxxxx` notation never produces a "non-uppercasable" keysym.
+fn is_latin1_unicode_keysym_u(_s: &str) -> bool {
+    false
+}
+
 fn hex_string_to_unicode_char(s: &str) -> Option<char> {
     let split_pos = s.char_indices().nth_back(4).unwrap().0;
     let number = &s[split_pos..];
@@ -438,6 +642,22 @@ fn hex_string_to_unicode_char(s: &str) -> Option<char> {
     u32::from_str_radix(number, 16)
         .ok()
         .and_then(std::char::from_u32)
+}
+
+/// Check whether a `0x...` hex keysym string represents a Latin-1 Unicode
+/// keysym (keysym value in range 0x01000000–0x010000FF).
+///
+/// xkbcommon's `xkb_keysym_to_upper` returns these keysyms **unchanged**
+/// because `XConvertCase` for Unicode keysyms in the Latin-1 codepoint range
+/// (≤ 0xFF) does not perform case conversion. Codepoints > 0xFF are handled
+/// correctly by `xkb_keysym_to_upper`, so only the Latin-1 range needs to be
+/// excluded from post-process uppercasing.
+fn is_latin1_unicode_keysym_hex(s: &str) -> bool {
+    if let Ok(keysym) = u32::from_str_radix(&s[2..], 16) {
+        (0x01000000..=0x010000FF).contains(&keysym)
+    } else {
+        false
+    }
 }
 
 pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
@@ -458,8 +678,21 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         regular_composer,
         compose_key_composer,
     );
-    map_xkb(&mut wkb, path, locale.clone(), Some(layout.clone()));
+    let mut bs = XkbBuildState::new();
+    map_xkb(
+        &mut wkb,
+        &mut bs,
+        path,
+        locale.clone(),
+        Some(layout.clone()),
+    );
     fix_xkb_edge_cases(&mut wkb, locale, Some(layout));
+    wkb.caps_lock_table = build_caps_lock_table(
+        &wkb.level_keymap,
+        &bs.key_types,
+        &bs.default_key_type,
+        &bs.bmp_unicode_keys,
+    );
     wkb
 }
 
@@ -471,8 +704,343 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         ListComposer::new(),
         ListComposer::new(),
     );
-    map_xkb_from_str(&mut wkb, &string, Path::new(XKB_SYMBOLS_PATH), None, None);
+    let mut bs = XkbBuildState::new();
+    map_xkb_from_str(
+        &mut wkb,
+        &mut bs,
+        &string,
+        Path::new(XKB_SYMBOLS_PATH),
+        None,
+        None,
+    );
+    wkb.caps_lock_table = build_caps_lock_table(
+        &wkb.level_keymap,
+        &bs.key_types,
+        &bs.default_key_type,
+        &bs.bmp_unicode_keys,
+    );
     wkb
+}
+
+/// How caps lock affects a key, derived from its XKB key type.
+enum CapsClass {
+    /// Lock toggles the level2 bit at all levels (ALPHABETIC types).
+    /// Levels 0↔1, 2↔3, 4↔5, 6↔7.
+    Alphabetic,
+    /// Lock toggles at levels 0-1, post-process uppercase at levels 2+
+    /// (SEMIALPHABETIC types).
+    SemiAlphabetic,
+    /// Lock not consumed — post-process uppercase at all levels
+    /// (TWO_LEVEL, FOUR_LEVEL, ONE_LEVEL, etc.).
+    PostProcess,
+    /// Lock redirects level 0 to a specific target level; other levels
+    /// are unaffected (FOUR_LEVEL_PLUS_LOCK).
+    PlusLock(usize),
+    /// Lock redirects level 0 to level 3 (with post-process), shift+lock
+    /// to level 0 (SEPARATE_CAPS_AND_SHIFT_ALPHABETIC).
+    SeparateCapsShift,
+}
+
+/// Determine the caps lock behavior class for a key type name.
+fn key_type_caps_class(type_name: &str) -> CapsClass {
+    match type_name {
+        // Fully alphabetic: Lock toggles level at all modifier combinations
+        "ALPHABETIC"
+        | "FOUR_LEVEL_ALPHABETIC"
+        | "EIGHT_LEVEL_ALPHABETIC"
+        | "EIGHT_LEVEL_ALPHABETIC_WITH_LEVEL5_LOCK"
+        | "EIGHT_LEVEL_BY_CTRL" => CapsClass::Alphabetic,
+
+        // Semi-alphabetic: Lock toggles at base levels, preserved at level3+
+        "FOUR_LEVEL_SEMIALPHABETIC" | "EIGHT_LEVEL_SEMIALPHABETIC" => CapsClass::SemiAlphabetic,
+
+        // Lock → Level5 (index 4); other levels unaffected
+        "FOUR_LEVEL_PLUS_LOCK" => CapsClass::PlusLock(4),
+
+        // Lock → Level4 (index 3) + post-process; Shift+Lock → Level1 (index 0)
+        "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC" => CapsClass::SeparateCapsShift,
+
+        // Everything else: Lock not in modifiers, no level toggle
+        _ => CapsClass::PostProcess,
+    }
+}
+
+/// Build the caps lock table from level_keymap and key type information.
+///
+/// For each key at each level, determines what char caps lock should produce:
+///   - **Alphabetic keys**: toggle the level2 bit (0↔1, 2↔3, …)
+///   - **Semialphabetic keys**: toggle at levels 0-1, uppercase at levels 2+
+///   - **PlusLock keys**: redirect level 0 to a target level (e.g. level 4)
+///   - **SeparateCapsShift keys**: redirect level 0→3, level 1→0
+///   - **Non-alphabetic keys**: uppercase post-processing
+///   - **No type info**: auto-detect from symbols (level0/level1 case pair)
+///
+/// `bmp_unicode_keys` tracks (level, evdev_code) entries whose keysyms
+/// originated from Latin-1 Unicode keysyms (0x01000000–0x010000FF) specified
+/// via `0x...` hex notation.  xkbcommon's `xkb_keysym_to_upper` returns these
+/// unchanged, so they must be excluded from both case-pair detection and
+/// post-process uppercasing.
+fn build_caps_lock_table(
+    level_keymap: &[BTreeMap<u32, char>],
+    key_types: &HashMap<u32, String>,
+    _default_key_type: &Option<String>,
+    bmp_unicode_keys: &HashSet<(usize, u32)>,
+) -> Vec<BTreeMap<u32, char>> {
+    if level_keymap.len() < 2 {
+        return Vec::new();
+    }
+
+    let num_levels = level_keymap.len();
+    let mut table: Vec<BTreeMap<u32, char>> = vec![BTreeMap::new(); num_levels];
+
+    // Collect all evdev codes that appear in any level
+    let mut all_codes: HashSet<u32> = HashSet::new();
+    for level in level_keymap {
+        all_codes.extend(level.keys());
+    }
+
+    // Propagate bmp_unicode_keys: if (level_X, key) is flagged and another
+    // level_Y has the same char value for the same key, treat level_Y as
+    // also non-uppercasable.  This handles keys defined with fewer keysyms
+    // than the layout has levels (e.g. ONE_LEVEL keys whose value leaks
+    // into higher levels via default maps).
+    let mut effective_bmp = bmp_unicode_keys.clone();
+    for &evdev_code in &all_codes {
+        // Collect chars from flagged levels for this key
+        let mut flagged_chars: HashSet<char> = HashSet::new();
+        for level in 0..num_levels {
+            if bmp_unicode_keys.contains(&(level, evdev_code)) {
+                if let Some(&c) = level_keymap[level].get(&evdev_code) {
+                    flagged_chars.insert(c);
+                }
+            }
+        }
+        if !flagged_chars.is_empty() {
+            for level in 0..num_levels {
+                if !effective_bmp.contains(&(level, evdev_code)) {
+                    if let Some(&c) = level_keymap[level].get(&evdev_code) {
+                        if flagged_chars.contains(&c) {
+                            effective_bmp.insert((level, evdev_code));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for &evdev_code in &all_codes {
+        // Use only per-key types (already includes the scoped default_key_type
+        // applied during parsing). Keys without an entry fall back to auto-detect.
+        let caps_class = match key_types.get(&evdev_code) {
+            Some(name) => key_type_caps_class(name),
+            None => {
+                // Auto-detect: match xkbcommon's default type inference.
+                // If level0 is lowercase and level1 is uppercase, it's a case pair.
+                // For 2-level keys → ALPHABETIC, for 4+ level keys → SEMIALPHABETIC.
+                if is_case_pair(level_keymap, evdev_code, &effective_bmp) {
+                    if num_levels <= 2 {
+                        CapsClass::Alphabetic
+                    } else {
+                        CapsClass::SemiAlphabetic
+                    }
+                } else {
+                    CapsClass::PostProcess
+                }
+            }
+        };
+
+        match caps_class {
+            CapsClass::Alphabetic => {
+                // Lock toggles the level2 bit at all levels
+                // level0 ↔ level1, level2 ↔ level3, level4 ↔ level5, level6 ↔ level7
+                for pair_base in (0..num_levels).step_by(2) {
+                    let pair_shift = pair_base + 1;
+                    if pair_shift >= num_levels {
+                        break;
+                    }
+                    let base_char = level_keymap[pair_base].get(&evdev_code).copied();
+                    let shift_char = level_keymap[pair_shift].get(&evdev_code).copied();
+                    match (base_char, shift_char) {
+                        (Some(bc), Some(sc)) if bc != sc => {
+                            table[pair_base].insert(evdev_code, sc);
+                            table[pair_shift].insert(evdev_code, bc);
+                        }
+                        // One level has a char but the other doesn't (e.g.
+                        // modifier at base, printable at shift): still toggle
+                        // so that caps lock at the missing level produces the
+                        // existing level's char.
+                        (None, Some(sc)) => {
+                            table[pair_base].insert(evdev_code, sc);
+                        }
+                        (Some(bc), None) => {
+                            table[pair_shift].insert(evdev_code, bc);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            CapsClass::SemiAlphabetic => {
+                // Toggle at levels 0-1
+                let base_char = level_keymap[0].get(&evdev_code).copied();
+                let shift_char = level_keymap[1].get(&evdev_code).copied();
+                match (base_char, shift_char) {
+                    (Some(bc), Some(sc)) if bc != sc => {
+                        table[0].insert(evdev_code, sc);
+                        table[1].insert(evdev_code, bc);
+                    }
+                    (None, Some(sc)) => {
+                        table[0].insert(evdev_code, sc);
+                    }
+                    (Some(bc), None) => {
+                        table[1].insert(evdev_code, bc);
+                    }
+                    _ => {}
+                }
+                // Post-process uppercase at levels 2+
+                // Skip individual (level, key) entries from BMP Unicode keysyms.
+                for level in 2..num_levels {
+                    if effective_bmp.contains(&(level, evdev_code)) {
+                        continue;
+                    }
+                    if let Some(&c) = level_keymap[level].get(&evdev_code) {
+                        let upper = caps_uppercase(c);
+                        if upper != c {
+                            table[level].insert(evdev_code, upper);
+                        }
+                    }
+                }
+            }
+            CapsClass::PlusLock(target_level) => {
+                // Lock redirects level 0 to target_level; other levels unaffected
+                if target_level < num_levels {
+                    if let Some(&tc) = level_keymap[target_level].get(&evdev_code) {
+                        let base_char = level_keymap[0].get(&evdev_code).copied();
+                        if base_char != Some(tc) {
+                            table[0].insert(evdev_code, tc);
+                        }
+                    }
+                }
+            }
+            CapsClass::SeparateCapsShift => {
+                // Lock at level 0 → level 3 (index 3), with post-process
+                if num_levels > 3 {
+                    if let Some(&tc) = level_keymap[3].get(&evdev_code) {
+                        let upper = caps_uppercase(tc);
+                        let base_char = level_keymap[0].get(&evdev_code).copied();
+                        if base_char != Some(upper) {
+                            table[0].insert(evdev_code, upper);
+                        }
+                    }
+                }
+                // Shift+Lock → level 0 (base)
+                if let Some(&bc) = level_keymap[0].get(&evdev_code) {
+                    let shift_char = level_keymap[1].get(&evdev_code).copied();
+                    if shift_char != Some(bc) {
+                        table[1].insert(evdev_code, bc);
+                    }
+                }
+            }
+            CapsClass::PostProcess => {
+                // Lock not consumed, apply uppercase post-processing at all levels.
+                // Skip individual (level, key) entries whose keysyms originated
+                // from Latin-1 Unicode keysyms (0x01000000–0x010000FF via hex
+                // notation): xkbcommon's xkb_keysym_to_upper returns these
+                // unchanged, so post-process uppercasing has no effect.
+                for level in 0..num_levels {
+                    if effective_bmp.contains(&(level, evdev_code)) {
+                        continue;
+                    }
+                    if let Some(&c) = level_keymap[level].get(&evdev_code) {
+                        let upper = caps_uppercase(c);
+                        if upper != c {
+                            table[level].insert(evdev_code, upper);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Trim trailing empty levels
+    while table.last().is_some_and(|m| m.is_empty()) {
+        table.pop();
+    }
+
+    table
+}
+
+/// Check if a key's level0 and level1 form a lowercase/uppercase pair.
+///
+/// Uses Unicode `is_lowercase()` / `is_uppercase()` properties rather than
+/// `to_uppercase()` mapping, matching xkbcommon's `xkb_keysym_is_lower` /
+/// `xkb_keysym_is_upper` heuristic. This correctly handles locale-specific
+/// case pairs like Turkish `i` / `İ` where `'i'.to_uppercase()` gives `'I'`,
+/// not `'İ'`.
+///
+/// Keys whose keysyms originated from Latin-1 Unicode keysyms
+/// (0x01000000–0x010000FF, specified via `0x...` hex notation) are never
+/// considered case pairs, because xkbcommon's `xkb_keysym_to_upper` /
+/// `xkb_keysym_to_lower` return these keysyms unchanged, so they are
+/// never detected as lowercase or uppercase during type inference.
+/// Unicode keysyms for codepoints > 0xFF are handled correctly by
+/// `xkb_keysym_to_upper` and CAN form case pairs.
+fn is_case_pair(
+    level_keymap: &[BTreeMap<u32, char>],
+    evdev_code: u32,
+    bmp_unicode_keys: &HashSet<(usize, u32)>,
+) -> bool {
+    // If either level 0 or level 1 keysym is a Latin-1 Unicode keysym
+    // (0x01000000–0x010000FF from hex notation), xkbcommon's
+    // xkb_keysym_to_upper/to_lower returns it unchanged → not a case pair.
+    if bmp_unicode_keys.contains(&(0, evdev_code)) || bmp_unicode_keys.contains(&(1, evdev_code)) {
+        return false;
+    }
+    if level_keymap.len() < 2 {
+        return false;
+    }
+    let base_char = level_keymap[0].get(&evdev_code).copied();
+    let shift_char = level_keymap[1].get(&evdev_code).copied();
+    if let (Some(bc), Some(sc)) = (base_char, shift_char) {
+        if bc == sc {
+            return false;
+        }
+        // Match xkbcommon 1.11+'s type inference:
+        //   xkb_keysym_is_lower  → checks Unicode General_Category Ll
+        //   xkb_keysym_is_upper_or_title → checks Unicode General_Category Lu/Lt
+        //
+        // For bc_is_lower we use caps_uppercase(bc) != bc, which covers
+        // both standard to_uppercase and the math_uppercase / simple_uppercase
+        // fallback tables for SMP mathematical symbols.
+        //
+        // For sc_is_upper we first try to_lowercase (mapping-based, works for
+        // BMP characters and matches older xkbcommon behaviour), then fall back
+        // to the Unicode Lu property via char::is_uppercase() for SMP
+        // characters where Rust's to_lowercase() returns the input unchanged.
+        let bc_is_lower = caps_uppercase(bc) != bc;
+        let sc_is_upper = {
+            let mut lower_iter = sc.to_lowercase();
+            if let Some(lower) = lower_iter.next() {
+                // Don't require single-char mapping: İ → i+\u{307} is
+                // still "upper" (xkbcommon uses simple lowercase mapping).
+                if lower != sc {
+                    true
+                } else {
+                    // to_lowercase returned the char unchanged — this happens
+                    // for SMP characters (e.g. mathematical symbols) where
+                    // Rust doesn't implement the mapping.  Fall back to the
+                    // Unicode General_Category Lu property, matching
+                    // xkbcommon 1.11+'s xkb_keysym_is_upper_or_title.
+                    sc.is_uppercase()
+                }
+            } else {
+                false
+            }
+        };
+        if bc_is_lower && sc_is_upper {
+            return true;
+        }
+    }
+    false
 }
 
 fn new_wkb(
@@ -504,8 +1072,6 @@ fn new_wkb(
         level_keymap: Vec::with_capacity(8),
         pressed_keys: HashSet::new(),
         repeat_keys,
-        custom_case_map: None,
-        caps_is_level2: None,
         modifiers: Modifiers::default(),
         num_lock_keys: vec![
             71, 72, 73, // 7, 8, 9
@@ -514,21 +1080,27 @@ fn new_wkb(
             82, 83, // 0, .
         ],
         remap: HashMap::new(),
-        caps_lock_disabled: false,
-        caps_lock_level2_disabled: false,
+        caps_lock_table: Vec::new(),
         right_left_shift_caps: false,
     }
 }
 
-fn map_xkb<C: Composer>(wkb: &mut WKB<C>, path: &Path, locale: String, layout: Option<String>) {
+fn map_xkb<C: Composer>(
+    wkb: &mut WKB<C>,
+    bs: &mut XkbBuildState,
+    path: &Path,
+    locale: String,
+    layout: Option<String>,
+) {
     let Ok(file) = std::fs::read_to_string(&path.join(locale.clone())) else {
         return;
     };
-    map_xkb_from_str(wkb, &file, path, Some(locale), layout);
+    map_xkb_from_str(wkb, bs, &file, path, Some(locale), layout);
 }
 
 fn map_xkb_from_str<C: Composer>(
     wkb: &mut WKB<C>,
+    bs: &mut XkbBuildState,
     file: &str,
     path: &Path,
     locale: Option<String>,
@@ -545,11 +1117,19 @@ fn map_xkb_from_str<C: Composer>(
                 src.value.iter().for_each(|si| {
                     if let XkbSymbolsItem::Include(Include { name }) = si {
                         let (locale, layout) = parse_include(name);
+                        // Save/restore default_key_type around includes so that
+                        // key.type from an included section doesn't leak into
+                        // the including section (and vice versa).
+                        let saved_type = bs.default_key_type.take();
                         if layout.is_none() {
-                            map_xkb(wkb, path, locale, Some("basic".to_string()));
+                            map_xkb(wkb, bs, path, locale, Some("basic".to_string()));
                         } else {
-                            map_xkb(wkb, path, locale, layout);
+                            map_xkb(wkb, bs, path, locale, layout);
                         }
+                        bs.default_key_type = saved_type;
+                    } else if let XkbSymbolsItem::KeyType(kt) = si {
+                        // Global default key type: key.type[group1] = "..."
+                        bs.default_key_type = Some(kt.name.content.to_string());
                     } else if let XkbSymbolsItem::Key(Key {
                         mode: _,
                         id,
@@ -557,8 +1137,17 @@ fn map_xkb_from_str<C: Composer>(
                     }) = si
                     {
                         if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
+                            // Track whether this key definition contains an
+                            // explicit per-key type (type[Group1] = "...").
+                            let mut has_explicit_type = false;
                             values.iter().for_each(|v| {
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
+                                    // Per-key type declaration: type[Group1] = "..."
+                                    if let xkb_parser::ast::KeyDef::TypeDef(td) = key_defs {
+                                        bs.key_types
+                                            .insert(*evdev_code, td.content.content.to_string());
+                                        has_explicit_type = true;
+                                    }
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
                                         for (i, v) in key.values.values.iter().enumerate() {
                                             if i == wkb.level_keymap.len() {
@@ -571,6 +1160,10 @@ fn map_xkb_from_str<C: Composer>(
                                             let single_char =
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
                                             if let Some(char) = single_char {
+                                                // Named keysym via KeyDefs path — not a
+                                                // BMP Unicode keysym; clear any stale
+                                                // entry from an earlier include.
+                                                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
                                                 wkb.level_keymap[i].insert(*evdev_code, char);
                                             }
                                         }
@@ -578,6 +1171,7 @@ fn map_xkb_from_str<C: Composer>(
                                 } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
                                     map_keys_and_modifiers(
                                         wkb,
+                                        bs,
                                         key,
                                         evdev_code,
                                         layout.clone(),
@@ -585,7 +1179,18 @@ fn map_xkb_from_str<C: Composer>(
                                         id.content.to_owned(),
                                     );
                                 }
-                            })
+                            });
+                            // After all values for this key are processed,
+                            // apply current default_key_type if this key
+                            // definition didn't include an explicit per-key
+                            // type. Always override any stale entry from a
+                            // previous include, since the key is being
+                            // (re)defined in the current section.
+                            if !has_explicit_type {
+                                if let Some(ref dt) = bs.default_key_type {
+                                    bs.key_types.insert(*evdev_code, dt.clone());
+                                }
+                            }
                         }
                     }
                 })
@@ -596,6 +1201,7 @@ fn map_xkb_from_str<C: Composer>(
 
 fn map_keys_and_modifiers<C: Composer>(
     wkb: &mut WKB<C>,
+    bs: &mut XkbBuildState,
     key: &xkb_parser::ast::KeyNames,
     evdev_code: &u32,
     layout: String,
@@ -607,8 +1213,15 @@ fn map_keys_and_modifiers<C: Composer>(
             wkb.remap.insert(*evdev_code, BACKSPACE);
             let value = *wkb.level_keymap[0].get(&BACKSPACE).unwrap();
             wkb.level_keymap[1].insert(CAPS_LOCK, value);
+            // Neutralize CAPS_LOCK modifier so is_caps_lock_modifier() returns false
+            wkb.modifiers
+                .0
+                .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         } else if key.values.first().is_some_and(|k| k.content == "Tab") {
             wkb.remap.insert(*evdev_code, TAB);
+            wkb.modifiers
+                .0
+                .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         }
     }
     for (i, v) in key.values.iter().enumerate() {
@@ -630,12 +1243,34 @@ fn map_keys_and_modifiers<C: Composer>(
         chars.next();
         let second_char = chars.next();
         let single_char = if count == 1 && first_char.is_some_and(|c| c.is_alphanumeric()) {
+            // Standard single-char keysym (e.g. 'a') — not a BMP Unicode keysym.
+            bs.bmp_unicode_keys.remove(&(i, *evdev_code));
             first_char
         } else if first_char.is_some_and(|c| c == 'U') && is_hex {
+            // Uxxxx notation: xkbcommon normalises codepoints ≤ 0xFF to named
+            // keysyms (uppercasable) and > 0xFF to Unicode keysyms where
+            // xkb_keysym_to_upper works correctly — so never flag these.
+            if is_latin1_unicode_keysym_u(v) {
+                bs.bmp_unicode_keys.insert((i, *evdev_code));
+            } else {
+                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+            }
             unicode_string_to_unicode_char(v)
         } else if first_char.is_some_and(|c| c == '0') && second_char.is_some_and(|c| c == 'x') {
+            // 0x... hex notation: only Latin-1 Unicode keysyms (0x01000000–
+            // 0x010000FF) are non-uppercasable; codepoints > 0xFF are fine.
+            if is_latin1_unicode_keysym_hex(v) {
+                bs.bmp_unicode_keys.insert((i, *evdev_code));
+            } else {
+                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+            }
             hex_string_to_unicode_char(v)
         } else {
+            // Named keysym from lookup table (e.g. "ccedilla") — not a
+            // BMP Unicode keysym even if it maps to the same codepoint.
+            if XKBCODES_DEF_TO_UTF8.contains_key(v.as_ref()) {
+                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+            }
             XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
         };
         if let Some(single_char) = single_char {
@@ -656,6 +1291,9 @@ fn map_keys_and_modifiers<C: Composer>(
                 ("Control_L", _) => {
                     if id == "CAPS" {
                         wkb.remap.insert(*evdev_code, 29);
+                        wkb.modifiers
+                            .0
+                            .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
                     }
                 }
                 ("Shift_L", _) => {
@@ -814,8 +1452,11 @@ fn map_keys_and_modifiers<C: Composer>(
 }
 
 fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Option<String>) {
-    //snowflake special case of bad design I don't want to support any other way!
+    // ── Keymap fixups (compensating for WKB parser limitations) ──
+    // These correct level_keymap values, num_lock_keys, etc. that WKB's
+    // xkb-parser cannot derive correctly on its own.
     match (locale.as_str(), &layout.as_deref()) {
+        // de:ru* key swap
         ("de", Some("ru")) | ("de", Some("ru-recom")) | ("de", Some("ru-translit")) => {
             for i in 0..2 {
                 let map = wkb.level_keymap[i].clone();
@@ -828,175 +1469,24 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
         _ => {}
     };
     match (locale.as_str(), &layout.as_deref()) {
-        ("at", Some(_))
-        | ("de", Some("basic"))
-        | ("de", Some("mac"))
-        | ("de", Some("mac_nodeadkeys"))
-        | ("de", Some("deadtilde"))
-        | ("de", Some("deadgraveacute"))
-        | ("de", Some("deadacute"))
-        | ("de", Some("ro"))
-        | ("de", Some("ro_nodeadkeys"))
-        | ("de", Some("dsb_qwertz"))
-        | ("de", Some("qwerty"))
-        | ("de", Some("ru"))
-        | ("de", Some("pl"))
-        | ("de", Some("tr"))
-        | ("de", Some("hu"))
-        | ("de", Some("e1"))
-        | ("de", Some("e2"))
-        | ("de", Some("dvorak"))
-        | ("it", Some("lldde"))
-        | ("cz", Some("ucw"))
-        | ("de", Some("nodeadkeys")) => {
-            wkb.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
-        }
-        ("de", Some("ru-translit")) | ("de", Some("ru-recom")) => {
-            wkb.custom_case_map = Some(HashMap::from([('~', 'ẞ')]));
-        }
-        ("tr", Some("basic"))
-        | ("tr", Some("e"))
-        | ("tr", Some("intl"))
-        | ("tr", Some("olpc"))
-        | ("ua", Some("crh"))
-        | ("ua", Some("crh_f"))
-        | ("ro", Some("crh_dobruja"))
-        | ("tr", Some("f")) => {
-            wkb.custom_case_map = Some(HashMap::from([('i', 'İ'), ('İ', 'i'), ('I', 'ı')]));
-        }
-        ("az", Some("latin")) => wkb.caps_is_level2 = Some(vec![23, 39]),
-        ("gh", Some("hausa")) => wkb.caps_is_level2 = Some(vec![39]),
-        ("ng", Some("hausa")) | ("gh", Some("fula")) | ("tr", Some("us")) => {
-            wkb.custom_case_map = Some(HashMap::from([('ı', 'İ'), ('İ', 'ı')]));
-        }
-        ("md", Some("gag")) => {
-            wkb.custom_case_map = Some(HashMap::from([
-                ('ı', 'I'),
-                ('I', 'ı'),
-                ('i', 'İ'),
-                ('İ', 'i'),
-            ]));
-        }
+        // bqn: level_keymap fixups (caps metadata now auto-derived)
         ("bqn", Some("bqn")) => {
-            wkb.custom_case_map = Some(HashMap::from([
-                ('𝕨', '𝕎'),
-                ('𝕤', '𝕊'),
-                ('𝕗', '𝔽'),
-                ('𝕘', '𝔾'),
-                ('𝕩', '𝕏'),
-                ('𝕎', '𝕨'),
-                ('𝕊', '𝕤'),
-                ('𝔽', '𝕗'),
-                ('𝔾', '𝕘'),
-                ('𝕏', '𝕩'),
-            ]));
             wkb.level_keymap[1].insert(22, '⊔');
             wkb.level_keymap[1].insert(32, '↕');
             wkb.level_keymap[1].insert(36, '∘');
             wkb.level_keymap[1].insert(46, '↓');
             wkb.level_keymap[1].insert(57, '‿');
         }
-        ("hu", Some("oldhunlig")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 41, 51, 52, 53]);
-        }
-        ("hu", Some("oldhun_base")) => {
-            wkb.caps_is_level2 = Some(vec![51, 52, 53]);
-        }
-        ("hu", Some("oldhun_origin")) | ("hu", Some("oldhun_lig")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 41]);
-        }
-        ("kz", Some("ext")) => wkb.caps_is_level2 = Some(vec![2, 7, 8, 43]),
-        ("fr", Some("bepo")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-        }
+        // fr:bepo_afnor: level_keymap resize
         ("fr", Some("bepo_afnor")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
             wkb.level_keymap.resize(4, BTreeMap::new());
         }
-        ("fr", Some("dvorak")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 17, 18, 41]);
-            wkb.custom_case_map = Some(HashMap::from([('à', '/'), (';', '-'), ('ç', 'ç')]))
-        }
-        ("kz", Some("latin")) => {
-            wkb.custom_case_map = Some(HashMap::from([('v', 'M')]));
-        }
-        ("us", Some("chr")) => {
-            wkb.caps_is_level2 = Some(vec![
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-                26, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 49,
-                50, 51, 52, 53,
-            ])
-        }
-        ("us", Some("mac")) => wkb.caps_lock_level2_disabled = true,
-        ("il", Some("si2")) | ("il", Some("basic")) => {
-            wkb.caps_is_level2 = Some(vec![
-                16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 44,
-                45, 46, 47, 48, 49, 50, 51, 52,
-            ])
-        }
-        ("il", Some("phonetic")) => {
-            wkb.caps_is_level2 = Some(vec![20, 25, 33, 37, 39, 46, 49, 50, 51, 52])
-        }
-        ("il", Some("biblical")) => {
-            wkb.caps_is_level2 = Some(vec![
-                2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-                27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50,
-                51, 52, 53,
-            ])
-        }
-        ("il", Some("biblicalSIL")) => {
-            wkb.caps_is_level2 = Some(vec![
-                2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 16, 18, 21, 24, 25, 26, 27, 30, 31, 33, 36, 37,
-                39, 40, 41, 46, 49, 50, 51, 52, 53,
-            ])
-        }
-        ("it", Some("geo")) => {
-            wkb.caps_is_level2 = Some(vec![
-                16, 18, 21, 22, 23, 24, 25, 30, 32, 33, 34, 35, 37, 38, 45, 47, 48, 49, 50,
-            ])
-        }
-        ("pl", Some("dvp")) | ("us", Some("dvp")) => {
-            wkb.caps_is_level2 = Some(vec![3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 40])
-        }
-        ("in", Some("tamilnet_TAB")) | ("lk", Some("tam_TAB")) => {
-            wkb.caps_lock_disabled = true;
-            wkb.caps_lock_level2_disabled = true;
-        }
-        ("in", Some("tamilnet_TSCII")) => {
-            wkb.custom_case_map = Some(HashMap::from([('þ', 'þ')]));
-            wkb.caps_lock_level2_disabled = true;
-        }
-        ("in", Some("iipa")) => wkb.custom_case_map = Some(HashMap::from([('b', 'Y')])),
-        ("ge", Some("qwerty")) | ("ge", Some("basic")) => {
-            wkb.caps_is_level2 = Some(vec![
-                16, 18, 21, 22, 23, 24, 25, 30, 32, 33, 34, 35, 37, 38, 45, 47, 48, 49, 50,
-            ])
-        }
-        ("ge", Some("ergonomic")) => {
-            wkb.caps_is_level2 = Some(vec![
-                16, 18, 21, 22, 23, 24, 25, 30, 32, 33, 34, 35, 37, 38, 45, 47, 48, 49, 50,
-            ])
-        }
-        ("ge", Some("mess")) => {
-            wkb.caps_is_level2 = Some(vec![
-                16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37, 38, 44, 45,
-                46, 47, 48, 49, 50,
-            ])
-        }
-        ("fr", Some("geo")) => {
-            wkb.caps_is_level2 = Some(vec![
-                17, 18, 20, 22, 24, 25, 26, 27, 30, 31, 32, 37, 38, 39, 40, 44, 48, 51,
-            ]);
-        }
-        ("gr", Some(_)) => {
-            wkb.caps_is_level2 = Some(vec![17]);
-        }
+        // pl:glagolica: level_keymap fixup
         ("pl", Some("glagolica")) => {
-            wkb.caps_lock_level2_disabled = true;
             let value = *wkb.level_keymap[0].get(&40).unwrap();
             wkb.level_keymap[1].insert(40, value);
         }
-        ("cd", _) | ("ml", Some("us-mac")) => wkb.caps_lock_level2_disabled = true,
+        // apl: copy level0 to level1 for non-alphabetic keys
         ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
             for i in 16..=25 {
                 let value = *wkb.level_keymap[0].get(&i).unwrap();
@@ -1011,6 +1501,7 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
                 wkb.level_keymap[1].insert(i, value);
             }
         }
+        // ie:ogam level_keymap fixups
         ("ie", Some("ogam")) => {
             wkb.level_keymap[1].insert(43, '\u{1680}');
         }
@@ -1028,12 +1519,14 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
                 }
             }
         }
+        // si: level_keymap copies
         ("si", Some(_)) => {
             let value = *wkb.level_keymap[0].get(&41).unwrap();
             wkb.level_keymap[2].insert(41, value);
             let value = *wkb.level_keymap[1].get(&41).unwrap();
             wkb.level_keymap[3].insert(41, value);
         }
+        // se:rus level_keymap copies
         ("se", Some("rus")) => {
             let value = *wkb.level_keymap[0].get(&13).unwrap();
             wkb.level_keymap[2].insert(13, value);
@@ -1062,6 +1555,7 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
             let value = *wkb.level_keymap[1].get(&86).unwrap();
             wkb.level_keymap[3].insert(86, value);
         }
+        // us:3l* level_keymap fixups
         ("us", Some("3l")) => {
             wkb.level_keymap[1].insert(2, '!');
             wkb.level_keymap[1].insert(3, '@');
@@ -1168,27 +1662,26 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
             let value = *wkb.level_keymap[2].get(&86).unwrap();
             wkb.level_keymap[6].insert(86, value);
         }
+        // fr:bepo_latin9 level_keymap fixups
         ("fr", Some("bepo_latin9")) => {
-            wkb.caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
             let value = *wkb.level_keymap[2].get(&55).unwrap();
             wkb.level_keymap[3].insert(55, value);
             let value = *wkb.level_keymap[2].get(&98).unwrap();
             wkb.level_keymap[3].insert(98, value);
         }
+        // fr/be:oss_latin9 level_keymap fixups
         ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
             let value = *wkb.level_keymap[2].get(&55).unwrap();
             wkb.level_keymap[3].insert(55, value);
             let value = *wkb.level_keymap[2].get(&98).unwrap();
             wkb.level_keymap[3].insert(98, value);
         }
+        // fr:mac level_keymap fixup
         ("fr", Some("mac")) => {
             let value = *wkb.level_keymap[0].get(&83).unwrap();
             wkb.level_keymap[3].insert(83, value);
         }
-        ("fr", Some("azerty")) => {
-            // let value = *wkb.level_keymap[0].get(&83).unwrap();
-            // wkb.level_keymap[3].insert(83, value);
-        }
+        // fr:afnor level_keymap fixups
         ("fr", Some("afnor")) => {
             for i in 0..2 {
                 for (code, value) in &wkb.level_keymap[i].clone() {
@@ -1203,8 +1696,8 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
             wkb.level_keymap[5].insert(86, '>');
             wkb.level_keymap[5].insert(98, '∕');
         }
+        // de:T3 level_keymap fixups (caps metadata now auto-derived)
         ("de", Some("T3")) => {
-            wkb.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
             wkb.level_keymap[3].insert(2, 'ʹ');
             wkb.level_keymap[3].insert(3, 'ʺ');
             wkb.level_keymap[3].insert(4, 'ʿ');
@@ -1239,6 +1732,7 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
             wkb.level_keymap[3].insert(53, '‑');
             wkb.level_keymap[3].insert(57, '\u{a0}');
         }
+        // Extra level_keymap push for braille/apl/kr/jp layouts
         ("brai", Some("home_row"))
         | ("brai", Some("right_hand"))
         | ("brai", Some("keypad"))
@@ -1264,6 +1758,7 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
                 (86, '>'),
             ]));
         }
+        // Num lock key fixups
         ("am", Some("eastern")) | ("am", Some("western")) | ("am", Some("eastern-alt")) => {
             wkb.num_lock_keys.push(2);
             wkb.num_lock_keys.push(5);
@@ -1301,7 +1796,6 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
         | ("de", Some("adnw_base"))
         | ("de", Some("adnw")) => {
             wkb.num_lock_keys = Vec::new();
-            wkb.custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
         }
         _ => {}
     }

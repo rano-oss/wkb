@@ -53,6 +53,17 @@ pub fn test_all_keys<C: wkb::composer::Composer>(
     layout: String,
     exceptions: &[(&str, &str, KeyRange)],
 ) {
+    test_all_keys_locale(wkb, xkb, layout, "", exceptions);
+}
+
+#[allow(dead_code)]
+pub fn test_all_keys_locale<C: wkb::composer::Composer>(
+    wkb: WKB<C>,
+    xkb: xkb::State,
+    layout: String,
+    locale: &str,
+    exceptions: &[(&str, &str, KeyRange)],
+) {
     let mut wkb = wkb;
     for i in 0..701 {
         let k1 = wkb.utf8(i);
@@ -62,8 +73,10 @@ pub fn test_all_keys<C: wkb::composer::Composer>(
             // Check if this is an expected exception
             let is_exception = exceptions
                 .iter()
-                .any(|(_exc_locale, exc_layout, exc_key_range)| {
-                    layout.contains(exc_layout) && exc_key_range.contains(i)
+                .any(|(exc_locale, exc_layout, exc_key_range)| {
+                    (locale.is_empty() || exc_locale.is_empty() || *exc_locale == locale)
+                        && layout.contains(exc_layout)
+                        && exc_key_range.contains(i)
                 });
 
             if !is_exception {
@@ -84,8 +97,10 @@ pub fn test_all_keys<C: wkb::composer::Composer>(
         let should_skip_assert =
             exceptions
                 .iter()
-                .any(|(_exc_locale, exc_layout, exc_key_range)| {
-                    layout.contains(exc_layout) && exc_key_range.contains(i)
+                .any(|(exc_locale, exc_layout, exc_key_range)| {
+                    (locale.is_empty() || exc_locale.is_empty() || *exc_locale == locale)
+                        && layout.contains(exc_layout)
+                        && exc_key_range.contains(i)
                 });
 
         if !should_skip_assert {

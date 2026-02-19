@@ -6,7 +6,164 @@ use xkbcommon::{
 };
 
 mod common;
-use common::{key_range, multiple_keys, single_key, test_all_keys, xkb_new_from_names};
+use common::{key_range, multiple_keys, single_key, test_all_keys_locale, xkb_new_from_names};
+
+#[test]
+fn debug_bqn_caps_lock() {
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+    let keymap = xkb::Keymap::new_from_names(
+        &context,
+        "",
+        "",
+        "bqn",
+        "bqn",
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap();
+
+    let mut state = xkb::State::new(&keymap);
+    let kc_w = Keycode::new(17 + 8); // AD02 = evdev 17
+    let kc_shift = Keycode::new(42 + 8);
+    let kc_caps = Keycode::new(58 + 8);
+
+    // No mods
+    eprintln!(
+        "BQN W no-mods: {:?}",
+        state.key_get_utf8(kc_w).chars().collect::<Vec<_>>()
+    );
+
+    // Caps only
+    state.update_key(kc_caps, xkb::KeyDirection::Down);
+    eprintln!(
+        "BQN W caps:    {:?}",
+        state.key_get_utf8(kc_w).chars().collect::<Vec<_>>()
+    );
+
+    // Shift + Caps
+    state.update_key(kc_shift, xkb::KeyDirection::Down);
+    eprintln!(
+        "BQN W shift+caps: {:?}",
+        state.key_get_utf8(kc_w).chars().collect::<Vec<_>>()
+    );
+    state.update_key(kc_shift, xkb::KeyDirection::Up);
+
+    // Now test WKB
+    let mut wkb_state = wkb::WKB::new_from_names("bqn".to_string(), Some("bqn".to_string()));
+    eprintln!("WKB level_keymap len: {}", wkb_state.level_keymap.len());
+    eprintln!(
+        "WKB caps_lock_table len: {}",
+        wkb_state.caps_lock_table.len()
+    );
+
+    for (level, map) in wkb_state.caps_lock_table.iter().enumerate() {
+        if let Some(&c) = map.get(&17) {
+            eprintln!(
+                "WKB caps_lock_table[{}][17] = {:?} (U+{:04X})",
+                level, c, c as u32
+            );
+        } else {
+            eprintln!("WKB caps_lock_table[{}][17] = None", level);
+        }
+    }
+    for level in 0..wkb_state.level_keymap.len().min(4) {
+        if let Some(&c) = wkb_state.level_keymap[level].get(&17) {
+            eprintln!(
+                "WKB level_keymap[{}][17] = {:?} (U+{:04X})",
+                level, c, c as u32
+            );
+        } else {
+            eprintln!("WKB level_keymap[{}][17] = None", level);
+        }
+    }
+
+    // Test WKB with just caps
+    wkb_state.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
+    eprintln!("WKB W caps: {:?}", wkb_state.utf8(17));
+
+    // Test WKB with shift+caps
+    let (shift_code, _) = wkb_state.modifiers.level2_code().unwrap();
+    wkb_state.update_key(shift_code, wkb::KeyDirection::Down);
+    eprintln!("WKB W shift+caps: {:?}", wkb_state.utf8(17));
+}
+
+#[test]
+fn debug_tamilnet_tscii_key51() {
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+
+    // Helper: dump the xkb_symbols section from a compiled keymap
+    let dump_symbols = |keymap_str: &str, label: &str| {
+        let mut in_symbols = false;
+        let mut depth: i32 = 0;
+        for line in keymap_str.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("xkb_symbols") {
+                in_symbols = true;
+            }
+            if in_symbols {
+                depth += line.matches('{').count() as i32;
+                depth -= line.matches('}').count() as i32;
+                eprintln!("{}: {}", label, line);
+                if depth <= 0 && in_symbols {
+                    in_symbols = false;
+                }
+            }
+        }
+    };
+
+    // ── tamilnet_TSCII ──
+    let keymap = xkb::Keymap::new_from_names(
+        &context,
+        "",
+        "",
+        "in",
+        "tamilnet_TSCII",
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap();
+    let ks = keymap.get_as_string(xkb::KEYMAP_FORMAT_TEXT_V1);
+    dump_symbols(&ks, "TSCII");
+
+    let mut state = xkb::State::new(&keymap);
+    let kc = Keycode::new(51 + 8);
+    eprintln!(
+        "TSCII Key51 no-caps: {:?}",
+        state.key_get_utf8(kc).chars().collect::<Vec<_>>()
+    );
+    state.update_key(Keycode::new(58 + 8), xkb::KeyDirection::Down);
+    eprintln!(
+        "TSCII Key51 caps:    {:?}",
+        state.key_get_utf8(kc).chars().collect::<Vec<_>>()
+    );
+
+    // ── iipa ──
+    let keymap3 = xkb::Keymap::new_from_names(
+        &context,
+        "",
+        "",
+        "in",
+        "iipa",
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap();
+    let ks3 = keymap3.get_as_string(xkb::KEYMAP_FORMAT_TEXT_V1);
+    dump_symbols(&ks3, "IIPA");
+
+    let mut state3 = xkb::State::new(&keymap3);
+    let kc3 = Keycode::new(17 + 8);
+    eprintln!(
+        "IIPA Key17 no-caps: {:?}",
+        state3.key_get_utf8(kc3).chars().collect::<Vec<_>>()
+    );
+    state3.update_key(Keycode::new(58 + 8), xkb::KeyDirection::Down);
+    eprintln!(
+        "IIPA Key17 caps:    {:?}",
+        state3.key_get_utf8(kc3).chars().collect::<Vec<_>>()
+    );
+}
 
 // #[ignore]
 #[test_matrix([
@@ -38,10 +195,11 @@ fn caps_lock(locale: &str) {
             ("eg", "cop", key_range(44, 50)),
             ("eg", "cop", single_key(53)),
             ("us", "3l-emacs", key_range(3, 57)),
+            ("us", "3l-emacs", single_key(98)),
             ("me", "latinunicodeyz", single_key(45)),
         ];
 
-        test_all_keys(wkb, xkb, layout, caps_lock_exceptions);
+        test_all_keys_locale(wkb, xkb, layout, locale, caps_lock_exceptions);
     }
     // assert!(false);
 }
@@ -140,8 +298,16 @@ fn level2_caps(locale: &str) {
                 "bak",
                 multiple_keys(vec![3, 4, 5, 6, 8, 9, 13, 41, 43]),
             ),
+            ("jp", "", key_range(16, 57)),
+            ("apl", "dyalog", key_range(71, 83)),
+            ("in", "tamilnet_TSCII", single_key(45)),
+            ("ba", "unicode", multiple_keys(vec![16, 17, 45])),
+            ("hr", "unicode", multiple_keys(vec![16, 17, 45])),
+            ("me", "latinunicode", multiple_keys(vec![16, 17, 45])),
+            ("rs", "twoletter", multiple_keys(vec![16, 17, 45])),
+            ("rs", "latinunicode", multiple_keys(vec![16, 17, 45])),
         ];
 
-        test_all_keys(wkb, xkb, layout, level2_caps_exceptions);
+        test_all_keys_locale(wkb, xkb, layout, locale, level2_caps_exceptions);
     }
 }

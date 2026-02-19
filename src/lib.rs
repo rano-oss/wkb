@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub use modifiers::KeyDirection;
-use modifiers::{level_index, *};
+use modifiers::{level_index, ModKind, ModType, Modifier, *};
 
 pub use composer::{ComposeState, Composer, ListComposer, UnicodeComposer};
 pub mod composer;
@@ -22,13 +22,16 @@ pub struct WKB<C: Composer> {
     pub compose_key_composer: C,
     pub(crate) pressed_keys: HashSet<u32>,
     pub(crate) repeat_keys: HashSet<u32>,
-    pub custom_case_map: Option<HashMap<char, char>>,
     pub modifiers: Modifiers,
     pub(crate) num_lock_keys: Vec<u32>,
     pub(crate) remap: HashMap<u32, u32>,
-    pub(crate) caps_is_level2: Option<Vec<u32>>,
-    pub(crate) caps_lock_disabled: bool,
-    pub(crate) caps_lock_level2_disabled: bool,
+    /// Per-level caps lock table. Parallel to `level_keymap`.
+    /// For each `(level, evdev_code)`, stores the char to produce when
+    /// caps lock is active. If the key is absent, falls back to the
+    /// normal `level_keymap` char (caps has no effect on that key at
+    /// that level). An entirely empty table means caps lock has no
+    /// effect at all.
+    pub caps_lock_table: Vec<BTreeMap<u32, char>>,
     pub(crate) right_left_shift_caps: bool,
 }
 
@@ -159,17 +162,34 @@ impl<C: Composer> WKB<C> {
         let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
         let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
-        let level_index = level_index(level5, level3, level2);
-        if self.right_left_shift_caps
-            && self.modifiers.pressed(RIGHT_SHIFT)
-            && self.modifiers.pressed(LEFT_SHIFT)
-            || self.modifiers.locked(CAPS_LOCK)
-        {} //TODO: fix CAPS_LOCK improve!
-        let key = if self.num_lock_keys.contains(&evdev_code) && self.modifiers.locked(NUM_LOCK) {
-            self.level_key(evdev_code, 1)
-        } else {
-            self.level_key(evdev_code, level_index)
-        };
+        let base_level = level_index(level5, level3, level2);
+
+        // Num Lock takes priority
+        if self.num_lock_keys.contains(&evdev_code) && self.modifiers.locked(NUM_LOCK) {
+            let key = self.level_key(evdev_code, 1);
+            if key.is_some() {
+                self.modifiers.unlatch();
+            }
+            return key;
+        }
+
+        let caps_active = self.modifiers.locked(CAPS_LOCK)
+            || (self.right_left_shift_caps
+                && self.modifiers.pressed(RIGHT_SHIFT)
+                && self.modifiers.pressed(LEFT_SHIFT));
+
+        if caps_active {
+            if let Some(&c) = self
+                .caps_lock_table
+                .get(base_level)
+                .and_then(|m| m.get(&evdev_code))
+            {
+                self.modifiers.unlatch();
+                return Some(c);
+            }
+        }
+
+        let key = self.level_key(evdev_code, base_level);
         if key.is_some() {
             self.modifiers.unlatch()
         }

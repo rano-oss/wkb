@@ -4,13 +4,13 @@ This is a start to a rewrite of xkb/xkbcommon for wayland.
 
 Goals: 
 - A complete replacement for the used parts of xkb. Meaning just evdev and no geometry support etc.
-- Creating a new more intuitive keyboard format that is serializable(TOML, JSON, etc)
+- Creating a new more intuitive keyboard format that is serializable(TOML, RON, etc)
 
 Todo list(tentative):
 - [x] Keymap
 - [x] Keymap functions 
 - [x] Level keys
-- [x] Repeat keys
+- [-] Repeat keys - move into parsing instead.
 - [x] Modifier support
 - [x] Level keys tests
 - [x] State keys tests
