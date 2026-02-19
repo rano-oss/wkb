@@ -25,14 +25,7 @@ pub struct WKB<C: Composer> {
     pub modifiers: Modifiers,
     pub(crate) num_lock_keys: Vec<u32>,
     pub(crate) remap: HashMap<u32, u32>,
-    /// Per-level caps lock table. Parallel to `level_keymap`.
-    /// For each `(level, evdev_code)`, stores the char to produce when
-    /// caps lock is active. If the key is absent, falls back to the
-    /// normal `level_keymap` char (caps has no effect on that key at
-    /// that level). An entirely empty table means caps lock has no
-    /// effect at all.
     pub caps_lock_table: Vec<BTreeMap<u32, char>>,
-    pub(crate) right_left_shift_caps: bool,
 }
 
 impl WKB<ListComposer> {
@@ -74,7 +67,7 @@ impl<C: Composer> WKB<C> {
         ];
 
         for (code, bit) in mapping {
-            if let Some(modifier) = self.modifiers.0.get(&code) {
+            if let Some(modifier) = self.modifiers.keys.get(&code) {
                 match modifier {
                     Modifier::Single(mk) => match mk {
                         ModKind::Pressed { pressed: true, .. } => depressed |= bit,
@@ -126,7 +119,7 @@ impl<C: Composer> WKB<C> {
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
 
-            self.modifiers.0.entry(code).and_modify(|m| match m {
+            self.modifiers.keys.entry(code).and_modify(|m| match m {
                 Modifier::Single(mk) => match mk {
                     ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
                     ModKind::Lock {
@@ -173,10 +166,7 @@ impl<C: Composer> WKB<C> {
             return key;
         }
 
-        let caps_active = self.modifiers.locked(CAPS_LOCK)
-            || (self.right_left_shift_caps
-                && self.modifiers.pressed(RIGHT_SHIFT)
-                && self.modifiers.pressed(LEFT_SHIFT));
+        let caps_active = self.modifiers.caps_active();
 
         if caps_active {
             if let Some(&c) = self

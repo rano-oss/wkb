@@ -1081,7 +1081,6 @@ fn new_wkb(
         ],
         remap: HashMap::new(),
         caps_lock_table: Vec::new(),
-        right_left_shift_caps: false,
     }
 }
 
@@ -1215,12 +1214,12 @@ fn map_keys_and_modifiers<C: Composer>(
             wkb.level_keymap[1].insert(CAPS_LOCK, value);
             // Neutralize CAPS_LOCK modifier so is_caps_lock_modifier() returns false
             wkb.modifiers
-                .0
+                .keys
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         } else if key.values.first().is_some_and(|k| k.content == "Tab") {
             wkb.remap.insert(*evdev_code, TAB);
             wkb.modifiers
-                .0
+                .keys
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         }
     }
@@ -1292,7 +1291,7 @@ fn map_keys_and_modifiers<C: Composer>(
                     if id == "CAPS" {
                         wkb.remap.insert(*evdev_code, 29);
                         wkb.modifiers
-                            .0
+                            .keys
                             .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
                     }
                 }
@@ -1404,7 +1403,7 @@ fn map_keys_and_modifiers<C: Composer>(
                     );
                 }
                 (_, "rshift_both_shiftlock") | (_, "lshift_both_shiftlock") => {
-                    wkb.right_left_shift_caps = true;
+                    wkb.modifiers.both_shift_caps = true;
                 }
                 (_, "bksl_switch") => {
                     wkb.modifiers.insert(
