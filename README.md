@@ -17,8 +17,8 @@ Todo list(tentative):
 - [x] Num_lock tests
 - [x] Caps_lock tests
 - [ ] Combined modifiers tests
-- [ ] try reaching edge case parity
-- [ ] Include previously ignored folders
+- [ ] Try reaching edge case parity
+- [x] Include previously ignored folders
 - [x] Composing
   - [x] Compose Key
   - [x] Compose Automagic

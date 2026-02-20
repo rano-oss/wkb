@@ -578,20 +578,7 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
     if let Ok(xkb) = parse(&string_file) {
         xkb.definitions.iter().for_each(|d| match &d.directive {
             Directive::XkbSymbols(src) => {
-                let name = src.name.content.to_string();
-                if ![
-                    "sun_type6",
-                    "sun_type6_de",
-                    "sun_type6_fr",
-                    "sun_type6_suncompat",
-                    "sun_type7_suncompat",
-                    "suncompat",
-                    "sun_type7",
-                ]
-                .contains(&name.as_str())
-                {
-                    layouts.push(src.name.content.to_string());
-                }
+                layouts.push(src.name.content.to_string());
             }
             _ => {}
         });
@@ -599,20 +586,7 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
         let re = Regex::new(r#"xkb_symbols\s+"([\w\s_\-\d]+)"\s+\{"#).unwrap();
         for cap in re.captures_iter(&string_file) {
             if let Some(name) = cap.get(1) {
-                let name = name.as_str();
-                if ![
-                    "sun_type6",
-                    "sun_type6_de",
-                    "sun_type6_fr",
-                    "sun_type6_suncompat",
-                    "sun_type7_suncompat",
-                    "suncompat",
-                    "sun_type7",
-                ]
-                .contains(&name)
-                {
-                    layouts.push(name.to_string());
-                }
+                layouts.push(name.as_str().to_string());
             }
         }
     }
@@ -620,7 +594,7 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
 }
 
 fn parse_include(input: &str) -> (String, Option<String>) {
-    let re = Regex::new(r"([\w]+)(?:\(([\w\-]+)\))?$").unwrap();
+    let re = Regex::new(r"([\w]+(?:/[\w]+)?)(?:\(([\w\-]+)\))?$").unwrap();
     let capture = re.captures(input).unwrap();
     (
         capture.get(1).map(|m| m.as_str().to_string()).unwrap(),
