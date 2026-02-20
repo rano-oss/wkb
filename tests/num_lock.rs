@@ -252,7 +252,10 @@ fn level7(locale: &str) {
     for layout in wkb.layouts() {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
-        if wkb.level_keymap.len() < 7 || wkb.modifiers.level5_code().is_none() {
+        if wkb.level_keymap.len() < 7
+            || wkb.modifiers.level5_code().is_none()
+            || wkb.modifiers.level3_code().is_none()
+        {
             continue;
         }
         // level 5
@@ -286,7 +289,11 @@ fn level8(locale: &str) {
         println!("{}", layout);
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.to_owned()));
-        if wkb.level_keymap.len() < 8 || wkb.modifiers.level5_code().is_none() {
+        if wkb.level_keymap.len() < 8
+            || wkb.modifiers.level5_code().is_none()
+            || wkb.modifiers.level3_code().is_none()
+            || wkb.modifiers.level2_code().is_none()
+        {
             continue;
         }
         // level 5

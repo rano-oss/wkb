@@ -14,7 +14,7 @@ Todo list(tentative):
 - [x] Modifier support
 - [x] Level keys tests
 - [x] State keys tests
-- [ ] Num_lock tests
+- [x] Num_lock tests
 - [x] Caps_lock tests
 - [x] Composing
   - [x] Compose Key

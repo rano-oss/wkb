@@ -23,7 +23,7 @@ pub struct WKB<C: Composer> {
     pub(crate) pressed_keys: HashSet<u32>,
     pub(crate) repeat_keys: HashSet<u32>,
     pub modifiers: Modifiers,
-    pub(crate) num_lock_keys: Vec<u32>,
+    pub(crate) num_lock_keys: Vec<BTreeMap<u32, char>>,
     pub(crate) remap: HashMap<u32, u32>,
     pub caps_lock_table: Vec<BTreeMap<u32, char>>,
 }
@@ -158,12 +158,15 @@ impl<C: Composer> WKB<C> {
         let base_level = level_index(level5, level3, level2);
 
         // Num Lock takes priority
-        if self.num_lock_keys.contains(&evdev_code) && self.modifiers.locked(NUM_LOCK) {
-            let key = self.level_key(evdev_code, 1);
-            if key.is_some() {
+        if self.modifiers.locked(NUM_LOCK) {
+            if let Some(&key) = self
+                .num_lock_keys
+                .get(base_level)
+                .and_then(|m| m.get(&evdev_code))
+            {
                 self.modifiers.unlatch();
+                return Some(key);
             }
-            return key;
         }
 
         let caps_active = self.modifiers.caps_active();

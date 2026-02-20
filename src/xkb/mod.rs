@@ -679,6 +679,12 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         compose_key_composer,
     );
     let mut bs = XkbBuildState::new();
+    let mut num_lock_codes: Vec<u32> = vec![
+        71, 72, 73, // 7, 8, 9
+        75, 76, 77, // 4, 5, 6
+        79, 80, 81, // 1, 2, 3
+        82, 83, // 0, .
+    ];
     map_xkb(
         &mut wkb,
         &mut bs,
@@ -686,7 +692,8 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         locale.clone(),
         Some(layout.clone()),
     );
-    fix_xkb_edge_cases(&mut wkb, locale, Some(layout));
+    fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, locale, Some(layout));
+    wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
         &bs.key_types,
@@ -713,6 +720,13 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         None,
         None,
     );
+    let num_lock_codes: Vec<u32> = vec![
+        71, 72, 73, // 7, 8, 9
+        75, 76, 77, // 4, 5, 6
+        79, 80, 81, // 1, 2, 3
+        82, 83, // 0, .
+    ];
+    wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
         &bs.key_types,
@@ -1073,12 +1087,7 @@ fn new_wkb(
         pressed_keys: HashSet::new(),
         repeat_keys,
         modifiers: Modifiers::default(),
-        num_lock_keys: vec![
-            71, 72, 73, // 7, 8, 9
-            75, 76, 77, // 4, 5, 6
-            79, 80, 81, // 1, 2, 3
-            82, 83, // 0, .
-        ],
+        num_lock_keys: Vec::new(),
         remap: HashMap::new(),
         caps_lock_table: Vec::new(),
     }
@@ -1436,9 +1445,86 @@ fn map_keys_and_modifiers<C: Composer>(
     }
 }
 
-fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Option<String>) {
+/// Build the NumLock lookup table from the list of NumLock-affected key codes,
+/// the fully-populated level_keymap, and the per-key type map.
+///
+/// Returns a `Vec<BTreeMap<u32, char>>` indexed by base_level (0–7).
+/// For each level, the BTreeMap maps evdev_code → char that should be
+/// returned when NumLock is active at that modifier combination.
+///
+/// Key type determines behavior:
+/// - `FOUR_LEVEL_MIXED_KEYPAD`: Level3+NumLock → level 2 value; otherwise → digit (level 1).
+/// - Standard / other types: NumLock always → digit (level 1), Level3 is masked.
+fn build_num_lock_table(
+    num_lock_codes: &[u32],
+    level_keymap: &[BTreeMap<u32, char>],
+    key_types: &HashMap<u32, String>,
+) -> Vec<BTreeMap<u32, char>> {
+    if num_lock_codes.is_empty() || level_keymap.is_empty() {
+        return Vec::new();
+    }
+
+    let num_levels = level_keymap.len();
+    let mut table: Vec<BTreeMap<u32, char>> = vec![BTreeMap::new(); num_levels];
+
+    for &evdev_code in num_lock_codes {
+        let is_mixed_keypad = key_types
+            .get(&evdev_code)
+            .is_some_and(|t| t == "FOUR_LEVEL_MIXED_KEYPAD");
+
+        // Digit value (XKB Level2 = WKB level 1)
+        let digit = level_keymap
+            .get(1)
+            .and_then(|m| m.get(&evdev_code).copied())
+            .or_else(|| DEFAULT_MAP.get(1).and_then(|m| m.get(&evdev_code).copied()));
+
+        if is_mixed_keypad {
+            // Level3 value (XKB Level3 = WKB level 2), but only if it
+            // was explicitly defined — propagated copies match level 0.
+            let l0 = level_keymap
+                .get(0)
+                .and_then(|m| m.get(&evdev_code).copied());
+            let l2 = level_keymap
+                .get(2)
+                .and_then(|m| m.get(&evdev_code).copied());
+            let level3_val = if l2.is_some() && l2 != l0 { l2 } else { None };
+
+            for level in 0..num_levels {
+                let has_level3 = (level & 2) != 0;
+                if has_level3 {
+                    if let Some(v) = level3_val {
+                        table[level].insert(evdev_code, v);
+                    } else if let Some(v) = digit {
+                        table[level].insert(evdev_code, v);
+                    }
+                } else if let Some(v) = digit {
+                    table[level].insert(evdev_code, v);
+                }
+            }
+        } else if let Some(v) = digit {
+            // Standard KEYPAD: NumLock always → digit, Level3 is masked
+            for level in 0..num_levels {
+                table[level].insert(evdev_code, v);
+            }
+        }
+    }
+
+    // Trim trailing empty levels
+    while table.last().is_some_and(|m| m.is_empty()) {
+        table.pop();
+    }
+
+    table
+}
+
+fn fix_xkb_edge_cases<C: Composer>(
+    wkb: &mut WKB<C>,
+    num_lock_codes: &mut Vec<u32>,
+    locale: String,
+    layout: Option<String>,
+) {
     // ── Keymap fixups (compensating for WKB parser limitations) ──
-    // These correct level_keymap values, num_lock_keys, etc. that WKB's
+    // These correct level_keymap values, num_lock_codes, etc. that WKB's
     // xkb-parser cannot derive correctly on its own.
     match (locale.as_str(), &layout.as_deref()) {
         // de:ru* key swap
@@ -1745,27 +1831,27 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
         }
         // Num lock key fixups
         ("am", Some("eastern")) | ("am", Some("western")) | ("am", Some("eastern-alt")) => {
-            wkb.num_lock_keys.push(2);
-            wkb.num_lock_keys.push(5);
-            wkb.num_lock_keys.push(6);
-            wkb.num_lock_keys.push(7);
+            num_lock_codes.push(2);
+            num_lock_codes.push(5);
+            num_lock_codes.push(6);
+            num_lock_codes.push(7);
         }
         ("ru", Some("ruintl_en")) => {
             wkb.level_keymap[3].insert(36, 'Ø');
         }
         ("cm", Some("azerty")) => {
-            wkb.num_lock_keys.push(2);
-            wkb.num_lock_keys.push(3);
-            wkb.num_lock_keys.push(4);
-            wkb.num_lock_keys.push(5);
-            wkb.num_lock_keys.push(6);
-            wkb.num_lock_keys.push(7);
-            wkb.num_lock_keys.push(8);
-            wkb.num_lock_keys.push(9);
-            wkb.num_lock_keys.push(10);
-            wkb.num_lock_keys.push(11);
+            num_lock_codes.push(2);
+            num_lock_codes.push(3);
+            num_lock_codes.push(4);
+            num_lock_codes.push(5);
+            num_lock_codes.push(6);
+            num_lock_codes.push(7);
+            num_lock_codes.push(8);
+            num_lock_codes.push(9);
+            num_lock_codes.push(10);
+            num_lock_codes.push(11);
         }
-        ("la", Some("stea")) => wkb.num_lock_keys.retain(|k| k != &83),
+        ("la", Some("stea")) => num_lock_codes.retain(|k| k != &83),
         ("de", Some("neo_base"))
         | ("de", Some("neo"))
         | ("de", Some("neo_qwerty_base"))
@@ -1779,8 +1865,9 @@ fn fix_xkb_edge_cases<C: Composer>(wkb: &mut WKB<C>, locale: String, layout: Opt
         | ("de", Some("koy_base"))
         | ("de", Some("koy"))
         | ("de", Some("adnw_base"))
-        | ("de", Some("adnw")) => {
-            wkb.num_lock_keys = Vec::new();
+        | ("de", Some("adnw"))
+        | ("de", Some("noted")) => {
+            num_lock_codes.clear();
         }
         _ => {}
     }
