@@ -8,8 +8,6 @@ use std::{
 
 use crate::composer::{Composer, ListComposer};
 use crate::modifiers::Modifiers;
-use crate::repeat::REPEAT_DEFAULT;
-use crate::REPEAT_KEYS;
 
 use regex::Regex;
 use xkb_parser::{
@@ -17,15 +15,19 @@ use xkb_parser::{
     parse,
 };
 
-use crate::default_keymap::DEFAULT_MAP;
 use crate::modifiers::{ModKind, ModType, BACKSPACE, CAPS_LOCK, TAB};
 use crate::WKB;
 
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
 
+mod default_keymap;
 pub mod evdev_xkb;
+mod repeat;
 pub mod xkb_compose_map;
 pub mod xkb_utf8;
+
+use default_keymap::DEFAULT_MAP;
+use repeat::REPEAT_DEFAULT;
 
 use evdev_xkb::XKBCODES_EVDEV;
 use xkb_compose_map::XKB_COMPOSE_MAP;
@@ -48,6 +50,15 @@ struct XkbBuildState {
     default_key_type: Option<String>,
     /// Per-key explicit type declarations (from `type[Group1] = "..."` within keys).
     key_types: HashMap<u32, String>,
+    /// Keycodes explicitly encountered during XKB parsing (from key
+    /// definitions in xkb_symbols sections, including included files).
+    /// Used by `build_repeat_keys` to distinguish keys that were actually
+    /// defined in the keymap from those filled in by `DEFAULT_MAP`.
+    /// Only explicitly-defined keys should be added to the repeat set
+    /// beyond what `REPEAT_DEFAULT` already provides, because xkbcommon
+    /// reports `key_repeats() == false` for keycodes that don't exist
+    /// in the compiled keymap.
+    explicit_keys: HashSet<u32>,
 }
 
 impl XkbBuildState {
@@ -56,6 +67,7 @@ impl XkbBuildState {
             bmp_unicode_keys: HashSet::new(),
             default_key_type: None,
             key_types: HashMap::new(),
+            explicit_keys: HashSet::new(),
         }
     }
 }
@@ -700,6 +712,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         &bs.default_key_type,
         &bs.bmp_unicode_keys,
     );
+    wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
 }
 
@@ -733,6 +746,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         &bs.default_key_type,
         &bs.bmp_unicode_keys,
     );
+    wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
 }
 
@@ -1064,19 +1078,6 @@ fn new_wkb(
     regular_composer: ListComposer,
     compose_key_composer: ListComposer,
 ) -> WKB<ListComposer> {
-    let repeat_keys = if let Some(locale) = &locale {
-        if let Some(locale_map) = REPEAT_KEYS.get(locale.as_str()) {
-            if let Some(layout_set) = locale_map.get(layout.as_str()) {
-                layout_set.clone()
-            } else {
-                REPEAT_DEFAULT.clone()
-            }
-        } else {
-            REPEAT_DEFAULT.clone()
-        }
-    } else {
-        REPEAT_DEFAULT.clone()
-    };
     WKB {
         layouts,
         layout,
@@ -1085,7 +1086,7 @@ fn new_wkb(
         compose_key_composer,
         level_keymap: Vec::with_capacity(8),
         pressed_keys: HashSet::new(),
-        repeat_keys,
+        repeat_keys: HashSet::new(),
         modifiers: Modifiers::default(),
         num_lock_keys: Vec::new(),
         remap: HashMap::new(),
@@ -1145,6 +1146,8 @@ fn map_xkb_from_str<C: Composer>(
                     }) = si
                     {
                         if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
+                            // Record this keycode as explicitly defined
+                            bs.explicit_keys.insert(*evdev_code);
                             // Track whether this key definition contains an
                             // explicit per-key type (type[Group1] = "...").
                             let mut has_explicit_type = false;
@@ -1452,9 +1455,20 @@ fn map_keys_and_modifiers<C: Composer>(
 /// For each level, the BTreeMap maps evdev_code → char that should be
 /// returned when NumLock is active at that modifier combination.
 ///
+/// Shift-cancels-NumLock: in xkbcommon's KEYPAD / FOUR_LEVEL_MIXED_KEYPAD
+/// types, pressing Shift while NumLock is active reverts to Level1
+/// (navigation).  We model this by leaving Shift-active levels empty in
+/// the table so that `utf8()` can detect the cancellation and return the
+/// base (level 0) value instead.
+///
 /// Key type determines behavior:
-/// - `FOUR_LEVEL_MIXED_KEYPAD`: Level3+NumLock → level 2 value; otherwise → digit (level 1).
-/// - Standard / other types: NumLock always → digit (level 1), Level3 is masked.
+/// - `FOUR_LEVEL_MIXED_KEYPAD`:
+///     - No Shift, no Level3  → digit (level 1)
+///     - Shift, no Level3     → empty (Shift cancels NumLock)
+///     - Level3 (±Shift)      → level3_val or digit (Shift does NOT cancel here)
+/// - Standard / other types:
+///     - No Shift             → digit (level 1)
+///     - Shift                → empty (Shift cancels NumLock)
 fn build_num_lock_table(
     num_lock_codes: &[u32],
     level_keymap: &[BTreeMap<u32, char>],
@@ -1490,21 +1504,35 @@ fn build_num_lock_table(
             let level3_val = if l2.is_some() && l2 != l0 { l2 } else { None };
 
             for level in 0..num_levels {
+                let has_shift = (level & 1) != 0;
                 let has_level3 = (level & 2) != 0;
                 if has_level3 {
+                    // Level3 active: Shift does NOT cancel NumLock.
+                    // Use level3_val (alt digit) or fall back to digit.
                     if let Some(v) = level3_val {
                         table[level].insert(evdev_code, v);
                     } else if let Some(v) = digit {
                         table[level].insert(evdev_code, v);
                     }
-                } else if let Some(v) = digit {
-                    table[level].insert(evdev_code, v);
+                } else if !has_shift {
+                    // No Level3, no Shift: NumLock → digit
+                    if let Some(v) = digit {
+                        table[level].insert(evdev_code, v);
+                    }
                 }
+                // !has_level3 && has_shift: Shift cancels NumLock → no entry
             }
-        } else if let Some(v) = digit {
-            // Standard KEYPAD: NumLock always → digit, Level3 is masked
-            for level in 0..num_levels {
-                table[level].insert(evdev_code, v);
+        } else {
+            // Standard KEYPAD: NumLock → digit, but Shift cancels NumLock.
+            // Level3/Level5 are not part of the KEYPAD type modifier set,
+            // so only Shift (bit 0) matters for cancellation.
+            if let Some(v) = digit {
+                for level in 0..num_levels {
+                    let has_shift = (level & 1) != 0;
+                    if !has_shift {
+                        table[level].insert(evdev_code, v);
+                    }
+                }
             }
         }
     }
@@ -1515,6 +1543,86 @@ fn build_num_lock_table(
     }
 
     table
+}
+
+/// Build the set of repeat keys at runtime.
+///
+/// In xkbcommon, a key repeats if it **exists** in the compiled keymap
+/// and its level-0 keysym is not a modifier.  WKB cannot fully track
+/// key existence because infrastructure keys (ESC, Tab, Enter, F-keys,
+/// numpad, multimedia keys, etc.) are resolved from `DEFAULT_MAP`
+/// rather than from XKB keysym parsing.  Only the main keyboard area
+/// keys (number row, letter rows, symbol keys — evdev codes 2–13,
+/// 16–27, 30–41, 44–53) are reliably recorded in `explicit_keys`.
+///
+/// Strategy:
+/// 1. Start with `REPEAT_DEFAULT` which covers every standard repeating
+///    keycode (infrastructure + main keyboard area).
+/// 2. Remove "layout-specific" keys (the main keyboard area) that were
+///    **not** explicitly parsed — these don't exist in the compiled
+///    keymap for fragment/overlay layouts.
+/// 3. Add explicitly-parsed keys that aren't already present.
+/// 4. Remove modifier keys (checking level-0 only, matching xkbcommon).
+fn build_repeat_keys(
+    level_keymap: &[BTreeMap<u32, char>],
+    modifiers: &Modifiers,
+    explicit_keys: &HashSet<u32>,
+) -> HashSet<u32> {
+    /// Keys in the main keyboard area whose existence varies by layout.
+    /// Fragment/overlay layouts (e.g. `apl:level3`, `jp:henkan`) don't
+    /// define these, so they should not repeat.  Full layouts (us:basic,
+    /// de:basic, …) always define them via includes.
+    fn is_layout_specific(code: u32) -> bool {
+        matches!(code, 2..=13 | 16..=27 | 30..=41 | 44..=53)
+    }
+
+    let mut repeat = REPEAT_DEFAULT.clone();
+
+    // Remove layout-specific keys that weren't explicitly parsed.
+    repeat.retain(|&code| !is_layout_specific(code) || explicit_keys.contains(&code));
+
+    // Add explicitly-parsed keys that produce characters (have entries
+    // in level_keymap).  This handles keys not in REPEAT_DEFAULT that
+    // are real character keys in certain layouts (e.g. KEY_RO / 89 in
+    // Brazilian layouts, KEY_YEN / 124 in French ergol).  Keys that
+    // were parsed but only have function/modifier keysyms (no character
+    // mapping) are NOT added — they don't repeat in xkbcommon either.
+    for &code in explicit_keys {
+        let has_char = level_keymap.iter().any(|m| m.contains_key(&code));
+        if has_char {
+            repeat.insert(code);
+        }
+    }
+
+    // Remove keys that act as modifiers at level 0.
+    // ModKind::None means the modifier slot was neutralised (e.g. CAPS
+    // remapped to BackSpace) — those keys DO repeat.
+    //
+    // Exception: Scroll Lock (70) repeats in xkbcommon despite being a
+    // lock modifier — the default compat section sets `repeat = True`
+    // for Scroll_Lock, unlike Caps_Lock and Num_Lock.
+    //
+    // Keys that only have modifier roles at levels > 0 (Leveled map
+    // without a level-0 entry) keep repeating, matching xkbcommon's
+    // behaviour of checking only the level-0 keysym.
+    for (&code, modifier) in &modifiers.0 {
+        if code == crate::modifiers::SCROLL_LOCK {
+            continue;
+        }
+        let is_modifier_at_level0 = match modifier {
+            crate::modifiers::Modifier::Single(ModKind::None) => false,
+            crate::modifiers::Modifier::Single(_) => true,
+            crate::modifiers::Modifier::Leveled(map) => {
+                // Only suppress repeat if level 0 is present and not None
+                map.get(&0).is_some_and(|mk| !matches!(mk, ModKind::None))
+            }
+        };
+        if is_modifier_at_level0 {
+            repeat.remove(&code);
+        }
+    }
+
+    repeat
 }
 
 fn fix_xkb_edge_cases<C: Composer>(

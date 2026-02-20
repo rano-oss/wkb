@@ -5,12 +5,8 @@ use modifiers::{level_index, ModKind, ModType, Modifier, *};
 
 pub use composer::{ComposeState, Composer, ListComposer, UnicodeComposer};
 pub mod composer;
-mod default_keymap;
 pub mod modifiers;
-mod repeat;
 pub mod xkb;
-
-include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {

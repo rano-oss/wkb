@@ -10,12 +10,15 @@ Todo list(tentative):
 - [x] Keymap
 - [x] Keymap functions 
 - [x] Level keys
-- [-] Repeat keys - move into parsing instead.
+- [x] Repeat keys
 - [x] Modifier support
 - [x] Level keys tests
 - [x] State keys tests
 - [x] Num_lock tests
 - [x] Caps_lock tests
+- [ ] Combined modifiers tests
+- [ ] try reaching edge case parity
+- [ ] Include previously ignored folders
 - [x] Composing
   - [x] Compose Key
   - [x] Compose Automagic
