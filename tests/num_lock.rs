@@ -6,7 +6,7 @@ use xkbcommon::{
 };
 
 mod common;
-use common::{key_range, multiple_keys, single_key, test_all_keys, xkb_new_from_names};
+use common::{key_range, multiple_keys, set_level, single_key, test_all_keys, xkb_new_from_names};
 
 // #[ignore]
 #[test_matrix([
@@ -54,35 +54,23 @@ fn level2(locale: &str) {
             continue;
         }
         // level 2
-        let (i, _) = wkb.modifiers.level2_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level2_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
 
-        // Define exception slice for level2 test
         let level2_exceptions = &[
             ("am", "eastern", single_key(2)),
             ("am", "eastern", key_range(5, 7)),
-            ("am", "eastern-alt", single_key(2)),
-            ("am", "eastern-alt", key_range(5, 7)),
             ("am", "western", single_key(2)),
             ("am", "western", key_range(5, 7)),
             ("be", "oss_latin9", single_key(55)),
             ("fr", "oss_latin9", single_key(55)),
             ("fr", "bepo_latin9", single_key(55)),
             ("fr", "mac", single_key(83)),
-            (
-                "apl",
-                "dyalog",
-                multiple_keys(vec![71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83]),
-            ),
-            (
-                "apl",
-                "dyalog_box",
-                multiple_keys(vec![71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83]),
-            ),
+            ("apl", "dyalog", key_range(71, 83)),
+            ("apl", "dyalog_box", key_range(71, 83)),
             (
                 "cm",
                 "azerty",
@@ -114,14 +102,12 @@ fn level3(locale: &str) {
             println!("{}", layout);
             continue;
         }
-        let (i, _) = wkb.modifiers.level3_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level3_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
 
-        // Define exception slice for level3 test
         let level3_exceptions = &[
             ("be", "oss_latin9", single_key(55)),
             ("fr", "oss_latin9", single_key(55)),
@@ -154,21 +140,15 @@ fn level4(locale: &str) {
         if wkb.level_keymap.len() < 4 || wkb.modifiers.level3_code().is_none() {
             continue;
         }
-        let (i, _) = wkb.modifiers.level3_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
-
-        let (i, _) = wkb.modifiers.level2_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level3_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
+        let (code, level) = wkb.modifiers.level2_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
 
-        // Define exception slice for level4 test
-        let level4_exceptions = &[("de", "T3", single_key(86))];
-
-        test_all_keys(wkb, xkb, layout, level4_exceptions);
+        test_all_keys(wkb, xkb, layout, &[]);
     }
 }
 
@@ -192,10 +172,8 @@ fn level5(locale: &str) {
         if wkb.level_keymap.len() < 5 || wkb.modifiers.level5_code().is_none() {
             continue;
         }
-        let (i, _) = wkb.modifiers.level5_code().unwrap();
-        // assert!(i != 0);
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level5_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
@@ -223,13 +201,11 @@ fn level6(locale: &str) {
             continue;
         }
         // level 5
-        let (i, _) = wkb.modifiers.level5_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level5_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // level 2
-        let (i, _) = wkb.modifiers.level2_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level2_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
@@ -259,13 +235,11 @@ fn level7(locale: &str) {
             continue;
         }
         // level 5
-        let (i, _) = wkb.modifiers.level5_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level5_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // level 3
-        let (i, _) = wkb.modifiers.level3_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level3_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
@@ -297,17 +271,14 @@ fn level8(locale: &str) {
             continue;
         }
         // level 5
-        let (i, _) = wkb.modifiers.level5_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level5_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // level 3
-        let (i, _) = wkb.modifiers.level3_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level3_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // level 2
-        let (i, _) = wkb.modifiers.level2_code().unwrap();
-        xkb.update_key(Keycode::new(i as u32 + 8), xkb::KeyDirection::Down);
-        wkb.update_key(i, wkb::KeyDirection::Down);
+        let (code, level) = wkb.modifiers.level2_code().unwrap();
+        set_level(&mut wkb, &mut xkb, code, level);
         // NumLock
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
