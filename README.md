@@ -16,8 +16,10 @@ Todo list(tentative):
 - [x] State keys tests
 - [x] Num_lock tests
 - [x] Caps_lock tests
-- [ ] Combined modifiers tests
+- [ ] Combined modifiers tests, edge case tests
 - [ ] Try reaching edge case parity
+- [ ] Compare Modifiers State between xkb and wkb test
+- [ ] Keymap handling/storage
 - [x] Include previously ignored folders
 - [x] Composing
   - [x] Compose Key

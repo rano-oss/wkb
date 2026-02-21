@@ -706,6 +706,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         &bs.key_types,
         &bs.default_key_type,
         &bs.bmp_unicode_keys,
+        &bs.key_num_symbols,
     );
     wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
@@ -741,6 +742,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         &bs.key_types,
         &bs.default_key_type,
         &bs.bmp_unicode_keys,
+        &bs.key_num_symbols,
     );
     wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
@@ -809,6 +811,7 @@ fn build_caps_lock_table(
     key_types: &HashMap<u32, String>,
     _default_key_type: &Option<String>,
     bmp_unicode_keys: &HashSet<(usize, u32)>,
+    key_num_symbols: &HashMap<u32, usize>,
 ) -> Vec<BTreeMap<u32, char>> {
     if level_keymap.len() < 2 {
         return Vec::new();
@@ -858,14 +861,63 @@ fn build_caps_lock_table(
         let caps_class = match key_types.get(&evdev_code) {
             Some(name) => key_type_caps_class(name),
             None => {
-                // Auto-detect: match xkbcommon's default type inference.
-                // If level0 is lowercase and level1 is uppercase, it's a case pair.
-                // For 2-level keys → ALPHABETIC, for 4+ level keys → SEMIALPHABETIC.
+                // Auto-detect: replicate xkbcommon's FindAutomaticType logic.
+                // The key type depends on the key's OWN symbol count, not the
+                // total number of levels in the keymap.
+                //
+                //  2-symbol case pair → ALPHABETIC (Lock toggles at all levels)
+                //  4-symbol case pair at levels 0-1 AND 2-3 → FOUR_LEVEL_ALPHABETIC
+                //  4-symbol case pair at levels 0-1 only → FOUR_LEVEL_SEMIALPHABETIC
+                //  otherwise → PostProcess (uppercase post-processing)
+                let num_syms = key_num_symbols.get(&evdev_code).copied().unwrap_or(0);
                 if is_case_pair(level_keymap, evdev_code, &effective_bmp) {
-                    if num_levels <= 2 {
+                    if num_syms <= 2 {
+                        // 2-symbol ALPHABETIC: Lock toggles Shift bit at all levels.
+                        // AltGr/Level5 are not in the type's modifier set, so the
+                        // key always behaves as if only Shift+Lock are active.
                         CapsClass::Alphabetic
                     } else {
-                        CapsClass::SemiAlphabetic
+                        // 4+ symbols: check if levels 2-3 also form a case pair
+                        // → FOUR_LEVEL_ALPHABETIC (toggle at all levels)
+                        // Otherwise → FOUR_LEVEL_SEMIALPHABETIC (toggle 0-1 only,
+                        // post-process uppercase at 2+)
+                        //
+                        // To avoid false positives from propagated values (e.g.
+                        // de:dvorak key 50 = [m, M, µ] where level 3 gets 'M'
+                        // from level-1 propagation), require that levels 2-3
+                        // actually differ from levels 0-1.  If they match, the
+                        // values were likely propagated rather than explicitly
+                        // defined by the layout — and the result is the same
+                        // regardless of Alphabetic vs SemiAlphabetic classification.
+                        let has_level23_case_pair = if num_syms >= 4 && level_keymap.len() > 3 {
+                            let l0 = level_keymap[0].get(&evdev_code).copied();
+                            let l1 = level_keymap[1].get(&evdev_code).copied();
+                            let l2 = level_keymap[2].get(&evdev_code).copied();
+                            let l3 = level_keymap[3].get(&evdev_code).copied();
+                            if let (Some(c2), Some(c3)) = (l2, l3) {
+                                // Levels 2-3 must differ from levels 0-1 to
+                                // confirm they are original parsed values.
+                                let l2_distinct = l0.map_or(true, |c0| c2 != c0);
+                                let l3_distinct = l1.map_or(true, |c1| c3 != c1);
+                                if !l2_distinct || !l3_distinct {
+                                    false
+                                } else {
+                                    let c2_lower = caps_uppercase(c2) != c2 || c2.is_lowercase();
+                                    let c3_upper =
+                                        c3.to_lowercase().next() != Some(c3) || c3.is_uppercase();
+                                    c2 != c3 && c2_lower && c3_upper
+                                }
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        };
+                        if has_level23_case_pair {
+                            CapsClass::Alphabetic
+                        } else {
+                            CapsClass::SemiAlphabetic
+                        }
                     }
                 } else {
                     CapsClass::PostProcess
