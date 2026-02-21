@@ -59,6 +59,23 @@ struct XkbBuildState {
     /// reports `key_repeats() == false` for keycodes that don't exist
     /// in the compiled keymap.
     explicit_keys: HashSet<u32>,
+    /// Evdev keycodes whose definitions contain at least one KP_* keysym
+    /// at a level > 0 but NOT at level 0. xkbcommon's `FindAutomaticType`
+    /// assigns the KEYPAD key type to 2-symbol keys that contain a keypad
+    /// keysym, which changes the modifier-to-level mapping: Shift stays
+    /// at Level 1, only NumLock activates Level 2.
+    ///
+    /// Keys where level 0 is ALSO a KP_* keysym (e.g. `[KP_Delete, KP_Decimal]`)
+    /// are excluded because xkbcommon expands those to FOUR_LEVEL_KEYPAD
+    /// where Shift→Level 2 is correct.
+    keypad_shifted_keys: HashSet<u32>,
+    /// Evdev keycodes whose level-0 symbol is a KP_* keysym.
+    keypad_base_keys: HashSet<u32>,
+    /// Number of symbols explicitly defined for each key (evdev code).
+    /// Used by `fix_key_type_levels` to distinguish 1-symbol ONE_LEVEL keys
+    /// (where DEFAULT_MAP digit values at level 1 should be overwritten)
+    /// from 2-symbol keys whose level 1 was intentionally defined.
+    key_num_symbols: HashMap<u32, usize>,
 }
 
 impl XkbBuildState {
@@ -68,6 +85,9 @@ impl XkbBuildState {
             default_key_type: None,
             key_types: HashMap::new(),
             explicit_keys: HashSet::new(),
+            keypad_shifted_keys: HashSet::new(),
+            keypad_base_keys: HashSet::new(),
+            key_num_symbols: HashMap::new(),
         }
     }
 }
@@ -680,6 +700,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     );
     fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, locale, Some(layout));
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
+    fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
         &bs.key_types,
@@ -714,6 +735,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         82, 83, // 0, .
     ];
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
+    fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
         &bs.key_types,
@@ -1125,6 +1147,13 @@ fn map_xkb_from_str<C: Composer>(
                             // Track whether this key definition contains an
                             // explicit per-key type (type[Group1] = "...").
                             let mut has_explicit_type = false;
+                            // Track whether we've already processed a KeyNames
+                            // group for this key.  Multi-group definitions like
+                            //   key <AE01> { [1, exclam], [kana_NU] };
+                            // produce multiple KeyNames entries — one per group.
+                            // xkbcommon only uses Group 1 by default, so we must
+                            // skip Group 2+ to avoid overwriting level 0 values.
+                            let mut key_names_processed = false;
                             values.iter().for_each(|v| {
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                     // Per-key type declaration: type[Group1] = "..."
@@ -1134,12 +1163,27 @@ fn map_xkb_from_str<C: Composer>(
                                         has_explicit_type = true;
                                     }
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
+                                        // Track symbol count for auto-type detection.
+                                        let new_count = key.values.values.len();
+                                        let entry =
+                                            bs.key_num_symbols.entry(*evdev_code).or_insert(0);
+                                        *entry = std::cmp::max(*entry, new_count);
+
                                         for (i, v) in key.values.values.iter().enumerate() {
                                             if i == wkb.level_keymap.len() {
                                                 if i < DEFAULT_MAP.len() {
                                                     wkb.level_keymap.push(DEFAULT_MAP[i].clone());
                                                 } else {
                                                     wkb.level_keymap.push(BTreeMap::new());
+                                                }
+                                            }
+                                            // Track keys containing KP_* keysyms for
+                                            // KEYPAD-type level adjustment.
+                                            if v.starts_with("KP_") {
+                                                if i == 0 {
+                                                    bs.keypad_base_keys.insert(*evdev_code);
+                                                } else {
+                                                    bs.keypad_shifted_keys.insert(*evdev_code);
                                                 }
                                             }
                                             let single_char =
@@ -1154,15 +1198,18 @@ fn map_xkb_from_str<C: Composer>(
                                         }
                                     }
                                 } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
-                                    map_keys_and_modifiers(
-                                        wkb,
-                                        bs,
-                                        key,
-                                        evdev_code,
-                                        layout.clone(),
-                                        locale.clone().unwrap_or_default(),
-                                        id.content.to_owned(),
-                                    );
+                                    if !key_names_processed {
+                                        key_names_processed = true;
+                                        map_keys_and_modifiers(
+                                            wkb,
+                                            bs,
+                                            key,
+                                            evdev_code,
+                                            layout.clone(),
+                                            locale.clone().unwrap_or_default(),
+                                            id.content.to_owned(),
+                                        );
+                                    }
                                 }
                             });
                             // After all values for this key are processed,
@@ -1209,6 +1256,11 @@ fn map_keys_and_modifiers<C: Composer>(
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         }
     }
+    // Track how many symbols are explicitly defined for this key.
+    let new_count = key.values.len();
+    let entry = bs.key_num_symbols.entry(*evdev_code).or_insert(0);
+    *entry = std::cmp::max(*entry, new_count);
+
     for (i, v) in key.values.iter().enumerate() {
         if i == wkb.level_keymap.len() {
             if i < DEFAULT_MAP.len() {
@@ -1258,6 +1310,15 @@ fn map_keys_and_modifiers<C: Composer>(
             }
             XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
         };
+        // Track keys that contain KP_* keysyms so we can apply
+        // KEYPAD-type level adjustments later (Shift stays at Level 1).
+        if v.content.starts_with("KP_") {
+            if i == 0 {
+                bs.keypad_base_keys.insert(*evdev_code);
+            } else {
+                bs.keypad_shifted_keys.insert(*evdev_code);
+            }
+        }
         if let Some(single_char) = single_char {
             wkb.level_keymap[i].insert(*evdev_code, single_char);
         } else {
@@ -1599,6 +1660,154 @@ fn build_repeat_keys(
     repeat
 }
 
+/// Adjust `level_keymap` entries for keys whose XKB key type uses a
+/// non-standard modifier-to-level mapping.
+///
+/// xkbcommon assigns key types that change how modifiers select levels:
+///
+/// - **KEYPAD** (auto-detected for 2-symbol keys containing a KP_* keysym):
+///   Shift stays at Level 1; only NumLock activates Level 2.
+///
+/// - **FOUR_LEVEL_X** (explicit `type = "FOUR_LEVEL_X"`):
+///   `map[Shift] = Level1`, `map[LevelThree] = Level2`,
+///   `map[Shift+LevelThree] = Level3`, `map[Control+Alt] = Level4`.
+///
+/// - **ALPHABETIC** (explicit `type = "ALPHABETIC"`):
+///   Only Shift and Lock affect the level; AltGr / Level5 have no effect.
+///
+/// WKB's level index assumes: 0=None, 1=Shift, 2=AltGr, 3=Shift+AltGr,
+/// so we rearrange the per-key values to match xkbcommon's resolution.
+///
+/// Must be called **after** `build_num_lock_table` (which needs the
+/// original Level 2 digit values) and **after** `fix_xkb_edge_cases`
+/// (which fills DEFAULT_MAP fallbacks).
+fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs: &XkbBuildState) {
+    // ── 1. KEYPAD / ONE_LEVEL keys ──────────────────────────────────
+    //
+    // xkbcommon auto-detects the key type from the keysym content:
+    //
+    //  • 1-symbol key → ONE_LEVEL: Shift has no effect.
+    //  • 2-symbol key with mixed KP_/non-KP_ keysyms → KEYPAD:
+    //        Shift stays at Level 1, only NumLock activates Level 2.
+    //  • 2-symbol key where BOTH syms are KP_ → expanded to
+    //        FOUR_LEVEL_KEYPAD when LevelThree is available:
+    //        Shift → Level 2 (standard mapping, no fix needed).
+    //
+    // For ONE_LEVEL keys in `num_lock_codes` whose level 1 was filled
+    // by DEFAULT_MAP (not by the parser), copy level 0 → level 1 so
+    // that Shift produces the same character as the unmodified press.
+    for &code in num_lock_codes {
+        let key_type = bs.key_types.get(&code).map(|s| s.as_str());
+        match key_type {
+            // These explicit types map Shift → Level2, matching WKB's default.
+            Some("FOUR_LEVEL_MIXED_KEYPAD") | Some("FOUR_LEVEL_KEYPAD") => continue,
+            // FOUR_LEVEL_X is handled in the next section.
+            Some("FOUR_LEVEL_X") => continue,
+            _ => {
+                let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
+                // Only fix keys whose level 1 was NOT explicitly defined
+                // during parsing (i.e. came from DEFAULT_MAP).  Keys with
+                // 2+ defined symbols already have their intended shift value.
+                if num_syms < 2 {
+                    if let Some(value) = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied())
+                    {
+                        if wkb.level_keymap.len() > 1 {
+                            wkb.level_keymap[1].insert(code, value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle keys detected as having KP_* keysyms at a shifted level
+    // but NOT at level 0 (e.g. am:eastern AE01 = [Armenian_full_stop, KP_1]).
+    // xkbcommon assigns KEYPAD type to 2-symbol keys containing a keypad
+    // keysym: Shift stays at Level 1, and AltGr/Level5 have no effect
+    // either — only NumLock activates Level 2.
+    //
+    // Keys with > 2 symbols (e.g. cm:azerty [ampersand, KP_1, onesuperior,
+    // U2018]) get FOUR_LEVEL type where Shift→Level 2 is correct, so we
+    // must NOT overwrite their level 1 values.
+    for &code in &bs.keypad_shifted_keys {
+        // Skip if level 0 is also KP_ — those get FOUR_LEVEL_KEYPAD
+        // where Shift→Level 2 is correct.
+        if bs.keypad_base_keys.contains(&code) {
+            continue;
+        }
+        // Only apply to 2-symbol (KEYPAD type) keys.  4-symbol keys get
+        // FOUR_LEVEL type where Shift→Level 2 is the intended behaviour.
+        let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
+        if num_syms > 2 {
+            continue;
+        }
+        let key_type = bs.key_types.get(&code).map(|s| s.as_str());
+        if key_type.is_none() {
+            if let Some(value) = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied()) {
+                // KEYPAD type: Shift/AltGr/Level5 all stay at Level 1.
+                // Copy level 0 to ALL higher levels so no modifier
+                // combination changes the output.
+                for i in 1..wkb.level_keymap.len() {
+                    wkb.level_keymap[i].insert(code, value);
+                }
+            }
+        }
+    }
+
+    // ── 2. FOUR_LEVEL_X keys ────────────────────────────────────────
+    // Rearrange from [L1, L2, L3, L4] to [L1, L1, L2, L3]:
+    //   WKB level 0 (None)      → xkb L1 = symbol[0]
+    //   WKB level 1 (Shift)     → xkb L1 = symbol[0]  (Shift stays L1)
+    //   WKB level 2 (AltGr)     → xkb L2 = symbol[1]
+    //   WKB level 3 (Shift+AltGr) → xkb L3 = symbol[2]
+    for (&code, type_name) in &bs.key_types {
+        if type_name != "FOUR_LEVEL_X" {
+            continue;
+        }
+        let l0 = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied());
+        let l1 = wkb.level_keymap.get(1).and_then(|m| m.get(&code).copied());
+        let l2 = wkb.level_keymap.get(2).and_then(|m| m.get(&code).copied());
+
+        if let Some(v) = l0 {
+            if wkb.level_keymap.len() > 1 {
+                wkb.level_keymap[1].insert(code, v);
+            }
+        }
+        if let Some(v) = l1 {
+            if wkb.level_keymap.len() > 2 {
+                wkb.level_keymap[2].insert(code, v);
+            }
+        }
+        if let Some(v) = l2 {
+            if wkb.level_keymap.len() > 3 {
+                wkb.level_keymap[3].insert(code, v);
+            }
+        }
+    }
+
+    // ── 3. ALPHABETIC keys ──────────────────────────────────────────
+    // Only Shift and Lock affect the level; AltGr / Level5 are ignored.
+    // Even levels (AltGr off) → Level 1, odd levels → Level 2.
+    for (&code, type_name) in &bs.key_types {
+        if type_name != "ALPHABETIC" {
+            continue;
+        }
+        let l0 = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied());
+        let l1 = wkb.level_keymap.get(1).and_then(|m| m.get(&code).copied());
+
+        if let Some(v) = l0 {
+            for i in (2..wkb.level_keymap.len()).step_by(2) {
+                wkb.level_keymap[i].insert(code, v);
+            }
+        }
+        if let Some(v) = l1 {
+            for i in (3..wkb.level_keymap.len()).step_by(2) {
+                wkb.level_keymap[i].insert(code, v);
+            }
+        }
+    }
+}
+
 fn fix_xkb_edge_cases<C: Composer>(
     wkb: &mut WKB<C>,
     num_lock_codes: &mut Vec<u32>,
@@ -1815,25 +2024,9 @@ fn fix_xkb_edge_cases<C: Composer>(
             let value = *wkb.level_keymap[2].get(&86).unwrap();
             wkb.level_keymap[6].insert(86, value);
         }
-        // fr:bepo_latin9 level_keymap fixups
-        ("fr", Some("bepo_latin9")) => {
-            let value = *wkb.level_keymap[2].get(&55).unwrap();
-            wkb.level_keymap[3].insert(55, value);
-            let value = *wkb.level_keymap[2].get(&98).unwrap();
-            wkb.level_keymap[3].insert(98, value);
-        }
-        // fr/be:oss_latin9 level_keymap fixups
-        ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
-            let value = *wkb.level_keymap[2].get(&55).unwrap();
-            wkb.level_keymap[3].insert(55, value);
-            let value = *wkb.level_keymap[2].get(&98).unwrap();
-            wkb.level_keymap[3].insert(98, value);
-        }
-        // fr:mac level_keymap fixup
-        ("fr", Some("mac")) => {
-            let value = *wkb.level_keymap[0].get(&83).unwrap();
-            wkb.level_keymap[3].insert(83, value);
-        }
+        // fr:bepo_latin9 — now handled generically by fix_key_type_levels (FOUR_LEVEL_X)
+        // fr/be:oss_latin9 — now handled generically by fix_key_type_levels (FOUR_LEVEL_X)
+        // fr:mac — now handled generically by fix_key_type_levels (KEYPAD auto-detect)
         // fr:afnor level_keymap fixups
         ("fr", Some("afnor")) => {
             for i in 0..2 {

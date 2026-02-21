@@ -51,20 +51,7 @@ fn level2(locale: &str) {
         let (code, level) = wkb.modifiers.level2_code().unwrap();
         set_level(&mut wkb, &mut xkb, code, level);
 
-        let level2_exceptions = &[
-            ("am", "eastern", single_key(2)),
-            ("am", "eastern", key_range(5, 7)),
-            ("am", "western", single_key(2)),
-            ("am", "western", key_range(5, 7)),
-            ("be", "oss_latin9", single_key(55)),
-            ("fr", "oss_latin9", single_key(55)),
-            ("fr", "bepo_latin9", single_key(55)),
-            ("fr", "mac", single_key(83)),
-            ("apl", "dyalog_box", key_range(71, 83)),
-            ("apl", "dyalog", key_range(71, 83)),
-        ];
-
-        test_all_keys(wkb, xkb, layout, level2_exceptions);
+        test_all_keys(wkb, xkb, layout, &[]);
     }
 }
 
@@ -90,17 +77,7 @@ fn level3(locale: &str) {
         let (code, level) = wkb.modifiers.level3_code().unwrap();
         set_level(&mut wkb, &mut xkb, code, level);
 
-        let level3_exceptions = &[
-            ("be", "oss_latin9", single_key(55)),
-            ("fr", "oss_latin9", single_key(55)),
-            ("fr", "bepo_latin9", single_key(55)),
-            ("be", "oss_latin9", single_key(98)),
-            ("fr", "oss_latin9", single_key(98)),
-            ("fr", "bepo_latin9", single_key(98)),
-            ("ua", "winkeysenhanced", single_key(86)),
-        ];
-
-        test_all_keys(wkb, xkb, layout, level3_exceptions);
+        test_all_keys(wkb, xkb, layout, &[]);
     }
 }
 
@@ -128,9 +105,7 @@ fn level4(locale: &str) {
         let (code, level) = wkb.modifiers.level2_code().unwrap();
         set_level(&mut wkb, &mut xkb, code, level);
 
-        let level4_exceptions = &[("ua", "winkeysenhanced", single_key(86))];
-
-        test_all_keys(wkb, xkb, layout, level4_exceptions);
+        test_all_keys(wkb, xkb, layout, &[]);
     }
 }
 
