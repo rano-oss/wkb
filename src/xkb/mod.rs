@@ -94,9 +94,11 @@ impl XkbBuildState {
 
 /// Unicode simple uppercase mapping for characters where Rust's
 /// `char::to_uppercase()` (full case mapping) expands to multiple
-/// codepoints or doesn't map at all. xkbcommon's `xkb_keysym_to_upper`
-/// uses simple mapping from UnicodeData.txt, which includes mathematical
-/// alphanumeric symbols that Rust's standard library doesn't handle.
+/// codepoints or doesn't map at all.
+///
+/// Note: Mathematical Alphanumeric Symbols (U+1D400–U+1D7FF) are NOT
+/// included here because xkbcommon's `xkb_keysym_to_upper` does not
+/// uppercase them (its case tables don't cover SMP mathematical symbols).
 fn simple_uppercase(c: char) -> Option<char> {
     match c {
         'ß' => Some('ẞ'), // U+00DF → U+1E9E
@@ -107,135 +109,8 @@ fn simple_uppercase(c: char) -> Option<char> {
         'ﬄ' => None,      // U+FB04: no simple uppercase
         'ﬅ' => None,      // U+FB05: no simple uppercase
         'ﬆ' => None,      // U+FB06: no simple uppercase
-        _ => math_uppercase(c),
+        _ => None,
     }
-}
-
-/// Uppercase mapping for Mathematical Alphanumeric Symbols (U+1D400–U+1D7FF).
-///
-/// Rust's `char::to_uppercase()` doesn't handle these because they have
-/// `<font>` decomposition type, but xkbcommon's `xkb_keysym_to_upper`
-/// uses the Simple_Uppercase_Mapping from UnicodeData.txt which does
-/// include them. Each style (bold, italic, double-struck, etc.) has
-/// lowercase letters at a fixed offset from their uppercase counterparts,
-/// except where pre-existing Unicode characters replace some uppercase
-/// slots (e.g., ℂ U+2102 instead of 𝔺).
-fn math_uppercase(c: char) -> Option<char> {
-    let cp = c as u32;
-    // Mathematical Bold: a-z 1D41A–1D433 → A-Z 1D400–1D419
-    if (0x1D41A..=0x1D433).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Italic: a-z 1D44E–1D467 → A-Z 1D434–1D44D
-    // (h at 1D455 is replaced by ℎ U+210E, but lowercase h maps to 1D43B)
-    if (0x1D44E..=0x1D467).contains(&cp) {
-        let upper = cp - 26;
-        return char::from_u32(upper);
-    }
-    // Mathematical Bold Italic: a-z 1D482–1D49B → A-Z 1D468–1D481
-    if (0x1D482..=0x1D49B).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Script: a-z 1D4B6–1D4CF → A-Z 1D49C–1D4B5
-    // (gaps: B→ℬ U+212C, E→ℰ U+2130, F→ℱ U+2131, H→ℋ U+210B,
-    //  I→ℐ U+2110, L→ℒ U+2112, M→ℳ U+2133, R→ℛ U+211B,
-    //  e→ℯ U+212F, g→ℊ U+210A, o→ℴ U+2134)
-    if (0x1D4B6..=0x1D4CF).contains(&cp) {
-        let idx = cp - 0x1D4B6; // 0-based index (a=0..z=25)
-        let upper = match idx {
-            1 => 0x212C,  // b→ℬ (B is at U+212C)
-            4 => 0x2130,  // e→ℰ (E is at U+2130)
-            5 => 0x2131,  // f→ℱ (F is at U+2131)
-            7 => 0x210B,  // h→ℋ (H is at U+210B)
-            8 => 0x2110,  // i→ℐ (I is at U+2110)
-            11 => 0x2112, // l→ℒ (L is at U+2112)
-            12 => 0x2133, // m→ℳ (M is at U+2133)
-            17 => 0x211B, // r→ℛ (R is at U+211B)
-            _ => cp - 26,
-        };
-        return char::from_u32(upper);
-    }
-    // Mathematical Bold Script: a-z 1D4EA–1D503 → A-Z 1D4D0–1D4E9
-    if (0x1D4EA..=0x1D503).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Fraktur: a-z 1D51E–1D537 → A-Z 1D504–1D51D
-    // (gaps: C→ℭ U+212D, H→ℌ U+210C, I→ℑ U+2111, R→ℜ U+211C, Z→ℨ U+2128)
-    if (0x1D51E..=0x1D537).contains(&cp) {
-        let idx = cp - 0x1D51E;
-        let upper = match idx {
-            2 => 0x212D,  // c→ℭ
-            7 => 0x210C,  // h→ℌ
-            8 => 0x2111,  // i→ℑ
-            17 => 0x211C, // r→ℜ
-            25 => 0x2128, // z→ℨ
-            _ => cp - 26,
-        };
-        return char::from_u32(upper);
-    }
-    // Mathematical Double-Struck: a-z 1D552–1D56B → A-Z 1D538–1D551
-    // (gaps: C→ℂ U+2102, H→ℍ U+210D, N→ℕ U+2115, P→ℙ U+2119,
-    //  Q→ℚ U+211A, R→ℝ U+211D, Z→ℤ U+2124)
-    if (0x1D552..=0x1D56B).contains(&cp) {
-        let idx = cp - 0x1D552;
-        let upper = match idx {
-            2 => 0x2102,  // c→ℂ
-            7 => 0x210D,  // h→ℍ
-            13 => 0x2115, // n→ℕ
-            15 => 0x2119, // p→ℙ
-            16 => 0x211A, // q→ℚ
-            17 => 0x211D, // r→ℝ
-            25 => 0x2124, // z→ℤ
-            _ => cp - 26,
-        };
-        return char::from_u32(upper);
-    }
-    // Mathematical Bold Fraktur: a-z 1D586–1D59F → A-Z 1D56C–1D585
-    if (0x1D586..=0x1D59F).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif: a-z 1D5BA–1D5D3 → A-Z 1D5A0–1D5B9
-    if (0x1D5BA..=0x1D5D3).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif Bold: a-z 1D5EE–1D607 → A-Z 1D5D4–1D5ED
-    if (0x1D5EE..=0x1D607).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif Italic: a-z 1D622–1D63B → A-Z 1D608–1D621
-    if (0x1D622..=0x1D63B).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif Bold Italic: a-z 1D656–1D66F → A-Z 1D63C–1D655
-    if (0x1D656..=0x1D66F).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Monospace: a-z 1D68A–1D6A3 → A-Z 1D670–1D689
-    if (0x1D68A..=0x1D6A3).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Bold Greek: α-ω 1D6C2–1D6DA → Α-Ω 1D6A8–1D6C0
-    // (offset 26 for 25 letters, ϑ at 1D6DD, ϰ at 1D6DE etc. are extras)
-    if (0x1D6C2..=0x1D6DA).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Italic Greek: α-ω 1D6FC–1D714 → Α-Ω 1D6E2–1D6FA
-    if (0x1D6FC..=0x1D714).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Bold Italic Greek: α-ω 1D736–1D74E → Α-Ω 1D71C–1D734
-    if (0x1D736..=0x1D74E).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif Bold Greek: α-ω 1D770–1D788 → Α-Ω 1D756–1D76E
-    if (0x1D770..=0x1D788).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    // Mathematical Sans-Serif Bold Italic Greek: α-ω 1D7AA–1D7C2 → Α-Ω 1D790–1D7A8
-    if (0x1D7AA..=0x1D7C2).contains(&cp) {
-        return char::from_u32(cp - 26);
-    }
-    None
 }
 
 /// Apply uppercase for caps lock post-processing.
@@ -700,6 +575,27 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     );
     fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, locale, Some(layout));
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
+
+    // apl:dyalog_box — numpad keys are ONE_LEVEL in xkbcommon, so
+    // Shift does not produce digits even when NumLock is active (Shift
+    // cancels NumLock back to the base box-drawing character).  Copy
+    // level 0 values into num_lock_keys at odd (Shift) levels.
+    if wkb.locale.as_deref() == Some("apl")
+        && matches!(wkb.layout.as_str(), "dyalog_box" | "dyalog")
+    {
+        let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
+        while wkb.num_lock_keys.len() < wkb.level_keymap.len() {
+            wkb.num_lock_keys.push(BTreeMap::new());
+        }
+        for &code in numpad_keys {
+            if let Some(&value) = wkb.level_keymap[0].get(&code) {
+                for level in (1..wkb.num_lock_keys.len()).step_by(2) {
+                    wkb.num_lock_keys[level].insert(code, value);
+                }
+            }
+        }
+    }
+
     fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
@@ -708,6 +604,27 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         &bs.bmp_unicode_keys,
         &bs.key_num_symbols,
     );
+    // apl:dyalog_box — numpad keys are ONE_LEVEL in xkbcommon, so
+    // CapsLock+Shift still produces the level-0 (box-drawing) char.
+    // Copy level 0 values into caps_lock_table at odd (Shift) levels
+    // so that the CapsLock path in utf8() returns the base character
+    // instead of falling through to level_keymap[1] (digits).
+    if wkb.locale.as_deref() == Some("apl")
+        && matches!(wkb.layout.as_str(), "dyalog_box" | "dyalog")
+    {
+        let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
+        // Ensure caps_lock_table has enough levels
+        while wkb.caps_lock_table.len() < wkb.level_keymap.len() {
+            wkb.caps_lock_table.push(BTreeMap::new());
+        }
+        for &code in numpad_keys {
+            if let Some(&value) = wkb.level_keymap[0].get(&code) {
+                for level in (1..wkb.caps_lock_table.len()).step_by(2) {
+                    wkb.caps_lock_table[level].insert(code, value);
+                }
+            }
+        }
+    }
     wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
 }
@@ -736,6 +653,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         82, 83, // 0, .
     ];
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.level_keymap, &bs.key_types);
+
     fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
@@ -882,31 +800,21 @@ fn build_caps_lock_table(
                         // Otherwise → FOUR_LEVEL_SEMIALPHABETIC (toggle 0-1 only,
                         // post-process uppercase at 2+)
                         //
-                        // To avoid false positives from propagated values (e.g.
-                        // de:dvorak key 50 = [m, M, µ] where level 3 gets 'M'
-                        // from level-1 propagation), require that levels 2-3
-                        // actually differ from levels 0-1.  If they match, the
-                        // values were likely propagated rather than explicitly
-                        // defined by the layout — and the result is the same
-                        // regardless of Alphabetic vs SemiAlphabetic classification.
+                        // Check if levels 2-3 also form a case pair, matching
+                        // xkbcommon's FindAutomaticType logic.  xkbcommon checks
+                        // xkb_keysym_is_lower(sym[2]) && xkb_keysym_is_upper(sym[3])
+                        // without requiring that levels 2-3 differ from 0-1.
+                        // Keys like [q, Q, q, Q] (explicitly defined with 4
+                        // identical-to-base symbols) are correctly detected as
+                        // FOUR_LEVEL_ALPHABETIC by xkbcommon.
                         let has_level23_case_pair = if num_syms >= 4 && level_keymap.len() > 3 {
-                            let l0 = level_keymap[0].get(&evdev_code).copied();
-                            let l1 = level_keymap[1].get(&evdev_code).copied();
                             let l2 = level_keymap[2].get(&evdev_code).copied();
                             let l3 = level_keymap[3].get(&evdev_code).copied();
                             if let (Some(c2), Some(c3)) = (l2, l3) {
-                                // Levels 2-3 must differ from levels 0-1 to
-                                // confirm they are original parsed values.
-                                let l2_distinct = l0.map_or(true, |c0| c2 != c0);
-                                let l3_distinct = l1.map_or(true, |c1| c3 != c1);
-                                if !l2_distinct || !l3_distinct {
-                                    false
-                                } else {
-                                    let c2_lower = caps_uppercase(c2) != c2 || c2.is_lowercase();
-                                    let c3_upper =
-                                        c3.to_lowercase().next() != Some(c3) || c3.is_uppercase();
-                                    c2 != c3 && c2_lower && c3_upper
-                                }
+                                let c2_lower = caps_uppercase(c2) != c2 || c2.is_lowercase();
+                                let c3_upper =
+                                    c3.to_lowercase().next() != Some(c3) || c3.is_uppercase();
+                                c2 != c3 && c2_lower && c3_upper
                             } else {
                                 false
                             }
@@ -929,59 +837,116 @@ fn build_caps_lock_table(
             CapsClass::Alphabetic => {
                 // Lock toggles the level2 bit at all levels
                 // level0 ↔ level1, level2 ↔ level3, level4 ↔ level5, level6 ↔ level7
+                //
+                // For 2-symbol ALPHABETIC keys (e.g. [q, Q]) in layouts with
+                // more than 2 levels, AltGr/Level5 are NOT in the type's
+                // modifier set.  CapsLock always behaves as if only Shift+Lock
+                // are active — so even levels get the shift char and odd levels
+                // get the base char, regardless of the AltGr/Level5 state.
+                //
+                // When a pair has identical values (from propagation) or the
+                // pair partner doesn't exist, fall back to the level 0-1 values.
+                let l0_char = level_keymap[0].get(&evdev_code).copied();
+                let l1_char = if num_levels > 1 {
+                    level_keymap[1].get(&evdev_code).copied()
+                } else {
+                    None
+                };
+
                 for pair_base in (0..num_levels).step_by(2) {
                     let pair_shift = pair_base + 1;
-                    if pair_shift >= num_levels {
-                        break;
-                    }
                     let base_char = level_keymap[pair_base].get(&evdev_code).copied();
-                    let shift_char = level_keymap[pair_shift].get(&evdev_code).copied();
+                    let shift_char = if pair_shift < num_levels {
+                        level_keymap[pair_shift].get(&evdev_code).copied()
+                    } else {
+                        None
+                    };
+
                     match (base_char, shift_char) {
                         (Some(bc), Some(sc)) if bc != sc => {
                             table[pair_base].insert(evdev_code, sc);
                             table[pair_shift].insert(evdev_code, bc);
                         }
-                        // One level has a char but the other doesn't (e.g.
-                        // modifier at base, printable at shift): still toggle
-                        // so that caps lock at the missing level produces the
-                        // existing level's char.
+                        (Some(_bc), Some(_sc)) => {
+                            // Pair values are identical (propagated from 0-1).
+                            // Use level 0-1 values for the toggle.
+                            if let (Some(b), Some(s)) = (l0_char, l1_char) {
+                                if b != s {
+                                    table[pair_base].insert(evdev_code, s);
+                                    table[pair_shift].insert(evdev_code, b);
+                                }
+                            }
+                        }
+                        (Some(_bc), None) if pair_shift >= num_levels => {
+                            // Unpaired level (odd number of levels).
+                            // Use the level-1 value (shift char) for this
+                            // even level, matching the CapsLock toggle.
+                            if let Some(s) = l1_char {
+                                if Some(s) != base_char {
+                                    table[pair_base].insert(evdev_code, s);
+                                }
+                            }
+                        }
                         (None, Some(sc)) => {
                             table[pair_base].insert(evdev_code, sc);
                         }
                         (Some(bc), None) => {
-                            table[pair_shift].insert(evdev_code, bc);
+                            if pair_shift < num_levels {
+                                table[pair_shift].insert(evdev_code, bc);
+                            }
                         }
                         _ => {}
                     }
                 }
             }
             CapsClass::SemiAlphabetic => {
-                // Toggle at levels 0-1
-                let base_char = level_keymap[0].get(&evdev_code).copied();
-                let shift_char = level_keymap[1].get(&evdev_code).copied();
-                match (base_char, shift_char) {
-                    (Some(bc), Some(sc)) if bc != sc => {
-                        table[0].insert(evdev_code, sc);
-                        table[1].insert(evdev_code, bc);
-                    }
-                    (None, Some(sc)) => {
-                        table[0].insert(evdev_code, sc);
-                    }
-                    (Some(bc), None) => {
-                        table[1].insert(evdev_code, bc);
-                    }
-                    _ => {}
-                }
-                // Post-process uppercase at levels 2+
-                // Skip individual (level, key) entries from BMP Unicode keysyms.
-                for level in 2..num_levels {
-                    if effective_bmp.contains(&(level, evdev_code)) {
-                        continue;
-                    }
-                    if let Some(&c) = level_keymap[level].get(&evdev_code) {
-                        let upper = caps_uppercase(c);
-                        if upper != c {
-                            table[level].insert(evdev_code, upper);
+                // FOUR_LEVEL_SEMIALPHABETIC / EIGHT_LEVEL_SEMIALPHABETIC:
+                //   Lock toggles at "base" pairs (0-1, 4-5) where the
+                //   higher modifier (LevelFive) is active but LevelThree
+                //   is not.  Lock is preserved (post-process uppercase) at
+                //   "AltGr" pairs (2-3, 6-7).
+                //
+                // Pattern by pair index (pair_base / 2):
+                //   even pair index (0, 2, …) → toggle (swap pair values)
+                //   odd  pair index (1, 3, …) → post-process uppercase
+                for pair_base in (0..num_levels).step_by(2) {
+                    let pair_shift = pair_base + 1;
+                    let pair_index = pair_base / 2;
+                    let is_toggle_pair = pair_index % 2 == 0;
+
+                    if is_toggle_pair {
+                        // Toggle (swap) at this pair
+                        let bc = level_keymap[pair_base].get(&evdev_code).copied();
+                        let sc = if pair_shift < num_levels {
+                            level_keymap[pair_shift].get(&evdev_code).copied()
+                        } else {
+                            None
+                        };
+                        match (bc, sc) {
+                            (Some(b), Some(s)) if b != s => {
+                                table[pair_base].insert(evdev_code, s);
+                                table[pair_shift].insert(evdev_code, b);
+                            }
+                            (None, Some(s)) => {
+                                table[pair_base].insert(evdev_code, s);
+                            }
+                            (Some(b), None) if pair_shift < num_levels => {
+                                table[pair_shift].insert(evdev_code, b);
+                            }
+                            _ => {}
+                        }
+                    } else {
+                        // Post-process uppercase at this pair
+                        for level in pair_base..std::cmp::min(pair_base + 2, num_levels) {
+                            if effective_bmp.contains(&(level, evdev_code)) {
+                                continue;
+                            }
+                            if let Some(&c) = level_keymap[level].get(&evdev_code) {
+                                let upper = caps_uppercase(c);
+                                if upper != c {
+                                    table[level].insert(evdev_code, upper);
+                                }
+                            }
                         }
                     }
                 }
@@ -998,7 +963,12 @@ fn build_caps_lock_table(
                 }
             }
             CapsClass::SeparateCapsShift => {
-                // Lock at level 0 → level 3 (index 3), with post-process
+                // SEPARATE_CAPS_AND_SHIFT_ALPHABETIC type:
+                //   map[Lock] = Level4;              preserve[Lock] = Lock;
+                //   map[Lock+LevelThree] = Level3;   preserve[Lock+LevelThree] = Lock;
+                //   map[Shift+Lock+LevelThree] = Level3;  (no preserve)
+                //
+                // Level 0: Lock → Level4 (index 3), Lock preserved → post-process
                 if num_levels > 3 {
                     if let Some(&tc) = level_keymap[3].get(&evdev_code) {
                         let upper = caps_uppercase(tc);
@@ -1008,11 +978,34 @@ fn build_caps_lock_table(
                         }
                     }
                 }
-                // Shift+Lock → level 0 (base)
+                // Level 1 (Shift): Shift+Lock not mapped → defaults to Level1 (index 0)
                 if let Some(&bc) = level_keymap[0].get(&evdev_code) {
                     let shift_char = level_keymap[1].get(&evdev_code).copied();
                     if shift_char != Some(bc) {
                         table[1].insert(evdev_code, bc);
+                    }
+                }
+                // Level 2 (AltGr): Lock+AltGr → Level3 (index 2), Lock preserved
+                // → post-process uppercase on level 2 value
+                if num_levels > 2 {
+                    if !effective_bmp.contains(&(2, evdev_code)) {
+                        if let Some(&c) = level_keymap[2].get(&evdev_code) {
+                            let upper = caps_uppercase(c);
+                            let l2_char = level_keymap[2].get(&evdev_code).copied();
+                            if l2_char != Some(upper) {
+                                table[2].insert(evdev_code, upper);
+                            }
+                        }
+                    }
+                }
+                // Level 3 (AltGr+Shift): Shift+Lock+AltGr → Level3 (index 2),
+                // Lock NOT preserved → use level 2 value directly
+                if num_levels > 3 {
+                    if let Some(&c2) = level_keymap[2].get(&evdev_code) {
+                        let l3_char = level_keymap[3].get(&evdev_code).copied();
+                        if l3_char != Some(c2) {
+                            table[3].insert(evdev_code, c2);
+                        }
                     }
                 }
             }
@@ -1085,8 +1078,7 @@ fn is_case_pair(
         //   xkb_keysym_is_upper_or_title → checks Unicode General_Category Lu/Lt
         //
         // For bc_is_lower we use caps_uppercase(bc) != bc, which covers
-        // both standard to_uppercase and the math_uppercase / simple_uppercase
-        // fallback tables for SMP mathematical symbols.
+        // both standard to_uppercase and the simple_uppercase fallback table.
         //
         // For sc_is_upper we first try to_lowercase (mapping-based, works for
         // BMP characters and matches older xkbcommon behaviour), then fall back
@@ -1237,14 +1229,53 @@ fn map_xkb_from_str<C: Composer>(
                                                 } else {
                                                     bs.keypad_shifted_keys.insert(*evdev_code);
                                                 }
+                                            } else if i == 0 {
+                                                bs.keypad_base_keys.remove(evdev_code);
                                             }
-                                            let single_char =
-                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
-                                            if let Some(char) = single_char {
-                                                // Named keysym via KeyDefs path — not a
-                                                // BMP Unicode keysym; clear any stale
-                                                // entry from an earlier include.
+                                            let mut chars = v.chars();
+                                            let count = chars.clone().count();
+                                            let first_char = chars.next();
+                                            let is_hex = chars.all(|c| c.is_ascii_hexdigit());
+                                            let mut chars = v.chars();
+                                            chars.next();
+                                            let second_char = chars.next();
+                                            let single_char = if count == 1
+                                                && first_char.is_some_and(|c| c.is_alphanumeric())
+                                            {
+                                                // Standard single-char keysym (e.g. 'a') — not a BMP Unicode keysym.
                                                 bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+                                                first_char
+                                            } else if first_char.is_some_and(|c| c == 'U') && is_hex
+                                            {
+                                                // Uxxxx notation: xkbcommon normalises codepoints ≤ 0xFF to named
+                                                // keysyms (uppercasable) and > 0xFF to Unicode keysyms where
+                                                // xkb_keysym_to_upper works correctly — so never flag these.
+                                                if is_latin1_unicode_keysym_u(v) {
+                                                    bs.bmp_unicode_keys.insert((i, *evdev_code));
+                                                } else {
+                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+                                                }
+                                                unicode_string_to_unicode_char(v)
+                                            } else if first_char.is_some_and(|c| c == '0')
+                                                && second_char.is_some_and(|c| c == 'x')
+                                            {
+                                                // 0x... hex notation: only Latin-1 Unicode keysyms (0x01000000–
+                                                // 0x010000FF) are non-uppercasable; codepoints > 0xFF are fine.
+                                                if is_latin1_unicode_keysym_hex(v) {
+                                                    bs.bmp_unicode_keys.insert((i, *evdev_code));
+                                                } else {
+                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+                                                }
+                                                hex_string_to_unicode_char(v)
+                                            } else {
+                                                // Named keysym from lookup table (e.g. "ccedilla") — not a
+                                                // BMP Unicode keysym even if it maps to the same codepoint.
+                                                if XKBCODES_DEF_TO_UTF8.contains_key(v.as_ref()) {
+                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
+                                                }
+                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
+                                            };
+                                            if let Some(char) = single_char {
                                                 wkb.level_keymap[i].insert(*evdev_code, char);
                                             }
                                         }
@@ -1370,6 +1401,12 @@ fn map_keys_and_modifiers<C: Composer>(
             } else {
                 bs.keypad_shifted_keys.insert(*evdev_code);
             }
+        } else if i == 0 {
+            // Position 0 overridden with a non-KP_ keysym (e.g. an
+            // include defined [KP_Home, KP_7] but this section
+            // redefines it as [U250C, KP_7]).  Clear the stale entry
+            // so fix_key_type_levels can detect the KEYPAD auto-type.
+            bs.keypad_base_keys.remove(evdev_code);
         }
         if let Some(single_char) = single_char {
             wkb.level_keymap[i].insert(*evdev_code, single_char);
@@ -1758,9 +1795,11 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
             _ => {
                 let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
                 // Only fix keys whose level 1 was NOT explicitly defined
-                // during parsing (i.e. came from DEFAULT_MAP).  Keys with
-                // 2+ defined symbols already have their intended shift value.
-                if num_syms < 2 {
+                // during parsing (i.e. came from DEFAULT_MAP). Skip keys
+                // explicitly defined in the keymap, even if they have a
+                // single symbol — those are handled at runtime via
+                // shift_numlock_keys (Shift stays at level 0).
+                if num_syms < 2 && !bs.explicit_keys.contains(&code) {
                     if let Some(value) = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied())
                     {
                         if wkb.level_keymap.len() > 1 {
@@ -1772,70 +1811,11 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
         }
     }
 
-    // Handle keys detected as having KP_* keysyms at a shifted level
-    // but NOT at level 0 (e.g. am:eastern AE01 = [Armenian_full_stop, KP_1]).
-    // xkbcommon assigns KEYPAD type to 2-symbol keys containing a keypad
-    // keysym: Shift stays at Level 1, and AltGr/Level5 have no effect
-    // either — only NumLock activates Level 2.
-    //
-    // Keys with > 2 symbols (e.g. cm:azerty [ampersand, KP_1, onesuperior,
-    // U2018]) get FOUR_LEVEL type where Shift→Level 2 is correct, so we
-    // must NOT overwrite their level 1 values.
-    for &code in &bs.keypad_shifted_keys {
-        // Skip if level 0 is also KP_ — those get FOUR_LEVEL_KEYPAD
-        // where Shift→Level 2 is correct.
-        if bs.keypad_base_keys.contains(&code) {
-            continue;
-        }
-        // Only apply to 2-symbol (KEYPAD type) keys.  4-symbol keys get
-        // FOUR_LEVEL type where Shift→Level 2 is the intended behaviour.
-        let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
-        if num_syms > 2 {
-            continue;
-        }
-        let key_type = bs.key_types.get(&code).map(|s| s.as_str());
-        if key_type.is_none() {
-            if let Some(value) = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied()) {
-                // KEYPAD type: Shift/AltGr/Level5 all stay at Level 1.
-                // Copy level 0 to ALL higher levels so no modifier
-                // combination changes the output.
-                for i in 1..wkb.level_keymap.len() {
-                    wkb.level_keymap[i].insert(code, value);
-                }
-            }
-        }
-    }
-
-    // ── 2. FOUR_LEVEL_X keys ────────────────────────────────────────
-    // Rearrange from [L1, L2, L3, L4] to [L1, L1, L2, L3]:
-    //   WKB level 0 (None)      → xkb L1 = symbol[0]
-    //   WKB level 1 (Shift)     → xkb L1 = symbol[0]  (Shift stays L1)
-    //   WKB level 2 (AltGr)     → xkb L2 = symbol[1]
-    //   WKB level 3 (Shift+AltGr) → xkb L3 = symbol[2]
-    for (&code, type_name) in &bs.key_types {
-        if type_name != "FOUR_LEVEL_X" {
-            continue;
-        }
-        let l0 = wkb.level_keymap.get(0).and_then(|m| m.get(&code).copied());
-        let l1 = wkb.level_keymap.get(1).and_then(|m| m.get(&code).copied());
-        let l2 = wkb.level_keymap.get(2).and_then(|m| m.get(&code).copied());
-
-        if let Some(v) = l0 {
-            if wkb.level_keymap.len() > 1 {
-                wkb.level_keymap[1].insert(code, v);
-            }
-        }
-        if let Some(v) = l1 {
-            if wkb.level_keymap.len() > 2 {
-                wkb.level_keymap[2].insert(code, v);
-            }
-        }
-        if let Some(v) = l2 {
-            if wkb.level_keymap.len() > 3 {
-                wkb.level_keymap[3].insert(code, v);
-            }
-        }
-    }
+    // ── 2. FOUR_LEVEL_X / KEYPAD-shifted keys ───────────────────────
+    // level_keymap keeps raw xkb level values so that level_key()
+    // returns what xkb key_get_syms_by_level would.
+    // No rearrangement is applied here; modifier remapping for these
+    // key types is handled at runtime via num_lock_keys / utf8().
 
     // ── 3. ALPHABETIC keys ──────────────────────────────────────────
     // Only Shift and Lock affect the level; AltGr / Level5 are ignored.

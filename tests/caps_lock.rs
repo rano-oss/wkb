@@ -6,7 +6,7 @@ use xkbcommon::{
 };
 
 mod common;
-use common::{key_range, set_level, single_key, test_all_keys_locale, xkb_new_from_names};
+use common::{set_level, test_all_keys_locale, xkb_new_from_names};
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
@@ -133,22 +133,6 @@ fn caps_lock(locale: &str, level: usize) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
 
-        let exceptions: &[(&str, &str, common::KeyRange)] = match level {
-            1 => &[
-                ("am", "eastern", single_key(2)),
-                ("am", "eastern", key_range(5, 7)),
-                ("am", "western", single_key(2)),
-                ("am", "western", key_range(5, 7)),
-                ("fr", "oss_latin9", single_key(55)),
-                ("fr", "bepo_latin9", single_key(55)),
-                ("fr", "mac", single_key(83)),
-                ("be", "oss_latin9", single_key(55)),
-                ("apl", "dyalog", key_range(71, 83)),
-                ("apl", "dyalog_box", key_range(71, 83)),
-            ],
-            _ => &[],
-        };
-
-        test_all_keys_locale(wkb, xkb, layout, locale, exceptions);
+        test_all_keys_locale(wkb, xkb, layout, locale, &[]);
     }
 }
