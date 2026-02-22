@@ -27,7 +27,6 @@ pub fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State 
 }
 
 /// Creates a new XKB keymap from locale and layout names
-#[allow(dead_code)]
 pub fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
     xkb::Keymap::new_from_names(
@@ -46,7 +45,6 @@ pub fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb:
 ///
 /// This version allows for specifying exceptions where WKB and XKB are expected to differ.
 /// The exceptions are specified as tuples of (locale, layout, key_range_or_single_key).
-#[allow(dead_code)]
 pub fn test_all_keys<C: wkb::composer::Composer>(
     wkb: WKB<C>,
     xkb: xkb::State,
@@ -56,7 +54,6 @@ pub fn test_all_keys<C: wkb::composer::Composer>(
     test_all_keys_locale(wkb, xkb, layout, "", exceptions);
 }
 
-#[allow(dead_code)]
 pub fn test_all_keys_locale<C: wkb::composer::Composer>(
     wkb: WKB<C>,
     xkb: xkb::State,
@@ -111,7 +108,6 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
 
 /// Represents a range or single key for exceptions
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum KeyRange {
     Single(u32),
     Range(u32, u32), // inclusive range
@@ -129,19 +125,16 @@ impl KeyRange {
 }
 
 /// Helper function to create a single key exception
-#[allow(dead_code)]
 pub fn single_key(key: u32) -> KeyRange {
     KeyRange::Single(key)
 }
 
 /// Helper function to create a key range exception
-#[allow(dead_code)]
 pub fn key_range(start: u32, end: u32) -> KeyRange {
     KeyRange::Range(start, end)
 }
 
 /// Helper function to create multiple specific keys exception
-#[allow(dead_code)]
 pub fn multiple_keys(keys: Vec<u32>) -> KeyRange {
     KeyRange::Multiple(keys)
 }

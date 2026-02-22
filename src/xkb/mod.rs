@@ -6,8 +6,11 @@ use std::{
     path::Path,
 };
 
-use crate::composer::{Composer, ListComposer};
 use crate::modifiers::Modifiers;
+use crate::{
+    composer::{Composer, ListComposer},
+    modifiers::{Modifier, LEFT_SHIFT, RIGHT_SHIFT},
+};
 
 use regex::Regex;
 use xkb_parser::{
@@ -15,7 +18,7 @@ use xkb_parser::{
     parse,
 };
 
-use crate::modifiers::{ModKind, ModType, BACKSPACE, CAPS_LOCK, TAB};
+use crate::modifiers::{ModKind, ModType, BACKSPACE, CAPS_LOCK};
 use crate::WKB;
 
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
@@ -581,19 +584,21 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     // cancels NumLock back to the base box-drawing character).  Copy
     // level 0 values into num_lock_keys at odd (Shift) levels.
     if wkb.locale.as_deref() == Some("apl") && matches!(wkb.layout.as_str(), "dyalog") {
-        let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
-        while wkb.num_lock_keys.len() < wkb.level_keymap.len() {
-            wkb.num_lock_keys.push(BTreeMap::new());
-        }
-        for &code in numpad_keys {
-            if let Some(&value) = wkb.level_keymap[0].get(&code) {
-                for level in (1..wkb.num_lock_keys.len()).step_by(2) {
-                    wkb.num_lock_keys[level].insert(code, value);
-                }
-            }
-        }
+        wkb.modifiers.0.insert(
+            LEFT_SHIFT,
+            Modifier::Single(ModKind::Pressed {
+                pressed: false,
+                mod_type: ModType::None,
+            }),
+        );
+        wkb.modifiers.0.insert(
+            RIGHT_SHIFT,
+            Modifier::Single(ModKind::Pressed {
+                pressed: false,
+                mod_type: ModType::None,
+            }),
+        );
     }
-
     fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.level_keymap,
@@ -602,25 +607,6 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         &bs.bmp_unicode_keys,
         &bs.key_num_symbols,
     );
-    // apl:dyalog_box — numpad keys are ONE_LEVEL in xkbcommon, so
-    // CapsLock+Shift still produces the level-0 (box-drawing) char.
-    // Copy level 0 values into caps_lock_table at odd (Shift) levels
-    // so that the CapsLock path in utf8() returns the base character
-    // instead of falling through to level_keymap[1] (digits).
-    if wkb.locale.as_deref() == Some("apl") && matches!(wkb.layout.as_str(), "dyalog") {
-        let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
-        // Ensure caps_lock_table has enough levels
-        while wkb.caps_lock_table.len() < wkb.level_keymap.len() {
-            wkb.caps_lock_table.push(BTreeMap::new());
-        }
-        for &code in numpad_keys {
-            if let Some(&value) = wkb.level_keymap[0].get(&code) {
-                for level in (1..wkb.caps_lock_table.len()).step_by(2) {
-                    wkb.caps_lock_table[level].insert(code, value);
-                }
-            }
-        }
-    }
     wkb.repeat_keys = build_repeat_keys(&wkb.level_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
 }
@@ -1345,7 +1331,6 @@ fn map_keys_and_modifiers<C: Composer>(
                 wkb.level_keymap.push(BTreeMap::new());
             }
         }
-        if let Some(remap_key_code) = XKBCODES_EVDEV.get(v.content) {}
         let mut chars = v.chars();
         let count = chars.clone().count();
         let first_char = chars.next();
