@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, ModKind, ModType, Modifier, *};
@@ -20,7 +20,6 @@ pub struct WKB<C: Composer> {
     pub(crate) repeat_keys: HashSet<u32>,
     pub modifiers: Modifiers,
     pub(crate) num_lock_keys: Vec<BTreeMap<u32, char>>,
-    pub(crate) remap: HashMap<u32, u32>,
     pub caps_lock_table: Vec<BTreeMap<u32, char>>,
 }
 

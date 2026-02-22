@@ -580,9 +580,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     // Shift does not produce digits even when NumLock is active (Shift
     // cancels NumLock back to the base box-drawing character).  Copy
     // level 0 values into num_lock_keys at odd (Shift) levels.
-    if wkb.locale.as_deref() == Some("apl")
-        && matches!(wkb.layout.as_str(), "dyalog_box" | "dyalog")
-    {
+    if wkb.locale.as_deref() == Some("apl") && matches!(wkb.layout.as_str(), "dyalog") {
         let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
         while wkb.num_lock_keys.len() < wkb.level_keymap.len() {
             wkb.num_lock_keys.push(BTreeMap::new());
@@ -609,9 +607,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     // Copy level 0 values into caps_lock_table at odd (Shift) levels
     // so that the CapsLock path in utf8() returns the base character
     // instead of falling through to level_keymap[1] (digits).
-    if wkb.locale.as_deref() == Some("apl")
-        && matches!(wkb.layout.as_str(), "dyalog_box" | "dyalog")
-    {
+    if wkb.locale.as_deref() == Some("apl") && matches!(wkb.layout.as_str(), "dyalog") {
         let numpad_keys: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
         // Ensure caps_lock_table has enough levels
         while wkb.caps_lock_table.len() < wkb.level_keymap.len() {
@@ -1129,7 +1125,6 @@ fn new_wkb(
         repeat_keys: HashSet::new(),
         modifiers: Modifiers::default(),
         num_lock_keys: Vec::new(),
-        remap: HashMap::new(),
         caps_lock_table: Vec::new(),
     }
 }
@@ -1325,7 +1320,6 @@ fn map_keys_and_modifiers<C: Composer>(
 ) {
     if id == "CAPS" {
         if key.values.first().is_some_and(|k| k.content == "BackSpace") {
-            wkb.remap.insert(*evdev_code, BACKSPACE);
             let value = *wkb.level_keymap[0].get(&BACKSPACE).unwrap();
             wkb.level_keymap[1].insert(CAPS_LOCK, value);
             // Neutralize CAPS_LOCK modifier so is_caps_lock_modifier() returns false
@@ -1333,7 +1327,6 @@ fn map_keys_and_modifiers<C: Composer>(
                 .0
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
         } else if key.values.first().is_some_and(|k| k.content == "Tab") {
-            wkb.remap.insert(*evdev_code, TAB);
             wkb.modifiers
                 .0
                 .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
@@ -1352,9 +1345,7 @@ fn map_keys_and_modifiers<C: Composer>(
                 wkb.level_keymap.push(BTreeMap::new());
             }
         }
-        if let Some(remap_key_code) = XKBCODES_EVDEV.get(v.content) {
-            wkb.remap.insert(*evdev_code, *remap_key_code);
-        }
+        if let Some(remap_key_code) = XKBCODES_EVDEV.get(v.content) {}
         let mut chars = v.chars();
         let count = chars.clone().count();
         let first_char = chars.next();
@@ -1425,7 +1416,6 @@ fn map_keys_and_modifiers<C: Composer>(
                 }
                 ("Control_L", _) => {
                     if id == "CAPS" {
-                        wkb.remap.insert(*evdev_code, 29);
                         wkb.modifiers
                             .0
                             .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
@@ -2115,7 +2105,6 @@ fn fix_xkb_edge_cases<C: Composer>(
         | ("brai", Some("right_hand"))
         | ("brai", Some("keypad"))
         | ("apl", Some("common"))
-        | ("apl", Some("dyalog_box"))
         | ("kr", Some("hw_keys"))
         | ("jp", Some("hztg_escape"))
         | ("brai", Some("right_hand_invert")) => {
