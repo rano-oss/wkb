@@ -133,6 +133,6 @@ fn caps_lock(locale: &str, level: usize) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
 
-        test_all_keys_locale(wkb, xkb, layout, locale, &[]);
+        test_all_keys_locale(wkb, xkb, layout, locale);
     }
 }

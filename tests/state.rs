@@ -108,6 +108,6 @@ fn state(locale: &str, level: usize) {
             _ => {}
         }
 
-        test_all_keys(wkb, xkb, layout, &[]);
+        test_all_keys(wkb, xkb, layout);
     }
 }

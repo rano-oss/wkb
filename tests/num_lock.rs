@@ -116,6 +116,6 @@ fn num_lock(locale: &str, level: usize) {
         xkb.update_key(Keycode::new(NUM_LOCK as u32 + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
 
-        test_all_keys(wkb, xkb, layout, &[]);
+        test_all_keys(wkb, xkb, layout);
     }
 }

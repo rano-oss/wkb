@@ -45,13 +45,8 @@ pub fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb:
 ///
 /// This version allows for specifying exceptions where WKB and XKB are expected to differ.
 /// The exceptions are specified as tuples of (locale, layout, key_range_or_single_key).
-pub fn test_all_keys<C: wkb::composer::Composer>(
-    wkb: WKB<C>,
-    xkb: xkb::State,
-    layout: String,
-    exceptions: &[(&str, &str, KeyRange)],
-) {
-    test_all_keys_locale(wkb, xkb, layout, "", exceptions);
+pub fn test_all_keys<C: wkb::composer::Composer>(wkb: WKB<C>, xkb: xkb::State, layout: String) {
+    test_all_keys_locale(wkb, xkb, layout, "");
 }
 
 pub fn test_all_keys_locale<C: wkb::composer::Composer>(
@@ -59,7 +54,6 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
     xkb: xkb::State,
     layout: String,
     locale: &str,
-    exceptions: &[(&str, &str, KeyRange)],
 ) {
     let mut wkb = wkb;
     for i in 0..701 {
@@ -67,42 +61,18 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
         let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
 
         if k1 != k2.chars().last() && !k2.is_empty() {
-            // Check if this is an expected exception
-            let is_exception = exceptions
-                .iter()
-                .any(|(exc_locale, exc_layout, exc_key_range)| {
-                    (locale.is_empty() || exc_locale.is_empty() || *exc_locale == locale)
-                        && layout.contains(exc_layout)
-                        && exc_key_range.contains(i)
-                });
-
-            if !is_exception {
-                let level = level_index(
-                    wkb.modifiers.level5(),
-                    wkb.modifiers.level3(),
-                    wkb.modifiers.level2(),
-                ) as usize;
-                println!("{}", layout);
-                println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
-                println!("level: {}", level);
-                println!("{}", wkb.modifiers);
-                println!("{:?}", wkb.level_keymap[level]);
-            }
+            let level = level_index(
+                wkb.modifiers.level5(),
+                wkb.modifiers.level3(),
+                wkb.modifiers.level2(),
+            ) as usize;
+            println!("{}", layout);
+            println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
+            println!("level: {}", level);
+            println!("{}", wkb.modifiers);
+            println!("{:?}", wkb.level_keymap[level]);
         }
-
-        // Check if this key should be excepted from assertion
-        let should_skip_assert =
-            exceptions
-                .iter()
-                .any(|(exc_locale, exc_layout, exc_key_range)| {
-                    (locale.is_empty() || exc_locale.is_empty() || *exc_locale == locale)
-                        && layout.contains(exc_layout)
-                        && exc_key_range.contains(i)
-                });
-
-        if !should_skip_assert {
-            assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
-        }
+        assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }
 }
 
