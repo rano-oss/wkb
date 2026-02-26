@@ -18,7 +18,7 @@ Todo list(tentative):
 - [x] Caps_lock tests
 - [ ] Combined modifiers tests, edge case tests
 - [ ] Try reaching edge case parity
-- [ ] Compare Modifiers State between xkb and wkb test
+- [x] Compare Modifiers State between xkb and wkb test
 - [ ] Keymap handling/storage
 - [x] Include previously ignored folders
 - [x] Composing
@@ -31,3 +31,17 @@ Todo list(tentative):
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps
+
+
+## Test dependencies
+
+Integration tests rely on the system `libxkbcommon` shared library via the `xkbcommon` Rust crate.
+
+On Debian/Ubuntu, install:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libxkbcommon-dev
+```
+
+Without this package, `cargo test` will fail at link time with `unable to find library -lxkbcommon`.

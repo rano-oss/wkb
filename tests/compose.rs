@@ -388,10 +388,21 @@ fn run_compose_test(
             match wkb_result {
                 Some(c) if c == expected => wkb_only_ok += 1,
                 Some(c) => {
-                    mismatches.push(format!(
+                    let is_known = resolve_entry_chars(entry)
+                        .map(|chars| {
+                            let key = (entry.is_multi_key, chars);
+                            collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key)
+                        })
+                        .unwrap_or(false);
+                    let msg = format!(
                         "  WKB_WRONG: {:?} [multi={}] -> wkb={:?} expected={:?}",
                         entry.keysym_names, entry.is_multi_key, c, expected
-                    ));
+                    );
+                    if is_known {
+                        char_collisions.push(msg);
+                    } else {
+                        mismatches.push(msg);
+                    }
                 }
                 None => {
                     wkb_failures.push(format!(
