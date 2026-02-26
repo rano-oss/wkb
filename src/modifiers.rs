@@ -354,23 +354,40 @@ impl Modifiers {
     }
 
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        self.0.iter().find_map(|(code, modifier)| match modifier {
-            Modifier::Single(mod_kind) => {
-                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                    Some((*code, None))
-                } else {
-                    None
-                }
+        fn priority(mod_kind: &ModKind, mod_type: ModType) -> Option<u8> {
+            match mod_kind {
+                ModKind::Pressed { mod_type: m_t, .. } if *m_t == mod_type => Some(0),
+                ModKind::Latch { mod_type: m_t, .. } if *m_t == mod_type => Some(1),
+                ModKind::Lock { mod_type: m_t, .. } if *m_t == mod_type => Some(2),
+                _ => None,
             }
-            Modifier::Leveled(map) => {
-                for (level, mod_kind) in map {
-                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                        return Some((*code, Some(*level)));
+        }
+
+        let mut best: Option<(u8, u32, Option<u8>)> = None;
+        for (code, modifier) in &self.0 {
+            match modifier {
+                Modifier::Single(mod_kind) => {
+                    if let Some(rank) = priority(mod_kind, mod_type) {
+                        let candidate = (rank, *code, None);
+                        if best.as_ref().is_none_or(|current| candidate < *current) {
+                            best = Some(candidate);
+                        }
                     }
                 }
-                None
+                Modifier::Leveled(map) => {
+                    for (level, mod_kind) in map {
+                        if let Some(rank) = priority(mod_kind, mod_type) {
+                            let candidate = (rank, *code, Some(*level));
+                            if best.as_ref().is_none_or(|current| candidate < *current) {
+                                best = Some(candidate);
+                            }
+                        }
+                    }
+                }
             }
-        })
+        }
+
+        best.map(|(_, code, level)| (code, level))
     }
 
     pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
