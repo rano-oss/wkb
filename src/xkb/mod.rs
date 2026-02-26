@@ -193,6 +193,16 @@ fn resolve_locale_alias(locale: &str) -> Option<String> {
 /// 3. Construct `"{lang}_{LANG}.UTF-8"` from a short code and try
 ///    that in `compose.dir` (covers locales where locale.alias points
 ///    nowhere useful).
+fn existing_compose_subpath(locale: &str) -> Option<String> {
+    let candidate = format!("{}/Compose", locale);
+    let full_path = Path::new(LOCALE_DIR).join(&candidate);
+    if full_path.exists() {
+        Some(candidate)
+    } else {
+        None
+    }
+}
+
 fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
     let compose_file_path = resolve_compose_file(locale)?;
     let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
@@ -224,6 +234,20 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
         return Some(compose_file);
     }
 
+    // 1a. Direct on-disk match for locale/Compose even when compose.dir
+    //     has no entry (seen on some distros, e.g. th_TH.UTF-8).
+    if let Some(compose_file) = existing_compose_subpath(locale) {
+        return Some(compose_file);
+    }
+
+    // 1b. If charset/modifier is present, try the base locale directory.
+    //     e.g. "th_TH.UTF-8" -> "th_TH/Compose".
+    if let Some((base, _)) = locale.split_once('.') {
+        if let Some(compose_file) = existing_compose_subpath(base) {
+            return Some(compose_file);
+        }
+    }
+
     // 2. Resolve through locale.alias
     if let Some(resolved) = resolve_locale_alias(locale) {
         // 2a. If the alias resolved to a non-UTF-8 locale, try the
@@ -236,12 +260,24 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
                 if let Some(compose_file) = lookup_compose_dir(&utf8_locale) {
                     return Some(compose_file);
                 }
+                if let Some(compose_file) = existing_compose_subpath(&utf8_locale) {
+                    return Some(compose_file);
+                }
+                if let Some(compose_file) = existing_compose_subpath(base) {
+                    return Some(compose_file);
+                }
             }
         }
 
-        // 2b. Fall back to the alias locale itself
-        if let Some(compose_file) = lookup_compose_dir(&resolved) {
-            return Some(compose_file);
+        // 2b. Fall back to the alias locale itself, but prefer UTF-8
+        //     compose files over legacy single-byte encodings.
+        if resolved.to_ascii_uppercase().contains("UTF-8") {
+            if let Some(compose_file) = lookup_compose_dir(&resolved) {
+                return Some(compose_file);
+            }
+            if let Some(compose_file) = existing_compose_subpath(&resolved) {
+                return Some(compose_file);
+            }
         }
     }
 
@@ -312,13 +348,6 @@ pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
 ///    that `feed()` keeps composing toward the longer match.  This
 ///    matches xkbcommon's behaviour.
 ///
-/// 2. **Keysym alias collision**: the keysyms `U223C` and `approximate`
-///    both resolve to char `∼` (U+223C).  The compose file maps
-///    `<Multi_key> <U223C> <slash>` → `≁` and
-///    `<Multi_key> <approximate> <slash>` → `≇`.  With last-wins
-///    insert semantics `≇` wins, but xkbcommon keeps them as separate
-///    keysym sequences and produces `≁` for the `U223C` keysym.
-///    Re-insert the xkbcommon-preferred entry so it wins.
 fn fix_compose_trie(composer: &mut ListComposer) {
     // Fix 1: remove emit on entries that are prefixes of longer
     // sequences (i.e. the node has children).  Walk every node: if it
@@ -330,10 +359,6 @@ fn fix_compose_trie(composer: &mut ListComposer) {
             composer.nodes[i].emit = None;
         }
     }
-
-    // Fix 2: keysym alias collision — force the xkbcommon-preferred
-    // value for `∼ /` → `≁` (U+2241 NOT TILDE).
-    composer.insert(&['∼', '/'], '≁');
 }
 
 /// Recursively parse a compose file into the given composers.
