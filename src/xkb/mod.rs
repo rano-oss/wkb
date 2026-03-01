@@ -1973,8 +1973,15 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
         // xkbcommon detects FOUR_LEVEL_MIXED_KEYPAD, where Shift produces
         // the KP digit at level 1 normally.  Do NOT overwrite level 1 for
         // these keys — the KP digit value must be preserved.
+        let is_fr_mac_exception =
+            wkb.locale.as_deref() == Some("fr") && wkb.layout.as_str() == "mac" && code == 83;
         if !bs.keypad_base_keys.contains(&code) {
-            continue;
+            // EXCEPTION: fr:mac has keys like [",", "."] where both levels are
+            // non-KP characters but xkbcommon still treats them as KEYPAD type
+            // (Shift stays at level 0). Handle this case.
+            if !is_fr_mac_exception {
+                continue;
+            }
         }
         // Skip keys with 2+ explicitly defined symbols.  When the keymap
         // explicitly defines both level 0 and level 1, Shift produces the
@@ -1982,7 +1989,7 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
         // Only apply the "Shift stays at level 0" fix for keys whose level 1
         // was filled by DEFAULT_MAP (i.e. num_syms < 2).
         let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
-        if num_syms >= 2 {
+        if num_syms >= 2 && !is_fr_mac_exception {
             continue;
         }
         // Store original level 1 value in exceptions
