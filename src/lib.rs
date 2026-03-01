@@ -13,7 +13,7 @@ pub struct WKB<C: Composer> {
     pub(crate) layouts: Vec<String>,
     pub(crate) layout: String,
     pub(crate) locale: Option<String>,
-    pub level_keymap: Vec<BTreeMap<u32, char>>,
+    pub state_keymap: Vec<BTreeMap<u32, char>>,
     pub regular_composer: C,
     pub compose_key_composer: C,
     pub(crate) pressed_keys: HashSet<u32>,
@@ -21,6 +21,7 @@ pub struct WKB<C: Composer> {
     pub modifiers: Modifiers,
     pub(crate) num_lock_keys: Vec<BTreeMap<u32, char>>,
     pub caps_lock_table: Vec<BTreeMap<u32, char>>,
+    pub(crate) level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
 }
 
 impl WKB<ListComposer> {
@@ -137,7 +138,16 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
-        self.level_keymap
+        // First check exceptions
+        if let Some(c) = self
+            .level_exceptions_keymap
+            .get(level_index)
+            .and_then(|m| m.get(&evdev_code).copied())
+        {
+            return Some(c);
+        }
+        // Fall back to state_keymap
+        self.state_keymap
             .get(level_index)
             .and_then(|hm| hm.get(&evdev_code).copied())
     }
@@ -147,9 +157,9 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
-        let level5 = self.modifiers.level5() && self.level_keymap.len() > 4;
-        let level3 = self.modifiers.level3() && self.level_keymap.len() > 2;
-        let level2 = self.modifiers.level2() && self.level_keymap.len() > 1;
+        let level5 = self.modifiers.level5() && self.state_keymap.len() > 4;
+        let level3 = self.modifiers.level3() && self.state_keymap.len() > 2;
+        let level2 = self.modifiers.level2() && self.state_keymap.len() > 1;
         let base_level = level_index(level5, level3, level2);
 
         // Num Lock takes priority
@@ -177,7 +187,11 @@ impl<C: Composer> WKB<C> {
             }
         }
 
-        let key = self.level_key(evdev_code, base_level);
+        // Use state_keymap directly
+        let key = self
+            .state_keymap
+            .get(base_level)
+            .and_then(|m| m.get(&evdev_code).copied());
         if key.is_some() {
             self.modifiers.unlatch()
         }
@@ -236,6 +250,6 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn level_keymap(&self) -> Vec<BTreeMap<u32, char>> {
-        self.level_keymap.clone()
+        self.state_keymap.clone()
     }
 }

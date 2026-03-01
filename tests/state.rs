@@ -19,7 +19,7 @@ fn state(locale: &str, level: usize) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
 
-        if wkb.level_keymap.len() <= level {
+        if wkb.state_keymap.len() <= level {
             continue;
         }
 

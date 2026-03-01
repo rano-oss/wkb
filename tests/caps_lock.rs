@@ -40,7 +40,7 @@ fn caps_lock(locale: &str, level: usize) {
             continue;
         }
 
-        if wkb.level_keymap.len() <= level {
+        if wkb.state_keymap.len() <= level {
             continue;
         }
 

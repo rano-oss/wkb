@@ -60,7 +60,7 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
         let k1 = wkb.utf8(i);
         let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
 
-        if k1 != k2.chars().last() && !k2.is_empty() {
+        if k1 != k2.chars().last() && !k2.is_empty() && i == 71 {
             let level = level_index(
                 wkb.modifiers.level5(),
                 wkb.modifiers.level3(),
@@ -69,8 +69,7 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
             println!("{}", layout);
             println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
             println!("level: {}", level);
-            println!("{}", wkb.modifiers);
-            println!("{:?}", wkb.level_keymap[level]);
+            println!("{:?}", wkb.state_keymap[level]);
         }
         assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }
