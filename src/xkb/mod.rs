@@ -1975,11 +1975,16 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
         // these keys — the KP digit value must be preserved.
         let is_fr_mac_exception =
             wkb.locale.as_deref() == Some("fr") && wkb.layout.as_str() == "mac" && code == 83;
+        let is_us_3l_exception = wkb.locale.as_deref() == Some("us")
+            && wkb.layout.as_str() == "3l"
+            && (2..=11).contains(&code);
         if !bs.keypad_base_keys.contains(&code) {
             // EXCEPTION: fr:mac has keys like [",", "."] where both levels are
             // non-KP characters but xkbcommon still treats them as KEYPAD type
             // (Shift stays at level 0). Handle this case.
-            if !is_fr_mac_exception {
+            // EXCEPTION: us:3l number row keys (2-11) behave similarly on some systems
+            // where xkbcommon treats them as having Shift stay at level 0.
+            if !is_fr_mac_exception && !is_us_3l_exception {
                 continue;
             }
         }
@@ -1989,7 +1994,7 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
         // Only apply the "Shift stays at level 0" fix for keys whose level 1
         // was filled by DEFAULT_MAP (i.e. num_syms < 2).
         let num_syms = bs.key_num_symbols.get(&code).copied().unwrap_or(0);
-        if num_syms >= 2 && !is_fr_mac_exception {
+        if num_syms >= 2 && !is_fr_mac_exception && !is_us_3l_exception {
             continue;
         }
         // Store original level 1 value in exceptions

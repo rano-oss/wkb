@@ -19,7 +19,7 @@ Todo list(tentative):
 - [ ] Combined modifiers tests, edge case tests for all modifiers
 - [ ] Try reaching edge case parity for exisisting tests
 - [ ] Handle cases where no keys should be returned
-- [ ] Compare Modifiers State between xkb and wkb test
+- [x] Compare Modifiers State between xkb and wkb test
 - [ ] Keymap handling/storage
 - [x] Include previously ignored folders
 - [x] Composing
