@@ -67,8 +67,28 @@ impl<C: Composer> WKB<C> {
                 match modifier {
                     Modifier::Single(mk) => match mk {
                         ModKind::Pressed { pressed: true, .. } => depressed |= bit,
-                        ModKind::Lock { locked: l, .. } if *l > 0 => locked |= bit,
-                        ModKind::Latch { latched: true, .. } => latched |= bit,
+                        ModKind::Lock {
+                            pressed, locked: l, ..
+                        } => {
+                            if *pressed {
+                                depressed |= bit;
+                            }
+                            if *l > 0 {
+                                locked |= bit;
+                            }
+                        }
+                        ModKind::Latch {
+                            pressed,
+                            latched: is_latched,
+                            ..
+                        } => {
+                            if *pressed {
+                                depressed |= bit;
+                            }
+                            if *is_latched {
+                                latched |= bit;
+                            }
+                        }
                         _ => {}
                     },
                     _ => {}
