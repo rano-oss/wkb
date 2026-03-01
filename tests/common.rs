@@ -60,16 +60,23 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
         let k1 = wkb.utf8(i);
         let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
 
-        if k1 != k2.chars().last() && !k2.is_empty() && i == 71 {
+        if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
                 wkb.modifiers.level5(),
                 wkb.modifiers.level3(),
                 wkb.modifiers.level2(),
             ) as usize;
-            println!("{}", layout);
-            println!("wkb: {:?}, xkb: {:?} {}", k1, k2.chars().last(), i);
-            println!("level: {}", level);
-            println!("{:?}", wkb.state_keymap[level]);
+            println!(
+                "locale={} layout={} key={} level={}",
+                locale, layout, i, level
+            );
+            println!("  wkb={:?} xkb={:?}", k1, k2.chars().last());
+            if level < wkb.state_keymap.len() {
+                println!("  state[{}]={:?}", level, wkb.state_keymap[level].get(&i));
+            }
+            if level < wkb.caps_lock_table.len() {
+                println!("  caps[{}]={:?}", level, wkb.caps_lock_table[level].get(&i));
+            }
         }
         assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }
