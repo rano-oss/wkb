@@ -352,8 +352,8 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
             _ => {}
         });
     } else {
-        let re = Regex::new(r#"xkb_symbols\s+"([\w\s_\-\d]+)"\s+\{"#).unwrap();
-        for cap in re.captures_iter(&string_file) {
+        static RE: Regex = Regex::new(r#"xkb_symbols\s+"([\w\s_\-\d]+)"\s+\{"#).unwrap();
+        for cap in RE.captures_iter(&string_file) {
             if let Some(name) = cap.get(1) {
                 layouts.push(name.as_str().to_string());
             }
@@ -363,8 +363,8 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
 }
 
 fn parse_include(input: &str) -> (String, Option<String>) {
-    let re = Regex::new(r"([\w]+(?:/[\w]+)?)(?:\(([\w\-]+)\))?$").unwrap();
-    let capture = re.captures(input).unwrap();
+    static RE: Regex = Regex::new(r"([\w]+(?:/[\w]+)?)(?:\(([\w\-]+)\))?$").unwrap();
+    let capture = RE.captures(input).unwrap();
     (
         capture.get(1).map(|m| m.as_str().to_string()).unwrap(),
         capture.get(2).map(|m| m.as_str().to_string()),
@@ -391,6 +391,61 @@ fn is_latin1_unicode_keysym_hex(s: &str) -> bool {
         (0x01000000..=0x010000FF).contains(&keysym)
     } else {
         false
+    }
+}
+
+fn process_keysyms<C: Composer>(
+    wkb: &mut WKB<C>,
+    bs: &mut XkbBuildState,
+    evdev_code: u32,
+    keysyms: impl IntoIterator<Item = String>,
+) {
+    for (i, v) in keysyms.into_iter().enumerate() {
+        if i == wkb.state_keymap.len() {
+            if i < DEFAULT_MAP.len() {
+                wkb.state_keymap.push(DEFAULT_MAP[i].clone());
+            } else {
+                wkb.state_keymap.push(BTreeMap::new());
+            }
+        }
+        if v.starts_with("KP_") {
+            if i == 0 {
+                bs.keypad_base_keys.insert(evdev_code);
+            } else {
+                bs.keypad_shifted_keys.insert(evdev_code);
+            }
+        } else if i == 0 {
+            bs.keypad_base_keys.remove(&evdev_code);
+        }
+        let mut chars = v.chars();
+        let count = chars.clone().count();
+        let first_char = chars.next();
+        let is_hex = chars.all(|c| c.is_ascii_hexdigit());
+        let mut chars = v.chars();
+        chars.next();
+        let second_char = chars.next();
+        let single_char = if count == 1 && first_char.is_some_and(|c| c.is_alphanumeric()) {
+            bs.bmp_unicode_keys.remove(&(i, evdev_code));
+            first_char
+        } else if first_char.is_some_and(|c| c == 'U') && is_hex {
+            bs.bmp_unicode_keys.remove(&(i, evdev_code));
+            unicode_string_to_unicode_char(&v)
+        } else if first_char.is_some_and(|c| c == '0') && second_char.is_some_and(|c| c == 'x') {
+            if is_latin1_unicode_keysym_hex(&v) {
+                bs.bmp_unicode_keys.insert((i, evdev_code));
+            } else {
+                bs.bmp_unicode_keys.remove(&(i, evdev_code));
+            }
+            hex_string_to_unicode_char(&v)
+        } else {
+            if XKBCODES_DEF_TO_UTF8.contains_key(v.as_str()) {
+                bs.bmp_unicode_keys.remove(&(i, evdev_code));
+            }
+            XKBCODES_DEF_TO_UTF8.get(v.as_str()).cloned()
+        };
+        if let Some(c) = single_char {
+            wkb.state_keymap[i].insert(evdev_code, c);
+        }
     }
 }
 
@@ -1026,71 +1081,18 @@ fn map_xkb_from_str<C: Composer>(
                                         has_explicit_type = true;
                                     }
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
-                                        // Track symbol count for auto-type detection.
                                         let new_count = key.values.values.len();
                                         let entry =
                                             bs.key_num_symbols.entry(*evdev_code).or_insert(0);
                                         *entry = std::cmp::max(*entry, new_count);
 
-                                        for (i, v) in key.values.values.iter().enumerate() {
-                                            if i == wkb.state_keymap.len() {
-                                                if i < DEFAULT_MAP.len() {
-                                                    wkb.state_keymap.push(DEFAULT_MAP[i].clone());
-                                                } else {
-                                                    wkb.state_keymap.push(BTreeMap::new());
-                                                }
-                                            }
-                                            // Track keys containing KP_* keysyms for
-                                            // KEYPAD-type level adjustment.
-                                            if v.starts_with("KP_") {
-                                                if i == 0 {
-                                                    bs.keypad_base_keys.insert(*evdev_code);
-                                                } else {
-                                                    bs.keypad_shifted_keys.insert(*evdev_code);
-                                                }
-                                            } else if i == 0 {
-                                                bs.keypad_base_keys.remove(evdev_code);
-                                            }
-                                            let mut chars = v.chars();
-                                            let count = chars.clone().count();
-                                            let first_char = chars.next();
-                                            let is_hex = chars.all(|c| c.is_ascii_hexdigit());
-                                            let mut chars = v.chars();
-                                            chars.next();
-                                            let second_char = chars.next();
-                                            let single_char = if count == 1
-                                                && first_char.is_some_and(|c| c.is_alphanumeric())
-                                            {
-                                                // Standard single-char keysym (e.g. 'a') — not a BMP Unicode keysym.
-                                                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-                                                first_char
-                                            } else if first_char.is_some_and(|c| c == 'U') && is_hex
-                                            {
-                                                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-                                                unicode_string_to_unicode_char(v)
-                                            } else if first_char.is_some_and(|c| c == '0')
-                                                && second_char.is_some_and(|c| c == 'x')
-                                            {
-                                                // 0x... hex notation: only Latin-1 Unicode keysyms (0x01000000–
-                                                // 0x010000FF) are non-uppercasable; codepoints > 0xFF are fine.
-                                                if is_latin1_unicode_keysym_hex(v) {
-                                                    bs.bmp_unicode_keys.insert((i, *evdev_code));
-                                                } else {
-                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-                                                }
-                                                hex_string_to_unicode_char(v)
-                                            } else {
-                                                // Named keysym from lookup table (e.g. "ccedilla") — not a
-                                                // BMP Unicode keysym even if it maps to the same codepoint.
-                                                if XKBCODES_DEF_TO_UTF8.contains_key(v.as_ref()) {
-                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-                                                }
-                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
-                                            };
-                                            if let Some(char) = single_char {
-                                                wkb.state_keymap[i].insert(*evdev_code, char);
-                                            }
-                                        }
+                                        let keysyms: Vec<String> = key
+                                            .values
+                                            .values
+                                            .iter()
+                                            .map(|v| v.to_string())
+                                            .collect();
+                                        process_keysyms(wkb, bs, *evdev_code, keysyms);
                                     }
                                 } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
                                     if !key_names_processed {
@@ -1154,190 +1156,60 @@ fn map_keys_and_modifiers<C: Composer>(
     let entry = bs.key_num_symbols.entry(*evdev_code).or_insert(0);
     *entry = std::cmp::max(*entry, new_count);
 
+    let keysyms: Vec<String> = key.values.iter().map(|v| v.content.to_string()).collect();
+    process_keysyms(wkb, bs, *evdev_code, keysyms);
+
     for (i, v) in key.values.iter().enumerate() {
-        if i == wkb.state_keymap.len() {
-            if i < DEFAULT_MAP.len() {
-                wkb.state_keymap.push(DEFAULT_MAP[i].clone());
-            } else {
-                wkb.state_keymap.push(BTreeMap::new());
-            }
-        }
-        let mut chars = v.chars();
-        let count = chars.clone().count();
-        let first_char = chars.next();
-        let is_hex = chars.all(|c| c.is_ascii_hexdigit());
-        let mut chars = v.chars();
-        chars.next();
-        let second_char = chars.next();
-        let single_char = if count == 1 && first_char.is_some_and(|c| c.is_alphanumeric()) {
-            // Standard single-char keysym (e.g. 'a') — not a BMP Unicode keysym.
-            bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-            first_char
-        } else if first_char.is_some_and(|c| c == 'U') && is_hex {
-            bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-            unicode_string_to_unicode_char(v)
-        } else if first_char.is_some_and(|c| c == '0') && second_char.is_some_and(|c| c == 'x') {
-            // 0x... hex notation: only Latin-1 Unicode keysyms (0x01000000–
-            // 0x010000FF) are non-uppercasable; codepoints > 0xFF are fine.
-            if is_latin1_unicode_keysym_hex(v) {
-                bs.bmp_unicode_keys.insert((i, *evdev_code));
-            } else {
-                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-            }
-            hex_string_to_unicode_char(v)
-        } else {
-            // Named keysym from lookup table (e.g. "ccedilla") — not a
-            // BMP Unicode keysym even if it maps to the same codepoint.
-            if XKBCODES_DEF_TO_UTF8.contains_key(v.as_ref()) {
-                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-            }
-            XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
-        };
-        // Track keys that contain KP_* keysyms so we can apply
-        // KEYPAD-type level adjustments later (Shift stays at Level 1).
-        if v.content.starts_with("KP_") {
-            if i == 0 {
-                bs.keypad_base_keys.insert(*evdev_code);
-            } else {
-                bs.keypad_shifted_keys.insert(*evdev_code);
-            }
-        } else if i == 0 {
-            // Position 0 overridden with a non-KP_ keysym (e.g. an
-            // include defined [KP_Home, KP_7] but this section
-            // redefines it as [U250C, KP_7]).  Clear the stale entry
-            // so fix_key_type_levels can detect the KEYPAD auto-type.
-            bs.keypad_base_keys.remove(evdev_code);
-        }
-        if let Some(single_char) = single_char {
-            wkb.state_keymap[i].insert(*evdev_code, single_char);
-        } else {
-            match (v.content, layout.as_str()) {
-                ("Eisu_toggle", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                            mod_type: ModType::None,
-                        },
-                        1,
-                    );
-                }
-                ("Control_L", _) => {
-                    if id == "CAPS" {
-                        wkb.modifiers
-                            .0
-                            .insert(CAPS_LOCK, crate::modifiers::Modifier::Single(ModKind::None));
+        if !v.content.starts_with("KP_") && (i != 0 || !bs.keypad_base_keys.contains(evdev_code)) {
+            if v.content.contains("none") {
+                if i > 0 {
+                    if let Some(key) = wkb.state_keymap[i - 1].clone().get(evdev_code) {
+                        wkb.state_keymap[i].insert(*evdev_code, *key);
                     }
                 }
-                ("Shift_L", _) | ("Shift_R", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Pressed {
-                            pressed: false,
-                            mod_type: ModType::Level2,
-                        },
-                        i as u8,
-                    );
-                }
-                ("Shift_Lock", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                            mod_type: ModType::Level2,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level3_Shift", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Pressed {
-                            pressed: false,
-                            mod_type: ModType::Level3,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level3_Lock", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                            mod_type: ModType::Level3,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level3_Latch", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Latch {
-                            pressed: false,
-                            latched: false,
-                            mod_type: ModType::Level3,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level5_Shift", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Pressed {
-                            pressed: false,
-                            mod_type: ModType::Level5,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level5_Lock", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                            mod_type: ModType::Level5,
-                        },
-                        i as u8,
-                    );
-                }
-                ("ISO_Level5_Latch", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Latch {
-                            pressed: false,
-                            latched: false,
-                            mod_type: ModType::Level5,
-                        },
-                        i as u8,
-                    );
-                }
-                ("Multi_key", _) => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Pressed {
-                            pressed: false,
-                            mod_type: ModType::Compose,
-                        },
-                        i as u8,
-                    );
-                }
-
-                (_, "bksl_switch") => {
-                    wkb.modifiers.insert(
-                        *evdev_code,
-                        ModKind::Pressed {
-                            pressed: false,
-                            mod_type: ModType::Level3,
-                        },
-                        i as u8,
-                    );
-                }
-                (_, "caps_switch") => {
-                    if locale == "level3" {
+            } else {
+                match (v.content.as_ref(), layout.as_str()) {
+                    ("Eisu_toggle", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::None,
+                            },
+                            1,
+                        );
+                    }
+                    ("Control_L", _) => {
+                        if id == "CAPS" {
+                            wkb.modifiers.0.insert(
+                                CAPS_LOCK,
+                                crate::modifiers::Modifier::Single(ModKind::None),
+                            );
+                        }
+                    }
+                    ("Shift_L", _) | ("Shift_R", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Level2,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("Shift_Lock", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level2,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level3_Shift", _) => {
                         wkb.modifiers.insert(
                             *evdev_code,
                             ModKind::Pressed {
@@ -1346,7 +1218,30 @@ fn map_keys_and_modifiers<C: Composer>(
                             },
                             i as u8,
                         );
-                    } else {
+                    }
+                    ("ISO_Level3_Lock", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level3_Latch", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Latch {
+                                pressed: false,
+                                latched: false,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level5_Shift", _) => {
                         wkb.modifiers.insert(
                             *evdev_code,
                             ModKind::Pressed {
@@ -1355,16 +1250,71 @@ fn map_keys_and_modifiers<C: Composer>(
                             },
                             i as u8,
                         );
-                    };
-                }
-                _ => {
-                    if v.contains("none") {
-                        if i > 0 {
-                            if let Some(key) = wkb.state_keymap[i - 1].clone().get(evdev_code) {
-                                wkb.state_keymap[i].insert(*evdev_code, *key);
-                            }
-                        }
                     }
+                    ("ISO_Level5_Lock", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Lock {
+                                pressed: false,
+                                locked: 0,
+                                mod_type: ModType::Level5,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("ISO_Level5_Latch", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Latch {
+                                pressed: false,
+                                latched: false,
+                                mod_type: ModType::Level5,
+                            },
+                            i as u8,
+                        );
+                    }
+                    ("Multi_key", _) => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Compose,
+                            },
+                            i as u8,
+                        );
+                    }
+                    (_, "bksl_switch") => {
+                        wkb.modifiers.insert(
+                            *evdev_code,
+                            ModKind::Pressed {
+                                pressed: false,
+                                mod_type: ModType::Level3,
+                            },
+                            i as u8,
+                        );
+                    }
+                    (_, "caps_switch") => {
+                        if locale == "level3" {
+                            wkb.modifiers.insert(
+                                *evdev_code,
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type: ModType::Level3,
+                                },
+                                i as u8,
+                            );
+                        } else {
+                            wkb.modifiers.insert(
+                                *evdev_code,
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type: ModType::Level5,
+                                },
+                                i as u8,
+                            );
+                        };
+                    }
+                    _ => {}
                 }
             }
         }
