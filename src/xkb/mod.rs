@@ -2168,6 +2168,9 @@ fn fix_xkb_edge_cases<C: Composer>(
         // fr:mac — now handled generically by fix_key_type_levels (KEYPAD auto-detect)
         // fr:afnor level_keymap fixups
         ("fr", Some("afnor")) => {
+            while wkb.state_keymap.len() < 6 {
+                wkb.state_keymap.push(BTreeMap::new());
+            }
             for i in 0..2 {
                 for (code, value) in &wkb.state_keymap[i].clone() {
                     if wkb.state_keymap[i + 4].get(&code).is_none() {
