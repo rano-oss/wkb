@@ -38,46 +38,15 @@ use xkb_utf8::XKBCODES_DEF_TO_UTF8;
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
-/// Temporary state used only during XKB keymap construction.
-/// These fields are consumed by `build_caps_lock_table` and then discarded.
+const NUM_LOCK_CODES: &[u32] = &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83];
+
 struct XkbBuildState {
-    /// Per-(level, evdev_code) pairs whose keysyms originated from BMP
-    /// Unicode keysyms (XKB keysym range 0x01000000–0x0100FFFF, i.e.
-    /// `Uxxxx` or `0x0100xxxx` notation). xkbcommon does NOT apply caps
-    /// lock post-process uppercasing to these keysyms, unlike standard
-    /// named keysyms that map to the same codepoints. Tracked per-level
-    /// because a single key can mix standard and Unicode keysyms across
-    /// levels (e.g. `z` at level 0, `U0A01` at level 1).
     bmp_unicode_keys: HashSet<(usize, u32)>,
-    /// Global default key type for this layout (from `key.type[group1] = "..."`).
     default_key_type: Option<String>,
-    /// Per-key explicit type declarations (from `type[Group1] = "..."` within keys).
     key_types: HashMap<u32, String>,
-    /// Keycodes explicitly encountered during XKB parsing (from key
-    /// definitions in xkb_symbols sections, including included files).
-    /// Used by `build_repeat_keys` to distinguish keys that were actually
-    /// defined in the keymap from those filled in by `DEFAULT_MAP`.
-    /// Only explicitly-defined keys should be added to the repeat set
-    /// beyond what `REPEAT_DEFAULT` already provides, because xkbcommon
-    /// reports `key_repeats() == false` for keycodes that don't exist
-    /// in the compiled keymap.
     explicit_keys: HashSet<u32>,
-    /// Evdev keycodes whose definitions contain at least one KP_* keysym
-    /// at a level > 0 but NOT at level 0. xkbcommon's `FindAutomaticType`
-    /// assigns the KEYPAD key type to 2-symbol keys that contain a keypad
-    /// keysym, which changes the modifier-to-level mapping: Shift stays
-    /// at Level 1, only NumLock activates Level 2.
-    ///
-    /// Keys where level 0 is ALSO a KP_* keysym (e.g. `[KP_Delete, KP_Decimal]`)
-    /// are excluded because xkbcommon expands those to FOUR_LEVEL_KEYPAD
-    /// where Shift→Level 2 is correct.
     keypad_shifted_keys: HashSet<u32>,
-    /// Evdev keycodes whose level-0 symbol is a KP_* keysym.
     keypad_base_keys: HashSet<u32>,
-    /// Number of symbols explicitly defined for each key (evdev code).
-    /// Used by `fix_key_type_levels` to distinguish 1-symbol ONE_LEVEL keys
-    /// (where DEFAULT_MAP digit values at level 1 should be overwritten)
-    /// from 2-symbol keys whose level 1 was intentionally defined.
     key_num_symbols: HashMap<u32, usize>,
 }
 
@@ -105,17 +74,7 @@ impl XkbBuildState {
 fn simple_uppercase(c: char) -> Option<char> {
     match c {
         'ß' => Some('ẞ'), // U+00DF → U+1E9E
-        'ﬀ' => None,      // U+FB00: no simple uppercase
-        'ﬁ' => None,      // U+FB01: no simple uppercase
-        'ﬂ' => None,      // U+FB02: no simple uppercase
-        'ﬃ' => None,      // U+FB03: no simple uppercase
-        'ﬄ' => None,      // U+FB04: no simple uppercase
-        'ﬅ' => None,      // U+FB05: no simple uppercase
-        'ﬆ' => None,      // U+FB06: no simple uppercase
-        // Turkish dotless i: xkbcommon's xkb_keysym_to_upper(idotless) = Iabovedot (İ),
-        // which differs from Unicode's simple uppercase of ı → I (U+0049).
-        // This legacy XKB mapping is used for case-pair detection in Turkish layouts.
-        'ı' => Some('İ'), // U+0131 → U+0130
+        'ı' => Some('İ'), // U+0131 → U+0130 (Turkish/Azerbaijani)
         // SMP mathematical double-struck letters (used in bqn layout).
         // Rust's to_uppercase() returns these unchanged because Unicode's
         // full case mapping for SMP math letters is not implemented in Rust's
@@ -130,19 +89,10 @@ fn simple_uppercase(c: char) -> Option<char> {
     }
 }
 
-/// Apply uppercase for caps lock post-processing.
-/// Uses xkbcommon's `xkb_keysym_to_upper` behavior, which may differ from
-/// Rust's standard Unicode case mapping for legacy XKB keysyms.
 fn caps_uppercase(c: char) -> char {
-    // First check the simple_uppercase table, which contains xkbcommon-specific
-    // overrides (e.g. ı → İ, ß → ẞ, SMP math letters).  These take priority
-    // over Rust's standard to_uppercase() because xkbcommon's keysym uppercase
-    // table may disagree with Unicode (e.g. ı → I in Unicode, but ı → İ in XKB).
     if let Some(upper) = simple_uppercase(c) {
         return upper;
     }
-    // Fall back to Rust's standard uppercase — use it if it maps to a single
-    // codepoint that is different from the input.
     let mut upper_iter = c.to_uppercase();
     if let Some(upper) = upper_iter.next() {
         if upper_iter.next().is_none() && upper != c {
@@ -152,64 +102,38 @@ fn caps_uppercase(c: char) -> char {
     c
 }
 
-/// Look up a locale name in `compose.dir` and return the compose file
-/// sub-path (e.g. `"en_US.UTF-8/Compose"`).  Returns `None` when no
-/// entry matches.
+fn lookup_locale_file(
+    filename: &str,
+    match_index: usize,
+    return_index: usize,
+    locale: &str,
+) -> Option<String> {
+    let path = Path::new(LOCALE_DIR).join(filename);
+    let file = fs::File::open(path).ok()?;
+    let reader = io::BufReader::new(file);
+
+    for line in reader.lines() {
+        let line = line.ok()?;
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        if parts.len() > match_index && parts.len() > return_index && parts[match_index] == locale {
+            return Some(parts[return_index].to_string());
+        }
+    }
+    None
+}
+
 fn lookup_compose_dir(locale: &str) -> Option<String> {
-    let compose_dir_path = Path::new(LOCALE_DIR).join("compose.dir");
-    let file = fs::File::open(compose_dir_path).ok()?;
-    let reader = io::BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = line.ok()?;
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() >= 2 && parts[1] == locale {
-            return Some(parts[0].to_string());
-        }
-    }
-    None
+    lookup_locale_file("compose.dir", 1, 0, locale)
 }
 
-/// Resolve a short or partial locale name through
-/// `/usr/share/X11/locale/locale.alias`.
-///
-/// For example `"de"` → `"de_DE.ISO8859-1"`, `"ru"` → `"ru_RU.UTF-8"`.
 fn resolve_locale_alias(locale: &str) -> Option<String> {
-    let alias_path = Path::new(LOCALE_DIR).join("locale.alias");
-    let file = fs::File::open(alias_path).ok()?;
-    let reader = io::BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = line.ok()?;
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() >= 2 && parts[0] == locale {
-            return Some(parts[1].to_string());
-        }
-    }
-    None
+    lookup_locale_file("locale.alias", 0, 1, locale)
 }
 
-/// Load a compose table from a locale name by resolving it through
-/// `locale.alias` and `compose.dir`.
-///
-/// Resolution order:
-/// 1. Exact match in `compose.dir` (handles full locale names like
-///    `"en_US.UTF-8"`).
-/// 2. Resolve through `locale.alias` (handles short names like `"de"`
-///    → `"de_DE.ISO8859-1"`).  When the alias is a non-UTF-8 locale,
-///    **prefer the UTF-8 sibling** (e.g. `"de_DE.UTF-8"`) over the
-///    legacy locale so that modern compose tables are used.
-/// 3. Construct `"{lang}_{LANG}.UTF-8"` from a short code and try
-///    that in `compose.dir` (covers locales where locale.alias points
-///    nowhere useful).
 fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
     let compose_file_path = resolve_compose_file(locale)?;
     let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
@@ -222,30 +146,18 @@ fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
 /// Returns e.g. `Some("en_US.UTF-8/Compose")` for locale `"de"`.
 /// Falls back to `"en_US.UTF-8"` when no locale-specific compose file
 /// can be found, matching xkbcommon's behaviour.  Returns `None` only
-/// if even the `en_US.UTF-8` fallback is missing (broken system).
-///
-/// This is the same resolution logic used by [`load_compose_table`],
-/// exposed publicly so tests can verify which compose file a given
-/// locale maps to.
 pub fn resolve_compose_file(locale: &str) -> Option<String> {
-    // 0. Hardcoded XKB layout name → compose.dir locale mapping
-    //    (covers layout names that locale.alias cannot resolve)
     if let Some(&mapped_locale) = XKB_COMPOSE_MAP.get(locale) {
         if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
             return Some(compose_file);
         }
     }
 
-    // 1. Direct match
     if let Some(compose_file) = lookup_compose_dir(locale) {
         return Some(compose_file);
     }
 
-    // 2. Resolve through locale.alias
     if let Some(resolved) = resolve_locale_alias(locale) {
-        // 2a. If the alias resolved to a non-UTF-8 locale, try the
-        //     UTF-8 variant first so we get modern compose tables.
-        //     e.g. "de_DE.ISO8859-1" → "de_DE.UTF-8"
         if let Some(dot_pos) = resolved.find('.') {
             let base = &resolved[..dot_pos];
             if !resolved[dot_pos..].eq_ignore_ascii_case(".UTF-8") {
@@ -256,14 +168,11 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
             }
         }
 
-        // 2b. Fall back to the alias locale itself
         if let Some(compose_file) = lookup_compose_dir(&resolved) {
             return Some(compose_file);
         }
     }
 
-    // 3. Heuristic: construct "{lang}_{LANG}.UTF-8" from a 2-3 letter code
-    //    e.g. "de" → "de_DE.UTF-8", "fr" → "fr_FR.UTF-8"
     if locale.len() >= 2 && locale.len() <= 3 && locale.chars().all(|c| c.is_ascii_lowercase()) {
         let upper = locale.to_ascii_uppercase();
         let candidate = format!("{}_{}.UTF-8", locale, upper);
@@ -272,18 +181,9 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
         }
     }
 
-    // 4. Final fallback: use en_US.UTF-8, matching xkbcommon behavior.
-    //    xkbcommon falls back to en_US.UTF-8 for any valid locale that
-    //    has no compose.dir entry, so we do the same rather than
-    //    maintaining a hardcoded list of fallback entries.
     lookup_compose_dir("en_US.UTF-8")
 }
 
-/// Resolve a keysym name to a character.
-///
-/// Checks [`XKBCODES_DEF_TO_UTF8`] first, then handles single-character
-/// names (e.g. `a`, `Z`), and finally `Uxxxx` Unicode codepoint names
-/// (e.g. `U0226` → U+0226 Ȧ).
 fn resolve_keysym_char(name: &str) -> Option<char> {
     if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(name) {
         return Some(c);
@@ -291,7 +191,6 @@ fn resolve_keysym_char(name: &str) -> Option<char> {
     if name.len() == 1 {
         return name.chars().next();
     }
-    // Handle Uxxxx / Uxxxxx / Uxxxxxx Unicode codepoint keysyms
     if name.starts_with('U') && name.len() >= 5 && name.len() <= 7 {
         let hex = &name[1..];
         if hex.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -303,14 +202,6 @@ fn resolve_keysym_char(name: &str) -> Option<char> {
     None
 }
 
-/// Load a compose file from the given path into a pair of
-/// [`ListComposer`]s (regular, compose-key).
-///
-/// Handles `include` directives recursively, skips entries where
-/// `Multi_key` appears in a non-first position, and falls back to
-/// resolving the keysym name after the quoted output string via
-/// [`XKBCODES_DEF_TO_UTF8`] when the quoted string contains an
-/// octal/hex escape or is empty.
 pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
     let mut regular = ListComposer::new();
     let mut compose_key = ListComposer::new();
@@ -320,40 +211,16 @@ pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
     (regular, compose_key)
 }
 
-/// Post-process a compose trie to fix known issues that arise from
-/// flattening keysym-based compose entries into char-based entries.
-///
-/// 1. **Prefix conflicts**: when a shorter sequence (e.g. `U, comma`)
-///    has an emit value but also has children leading to longer
-///    sequences (e.g. `U, comma, E`), remove the shorter entry so
-///    that `feed()` keeps composing toward the longer match.  This
-///    matches xkbcommon's behaviour.
-///
-/// 2. **Keysym alias collision**: the keysyms `U223C` and `approximate`
-///    both resolve to char `∼` (U+223C).  The compose file maps
-///    `<Multi_key> <U223C> <slash>` → `≁` and
-///    `<Multi_key> <approximate> <slash>` → `≇`.  With last-wins
-///    insert semantics `≇` wins, but xkbcommon keeps them as separate
-///    keysym sequences and produces `≁` for the `U223C` keysym.
-///    Re-insert the xkbcommon-preferred entry so it wins.
 fn fix_compose_trie(composer: &mut ListComposer) {
-    // Fix 1: remove emit on entries that are prefixes of longer
-    // sequences (i.e. the node has children).  Walk every node: if it
-    // has both emit and children, clear emit.
-    // We need to use indices because we can't borrow mutably while
-    // iterating, but the node vec length is fixed after parsing.
     for i in 0..composer.nodes.len() {
         if !composer.nodes[i].next.is_empty() && composer.nodes[i].emit.is_some() {
             composer.nodes[i].emit = None;
         }
     }
 
-    // Fix 2: keysym alias collision — force the xkbcommon-preferred
-    // value for `∼ /` → `≁` (U+2241 NOT TILDE).
     composer.insert(&['∼', '/'], '≁');
 }
 
-/// Recursively parse a compose file into the given composers.
 fn parse_compose_into(path: &Path, regular: &mut ListComposer, compose_key: &mut ListComposer) {
     let file = match fs::File::open(path) {
         Ok(f) => f,
@@ -439,19 +306,8 @@ fn parse_compose_into(path: &Path, regular: &mut ListComposer, compose_key: &mut
     }
 }
 
-/// Extract the output character from the value part of a compose line.
-///
-/// Handles formats like:
-///   `"á"  aacute # LATIN SMALL LETTER A WITH ACUTE`
-///   `"\305"  Aring`
-///   `"á"`
-///
-/// Prefers the character from the quoted string when it is plain UTF-8.
-/// Falls back to resolving the keysym name (the token after the closing
-/// quote) via [`XKBCODES_DEF_TO_UTF8`].
 fn parse_compose_output(value_str: &str) -> Option<char> {
     if !value_str.starts_with('"') {
-        // No quoted string — try the whole value as a keysym name
         let name = value_str.trim();
         return resolve_keysym_char(name);
     }
@@ -460,14 +316,12 @@ fn parse_compose_output(value_str: &str) -> Option<char> {
     let end_quote = rest.find('"')?;
     let inner = &rest[..end_quote];
 
-    // Accept the quoted character if it is NOT an octal/hex escape
     if !inner.is_empty() && !inner.starts_with('\\') {
         if let Some(c) = inner.chars().next() {
             return Some(c);
         }
     }
 
-    // Fall back to the keysym name after the closing quote
     let after_quote = rest[end_quote + 1..].trim();
     if after_quote.is_empty() || after_quote.starts_with('#') {
         return None;
@@ -517,42 +371,21 @@ fn parse_include(input: &str) -> (String, Option<String>) {
     )
 }
 
-fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
-    let number = &s[1..];
-
-    u32::from_str_radix(number, 16)
+fn parse_hex_char(s: &str, start: usize, len: usize) -> Option<char> {
+    let end = std::cmp::min(start + len, s.len());
+    u32::from_str_radix(&s[start..end], 16)
         .ok()
         .and_then(std::char::from_u32)
 }
 
-/// Check whether a `Uxxxx` keysym string represents a Latin-1 Unicode keysym
-/// that xkbcommon would NOT normalise to a named keysym.
-///
-/// In practice this never returns `true`: xkbcommon normalises `Uxxxx` with
-/// codepoint ≤ 0xFF to the named keysym (which IS uppercased), and codepoints
-/// > 0xFF become Unicode keysyms where `xkb_keysym_to_upper` works correctly.
-/// So `Uxxxx` notation never produces a "non-uppercasable" keysym.
-fn is_latin1_unicode_keysym_u(_s: &str) -> bool {
-    false
+fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
+    parse_hex_char(s, 1, s.len() - 1)
 }
 
 fn hex_string_to_unicode_char(s: &str) -> Option<char> {
-    let split_pos = s.char_indices().nth_back(4).unwrap().0;
-    let number = &s[split_pos..];
-
-    u32::from_str_radix(number, 16)
-        .ok()
-        .and_then(std::char::from_u32)
+    parse_hex_char(s, s.len() - 4, 4)
 }
 
-/// Check whether a `0x...` hex keysym string represents a Latin-1 Unicode
-/// keysym (keysym value in range 0x01000000–0x010000FF).
-///
-/// xkbcommon's `xkb_keysym_to_upper` returns these keysyms **unchanged**
-/// because `XConvertCase` for Unicode keysyms in the Latin-1 codepoint range
-/// (≤ 0xFF) does not perform case conversion. Codepoints > 0xFF are handled
-/// correctly by `xkb_keysym_to_upper`, so only the Latin-1 range needs to be
-/// excluded from post-process uppercasing.
 fn is_latin1_unicode_keysym_hex(s: &str) -> bool {
     if let Ok(keysym) = u32::from_str_radix(&s[2..], 16) {
         (0x01000000..=0x010000FF).contains(&keysym)
@@ -580,12 +413,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         compose_key_composer,
     );
     let mut bs = XkbBuildState::new();
-    let mut num_lock_codes: Vec<u32> = vec![
-        71, 72, 73, // 7, 8, 9
-        75, 76, 77, // 4, 5, 6
-        79, 80, 81, // 1, 2, 3
-        82, 83, // 0, .
-    ];
+    let mut num_lock_codes: Vec<u32> = NUM_LOCK_CODES.to_vec();
     map_xkb(
         &mut wkb,
         &mut bs,
@@ -697,12 +525,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         None,
         None,
     );
-    let num_lock_codes: Vec<u32> = vec![
-        71, 72, 73, // 7, 8, 9
-        75, 76, 77, // 4, 5, 6
-        79, 80, 81, // 1, 2, 3
-        82, 83, // 0, .
-    ];
+    let num_lock_codes: Vec<u32> = NUM_LOCK_CODES.to_vec();
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.state_keymap, &bs.key_types);
 
     fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
@@ -717,45 +540,24 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
     wkb
 }
 
-/// How caps lock affects a key, derived from its XKB key type.
 enum CapsClass {
-    /// Lock toggles the level2 bit at all levels (ALPHABETIC types).
-    /// Levels 0↔1, 2↔3, 4↔5, 6↔7.
     Alphabetic,
-    /// Lock toggles at levels 0-1, post-process uppercase at levels 2+
-    /// (SEMIALPHABETIC types).
     SemiAlphabetic,
-    /// Lock not consumed — post-process uppercase at all levels
-    /// (TWO_LEVEL, FOUR_LEVEL, ONE_LEVEL, etc.).
     PostProcess,
-    /// Lock redirects level 0 to a specific target level; other levels
-    /// are unaffected (FOUR_LEVEL_PLUS_LOCK).
     PlusLock(usize),
-    /// Lock redirects level 0 to level 3 (with post-process), shift+lock
-    /// to level 0 (SEPARATE_CAPS_AND_SHIFT_ALPHABETIC).
     SeparateCapsShift,
 }
 
-/// Determine the caps lock behavior class for a key type name.
 fn key_type_caps_class(type_name: &str) -> CapsClass {
     match type_name {
-        // Fully alphabetic: Lock toggles level at all modifier combinations
         "ALPHABETIC"
         | "FOUR_LEVEL_ALPHABETIC"
         | "EIGHT_LEVEL_ALPHABETIC"
         | "EIGHT_LEVEL_ALPHABETIC_WITH_LEVEL5_LOCK"
         | "EIGHT_LEVEL_BY_CTRL" => CapsClass::Alphabetic,
-
-        // Semi-alphabetic: Lock toggles at base levels, preserved at level3+
         "FOUR_LEVEL_SEMIALPHABETIC" | "EIGHT_LEVEL_SEMIALPHABETIC" => CapsClass::SemiAlphabetic,
-
-        // Lock → Level5 (index 4); other levels unaffected
         "FOUR_LEVEL_PLUS_LOCK" => CapsClass::PlusLock(4),
-
-        // Lock → Level4 (index 3) + post-process; Shift+Lock → Level1 (index 0)
         "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC" => CapsClass::SeparateCapsShift,
-
-        // Everything else: Lock not in modifiers, no level toggle
         _ => CapsClass::PostProcess,
     }
 }
@@ -771,10 +573,6 @@ fn key_type_caps_class(type_name: &str) -> CapsClass {
 ///   - **No type info**: auto-detect from symbols (level0/level1 case pair)
 ///
 /// `bmp_unicode_keys` tracks (level, evdev_code) entries whose keysyms
-/// originated from Latin-1 Unicode keysyms (0x01000000–0x010000FF) specified
-/// via `0x...` hex notation.  xkbcommon's `xkb_keysym_to_upper` returns these
-/// unchanged, so they must be excluded from both case-pair detection and
-/// post-process uppercasing.
 fn build_caps_lock_table(
     state_keymap: &[BTreeMap<u32, char>],
     key_types: &HashMap<u32, String>,
@@ -789,17 +587,11 @@ fn build_caps_lock_table(
     let num_levels = state_keymap.len();
     let mut table: Vec<BTreeMap<u32, char>> = vec![BTreeMap::new(); num_levels];
 
-    // Collect all evdev codes that appear in any level
     let mut all_codes: HashSet<u32> = HashSet::new();
     for level in state_keymap {
         all_codes.extend(level.keys());
     }
 
-    // Propagate bmp_unicode_keys: if (level_X, key) is flagged and another
-    // level_Y has the same char value for the same key, treat level_Y as
-    // also non-uppercasable.  This handles keys defined with fewer keysyms
-    // than the layout has levels (e.g. ONE_LEVEL keys whose value leaks
-    // into higher levels via default maps).
     let mut effective_bmp = bmp_unicode_keys.clone();
     for &evdev_code in &all_codes {
         // Collect chars from flagged levels for this key
@@ -825,11 +617,6 @@ fn build_caps_lock_table(
     }
 
     for &evdev_code in &all_codes {
-        // Use only per-key types (already includes the scoped default_key_type
-        // applied during parsing). Keys without an entry fall back to auto-detect.
-        let key_type_name = key_types.get(&evdev_code).cloned();
-        // Hoist num_syms so it's available both during caps_class detection
-        // and later in the Alphabetic match arm (for pair_limit).
         let num_syms = key_num_symbols.get(&evdev_code).copied().unwrap_or(0);
         let caps_class = match key_types.get(&evdev_code) {
             Some(name) => key_type_caps_class(name),
@@ -1117,29 +904,11 @@ fn build_caps_lock_table(
     table
 }
 
-/// Check if a key's level0 and level1 form a lowercase/uppercase pair.
-///
-/// Uses Unicode `is_lowercase()` / `is_uppercase()` properties rather than
-/// `to_uppercase()` mapping, matching xkbcommon's `xkb_keysym_is_lower` /
-/// `xkb_keysym_is_upper` heuristic. This correctly handles locale-specific
-/// case pairs like Turkish `i` / `İ` where `'i'.to_uppercase()` gives `'I'`,
-/// not `'İ'`.
-///
-/// Keys whose keysyms originated from Latin-1 Unicode keysyms
-/// (0x01000000–0x010000FF, specified via `0x...` hex notation) are never
-/// considered case pairs, because xkbcommon's `xkb_keysym_to_upper` /
-/// `xkb_keysym_to_lower` return these keysyms unchanged, so they are
-/// never detected as lowercase or uppercase during type inference.
-/// Unicode keysyms for codepoints > 0xFF are handled correctly by
-/// `xkb_keysym_to_upper` and CAN form case pairs.
 fn is_case_pair(
     state_keymap: &[BTreeMap<u32, char>],
     evdev_code: u32,
     bmp_unicode_keys: &HashSet<(usize, u32)>,
 ) -> bool {
-    // If either level 0 or level 1 keysym is a Latin-1 Unicode keysym
-    // (0x01000000–0x010000FF from hex notation), xkbcommon's
-    // xkb_keysym_to_upper/to_lower returns it unchanged → not a case pair.
     if bmp_unicode_keys.contains(&(0, evdev_code)) || bmp_unicode_keys.contains(&(1, evdev_code)) {
         return false;
     }
@@ -1152,25 +921,7 @@ fn is_case_pair(
         if bc == sc {
             return false;
         }
-        // Match xkbcommon's FindAutomaticType logic:
-        //   xkb_keysym_is_lower(syms[0]) && xkb_keysym_to_upper(syms[0]) == syms[1]
-        //
-        // We require BOTH:
-        //   1. bc is lowercase  (caps_uppercase(bc) != bc  OR  bc.is_lowercase())
-        //   2. caps_uppercase(bc) == sc  (the uppercase of the base equals the shift char)
-        //
-        // Checking that caps_uppercase(bc) == sc prevents false positives such as
-        // ც (Georgian, whose Unicode uppercase is Ც) paired with M (Latin).
-        // xkbcommon would compute xkb_keysym_to_upper(Georgian_can) = Georgian_Can ≠ M,
-        // so it does NOT treat that pair as a case pair.
-        //
-        // For SMP mathematical letters (e.g. 𝕨/𝕎) that Rust's to_uppercase()
-        // returns unchanged, simple_uppercase() provides the correct mapping so
-        // that caps_uppercase('𝕨') = '𝕎' and the pair is detected correctly.
         let upper_of_bc = caps_uppercase(bc);
-        // bc_is_lower: either caps_uppercase computed a different (upper) char,
-        // or the Unicode Ll category confirms it's lowercase even when the
-        // simple mapping isn't available.
         let bc_is_lower = upper_of_bc != bc || bc.is_lowercase();
         if bc_is_lower && upper_of_bc == sc {
             return true;
@@ -1315,14 +1066,7 @@ fn map_xkb_from_str<C: Composer>(
                                                 first_char
                                             } else if first_char.is_some_and(|c| c == 'U') && is_hex
                                             {
-                                                // Uxxxx notation: xkbcommon normalises codepoints ≤ 0xFF to named
-                                                // keysyms (uppercasable) and > 0xFF to Unicode keysyms where
-                                                // xkb_keysym_to_upper works correctly — so never flag these.
-                                                if is_latin1_unicode_keysym_u(v) {
-                                                    bs.bmp_unicode_keys.insert((i, *evdev_code));
-                                                } else {
-                                                    bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-                                                }
+                                                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
                                                 unicode_string_to_unicode_char(v)
                                             } else if first_char.is_some_and(|c| c == '0')
                                                 && second_char.is_some_and(|c| c == 'x')
@@ -1430,14 +1174,7 @@ fn map_keys_and_modifiers<C: Composer>(
             bs.bmp_unicode_keys.remove(&(i, *evdev_code));
             first_char
         } else if first_char.is_some_and(|c| c == 'U') && is_hex {
-            // Uxxxx notation: xkbcommon normalises codepoints ≤ 0xFF to named
-            // keysyms (uppercasable) and > 0xFF to Unicode keysyms where
-            // xkb_keysym_to_upper works correctly — so never flag these.
-            if is_latin1_unicode_keysym_u(v) {
-                bs.bmp_unicode_keys.insert((i, *evdev_code));
-            } else {
-                bs.bmp_unicode_keys.remove(&(i, *evdev_code));
-            }
+            bs.bmp_unicode_keys.remove(&(i, *evdev_code));
             unicode_string_to_unicode_char(v)
         } else if first_char.is_some_and(|c| c == '0') && second_char.is_some_and(|c| c == 'x') {
             // 0x... hex notation: only Latin-1 Unicode keysyms (0x01000000–
