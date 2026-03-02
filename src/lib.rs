@@ -6,22 +6,20 @@ use std::{
     path::Path,
 };
 
-use default_keymap::DEFAULT_MAP;
-use evdev_xkb::XKBCODES_EVDEV;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, ModKind, ModType, Modifiers, *};
 use regex::Regex;
 use repeat::REPEAT_DEFAULT;
+use xkb::default_keymap::DEFAULT_MAP;
+use xkb::evdev_xkb::XKBCODES_EVDEV;
+use xkb::xkb_utf8::XKBCODES_DEF_TO_UTF8;
 use xkb_parser::{
     ast::{Directive, Include, Key, XkbSymbolsItem},
     parse,
 };
-use xkb_utf8::XKBCODES_DEF_TO_UTF8;
-mod default_keymap;
-mod evdev_xkb;
 pub mod modifiers;
 mod repeat;
-mod xkb_utf8;
+mod xkb;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
