@@ -81,7 +81,11 @@ fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec
     } else if let Some(locale) = locale {
         string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
     }
-    let xkb = parse(&string_file).expect("neither names nor file set");
+    // let xkb = parse(&string_file).expect("neither names nor file set");
+    let xkb = match parse(&string_file) {
+        Ok(xkb) => xkb,
+        Err(_) => return Vec::new(),
+    };
     let mut layouts = Vec::new();
     xkb.definitions.iter().for_each(|d| match &d.directive {
         Directive::XkbSymbols(src) => {

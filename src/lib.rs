@@ -18,7 +18,7 @@ use xkb_parser::{
     parse,
 };
 pub mod modifiers;
-mod repeat;
+use xkb::repeat;
 mod xkb;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
