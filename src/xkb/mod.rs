@@ -9,7 +9,7 @@ use std::{
 use crate::modifiers::Modifiers;
 use crate::{
     composer::{Composer, ListComposer},
-    modifiers::{Modifier, LEFT_SHIFT, RIGHT_SHIFT},
+    
 };
 
 use regex::Regex;
@@ -152,7 +152,17 @@ fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
 }
 
 fn hex_string_to_unicode_char(s: &str) -> Option<char> {
-    parse_hex_char(s, s.len() - 4, 4)
+    if let Ok(keysym) = u32::from_str_radix(&s[2..], 16) {
+        if (0x01000000..=0x0110FFFF).contains(&keysym) {
+            std::char::from_u32(keysym - 0x01000000)
+        } else if keysym <= 0x10FFFF {
+            std::char::from_u32(keysym)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 fn is_latin1_unicode_keysym_hex(s: &str) -> bool {
@@ -245,45 +255,10 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         locale.clone(),
         Some(layout.clone()),
     );
-    fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, locale, Some(layout));
+    fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, &locale, Some(layout.as_str()), false);
     wkb.num_lock_keys = build_num_lock_table(&num_lock_codes, &wkb.state_keymap, &bs.key_types);
 
-    // apl:dyalog_box — numpad keys are ONE_LEVEL in xkbcommon, so
-    // Shift does not produce digits even when NumLock is active (Shift
-    // cancels NumLock back to the base box-drawing character).  Copy
-    // level 0 values into num_lock_keys at odd (Shift) levels.
-    if wkb.locale.as_deref() == Some("apl") && matches!(wkb.layout.as_str(), "dyalog") {
-        wkb.modifiers.0.insert(
-            LEFT_SHIFT,
-            Modifier::Single(ModKind::Pressed {
-                pressed: false,
-                mod_type: ModType::None,
-            }),
-        );
-        wkb.modifiers.0.insert(
-            RIGHT_SHIFT,
-            Modifier::Single(ModKind::Pressed {
-                pressed: false,
-                mod_type: ModType::None,
-            }),
-        );
-    }
     fix_key_type_levels(&mut wkb, &num_lock_codes, &bs);
-
-    // Post-fix_key_type_levels fixups for specific layouts
-    match (wkb.locale.as_deref(), wkb.layout.as_str()) {
-        (Some("fr"), "latin9") | (Some("fr"), "latin9_nodeadkeys") => {
-            if wkb.state_keymap.len() > 1 {
-                wkb.state_keymap[1].insert(83, '.');
-            }
-        }
-        (Some("fr"), "mac") => {
-            if wkb.state_keymap.len() > 3 {
-                wkb.state_keymap[3].insert(83, ',');
-            }
-        }
-        _ => {}
-    }
 
     wkb.caps_lock_table = build_caps_lock_table(
         &wkb.state_keymap,
@@ -293,41 +268,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         &bs.key_num_symbols,
     );
 
-    // Post-build_caps_lock_table fixups for specific layouts
-    match (wkb.locale.as_deref(), wkb.layout.as_str()) {
-        (Some("lv"), "fkey") => {
-            // lv:fkey redefines AC04 (evdev 33) as [ISO_Level3_Latch, ISO_Level3_Latch, f, F].
-            // Levels 0-1 are a modifier key, not letters — so xkbcommon does not detect
-            // a case pair and does not toggle CapsLock for this key at any level.
-            // WKB incorrectly sees f/F (inherited from lv:basic) and builds toggle entries.
-            // Clear all caps_lock_table entries for key 33 in this layout.
-            for level_map in wkb.caps_lock_table.iter_mut() {
-                level_map.remove(&33);
-            }
-        }
-        (Some("fr"), "afnor") => {
-            // fr:afnor: keys 16 and 24 are incorrectly detected as FOUR_LEVEL_SEMIALPHABETIC
-            // instead of EIGHT_LEVEL_ALPHABETIC. Fix caps_lock_table levels 4 and 5.
-            for code in [16, 24] {
-                if wkb.state_keymap.len() > 4 {
-                    if let Some(&c4) = wkb.state_keymap[4].get(&code) {
-                        if wkb.caps_lock_table.len() > 4 {
-                            wkb.caps_lock_table[4].insert(code, c4);
-                        }
-                    }
-                }
-                if wkb.state_keymap.len() > 5 {
-                    if let Some(&c5) = wkb.state_keymap[5].get(&code) {
-                        if wkb.caps_lock_table.len() > 5 {
-                            wkb.caps_lock_table[5].insert(code, c5);
-                        }
-                    }
-                }
-            }
-        }
-        _ => {}
-    }
-
+    fix_xkb_edge_cases(&mut wkb, &mut num_lock_codes, &locale, Some(layout.as_str()), true);
     wkb.repeat_keys = build_repeat_keys(&wkb.state_keymap, &wkb.modifiers, &bs.explicit_keys);
     wkb
 }
@@ -1491,13 +1432,54 @@ fn fix_key_type_levels<C: Composer>(wkb: &mut WKB<C>, num_lock_codes: &[u32], bs
 fn fix_xkb_edge_cases<C: Composer>(
     wkb: &mut WKB<C>,
     num_lock_codes: &mut Vec<u32>,
-    locale: String,
-    layout: Option<String>,
+    locale: &str,
+    layout: Option<&str>,
+    post_build: bool,
 ) {
+    if post_build {
+        match (locale, layout) {
+            ("fr", Some("latin9")) | ("fr", Some("latin9_nodeadkeys")) => {
+                if wkb.state_keymap.len() > 1 {
+                    wkb.state_keymap[1].insert(83, '.');
+                }
+            }
+            ("fr", Some("mac")) => {
+                if wkb.state_keymap.len() > 3 {
+                    wkb.state_keymap[3].insert(83, ',');
+                }
+            }
+            ("lv", Some("fkey")) => {
+                for level_map in wkb.caps_lock_table.iter_mut() {
+                    level_map.remove(&33);
+                }
+            }
+            ("fr", Some("afnor")) => {
+                for code in [16, 24] {
+                    if wkb.state_keymap.len() > 4 {
+                        if let Some(&c4) = wkb.state_keymap[4].get(&code) {
+                            if wkb.caps_lock_table.len() > 4 {
+                                wkb.caps_lock_table[4].insert(code, c4);
+                            }
+                        }
+                    }
+                    if wkb.state_keymap.len() > 5 {
+                        if let Some(&c5) = wkb.state_keymap[5].get(&code) {
+                            if wkb.caps_lock_table.len() > 5 {
+                                wkb.caps_lock_table[5].insert(code, c5);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        return;
+    }
+
     // ── Keymap fixups (compensating for WKB parser limitations) ──
     // These correct level_keymap values, num_lock_codes, etc. that WKB's
     // xkb-parser cannot derive correctly on its own.
-    match (locale.as_str(), &layout.as_deref()) {
+    match (locale, layout) {
         // de:ru* key swap
         ("de", Some("ru")) | ("de", Some("ru-recom")) | ("de", Some("ru-translit")) => {
             for i in 0..2 {
@@ -1510,7 +1492,7 @@ fn fix_xkb_edge_cases<C: Composer>(
         }
         _ => {}
     };
-    match (locale.as_str(), &layout.as_deref()) {
+    match (locale, layout) {
         // bqn: level_keymap fixups (caps metadata now auto-derived)
         ("bqn", Some("bqn")) => {
             wkb.state_keymap[1].insert(22, '⊔');
@@ -1529,6 +1511,26 @@ fn fix_xkb_edge_cases<C: Composer>(
             wkb.state_keymap[1].insert(40, value);
         }
         // apl: copy level0 to level1 for non-alphabetic keys
+        ("apl", Some("dyalog")) => {
+            // apl:dyalog_box — numpad keys are ONE_LEVEL in xkbcommon, so
+            // Shift does not produce digits even when NumLock is active (Shift
+            // cancels NumLock back to the base box-drawing character).  Copy
+            // level 0 values into num_lock_keys at odd (Shift) levels.
+            wkb.modifiers.0.insert(
+                crate::modifiers::LEFT_SHIFT,
+                crate::modifiers::Modifier::Single(crate::modifiers::ModKind::Pressed {
+                    pressed: false,
+                    mod_type: crate::modifiers::ModType::None,
+                }),
+            );
+            wkb.modifiers.0.insert(
+                crate::modifiers::RIGHT_SHIFT,
+                crate::modifiers::Modifier::Single(crate::modifiers::ModKind::Pressed {
+                    pressed: false,
+                    mod_type: crate::modifiers::ModType::None,
+                }),
+            );
+        }
         ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
             for i in 16..=25 {
                 let value = *wkb.state_keymap[0].get(&i).unwrap();
