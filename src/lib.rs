@@ -14,18 +14,18 @@ include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
-    pub(crate) layouts: Vec<String>,
-    pub(crate) layout: String,
-    pub(crate) locale: Option<String>,
-    pub state_keymap: Vec<BTreeMap<u32, char>>,
-    pub regular_composer: C,
-    pub compose_key_composer: C,
-    pub(crate) pressed_keys: HashSet<u32>,
-    pub(crate) repeat_keys: HashSet<u32>,
-    pub modifiers: Modifiers,
-    pub(crate) num_lock_keys: Vec<BTreeMap<u32, char>>,
-    pub caps_lock_table: Vec<BTreeMap<u32, char>>,
-    pub(crate) level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
+    layouts: Vec<String>,
+    layout: String,
+    locale: Option<String>,
+    state_keymap: Vec<BTreeMap<u32, char>>,
+    regular_composer: C,
+    compose_key_composer: C,
+    pressed_keys: HashSet<u32>,
+    repeat_keys: HashSet<u32>,
+    modifiers: Modifiers,
+    num_lock_keys: Vec<BTreeMap<u32, char>>,
+    caps_lock_table: Vec<BTreeMap<u32, char>>,
+    level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
 }
 
 impl WKB<ListComposer> {
