@@ -20,7 +20,7 @@ fn level_keys(locale: &str, level: usize) {
         println!("{:?}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
-        if wkb.level_keymap.len() <= level {
+        if wkb.state_keymap.len() <= level {
             assert!(true);
             continue;
         }
@@ -35,7 +35,7 @@ fn level_keys(locale: &str, level: usize) {
             }
             if k1 != k2 && k2 != None {
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
-                println!("{:?}", wkb.level_keymap[level]);
+                println!("{:?}", wkb.state_keymap[level]);
             }
             assert!(k1 == k2 || k2 == None);
         }
