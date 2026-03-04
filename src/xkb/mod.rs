@@ -417,10 +417,10 @@ pub fn fix_xkb_edge_cases(
                 }
             }
             wkb.state_keymap[4].insert(86, '<');
-            wkb.state_keymap[5].insert(55, '⋅');
-            wkb.state_keymap[5].insert(74, '−');
-            wkb.state_keymap[5].insert(86, '>');
-            wkb.state_keymap[5].insert(98, '∕');
+            // wkb.state_keymap[5].insert(55, '⋅');
+            // wkb.state_keymap[5].insert(74, '−');
+            // wkb.state_keymap[5].insert(86, '>');
+            // wkb.state_keymap[5].insert(98, '∕');
         }
         ("de", Some("T3")) => {
             // custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
