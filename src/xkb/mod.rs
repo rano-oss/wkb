@@ -614,9 +614,9 @@ pub fn map_xkb(
     });
     for (i, map) in wkb.state_keymap.iter_mut().enumerate() {
         if i % 2 == 0 && i + 1 < wkb.caps_lock_keymap.len() {
-            wkb.caps_lock_keymap[i + 1].extend(map.iter());
-        } else {
-            wkb.caps_lock_keymap[i - 1].extend(map.iter());
+            wkb.caps_lock_keymap[i + 1] = map.clone();
+        } else if i % 2 == 1 {
+            wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
 }
