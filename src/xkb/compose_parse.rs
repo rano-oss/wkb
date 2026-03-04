@@ -54,7 +54,7 @@ pub(crate) fn load_compose_table(locale: &str) -> (ListComposer, ListComposer) {
 /// Returns e.g. `Some("en_US.UTF-8/Compose")` for locale `"de"`.
 /// Falls back to `"en_US.UTF-8"` when no locale-specific compose file
 /// can be found, matching xkbcommon's behaviour.  Returns `None` only
-fn resolve_compose_file(locale: &str) -> Option<String> {
+pub fn resolve_compose_file(locale: &str) -> Option<String> {
     if let Some(&mapped_locale) = XKB_COMPOSE_MAP.get(locale) {
         if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
             return Some(compose_file);
