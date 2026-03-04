@@ -409,13 +409,13 @@ pub fn fix_xkb_edge_cases(
             // wkb.state_keymap[3].insert(83, value);
         }
         ("fr", Some("afnor")) => {
-            for i in 0..2 {
-                for (code, value) in &wkb.state_keymap[i].clone() {
-                    if wkb.state_keymap[i + 4].get(&code).is_none() {
-                        wkb.state_keymap[i + 4].insert(*code, *value);
-                    }
-                }
-            }
+            // for i in 0..2 {
+            //     for (code, value) in &wkb.state_keymap[i].clone() {
+            //         if wkb.state_keymap[i + 4].get(&code).is_none() {
+            //             wkb.state_keymap[i + 4].insert(*code, *value);
+            //         }
+            //     }
+            // }
             wkb.state_keymap[4].insert(86, '<');
             // wkb.state_keymap[5].insert(55, '⋅');
             // wkb.state_keymap[5].insert(74, '−');
