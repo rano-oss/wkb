@@ -612,7 +612,6 @@ pub fn map_xkb(
             }
         }
     });
-    wkb.caps_lock_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
     for (i, map) in wkb.state_keymap.iter_mut().enumerate() {
         if i % 2 == 0 && i + 1 < wkb.caps_lock_keymap.len() {
             wkb.caps_lock_keymap[i + 1].extend(map.iter());
@@ -640,6 +639,8 @@ fn map_keys_and_modifiers(
     for (i, v) in key.values.iter().enumerate() {
         if i == wkb.state_keymap.len() {
             wkb.state_keymap.push(DEFAULT_MAP[i].clone());
+            wkb.num_lock_keys.push(BTreeMap::new());
+            wkb.caps_lock_keymap.push(BTreeMap::new());
         }
         let mut chars = v.chars();
         let count = chars.clone().count();
