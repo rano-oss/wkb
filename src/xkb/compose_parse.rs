@@ -42,10 +42,10 @@ fn resolve_locale_alias(locale: &str) -> Option<String> {
     lookup_locale_file("locale.alias", 0, 1, locale)
 }
 
-pub(crate) fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComposer)> {
+pub(crate) fn load_compose_table(locale: &str) -> (ListComposer, ListComposer) {
     let compose_file_path = resolve_compose_file(locale)?;
     let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
-    Some(load_compose_from_path(&full_path))
+    load_compose_from_path(&full_path)
 }
 
 /// Resolve a locale name to the compose file sub-path (relative to
@@ -54,7 +54,7 @@ pub(crate) fn load_compose_table(locale: &str) -> Option<(ListComposer, ListComp
 /// Returns e.g. `Some("en_US.UTF-8/Compose")` for locale `"de"`.
 /// Falls back to `"en_US.UTF-8"` when no locale-specific compose file
 /// can be found, matching xkbcommon's behaviour.  Returns `None` only
-pub fn resolve_compose_file(locale: &str) -> Option<String> {
+fn resolve_compose_file(locale: &str) -> Option<String> {
     if let Some(&mapped_locale) = XKB_COMPOSE_MAP.get(locale) {
         if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
             return Some(compose_file);

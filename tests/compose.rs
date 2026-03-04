@@ -472,7 +472,7 @@ fn run_compose_test(
 /// 3. Parses the compose file and tests every entry against the WKB's
 ///    composers, cross-checked with xkbcommon.
 fn test_wkb_compose(xkb_locale: &str) {
-    let compose_file_subpath = wkb::xkb::resolve_compose_file(xkb_locale).unwrap_or_else(|| {
+    let compose_file_subpath = wkb::xkb::compose_parse::resolve_compose_file(xkb_locale).unwrap_or_else(|| {
         panic!(
             "resolve_compose_file('{}') returned None — \
                  add an entry to xkb_compose_map.rs",
@@ -520,7 +520,7 @@ fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
         return;
     }
 
-    let (regular, compose_key) = wkb::xkb::load_compose_from_path(compose_path);
+    let (regular, compose_key) = wkb::xkb::compose_parse::load_compose_from_path(compose_path);
 
     run_compose_test(label, xkb_locale, compose_path, &regular, &compose_key);
 }
@@ -842,7 +842,7 @@ fn compose_resolution_short_names() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::resolve_compose_file(locale);
+        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -884,7 +884,7 @@ fn compose_resolution_xkb_compose_map() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::resolve_compose_file(locale);
+        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -919,7 +919,7 @@ fn compose_resolution_full_locale_names() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::resolve_compose_file(locale);
+        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -945,7 +945,7 @@ fn compose_resolution_every_xkb_layout() {
     ];
 
     for &layout in &xkb_layouts {
-        let resolved = wkb::xkb::resolve_compose_file(layout);
+        let resolved = wkb::xkb::compose_parse::resolve_compose_file(layout);
         assert!(
             resolved.is_some(),
             "resolve_compose_file('{}') returned None — every XKB layout must resolve",

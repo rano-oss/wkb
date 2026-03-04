@@ -26,7 +26,7 @@ fn caps_lock(locale: &str, level: usize) {
         // Skip layouts where CAPS_LOCK has been remapped (not a true caps lock).
         // Pressing a remapped CAPS_LOCK in xkbcommon has side effects that
         // diverge from WKB, making the comparison meaningless.
-        if !wkb.modifiers.caps_active()
+        if !wkb.modifiers.locked(CAPS_LOCK)
             && !matches!(
                 wkb.modifiers.0.get(&CAPS_LOCK),
                 Some(wkb::modifiers::Modifier::Single(

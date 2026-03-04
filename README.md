@@ -29,6 +29,8 @@ Todo list(tentative):
 - [x] Add wayland specific functions
 - [x] Lightbulbs
 - [ ] New keyboard format
+- [ ] Benchmarks
+- [ ] Check if remapping is needed
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps

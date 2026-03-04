@@ -1,31 +1,28 @@
 pub use composer::{ComposeState, Composer, ListComposer, UnicodeComposer};
-use std::{
-    collections::{BTreeMap, HashMap, HashSet},
-    path::Path,
-};
+use std::collections::{BTreeMap, HashMap, HashSet};
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
 use repeat::REPEAT_DEFAULT;
 pub mod modifiers;
 use xkb::repeat;
-mod xkb;
+pub mod xkb;
 include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
-    layouts: Vec<String>,
-    layout: String,
-    locale: Option<String>,
-    state_keymap: Vec<BTreeMap<u32, char>>,
-    regular_composer: C,
-    compose_key_composer: C,
-    pressed_keys: HashSet<u32>,
-    repeat_keys: HashSet<u32>,
-    modifiers: Modifiers,
-    num_lock_keys: Vec<BTreeMap<u32, char>>,
-    caps_lock_table: Vec<BTreeMap<u32, char>>,
-    level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
+    pub layouts: Vec<String>,
+    pub layout: String,
+    pub locale: Option<String>,
+    pub state_keymap: Vec<BTreeMap<u32, char>>,
+    pub regular_composer: C,
+    pub compose_key_composer: C,
+    pub pressed_keys: HashSet<u32>,
+    pub repeat_keys: HashSet<u32>,
+    pub modifiers: Modifiers,
+    pub num_lock_keys: Vec<BTreeMap<u32, char>>,
+    pub caps_lock_keymap: Vec<BTreeMap<u32, char>>,
+    pub level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
 }
 
 impl WKB<ListComposer> {
@@ -53,7 +50,6 @@ impl<C: Composer> WKB<C> {
         let mut latched = 0;
         let mut locked = 0;
         let group = 0;
-
         let mapping = [
             (LEFT_SHIFT, 1),
             (RIGHT_SHIFT, 1),
@@ -65,7 +61,6 @@ impl<C: Composer> WKB<C> {
             (LOGO, 64),
             (ALTGR, 128),
         ];
-
         for (code, bit) in mapping {
             if let Some(modifier) = self.modifiers.0.get(&code) {
                 match modifier {
@@ -121,7 +116,6 @@ impl<C: Composer> WKB<C> {
         if let Some(layout) = self.layouts.get(group as usize) {
             self.layout = layout.clone();
         }
-
         let mapping = [
             (LEFT_SHIFT, 1),
             (RIGHT_SHIFT, 1),
@@ -133,7 +127,6 @@ impl<C: Composer> WKB<C> {
             (LOGO, 64),
             (ALTGR, 128),
         ];
-
         for (code, bit) in mapping {
             let is_depressed = (depressed & bit) != 0;
             let is_locked = (locked & bit) != 0;
@@ -162,7 +155,6 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
-        // First check exceptions
         if let Some(c) = self
             .level_exceptions_keymap
             .get(level_index)
@@ -170,7 +162,6 @@ impl<C: Composer> WKB<C> {
         {
             return Some(c);
         }
-        // Fall back to state_keymap
         self.state_keymap
             .get(level_index)
             .and_then(|hm| hm.get(&evdev_code).copied())
@@ -186,7 +177,6 @@ impl<C: Composer> WKB<C> {
         let level2 = self.modifiers.level2() && self.state_keymap.len() > 1;
         let base_level = level_index(level5, level3, level2);
 
-        // Num Lock takes priority
         if self.modifiers.locked(NUM_LOCK) {
             if let Some(&key) = self
                 .num_lock_keys
@@ -198,11 +188,9 @@ impl<C: Composer> WKB<C> {
             }
         }
 
-        let caps_active = self.modifiers.caps_active();
-
-        if caps_active {
+        if self.modifiers.locked(CAPS_LOCK) {
             if let Some(&c) = self
-                .caps_lock_table
+                .caps_lock_keymap
                 .get(base_level)
                 .and_then(|m| m.get(&evdev_code))
             {
@@ -271,9 +259,5 @@ impl<C: Composer> WKB<C> {
 
     pub fn current_layout(&self) -> String {
         self.layout.clone()
-    }
-
-    pub fn level_keymap(&self) -> Vec<BTreeMap<u32, char>> {
-        self.state_keymap.clone()
     }
 }
