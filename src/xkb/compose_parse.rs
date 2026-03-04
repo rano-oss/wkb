@@ -43,7 +43,7 @@ fn resolve_locale_alias(locale: &str) -> Option<String> {
 }
 
 pub(crate) fn load_compose_table(locale: &str) -> (ListComposer, ListComposer) {
-    let compose_file_path = resolve_compose_file(locale)?;
+    let compose_file_path = resolve_compose_file(locale).expect("compose file is missing");
     let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
     load_compose_from_path(&full_path)
 }
