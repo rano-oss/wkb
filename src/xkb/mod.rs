@@ -246,6 +246,11 @@ pub fn fix_xkb_edge_cases(
                     wkb.state_keymap[3].insert(code, value);
                 }
             }
+            // Ensure level2/level3 follow xkb for key 86 (᚛ / ᚜).
+            wkb.state_keymap[2].insert(86, '᚛');
+            wkb.state_keymap[3].insert(86, '᚜');
+            wkb.caps_lock_keymap[2].insert(86, '᚛');
+            wkb.caps_lock_keymap[3].insert(86, '᚜');
         }
         ("si", Some(_)) => {
             let value = *wkb.state_keymap[0].get(&41).unwrap();
@@ -302,6 +307,26 @@ pub fn fix_xkb_edge_cases(
             wkb.state_keymap[3].insert(9, '*');
             wkb.state_keymap[3].insert(10, '(');
             wkb.state_keymap[3].insert(11, ')');
+            wkb.state_keymap[5].insert(2, '!');
+            wkb.state_keymap[5].insert(3, '@');
+            wkb.state_keymap[5].insert(4, '#');
+            wkb.state_keymap[5].insert(5, '$');
+            wkb.state_keymap[5].insert(6, '%');
+            wkb.state_keymap[5].insert(7, '^');
+            wkb.state_keymap[5].insert(8, '&');
+            wkb.state_keymap[5].insert(9, '*');
+            wkb.state_keymap[5].insert(10, '(');
+            wkb.state_keymap[5].insert(11, ')');
+            wkb.state_keymap[7].insert(2, '!');
+            wkb.state_keymap[7].insert(3, '@');
+            wkb.state_keymap[7].insert(4, '#');
+            wkb.state_keymap[7].insert(5, '$');
+            wkb.state_keymap[7].insert(6, '%');
+            wkb.state_keymap[7].insert(7, '^');
+            wkb.state_keymap[7].insert(8, '&');
+            wkb.state_keymap[7].insert(9, '*');
+            wkb.state_keymap[7].insert(10, '(');
+            wkb.state_keymap[7].insert(11, ')');
             let value = *wkb.state_keymap[0].get(&15).unwrap();
             wkb.state_keymap[1].insert(15, value);
             wkb.state_keymap[2].insert(15, value);
@@ -389,18 +414,25 @@ pub fn fix_xkb_edge_cases(
         }
         ("fr", Some("bepo_latin9")) => {
             // caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+            wkb.state_keymap[1].insert(55, '*');
+            wkb.state_keymap[2].insert(55, '·');
             let value = *wkb.state_keymap[2].get(&55).unwrap();
             wkb.state_keymap[3].insert(55, value);
+            wkb.state_keymap[2].insert(98, '/');
             let value = *wkb.state_keymap[2].get(&98).unwrap();
             wkb.state_keymap[3].insert(98, value);
         }
         ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
+            wkb.state_keymap[1].insert(55, '*');
+            wkb.state_keymap[2].insert(55, '·');
             let value = *wkb.state_keymap[2].get(&55).unwrap();
             wkb.state_keymap[3].insert(55, value);
+            wkb.state_keymap[2].insert(98, '/');
             let value = *wkb.state_keymap[2].get(&98).unwrap();
             wkb.state_keymap[3].insert(98, value);
         }
         ("fr", Some("mac")) => {
+            wkb.state_keymap[1].insert(83, ',');
             let value = *wkb.state_keymap[0].get(&83).unwrap();
             wkb.state_keymap[3].insert(83, value);
         }
@@ -463,6 +495,7 @@ pub fn fix_xkb_edge_cases(
         | ("brai", Some("keypad"))
         | ("apl", Some("common"))
         | ("apl", Some("dyalog_box"))
+        | ("apl", Some("dyalog"))
         | ("kr", Some("hw_keys"))
         | ("jp", Some("hztg_escape"))
         | ("brai", Some("right_hand_invert")) => {
@@ -482,6 +515,22 @@ pub fn fix_xkb_edge_cases(
                 (83, '.'),
                 (86, '>'),
             ]));
+
+            if locale.as_str() == "apl"
+                && (layout.as_deref() == Some("dyalog") || layout.as_deref() == Some("dyalog_box"))
+            {
+                wkb.state_keymap[1].insert(71, '┌');
+                wkb.state_keymap[1].insert(72, '┬');
+                wkb.state_keymap[1].insert(73, '┐');
+                wkb.state_keymap[1].insert(75, '├');
+                wkb.state_keymap[1].insert(76, '┼');
+                wkb.state_keymap[1].insert(77, '┤');
+                wkb.state_keymap[1].insert(79, '└');
+                wkb.state_keymap[1].insert(80, '┴');
+                wkb.state_keymap[1].insert(81, '┘');
+                wkb.state_keymap[1].insert(82, '─');
+                wkb.state_keymap[1].insert(83, '│');
+            }
         }
         // ("am", Some("eastern")) | ("am", Some("western")) | ("am", Some("eastern-alt")) => {
         //     num_lock_codes.push(2);
@@ -489,6 +538,18 @@ pub fn fix_xkb_edge_cases(
         //     num_lock_codes.push(6);
         //     num_lock_codes.push(7);
         // }
+        ("am", Some("eastern")) => {
+            wkb.state_keymap[1].insert(2, '։');
+            wkb.state_keymap[1].insert(5, '՛');
+            wkb.state_keymap[1].insert(6, ',');
+            wkb.state_keymap[1].insert(7, '-');
+        }
+        ("am", Some("western")) | ("am", Some("eastern-alt")) => {
+            wkb.state_keymap[1].insert(2, '։');
+            wkb.state_keymap[1].insert(5, '՛');
+            wkb.state_keymap[1].insert(6, ',');
+            wkb.state_keymap[1].insert(7, '-');
+        }
         ("ru", Some("ruintl_en")) => {
             wkb.state_keymap[3].insert(36, 'Ø');
         }
