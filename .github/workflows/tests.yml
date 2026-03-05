@@ -11,7 +11,7 @@ jobs:
       image: fedora:latest
     steps:
       - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           - num_lock
     steps:
       - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,7 +68,7 @@ jobs:
           - repeat
     steps:
       - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
 
       - name: Checkout
         uses: actions/checkout@v4
