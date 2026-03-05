@@ -508,7 +508,6 @@ pub fn fix_xkb_edge_cases(
                 // Preserve pushed-level originals in level_exceptions (level 2) for dyalog only
                 if layout.as_deref() == Some("dyalog") {
                     let pushed_level = wkb.state_keymap.len() - 1;
-                    wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
                     wkb.level_exceptions_keymap[pushed_level].insert(55, '*');
                     wkb.level_exceptions_keymap[pushed_level].insert(74, '-');
                     wkb.level_exceptions_keymap[pushed_level].insert(86, '|');
