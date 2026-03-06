@@ -4,29 +4,74 @@ on:
   pull_request:
 
 jobs:
-  test-per-target:
-    name: test (${{ matrix.test_target }})
+  test-state:
+    name: test (state)
     runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - name: Install system dependencies
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run test target
+        run: cargo test --test state
+
+  test-dependent:
+    name: test (${{ matrix.test_target }})
+    needs: test-state
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
     strategy:
       fail-fast: false
       matrix:
         test_target:
           - caps_lock
-          - compose
-          - level
-          - modifiers_state
           - num_lock
-          - repeat
-          - state
-
     steps:
+      - name: Install system dependencies
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
+
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run test target
+        run: cargo test --test ${{ matrix.test_target }}
+
+  test-independent:
+    name: test (${{ matrix.test_target }})
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_target:
+          - compose
+          - level
+          - modifiers_state
+          - repeat
+    steps:
       - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxkbcommon-dev
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable

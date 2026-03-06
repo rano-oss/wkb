@@ -1,10 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    fs::File,
-    io::Read,
-    os::fd::OwnedFd,
-    path::Path,
-};
+use std::{collections::BTreeMap, fs::File, io::Read, os::fd::OwnedFd, path::Path};
 
 use regex::Regex;
 use xkb_parser::{
@@ -216,6 +210,14 @@ pub fn fix_xkb_edge_cases(
             wkb.state_keymap[1].insert(40, value);
         }
         ("cd", _) | ("ml", Some("us-mac")) => wkb.caps_lock_keymap[1].clear(),
+        ("ua", Some("winkeysenhanced")) => {
+            if let Some(&v0) = wkb.state_keymap[0].get(&86) {
+                wkb.state_keymap[2].insert(86, v0);
+            }
+            if let Some(&v1) = wkb.state_keymap[1].get(&86) {
+                wkb.state_keymap[3].insert(86, v1);
+            }
+        }
         ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
             for i in 16..=25 {
                 let value = *wkb.state_keymap[0].get(&i).unwrap();
@@ -246,6 +248,11 @@ pub fn fix_xkb_edge_cases(
                     wkb.state_keymap[3].insert(code, value);
                 }
             }
+            // Ensure level2/level3 follow xkb for key 86 (᚛ / ᚜).
+            wkb.state_keymap[2].insert(86, '᚛');
+            wkb.state_keymap[3].insert(86, '᚜');
+            wkb.caps_lock_keymap[2].insert(86, '᚛');
+            wkb.caps_lock_keymap[3].insert(86, '᚜');
         }
         ("si", Some(_)) => {
             let value = *wkb.state_keymap[0].get(&41).unwrap();
@@ -282,26 +289,6 @@ pub fn fix_xkb_edge_cases(
             wkb.state_keymap[3].insert(86, value);
         }
         ("us", Some("3l")) => {
-            wkb.state_keymap[1].insert(2, '!');
-            wkb.state_keymap[1].insert(3, '@');
-            wkb.state_keymap[1].insert(4, '#');
-            wkb.state_keymap[1].insert(5, '$');
-            wkb.state_keymap[1].insert(6, '%');
-            wkb.state_keymap[1].insert(7, '^');
-            wkb.state_keymap[1].insert(8, '&');
-            wkb.state_keymap[1].insert(9, '*');
-            wkb.state_keymap[1].insert(10, '(');
-            wkb.state_keymap[1].insert(11, ')');
-            wkb.state_keymap[3].insert(2, '!');
-            wkb.state_keymap[3].insert(3, '@');
-            wkb.state_keymap[3].insert(4, '#');
-            wkb.state_keymap[3].insert(5, '$');
-            wkb.state_keymap[3].insert(6, '%');
-            wkb.state_keymap[3].insert(7, '^');
-            wkb.state_keymap[3].insert(8, '&');
-            wkb.state_keymap[3].insert(9, '*');
-            wkb.state_keymap[3].insert(10, '(');
-            wkb.state_keymap[3].insert(11, ')');
             let value = *wkb.state_keymap[0].get(&15).unwrap();
             wkb.state_keymap[1].insert(15, value);
             wkb.state_keymap[2].insert(15, value);
@@ -389,18 +376,45 @@ pub fn fix_xkb_edge_cases(
         }
         ("fr", Some("bepo_latin9")) => {
             // caps_is_level2 = Some(vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-            let value = *wkb.state_keymap[2].get(&55).unwrap();
-            wkb.state_keymap[3].insert(55, value);
-            let value = *wkb.state_keymap[2].get(&98).unwrap();
-            wkb.state_keymap[3].insert(98, value);
+            wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+            if let Some(&v) = wkb.state_keymap[1].get(&55) {
+                wkb.level_exceptions_keymap[1].insert(55, v);
+            }
+            if let Some(&v) = wkb.state_keymap[2].get(&55) {
+                wkb.level_exceptions_keymap[2].insert(55, v);
+            }
+            if let Some(&v) = wkb.state_keymap[2].get(&98) {
+                wkb.level_exceptions_keymap[2].insert(98, v);
+            }
+            wkb.state_keymap[1].insert(55, '*');
+            wkb.state_keymap[2].insert(55, '·');
+            wkb.state_keymap[3].insert(55, '×');
+            wkb.state_keymap[2].insert(98, '/');
+            wkb.state_keymap[3].insert(98, '÷');
         }
         ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
-            let value = *wkb.state_keymap[2].get(&55).unwrap();
-            wkb.state_keymap[3].insert(55, value);
-            let value = *wkb.state_keymap[2].get(&98).unwrap();
-            wkb.state_keymap[3].insert(98, value);
+            wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+            if let Some(&v) = wkb.state_keymap[1].get(&55) {
+                wkb.level_exceptions_keymap[1].insert(55, v);
+            }
+            if let Some(&v) = wkb.state_keymap[2].get(&55) {
+                wkb.level_exceptions_keymap[2].insert(55, v);
+            }
+            if let Some(&v) = wkb.state_keymap[2].get(&98) {
+                wkb.level_exceptions_keymap[2].insert(98, v);
+            }
+            wkb.state_keymap[1].insert(55, '*');
+            wkb.state_keymap[2].insert(55, '·');
+            wkb.state_keymap[3].insert(55, '×');
+            wkb.state_keymap[2].insert(98, '/');
+            wkb.state_keymap[3].insert(98, '÷');
         }
         ("fr", Some("mac")) => {
+            wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+            if let Some(&v) = wkb.state_keymap[1].get(&83) {
+                wkb.level_exceptions_keymap[1].insert(83, v);
+            }
+            wkb.state_keymap[1].insert(83, ',');
             let value = *wkb.state_keymap[0].get(&83).unwrap();
             wkb.state_keymap[3].insert(83, value);
         }
@@ -409,18 +423,18 @@ pub fn fix_xkb_edge_cases(
             // wkb.state_keymap[3].insert(83, value);
         }
         ("fr", Some("afnor")) => {
-            // for i in 0..2 {
-            //     for (code, value) in &wkb.state_keymap[i].clone() {
-            //         if wkb.state_keymap[i + 4].get(&code).is_none() {
-            //             wkb.state_keymap[i + 4].insert(*code, *value);
-            //         }
-            //     }
-            // }
+            for i in 0..2 {
+                for (code, value) in &wkb.state_keymap[i].clone() {
+                    if wkb.state_keymap[i + 4].get(&code).is_none() {
+                        wkb.state_keymap[i + 4].insert(*code, *value);
+                    }
+                }
+            }
             wkb.state_keymap[4].insert(86, '<');
-            // wkb.state_keymap[5].insert(55, '⋅');
-            // wkb.state_keymap[5].insert(74, '−');
-            // wkb.state_keymap[5].insert(86, '>');
-            // wkb.state_keymap[5].insert(98, '∕');
+            wkb.state_keymap[5].insert(55, '⋅');
+            wkb.state_keymap[5].insert(74, '−');
+            wkb.state_keymap[5].insert(86, '>');
+            wkb.state_keymap[5].insert(98, '∕');
         }
         ("de", Some("T3")) => {
             // custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
@@ -463,6 +477,7 @@ pub fn fix_xkb_edge_cases(
         | ("brai", Some("keypad"))
         | ("apl", Some("common"))
         | ("apl", Some("dyalog_box"))
+        | ("apl", Some("dyalog"))
         | ("kr", Some("hw_keys"))
         | ("jp", Some("hztg_escape"))
         | ("brai", Some("right_hand_invert")) => {
@@ -482,6 +497,36 @@ pub fn fix_xkb_edge_cases(
                 (83, '.'),
                 (86, '>'),
             ]));
+
+            if locale.as_str() == "apl"
+                && (layout.as_deref() == Some("dyalog") || layout.as_deref() == Some("dyalog_box"))
+            {
+                wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+                for &code in &[71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83] {
+                    if let Some(&v) = wkb.state_keymap[1].get(&code) {
+                        wkb.level_exceptions_keymap[1].insert(code, v);
+                    }
+                }
+                // Preserve pushed-level originals in level_exceptions (level 2) for dyalog only
+                if layout.as_deref() == Some("dyalog") {
+                    let pushed_level = wkb.state_keymap.len() - 1;
+                    wkb.level_exceptions_keymap[pushed_level].insert(55, '*');
+                    wkb.level_exceptions_keymap[pushed_level].insert(74, '-');
+                    wkb.level_exceptions_keymap[pushed_level].insert(86, '|');
+                    wkb.level_exceptions_keymap[pushed_level].insert(98, '/');
+                }
+                wkb.state_keymap[1].insert(71, '┌');
+                wkb.state_keymap[1].insert(72, '┬');
+                wkb.state_keymap[1].insert(73, '┐');
+                wkb.state_keymap[1].insert(75, '├');
+                wkb.state_keymap[1].insert(76, '┼');
+                wkb.state_keymap[1].insert(77, '┤');
+                wkb.state_keymap[1].insert(79, '└');
+                wkb.state_keymap[1].insert(80, '┴');
+                wkb.state_keymap[1].insert(81, '┘');
+                wkb.state_keymap[1].insert(82, '─');
+                wkb.state_keymap[1].insert(83, '│');
+            }
         }
         // ("am", Some("eastern")) | ("am", Some("western")) | ("am", Some("eastern-alt")) => {
         //     num_lock_codes.push(2);
@@ -489,6 +534,30 @@ pub fn fix_xkb_edge_cases(
         //     num_lock_codes.push(6);
         //     num_lock_codes.push(7);
         // }
+        ("am", Some("eastern")) => {
+            wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+            for &code in &[2, 5, 6, 7] {
+                if let Some(&v) = wkb.state_keymap[1].get(&code) {
+                    wkb.level_exceptions_keymap[1].insert(code, v);
+                }
+            }
+            wkb.state_keymap[1].insert(2, '։');
+            wkb.state_keymap[1].insert(5, '՛');
+            wkb.state_keymap[1].insert(6, ',');
+            wkb.state_keymap[1].insert(7, '-');
+        }
+        ("am", Some("western")) | ("am", Some("eastern-alt")) => {
+            wkb.level_exceptions_keymap = vec![BTreeMap::new(); wkb.state_keymap.len()];
+            for &code in &[2, 5, 6, 7] {
+                if let Some(&v) = wkb.state_keymap[1].get(&code) {
+                    wkb.level_exceptions_keymap[1].insert(code, v);
+                }
+            }
+            wkb.state_keymap[1].insert(2, '։');
+            wkb.state_keymap[1].insert(5, '՛');
+            wkb.state_keymap[1].insert(6, ',');
+            wkb.state_keymap[1].insert(7, '-');
+        }
         ("ru", Some("ruintl_en")) => {
             wkb.state_keymap[3].insert(36, 'Ø');
         }
@@ -588,6 +657,11 @@ pub fn map_xkb(
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
                                         for (i, v) in key.values.values.iter().enumerate() {
+                                            if i == wkb.state_keymap.len() {
+                                                wkb.state_keymap.push(DEFAULT_MAP[i].clone());
+                                                wkb.num_lock_keys.push(BTreeMap::new());
+                                                wkb.caps_lock_keymap.push(BTreeMap::new());
+                                            }
                                             let single_char =
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
                                             if let Some(char) = single_char {
@@ -938,7 +1012,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crat
     wkb
 }
 
-pub fn new_from_string(string: String) -> crate::WKB<crate::ListComposer> {
+pub fn new_from_string(_string: String) -> crate::WKB<crate::ListComposer> {
     // Basic stub, might need parsing string instead of relying on map_xkb reading from file
     unimplemented!("new_from_string is not yet fully implemented")
 }
