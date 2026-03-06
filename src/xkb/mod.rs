@@ -210,6 +210,10 @@ pub fn fix_xkb_edge_cases(
             wkb.state_keymap[1].insert(40, value);
         }
         ("cd", _) | ("ml", Some("us-mac")) => wkb.caps_lock_keymap[1].clear(),
+        ("ua", Some("winkeysenhanced")) => {
+            wkb.state_keymap[2].insert(86, v0);
+            wkb.state_keymap[3].insert(86, v1);
+        }
         ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
             for i in 16..=25 {
                 let value = *wkb.state_keymap[0].get(&i).unwrap();
@@ -415,18 +419,18 @@ pub fn fix_xkb_edge_cases(
             // wkb.state_keymap[3].insert(83, value);
         }
         ("fr", Some("afnor")) => {
-            // for i in 0..2 {
-            //     for (code, value) in &wkb.state_keymap[i].clone() {
-            //         if wkb.state_keymap[i + 4].get(&code).is_none() {
-            //             wkb.state_keymap[i + 4].insert(*code, *value);
-            //         }
-            //     }
-            // }
+            for i in 0..2 {
+                for (code, value) in &wkb.state_keymap[i].clone() {
+                    if wkb.state_keymap[i + 4].get(&code).is_none() {
+                        wkb.state_keymap[i + 4].insert(*code, *value);
+                    }
+                }
+            }
             wkb.state_keymap[4].insert(86, '<');
-            // wkb.state_keymap[5].insert(55, '⋅');
-            // wkb.state_keymap[5].insert(74, '−');
-            // wkb.state_keymap[5].insert(86, '>');
-            // wkb.state_keymap[5].insert(98, '∕');
+            wkb.state_keymap[5].insert(55, '⋅');
+            wkb.state_keymap[5].insert(74, '−');
+            wkb.state_keymap[5].insert(86, '>');
+            wkb.state_keymap[5].insert(98, '∕');
         }
         ("de", Some("T3")) => {
             // custom_case_map = Some(HashMap::from([('ß', 'ẞ')]));
