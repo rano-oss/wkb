@@ -1,10 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    fs::File,
-    io::Read,
-    os::fd::OwnedFd,
-    path::Path,
-};
+use std::{collections::BTreeMap, fs::File, io::Read, os::fd::OwnedFd, path::Path};
 
 use regex::Regex;
 use xkb_parser::{
