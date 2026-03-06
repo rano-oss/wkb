@@ -649,6 +649,11 @@ pub fn map_xkb(
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
                                         for (i, v) in key.values.values.iter().enumerate() {
+                                            if i == wkb.state_keymap.len() {
+                                                wkb.state_keymap.push(DEFAULT_MAP[i].clone());
+                                                wkb.num_lock_keys.push(BTreeMap::new());
+                                                wkb.caps_lock_keymap.push(BTreeMap::new());
+                                            }
                                             let single_char =
                                                 XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
                                             if let Some(char) = single_char {
@@ -999,7 +1004,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crat
     wkb
 }
 
-pub fn new_from_string(string: String) -> crate::WKB<crate::ListComposer> {
+pub fn new_from_string(_string: String) -> crate::WKB<crate::ListComposer> {
     // Basic stub, might need parsing string instead of relying on map_xkb reading from file
     unimplemented!("new_from_string is not yet fully implemented")
 }
