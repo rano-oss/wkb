@@ -211,8 +211,12 @@ pub fn fix_xkb_edge_cases(
         }
         ("cd", _) | ("ml", Some("us-mac")) => wkb.caps_lock_keymap[1].clear(),
         ("ua", Some("winkeysenhanced")) => {
-            wkb.state_keymap[2].insert(86, v0);
-            wkb.state_keymap[3].insert(86, v1);
+            if let Some(&v0) = wkb.state_keymap[0].get(&86) {
+                wkb.state_keymap[2].insert(86, v0);
+            }
+            if let Some(&v1) = wkb.state_keymap[1].get(&86) {
+                wkb.state_keymap[3].insert(86, v1);
+            }
         }
         ("apl", Some("apl2")) | ("apl", Some("aplplusII")) => {
             for i in 16..=25 {
