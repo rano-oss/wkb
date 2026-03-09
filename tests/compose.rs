@@ -4,7 +4,6 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 use test_case::test_matrix;
-use wkb::xkb::xkb_utf8::XKBCODES_DEF_TO_UTF8;
 use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
 
@@ -14,10 +13,7 @@ use xkbcommon::xkb::{self, compose};
 
 /// Resolve a keysym name to a char the same way wkb's load_compose_table does.
 fn resolve_keysym_to_char(name: &str) -> Option<char> {
-    XKBCODES_DEF_TO_UTF8
-        .get(name)
-        .cloned()
-        .or_else(|| keysym_name_to_char(name))
+    keysym_name_to_char(name)
 }
 
 /// Resolve a keysym name to a UTF-8 character via xkbcommon.

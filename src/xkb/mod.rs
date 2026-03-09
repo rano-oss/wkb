@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fs::File, io::Read, os::fd::OwnedFd, path::Path};
+use std::{collections::BTreeMap, path::Path};
 
 use xkb_parser::{
     ast::{Directive, Key, XkbSymbolsItem},
@@ -18,6 +18,19 @@ pub mod default_keymap;
 pub mod evdev_xkb;
 pub mod repeat;
 pub mod xkb_compose_map;
+
+/// Layouts that require non-evdev (Sun) keycodes and cannot be used with the
+/// standard evdev keycode table.  They are filtered out everywhere we populate
+/// the layouts list so that callers never accidentally try to load them.
+pub const SUN_LAYOUTS: &[&str] = &[
+    "sun_type6",
+    "sun_type6_de",
+    "sun_type6_fr",
+    "sun_type6_suncompat",
+    "sun_type7_suncompat",
+    "suncompat",
+    "sun_type7",
+];
 
 pub fn fix_xkb_edge_cases(
     wkb: &mut WKB<crate::ListComposer>,
@@ -893,44 +906,19 @@ fn map_keys_and_modifiers(
     }
 }
 
-pub fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
-    let mut string_file = String::new();
-    if let Some(fd) = fd {
-        let mut file = File::from(fd);
-        file.read_to_string(&mut string_file)
-            .expect("Could not read file");
-    } else if let Some(locale) = locale {
-        string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
-    }
-    let xkb = parse(&string_file).expect("neither names nor file set");
-    let mut layouts = Vec::new();
-    xkb.definitions.iter().for_each(|d| match &d.directive {
-        Directive::XkbSymbols(src) => {
-            let name = src.name.content.to_string();
-            if ![
-                "sun_type6",
-                "sun_type6_de",
-                "sun_type6_fr",
-                "sun_type6_suncompat",
-                "sun_type7_suncompat",
-                "suncompat",
-                "sun_type7",
-            ]
-            .contains(&name.as_str())
-            {
-                layouts.push(src.name.content.to_string());
-            }
-        }
-        _ => {}
-    });
-    layouts
-}
-
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
 
 pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crate::ListComposer> {
     let path = std::path::Path::new(XKB_SYMBOLS_PATH);
-    let layouts = read_layouts(path, Some(locale.clone()), None);
+    let string_file = std::fs::read_to_string(path.join(locale.clone()))
+        .expect("could not read xkb symbols file");
+    let xkb = parse(&string_file).expect("could not parse xkb symbols file");
+    let layouts: Vec<String> = xkb
+        .symbol_layout_names()
+        .into_iter()
+        .filter(|name| !SUN_LAYOUTS.contains(name))
+        .map(str::to_string)
+        .collect();
     let layout_val = if let Some(l) = layout.clone() {
         l
     } else {

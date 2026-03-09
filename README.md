@@ -21,7 +21,6 @@ Todo list(tentative):
 - [ ] Handle cases where no keys should be returned
 - [x] Compare Modifiers State between xkb and wkb test
 - [ ] Keymap handling/storage
-- [x] Include previously ignored folders
 - [x] Composing
   - [x] Compose Key
   - [x] Compose Automagic
