@@ -9,7 +9,6 @@ use crate::{
     modifiers::{ModKind, ModType, CAPS_LOCK},
     xkb::{
         compose_parse::load_compose_table, default_keymap::DEFAULT_MAP, evdev_xkb::XKBCODES_EVDEV,
-        xkb_utf8::XKBCODES_DEF_TO_UTF8,
     },
     BACKSPACE, WKB,
 };
@@ -19,7 +18,6 @@ pub mod default_keymap;
 pub mod evdev_xkb;
 pub mod repeat;
 pub mod xkb_compose_map;
-pub mod xkb_utf8;
 
 pub fn fix_xkb_edge_cases(
     wkb: &mut WKB<crate::ListComposer>,
@@ -661,10 +659,7 @@ pub fn map_xkb(
                                                 wkb.num_lock_keys.push(BTreeMap::new());
                                                 wkb.caps_lock_keymap.push(BTreeMap::new());
                                             }
-                                            let single_char = XKBCODES_DEF_TO_UTF8
-                                                .get(v.as_ref())
-                                                .cloned()
-                                                .or_else(|| keysym_name_to_char(v.as_ref()));
+                                            let single_char = keysym_name_to_char(v.as_ref());
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
                                             }
@@ -717,10 +712,7 @@ fn map_keys_and_modifiers(
             wkb.num_lock_keys.push(BTreeMap::new());
             wkb.caps_lock_keymap.push(BTreeMap::new());
         }
-        let single_char = XKBCODES_DEF_TO_UTF8
-            .get(v.as_ref())
-            .cloned()
-            .or_else(|| keysym_name_to_char(v.as_ref()));
+        let single_char = keysym_name_to_char(v.as_ref());
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
             if v.as_ref().starts_with("KP_") {
