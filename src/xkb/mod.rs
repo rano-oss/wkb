@@ -1,9 +1,8 @@
 use std::{collections::BTreeMap, fs::File, io::Read, os::fd::OwnedFd, path::Path};
 
-use regex::Regex;
 use xkb_parser::{
-    ast::{Directive, Include, Key, XkbSymbolsItem},
-    parse,
+    ast::{Directive, Key, XkbSymbolsItem},
+    keysym_name_to_char, parse,
 };
 
 use crate::{
@@ -637,12 +636,12 @@ pub fn map_xkb(
             let layout = layout.clone().unwrap_or(wkb.current_layout());
             if src.name.content == layout {
                 src.value.iter().for_each(|si| {
-                    if let XkbSymbolsItem::Include(Include { name }) = si {
-                        let (locale, layout) = parse_include(name);
+                    if let XkbSymbolsItem::Include(include) = si {
+                        let (locale, layout) = include.parse_name();
                         if layout.is_none() {
-                            map_xkb(wkb, path, locale, Some("basic".to_string()));
+                            map_xkb(wkb, path, locale.to_string(), Some("basic".to_string()));
                         } else {
-                            map_xkb(wkb, path, locale, layout);
+                            map_xkb(wkb, path, locale.to_string(), layout.map(str::to_string));
                         }
                     } else if let XkbSymbolsItem::Key(Key {
                         mode: _,
@@ -662,8 +661,10 @@ pub fn map_xkb(
                                                 wkb.num_lock_keys.push(BTreeMap::new());
                                                 wkb.caps_lock_keymap.push(BTreeMap::new());
                                             }
-                                            let single_char =
-                                                XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned();
+                                            let single_char = XKBCODES_DEF_TO_UTF8
+                                                .get(v.as_ref())
+                                                .cloned()
+                                                .or_else(|| keysym_name_to_char(v.as_ref()));
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
                                             }
@@ -716,22 +717,10 @@ fn map_keys_and_modifiers(
             wkb.num_lock_keys.push(BTreeMap::new());
             wkb.caps_lock_keymap.push(BTreeMap::new());
         }
-        let mut chars = v.chars();
-        let count = chars.clone().count();
-        let first_char = chars.next();
-        let is_hex = chars.all(|c| c.is_ascii_hexdigit());
-        let mut chars = v.chars();
-        chars.next();
-        let second_char = chars.next();
-        let single_char = if count == 1 && first_char.is_some_and(|c| c.is_alphanumeric()) {
-            first_char
-        } else if first_char.is_some_and(|c| c == 'U') && is_hex {
-            unicode_string_to_unicode_char(v)
-        } else if first_char.is_some_and(|c| c == '0') && second_char.is_some_and(|c| c == 'x') {
-            hex_string_to_unicode_char(v)
-        } else {
-            XKBCODES_DEF_TO_UTF8.get(v.as_ref()).cloned()
-        };
+        let single_char = XKBCODES_DEF_TO_UTF8
+            .get(v.as_ref())
+            .cloned()
+            .or_else(|| keysym_name_to_char(v.as_ref()));
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
             if v.as_ref().starts_with("KP_") {
@@ -943,32 +932,6 @@ pub fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) ->
         _ => {}
     });
     layouts
-}
-
-fn parse_include(input: &str) -> (String, Option<String>) {
-    let re = Regex::new(r"([\w]+)(?:\(([\w\-]+)\))?$").unwrap();
-    let capture = re.captures(input).unwrap();
-    (
-        capture.get(1).map(|m| m.as_str().to_string()).unwrap(),
-        capture.get(2).map(|m| m.as_str().to_string()),
-    )
-}
-
-fn unicode_string_to_unicode_char(s: &str) -> Option<char> {
-    let number = &s[1..];
-
-    u32::from_str_radix(number, 16)
-        .ok()
-        .and_then(std::char::from_u32)
-}
-
-fn hex_string_to_unicode_char(s: &str) -> Option<char> {
-    let split_pos = s.char_indices().nth_back(4).unwrap().0;
-    let number = &s[split_pos..];
-
-    u32::from_str_radix(number, 16)
-        .ok()
-        .and_then(std::char::from_u32)
 }
 
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";

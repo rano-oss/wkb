@@ -7,6 +7,7 @@ use std::{
 use crate::composer::ListComposer;
 
 use super::{xkb_compose_map::XKB_COMPOSE_MAP, xkb_utf8::XKBCODES_DEF_TO_UTF8};
+use xkb_parser::keysym_name_to_char;
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
@@ -93,21 +94,10 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
 }
 
 fn resolve_keysym_char(name: &str) -> Option<char> {
-    if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(name) {
-        return Some(c);
-    }
-    if name.len() == 1 {
-        return name.chars().next();
-    }
-    if name.starts_with('U') && name.len() >= 5 && name.len() <= 7 {
-        let hex = &name[1..];
-        if hex.chars().all(|c| c.is_ascii_hexdigit()) {
-            if let Ok(cp) = u32::from_str_radix(hex, 16) {
-                return char::from_u32(cp);
-            }
-        }
-    }
-    None
+    XKBCODES_DEF_TO_UTF8
+        .get(name)
+        .cloned()
+        .or_else(|| keysym_name_to_char(name))
 }
 
 pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {

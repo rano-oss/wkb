@@ -5,6 +5,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use test_case::test_matrix;
 use wkb::xkb::xkb_utf8::XKBCODES_DEF_TO_UTF8;
+use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
 
 // ---------------------------------------------------------------------------
@@ -13,22 +14,10 @@ use xkbcommon::xkb::{self, compose};
 
 /// Resolve a keysym name to a char the same way wkb's load_compose_table does.
 fn resolve_keysym_to_char(name: &str) -> Option<char> {
-    if let Some(&c) = XKBCODES_DEF_TO_UTF8.get(name) {
-        return Some(c);
-    }
-    if name.len() == 1 {
-        return Some(name.chars().next().unwrap());
-    }
-    // Handle Uxxxx / Uxxxxx / Uxxxxxx Unicode codepoint keysyms
-    if name.starts_with('U') && name.len() >= 5 && name.len() <= 7 {
-        let hex = &name[1..];
-        if hex.chars().all(|c| c.is_ascii_hexdigit()) {
-            if let Ok(cp) = u32::from_str_radix(hex, 16) {
-                return char::from_u32(cp);
-            }
-        }
-    }
-    None
+    XKBCODES_DEF_TO_UTF8
+        .get(name)
+        .cloned()
+        .or_else(|| keysym_name_to_char(name))
 }
 
 /// Resolve a keysym name to a UTF-8 character via xkbcommon.
@@ -472,13 +461,14 @@ fn run_compose_test(
 /// 3. Parses the compose file and tests every entry against the WKB's
 ///    composers, cross-checked with xkbcommon.
 fn test_wkb_compose(xkb_locale: &str) {
-    let compose_file_subpath = wkb::xkb::compose_parse::resolve_compose_file(xkb_locale).unwrap_or_else(|| {
-        panic!(
-            "resolve_compose_file('{}') returned None — \
+    let compose_file_subpath = wkb::xkb::compose_parse::resolve_compose_file(xkb_locale)
+        .unwrap_or_else(|| {
+            panic!(
+                "resolve_compose_file('{}') returned None — \
                  add an entry to xkb_compose_map.rs",
-            xkb_locale
-        )
-    });
+                xkb_locale
+            )
+        });
 
     let wkb = wkb::WKB::new_from_names(xkb_locale.to_string(), None);
 
