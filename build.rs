@@ -1,12 +1,11 @@
 use std::{
     env,
     fs::File,
-    io::{LineWriter, Read, Write},
-    os::fd::OwnedFd,
+    io::{LineWriter, Write},
     path::Path,
 };
 
-use xkb_parser::{ast::Directive, parse};
+use xkb_parser::parse;
 use xkbcommon::xkb::{self, Keycode};
 
 fn main() -> std::io::Result<()> {
@@ -35,7 +34,29 @@ fn main() -> std::io::Result<()> {
         file.write_all(b"        (\"")?;
         file.write_all(locale.as_bytes())?;
         file.write_all(b"\", [\n")?;
-        let layouts = read_layouts(&path, Some(locale.to_string()), None);
+        let string_file = std::fs::read_to_string(path.join(locale)).unwrap_or_default();
+        let xkb = match parse(&string_file) {
+            Ok(xkb) => xkb,
+            Err(_) => {
+                file.write_all(b"        ].into()),\n")?;
+                continue;
+            }
+        };
+        const SUN_LAYOUTS: &[&str] = &[
+            "sun_type6",
+            "sun_type6_de",
+            "sun_type6_fr",
+            "sun_type6_suncompat",
+            "sun_type7_suncompat",
+            "suncompat",
+            "sun_type7",
+        ];
+        let layouts: Vec<String> = xkb
+            .symbol_layout_names()
+            .into_iter()
+            .filter(|name| !SUN_LAYOUTS.contains(name))
+            .map(str::to_string)
+            .collect();
         for layout in layouts {
             file.write_all(b"            (\"")?;
             file.write_all(layout.as_bytes())?;
@@ -70,41 +91,4 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
         xkb::KEYMAP_COMPILE_NO_FLAGS,
     )
     .unwrap()
-}
-
-fn read_layouts(path: &Path, locale: Option<String>, fd: Option<OwnedFd>) -> Vec<String> {
-    let mut string_file = String::new();
-    if let Some(fd) = fd {
-        let mut file = File::from(fd);
-        file.read_to_string(&mut string_file)
-            .expect("Could not read file");
-    } else if let Some(locale) = locale {
-        string_file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
-    }
-    // let xkb = parse(&string_file).expect("neither names nor file set");
-    let xkb = match parse(&string_file) {
-        Ok(xkb) => xkb,
-        Err(_) => return Vec::new(),
-    };
-    let mut layouts = Vec::new();
-    xkb.definitions.iter().for_each(|d| match &d.directive {
-        Directive::XkbSymbols(src) => {
-            let name = src.name.content.to_string();
-            if ![
-                "sun_type6",
-                "sun_type6_de",
-                "sun_type6_fr",
-                "sun_type6_suncompat",
-                "sun_type7_suncompat",
-                "suncompat",
-                "sun_type7",
-            ]
-            .contains(&name.as_str())
-            {
-                layouts.push(src.name.content.to_string());
-            }
-        }
-        _ => {}
-    });
-    layouts
 }
