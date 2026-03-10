@@ -212,8 +212,9 @@ fn parse_compose_output(value_str: &str) -> Option<char> {
     let inner = &rest[..end_quote];
 
     if !inner.is_empty() && !inner.starts_with('\\') {
-        if let Some(c) = inner.chars().next() {
-            return Some(c);
+        let first = inner.chars().next()?;
+        if !first.is_ascii_digit() {
+            return Some(first);
         }
     }
 
