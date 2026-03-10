@@ -4,6 +4,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 use test_case::test_matrix;
+use xkb_parser::compose::{parse_compose_file as lib_parse, ComposeEntry as LibComposeEntry};
 use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
 
@@ -63,38 +64,19 @@ impl ComposeEntry {
 }
 
 fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
-    let mut entries = Vec::new();
-    let file = match fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return entries,
-    };
-    let reader = io::BufReader::new(file);
+    // Delegate parsing to the canonical parser in xkb-parser and adapt its
+    // ComposeEntry into the test-local ComposeEntry shape.
+    let mut entries: Vec<ComposeEntry> = Vec::new();
 
-    for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(_) => continue,
-        };
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        if trimmed.starts_with("include") {
-            if let Some(start) = trimmed.find('"') {
-                if let Some(end) = trimmed[start + 1..].find('"') {
-                    let include_path = &trimmed[start + 1..start + 1 + end];
-                    let included = parse_compose_file(Path::new(include_path));
-                    entries.extend(included);
-                }
-            }
-            continue;
-        }
-        if !trimmed.starts_with('<') {
-            continue;
-        }
-        if let Some(entry) = parse_compose_line(trimmed) {
-            entries.push(entry);
-        }
+    for lib_entry in lib_parse(path) {
+        let keysym_names: Vec<String> = lib_entry.keys.iter().map(|c| c.to_string()).collect();
+        let is_multi_key = lib_entry.multi_key_index == Some(0);
+        entries.push(ComposeEntry {
+            keysym_names,
+            is_multi_key,
+            output: Some(lib_entry.output),
+            output_keysym_name: None,
+        });
     }
 
     entries
