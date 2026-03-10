@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::fs;
-use std::io::{self, BufRead};
 use std::path::Path;
 use test_case::test_matrix;
 use xkb_parser::compose::{parse_compose_file as lib_parse, ComposeEntry as LibComposeEntry};
@@ -19,11 +17,6 @@ use xkbcommon::xkb::{self, compose};
 fn is_utf8_compose_subpath(subpath: &str) -> bool {
     let s = subpath.to_ascii_lowercase();
     s.contains(".utf-8") || s.contains(".utf8")
-}
-
-/// Resolve a keysym name to a char the same way wkb's load_compose_table does.
-fn resolve_keysym_to_char(name: &str) -> Option<char> {
-    keysym_name_to_char(name)
 }
 
 /// Resolve a keysym name to a UTF-8 character via xkbcommon.
@@ -82,76 +75,6 @@ fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
     entries
 }
 
-fn parse_compose_line(line: &str) -> Option<ComposeEntry> {
-    let (keys_part, value_part) = line.split_once(':')?;
-    let keys_str = keys_part.trim();
-    let value_str = value_part.trim();
-
-    let mut keysym_names: Vec<String> = Vec::new();
-    let mut is_multi_key = false;
-
-    for token in keys_str.split_whitespace() {
-        let name = token.trim_start_matches('<').trim_end_matches('>');
-        if name == "Multi_key" {
-            if keysym_names.is_empty() {
-                is_multi_key = true;
-            } else {
-                return None;
-            }
-            continue;
-        }
-        keysym_names.push(name.to_string());
-    }
-
-    if keysym_names.is_empty() {
-        return None;
-    }
-
-    let (output, output_keysym_name) = parse_output(value_str);
-
-    if output.is_none() && output_keysym_name.is_none() {
-        return None;
-    }
-
-    Some(ComposeEntry {
-        keysym_names,
-        is_multi_key,
-        output,
-        output_keysym_name,
-    })
-}
-
-fn parse_output(value_str: &str) -> (Option<char>, Option<String>) {
-    let mut output_char = None;
-    let mut keysym_name = None;
-
-    if value_str.starts_with('"') {
-        let rest = &value_str[1..];
-        if let Some(end_quote) = rest.find('"') {
-            let inner = &rest[..end_quote];
-            if !inner.starts_with('\\') && !inner.is_empty() {
-                output_char = inner.chars().next();
-            }
-            let after_quote = rest[end_quote + 1..].trim();
-            keysym_name = parse_keysym_name(after_quote);
-        }
-    }
-
-    (output_char, keysym_name)
-}
-
-fn parse_keysym_name(after_quote: &str) -> Option<String> {
-    let trimmed = after_quote.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') {
-        return None;
-    }
-    let name = trimmed.split_whitespace().next()?;
-    if name.starts_with('#') {
-        return None;
-    }
-    Some(name.to_string())
-}
-
 // ---------------------------------------------------------------------------
 // Compose sequence testers
 // ---------------------------------------------------------------------------
@@ -205,7 +128,7 @@ fn wkb_compose_sequence(composer: &wkb::composer::ListComposer, chars: &[char]) 
 fn resolve_entry_chars(entry: &ComposeEntry) -> Option<Vec<char>> {
     let mut chars = Vec::new();
     for name in &entry.keysym_names {
-        chars.push(resolve_keysym_to_char(name)?);
+        chars.push(keysym_name_to_char(name)?);
     }
     Some(chars)
 }
