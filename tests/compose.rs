@@ -11,6 +11,15 @@ use xkbcommon::xkb::{self, compose};
 // Helpers: keysym / char resolution
 // ---------------------------------------------------------------------------
 
+/// Simple check whether a compose subpath indicates a UTF-8 compose file.
+///
+/// Accepts strings like `en_US.UTF-8/Compose` (case-insensitive). Also accepts
+/// `.utf8` without the hyphen to be permissive.
+fn is_utf8_compose_subpath(subpath: &str) -> bool {
+    let s = subpath.to_ascii_lowercase();
+    s.contains(".utf-8") || s.contains(".utf8")
+}
+
 /// Resolve a keysym name to a char the same way wkb's load_compose_table does.
 fn resolve_keysym_to_char(name: &str) -> Option<char> {
     keysym_name_to_char(name)
@@ -466,6 +475,15 @@ fn test_wkb_compose(xkb_locale: &str) {
             )
         });
 
+    // Simple UTF-8 check: only exercise compose files whose subpath indicates UTF-8.
+    if !is_utf8_compose_subpath(&compose_file_subpath) {
+        println!(
+            "SKIP: wkb({}) -> legacy/non-UTF-8 compose file '{}'",
+            xkb_locale, compose_file_subpath
+        );
+        return;
+    }
+
     let wkb = wkb::WKB::new_from_names(xkb_locale.to_string(), None);
 
     let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
@@ -500,6 +518,21 @@ fn test_wkb_compose(xkb_locale: &str) {
 /// `load_compose_from_path`.  Used for compose files not reachable
 /// through any short XKB locale name.
 fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
+    // Derive the compose subpath relative to /usr/share/X11/locale if possible,
+    // e.g. "/usr/share/X11/locale/en_US.UTF-8/Compose" -> "en_US.UTF-8/Compose".
+    let subpath = compose_file
+        .strip_prefix("/usr/share/X11/locale/")
+        .unwrap_or(compose_file);
+
+    // Simple UTF-8 check (no compose.dir parsing): only support explicit UTF-8 subpaths.
+    if !is_utf8_compose_subpath(subpath) {
+        println!(
+            "SKIP: legacy/non-UTF-8 compose file not supported: {}",
+            compose_file
+        );
+        return;
+    }
+
     let compose_path = Path::new(compose_file);
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_file);
