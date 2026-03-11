@@ -7,7 +7,7 @@ use std::{
 use crate::composer::ListComposer;
 
 use super::xkb_compose_map::XKB_COMPOSE_MAP;
-use xkb_parser::keysym_name_to_char;
+use xkb_parser::parse_compose_file;
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
@@ -93,137 +93,45 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
     lookup_compose_dir("en_US.UTF-8")
 }
 
-fn resolve_keysym_char(name: &str) -> Option<char> {
-    keysym_name_to_char(name)
-}
-
 pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
     let mut regular = ListComposer::new();
     let mut compose_key = ListComposer::new();
-    parse_compose_into(path, &mut regular, &mut compose_key);
+
+    // Delegate parsing to xkb-parser. The parser resolves keysyms to chars
+    // and preserves the Multi_key index in each returned entry.
+    let entries = parse_compose_file(path);
+
+    for entry in entries {
+        match entry.multi_key_index {
+            Some(0) => {
+                // Leading Multi_key: goes into the compose_key trie
+                compose_key.insert(&entry.keys, entry.output);
+            }
+            None => {
+                // Regular sequence: goes into the regular trie
+                regular.insert(&entry.keys, entry.output);
+            }
+            Some(_n) => {
+                // TODO: mid-sequence Multi_key — currently not handled by wkb.
+                // Preserve the information in the parser but skip insertion here.
+            }
+        }
+    }
+
     fix_compose_trie(&mut regular);
     fix_compose_trie(&mut compose_key);
     (regular, compose_key)
 }
 
 fn fix_compose_trie(composer: &mut ListComposer) {
+    // Enforce wkb-specific trie invariants: if a node has children, it
+    // should not be an emit node (remove emits on internal nodes).
     for i in 0..composer.nodes.len() {
         if !composer.nodes[i].next.is_empty() && composer.nodes[i].emit.is_some() {
             composer.nodes[i].emit = None;
         }
     }
 
+    // Ensure special mapping exists.
     composer.insert(&['∼', '/'], '≁');
-}
-
-fn parse_compose_into(path: &Path, regular: &mut ListComposer, compose_key: &mut ListComposer) {
-    let file = match fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return,
-    };
-    let reader = io::BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(_) => continue,
-        };
-        let trimmed = line.trim();
-
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-
-        // Handle include directives recursively
-        if trimmed.starts_with("include") {
-            if let Some(start) = trimmed.find('"') {
-                if let Some(end) = trimmed[start + 1..].find('"') {
-                    let include_path = &trimmed[start + 1..start + 1 + end];
-                    parse_compose_into(Path::new(include_path), regular, compose_key);
-                }
-            }
-            continue;
-        }
-
-        if !trimmed.starts_with('<') {
-            continue;
-        }
-
-        // Parse: <key1> <key2> ... : "output" keysym_name # comment
-        let (keys_part, value_part) = match trimmed.split_once(':') {
-            Some(pair) => pair,
-            None => continue,
-        };
-
-        let keys_str = keys_part.trim();
-        let value_str = value_part.trim();
-
-        let mut keys: Vec<char> = Vec::new();
-        let mut is_multi_key = false;
-        let mut skip = false;
-
-        for token in keys_str.split_whitespace() {
-            let name = token.trim_start_matches('<').trim_end_matches('>');
-            if name == "Multi_key" {
-                if keys.is_empty() {
-                    is_multi_key = true;
-                } else {
-                    // Multi_key in a non-first position creates a hybrid
-                    // sequence we cannot represent.  Skip the entry.
-                    skip = true;
-                    break;
-                }
-                continue;
-            }
-            if let Some(c) = resolve_keysym_char(name) {
-                keys.push(c);
-            } else {
-                // Unresolvable keysym — skip entry
-                keys.clear();
-                break;
-            }
-        }
-
-        if skip || keys.is_empty() {
-            continue;
-        }
-
-        // Parse output: try quoted string first, fall back to keysym name
-        let out_char = parse_compose_output(value_str);
-
-        if let Some(out) = out_char {
-            if is_multi_key {
-                compose_key.insert(&keys, out);
-            } else {
-                regular.insert(&keys, out);
-            }
-        }
-    }
-}
-
-fn parse_compose_output(value_str: &str) -> Option<char> {
-    if !value_str.starts_with('"') {
-        let name = value_str.trim();
-        return resolve_keysym_char(name);
-    }
-
-    let rest = &value_str[1..];
-    let end_quote = rest.find('"')?;
-    let inner = &rest[..end_quote];
-
-    if !inner.is_empty() && !inner.starts_with('\\') {
-        if let Some(c) = inner.chars().next() {
-            return Some(c);
-        }
-    }
-
-    let after_quote = rest[end_quote + 1..].trim();
-    if after_quote.is_empty() || after_quote.starts_with('#') {
-        return None;
-    }
-    let keysym_name = after_quote.split_whitespace().next()?;
-    if keysym_name.starts_with('#') {
-        return None;
-    }
-    resolve_keysym_char(keysym_name)
 }

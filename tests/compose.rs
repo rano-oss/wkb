@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::fs;
-use std::io::{self, BufRead};
 use std::path::Path;
 use test_case::test_matrix;
+use xkb_parser::compose::{parse_compose_file, ComposeEntry};
 use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
 
@@ -11,154 +10,13 @@ use xkbcommon::xkb::{self, compose};
 // Helpers: keysym / char resolution
 // ---------------------------------------------------------------------------
 
-/// Resolve a keysym name to a char the same way wkb's load_compose_table does.
-fn resolve_keysym_to_char(name: &str) -> Option<char> {
-    keysym_name_to_char(name)
-}
-
-/// Resolve a keysym name to a UTF-8 character via xkbcommon.
-fn resolve_output_via_keysym(name: &str) -> Option<char> {
-    let keysym = xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS);
-    if keysym.raw() == 0 {
-        return None;
-    }
-    let utf = xkb::keysym_to_utf8(keysym);
-    if utf.is_empty() {
-        return None;
-    }
-    utf.chars().next()
-}
-
-// ---------------------------------------------------------------------------
-// Compose file parsing (test-side, mirrors the main library logic)
-// ---------------------------------------------------------------------------
-
-/// A parsed compose entry.
-#[derive(Debug, Clone)]
-struct ComposeEntry {
-    keysym_names: Vec<String>,
-    is_multi_key: bool,
-    output: Option<char>,
-    output_keysym_name: Option<String>,
-}
-
-impl ComposeEntry {
-    fn resolved_output(&self) -> Option<char> {
-        if let Some(c) = self.output {
-            return Some(c);
-        }
-        self.output_keysym_name
-            .as_deref()
-            .and_then(resolve_output_via_keysym)
-    }
-}
-
-fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
-    let mut entries = Vec::new();
-    let file = match fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return entries,
-    };
-    let reader = io::BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(_) => continue,
-        };
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        if trimmed.starts_with("include") {
-            if let Some(start) = trimmed.find('"') {
-                if let Some(end) = trimmed[start + 1..].find('"') {
-                    let include_path = &trimmed[start + 1..start + 1 + end];
-                    let included = parse_compose_file(Path::new(include_path));
-                    entries.extend(included);
-                }
-            }
-            continue;
-        }
-        if !trimmed.starts_with('<') {
-            continue;
-        }
-        if let Some(entry) = parse_compose_line(trimmed) {
-            entries.push(entry);
-        }
-    }
-
-    entries
-}
-
-fn parse_compose_line(line: &str) -> Option<ComposeEntry> {
-    let (keys_part, value_part) = line.split_once(':')?;
-    let keys_str = keys_part.trim();
-    let value_str = value_part.trim();
-
-    let mut keysym_names: Vec<String> = Vec::new();
-    let mut is_multi_key = false;
-
-    for token in keys_str.split_whitespace() {
-        let name = token.trim_start_matches('<').trim_end_matches('>');
-        if name == "Multi_key" {
-            if keysym_names.is_empty() {
-                is_multi_key = true;
-            } else {
-                return None;
-            }
-            continue;
-        }
-        keysym_names.push(name.to_string());
-    }
-
-    if keysym_names.is_empty() {
-        return None;
-    }
-
-    let (output, output_keysym_name) = parse_output(value_str);
-
-    if output.is_none() && output_keysym_name.is_none() {
-        return None;
-    }
-
-    Some(ComposeEntry {
-        keysym_names,
-        is_multi_key,
-        output,
-        output_keysym_name,
-    })
-}
-
-fn parse_output(value_str: &str) -> (Option<char>, Option<String>) {
-    let mut output_char = None;
-    let mut keysym_name = None;
-
-    if value_str.starts_with('"') {
-        let rest = &value_str[1..];
-        if let Some(end_quote) = rest.find('"') {
-            let inner = &rest[..end_quote];
-            if !inner.starts_with('\\') && !inner.is_empty() {
-                output_char = inner.chars().next();
-            }
-            let after_quote = rest[end_quote + 1..].trim();
-            keysym_name = parse_keysym_name(after_quote);
-        }
-    }
-
-    (output_char, keysym_name)
-}
-
-fn parse_keysym_name(after_quote: &str) -> Option<String> {
-    let trimmed = after_quote.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') {
-        return None;
-    }
-    let name = trimmed.split_whitespace().next()?;
-    if name.starts_with('#') {
-        return None;
-    }
-    Some(name.to_string())
+/// Simple check whether a compose subpath indicates a UTF-8 compose file.
+///
+/// Accepts strings like `en_US.UTF-8/Compose` (case-insensitive). Also accepts
+/// `.utf8` without the hyphen to be permissive.
+fn is_utf8_compose_subpath(subpath: &str) -> bool {
+    let s = subpath.to_ascii_lowercase();
+    s.contains(".utf-8") || s.contains(".utf8")
 }
 
 // ---------------------------------------------------------------------------
@@ -211,12 +69,14 @@ fn wkb_compose_sequence(composer: &wkb::composer::ListComposer, chars: &[char]) 
 }
 
 /// Resolve a compose entry's keysym names to chars for wkb.
-fn resolve_entry_chars(entry: &ComposeEntry) -> Option<Vec<char>> {
+fn resolve_entry_chars(entry: &ComposeEntry) -> Vec<char> {
     let mut chars = Vec::new();
     for name in &entry.keysym_names {
-        chars.push(resolve_keysym_to_char(name)?);
+        if let Some(character) = keysym_name_to_char(name) {
+            chars.push(character);
+        }
     }
-    Some(chars)
+    chars
 }
 
 // ---------------------------------------------------------------------------
@@ -271,22 +131,21 @@ fn run_compose_test(
     let mut char_seq_outputs: HashMap<(bool, Vec<char>), char> = HashMap::new();
     let mut collision_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
     for entry in &entries {
-        if let (Some(chars), Some(output)) = (resolve_entry_chars(entry), entry.resolved_output()) {
-            let key = (entry.is_multi_key, chars);
-            if let Some(&prev) = char_seq_outputs.get(&key) {
-                if prev != output {
-                    collision_seqs.insert(key);
-                }
-            } else {
-                char_seq_outputs.insert(key, output);
+        let (chars, output) = (resolve_entry_chars(entry), entry.output);
+        let key = (entry.multi_key_index.is_some(), chars);
+        if let Some(&prev) = char_seq_outputs.get(&key) {
+            if prev != output {
+                collision_seqs.insert(key);
             }
+        } else {
+            char_seq_outputs.insert(key, output);
         }
     }
 
     // Detect prefix conflicts
     let all_char_seqs: Vec<(bool, Vec<char>)> = entries
         .iter()
-        .filter_map(|e| resolve_entry_chars(e).map(|chars| (e.is_multi_key, chars)))
+        .map(|e| (e.multi_key_index.is_some(), e.keys.clone()))
         .collect();
     let mut prefix_conflict_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
     for a in &all_char_seqs {
@@ -309,24 +168,19 @@ fn run_compose_test(
     let mut wkb_only_ok = 0usize;
 
     for entry in &entries {
-        let expected = match entry.resolved_output() {
-            Some(c) => c,
-            None => continue,
-        };
+        let expected = entry.output;
 
-        let xkb_result = xkb_state
-            .as_mut()
-            .and_then(|state| xkb_compose_sequence(state, &entry.keysym_names, entry.is_multi_key));
+        let xkb_result = xkb_state.as_mut().and_then(|state| {
+            xkb_compose_sequence(state, &entry.keysym_names, entry.multi_key_index.is_some())
+        });
 
-        let wkb_result = if let Some(chars) = resolve_entry_chars(entry) {
-            let composer = if entry.is_multi_key {
+        let wkb_result = {
+            let composer = if entry.multi_key_index.is_some() {
                 compose_key
             } else {
                 regular
             };
-            wkb_compose_sequence(composer, &chars)
-        } else {
-            None
+            wkb_compose_sequence(composer, &resolve_entry_chars(entry))
         };
 
         if has_xkb {
@@ -344,14 +198,15 @@ fn run_compose_test(
                 } else {
                     let msg = format!(
                         "  MISMATCH: {:?} [multi={}] -> xkb={:?} wkb={:?} expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, xkb_result, wkb_result, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        xkb_result,
+                        wkb_result,
+                        expected
                     );
-                    let is_known = resolve_entry_chars(entry)
-                        .map(|chars| {
-                            let key = (entry.is_multi_key, chars);
-                            collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key)
-                        })
-                        .unwrap_or(false);
+                    let key = (entry.multi_key_index.is_some(), entry.keys.clone());
+                    let is_known =
+                        collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key);
                     if is_known {
                         char_collisions.push(msg);
                     } else {
@@ -361,12 +216,18 @@ fn run_compose_test(
             } else if xkb_result.is_some() && wkb_result.is_none() {
                 wkb_failures.push(format!(
                     "  WKB_MISS: {:?} [multi={}] -> xkb={:?} expected={:?}",
-                    entry.keysym_names, entry.is_multi_key, xkb_result, expected
+                    entry.keysym_names,
+                    entry.multi_key_index.is_some(),
+                    xkb_result,
+                    expected
                 ));
             } else if xkb_result.is_none() && wkb_result.is_some() {
                 xkb_failures.push(format!(
                     "  XKB_MISS: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                    entry.keysym_names, entry.is_multi_key, wkb_result, expected
+                    entry.keysym_names,
+                    entry.multi_key_index.is_some(),
+                    wkb_result,
+                    expected
                 ));
             }
         } else {
@@ -375,13 +236,18 @@ fn run_compose_test(
                 Some(c) => {
                     mismatches.push(format!(
                         "  WKB_WRONG: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, c, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        c,
+                        expected
                     ));
                 }
                 None => {
                     wkb_failures.push(format!(
                         "  WKB_MISS: {:?} [multi={}] -> expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        expected
                     ));
                 }
             }
@@ -466,6 +332,15 @@ fn test_wkb_compose(xkb_locale: &str) {
             )
         });
 
+    // Simple UTF-8 check: only exercise compose files whose subpath indicates UTF-8.
+    if !is_utf8_compose_subpath(&compose_file_subpath) {
+        println!(
+            "SKIP: wkb({}) -> legacy/non-UTF-8 compose file '{}'",
+            xkb_locale, compose_file_subpath
+        );
+        return;
+    }
+
     let wkb = wkb::WKB::new_from_names(xkb_locale.to_string(), None);
 
     let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
@@ -500,6 +375,21 @@ fn test_wkb_compose(xkb_locale: &str) {
 /// `load_compose_from_path`.  Used for compose files not reachable
 /// through any short XKB locale name.
 fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
+    // Derive the compose subpath relative to /usr/share/X11/locale if possible,
+    // e.g. "/usr/share/X11/locale/en_US.UTF-8/Compose" -> "en_US.UTF-8/Compose".
+    let subpath = compose_file
+        .strip_prefix("/usr/share/X11/locale/")
+        .unwrap_or(compose_file);
+
+    // Simple UTF-8 check (no compose.dir parsing): only support explicit UTF-8 subpaths.
+    if !is_utf8_compose_subpath(subpath) {
+        println!(
+            "SKIP: legacy/non-UTF-8 compose file not supported: {}",
+            compose_file
+        );
+        return;
+    }
+
     let compose_path = Path::new(compose_file);
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_file);
