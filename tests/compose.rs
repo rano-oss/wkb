@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
-use xkb_parser::compose::{parse_compose_file as lib_parse, ComposeEntry as LibComposeEntry};
+use xkb_parser::compose::{parse_compose_file, ComposeEntry};
 use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
 
@@ -30,49 +30,6 @@ fn resolve_output_via_keysym(name: &str) -> Option<char> {
         return None;
     }
     utf.chars().next()
-}
-
-// ---------------------------------------------------------------------------
-// Compose file parsing (test-side, mirrors the main library logic)
-// ---------------------------------------------------------------------------
-
-/// A parsed compose entry.
-#[derive(Debug, Clone)]
-struct ComposeEntry {
-    keysym_names: Vec<String>,
-    is_multi_key: bool,
-    output: Option<char>,
-    output_keysym_name: Option<String>,
-}
-
-impl ComposeEntry {
-    fn resolved_output(&self) -> Option<char> {
-        if let Some(c) = self.output {
-            return Some(c);
-        }
-        self.output_keysym_name
-            .as_deref()
-            .and_then(resolve_output_via_keysym)
-    }
-}
-
-fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
-    // Delegate parsing to the canonical parser in xkb-parser and adapt its
-    // ComposeEntry into the test-local ComposeEntry shape.
-    let mut entries: Vec<ComposeEntry> = Vec::new();
-
-    for lib_entry in lib_parse(path) {
-        let keysym_names: Vec<String> = lib_entry.keys.iter().map(|c| c.to_string()).collect();
-        let is_multi_key = lib_entry.multi_key_index == Some(0);
-        entries.push(ComposeEntry {
-            keysym_names,
-            is_multi_key,
-            output: Some(lib_entry.output),
-            output_keysym_name: None,
-        });
-    }
-
-    entries
 }
 
 // ---------------------------------------------------------------------------
@@ -125,12 +82,14 @@ fn wkb_compose_sequence(composer: &wkb::composer::ListComposer, chars: &[char]) 
 }
 
 /// Resolve a compose entry's keysym names to chars for wkb.
-fn resolve_entry_chars(entry: &ComposeEntry) -> Option<Vec<char>> {
+fn resolve_entry_chars(entry: &ComposeEntry) -> Vec<char> {
     let mut chars = Vec::new();
     for name in &entry.keysym_names {
-        chars.push(keysym_name_to_char(name)?);
+        if let Some(character) = keysym_name_to_char(name) {
+            chars.push(character);
+        }
     }
-    Some(chars)
+    chars
 }
 
 // ---------------------------------------------------------------------------
@@ -185,22 +144,21 @@ fn run_compose_test(
     let mut char_seq_outputs: HashMap<(bool, Vec<char>), char> = HashMap::new();
     let mut collision_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
     for entry in &entries {
-        if let (Some(chars), Some(output)) = (resolve_entry_chars(entry), entry.resolved_output()) {
-            let key = (entry.is_multi_key, chars);
-            if let Some(&prev) = char_seq_outputs.get(&key) {
-                if prev != output {
-                    collision_seqs.insert(key);
-                }
-            } else {
-                char_seq_outputs.insert(key, output);
+        let (chars, output) = (resolve_entry_chars(entry), entry.output);
+        let key = (entry.multi_key_index.is_some(), chars);
+        if let Some(&prev) = char_seq_outputs.get(&key) {
+            if prev != output {
+                collision_seqs.insert(key);
             }
+        } else {
+            char_seq_outputs.insert(key, output);
         }
     }
 
     // Detect prefix conflicts
     let all_char_seqs: Vec<(bool, Vec<char>)> = entries
         .iter()
-        .filter_map(|e| resolve_entry_chars(e).map(|chars| (e.is_multi_key, chars)))
+        .map(|e| (e.multi_key_index.is_some(), e.keys.clone()))
         .collect();
     let mut prefix_conflict_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
     for a in &all_char_seqs {
@@ -223,24 +181,19 @@ fn run_compose_test(
     let mut wkb_only_ok = 0usize;
 
     for entry in &entries {
-        let expected = match entry.resolved_output() {
-            Some(c) => c,
-            None => continue,
-        };
+        let expected = entry.output;
 
-        let xkb_result = xkb_state
-            .as_mut()
-            .and_then(|state| xkb_compose_sequence(state, &entry.keysym_names, entry.is_multi_key));
+        let xkb_result = xkb_state.as_mut().and_then(|state| {
+            xkb_compose_sequence(state, &entry.keysym_names, entry.multi_key_index.is_some())
+        });
 
-        let wkb_result = if let Some(chars) = resolve_entry_chars(entry) {
-            let composer = if entry.is_multi_key {
+        let wkb_result = {
+            let composer = if entry.multi_key_index.is_some() {
                 compose_key
             } else {
                 regular
             };
-            wkb_compose_sequence(composer, &chars)
-        } else {
-            None
+            wkb_compose_sequence(composer, &resolve_entry_chars(entry))
         };
 
         if has_xkb {
@@ -258,14 +211,15 @@ fn run_compose_test(
                 } else {
                     let msg = format!(
                         "  MISMATCH: {:?} [multi={}] -> xkb={:?} wkb={:?} expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, xkb_result, wkb_result, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        xkb_result,
+                        wkb_result,
+                        expected
                     );
-                    let is_known = resolve_entry_chars(entry)
-                        .map(|chars| {
-                            let key = (entry.is_multi_key, chars);
-                            collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key)
-                        })
-                        .unwrap_or(false);
+                    let key = (entry.multi_key_index.is_some(), entry.keys.clone());
+                    let is_known =
+                        collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key);
                     if is_known {
                         char_collisions.push(msg);
                     } else {
@@ -275,12 +229,18 @@ fn run_compose_test(
             } else if xkb_result.is_some() && wkb_result.is_none() {
                 wkb_failures.push(format!(
                     "  WKB_MISS: {:?} [multi={}] -> xkb={:?} expected={:?}",
-                    entry.keysym_names, entry.is_multi_key, xkb_result, expected
+                    entry.keysym_names,
+                    entry.multi_key_index.is_some(),
+                    xkb_result,
+                    expected
                 ));
             } else if xkb_result.is_none() && wkb_result.is_some() {
                 xkb_failures.push(format!(
                     "  XKB_MISS: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                    entry.keysym_names, entry.is_multi_key, wkb_result, expected
+                    entry.keysym_names,
+                    entry.multi_key_index.is_some(),
+                    wkb_result,
+                    expected
                 ));
             }
         } else {
@@ -289,13 +249,18 @@ fn run_compose_test(
                 Some(c) => {
                     mismatches.push(format!(
                         "  WKB_WRONG: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, c, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        c,
+                        expected
                     ));
                 }
                 None => {
                     wkb_failures.push(format!(
                         "  WKB_MISS: {:?} [multi={}] -> expected={:?}",
-                        entry.keysym_names, entry.is_multi_key, expected
+                        entry.keysym_names,
+                        entry.multi_key_index.is_some(),
+                        expected
                     ));
                 }
             }
