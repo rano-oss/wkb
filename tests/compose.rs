@@ -19,19 +19,6 @@ fn is_utf8_compose_subpath(subpath: &str) -> bool {
     s.contains(".utf-8") || s.contains(".utf8")
 }
 
-/// Resolve a keysym name to a UTF-8 character via xkbcommon.
-fn resolve_output_via_keysym(name: &str) -> Option<char> {
-    let keysym = xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS);
-    if keysym.raw() == 0 {
-        return None;
-    }
-    let utf = xkb::keysym_to_utf8(keysym);
-    if utf.is_empty() {
-        return None;
-    }
-    utf.chars().next()
-}
-
 // ---------------------------------------------------------------------------
 // Compose sequence testers
 // ---------------------------------------------------------------------------
