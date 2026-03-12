@@ -27,6 +27,9 @@ pub enum ModType {
     Level3,
     Level5,
     Compose,
+    Caps,
+    Num,
+    Scroll,
 }
 
 #[derive(Debug, Clone)]
@@ -164,7 +167,7 @@ impl ModKind {
         }
     }
 
-    pub fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
+    fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
         match self {
             ModKind::Pressed { mod_type: m_t, .. }
             | ModKind::Lock { mod_type: m_t, .. }
@@ -268,7 +271,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Caps,
                 }),
             ),
             (
@@ -276,7 +279,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Num,
                 }),
             ),
             (
@@ -284,7 +287,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Scroll,
                 }),
             ),
         ]))
@@ -319,7 +322,7 @@ impl Modifiers {
         }
     }
 
-    pub fn level(&self, mod_type: ModType) -> bool {
+    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.0
             .values()
             .find(|modifier| match modifier {
@@ -342,15 +345,15 @@ impl Modifiers {
     }
 
     pub fn level5(&self) -> bool {
-        self.level(ModType::Level5)
+        self.active_mod_type(ModType::Level5)
     }
 
     pub fn level3(&self) -> bool {
-        self.level(ModType::Level3)
+        self.active_mod_type(ModType::Level3)
     }
 
     pub fn level2(&self) -> bool {
-        self.level(ModType::Level2)
+        self.active_mod_type(ModType::Level2)
     }
 
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
