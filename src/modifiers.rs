@@ -27,6 +27,9 @@ pub enum ModType {
     Level3,
     Level5,
     Compose,
+    Caps,
+    Num,
+    Scroll,
 }
 
 #[derive(Debug, Clone)]
@@ -268,7 +271,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Caps,
                 }),
             ),
             (
@@ -276,7 +279,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Num,
                 }),
             ),
             (
@@ -284,7 +287,7 @@ impl Default for Modifiers {
                 Modifier::Single(ModKind::Lock {
                     pressed: false,
                     locked: 0,
-                    mod_type: ModType::None,
+                    mod_type: ModType::Scroll,
                 }),
             ),
         ]))
