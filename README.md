@@ -18,7 +18,7 @@ Todo list(tentative):
 - [x] Caps_lock tests
 - [ ] Combined modifiers tests, edge case tests for all modifiers
 - [ ] Try reaching edge case parity for exisisting tests
-- [ ] Handle cases where no keys should be returned
+- [x] Handle cases where no keys should be returned
 - [x] Compare Modifiers State between xkb and wkb test
 - [ ] Keymap handling/storage
 - [x] Composing
@@ -29,7 +29,6 @@ Todo list(tentative):
 - [x] Lightbulbs
 - [ ] New keyboard format
 - [ ] Benchmarks
-- [ ] Check if remapping is needed
 
 Performance improvements(?):
 - [ ] use phf instead of static hashmaps
