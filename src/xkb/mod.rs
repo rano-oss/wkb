@@ -712,18 +712,18 @@ fn map_keys_and_modifiers(
     locale: String,
     id: String,
 ) {
-    if id == "CAPS" {
-        if key.values.first().is_some_and(|k| k.content == "BackSpace") {
-            let value = *wkb.state_keymap[0].get(&BACKSPACE).unwrap();
-            wkb.state_keymap[1].insert(CAPS_LOCK, value);
-            wkb.modifiers.0.remove_entry(CAPS_LOCK);
-        } else if key.values.first().is_some_and(|k| k.content == "Tab") {
-            let value = *wkb.state_keymap[0].get(&TAB).unwrap();
-            wkb.state_keymap[1].insert(CAPS_LOCK, value);
-            wkb.modifiers.0.remove_entry(CAPS_LOCK);
-        }
-    }
     for (i, v) in key.values.iter().enumerate() {
+        if id == "CAPS" {
+            if key.values.first().is_some_and(|k| k.content == "BackSpace") {
+                let value = *wkb.state_keymap[i].get(&BACKSPACE).unwrap();
+                wkb.state_keymap[i].insert(CAPS_LOCK, value);
+                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
+            } else if key.values.first().is_some_and(|k| k.content == "Tab") {
+                let value = *wkb.state_keymap[i].get(&TAB).unwrap();
+                wkb.state_keymap[i].insert(CAPS_LOCK, value);
+                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
+            }
+        }
         if i == wkb.state_keymap.len() {
             wkb.state_keymap.push(DEFAULT_MAP[i].clone());
             wkb.num_lock_keys.push(BTreeMap::new());
