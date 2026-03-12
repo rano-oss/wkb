@@ -172,6 +172,9 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
+        if self.modifiers.active_mod_type(ModType::None) {
+            return None;
+        }
         let level5 = self.modifiers.level5() && self.state_keymap.len() > 4;
         let level3 = self.modifiers.level3() && self.state_keymap.len() > 2;
         let level2 = self.modifiers.level2() && self.state_keymap.len() > 1;
@@ -199,7 +202,6 @@ impl<C: Composer> WKB<C> {
             }
         }
 
-        // Use state_keymap directly
         let key = self
             .state_keymap
             .get(base_level)
@@ -245,8 +247,8 @@ impl<C: Composer> WKB<C> {
         (compose_state, is_modifier)
     }
 
-    pub fn compose_feed(&mut self, character: char) -> ComposeState {
-        if self.modifiers.level(ModType::Compose) {
+    fn compose_feed(&mut self, character: char) -> ComposeState {
+        if self.modifiers.active_mod_type(ModType::Compose) {
             self.compose_key_composer.feed(character)
         } else {
             self.regular_composer.feed(character)
