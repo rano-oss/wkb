@@ -81,6 +81,14 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
                     wkb.caps_lock_keymap[level].get(&i)
                 );
             }
+            if level < wkb.num_lock_keys.len() {
+                println!("  num[{}]={:?}", level, wkb.num_lock_keys[level].get(&i));
+            }
+
+            println!("  * Full num_lock_keys:");
+            for (idx, map) in wkb.num_lock_keys.iter().enumerate() {
+                println!("    num[{}] = {:?}", idx, map);
+            }
         }
         assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }

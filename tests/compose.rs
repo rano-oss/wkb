@@ -430,132 +430,13 @@ fn compose_wkb(locale: &str) {
 // ===================================================================
 
 // --- UTF-8 compose files ---
-
-#[test]
-fn compose_direct_en_us() {
-    test_compose_file_direct(
-        "en_US.UTF-8",
-        "en_US.UTF-8",
-        "/usr/share/X11/locale/en_US.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_el_gr() {
-    test_compose_file_direct(
-        "el_GR.UTF-8",
-        "el_GR.UTF-8",
-        "/usr/share/X11/locale/el_GR.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_fi_fi() {
-    test_compose_file_direct(
-        "fi_FI.UTF-8",
-        "fi_FI.UTF-8",
-        "/usr/share/X11/locale/fi_FI.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_am_et() {
-    test_compose_file_direct(
-        "am_ET.UTF-8",
-        "am_ET.UTF-8",
-        "/usr/share/X11/locale/am_ET.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_sr_rs() {
-    test_compose_file_direct(
-        "sr_RS.UTF-8",
-        "sr_RS.UTF-8",
-        "/usr/share/X11/locale/sr_RS.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_pt_br() {
-    test_compose_file_direct(
-        "pt_BR.UTF-8",
-        "pt_BR.UTF-8",
-        "/usr/share/X11/locale/pt_BR.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_cs_cz() {
-    test_compose_file_direct(
-        "cs_CZ.UTF-8",
-        "cs_CZ.UTF-8",
-        "/usr/share/X11/locale/cs_CZ.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_pt_pt() {
-    test_compose_file_direct(
-        "pt_PT.UTF-8",
-        "pt_PT.UTF-8",
-        "/usr/share/X11/locale/pt_PT.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_km_kh() {
-    test_compose_file_direct(
-        "km_KH.UTF-8",
-        "km_KH.UTF-8",
-        "/usr/share/X11/locale/km_KH.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_ja_jp() {
-    test_compose_file_direct(
-        "ja_JP.UTF-8",
-        "ja_JP.UTF-8",
-        "/usr/share/X11/locale/ja_JP.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_ko_kr() {
-    test_compose_file_direct(
-        "ko_KR.UTF-8",
-        "ko_KR.UTF-8",
-        "/usr/share/X11/locale/ko_KR.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_ru_ru() {
-    test_compose_file_direct(
-        "ru_RU.UTF-8",
-        "ru_RU.UTF-8",
-        "/usr/share/X11/locale/ru_RU.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_th_th() {
-    test_compose_file_direct(
-        "th_TH.UTF-8",
-        "th_TH.UTF-8",
-        "/usr/share/X11/locale/th_TH.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_zh_cn() {
-    test_compose_file_direct(
-        "zh_CN.UTF-8",
-        "zh_CN.UTF-8",
-        "/usr/share/X11/locale/zh_CN.UTF-8/Compose",
-    );
-}
+// Note: Most UTF-8 compose files are exercised via the `compose_wkb`
+// test matrix (which resolves short XKB names to compose files).
+// To avoid duplicate test coverage and slow CI, keep only compose
+// files not reachable via short XKB names.
+//
+// The zh_HK compose file is not reachable from the short-name matrix,
+// so keep a direct test for it.
 
 #[test]
 fn compose_direct_zh_hk() {
@@ -563,15 +444,6 @@ fn compose_direct_zh_hk() {
         "zh_HK.UTF-8",
         "zh_HK.UTF-8",
         "/usr/share/X11/locale/zh_HK.UTF-8/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_zh_tw() {
-    test_compose_file_direct(
-        "zh_TW.UTF-8",
-        "zh_TW.UTF-8",
-        "/usr/share/X11/locale/zh_TW.UTF-8/Compose",
     );
 }
 

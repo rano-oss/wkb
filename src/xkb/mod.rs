@@ -702,6 +702,63 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
+    let key_83 = wkb.num_lock_keys.get(1).and_then(|km| km.get(&83)).cloned();
+    for (i, map) in wkb.num_lock_keys.iter_mut().enumerate() {
+        if !(map.contains_key(&71)
+            && map.contains_key(&72)
+            && map.contains_key(&73)
+            && map.contains_key(&74)
+            && map.contains_key(&75)
+            && map.contains_key(&76)
+            && map.contains_key(&77)
+            && map.contains_key(&78)
+            && map.contains_key(&79)
+            && map.contains_key(&80)
+            && map.contains_key(&81)
+            && map.contains_key(&82)
+            && map.contains_key(&83))
+        {
+            match i {
+                0 | 2 | 4 | 6 => {
+                    for (key, value) in [
+                        (71, '7'),
+                        (72, '8'),
+                        (73, '9'),
+                        (75, '4'),
+                        (76, '5'),
+                        (77, '6'),
+                        (79, '1'),
+                        (80, '2'),
+                        (81, '3'),
+                        (82, '0'),
+                        // (83, '.'),
+                    ] {
+                        if let Some(state_value) = wkb.state_keymap[i].get(&key) {
+                            map.insert(key, *state_value);
+                        } else {
+                            map.insert(key, value);
+                        }
+                    }
+                    if let Some(v) = key_83 {
+                        map.insert(83, v);
+                    } else {
+                        map.insert(83, '.');
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    //         if i < DEFAULT_MAP.len() {
+    //             for code in keypad_codes {
+    //                 if let Some(&v) = DEFAULT_MAP[1].get(&code) {
+    //                     map.insert(code, v);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 fn map_keys_and_modifiers(
@@ -713,16 +770,14 @@ fn map_keys_and_modifiers(
     id: String,
 ) {
     for (i, v) in key.values.iter().enumerate() {
-        if id == "CAPS" {
-            if key.values.first().is_some_and(|k| k.content == "BackSpace") {
-                let value = *wkb.state_keymap[i].get(&BACKSPACE).unwrap();
-                wkb.state_keymap[i].insert(CAPS_LOCK, value);
-                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
-            } else if key.values.first().is_some_and(|k| k.content == "Tab") {
-                let value = *wkb.state_keymap[i].get(&TAB).unwrap();
-                wkb.state_keymap[i].insert(CAPS_LOCK, value);
-                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
-            }
+        if id == "CAPS" && key.values.first().is_some_and(|k| k.content == "BackSpace") {
+            let value = *wkb.state_keymap[i].get(&BACKSPACE).unwrap();
+            wkb.state_keymap[i].insert(CAPS_LOCK, value);
+            wkb.modifiers.0.remove_entry(&CAPS_LOCK);
+        } else if id == "CAPS" && key.values.first().is_some_and(|k| k.content == "Tab") {
+            let value = *wkb.state_keymap[i].get(&TAB).unwrap();
+            wkb.state_keymap[i].insert(CAPS_LOCK, value);
+            wkb.modifiers.0.remove_entry(&CAPS_LOCK);
         }
         if i == wkb.state_keymap.len() {
             wkb.state_keymap.push(DEFAULT_MAP[i].clone());
@@ -732,7 +787,9 @@ fn map_keys_and_modifiers(
         let single_char = keysym_name_to_char(v.as_ref());
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
-            if v.as_ref().starts_with("KP_") {
+            if v.as_ref().starts_with("KP")
+                || [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(evdev_code)
+            {
                 wkb.num_lock_keys[i].insert(*evdev_code, single_char);
             }
         } else {
