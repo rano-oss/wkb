@@ -1,6 +1,25 @@
 use std::collections::BTreeMap;
 
 lazy_static::lazy_static! {
+    pub static ref DEFAULT_KEYPAD_MAP: BTreeMap<u32, char> = [
+        // (55, '*'),
+        (71, '7'),
+        (72, '8'),
+        (73, '9'),
+        // (74, '-'),
+        (75, '4'),
+        (76, '5'),
+        (77, '6'),
+        // (78, '+'),
+        (79, '1'),
+        (80, '2'),
+        (81, '3'),
+        (82, '0'),
+        (83, '.'),
+        // (96, '\u{d}'),
+        // (98, '/'),
+        // (101,'\n'),
+    ].into();
     pub static ref DEFAULT_MAP: [BTreeMap<u32, char>;8] = [
         [
             (1, '\u{1b}'),

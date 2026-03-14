@@ -8,7 +8,9 @@ use xkb_parser::{
 use crate::{
     modifiers::{ModKind, ModType, CAPS_LOCK, TAB},
     xkb::{
-        compose_parse::load_compose_table, default_keymap::DEFAULT_MAP, evdev_xkb::XKBCODES_EVDEV,
+        compose_parse::load_compose_table,
+        default_keymap::{DEFAULT_KEYPAD_MAP, DEFAULT_MAP},
+        evdev_xkb::XKBCODES_EVDEV,
     },
     BACKSPACE, WKB,
 };
@@ -669,7 +671,7 @@ pub fn map_xkb(
                                         for (i, v) in key.values.values.iter().enumerate() {
                                             if i == wkb.state_keymap.len() {
                                                 wkb.state_keymap.push(DEFAULT_MAP[i].clone());
-                                                wkb.num_lock_keys.push(BTreeMap::new());
+                                                wkb.num_lock_keys.push(DEFAULT_KEYPAD_MAP.clone());
                                                 wkb.caps_lock_keymap.push(BTreeMap::new());
                                             }
                                             let single_char = keysym_name_to_char(v.as_ref());
@@ -702,6 +704,28 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
+    // for (i, map) in wkb.num_lock_keys.iter_mut().enumerate() {
+    //     if map.is_empty() && i % 2 == 0 {
+    //         // If the xkb symbols didn't provide explicit KP_* mappings, populate
+    //         // the num_lock_keys map with a sensible default set from
+    //         // `DEFAULT_MAP` (standard keypad keys: 55, 71-83, 96, 98).
+    //         let keypad_codes: [u32; 16] = [
+    //             55, // KP_* (asterisk)
+    //             71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82,
+    //             83, // KP 7...
+    //             96, // KP_Enter
+    //             98, // KP_Divide
+    //         ];
+
+    //         if i < DEFAULT_MAP.len() {
+    //             for code in keypad_codes {
+    //                 if let Some(&v) = DEFAULT_MAP[1].get(&code) {
+    //                     map.insert(code, v);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 fn map_keys_and_modifiers(
@@ -713,26 +737,24 @@ fn map_keys_and_modifiers(
     id: String,
 ) {
     for (i, v) in key.values.iter().enumerate() {
-        if id == "CAPS" {
-            if key.values.first().is_some_and(|k| k.content == "BackSpace") {
-                let value = *wkb.state_keymap[i].get(&BACKSPACE).unwrap();
-                wkb.state_keymap[i].insert(CAPS_LOCK, value);
-                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
-            } else if key.values.first().is_some_and(|k| k.content == "Tab") {
-                let value = *wkb.state_keymap[i].get(&TAB).unwrap();
-                wkb.state_keymap[i].insert(CAPS_LOCK, value);
-                wkb.modifiers.0.remove_entry(&CAPS_LOCK);
-            }
+        if id == "CAPS" && key.values.first().is_some_and(|k| k.content == "BackSpace") {
+            let value = *wkb.state_keymap[i].get(&BACKSPACE).unwrap();
+            wkb.state_keymap[i].insert(CAPS_LOCK, value);
+            wkb.modifiers.0.remove_entry(&CAPS_LOCK);
+        } else if id == "CAPS" && key.values.first().is_some_and(|k| k.content == "Tab") {
+            let value = *wkb.state_keymap[i].get(&TAB).unwrap();
+            wkb.state_keymap[i].insert(CAPS_LOCK, value);
+            wkb.modifiers.0.remove_entry(&CAPS_LOCK);
         }
         if i == wkb.state_keymap.len() {
             wkb.state_keymap.push(DEFAULT_MAP[i].clone());
-            wkb.num_lock_keys.push(BTreeMap::new());
+            wkb.num_lock_keys.push(DEFAULT_KEYPAD_MAP.clone());
             wkb.caps_lock_keymap.push(BTreeMap::new());
         }
         let single_char = keysym_name_to_char(v.as_ref());
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
-            if v.as_ref().starts_with("KP_") {
+            if v.as_ref().starts_with("KP") {
                 wkb.num_lock_keys[i].insert(*evdev_code, single_char);
             }
         } else {
