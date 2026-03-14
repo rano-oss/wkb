@@ -702,10 +702,24 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
+    let key_83 = wkb.num_lock_keys.get(1).and_then(|km| km.get(&83)).cloned();
     for (i, map) in wkb.num_lock_keys.iter_mut().enumerate() {
-        if map.is_empty() {
+        if !(map.contains_key(&71)
+            && map.contains_key(&72)
+            && map.contains_key(&73)
+            && map.contains_key(&74)
+            && map.contains_key(&75)
+            && map.contains_key(&76)
+            && map.contains_key(&77)
+            && map.contains_key(&78)
+            && map.contains_key(&79)
+            && map.contains_key(&80)
+            && map.contains_key(&81)
+            && map.contains_key(&82)
+            && map.contains_key(&83))
+        {
             match i {
-                0 | 2 => {
+                0 | 2 | 4 | 6 => {
                     for (key, value) in [
                         (71, '7'),
                         (72, '8'),
@@ -717,13 +731,18 @@ pub fn map_xkb(
                         (80, '2'),
                         (81, '3'),
                         (82, '0'),
-                        (83, '.'),
+                        // (83, '.'),
                     ] {
                         if let Some(state_value) = wkb.state_keymap[i].get(&key) {
                             map.insert(key, *state_value);
                         } else {
                             map.insert(key, value);
                         }
+                    }
+                    if let Some(v) = key_83 {
+                        map.insert(83, v);
+                    } else {
+                        map.insert(83, '.');
                     }
                 }
                 _ => {}
