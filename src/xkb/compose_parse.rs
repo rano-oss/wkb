@@ -117,14 +117,6 @@ pub fn load_compose_from_path(path: &Path) -> ListComposer {
             }
             tokens.push(Token::Char(*ch));
         }
-        // If the Multi_key was at the end of the sequence (index == len),
-        // append a Compose token after all chars.
-        if let Some(idx) = mk_idx {
-            if idx == entry.keys.len() {
-                tokens.push(Token::Compose);
-            }
-        }
-
         // Insert the constructed token sequence into the single composer.
         regular.insert(&tokens, entry.output);
     }
