@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
+use wkb::Token;
 use xkb_parser::compose::{parse_compose_file, ComposeEntry};
 use xkb_parser::keysym_name_to_char;
 use xkbcommon::xkb::{self, compose};
@@ -55,7 +56,7 @@ fn wkb_compose_sequence(composer: &wkb::composer::ListComposer, chars: &[char]) 
     let mut c = composer.clone();
     let mut result = None;
     for &ch in chars {
-        match c.feed(ch) {
+        match c.feed(Token::Char(ch)) {
             ComposeState::Finished(out) => {
                 result = Some(out);
             }
@@ -83,18 +84,17 @@ fn resolve_entry_chars(entry: &ComposeEntry) -> Vec<char> {
 // Core test logic
 // ---------------------------------------------------------------------------
 
-/// Run compose tests for a compose file loaded from a pair of composers.
+/// Run compose tests for a compose file loaded from a composer.
 ///
 /// `label` is used for log/assertion messages.
 /// `xkb_locale` is the locale to pass to xkbcommon for cross-checking.
 /// `compose_path` is the path to the compose file to parse entries from.
-/// `regular` and `compose_key` are the wkb composers to test against.
+/// `regular` is the wkb composer to test against.
 fn run_compose_test(
     label: &str,
     xkb_locale: &str,
     compose_path: &Path,
     regular: &wkb::composer::ListComposer,
-    compose_key: &wkb::composer::ListComposer,
 ) {
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_path.display());
@@ -175,11 +175,7 @@ fn run_compose_test(
         });
 
         let wkb_result = {
-            let composer = if entry.multi_key_index.is_some() {
-                compose_key
-            } else {
-                regular
-            };
+            let composer = regular;
             wkb_compose_sequence(composer, &resolve_entry_chars(entry))
         };
 
@@ -366,8 +362,7 @@ fn test_wkb_compose(xkb_locale: &str) {
         &format!("wkb({})", xkb_locale),
         &xkb_locale_full,
         &compose_path,
-        &wkb.regular_composer,
-        &wkb.compose_key_composer,
+        &wkb.composer,
     );
 }
 
@@ -396,9 +391,9 @@ fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
         return;
     }
 
-    let (regular, compose_key) = wkb::xkb::compose_parse::load_compose_from_path(compose_path);
+    let regular = wkb::xkb::compose_parse::load_compose_from_path(compose_path);
 
-    run_compose_test(label, xkb_locale, compose_path, &regular, &compose_key);
+    run_compose_test(label, xkb_locale, compose_path, &regular);
 }
 
 // ===================================================================

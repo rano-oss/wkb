@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use crate::composer::ListComposer;
+use crate::composer::{ListComposer, Token};
 
 use super::xkb_compose_map::XKB_COMPOSE_MAP;
 use xkb_parser::parse_compose_file;
@@ -43,7 +43,7 @@ fn resolve_locale_alias(locale: &str) -> Option<String> {
     lookup_locale_file("locale.alias", 0, 1, locale)
 }
 
-pub(crate) fn load_compose_table(locale: &str) -> (ListComposer, ListComposer) {
+pub(crate) fn load_compose_table(locale: &str) -> ListComposer {
     let compose_file_path = resolve_compose_file(locale).expect("compose file is missing");
     let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
     load_compose_from_path(&full_path)
@@ -93,45 +93,40 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
     lookup_compose_dir("en_US.UTF-8")
 }
 
-pub fn load_compose_from_path(path: &Path) -> (ListComposer, ListComposer) {
+pub fn load_compose_from_path(path: &Path) -> ListComposer {
     let mut regular = ListComposer::new();
-    let mut compose_key = ListComposer::new();
 
     // Delegate parsing to xkb-parser. The parser resolves keysyms to chars
     // and preserves the Multi_key index in each returned entry.
     let entries = parse_compose_file(path);
 
     for entry in entries {
-        match entry.multi_key_index {
-            Some(0) => {
-                // Leading Multi_key: goes into the compose_key trie
-                compose_key.insert(&entry.keys, entry.output);
+        // Build a token sequence for insertion. The parser returns `keys`
+        // (a Vec<char>) and an optional `multi_key_index` which indicates
+        // where a `Multi_key` appeared in the original sequence. The
+        // composer now understands `Token::Compose` inline, so insert
+        // `Token::Compose` at the reported index and otherwise `Token::Char`.
+        let mut tokens: Vec<Token> = Vec::new();
+        let mk_idx = entry.multi_key_index;
+
+        for (i, ch) in entry.keys.iter().enumerate() {
+            if let Some(idx) = mk_idx {
+                if idx == i {
+                    tokens.push(Token::Compose);
+                }
             }
-            None => {
-                // Regular sequence: goes into the regular trie
-                regular.insert(&entry.keys, entry.output);
-            }
-            Some(_n) => {
-                // TODO: mid-sequence Multi_key — currently not handled by wkb.
-                // Preserve the information in the parser but skip insertion here.
+            tokens.push(Token::Char(*ch));
+        }
+        // If the Multi_key was at the end of the sequence (index == len),
+        // append a Compose token after all chars.
+        if let Some(idx) = mk_idx {
+            if idx == entry.keys.len() {
+                tokens.push(Token::Compose);
             }
         }
+
+        // Insert the constructed token sequence into the single composer.
+        regular.insert(&tokens, entry.output);
     }
-
-    fix_compose_trie(&mut regular);
-    fix_compose_trie(&mut compose_key);
-    (regular, compose_key)
-}
-
-fn fix_compose_trie(composer: &mut ListComposer) {
-    // Enforce wkb-specific trie invariants: if a node has children, it
-    // should not be an emit node (remove emits on internal nodes).
-    for i in 0..composer.nodes.len() {
-        if !composer.nodes[i].next.is_empty() && composer.nodes[i].emit.is_some() {
-            composer.nodes[i].emit = None;
-        }
-    }
-
-    // Ensure special mapping exists.
-    composer.insert(&['∼', '/'], '≁');
+    regular
 }

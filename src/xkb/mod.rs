@@ -675,6 +675,26 @@ pub fn map_xkb(
                                             let single_char = keysym_name_to_char(v.as_ref());
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
+                                                wkb.num_lock_keys[i].insert(*evdev_code, char);
+
+                                                if v.as_ref().starts_with("KP")
+                                                    || [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83]
+                                                        .contains(evdev_code)
+                                                {
+                                                    wkb.num_lock_keys[i].insert(*evdev_code, char);
+                                                    // if layout == "comma"
+                                                    //     || (layout == "dotoss" && i == 2)
+                                                    // {
+                                                    //     wkb.num_lock_keys[i]
+                                                    //         .insert(*evdev_code, ',');
+                                                    // } else if layout == "dotoss" && i == 0 {
+                                                    //     wkb.num_lock_keys[i]
+                                                    //         .insert(*evdev_code, '.');
+                                                    // } else {
+                                                    //     wkb.num_lock_keys[i]
+                                                    //         .insert(*evdev_code, char);
+                                                    // }
+                                                }
                                             }
                                         }
                                     }
@@ -702,7 +722,7 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
-    let key_83 = wkb.num_lock_keys.get(1).and_then(|km| km.get(&83)).cloned();
+    // let key_83 = wkb.num_lock_keys.get(1).and_then(|km| km.get(&83)).cloned();
     for (i, map) in wkb.num_lock_keys.iter_mut().enumerate() {
         if !(map.contains_key(&71)
             && map.contains_key(&72)
@@ -731,7 +751,7 @@ pub fn map_xkb(
                         (80, '2'),
                         (81, '3'),
                         (82, '0'),
-                        // (83, '.'),
+                        (83, '.'),
                     ] {
                         if let Some(state_value) = wkb.state_keymap[i].get(&key) {
                             map.insert(key, *state_value);
@@ -739,26 +759,17 @@ pub fn map_xkb(
                             map.insert(key, value);
                         }
                     }
-                    if let Some(v) = key_83 {
-                        map.insert(83, v);
-                    } else {
-                        map.insert(83, '.');
-                    }
+                    // if let Some(v) = key_83 {
+                    //     map.insert(83, v);
+                    // } else {
+                    //     println!("HERE?!");
+                    //     map.insert(83, '.');
+                    // }
                 }
                 _ => {}
             }
         }
     }
-
-    //         if i < DEFAULT_MAP.len() {
-    //             for code in keypad_codes {
-    //                 if let Some(&v) = DEFAULT_MAP[1].get(&code) {
-    //                     map.insert(code, v);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 fn map_keys_and_modifiers(
@@ -790,7 +801,24 @@ fn map_keys_and_modifiers(
             if v.as_ref().starts_with("KP")
                 || [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(evdev_code)
             {
-                wkb.num_lock_keys[i].insert(*evdev_code, single_char);
+                if layout == "legacynumber" && (i == 1 || i == 2) {
+                    let num_lock_maps = wkb.num_lock_keys.split_at_mut_checked(1);
+                    if let Some((ref num_lock_map_start, num_lock_map_end)) = num_lock_maps {
+                        if let Some(v) = num_lock_map_start[0].get(evdev_code) {
+                            num_lock_map_end[0].insert(*evdev_code, v.clone());
+                            num_lock_map_end[1].insert(*evdev_code, v.clone());
+                        }
+                    }
+                    println!("{:?}", wkb.num_lock_keys[2]);
+                } else if layout == "comma" || (layout == "dotoss" && i == 2) {
+                    wkb.num_lock_keys[i].insert(*evdev_code, ',');
+                } else if (layout == "dotoss" || layout == "dotoss_latin9" || layout == "dot")
+                    && i == 0
+                {
+                    wkb.num_lock_keys[i].insert(*evdev_code, '.');
+                } else {
+                    wkb.num_lock_keys[i].insert(*evdev_code, single_char);
+                }
             }
         } else {
             match (v.content, layout.as_str()) {
@@ -995,15 +1023,14 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crat
     } else {
         crate::REPEAT_DEFAULT.clone()
     };
-    let (regular_composer, compose_key_composer) = load_compose_table(&locale);
+    let regular_composer = load_compose_table(&locale);
     let modifiers = crate::modifiers::Modifiers::default();
     let mut wkb = crate::WKB {
         layouts,
         layout: layout_val.clone(),
         locale: Some(locale.clone()),
         state_keymap: Vec::with_capacity(8),
-        regular_composer,
-        compose_key_composer,
+        composer: regular_composer,
         pressed_keys: std::collections::HashSet::new(),
         repeat_keys,
         modifiers,
