@@ -23,15 +23,6 @@ pub(crate) enum Node {
     Emit(char),
 }
 
-impl Node {
-    fn child(&self, token: &Token) -> Option<usize> {
-        match self {
-            Node::Next(children) => children.iter().find(|(k, _)| k == token).map(|(_, i)| *i),
-            Node::Emit(_) => None,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct ListComposer {
     pub(crate) nodes: Vec<Node>,
@@ -53,12 +44,18 @@ impl ListComposer {
     pub fn insert(&mut self, tokens: &[Token], out: char) {
         let mut n = 0usize;
         for t in tokens.iter() {
-            n = match self.nodes[n].child(t) {
-                Some(i) => i,
-                None => {
-                    let i = self.nodes.len();
-                    let node = Node::Next(vec![(t.clone(), i)]);
-                    self.nodes[n] = node;
+            let i = self.nodes.len();
+            n = match self.nodes[n] {
+                Node::Next(ref mut items) => {
+                    if let Some((_, next)) = items.iter().find(|(k, _)| k == t) {
+                        *next
+                    } else {
+                        items.push((t.clone(), i));
+                        i
+                    }
+                }
+                Node::Emit(_) => {
+                    self.nodes[n] = Node::Next(vec![(t.clone(), i)]);
                     i
                 }
             };
