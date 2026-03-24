@@ -71,24 +71,24 @@ pub fn test_all_keys_locale<C: wkb::composer::Composer>(
                 locale, layout, i, level
             );
             println!("  wkb={:?} xkb={:?}", k1, k2.chars().last());
-            if level < wkb.state_keymap.len() {
-                println!("  state[{}]={:?}", level, wkb.state_keymap[level].get(&i));
-            }
-            if level < wkb.caps_lock_keymap.len() {
-                println!(
-                    "  caps[{}]={:?}",
-                    level,
-                    wkb.caps_lock_keymap[level].get(&i)
-                );
-            }
-            if level < wkb.num_lock_keys.len() {
-                println!("  num[{}]={:?}", level, wkb.num_lock_keys[level].get(&i));
-            }
+            // if level < wkb.state_keymap.len() {
+            //     println!("  state[{}]={:?}", level, wkb.state_keymap[level].get(&i));
+            // }
+            // if level < wkb.caps_lock_keymap.len() {
+            //     println!(
+            //         "  caps[{}]={:?}",
+            //         level,
+            //         wkb.caps_lock_keymap[level].get(&i)
+            //     );
+            // }
+            // if level < wkb.num_lock_keys.len() {
+            //     println!("  num[{}]={:?}", level, wkb.num_lock_keys[level].get(&i));
+            // }
 
-            println!("  * Full num_lock_keys:");
-            for (idx, map) in wkb.num_lock_keys.iter().enumerate() {
-                println!("    num[{}] = {:?}", idx, map);
-            }
+            // println!("  * Full num_lock_keys:");
+            // for (idx, map) in wkb.num_lock_keys.iter().enumerate() {
+            //     println!("    num[{}] = {:?}", idx, map);
+            // }
         }
         assert!(k1 == k2.chars().last() || k2.chars().last().is_none());
     }

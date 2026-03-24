@@ -28,8 +28,5 @@ Todo list(tentative):
   - [x] Tests
 - [x] Add wayland specific functions
 - [x] Lightbulbs
-- [ ] New keyboard format
 - [ ] Benchmarks
-
-Performance improvements(?):
-- [ ] use phf instead of static hashmaps
+- [ ] New keyboard format

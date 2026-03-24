@@ -722,52 +722,48 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
-    // let key_83 = wkb.num_lock_keys.get(1).and_then(|km| km.get(&83)).cloned();
-    for (i, map) in wkb.num_lock_keys.iter_mut().enumerate() {
-        if !(map.contains_key(&71)
-            && map.contains_key(&72)
-            && map.contains_key(&73)
-            && map.contains_key(&74)
-            && map.contains_key(&75)
-            && map.contains_key(&76)
-            && map.contains_key(&77)
-            && map.contains_key(&78)
-            && map.contains_key(&79)
-            && map.contains_key(&80)
-            && map.contains_key(&81)
-            && map.contains_key(&82)
-            && map.contains_key(&83))
-        {
-            match i {
-                0 | 2 | 4 | 6 => {
-                    for (key, value) in [
-                        (71, '7'),
-                        (72, '8'),
-                        (73, '9'),
-                        (75, '4'),
-                        (76, '5'),
-                        (77, '6'),
-                        (79, '1'),
-                        (80, '2'),
-                        (81, '3'),
-                        (82, '0'),
-                        (83, '.'),
-                    ] {
-                        if let Some(state_value) = wkb.state_keymap[i].get(&key) {
-                            map.insert(key, *state_value);
-                        } else {
-                            map.insert(key, value);
-                        }
+    for i in 0..wkb.state_keymap.len() {
+        match i {
+            0 | 2 | 4 | 6 => {
+                for (key, value) in [
+                    (71, '7'),
+                    (72, '8'),
+                    (73, '9'),
+                    (75, '4'),
+                    (76, '5'),
+                    (77, '6'),
+                    (79, '1'),
+                    (80, '2'),
+                    (81, '3'),
+                    (82, '0'),
+                ] {
+                    if let Some(_) = wkb.num_lock_keys[i].get(&key) {
+                    } else if let Some(state_value) = wkb.state_keymap[i].get(&key) {
+                        wkb.num_lock_keys[i].insert(key, *state_value);
+                    } else {
+                        wkb.num_lock_keys[i].insert(key, value);
                     }
-                    // if let Some(v) = key_83 {
-                    //     map.insert(83, v);
-                    // } else {
-                    //     println!("HERE?!");
-                    //     map.insert(83, '.');
-                    // }
                 }
-                _ => {}
+                if wkb.num_lock_keys[i].get(&83).is_none() {
+                    if i > 0 {
+                        let (first, last) = wkb.num_lock_keys.split_at_mut(i);
+                        if let Some(value) = first[1].get(&83) {
+                            last[0].insert(83, *value);
+                        } else {
+                            last[0].insert(83, '.');
+                        }
+                    } else {
+                        wkb.num_lock_keys[i].insert(83, '.');
+                    }
+                }
             }
+            1 => {
+                let (first, last) = wkb.num_lock_keys.split_at_mut(1);
+                if let Some(value) = last[0].get(&83) {
+                    first[0].insert(83, *value);
+                }
+            }
+            _ => {}
         }
     }
 }
@@ -809,7 +805,6 @@ fn map_keys_and_modifiers(
                             num_lock_map_end[1].insert(*evdev_code, v.clone());
                         }
                     }
-                    println!("{:?}", wkb.num_lock_keys[2]);
                 } else if layout == "comma" || (layout == "dotoss" && i == 2) {
                     wkb.num_lock_keys[i].insert(*evdev_code, ',');
                 } else if (layout == "dotoss" || layout == "dotoss_latin9" || layout == "dot")
