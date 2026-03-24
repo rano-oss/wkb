@@ -631,6 +631,45 @@ pub fn fix_xkb_edge_cases(
     }
 }
 
+fn extract_key_type(values: &[xkb_parser::ast::KeyValue]) -> Option<String> {
+    for v in values {
+        if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
+            if let xkb_parser::ast::KeyDef::TypeDef(type_def) = key_defs {
+                if type_def.group.is_none()
+                    || matches!(
+                        type_def.group.as_ref().map(|g| g.content),
+                        Some("Group1") | Some("group1")
+                    )
+                {
+                    return Some(type_def.content.content.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+fn is_numpad_key(keysym: &str, evdev_code: &u32, _key_type: &Option<String>) -> bool {
+    if evdev_code == &71
+        || evdev_code == &72
+        || evdev_code == &73
+        || evdev_code == &75
+        || evdev_code == &76
+        || evdev_code == &77
+        || evdev_code == &79
+        || evdev_code == &80
+        || evdev_code == &81
+        || evdev_code == &82
+        || evdev_code == &83
+    {
+        return true;
+    }
+    if keysym.starts_with("KP") {
+        return true;
+    }
+    false
+}
+
 // This recursive function from hell is currently used only to map xkb
 // hopefully xkb files can be depricated one day so one does not have to work
 // with this cursed file format.
@@ -660,9 +699,8 @@ pub fn map_xkb(
                         values,
                     }) = si
                     {
-                        // Why not just unwrap here? Surely there shouldn't be any symbols not defined in evdev...
-                        // ph has AB00 which does not exists in evdev...
                         if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
+                            let key_type = extract_key_type(values);
                             values.iter().for_each(|v| {
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
@@ -675,25 +713,10 @@ pub fn map_xkb(
                                             let single_char = keysym_name_to_char(v.as_ref());
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
-                                                wkb.num_lock_keys[i].insert(*evdev_code, char);
 
-                                                if v.as_ref().starts_with("KP")
-                                                    || [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83]
-                                                        .contains(evdev_code)
+                                                if is_numpad_key(v.as_ref(), evdev_code, &key_type)
                                                 {
                                                     wkb.num_lock_keys[i].insert(*evdev_code, char);
-                                                    // if layout == "comma"
-                                                    //     || (layout == "dotoss" && i == 2)
-                                                    // {
-                                                    //     wkb.num_lock_keys[i]
-                                                    //         .insert(*evdev_code, ',');
-                                                    // } else if layout == "dotoss" && i == 0 {
-                                                    //     wkb.num_lock_keys[i]
-                                                    //         .insert(*evdev_code, '.');
-                                                    // } else {
-                                                    //     wkb.num_lock_keys[i]
-                                                    //         .insert(*evdev_code, char);
-                                                    // }
                                                 }
                                             }
                                         }
@@ -706,6 +729,7 @@ pub fn map_xkb(
                                         layout.clone(),
                                         locale.clone(),
                                         id.content.to_owned(),
+                                        key_type.clone(),
                                     );
                                 }
                             })
@@ -722,6 +746,7 @@ pub fn map_xkb(
             wkb.caps_lock_keymap[i - 1] = map.clone();
         }
     }
+
     for i in 0..wkb.state_keymap.len() {
         match i {
             0 | 2 | 4 | 6 => {
@@ -775,6 +800,7 @@ fn map_keys_and_modifiers(
     layout: String,
     locale: String,
     id: String,
+    key_type: Option<String>,
 ) {
     for (i, v) in key.values.iter().enumerate() {
         if id == "CAPS" && key.values.first().is_some_and(|k| k.content == "BackSpace") {
@@ -794,9 +820,7 @@ fn map_keys_and_modifiers(
         let single_char = keysym_name_to_char(v.as_ref());
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
-            if v.as_ref().starts_with("KP")
-                || [71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 83].contains(evdev_code)
-            {
+            if is_numpad_key(v.as_ref(), evdev_code, &key_type) {
                 if layout == "legacynumber" && (i == 1 || i == 2) {
                     let num_lock_maps = wkb.num_lock_keys.split_at_mut_checked(1);
                     if let Some((ref num_lock_map_start, num_lock_map_end)) = num_lock_maps {
