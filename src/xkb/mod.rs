@@ -678,6 +678,7 @@ pub fn map_xkb(
     path: &Path,
     locale: String,
     layout: Option<String>,
+    numpad_key_types: &mut BTreeMap<u32, String>,
 ) {
     let file = std::fs::read_to_string(&path.join(locale.clone())).expect("dir");
     let xkb = parse(&file).unwrap();
@@ -685,13 +686,31 @@ pub fn map_xkb(
         if let Directive::XkbSymbols(src) = &d.directive {
             let layout = layout.clone().unwrap_or(wkb.current_layout());
             if src.name.content == layout {
+                let mut pending_key_type: Option<(String, Option<String>)> = None;
                 src.value.iter().for_each(|si| {
-                    if let XkbSymbolsItem::Include(include) = si {
+                    if let XkbSymbolsItem::KeyType(key_type_item) = si {
+                        pending_key_type = Some((
+                            key_type_item.name.content.to_string(),
+                            key_type_item.group.as_ref().map(|g| g.content.to_string()),
+                        ));
+                    } else if let XkbSymbolsItem::Include(include) = si {
                         let (locale, layout) = include.parse_name();
                         if layout.is_none() {
-                            map_xkb(wkb, path, locale.to_string(), Some("basic".to_string()));
+                            map_xkb(
+                                wkb,
+                                path,
+                                locale.to_string(),
+                                Some("basic".to_string()),
+                                numpad_key_types,
+                            );
                         } else {
-                            map_xkb(wkb, path, locale.to_string(), layout.map(str::to_string));
+                            map_xkb(
+                                wkb,
+                                path,
+                                locale.to_string(),
+                                layout.map(str::to_string),
+                                numpad_key_types,
+                            );
                         }
                     } else if let XkbSymbolsItem::Key(Key {
                         mode: _,
@@ -701,8 +720,46 @@ pub fn map_xkb(
                     {
                         if let Some(evdev_code) = XKBCODES_EVDEV.get(id.content) {
                             let key_type = extract_key_type(values);
+
+                            let evdev_code_copy = *evdev_code;
+
+                            let effective_key_type = key_type.clone().or_else(|| {
+                                if let Some((ref type_name, ref group)) = pending_key_type {
+                                    if group
+                                        .as_ref()
+                                        .map(|g| g == "Group1" || g == "group1")
+                                        .unwrap_or(true)
+                                    {
+                                        return Some(type_name.clone());
+                                    }
+                                }
+                                None
+                            });
+
+                            if let Some(ref kt) = effective_key_type {
+                                if kt.contains("KEYPAD") {
+                                    numpad_key_types.insert(evdev_code_copy, kt.clone());
+                                }
+                            }
+
+                            if pending_key_type.is_some() {
+                                pending_key_type = None;
+                            }
+
+                            let mut key_type_from_type_def: Option<String> = None;
                             values.iter().for_each(|v| {
                                 if let xkb_parser::ast::KeyValue::KeyDefs(key_defs) = v {
+                                    if let xkb_parser::ast::KeyDef::TypeDef(type_def) = key_defs {
+                                        if type_def.group.is_none()
+                                            || matches!(
+                                                type_def.group.as_ref().map(|g| g.content),
+                                                Some("Group1") | Some("group1")
+                                            )
+                                        {
+                                            key_type_from_type_def =
+                                                Some(type_def.content.content.to_string());
+                                        }
+                                    }
                                     if let xkb_parser::ast::KeyDef::SymbolDef(key) = key_defs {
                                         for (i, v) in key.values.values.iter().enumerate() {
                                             if i == wkb.state_keymap.len() {
@@ -711,17 +768,34 @@ pub fn map_xkb(
                                                 wkb.caps_lock_keymap.push(BTreeMap::new());
                                             }
                                             let single_char = keysym_name_to_char(v.as_ref());
+                                            if *evdev_code == 83 {
+                                                eprintln!(
+                                                    "DEBUG SymbolDef: keysym={:?}, char={:?}, i={}",
+                                                    v.as_ref(),
+                                                    single_char,
+                                                    i
+                                                );
+                                            }
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
 
-                                                if is_numpad_key(v.as_ref(), evdev_code, &key_type)
-                                                {
+                                                let effective_kt = key_type_from_type_def
+                                                    .clone()
+                                                    .or_else(|| effective_key_type.clone());
+                                                if is_numpad_key(
+                                                    v.as_ref(),
+                                                    evdev_code,
+                                                    &effective_kt,
+                                                ) {
                                                     wkb.num_lock_keys[i].insert(*evdev_code, char);
                                                 }
                                             }
                                         }
                                     }
                                 } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
+                                    if *evdev_code == 83 {
+                                        eprintln!("DEBUG: KeyNames for KPDL in {}", layout);
+                                    }
                                     map_keys_and_modifiers(
                                         wkb,
                                         key,
@@ -729,7 +803,7 @@ pub fn map_xkb(
                                         layout.clone(),
                                         locale.clone(),
                                         id.content.to_owned(),
-                                        key_type.clone(),
+                                        effective_key_type.clone(),
                                     );
                                 }
                             })
@@ -777,7 +851,7 @@ pub fn map_xkb(
                         } else {
                             last[0].insert(83, '.');
                         }
-                    } else {
+                    } else if wkb.state_keymap.get(0).and_then(|m| m.get(&83)).is_none() {
                         wkb.num_lock_keys[i].insert(83, '.');
                     }
                 }
@@ -785,7 +859,9 @@ pub fn map_xkb(
             1 => {
                 let (first, last) = wkb.num_lock_keys.split_at_mut(1);
                 if let Some(value) = last[0].get(&83) {
-                    first[0].insert(83, *value);
+                    if first[0].get(&83).is_none() {
+                        first[0].insert(83, *value);
+                    }
                 }
             }
             _ => {}
@@ -818,8 +894,23 @@ fn map_keys_and_modifiers(
             wkb.caps_lock_keymap.push(BTreeMap::new());
         }
         let single_char = keysym_name_to_char(v.as_ref());
+        if *evdev_code == 83 {
+            eprintln!(
+                "DEBUG map_keys_and_modifiers: evdev_code=83, keysym={:?}, char={:?}, id={}",
+                v.as_ref(),
+                single_char,
+                id
+            );
+        }
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
+            if *evdev_code == 83 && i == 1 {
+                eprintln!(
+                    "DEBUG map_keys: inserting num_lock_keys[1][83] = {:?}, is_numpad={}",
+                    single_char,
+                    is_numpad_key(v.as_ref(), evdev_code, &key_type)
+                );
+            }
             if is_numpad_key(v.as_ref(), evdev_code, &key_type) {
                 if layout == "legacynumber" && (i == 1 || i == 2) {
                     let num_lock_maps = wkb.num_lock_keys.split_at_mut_checked(1);
@@ -1057,8 +1148,27 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crat
         caps_lock_keymap: Vec::with_capacity(8),
         level_exceptions_keymap: Vec::with_capacity(8),
     };
-    map_xkb(&mut wkb, path, locale.clone(), Some(layout_val.clone()));
-    fix_xkb_edge_cases(&mut wkb, locale, Some(layout_val));
+    let mut numpad_key_types: BTreeMap<u32, String> = BTreeMap::new();
+
+    map_xkb(
+        &mut wkb,
+        path,
+        locale.clone(),
+        Some(layout_val.clone()),
+        &mut numpad_key_types,
+    );
+    fix_xkb_edge_cases(&mut wkb, locale.clone(), Some(layout_val.clone()));
+
+    for (&evdev_code, _) in &numpad_key_types {
+        if let Some(&level1_char) = wkb.state_keymap.get(1).and_then(|m| m.get(&evdev_code)) {
+            for i in 0..wkb.state_keymap.len() {
+                if i != 1 {
+                    wkb.num_lock_keys[i].insert(evdev_code, level1_char);
+                }
+            }
+        }
+    }
+
     wkb
 }
 
