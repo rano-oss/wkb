@@ -737,7 +737,7 @@ pub fn map_xkb(
                             });
 
                             if let Some(ref kt) = effective_key_type {
-                                if kt.contains("KEYPAD") {
+                                if kt.contains("KEYPAD") || kt.contains("FOUR_LEVEL_MIXED_KEYPAD") {
                                     numpad_key_types.insert(evdev_code_copy, kt.clone());
                                 }
                             }
@@ -768,14 +768,7 @@ pub fn map_xkb(
                                                 wkb.caps_lock_keymap.push(BTreeMap::new());
                                             }
                                             let single_char = keysym_name_to_char(v.as_ref());
-                                            if *evdev_code == 83 {
-                                                eprintln!(
-                                                    "DEBUG SymbolDef: keysym={:?}, char={:?}, i={}",
-                                                    v.as_ref(),
-                                                    single_char,
-                                                    i
-                                                );
-                                            }
+
                                             if let Some(char) = single_char {
                                                 wkb.state_keymap[i].insert(*evdev_code, char);
 
@@ -793,9 +786,6 @@ pub fn map_xkb(
                                         }
                                     }
                                 } else if let xkb_parser::ast::KeyValue::KeyNames(key) = v {
-                                    if *evdev_code == 83 {
-                                        eprintln!("DEBUG: KeyNames for KPDL in {}", layout);
-                                    }
                                     map_keys_and_modifiers(
                                         wkb,
                                         key,
@@ -894,23 +884,8 @@ fn map_keys_and_modifiers(
             wkb.caps_lock_keymap.push(BTreeMap::new());
         }
         let single_char = keysym_name_to_char(v.as_ref());
-        if *evdev_code == 83 {
-            eprintln!(
-                "DEBUG map_keys_and_modifiers: evdev_code=83, keysym={:?}, char={:?}, id={}",
-                v.as_ref(),
-                single_char,
-                id
-            );
-        }
         if let Some(single_char) = single_char {
             wkb.state_keymap[i].insert(*evdev_code, single_char);
-            if *evdev_code == 83 && i == 1 {
-                eprintln!(
-                    "DEBUG map_keys: inserting num_lock_keys[1][83] = {:?}, is_numpad={}",
-                    single_char,
-                    is_numpad_key(v.as_ref(), evdev_code, &key_type)
-                );
-            }
             if is_numpad_key(v.as_ref(), evdev_code, &key_type) {
                 if layout == "legacynumber" && (i == 1 || i == 2) {
                     let num_lock_maps = wkb.num_lock_keys.split_at_mut_checked(1);
