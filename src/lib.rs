@@ -1,4 +1,4 @@
-pub use composer::{ComposeState, Composer, ListComposer, UnicodeComposer};
+pub use composer::{ComposeState, Composer, ListComposer, Token};
 use std::collections::{BTreeMap, HashMap, HashSet};
 pub mod composer;
 pub use modifiers::KeyDirection;
@@ -14,12 +14,11 @@ pub struct WKB<C: Composer> {
     pub layouts: Vec<String>,
     pub layout: String,
     pub locale: Option<String>,
-    pub state_keymap: Vec<BTreeMap<u32, char>>,
-    pub regular_composer: C,
-    pub compose_key_composer: C,
     pub pressed_keys: HashSet<u32>,
     pub repeat_keys: HashSet<u32>,
+    pub composer: C,
     pub modifiers: Modifiers,
+    pub state_keymap: Vec<BTreeMap<u32, char>>,
     pub num_lock_keys: Vec<BTreeMap<u32, char>>,
     pub caps_lock_keymap: Vec<BTreeMap<u32, char>>,
     pub level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
@@ -239,20 +238,18 @@ impl<C: Composer> WKB<C> {
         key_direction: KeyDirection,
     ) -> (Option<ComposeState>, bool) {
         let is_modifier = self.update_key(evdev_code, key_direction);
-        let compose_state = if key_direction == KeyDirection::Down && !is_modifier {
-            self.utf8(evdev_code).map(|c| self.compose_feed(c))
+        let compose_state = if key_direction == KeyDirection::Down
+            && is_modifier
+            && self.modifiers.active_mod_type(ModType::Compose)
+        {
+            Some(self.composer.feed(Token::Compose))
+        } else if key_direction == KeyDirection::Down && !is_modifier {
+            self.utf8(evdev_code)
+                .map(|c| self.composer.feed(Token::Char(c)))
         } else {
             None
         };
         (compose_state, is_modifier)
-    }
-
-    fn compose_feed(&mut self, character: char) -> ComposeState {
-        if self.modifiers.active_mod_type(ModType::Compose) {
-            self.compose_key_composer.feed(character)
-        } else {
-            self.regular_composer.feed(character)
-        }
     }
 
     pub fn layouts(&self) -> Vec<String> {
