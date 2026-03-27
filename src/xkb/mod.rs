@@ -398,8 +398,8 @@ pub fn fix_xkb_edge_cases(
             }
             wkb.state_keymap[1].insert(55, '*');
             wkb.state_keymap[2].insert(55, '·');
-            wkb.state_keymap[3].insert(55, '×');
             wkb.state_keymap[2].insert(98, '/');
+            wkb.state_keymap[3].insert(55, '×');
             wkb.state_keymap[3].insert(98, '÷');
         }
         ("fr", Some("oss_latin9")) | ("be", Some("oss_latin9")) => {
@@ -803,11 +803,43 @@ pub fn map_xkb(
             }
         }
     });
-    for (i, map) in wkb.state_keymap.iter_mut().enumerate() {
-        if i % 2 == 0 && i + 1 < wkb.caps_lock_keymap.len() {
-            wkb.caps_lock_keymap[i + 1] = map.clone();
-        } else if i % 2 == 1 {
-            wkb.caps_lock_keymap[i - 1] = map.clone();
+
+    // Caps lock: check both adjacent levels for case pairs
+    for (i, map) in wkb.state_keymap.iter().enumerate() {
+        if i < wkb.caps_lock_keymap.len() {
+            let mut caps_map = BTreeMap::new();
+
+            for (key, &value) in map {
+                // Check prev level first
+                let caps_char = if let Some(prev_map) = wkb.state_keymap.get(i.saturating_sub(1)) {
+                    if let Some(&prev_char) = prev_map.get(key) {
+                        if are_case_pairs(value, prev_char) {
+                            prev_char
+                        } else {
+                            // Check next level
+                            if let Some(next_map) = wkb.state_keymap.get(i + 1) {
+                                if let Some(&next_char) = next_map.get(key) {
+                                    if are_case_pairs(value, next_char) {
+                                        next_char
+                                    } else {
+                                        apply_caps_case(value)
+                                    }
+                                } else {
+                                    apply_caps_case(value)
+                                }
+                            } else {
+                                apply_caps_case(value)
+                            }
+                        }
+                    } else {
+                        apply_caps_case(value)
+                    }
+                } else {
+                    apply_caps_case(value)
+                };
+                caps_map.insert(*key, caps_char);
+            }
+            wkb.caps_lock_keymap[i] = caps_map;
         }
     }
 
@@ -1150,4 +1182,81 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> crate::WKB<crat
 pub fn new_from_string(_string: String) -> crate::WKB<crate::ListComposer> {
     // Basic stub, might need parsing string instead of relying on map_xkb reading from file
     unimplemented!("new_from_string is not yet fully implemented")
+}
+
+fn are_case_pairs(a: char, b: char) -> bool {
+    if a.to_lowercase().next() == b.to_lowercase().next()
+        && a.to_uppercase().next() == b.to_uppercase().next()
+        && a != b
+    {
+        return true;
+    }
+
+    let explicit_pairs = [
+        ('ß', 'ẞ'),
+        ('ẞ', 'ß'),
+        ('þ', 'Þ'),
+        ('Þ', 'þ'),
+        ('ŧ', 'Ŧ'),
+        ('Ŧ', 'ŧ'),
+        ('i', 'İ'),
+        ('İ', 'i'),
+        ('ı', 'I'),
+        ('I', 'ı'),
+        ('é', 'É'),
+        ('É', 'é'),
+        ('ç', 'Ç'),
+        ('Ç', 'ç'),
+        ('æ', 'Æ'),
+        ('Æ', 'æ'),
+        ('ø', 'Ø'),
+        ('Ø', 'ø'),
+        ('å', 'Å'),
+        ('Å', 'å'),
+        ('ä', 'Ä'),
+        ('Ä', 'ä'),
+        ('ö', 'Ö'),
+        ('Ö', 'ö'),
+        ('è', 'È'),
+        ('È', 'è'),
+        ('ê', 'Ê'),
+        ('Ê', 'ê'),
+        ('ë', 'Ë'),
+        ('Ë', 'ë'),
+        ('ù', 'Ù'),
+        ('Ù', 'ù'),
+        ('û', 'Û'),
+        ('Û', 'û'),
+        ('ü', 'Ü'),
+        ('Ü', 'ü'),
+        ('ò', 'Ò'),
+        ('Ò', 'ò'),
+        ('Ǉ', 'ǈ'),
+        ('ǈ', 'Ǉ'),
+        ('ǉ', 'Ǌ'),
+        ('Ǌ', 'ǉ'),
+        ('đ', 'Đ'),
+        ('Đ', 'đ'),
+    ];
+    for &(x, y) in &explicit_pairs {
+        if (a == x && b == y) || (a == y && b == x) {
+            return true;
+        }
+    }
+    false
+}
+
+fn apply_caps_case(c: char) -> char {
+    // Only apply case transformation to alphabetic characters
+    if !c.is_alphabetic() {
+        return c;
+    }
+    match c {
+        'ß' => 'ẞ',
+        'þ' => 'Þ',
+        'ŧ' => 'Ŧ',
+        'İ' => 'ı',
+        'i' => 'ı',
+        _ => c.to_uppercase().next().unwrap_or(c),
+    }
 }
