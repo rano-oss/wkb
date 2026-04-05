@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
+use wkb;
 use wkb::Token;
-use wkbxkb as wkb;
 use xkbcommon::xkb::{self, compose};
 
 // Use xkb-parser for compose file parsing

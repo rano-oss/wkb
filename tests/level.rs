@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkbxkb as wkb;
+use wkb;
 use xkbcommon::{
     self,
     xkb::{self, Keycode},

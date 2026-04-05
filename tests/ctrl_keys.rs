@@ -1,13 +1,13 @@
 //! Test CTRL key combinations that should return empty/no character
 //!
-//! This test suite verifies that wkbxkb correctly returns None for
+//! This test suite verifies that wkb correctly returns None for
 //! control key combinations (CTRL+letter) matching xkbcommon behavior.
 //!
-//! Note: wkbxkb does not support control characters (U+0000-U+001F, U+007F).
+//! Note: wkb does not support control characters (U+0000-U+001F, U+007F).
 //! When xkbcommon returns a control character, we treat it as equivalent to None.
 
 use test_case::test_matrix;
-use wkbxkb::{self as wkb, KeyDirection};
+use wkb::KeyDirection;
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -39,7 +39,7 @@ fn normalize_xkb_char(xkb_str: String) -> Option<char> {
         xkb_str.chars().last()
     };
 
-    // Treat control characters as None since wkbxkb doesn't support them
+    // Treat control characters as None since wkb doesn't support them
     match xkb_char {
         Some(c) if is_control_char(c) => None,
         other => other,
@@ -88,7 +88,7 @@ fn ctrl_letter_combinations(locale: &str) {
 }
 
 /// Test CTRL+ALT combinations
-/// Note: wkbxkb may suppress more keys with CTRL than xkbcommon
+/// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it", "ru"])]
 fn ctrl_alt_combinations(locale: &str) {
     let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
@@ -114,7 +114,7 @@ fn ctrl_alt_combinations(locale: &str) {
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = normalize_xkb_char(xkb_str);
 
-            // wkbxkb may suppress more keys with CTRL than xkbcommon
+            // wkb may suppress more keys with CTRL than xkbcommon
             // If wkb returns None, that's acceptable even if xkb returns a character
             // If wkb returns a character, it should match xkb
             assert!(
@@ -137,7 +137,7 @@ fn ctrl_alt_combinations(locale: &str) {
 }
 
 /// Test CTRL+Shift combinations
-/// Note: wkbxkb may suppress more keys with CTRL than xkbcommon
+/// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it"])]
 fn ctrl_shift_combinations(locale: &str) {
     let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
@@ -163,7 +163,7 @@ fn ctrl_shift_combinations(locale: &str) {
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = normalize_xkb_char(xkb_str);
 
-            // wkbxkb may suppress more keys with CTRL than xkbcommon
+            // wkb may suppress more keys with CTRL than xkbcommon
             // If wkb returns None, that's acceptable even if xkb returns a character
             // If wkb returns a character, it should match xkb
             assert!(
@@ -186,7 +186,7 @@ fn ctrl_shift_combinations(locale: &str) {
 }
 
 /// Test that keys without CTRL produce characters, then with CTRL produce None/empty
-/// Note: wkbxkb may suppress more keys with CTRL than xkbcommon
+/// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "jp"])]
 fn ctrl_suppresses_output(locale: &str) {
     let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
@@ -211,7 +211,7 @@ fn ctrl_suppresses_output(locale: &str) {
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_with_ctrl = normalize_xkb_char(xkb_str);
 
-            // wkbxkb may suppress more keys with CTRL than xkbcommon
+            // wkb may suppress more keys with CTRL than xkbcommon
             // If wkb returns None, that's acceptable even if xkb returns a character
             // If wkb returns a character, it should match xkb
             assert!(

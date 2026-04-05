@@ -1,6 +1,5 @@
 use test_case::test_matrix;
-use wkbxkb::{
-    self as wkb,
+use wkb::{
     modifiers::{level_index, ALTGR, NUM_LOCK},
     KeyDirection, WKB,
 };

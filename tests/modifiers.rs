@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkbxkb::{self as wkb, modifiers::CAPS_LOCK, KeyDirection};
+use wkb::{modifiers::CAPS_LOCK, KeyDirection};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {

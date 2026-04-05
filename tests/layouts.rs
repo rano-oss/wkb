@@ -4,7 +4,7 @@
 //! of layout variants for each locale, and that each variant can be loaded.
 
 use test_case::test_matrix;
-use wkbxkb as wkb;
+use wkb;
 use xkbcommon::xkb;
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -57,7 +57,7 @@ fn layouts_enumeration(locale: &str) {
     );
 
     // Verify each returned variant can be loaded successfully with xkbcommon
-    // This ensures wkbxkb is returning valid variant names
+    // This ensures wkb is returning valid variant names
     for variant in &layouts {
         // Try to create an xkb keymap with this locale and variant
         let xkb_state = xkb_new_from_names(locale.to_string(), Some(variant.clone()));

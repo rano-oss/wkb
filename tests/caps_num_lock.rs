@@ -1,11 +1,10 @@
 //! Test caps lock + num lock combinations across all locales and layouts
 //!
-//! This test suite verifies that wkbxkb handles the combination of caps lock
+//! This test suite verifies that wkb handles the combination of caps lock
 //! and num lock modifiers the same way as xkbcommon for all keys.
 
 use test_case::test_matrix;
-use wkbxkb::{
-    self as wkb,
+use wkb::{
     modifiers::{CAPS_LOCK, NUM_LOCK},
     KeyDirection,
 };

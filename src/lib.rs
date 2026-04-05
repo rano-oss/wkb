@@ -8,7 +8,7 @@
 extern crate c2rust_bitfields;
 
 pub use composer::{ComposeState, Composer, ListComposer, Token};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};

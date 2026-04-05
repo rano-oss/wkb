@@ -1,12 +1,11 @@
 //! Test LED state functions (Caps Lock, Num Lock, Scroll Lock)
 //!
-//! This test suite verifies that wkbxkb reports LED states that match
+//! This test suite verifies that wkb reports LED states that match
 //! xkbcommon exactly, without making assumptions about expected behavior.
 //! The tests simply ensure both libraries agree on LED state.
 
 use test_case::test_matrix;
-use wkbxkb::{
-    self as wkb,
+use wkb::{
     modifiers::{CAPS_LOCK, NUM_LOCK, SCROLL_LOCK},
     KeyDirection,
 };
@@ -50,7 +49,7 @@ fn caps_lock_led(locale: &str) {
         let xkb_keymap = xkb.get_keymap();
         let caps_led_idx = xkb_keymap.led_get_index(caps_led_name);
 
-        // Check initial state matches between wkbxkb and xkbcommon
+        // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
         let wkb_caps_on = (wkb_leds & 2) != 0; // Bit 1 is caps lock
 
@@ -118,7 +117,7 @@ fn num_lock_led(locale: &str) {
         let xkb_keymap = xkb.get_keymap();
         let num_led_idx = xkb_keymap.led_get_index(num_led_name);
 
-        // Check initial state matches between wkbxkb and xkbcommon
+        // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
         let wkb_num_on = (wkb_leds & 1) != 0; // Bit 0 is num lock
         let xkb_num_on = xkb.led_index_is_active(num_led_idx);
@@ -185,7 +184,7 @@ fn scroll_lock_led(locale: &str) {
         let xkb_keymap = xkb.get_keymap();
         let scroll_led_idx = xkb_keymap.led_get_index(scroll_led_name);
 
-        // Check initial state matches between wkbxkb and xkbcommon
+        // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
         let wkb_scroll_on = (wkb_leds & 4) != 0; // Bit 2 is scroll lock
         let xkb_scroll_on = xkb.led_index_is_active(scroll_led_idx);
@@ -253,7 +252,7 @@ fn all_locks_pressed(locale: &str) {
             xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Up);
         }
 
-        // Compare LED states between wkbxkb and xkbcommon
+        // Compare LED states between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
         let wkb_caps = (wkb_leds & 2) != 0;
         let wkb_num = (wkb_leds & 1) != 0;
