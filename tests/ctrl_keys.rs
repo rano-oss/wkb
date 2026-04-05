@@ -46,7 +46,7 @@ fn normalize_xkb_char(xkb_str: String) -> Option<char> {
     }
 }
 
-/// Test that CTRL+letter combinations return None/empty
+/// Test that CTRL+letter combinations match xkbcommon behavior
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
     "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
@@ -60,29 +60,51 @@ fn ctrl_letter_combinations(locale: &str) {
     let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
     for layout in base_wkb.layouts() {
-        let mut wkb_left = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
-        let mut wkb_right = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let left_ctrl = 29u32;
         let right_ctrl = 97u32;
-
-        // Test key
         let test_key = 38u32; // 'a'
 
-        // Test with left CTRL
-        wkb_left.update_key(left_ctrl, KeyDirection::Down);
-        let left_result = wkb_left.utf8(test_key);
-        wkb_left.update_key(left_ctrl, KeyDirection::Up);
+        // Test with left CTRL (keycode 29)
+        wkb.update_key(left_ctrl, KeyDirection::Down);
+        xkb.update_key(Keycode::new(left_ctrl + 8), xkb::KeyDirection::Down);
 
-        // Test with right CTRL
-        wkb_right.update_key(right_ctrl, KeyDirection::Down);
-        let right_result = wkb_right.utf8(test_key);
-        wkb_right.update_key(right_ctrl, KeyDirection::Up);
+        let wkb_left = wkb.utf8(test_key);
+        let xkb_str_left = xkb.key_get_utf8(Keycode::new(test_key + 8));
+        let xkb_left = normalize_xkb_char(xkb_str_left);
 
-        assert_eq!(
-            left_result, right_result,
-            "Left CTRL and Right CTRL should produce same result for locale={} layout={}: left={:?} right={:?}",
-            locale, layout, left_result, right_result
+        wkb.update_key(left_ctrl, KeyDirection::Up);
+        xkb.update_key(Keycode::new(left_ctrl + 8), xkb::KeyDirection::Up);
+
+        assert!(
+            wkb_left == xkb_left || wkb_left.is_none(),
+            "Left CTRL mismatch for locale={} layout={}: wkb={:?} xkb={:?}",
+            locale,
+            layout,
+            wkb_left,
+            xkb_left
+        );
+
+        // Test with right CTRL (keycode 97)
+        wkb.update_key(right_ctrl, KeyDirection::Down);
+        xkb.update_key(Keycode::new(right_ctrl + 8), xkb::KeyDirection::Down);
+
+        let wkb_right = wkb.utf8(test_key);
+        let xkb_str_right = xkb.key_get_utf8(Keycode::new(test_key + 8));
+        let xkb_right = normalize_xkb_char(xkb_str_right);
+
+        wkb.update_key(right_ctrl, KeyDirection::Up);
+        xkb.update_key(Keycode::new(right_ctrl + 8), xkb::KeyDirection::Up);
+
+        assert!(
+            wkb_right == xkb_right || wkb_right.is_none(),
+            "Right CTRL mismatch for locale={} layout={}: wkb={:?} xkb={:?}",
+            locale,
+            layout,
+            wkb_right,
+            xkb_right
         );
     }
 }

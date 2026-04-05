@@ -891,51 +891,81 @@ fn build_modifiers_from_keymap(
             }
 
             let modmap = (*key).modmap;
+            let vmodmap = (*key).vmodmap;
             let evdev_code = keycode - evdev_offset;
 
-            if modmap == 0 {
-                continue; // This key doesn't produce any modifiers
+            // Check both real modifiers (modmap) and virtual modifiers (vmodmap)
+            if modmap != 0 || vmodmap != 0 {
+                // Check which modifiers this key produces
+                for mod_idx in 0..num_mods {
+                    let mod_mask = keymap::xkb_keymap_mod_get_mask(
+                        keymap,
+                        keymap::xkb_keymap_mod_get_name(keymap, mod_idx),
+                    );
+
+                    // Check both modmap and vmodmap
+                    if (modmap & mod_mask) != 0 || (vmodmap & mod_mask) != 0 {
+                        // This key produces this modifier
+                        let mod_name_ptr = keymap::xkb_keymap_mod_get_name(keymap, mod_idx);
+                        if mod_name_ptr.is_null() {
+                            continue;
+                        }
+
+                        let mod_name = CStr::from_ptr(mod_name_ptr).to_string_lossy().to_string();
+
+                        if let Some(&mod_type) = mod_name_to_type.get(&mod_name) {
+                            let evdev_code = keycode - evdev_offset;
+
+                            // Create appropriate ModKind based on modifier type
+                            let mod_kind = match mod_type {
+                                ModType::Caps | ModType::Num | ModType::Scroll => ModKind::Lock {
+                                    pressed: false,
+                                    locked: 0,
+                                    mod_type,
+                                },
+                                _ => ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type,
+                                },
+                            };
+
+                            // Update the modifiers map
+                            modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
+                        }
+                    }
+                }
             }
 
-            if modmap == 0 {
-                continue; // This key doesn't produce any modifiers
-            }
+            // Also check if this key produces a level shift keysym (like ISO_Level5_Shift)
+            // This handles cases like level5(rctrl_switch) where RCTL produces ISO_Level5_Shift keysym
+            let layout_idx = 0;
+            let level_idx = 0;
+            let mut syms_ptr: *const u32 = std::ptr::null();
+            let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
+                keymap,
+                keycode,
+                layout_idx,
+                level_idx,
+                &mut syms_ptr,
+            );
 
-            // Check which modifiers this key produces
-            for mod_idx in 0..num_mods {
-                let mod_mask = keymap::xkb_keymap_mod_get_mask(
-                    keymap,
-                    keymap::xkb_keymap_mod_get_name(keymap, mod_idx),
-                );
+            if num_syms == 1 && !syms_ptr.is_null() {
+                let keysym = *syms_ptr;
 
-                if (modmap & mod_mask) != 0 {
-                    // This key produces this modifier
-                    let mod_name_ptr = keymap::xkb_keymap_mod_get_name(keymap, mod_idx);
-                    if mod_name_ptr.is_null() {
-                        continue;
-                    }
+                // Check if this keysym is a level shift
+                // ISO_Level3_Shift = 0xfe03, ISO_Level5_Shift = 0xfe11
+                let mod_type = match keysym {
+                    0xfe03 => Some(ModType::Level3), // ISO_Level3_Shift
+                    0xfe11 => Some(ModType::Level5), // ISO_Level5_Shift
+                    _ => None,
+                };
 
-                    let mod_name = CStr::from_ptr(mod_name_ptr).to_string_lossy().to_string();
-
-                    if let Some(&mod_type) = mod_name_to_type.get(&mod_name) {
-                        let evdev_code = keycode - evdev_offset;
-
-                        // Create appropriate ModKind based on modifier type
-                        let mod_kind = match mod_type {
-                            ModType::Caps | ModType::Num | ModType::Scroll => ModKind::Lock {
-                                pressed: false,
-                                locked: 0,
-                                mod_type,
-                            },
-                            _ => ModKind::Pressed {
-                                pressed: false,
-                                mod_type,
-                            },
-                        };
-
-                        // Update the modifiers map
-                        modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
-                    }
+                if let Some(mod_type) = mod_type {
+                    let mod_kind = ModKind::Pressed {
+                        pressed: false,
+                        mod_type,
+                    };
+                    modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
                 }
             }
         }
