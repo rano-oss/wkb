@@ -12,7 +12,7 @@ regex = "1.10.2"
 unicode-normalization = "0.1.22"
 libc = "0.2"
 c2rust-bitfields = "0.22.1"
-xkb-parser = { path = "../xkb-parser" }
+xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }
 
 [dev-dependencies]
 test-case = "3.3.1"
