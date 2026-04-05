@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkb::KeyDirection;
+use wkb::{modifiers::CAPS_LOCK, KeyDirection};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -145,20 +145,11 @@ fn caps_plus_shift_combination(locale: &str) {
         }
         let (shift_code, _) = shift_code.unwrap();
 
-        // Find the actual caps lock key for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-
         // Activate caps lock
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         // Hold shift while caps is active
         wkb.update_key(shift_code, KeyDirection::Down);

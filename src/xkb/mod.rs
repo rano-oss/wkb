@@ -875,12 +875,11 @@ fn build_modifiers_from_keymap(
                 "Lock" => ModType::Caps,
                 "Mod2" => ModType::Num, // Num_Lock is typically mapped to Mod2
                 "Scroll_Lock" | "ScrollLock" => ModType::Scroll,
-                _ => ModType::None,
+                "Control" => ModType::None, // Control keys use ModType::None
+                _ => continue,              // Skip unknown modifiers
             };
 
-            if mod_type != ModType::None {
-                mod_name_to_type.insert(mod_name, mod_type);
-            }
+            mod_name_to_type.insert(mod_name, mod_type);
         }
 
         // Now iterate through all keys to find which keys produce which modifiers

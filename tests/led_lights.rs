@@ -44,15 +44,6 @@ fn caps_lock_led(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual caps lock key for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-
         // Get LED index for caps lock from xkbcommon
         let caps_led_name = "Caps Lock";
         let xkb_keymap = xkb.get_keymap();
@@ -71,10 +62,10 @@ fn caps_lock_led(locale: &str) {
         );
 
         // Press and release caps lock key
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_caps_on = (wkb_leds & 2) != 0;
@@ -87,10 +78,10 @@ fn caps_lock_led(locale: &str) {
         );
 
         // Press and release caps lock key again
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_caps_on = (wkb_leds & 2) != 0;
@@ -121,15 +112,6 @@ fn num_lock_led(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual num lock key for this layout
-        let num_code = match wkb.num_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a num lock key, skip this test
-                continue;
-            }
-        };
-
         // Get LED index for num lock from xkbcommon
         let num_led_name = "Num Lock";
         let xkb_keymap = xkb.get_keymap();
@@ -147,10 +129,10 @@ fn num_lock_led(locale: &str) {
         );
 
         // Press and release num lock key
-        wkb.update_key(num_code, KeyDirection::Down);
-        wkb.update_key(num_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_num_on = (wkb_leds & 1) != 0;
@@ -163,10 +145,10 @@ fn num_lock_led(locale: &str) {
         );
 
         // Press and release num lock key again
-        wkb.update_key(num_code, KeyDirection::Down);
-        wkb.update_key(num_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_num_on = (wkb_leds & 1) != 0;
@@ -197,15 +179,6 @@ fn scroll_lock_led(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual scroll lock key for this layout
-        let scroll_code = match wkb.scroll_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a scroll lock key, skip this test
-                continue;
-            }
-        };
-
         // Get LED index for scroll lock from xkbcommon
         let scroll_led_name = "Scroll Lock";
         let xkb_keymap = xkb.get_keymap();
@@ -223,10 +196,10 @@ fn scroll_lock_led(locale: &str) {
         );
 
         // Press and release scroll lock key
-        wkb.update_key(scroll_code, KeyDirection::Down);
-        wkb.update_key(scroll_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(scroll_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(scroll_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(SCROLL_LOCK, KeyDirection::Down);
+        wkb.update_key(SCROLL_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_scroll_on = (wkb_leds & 4) != 0;
@@ -239,10 +212,10 @@ fn scroll_lock_led(locale: &str) {
         );
 
         // Press and release scroll lock key again
-        wkb.update_key(scroll_code, KeyDirection::Down);
-        wkb.update_key(scroll_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(scroll_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(scroll_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(SCROLL_LOCK, KeyDirection::Down);
+        wkb.update_key(SCROLL_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
         let wkb_scroll_on = (wkb_leds & 4) != 0;
@@ -265,29 +238,6 @@ fn all_locks_pressed(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual lock keys for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-        let num_code = match wkb.num_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a num lock key, skip this test
-                continue;
-            }
-        };
-        let scroll_code = match wkb.scroll_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a scroll lock key, skip this test
-                continue;
-            }
-        };
-
         // Get LED indices
         let xkb_keymap = xkb.get_keymap();
         let caps_led_idx = xkb_keymap.led_get_index("Caps Lock");
@@ -295,7 +245,7 @@ fn all_locks_pressed(locale: &str) {
         let scroll_led_idx = xkb_keymap.led_get_index("Scroll Lock");
 
         // Press all three lock keys
-        for &code in &[caps_code, num_code, scroll_code] {
+        for &code in &[CAPS_LOCK, NUM_LOCK, SCROLL_LOCK] {
             wkb.update_key(code, KeyDirection::Down);
             wkb.update_key(code, KeyDirection::Up);
             xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Down);
