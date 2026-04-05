@@ -1,0 +1,1391 @@
+use c2rust_bitfields;
+pub mod internal {
+    pub type __builtin_va_list = [__va_list_tag; 1];
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+}
+pub mod __stddef_size_t_h {
+    pub type size_t = usize;
+}
+pub mod __stdarg___gnuc_va_list_h {
+    pub type __gnuc_va_list = __builtin_va_list;
+    use super::internal::__builtin_va_list;
+}
+pub mod types_h {
+    pub type __uint64_t = u64;
+    pub type __off_t = ::core::ffi::c_long;
+    pub type __off64_t = ::core::ffi::c_long;
+    pub type __ssize_t = ::core::ffi::c_long;
+}
+pub mod struct_FILE_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct _IO_FILE {
+        pub _flags: ::core::ffi::c_int,
+        pub _IO_read_ptr: *mut ::core::ffi::c_char,
+        pub _IO_read_end: *mut ::core::ffi::c_char,
+        pub _IO_read_base: *mut ::core::ffi::c_char,
+        pub _IO_write_base: *mut ::core::ffi::c_char,
+        pub _IO_write_ptr: *mut ::core::ffi::c_char,
+        pub _IO_write_end: *mut ::core::ffi::c_char,
+        pub _IO_buf_base: *mut ::core::ffi::c_char,
+        pub _IO_buf_end: *mut ::core::ffi::c_char,
+        pub _IO_save_base: *mut ::core::ffi::c_char,
+        pub _IO_backup_base: *mut ::core::ffi::c_char,
+        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _markers: *mut _IO_marker,
+        pub _chain: *mut _IO_FILE,
+        pub _fileno: ::core::ffi::c_int,
+        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _flags2: [u8; 3],
+        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _old_offset: __off_t,
+        pub _cur_column: ::core::ffi::c_ushort,
+        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _lock: *mut ::core::ffi::c_void,
+        pub _offset: __off64_t,
+        pub _codecvt: *mut _IO_codecvt,
+        pub _wide_data: *mut _IO_wide_data,
+        pub _freeres_list: *mut _IO_FILE,
+        pub _freeres_buf: *mut ::core::ffi::c_void,
+        pub _prevchain: *mut *mut _IO_FILE,
+        pub _mode: ::core::ffi::c_int,
+        pub _unused3: ::core::ffi::c_int,
+        pub _total_written: __uint64_t,
+        pub _unused2: [::core::ffi::c_char; 8],
+    }
+    pub type _IO_lock_t = ();
+    use super::types_h::{__off64_t, __off_t, __uint64_t};
+    extern "C" {
+        pub type _IO_wide_data;
+        pub type _IO_codecvt;
+        pub type _IO_marker;
+    }
+}
+pub mod FILE_h {
+    pub type FILE = _IO_FILE;
+    use super::struct_FILE_h::_IO_FILE;
+}
+pub mod stdio_h {
+    pub type va_list = __gnuc_va_list;
+    pub type ssize_t = __ssize_t;
+    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+    use super::types_h::__ssize_t;
+    use super::FILE_h::FILE;
+    use super::__stddef_size_t_h::size_t;
+    use super::internal::__va_list_tag;
+    extern "C" {
+        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn fopen(
+            __filename: *const ::core::ffi::c_char,
+            __modes: *const ::core::ffi::c_char,
+        ) -> *mut FILE;
+        pub fn snprintf(
+            __s: *mut ::core::ffi::c_char,
+            __maxlen: size_t,
+            __format: *const ::core::ffi::c_char,
+            ...
+        ) -> ::core::ffi::c_int;
+        pub fn vsnprintf(
+            __s: *mut ::core::ffi::c_char,
+            __maxlen: size_t,
+            __format: *const ::core::ffi::c_char,
+            __arg: ::core::ffi::VaList,
+        ) -> ::core::ffi::c_int;
+    }
+}
+pub mod messages_codes_h {
+    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
+    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
+    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
+    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
+    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
+    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
+    pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
+    pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
+    pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: xkb_message_code = 965;
+    pub const XKB_ERROR_INVALID_IDENTIFIER: xkb_message_code = 949;
+    pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: xkb_message_code = 935;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT_: xkb_message_code = 914;
+    pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: xkb_message_code = 903;
+    pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: xkb_message_code = 901;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: xkb_message_code = 893;
+    pub const XKB_WARNING_CONFLICTING_KEY_ACTION: xkb_message_code = 883;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT_: xkb_message_code = 876;
+    pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: xkb_message_code = 844;
+    pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: xkb_message_code = 822;
+    pub const XKB_ERROR_UNKNOWN_FIELD: xkb_message_code = 812;
+    pub const XKB_WARNING_CONFLICTING_MODMAP: xkb_message_code = 800;
+    pub const XKB_ERROR_INVALID_VALUE: xkb_message_code = 796;
+    pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: xkb_message_code = 784;
+    pub const XKB_WARNING_UNDEFINED_KEYCODE: xkb_message_code = 770;
+    pub const XKB_ERROR_INVALID_XKB_SYNTAX: xkb_message_code = 769;
+    pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: xkb_message_code = 762;
+    pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: xkb_message_code = 742;
+    pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: xkb_message_code = 711;
+    pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: xkb_message_code = 700;
+    pub const XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT: xkb_message_code = 693;
+    pub const XKB_ERROR_INVALID_COMPOSE_SYNTAX: xkb_message_code = 685;
+    pub const XKB_ERROR_INVALID_COMPOSE_LOCALE: xkb_message_code = 679;
+    pub const XKB_ERROR_INVALID_INCLUDED_FILE: xkb_message_code = 661;
+    pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: xkb_message_code = 645;
+    pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: xkb_message_code = 639;
+    pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
+    pub const XKB_ERROR_INVALID_REAL_MODIFIER: xkb_message_code = 623;
+    pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: xkb_message_code = 607;
+    pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: xkb_message_code = 595;
+    pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: xkb_message_code = 588;
+    pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
+    pub const XKB_ERROR_INVALID_ACTION_FIELD: xkb_message_code = 563;
+    pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
+    pub const XKB_ERROR_INVALID_FILE_ENCODING: xkb_message_code = 542;
+    pub const XKB_WARNING_CONFLICTING_KEY_NAME: xkb_message_code = 523;
+    pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: xkb_message_code = 516;
+    pub const XKB_WARNING_NUMERIC_KEYSYM: xkb_message_code = 489;
+    pub const XKB_ERROR_INVALID_OPERATION: xkb_message_code = 478;
+    pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: xkb_message_code = 461;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE_: xkb_message_code = 450;
+    pub const XKB_WARNING_MISSING_DEFAULT_SECTION: xkb_message_code = 433;
+    pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: xkb_message_code = 428;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: xkb_message_code = 407;
+    pub const XKB_ERROR_RECURSIVE_INCLUDE: xkb_message_code = 386;
+    pub const XKB_WARNING_DUPLICATE_ENTRY: xkb_message_code = 378;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_: xkb_message_code = 371;
+    pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: xkb_message_code = 362;
+    pub const XKB_ERROR_OVERLAPPING_OVERLAY: xkb_message_code = 355;
+    pub const XKB_ERROR_UNKNOWN_OPERATOR: xkb_message_code = 345;
+    pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: xkb_message_code = 338;
+    pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: xkb_message_code = 312;
+    pub const XKB_WARNING_NON_BASE_GROUP_NAME: xkb_message_code = 305;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: xkb_message_code = 302;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM: xkb_message_code = 301;
+    pub const XKB_WARNING_UNDEFINED_KEY_TYPE: xkb_message_code = 286;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: xkb_message_code = 266;
+    pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: xkb_message_code = 254;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: xkb_message_code = 239;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: xkb_message_code = 237;
+    pub const XKB_ERROR_UNKNOWN_STATEMENT: xkb_message_code = 222;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_: xkb_message_code = 214;
+    pub const XKB_ERROR_INVALID_MODMAP_ENTRY: xkb_message_code = 206;
+    pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: xkb_message_code = 203;
+    pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: xkb_message_code = 195;
+    pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: xkb_message_code = 193;
+    pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: xkb_message_code = 183;
+    pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: xkb_message_code = 172;
+    pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
+    pub const XKB_ERROR_WRONG_STATEMENT_TYPE: xkb_message_code = 150;
+    pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
+    pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: xkb_message_code = 123;
+    pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: xkb_message_code = 107;
+    pub const XKB_WARNING_ILLEGAL_KEYCODE_ALIAS: xkb_message_code = 101;
+    pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: xkb_message_code = 82;
+    pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: xkb_message_code = 60;
+    pub const XKB_ERROR_INTEGER_OVERFLOW: xkb_message_code = 52;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: xkb_message_code = 43;
+    pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
+    pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
+}
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::atom_table;
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    extern "C" {
+        pub fn xkb_context_getenv(
+            ctx: *mut xkb_context,
+            name: *const ::core::ffi::c_char,
+        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> darray_size_t;
+        pub fn xkb_context_failed_include_path_get(
+            ctx: *mut xkb_context,
+            idx: darray_size_t,
+        ) -> *const ::core::ffi::c_char;
+        pub fn xkb_context_include_path_get_extra_path(
+            ctx: *mut xkb_context,
+        ) -> *const ::core::ffi::c_char;
+        pub fn xkb_context_include_path_get_system_path(
+            ctx: *mut xkb_context,
+        ) -> *const ::core::ffi::c_char;
+        pub fn xkb_log(
+            ctx: *mut xkb_context,
+            level: xkb_log_level,
+            verbosity: ::core::ffi::c_int,
+            fmt: *const ::core::ffi::c_char,
+            ...
+        );
+    }
+}
+pub mod atom_h {
+    extern "C" {
+        pub type atom_table;
+    }
+}
+pub mod darray_h {
+    pub type darray_size_t = ::core::ffi::c_uint;
+}
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    use super::context_h::xkb_context;
+    extern "C" {
+        pub fn xkb_context_num_include_paths(context: *mut xkb_context) -> ::core::ffi::c_uint;
+        pub fn xkb_context_include_path_get(
+            context: *mut xkb_context,
+            index: ::core::ffi::c_uint,
+        ) -> *const ::core::ffi::c_char;
+    }
+}
+pub mod ast_h {
+    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub const FILE_TYPE_INVALID: xkb_file_type = 7;
+    pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
+    pub const FILE_TYPE_RULES: xkb_file_type = 6;
+    pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
+    pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
+    pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
+    pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
+    pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
+    pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
+    pub const FILE_TYPE_TYPES: xkb_file_type = 1;
+    pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
+    pub type stmt_type = ::core::ffi::c_uint;
+    pub const _STMT_NUM_VALUES: stmt_type = 37;
+    pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
+    pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
+    pub const STMT_LED_NAME: stmt_type = 34;
+    pub const STMT_LED_MAP: stmt_type = 33;
+    pub const STMT_GROUP_COMPAT: stmt_type = 32;
+    pub const STMT_MODMAP: stmt_type = 31;
+    pub const STMT_SYMBOLS: stmt_type = 30;
+    pub const STMT_VMOD: stmt_type = 29;
+    pub const STMT_INTERP: stmt_type = 28;
+    pub const STMT_TYPE: stmt_type = 27;
+    pub const STMT_VAR: stmt_type = 26;
+    pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
+    pub const STMT_EXPR_INVERT: stmt_type = 24;
+    pub const STMT_EXPR_NEGATE: stmt_type = 23;
+    pub const STMT_EXPR_NOT: stmt_type = 22;
+    pub const STMT_EXPR_ASSIGN: stmt_type = 21;
+    pub const STMT_EXPR_DIVIDE: stmt_type = 20;
+    pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
+    pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
+    pub const STMT_EXPR_ADD: stmt_type = 17;
+    pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
+    pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
+    pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
+    pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
+    pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
+    pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
+    pub const STMT_EXPR_IDENT: stmt_type = 10;
+    pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
+    pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
+    pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
+    pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
+    pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
+    pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
+    pub const STMT_ALIAS: stmt_type = 3;
+    pub const STMT_KEYCODE: stmt_type = 2;
+    pub const STMT_INCLUDE: stmt_type = 1;
+    pub const STMT_UNKNOWN: stmt_type = 0;
+    pub type merge_mode = ::core::ffi::c_uint;
+    pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
+    pub const MERGE_REPLACE: merge_mode = 3;
+    pub const MERGE_OVERRIDE: merge_mode = 2;
+    pub const MERGE_AUGMENT: merge_mode = 1;
+    pub const MERGE_DEFAULT: merge_mode = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _ParseCommon {
+        pub next: *mut _ParseCommon,
+        pub type_0: stmt_type,
+    }
+    pub type ParseCommon = _ParseCommon;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _IncludeStmt {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub stmt: *mut ::core::ffi::c_char,
+        pub file: *mut ::core::ffi::c_char,
+        pub map: *mut ::core::ffi::c_char,
+        pub modifier: *mut ::core::ffi::c_char,
+        pub next_incl: *mut _IncludeStmt,
+    }
+    pub type IncludeStmt = _IncludeStmt;
+    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub const MAP_IS_ALTGR: xkb_map_flags = 128;
+    pub const MAP_HAS_FN: xkb_map_flags = 64;
+    pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
+    pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
+    pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
+    pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
+    pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
+    pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct XkbFile {
+        pub common: ParseCommon,
+        pub name: *mut ::core::ffi::c_char,
+        pub defs: *mut ParseCommon,
+        pub file_type: xkb_file_type,
+        pub flags: xkb_map_flags,
+    }
+    extern "C" {
+        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const ::core::ffi::c_char;
+    }
+}
+pub mod scanner_utils_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner_loc {
+        pub line: size_t,
+        pub column: size_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner {
+        pub pos: size_t,
+        pub len: size_t,
+        pub s: *const ::core::ffi::c_char,
+        pub buf: [::core::ffi::c_char; 1024],
+        pub buf_pos: size_t,
+        pub token_pos: size_t,
+        pub cached_pos: size_t,
+        pub cached_loc: scanner_loc,
+        pub file_name: *const ::core::ffi::c_char,
+        pub ctx: *mut xkb_context,
+        pub priv_0: *mut ::core::ffi::c_void,
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_init(
+        mut s: *mut scanner,
+        mut ctx: *mut xkb_context,
+        mut string: *const ::core::ffi::c_char,
+        mut len: size_t,
+        mut file_name: *const ::core::ffi::c_char,
+        mut priv_0: *mut ::core::ffi::c_void,
+    ) {
+        unsafe {
+            (*s).s = string;
+            (*s).len = len;
+            (*s).pos = 0 as size_t;
+            (*s).token_pos = 0 as size_t;
+            (*s).cached_pos = 0 as size_t;
+            (*s).cached_loc.column = 1 as size_t;
+            (*s).cached_loc.line = (*s).cached_loc.column;
+            (*s).file_name = file_name;
+            (*s).ctx = ctx;
+            (*s).priv_0 = priv_0;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> ::core::ffi::c_char {
+        unsafe {
+            if ((*s).pos >= (*s).len) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+                return '\0' as i32 as ::core::ffi::c_char;
+            }
+            return *(*s).s.offset((*s).pos as isize);
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_eof(mut s: *mut scanner) -> bool {
+        unsafe {
+            return (*s).pos >= (*s).len;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_eol(mut s: *mut scanner) -> bool {
+        unsafe {
+            return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> ::core::ffi::c_char {
+        unsafe {
+            if scanner_eof(s) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+                return '\0' as i32 as ::core::ffi::c_char;
+            }
+            let c2rust_fresh0 = (*s).pos;
+            (*s).pos = (*s).pos.wrapping_add(1);
+            return *(*s).s.offset(c2rust_fresh0 as isize);
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: ::core::ffi::c_char) -> bool {
+        unsafe {
+            if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
+                as ::core::ffi::c_int as ::core::ffi::c_long
+                != 0
+            {
+                return false_0 != 0;
+            }
+            (*s).pos = (*s).pos.wrapping_add(1);
+            return true_0 != 0;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_buf_append(
+        mut s: *mut scanner,
+        mut ch: ::core::ffi::c_char,
+    ) -> bool {
+        unsafe {
+            if (*s).buf_pos.wrapping_add(1 as size_t)
+                >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+            {
+                return false_0 != 0;
+            }
+            let c2rust_fresh1 = (*s).buf_pos;
+            (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
+            (*s).buf[c2rust_fresh1 as usize] = ch;
+            return true_0 != 0;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn scanner_buf_appends(
+        mut s: *mut scanner,
+        mut str: *const ::core::ffi::c_char,
+    ) -> bool {
+        unsafe {
+            let mut ret: ::core::ffi::c_int = 0;
+            ret = snprintf(
+                (&raw mut (*s).buf as *mut ::core::ffi::c_char).offset((*s).buf_pos as isize),
+                (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t)
+                    .wrapping_sub((*s).buf_pos),
+                b"%s\0".as_ptr() as *const ::core::ffi::c_char,
+                str,
+            );
+            if ret < 0 as ::core::ffi::c_int
+                || ret as size_t
+                    >= (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
+                        .wrapping_sub((*s).buf_pos as usize)
+            {
+                return false_0 != 0;
+            }
+            (*s).buf_pos = (*s).buf_pos.wrapping_add(ret as size_t);
+            return true_0 != 0;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+    use super::stdbool_h::{false_0, true_0};
+    use super::stdio_h::snprintf;
+    extern "C" {
+        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    }
+}
+pub mod string_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn memcpy(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn strchr(
+            __s: *const ::core::ffi::c_char,
+            __c: ::core::ffi::c_int,
+        ) -> *mut ::core::ffi::c_char;
+        pub fn strpbrk(
+            __s: *const ::core::ffi::c_char,
+            __accept: *const ::core::ffi::c_char,
+        ) -> *mut ::core::ffi::c_char;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+    }
+}
+pub mod utils_h {
+    #[inline]
+    pub unsafe extern "C" fn snprintf_safe(
+        mut buf: *mut ::core::ffi::c_char,
+        mut sz: size_t,
+        mut format: *const ::core::ffi::c_char,
+        mut c2rust_args: ...
+    ) -> bool {
+        unsafe {
+            let mut ap: ::core::ffi::VaList;
+            let mut rc: ::core::ffi::c_int = 0;
+            ap = c2rust_args.clone();
+            rc = vsnprintf(buf, sz, format, ap);
+            return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::stdio_h::vsnprintf;
+}
+pub mod xkbcomp_priv_h {
+    use super::ast_h::XkbFile;
+    use super::context_h::xkb_context;
+    use super::FILE_h::FILE;
+    extern "C" {
+        pub fn XkbParseFile(
+            ctx: *mut xkb_context,
+            file: *mut FILE,
+            file_name: *const ::core::ffi::c_char,
+            map: *const ::core::ffi::c_char,
+        ) -> *mut XkbFile;
+        pub fn FreeXkbFile(file: *mut XkbFile);
+    }
+}
+pub mod stdbool_h {
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub mod assert_h {
+    extern "C" {
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+pub mod __stddef_null_h {
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+pub mod stdlib_h {
+    extern "C" {
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+    }
+}
+pub mod include_h {
+    pub const INCLUDE_MAX_DEPTH: ::core::ffi::c_int = 15 as ::core::ffi::c_int;
+    pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
+    pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
+    pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
+    pub static mut MERGE_MODE_PREFIXES: [::core::ffi::c_char; 4] = [
+        MERGE_OVERRIDE_PREFIX as ::core::ffi::c_char,
+        MERGE_AUGMENT_PREFIX as ::core::ffi::c_char,
+        MERGE_REPLACE_PREFIX as ::core::ffi::c_char,
+        0 as ::core::ffi::c_int as ::core::ffi::c_char,
+    ];
+}
+pub mod utils_paths_h {
+    extern "C" {
+        pub fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool;
+    }
+}
+pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+pub use self::__stddef_null_h::NULL;
+pub use self::__stddef_size_t_h::size_t;
+use self::assert_h::__assert_fail;
+pub use self::ast_h::{
+    _ParseCommon, merge_mode, xkb_file_type_to_string, xkb_map_flags, IncludeStmt, ParseCommon,
+    XkbFile, _IncludeStmt, stmt_type, xkb_file_type, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
+    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
+    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
+    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
+    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
+    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
+    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+};
+use self::atom_h::atom_table;
+pub use self::context_h::{
+    xkb_context, xkb_context_failed_include_path_get, xkb_context_getenv,
+    xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
+    xkb_context_num_failed_include_paths, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+};
+pub use self::darray_h::darray_size_t;
+pub use self::include_h::{
+    INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
+    MERGE_REPLACE_PREFIX,
+};
+pub use self::internal::{__builtin_va_list, __va_list_tag};
+pub use self::messages_codes_h::{
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
+    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
+    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
+    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
+    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
+    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
+    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
+    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
+    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
+    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
+    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
+    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
+    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
+    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
+    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
+    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+};
+pub use self::scanner_utils_h::{
+    scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
+    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
+};
+pub use self::stdbool_h::{false_0, true_0};
+pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
+use self::stdlib_h::free;
+use self::string_h::{memcpy, strchr, strdup, strlen, strpbrk};
+pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
+pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
+pub use self::utils_h::snprintf_safe;
+use self::utils_paths_h::is_absolute_path;
+pub use self::xkbcommon_h::{
+    xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,
+    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
+    XKB_LOG_LEVEL_WARNING,
+};
+use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
+pub use self::FILE_h::FILE;
+#[no_mangle]
+pub unsafe extern "C" fn ParseIncludeMap(
+    mut str_inout: *mut *mut ::core::ffi::c_char,
+    mut file_rtrn: *mut *mut ::core::ffi::c_char,
+    mut map_rtrn: *mut *mut ::core::ffi::c_char,
+    mut nextop_rtrn: *mut ::core::ffi::c_char,
+    mut extra_data: *mut *mut ::core::ffi::c_char,
+) -> bool {
+    unsafe {
+        let mut tmp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut next: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        str = *str_inout;
+        next = strpbrk(
+            str,
+            &raw const MERGE_MODE_PREFIXES as *const ::core::ffi::c_char,
+        );
+        if !next.is_null() {
+            *nextop_rtrn = *next;
+            let c2rust_fresh2 = next;
+            next = next.offset(1);
+            *c2rust_fresh2 = '\0' as i32 as ::core::ffi::c_char;
+        } else {
+            *nextop_rtrn = '\0' as i32 as ::core::ffi::c_char;
+            next = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        tmp = strchr(str, ':' as i32);
+        if !tmp.is_null() {
+            let c2rust_fresh3 = tmp;
+            tmp = tmp.offset(1);
+            *c2rust_fresh3 = '\0' as i32 as ::core::ffi::c_char;
+            *extra_data = strdup(tmp);
+        } else {
+            *extra_data = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        tmp = strchr(str, '(' as i32);
+        if tmp.is_null() {
+            *file_rtrn = strdup(str);
+            *map_rtrn = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
+        {
+            free(*extra_data as *mut ::core::ffi::c_void);
+            return false_0 != 0;
+        } else {
+            let c2rust_fresh4 = tmp;
+            tmp = tmp.offset(1);
+            *c2rust_fresh4 = '\0' as i32 as ::core::ffi::c_char;
+            *file_rtrn = strdup(str);
+            str = tmp;
+            tmp = strchr(str, ')' as i32);
+            if tmp.is_null()
+                || *tmp.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+                    != '\0' as i32
+            {
+                free(*file_rtrn as *mut ::core::ffi::c_void);
+                free(*extra_data as *mut ::core::ffi::c_void);
+                return false_0 != 0;
+            }
+            let c2rust_fresh5 = tmp;
+            tmp = tmp.offset(1);
+            *c2rust_fresh5 = '\0' as i32 as ::core::ffi::c_char;
+            *map_rtrn = strdup(str);
+        }
+        if *nextop_rtrn as ::core::ffi::c_int == '\0' as i32 {
+            *str_inout = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        } else if *nextop_rtrn as ::core::ffi::c_int == MERGE_OVERRIDE_PREFIX
+            || *nextop_rtrn as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
+            || *nextop_rtrn as ::core::ffi::c_int == MERGE_REPLACE_PREFIX
+        {
+            *str_inout = next;
+        } else {
+            return false_0 != 0;
+        }
+        return true_0 != 0;
+    }
+}
+static mut xkb_file_type_include_dirs: [*const ::core::ffi::c_char; 7] = [
+    b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
+    b"types\0".as_ptr() as *const ::core::ffi::c_char,
+    b"compat\0".as_ptr() as *const ::core::ffi::c_char,
+    b"symbols\0".as_ptr() as *const ::core::ffi::c_char,
+    b"geometry\0".as_ptr() as *const ::core::ffi::c_char,
+    b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
+    b"rules\0".as_ptr() as *const ::core::ffi::c_char,
+];
+unsafe extern "C" fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const ::core::ffi::c_char {
+    unsafe {
+        if type_0 as ::core::ffi::c_uint
+            >= _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            return b"\0".as_ptr() as *const ::core::ffi::c_char;
+        }
+        return xkb_file_type_include_dirs[type_0 as usize];
+    }
+}
+unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
+    unsafe {
+        if xkb_context_num_include_paths(ctx) > 0 as ::core::ffi::c_uint {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] %u include paths searched:\n\0".as_ptr() as *const ::core::ffi::c_char,
+                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                xkb_context_num_include_paths(ctx),
+            );
+            let mut i: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+            while i < xkb_context_num_include_paths(ctx) {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                    xkb_context_include_path_get(ctx, i),
+                );
+                i = i.wrapping_add(1);
+            }
+        } else {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] There are no include paths to search\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+            );
+        }
+        if xkb_context_num_failed_include_paths(ctx) > 0 as darray_size_t {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] %u include paths could not be added:\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                xkb_context_num_failed_include_paths(ctx),
+            );
+            let mut i_0: darray_size_t = 0 as darray_size_t;
+            while i_0 < xkb_context_num_failed_include_paths(ctx) {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                    xkb_context_failed_include_path_get(ctx, i_0),
+                );
+                i_0 = i_0.wrapping_add(1);
+            }
+        }
+    }
+}
+unsafe extern "C" fn expand_percent(
+    mut ctx: *mut xkb_context,
+    mut parent_file_name: *const ::core::ffi::c_char,
+    mut typeDir: *const ::core::ffi::c_char,
+    mut buf: *mut ::core::ffi::c_char,
+    mut buf_size: size_t,
+    mut name: *const ::core::ffi::c_char,
+    mut name_len: size_t,
+) -> size_t {
+    unsafe {
+        let mut s: scanner = scanner {
+            pos: 0,
+            len: 0,
+            s: ::core::ptr::null::<::core::ffi::c_char>(),
+            buf: [0; 1024],
+            buf_pos: 0,
+            token_pos: 0,
+            cached_pos: 0,
+            cached_loc: scanner_loc { line: 0, column: 0 },
+            file_name: ::core::ptr::null::<::core::ffi::c_char>(),
+            ctx: ::core::ptr::null_mut::<xkb_context>(),
+            priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
+        };
+        scanner_init(&raw mut s, ctx, name, name_len, parent_file_name, NULL);
+        s.buf_pos = 0 as size_t;
+        while !scanner_eof(&raw mut s) && !scanner_eol(&raw mut s) {
+            if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
+                if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
+                    scanner_buf_append(&raw mut s, '%' as i32 as ::core::ffi::c_char);
+                } else if scanner_chr(&raw mut s, 'H' as i32 as ::core::ffi::c_char) {
+                    let mut home: *const ::core::ffi::c_char =
+                        xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const ::core::ffi::c_char);
+                    if home.is_null() {
+                        let mut loc: scanner_loc = scanner_token_location(&raw mut s);
+                        xkb_log(
+                            s.ctx,
+                            XKB_LOG_LEVEL_ERROR,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"%s:%zu:%zu: %%H was used in an include statement, but the HOME environment variable is not set\n\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            s.file_name,
+                            loc.line,
+                            loc.column,
+                        );
+                        return 0 as size_t;
+                    }
+                    if !scanner_buf_appends(&raw mut s, home) {
+                        let mut loc_0: scanner_loc = scanner_token_location(&raw mut s);
+                        xkb_log(
+                            s.ctx,
+                            XKB_LOG_LEVEL_ERROR,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%H is too long\n\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                            s.file_name,
+                            loc_0.line,
+                            loc_0.column,
+                        );
+                        return 0 as size_t;
+                    }
+                } else if scanner_chr(&raw mut s, 'S' as i32 as ::core::ffi::c_char) {
+                    let mut default_root: *const ::core::ffi::c_char =
+                        xkb_context_include_path_get_system_path(ctx);
+                    if !scanner_buf_appends(&raw mut s, default_root)
+                        || !scanner_buf_append(&raw mut s, '/' as i32 as ::core::ffi::c_char)
+                        || !scanner_buf_appends(&raw mut s, typeDir)
+                    {
+                        let mut loc_1: scanner_loc = scanner_token_location(&raw mut s);
+                        xkb_log(
+                            s.ctx,
+                            XKB_LOG_LEVEL_ERROR,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%S is too long\n\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                            s.file_name,
+                            loc_1.line,
+                            loc_1.column,
+                        );
+                        return 0 as size_t;
+                    }
+                } else if scanner_chr(&raw mut s, 'E' as i32 as ::core::ffi::c_char) {
+                    let mut default_root_0: *const ::core::ffi::c_char =
+                        xkb_context_include_path_get_extra_path(ctx);
+                    if !scanner_buf_appends(&raw mut s, default_root_0)
+                        || !scanner_buf_append(&raw mut s, '/' as i32 as ::core::ffi::c_char)
+                        || !scanner_buf_appends(&raw mut s, typeDir)
+                    {
+                        let mut loc_2: scanner_loc = scanner_token_location(&raw mut s);
+                        xkb_log(
+                            s.ctx,
+                            XKB_LOG_LEVEL_ERROR,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%E is too long\n\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                            s.file_name,
+                            loc_2.line,
+                            loc_2.column,
+                        );
+                        return 0 as size_t;
+                    }
+                } else {
+                    let mut loc_3: scanner_loc = scanner_token_location(&raw mut s);
+                    xkb_log(
+                        s.ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"[XKB-%03d] %s:%zu:%zu: unknown %% format (%c) in include statement\n\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                        s.file_name,
+                        loc_3.line,
+                        loc_3.column,
+                        scanner_peek(&raw mut s) as ::core::ffi::c_int,
+                    );
+                    return 0 as size_t;
+                }
+            } else {
+                scanner_buf_append(&raw mut s, scanner_next(&raw mut s));
+            }
+        }
+        if !scanner_buf_append(&raw mut s, '\0' as i32 as ::core::ffi::c_char) {
+            let mut loc_4: scanner_loc = scanner_token_location(&raw mut s);
+            xkb_log(
+                s.ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] %s:%zu:%zu: include path is too long; max: %zu\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                s.file_name,
+                loc_4.line,
+                loc_4.column,
+                ::core::mem::size_of::<[::core::ffi::c_char; 1024]>(),
+            );
+            return 0 as size_t;
+        }
+        if (s.buf_pos > buf_size) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+            let mut loc_5: scanner_loc = scanner_token_location(&raw mut s);
+            xkb_log(
+                s.ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] %s:%zu:%zu: include path is too long: %zu > %zu\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                s.file_name,
+                loc_5.line,
+                loc_5.column,
+                s.buf_pos,
+                buf_size,
+            );
+            return 0 as size_t;
+        }
+        memcpy(
+            buf as *mut ::core::ffi::c_void,
+            &raw mut s.buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+            s.buf_pos,
+        );
+        return s.buf_pos;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn expand_path(
+    mut ctx: *mut xkb_context,
+    mut parent_file_name: *const ::core::ffi::c_char,
+    mut name: *const ::core::ffi::c_char,
+    mut name_len: size_t,
+    mut type_0: xkb_file_type,
+    mut buf: *mut ::core::ffi::c_char,
+    mut buf_size: size_t,
+) -> ssize_t {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        let mut k: size_t = 0;
+        k = 0 as size_t;
+        loop {
+            if !(k < name_len) {
+                c2rust_current_block = 17179679302217393232;
+                break;
+            }
+            if *name.offset(k as isize) as ::core::ffi::c_int == '%' as i32 {
+                c2rust_current_block = 15593259132448327734;
+                break;
+            }
+            k = k.wrapping_add(1);
+        }
+        match c2rust_current_block {
+            17179679302217393232 => return 0 as ssize_t,
+            _ => {
+                if (k >= buf_size) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+                    xkb_log(
+                        ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"[XKB-%03d] Path is too long: %zu > %zu, got raw path: %.*s\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
+                        k,
+                        buf_size,
+                        name_len as ::core::ffi::c_uint,
+                        name,
+                    );
+                    return -1 as ::core::ffi::c_int as ssize_t;
+                }
+                memcpy(
+                    buf as *mut ::core::ffi::c_void,
+                    name as *const ::core::ffi::c_void,
+                    k,
+                );
+                let mut typeDir: *const ::core::ffi::c_char = DirectoryForInclude(type_0);
+                let mut count: size_t = expand_percent(
+                    ctx,
+                    parent_file_name,
+                    typeDir,
+                    buf.offset(k as isize),
+                    buf_size.wrapping_sub(k),
+                    name.offset(k as isize),
+                    name_len.wrapping_sub(k),
+                );
+                if count == 0 {
+                    return -1 as ::core::ffi::c_int as ssize_t;
+                }
+                count = count.wrapping_add(k);
+                if *buf.offset(count.wrapping_sub(1 as size_t) as isize) as ::core::ffi::c_int
+                    == '\0' as i32
+                {
+                } else {
+                    __assert_fail(
+                        b"buf[count - 1] == '\\0'\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        b"../src/xkbcomp/include.c\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        306 as ::core::ffi::c_uint,
+                        b"ssize_t expand_path(struct xkb_context *, const char *, const char *, size_t, enum xkb_file_type, char *, size_t)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+                return count as ssize_t - 1 as ssize_t;
+            }
+        };
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn FindFileInXkbPath(
+    mut ctx: *mut xkb_context,
+    mut parent_file_name: *const ::core::ffi::c_char,
+    mut name: *const ::core::ffi::c_char,
+    mut name_len: size_t,
+    mut type_0: xkb_file_type,
+    mut buf: *mut ::core::ffi::c_char,
+    mut buf_size: size_t,
+    mut offset: *mut ::core::ffi::c_uint,
+    mut required: bool,
+) -> *mut FILE {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        if !is_absolute_path(name) {
+        } else {
+            __assert_fail(
+                b"!is_absolute_path(name)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
+                327 as ::core::ffi::c_uint,
+                b"FILE *FindFileInXkbPath(struct xkb_context *, const char *, const char *, size_t, enum xkb_file_type, char *, size_t, unsigned int *, _Bool)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut name_buffer: *mut ::core::ffi::c_char =
+            ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut typeDir: *const ::core::ffi::c_char = DirectoryForInclude(type_0);
+        let mut i: ::core::ffi::c_uint = *offset;
+        loop {
+            if !(i < xkb_context_num_include_paths(ctx)) {
+                c2rust_current_block = 8515828400728868193;
+                break;
+            }
+            if !snprintf_safe(
+                buf,
+                buf_size,
+                b"%s/%s/%.*s\0".as_ptr() as *const ::core::ffi::c_char,
+                xkb_context_include_path_get(ctx, i),
+                typeDir,
+                name_len as ::core::ffi::c_uint,
+                name,
+            ) {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] Path is too long: expected max length of %zu, got: %s/%s/%.*s\n\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                    XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
+                    buf_size,
+                    xkb_context_include_path_get(ctx, i),
+                    typeDir,
+                    name_len as ::core::ffi::c_uint,
+                    name,
+                );
+            } else {
+                file = fopen(buf, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+                if !file.is_null() {
+                    *offset = i;
+                    c2rust_current_block = 17619028831370153636;
+                    break;
+                }
+            }
+            i = i.wrapping_add(1);
+        }
+        match c2rust_current_block {
+            8515828400728868193 => {
+                if required as ::core::ffi::c_int != 0 && *offset == 0 as ::core::ffi::c_uint {
+                    xkb_log(
+                        ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"[XKB-%03d] Couldn't find file \"%s/%.*s\" in include paths\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                        typeDir,
+                        name_len as ::core::ffi::c_uint,
+                        name,
+                    );
+                    LogIncludePaths(ctx);
+                }
+            }
+            _ => {}
+        }
+        free(name_buffer as *mut ::core::ffi::c_void);
+        return file;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn ExceedsIncludeMaxDepth(
+    mut ctx: *mut xkb_context,
+    mut include_depth: ::core::ffi::c_uint,
+) -> bool {
+    unsafe {
+        if include_depth >= INCLUDE_MAX_DEPTH as ::core::ffi::c_uint {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Exceeded include depth threshold (%u)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_RECURSIVE_INCLUDE as ::core::ffi::c_int,
+                15 as ::core::ffi::c_int,
+            );
+            return true_0 != 0;
+        } else {
+            return false_0 != 0;
+        };
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn ProcessIncludeFile(
+    mut ctx: *mut xkb_context,
+    mut stmt: *const IncludeStmt,
+    mut file_type: xkb_file_type,
+    mut path: *mut ::core::ffi::c_char,
+    mut path_size: size_t,
+) -> *mut XkbFile {
+    unsafe {
+        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut stmt_file: *const ::core::ffi::c_char = (*stmt).file;
+        let mut stmt_file_len: size_t = strlen(stmt_file);
+        let expanded: ssize_t = expand_path(
+            ctx,
+            b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+            stmt_file,
+            stmt_file_len,
+            file_type,
+            path,
+            path_size,
+        ) as ssize_t;
+        if expanded < 0 as ssize_t {
+            return ::core::ptr::null_mut::<XkbFile>();
+        } else if expanded > 0 as ssize_t {
+            stmt_file = path;
+            stmt_file_len = expanded as size_t;
+            if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
+            } else {
+                __assert_fail(
+                    b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    407 as ::core::ffi::c_uint,
+                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+        }
+        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+        let absolute_path: bool = is_absolute_path(stmt_file) as bool;
+        if absolute_path {
+            if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
+            } else {
+                __assert_fail(
+                    b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    416 as ::core::ffi::c_uint,
+                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            file = fopen(stmt_file, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        } else if (expanded != 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+            file = ::core::ptr::null_mut::<FILE>();
+        } else {
+            file = FindFileInXkbPath(
+                ctx,
+                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                stmt_file,
+                stmt_file_len,
+                file_type,
+                path,
+                path_size,
+                &raw mut offset,
+                true_0 != 0,
+            );
+        }
+        while !file.is_null() {
+            xkb_file = XkbParseFile(ctx, file, (*stmt).file, (*stmt).map);
+            fclose(file);
+            if !xkb_file.is_null() {
+                if (*xkb_file).file_type as ::core::ffi::c_uint != file_type as ::core::ffi::c_uint
+                {
+                    xkb_log(
+                        ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"[XKB-%03d] Include file of wrong type (expected %s, got %s); Include file \"%s\" ignored\n\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                        XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
+                        xkb_file_type_to_string(file_type),
+                        xkb_file_type_to_string((*xkb_file).file_type),
+                        (*stmt).file,
+                    );
+                    FreeXkbFile(xkb_file);
+                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                } else if !(*stmt).map.is_null()
+                    || (*xkb_file).flags as ::core::ffi::c_uint != 0
+                        && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
+                {
+                    break;
+                } else if candidate.is_null() {
+                    candidate = xkb_file;
+                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                } else {
+                    FreeXkbFile(xkb_file);
+                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                }
+            }
+            if absolute_path {
+                break;
+            }
+            offset = offset.wrapping_add(1);
+            file = FindFileInXkbPath(
+                ctx,
+                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                stmt_file,
+                stmt_file_len,
+                file_type,
+                path,
+                path_size,
+                &raw mut offset,
+                true_0 != 0,
+            );
+        }
+        if xkb_file.is_null() {
+            xkb_file = candidate;
+        } else {
+            FreeXkbFile(candidate);
+        }
+        if xkb_file.is_null() {
+            if !(*stmt).map.is_null() {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] Couldn't process include statement for '%s(%s)'\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
+                    (*stmt).file,
+                    (*stmt).map,
+                );
+            } else {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] Couldn't process include statement for '%s'\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
+                    (*stmt).file,
+                );
+            }
+        }
+        return xkb_file;
+    }
+}

@@ -1,9 +1,24 @@
 use test_case::test_matrix;
-use wkb;
-use xkbcommon::{self, xkb::Keycode};
+use wkbxkb as wkb;
+use xkbcommon::{
+    self,
+    xkb::{self, Keycode},
+};
 
-mod common;
-use common::xkb_new_keymap_from_names;
+fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let variant_str = layout.unwrap_or_else(|| String::new());
+    xkb::Keymap::new_from_names(
+        &context,
+        "evdev",
+        "pc105",
+        &locale,
+        &variant_str,
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap()
+}
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",

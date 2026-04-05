@@ -3,9 +3,11 @@ use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
 use wkb::Token;
-use xkb_parser::compose::{parse_compose_file, ComposeEntry};
-use xkb_parser::keysym_name_to_char;
+use wkbxkb as wkb;
 use xkbcommon::xkb::{self, compose};
+
+// Use xkb-parser for compose file parsing
+use xkb_parser::{keysym_name_to_char, parse_compose_file, ComposeEntry};
 
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution
@@ -103,7 +105,10 @@ fn run_compose_test(
 
     let entries = parse_compose_file(compose_path);
     if entries.is_empty() {
-        println!("SKIP: no entries in {}", compose_path.display());
+        println!(
+            "SKIP: no entries in {} (parser not fully implemented)",
+            compose_path.display()
+        );
         return;
     }
 
@@ -641,6 +646,7 @@ fn compose_resolution_xkb_compose_map() {
 #[test]
 fn compose_resolution_full_locale_names() {
     // Full locale names should match compose.dir directly
+    // Only test locales that have their own compose file directories
     let cases: &[(&str, &str)] = &[
         ("en_US.UTF-8", "en_US.UTF-8/Compose"),
         ("de_DE.UTF-8", "en_US.UTF-8/Compose"),

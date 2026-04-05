@@ -1,0 +1,907 @@
+use c2rust_bitfields;
+pub mod internal {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+}
+pub mod __stddef_size_t_h {
+    pub type size_t = usize;
+}
+pub mod types_h {
+    pub type __uint32_t = u32;
+}
+pub mod stdint_uintn_h {
+    pub type uint32_t = __uint32_t;
+    use super::types_h::__uint32_t;
+}
+pub mod xkbcommon_errors_h {
+    pub type xkb_error_code = ::core::ffi::c_int;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
+    pub const XKB_SUCCESS: xkb_error_code = 0;
+    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
+}
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::atom_table;
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    extern "C" {
+        pub fn xkb_log(
+            ctx: *mut xkb_context,
+            level: xkb_log_level,
+            verbosity: ::core::ffi::c_int,
+            fmt: *const ::core::ffi::c_char,
+            ...
+        );
+    }
+}
+pub mod atom_h {
+    extern "C" {
+        pub type atom_table;
+    }
+}
+pub mod darray_h {
+    pub type darray_size_t = ::core::ffi::c_uint;
+    #[inline]
+    pub unsafe extern "C" fn darray_next_alloc(
+        mut alloc: darray_size_t,
+        mut need: darray_size_t,
+        mut itemSize: size_t,
+    ) -> darray_size_t {
+        unsafe {
+            if (need as size_t)
+                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
+                    .wrapping_mul(2 as ::core::ffi::c_uint)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_div(itemSize)
+                    .wrapping_div(2 as size_t)
+            {
+            } else {
+                __assert_fail(
+                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    220 as ::core::ffi::c_uint,
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if alloc == 0 as darray_size_t {
+                alloc = 4 as darray_size_t;
+            }
+            while alloc < need {
+                alloc = alloc.wrapping_mul(2 as darray_size_t);
+            }
+            return alloc;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::__assert_fail;
+}
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_rmlvo_builder_flags = ::core::ffi::c_uint;
+    pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
+    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    use super::context_h::xkb_context;
+    use super::stdint_uintn_h::uint32_t;
+    extern "C" {
+        pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
+        pub fn xkb_context_unref(context: *mut xkb_context);
+    }
+}
+pub mod rmlvo_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder {
+        pub rules: *mut ::core::ffi::c_char,
+        pub model: *mut ::core::ffi::c_char,
+        pub layouts: xkb_rmlvo_builder_layouts,
+        pub options: xkb_rmlvo_builder_options,
+        pub refcnt: ::core::ffi::c_int,
+        pub ctx: *mut xkb_context,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_options {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_rmlvo_builder_option,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_option {
+        pub option: *mut ::core::ffi::c_char,
+        pub layout: xkb_layout_index_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_layouts {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_rmlvo_builder_layout,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_layout {
+        pub layout: *mut ::core::ffi::c_char,
+        pub variant: *mut ::core::ffi::c_char,
+    }
+    use super::context_h::xkb_context;
+    use super::darray_h::darray_size_t;
+    use super::xkbcommon_h::xkb_layout_index_t;
+}
+pub mod messages_codes_h {
+    pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
+    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
+    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
+    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
+    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
+    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
+    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
+    pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
+    pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
+    pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: xkb_message_code = 965;
+    pub const XKB_ERROR_INVALID_IDENTIFIER: xkb_message_code = 949;
+    pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: xkb_message_code = 935;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT_: xkb_message_code = 914;
+    pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: xkb_message_code = 903;
+    pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: xkb_message_code = 901;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: xkb_message_code = 893;
+    pub const XKB_WARNING_CONFLICTING_KEY_ACTION: xkb_message_code = 883;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT_: xkb_message_code = 876;
+    pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: xkb_message_code = 844;
+    pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: xkb_message_code = 822;
+    pub const XKB_ERROR_UNKNOWN_FIELD: xkb_message_code = 812;
+    pub const XKB_WARNING_CONFLICTING_MODMAP: xkb_message_code = 800;
+    pub const XKB_ERROR_INVALID_VALUE: xkb_message_code = 796;
+    pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: xkb_message_code = 784;
+    pub const XKB_WARNING_UNDEFINED_KEYCODE: xkb_message_code = 770;
+    pub const XKB_ERROR_INVALID_XKB_SYNTAX: xkb_message_code = 769;
+    pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: xkb_message_code = 762;
+    pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: xkb_message_code = 742;
+    pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: xkb_message_code = 711;
+    pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: xkb_message_code = 700;
+    pub const XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT: xkb_message_code = 693;
+    pub const XKB_ERROR_INVALID_COMPOSE_SYNTAX: xkb_message_code = 685;
+    pub const XKB_ERROR_INVALID_COMPOSE_LOCALE: xkb_message_code = 679;
+    pub const XKB_ERROR_INVALID_INCLUDED_FILE: xkb_message_code = 661;
+    pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: xkb_message_code = 645;
+    pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: xkb_message_code = 639;
+    pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
+    pub const XKB_ERROR_INVALID_REAL_MODIFIER: xkb_message_code = 623;
+    pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: xkb_message_code = 607;
+    pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: xkb_message_code = 595;
+    pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: xkb_message_code = 588;
+    pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
+    pub const XKB_ERROR_INVALID_ACTION_FIELD: xkb_message_code = 563;
+    pub const XKB_ERROR_INVALID_FILE_ENCODING: xkb_message_code = 542;
+    pub const XKB_WARNING_CONFLICTING_KEY_NAME: xkb_message_code = 523;
+    pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: xkb_message_code = 516;
+    pub const XKB_WARNING_NUMERIC_KEYSYM: xkb_message_code = 489;
+    pub const XKB_ERROR_INVALID_OPERATION: xkb_message_code = 478;
+    pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: xkb_message_code = 461;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE_: xkb_message_code = 450;
+    pub const XKB_WARNING_MISSING_DEFAULT_SECTION: xkb_message_code = 433;
+    pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: xkb_message_code = 428;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: xkb_message_code = 407;
+    pub const XKB_ERROR_RECURSIVE_INCLUDE: xkb_message_code = 386;
+    pub const XKB_WARNING_DUPLICATE_ENTRY: xkb_message_code = 378;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_: xkb_message_code = 371;
+    pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: xkb_message_code = 362;
+    pub const XKB_ERROR_OVERLAPPING_OVERLAY: xkb_message_code = 355;
+    pub const XKB_ERROR_UNKNOWN_OPERATOR: xkb_message_code = 345;
+    pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: xkb_message_code = 338;
+    pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: xkb_message_code = 312;
+    pub const XKB_WARNING_NON_BASE_GROUP_NAME: xkb_message_code = 305;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: xkb_message_code = 302;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM: xkb_message_code = 301;
+    pub const XKB_WARNING_UNDEFINED_KEY_TYPE: xkb_message_code = 286;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: xkb_message_code = 266;
+    pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: xkb_message_code = 254;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: xkb_message_code = 239;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: xkb_message_code = 237;
+    pub const XKB_ERROR_UNKNOWN_STATEMENT: xkb_message_code = 222;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_: xkb_message_code = 214;
+    pub const XKB_ERROR_INVALID_MODMAP_ENTRY: xkb_message_code = 206;
+    pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: xkb_message_code = 203;
+    pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: xkb_message_code = 195;
+    pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: xkb_message_code = 193;
+    pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: xkb_message_code = 183;
+    pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: xkb_message_code = 172;
+    pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
+    pub const XKB_ERROR_WRONG_STATEMENT_TYPE: xkb_message_code = 150;
+    pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
+    pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: xkb_message_code = 123;
+    pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: xkb_message_code = 107;
+    pub const XKB_WARNING_ILLEGAL_KEYCODE_ALIAS: xkb_message_code = 101;
+    pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: xkb_message_code = 82;
+    pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: xkb_message_code = 60;
+    pub const XKB_ERROR_INTEGER_OVERFLOW: xkb_message_code = 52;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: xkb_message_code = 43;
+    pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
+    pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
+}
+pub mod stdio_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn snprintf(
+            __s: *mut ::core::ffi::c_char,
+            __maxlen: size_t,
+            __format: *const ::core::ffi::c_char,
+            ...
+        ) -> ::core::ffi::c_int;
+    }
+}
+pub mod stdlib_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
+            -> *mut ::core::ffi::c_void;
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+    }
+}
+pub mod utils_h {
+    #[inline]
+    pub unsafe extern "C" fn strdup_safe(
+        mut s: *const ::core::ffi::c_char,
+    ) -> *mut ::core::ffi::c_char {
+        unsafe {
+            return if !s.is_null() {
+                strdup(s)
+            } else {
+                ::core::ptr::null_mut::<::core::ffi::c_char>()
+            };
+        }
+    }
+    use super::__stddef_null_h::NULL;
+    use super::string_h::strdup;
+}
+pub mod assert_h {
+    extern "C" {
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+pub mod string_h {
+    extern "C" {
+        pub fn strcmp(
+            __s1: *const ::core::ffi::c_char,
+            __s2: *const ::core::ffi::c_char,
+        ) -> ::core::ffi::c_int;
+        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    }
+}
+pub mod __stddef_null_h {
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+pub mod keymap_h {
+    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
+}
+pub mod rules_h {
+    pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
+}
+pub mod stdbool_h {
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub use self::__stddef_null_h::NULL;
+pub use self::__stddef_size_t_h::size_t;
+use self::assert_h::__assert_fail;
+use self::atom_h::atom_table;
+pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::internal::__va_list_tag;
+pub use self::keymap_h::XKB_MAX_GROUPS;
+pub use self::messages_codes_h::{
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
+    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
+    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
+    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
+    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
+    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
+    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
+    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
+    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
+    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
+    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
+    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
+    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
+    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
+    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
+    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+};
+pub use self::rmlvo_h::{
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
+    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+};
+pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
+pub use self::stdbool_h::{false_0, true_0};
+pub use self::stdint_uintn_h::uint32_t;
+use self::stdio_h::snprintf;
+use self::stdlib_h::{calloc, free, realloc};
+use self::string_h::{strcmp, strdup};
+pub use self::types_h::__uint32_t;
+pub use self::utils_h::strdup_safe;
+pub use self::xkbcommon_errors_h::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
+pub use self::xkbcommon_h::{
+    xkb_context_ref, xkb_context_unref, xkb_layout_index_t, xkb_log_level, xkb_rmlvo_builder_flags,
+    xkb_rule_names, XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
+};
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_new(
+    mut context: *mut xkb_context,
+    mut rules: *const ::core::ffi::c_char,
+    mut model: *const ::core::ffi::c_char,
+    mut flags: xkb_rmlvo_builder_flags,
+) -> *mut xkb_rmlvo_builder {
+    unsafe {
+        static mut XKB_RMLVO_BUILDER_FLAGS: xkb_rmlvo_builder_flags = XKB_RMLVO_BUILDER_NO_FLAGS;
+        if flags as ::core::ffi::c_uint & !(XKB_RMLVO_BUILDER_FLAGS as ::core::ffi::c_uint) != 0 {
+            xkb_log(
+                context,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"Unsupported RMLVO flags: 0x%x\n\0".as_ptr() as *const ::core::ffi::c_char,
+                flags as ::core::ffi::c_uint & !(XKB_RMLVO_BUILDER_FLAGS as ::core::ffi::c_uint),
+            );
+            return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+        }
+        let builder: *mut xkb_rmlvo_builder = calloc(
+            1 as size_t,
+            ::core::mem::size_of::<xkb_rmlvo_builder>() as size_t,
+        ) as *mut xkb_rmlvo_builder;
+        if !builder.is_null() {
+            (*builder).refcnt = 1 as ::core::ffi::c_int;
+            (*builder).ctx = xkb_context_ref(context);
+            (*builder).rules = strdup_safe(rules);
+            if !((*builder).rules.is_null() && !rules.is_null()) {
+                (*builder).model = strdup_safe(model);
+                if !((*builder).model.is_null() && !model.is_null()) {
+                    (*builder).layouts.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_layout>();
+                    (*builder).layouts.size = 0 as darray_size_t;
+                    (*builder).layouts.alloc = 0 as darray_size_t;
+                    (*builder).options.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_option>();
+                    (*builder).options.size = 0 as darray_size_t;
+                    (*builder).options.alloc = 0 as darray_size_t;
+                    return builder;
+                }
+            }
+        }
+        xkb_log(
+            context,
+            XKB_LOG_LEVEL_ERROR,
+            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            b"[XKB-%03d] Cannot allocate a RMLVO builder.\n\0".as_ptr()
+                as *const ::core::ffi::c_char,
+            XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+        );
+        xkb_rmlvo_builder_unref(builder);
+        return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
+    mut rmlvo: *mut xkb_rmlvo_builder,
+    mut layout: *const ::core::ffi::c_char,
+    mut variant: *const ::core::ffi::c_char,
+    mut options: *const *const ::core::ffi::c_char,
+    mut options_len: size_t,
+) -> bool {
+    unsafe {
+        let idx: xkb_layout_index_t = (*rmlvo).layouts.size as xkb_layout_index_t;
+        if idx >= XKB_MAX_GROUPS as xkb_layout_index_t {
+            xkb_log(
+                (*rmlvo).ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Maximum layout count reached: %u; cannot add layout \"%s(%s)\" to the RMLVO builder.\n\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                32 as ::core::ffi::c_int,
+                layout,
+                if !variant.is_null() {
+                    variant
+                } else {
+                    b"\0".as_ptr() as *const ::core::ffi::c_char
+                },
+            );
+            return false_0 != 0;
+        }
+        let new: xkb_rmlvo_builder_layout = xkb_rmlvo_builder_layout {
+            layout: strdup_safe(layout),
+            variant: strdup_safe(variant),
+        };
+        if new.layout.is_null() || new.variant.is_null() && !variant.is_null() {
+            free(new.layout as *mut ::core::ffi::c_void);
+            free(new.variant as *mut ::core::ffi::c_void);
+            xkb_log(
+                (*rmlvo).ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Cannot allocate layout \"%s(%s)\" to the RMLVO builder.\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                layout,
+                if !variant.is_null() {
+                    variant
+                } else {
+                    b"\0".as_ptr() as *const ::core::ffi::c_char
+                },
+            );
+            return false_0 != 0;
+        }
+        (*rmlvo).layouts.size = (*rmlvo).layouts.size.wrapping_add(1 as darray_size_t);
+        let mut __need: darray_size_t = (*rmlvo).layouts.size;
+        if __need > (*rmlvo).layouts.alloc {
+            (*rmlvo).layouts.alloc = darray_next_alloc(
+                (*rmlvo).layouts.alloc,
+                __need,
+                ::core::mem::size_of::<xkb_rmlvo_builder_layout>() as size_t,
+            );
+            (*rmlvo).layouts.item = realloc(
+                (*rmlvo).layouts.item as *mut ::core::ffi::c_void,
+                ((*rmlvo).layouts.alloc as size_t)
+                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_layout>() as size_t),
+            ) as *mut xkb_rmlvo_builder_layout;
+        }
+        *(*rmlvo)
+            .layouts
+            .item
+            .offset((*rmlvo).layouts.size.wrapping_sub(1 as darray_size_t) as isize) = new;
+        if options.is_null() {
+            options_len = 0 as size_t;
+        }
+        let mut k: size_t = 0 as size_t;
+        while k < options_len {
+            let option: xkb_rmlvo_builder_option = xkb_rmlvo_builder_option {
+                option: strdup_safe(*options.offset(k as isize)),
+                layout: idx,
+            };
+            if option.option.is_null() {
+                xkb_log(
+                    (*rmlvo).ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] Cannot allocate option \"%s\" of layout \"%s(%s)\" to the RMLVO builder.\n\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                    XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                    *options.offset(k as isize),
+                    layout,
+                    if !variant.is_null() {
+                        variant
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                );
+                return false_0 != 0;
+            }
+            (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
+            let mut __need_0: darray_size_t = (*rmlvo).options.size;
+            if __need_0 > (*rmlvo).options.alloc {
+                (*rmlvo).options.alloc = darray_next_alloc(
+                    (*rmlvo).options.alloc,
+                    __need_0,
+                    ::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t,
+                );
+                (*rmlvo).options.item = realloc(
+                    (*rmlvo).options.item as *mut ::core::ffi::c_void,
+                    ((*rmlvo).options.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t),
+                ) as *mut xkb_rmlvo_builder_option;
+            }
+            *(*rmlvo)
+                .options
+                .item
+                .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = option;
+            k = k.wrapping_add(1);
+        }
+        return true_0 != 0;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
+    mut rmlvo: *mut xkb_rmlvo_builder,
+    mut option: *const ::core::ffi::c_char,
+) -> bool {
+    unsafe {
+        if option.is_null() {
+            return false_0 != 0;
+        }
+        let mut prev: *const xkb_rmlvo_builder_option =
+            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+        if !(*rmlvo).options.item.is_null() {
+            prev = (*rmlvo)
+                .options
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_option;
+            while prev
+                < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
+                    as *mut xkb_rmlvo_builder_option
+                    as *const xkb_rmlvo_builder_option
+            {
+                if (*prev).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
+                    && strcmp((*prev).option, option) == 0 as ::core::ffi::c_int
+                {
+                    return true_0 != 0;
+                }
+                prev = prev.offset(1);
+            }
+        }
+        let new: xkb_rmlvo_builder_option = xkb_rmlvo_builder_option {
+            option: strdup_safe(option),
+            layout: XKB_LAYOUT_INVALID as xkb_layout_index_t,
+        };
+        if new.option.is_null() {
+            xkb_log(
+                (*rmlvo).ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Cannot allocate option \"%s\" to the RMLVO builder.\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                option,
+            );
+            return false_0 != 0;
+        }
+        (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
+        let mut __need: darray_size_t = (*rmlvo).options.size;
+        if __need > (*rmlvo).options.alloc {
+            (*rmlvo).options.alloc = darray_next_alloc(
+                (*rmlvo).options.alloc,
+                __need,
+                ::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t,
+            );
+            (*rmlvo).options.item = realloc(
+                (*rmlvo).options.item as *mut ::core::ffi::c_void,
+                ((*rmlvo).options.alloc as size_t)
+                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t),
+            ) as *mut xkb_rmlvo_builder_option;
+        }
+        *(*rmlvo)
+            .options
+            .item
+            .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = new;
+        return true_0 != 0;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_ref(
+    mut rmlvo: *mut xkb_rmlvo_builder,
+) -> *mut xkb_rmlvo_builder {
+    unsafe {
+        if (*rmlvo).refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"rmlvo->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/rmlvo.c\0".as_ptr() as *const ::core::ffi::c_char,
+                152 as ::core::ffi::c_uint,
+                b"struct xkb_rmlvo_builder *xkb_rmlvo_builder_ref(struct xkb_rmlvo_builder *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        (*rmlvo).refcnt += 1;
+        return rmlvo;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
+    unsafe {
+        if rmlvo.is_null() || (*rmlvo).refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"!rmlvo || rmlvo->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/rmlvo.c\0".as_ptr() as *const ::core::ffi::c_char,
+                160 as ::core::ffi::c_uint,
+                b"void xkb_rmlvo_builder_unref(struct xkb_rmlvo_builder *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        if rmlvo.is_null() || {
+            (*rmlvo).refcnt -= 1;
+            (*rmlvo).refcnt > 0 as ::core::ffi::c_int
+        } {
+            return;
+        }
+        free((*rmlvo).rules as *mut ::core::ffi::c_void);
+        free((*rmlvo).model as *mut ::core::ffi::c_void);
+        let mut layout: *const xkb_rmlvo_builder_layout =
+            ::core::ptr::null::<xkb_rmlvo_builder_layout>();
+        if !(*rmlvo).layouts.item.is_null() {
+            layout = (*rmlvo)
+                .layouts
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_layout;
+            while layout
+                < (*rmlvo).layouts.item.offset((*rmlvo).layouts.size as isize)
+                    as *mut xkb_rmlvo_builder_layout
+                    as *const xkb_rmlvo_builder_layout
+            {
+                free((*layout).layout as *mut ::core::ffi::c_void);
+                free((*layout).variant as *mut ::core::ffi::c_void);
+                layout = layout.offset(1);
+            }
+        }
+        free((*rmlvo).layouts.item as *mut ::core::ffi::c_void);
+        (*rmlvo).layouts.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_layout>();
+        (*rmlvo).layouts.size = 0 as darray_size_t;
+        (*rmlvo).layouts.alloc = 0 as darray_size_t;
+        let mut option: *const xkb_rmlvo_builder_option =
+            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+        if !(*rmlvo).options.item.is_null() {
+            option = (*rmlvo)
+                .options
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_option;
+            while option
+                < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
+                    as *mut xkb_rmlvo_builder_option
+                    as *const xkb_rmlvo_builder_option
+            {
+                free((*option).option as *mut ::core::ffi::c_void);
+                option = option.offset(1);
+            }
+        }
+        free((*rmlvo).options.item as *mut ::core::ffi::c_void);
+        (*rmlvo).options.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_option>();
+        (*rmlvo).options.size = 0 as darray_size_t;
+        (*rmlvo).options.alloc = 0 as darray_size_t;
+        xkb_context_unref((*rmlvo).ctx);
+        free(rmlvo as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
+    mut builder: *const xkb_rmlvo_builder,
+    mut rmlvo: *mut xkb_rule_names,
+    mut buf: *mut ::core::ffi::c_char,
+    mut buf_size: size_t,
+) -> bool {
+    unsafe {
+        (*rmlvo).rules = (*builder).rules;
+        (*rmlvo).model = (*builder).model;
+        let mut start: *mut ::core::ffi::c_char = buf;
+        (*rmlvo).layout = start;
+        let mut k: darray_size_t = 0;
+        let mut layout: *const xkb_rmlvo_builder_layout =
+            ::core::ptr::null::<xkb_rmlvo_builder_layout>();
+        if !(*builder).layouts.item.is_null() {
+            k = 0 as darray_size_t;
+            layout = (*builder)
+                .layouts
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_layout;
+            while k < (*builder).layouts.size {
+                let mut count: ::core::ffi::c_int = snprintf(
+                    start,
+                    buf_size,
+                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    if k > 0 as darray_size_t {
+                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                    (*layout).layout,
+                );
+                if count < 0 as ::core::ffi::c_int || count as size_t >= buf_size {
+                    return false_0 != 0;
+                }
+                buf_size = buf_size.wrapping_sub(count as size_t);
+                start = start.offset(count as isize);
+                k = k.wrapping_add(1);
+                layout = layout.offset(1);
+            }
+        }
+        if buf_size <= 1 as size_t {
+            return false_0 != 0;
+        }
+        *start = '\0' as i32 as ::core::ffi::c_char;
+        start = start.offset(1);
+        buf_size = buf_size.wrapping_sub(1);
+        (*rmlvo).variant = start;
+        if !(*builder).layouts.item.is_null() {
+            k = 0 as darray_size_t;
+            layout = (*builder)
+                .layouts
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_layout;
+            while k < (*builder).layouts.size {
+                let mut count_0: ::core::ffi::c_int = snprintf(
+                    start,
+                    buf_size,
+                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    if k > 0 as darray_size_t {
+                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                    if !(*layout).variant.is_null() {
+                        (*layout).variant as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                );
+                if count_0 < 0 as ::core::ffi::c_int || count_0 as size_t >= buf_size {
+                    return false_0 != 0;
+                }
+                buf_size = buf_size.wrapping_sub(count_0 as size_t);
+                start = start.offset(count_0 as isize);
+                k = k.wrapping_add(1);
+                layout = layout.offset(1);
+            }
+        }
+        if buf_size <= 1 as size_t {
+            return false_0 != 0;
+        }
+        *start = '\0' as i32 as ::core::ffi::c_char;
+        start = start.offset(1);
+        buf_size = buf_size.wrapping_sub(1);
+        (*rmlvo).options = start;
+        let mut option: *const xkb_rmlvo_builder_option =
+            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+        if !(*builder).options.item.is_null() {
+            k = 0 as darray_size_t;
+            option = (*builder)
+                .options
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_rmlvo_builder_option;
+            while k < (*builder).options.size {
+                let mut count_1: ::core::ffi::c_int = snprintf(
+                    start,
+                    buf_size,
+                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    if k > 0 as darray_size_t {
+                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                    (*option).option,
+                );
+                if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
+                    return false_0 != 0;
+                }
+                buf_size = buf_size.wrapping_sub(count_1 as size_t);
+                start = start.offset(count_1 as isize);
+                if (*option).layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
+                    count_1 = snprintf(
+                        start,
+                        buf_size,
+                        b"%c%u\0".as_ptr() as *const ::core::ffi::c_char,
+                        OPTIONS_GROUP_SPECIFIER_PREFIX,
+                        (*option).layout,
+                    );
+                    if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
+                        return false_0 != 0;
+                    }
+                    buf_size = buf_size.wrapping_sub(count_1 as size_t);
+                    start = start.offset(count_1 as isize);
+                }
+                k = k.wrapping_add(1);
+                option = option.offset(1);
+            }
+        }
+        if buf_size == 0 as size_t {
+            return false_0 != 0;
+        }
+        *start = '\0' as i32 as ::core::ffi::c_char;
+        return true_0 != 0;
+    }
+}

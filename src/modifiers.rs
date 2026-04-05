@@ -322,6 +322,10 @@ impl Modifiers {
         }
     }
 
+    pub fn set_modifier(&mut self, evdev_code: u32, modifier: Modifier) {
+        self.0.insert(evdev_code, modifier);
+    }
+
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.0
             .values()
@@ -440,6 +444,54 @@ impl Modifiers {
         } else {
             false
         }
+    }
+
+    /// Find the keycode that has a specific ModType
+    pub fn find_key_with_mod_type(&self, target_mod_type: ModType) -> Option<u32> {
+        self.0.iter().find_map(|(code, modifier)| match modifier {
+            Modifier::Single(mod_kind) => match mod_kind {
+                ModKind::Pressed { mod_type, .. }
+                | ModKind::Lock { mod_type, .. }
+                | ModKind::Latch { mod_type, .. } => {
+                    if *mod_type == target_mod_type {
+                        Some(*code)
+                    } else {
+                        None
+                    }
+                }
+                ModKind::None => None,
+            },
+            Modifier::Leveled(map) => {
+                for mod_kind in map.values() {
+                    match mod_kind {
+                        ModKind::Pressed { mod_type, .. }
+                        | ModKind::Lock { mod_type, .. }
+                        | ModKind::Latch { mod_type, .. } => {
+                            if *mod_type == target_mod_type {
+                                return Some(*code);
+                            }
+                        }
+                        ModKind::None => {}
+                    }
+                }
+                None
+            }
+        })
+    }
+
+    /// Find the keycode for caps lock in the current layout
+    pub fn caps_lock_key(&self) -> Option<u32> {
+        self.find_key_with_mod_type(ModType::Caps)
+    }
+
+    /// Find the keycode for num lock in the current layout
+    pub fn num_lock_key(&self) -> Option<u32> {
+        self.find_key_with_mod_type(ModType::Num)
+    }
+
+    /// Find the keycode for scroll lock in the current layout
+    pub fn scroll_lock_key(&self) -> Option<u32> {
+        self.find_key_with_mod_type(ModType::Scroll)
     }
 }
 

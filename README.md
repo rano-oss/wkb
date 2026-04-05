@@ -16,10 +16,11 @@ Todo list(tentative):
 - [x] State keys tests
 - [x] Num_lock tests
 - [x] Caps_lock tests
-- [ ] Combined modifiers tests, edge case tests for all modifiers
-- [ ] Try reaching edge case parity for exisisting tests
+- [x] Combined modifiers tests, edge case tests for all modifiers
+- [x] Layout comparison test, light test, etc
+- [x] Try reaching edge case parity for exisisting tests
 - [x] Handle cases where no keys should be returned
-- [ ] Test cases where no keys should be returned
+- [x] Test cases where no keys should be returned
 - [x] Compare Modifiers State between xkb and wkb test
 - [ ] Keymap handling/storage
 - [x] Composing

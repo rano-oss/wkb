@@ -1,13 +1,19 @@
+#![feature(extern_types)]
+#![feature(c_variadic)]
+#![feature(register_tool)]
+#![register_tool(c2rust)]
+#![allow(deref_nullptr)]
+
+#[macro_use]
+extern crate c2rust_bitfields;
+
 pub use composer::{ComposeState, Composer, ListComposer, Token};
 use std::collections::{BTreeMap, HashMap, HashSet};
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
-use repeat::REPEAT_DEFAULT;
 pub mod modifiers;
-use xkb::repeat;
 pub mod xkb;
-include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
@@ -258,5 +264,20 @@ impl<C: Composer> WKB<C> {
 
     pub fn current_layout(&self) -> String {
         self.layout.clone()
+    }
+
+    /// Find the keycode for caps lock in the current layout
+    pub fn caps_lock_key(&self) -> Option<u32> {
+        self.modifiers.caps_lock_key()
+    }
+
+    /// Find the keycode for num lock in the current layout
+    pub fn num_lock_key(&self) -> Option<u32> {
+        self.modifiers.num_lock_key()
+    }
+
+    /// Find the keycode for scroll lock in the current layout
+    pub fn scroll_lock_key(&self) -> Option<u32> {
+        self.modifiers.scroll_lock_key()
     }
 }

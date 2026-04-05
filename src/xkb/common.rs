@@ -1,0 +1,4048 @@
+use c2rust_bitfields;
+pub mod internal {
+    pub type __builtin_va_list = [__va_list_tag; 1];
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+}
+pub mod __stddef_size_t_h {
+    pub type size_t = usize;
+}
+pub mod types_h {
+    pub type __int8_t = i8;
+    pub type __uint8_t = u8;
+    pub type __int16_t = i16;
+    pub type __uint16_t = u16;
+    pub type __int32_t = i32;
+    pub type __uint32_t = u32;
+    pub type __uint64_t = u64;
+    pub type __dev_t = ::core::ffi::c_ulong;
+    pub type __uid_t = ::core::ffi::c_uint;
+    pub type __gid_t = ::core::ffi::c_uint;
+    pub type __ino_t = ::core::ffi::c_ulong;
+    pub type __mode_t = ::core::ffi::c_uint;
+    pub type __nlink_t = ::core::ffi::c_ulong;
+    pub type __off_t = ::core::ffi::c_long;
+    pub type __off64_t = ::core::ffi::c_long;
+    pub type __time_t = ::core::ffi::c_long;
+    pub type __blksize_t = ::core::ffi::c_long;
+    pub type __blkcnt_t = ::core::ffi::c_long;
+    pub type __syscall_slong_t = ::core::ffi::c_long;
+}
+pub mod stdint_intn_h {
+    pub type int8_t = __int8_t;
+    pub type int16_t = __int16_t;
+    pub type int32_t = __int32_t;
+    use super::types_h::{__int16_t, __int32_t, __int8_t};
+}
+pub mod struct_timespec_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct timespec {
+        pub tv_sec: __time_t,
+        pub tv_nsec: __syscall_slong_t,
+    }
+    use super::types_h::{__syscall_slong_t, __time_t};
+}
+pub mod struct_stat_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct stat {
+        pub st_dev: __dev_t,
+        pub st_ino: __ino_t,
+        pub st_nlink: __nlink_t,
+        pub st_mode: __mode_t,
+        pub st_uid: __uid_t,
+        pub st_gid: __gid_t,
+        pub __pad0: ::core::ffi::c_int,
+        pub st_rdev: __dev_t,
+        pub st_size: __off_t,
+        pub st_blksize: __blksize_t,
+        pub st_blocks: __blkcnt_t,
+        pub st_atim: timespec,
+        pub st_mtim: timespec,
+        pub st_ctim: timespec,
+        pub __glibc_reserved: [__syscall_slong_t; 3],
+    }
+    use super::struct_timespec_h::timespec;
+    use super::types_h::{
+        __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off_t,
+        __syscall_slong_t, __uid_t,
+    };
+}
+pub mod __stdarg___gnuc_va_list_h {
+    pub type __gnuc_va_list = __builtin_va_list;
+    use super::internal::__builtin_va_list;
+}
+pub mod struct_FILE_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct _IO_FILE {
+        pub _flags: ::core::ffi::c_int,
+        pub _IO_read_ptr: *mut ::core::ffi::c_char,
+        pub _IO_read_end: *mut ::core::ffi::c_char,
+        pub _IO_read_base: *mut ::core::ffi::c_char,
+        pub _IO_write_base: *mut ::core::ffi::c_char,
+        pub _IO_write_ptr: *mut ::core::ffi::c_char,
+        pub _IO_write_end: *mut ::core::ffi::c_char,
+        pub _IO_buf_base: *mut ::core::ffi::c_char,
+        pub _IO_buf_end: *mut ::core::ffi::c_char,
+        pub _IO_save_base: *mut ::core::ffi::c_char,
+        pub _IO_backup_base: *mut ::core::ffi::c_char,
+        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _markers: *mut _IO_marker,
+        pub _chain: *mut _IO_FILE,
+        pub _fileno: ::core::ffi::c_int,
+        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _flags2: [u8; 3],
+        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _old_offset: __off_t,
+        pub _cur_column: ::core::ffi::c_ushort,
+        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _lock: *mut ::core::ffi::c_void,
+        pub _offset: __off64_t,
+        pub _codecvt: *mut _IO_codecvt,
+        pub _wide_data: *mut _IO_wide_data,
+        pub _freeres_list: *mut _IO_FILE,
+        pub _freeres_buf: *mut ::core::ffi::c_void,
+        pub _prevchain: *mut *mut _IO_FILE,
+        pub _mode: ::core::ffi::c_int,
+        pub _unused3: ::core::ffi::c_int,
+        pub _total_written: __uint64_t,
+        pub _unused2: [::core::ffi::c_char; 8],
+    }
+    pub type _IO_lock_t = ();
+    use super::types_h::{__off64_t, __off_t, __uint64_t};
+    extern "C" {
+        pub type _IO_wide_data;
+        pub type _IO_codecvt;
+        pub type _IO_marker;
+    }
+}
+pub mod FILE_h {
+    pub type FILE = _IO_FILE;
+    use super::struct_FILE_h::_IO_FILE;
+}
+pub mod stdio_h {
+    pub type va_list = __gnuc_va_list;
+    pub const _IONBF: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
+    pub const BUFSIZ: ::core::ffi::c_int = 8192 as ::core::ffi::c_int;
+    use super::FILE_h::FILE;
+    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+    use super::__stddef_size_t_h::size_t;
+    use super::internal::__va_list_tag;
+    extern "C" {
+        pub static mut stdout: *mut FILE;
+        pub static mut stderr: *mut FILE;
+        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn fopen(
+            __filename: *const ::core::ffi::c_char,
+            __modes: *const ::core::ffi::c_char,
+        ) -> *mut FILE;
+        pub fn setvbuf(
+            __stream: *mut FILE,
+            __buf: *mut ::core::ffi::c_char,
+            __modes: ::core::ffi::c_int,
+            __n: size_t,
+        ) -> ::core::ffi::c_int;
+        pub fn fprintf(
+            __stream: *mut FILE,
+            __format: *const ::core::ffi::c_char,
+            ...
+        ) -> ::core::ffi::c_int;
+        pub fn printf(__format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+        pub fn vasprintf(
+            __ptr: *mut *mut ::core::ffi::c_char,
+            __f: *const ::core::ffi::c_char,
+            __arg: ::core::ffi::VaList,
+        ) -> ::core::ffi::c_int;
+        pub fn fread(
+            __ptr: *mut ::core::ffi::c_void,
+            __size: size_t,
+            __n: size_t,
+            __stream: *mut FILE,
+        ) -> ::core::ffi::c_ulong;
+        pub fn fwrite(
+            __ptr: *const ::core::ffi::c_void,
+            __size: size_t,
+            __n: size_t,
+            __s: *mut FILE,
+        ) -> ::core::ffi::c_ulong;
+        pub fn feof(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn ferror(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn fileno(__stream: *mut FILE) -> ::core::ffi::c_int;
+    }
+}
+pub mod stdint_uintn_h {
+    pub type uint8_t = __uint8_t;
+    pub type uint16_t = __uint16_t;
+    pub type uint32_t = __uint32_t;
+    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
+}
+pub mod xkbcommon_errors_h {
+    pub type xkb_error_code = ::core::ffi::c_int;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
+    pub const XKB_SUCCESS: xkb_error_code = 0;
+    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
+}
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::atom_table;
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+}
+pub mod atom_h {
+    pub type xkb_atom_t = darray_size_t;
+    use super::darray_h::darray_size_t;
+    extern "C" {
+        pub type atom_table;
+    }
+}
+pub mod darray_h {
+    pub type darray_size_t = ::core::ffi::c_uint;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct darray_string {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[inline]
+    pub unsafe extern "C" fn darray_next_alloc(
+        mut alloc: darray_size_t,
+        mut need: darray_size_t,
+        mut itemSize: size_t,
+    ) -> darray_size_t {
+        unsafe {
+            if (need as size_t)
+                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
+                    .wrapping_mul(2 as ::core::ffi::c_uint)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_div(itemSize)
+                    .wrapping_div(2 as size_t)
+            {
+            } else {
+                __assert_fail(
+                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    220 as ::core::ffi::c_uint,
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if alloc == 0 as darray_size_t {
+                alloc = 4 as darray_size_t;
+            }
+            while alloc < need {
+                alloc = alloc.wrapping_mul(2 as darray_size_t);
+            }
+            return alloc;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::__assert_fail;
+}
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_keycode_t = uint32_t;
+    pub type xkb_mod_mask_t = uint32_t;
+    pub type xkb_mod_index_t = uint32_t;
+    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
+    pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
+    pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
+    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
+    pub const XKB_STATE_LEDS: xkb_state_component = 256;
+    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
+    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
+    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
+    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
+    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
+    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
+    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
+    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
+    pub type xkb_layout_mask_t = uint32_t;
+    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
+    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
+    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
+    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
+    pub type xkb_led_mask_t = uint32_t;
+    pub type xkb_rmlvo_builder_flags = ::core::ffi::c_uint;
+    pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
+    pub type xkb_context_flags = ::core::ffi::c_uint;
+    pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
+    pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
+    pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
+    pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
+    pub type xkb_keymap_serialize_flags = ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
+    pub const XKB_KEYMAP_SERIALIZE_KEEP_UNUSED: xkb_keymap_serialize_flags = 2;
+    pub const XKB_KEYMAP_SERIALIZE_PRETTY: xkb_keymap_serialize_flags = 1;
+    pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
+    pub type xkb_event_type = ::core::ffi::c_uint;
+    pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
+    pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
+    pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
+    pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
+    pub type xkb_key_direction = ::core::ffi::c_uint;
+    pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
+    pub const XKB_KEY_DOWN: xkb_key_direction = 1;
+    pub const XKB_KEY_UP: xkb_key_direction = 0;
+    pub type xkb_consumed_mode = ::core::ffi::c_uint;
+    pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
+    pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
+    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+    use super::keymap_h::xkb_keymap;
+    use super::rmlvo_h::xkb_rmlvo_builder;
+    use super::stdint_uintn_h::uint32_t;
+    use super::xkbcommon_errors_h::xkb_error_code;
+    use super::FILE_h::FILE;
+    extern "C" {
+        pub type xkb_machine;
+        pub type xkb_state;
+        pub type xkb_event;
+        pub type xkb_events;
+        pub fn xkb_rmlvo_builder_new(
+            context: *mut xkb_context,
+            rules: *const ::core::ffi::c_char,
+            model: *const ::core::ffi::c_char,
+            flags: xkb_rmlvo_builder_flags,
+        ) -> *mut xkb_rmlvo_builder;
+        pub fn xkb_rmlvo_builder_append_layout(
+            rmlvo: *mut xkb_rmlvo_builder,
+            layout: *const ::core::ffi::c_char,
+            variant: *const ::core::ffi::c_char,
+            options: *const *const ::core::ffi::c_char,
+            options_len: size_t,
+        ) -> bool;
+        pub fn xkb_rmlvo_builder_append_option(
+            rmlvo: *mut xkb_rmlvo_builder,
+            option: *const ::core::ffi::c_char,
+        ) -> bool;
+        pub fn xkb_rmlvo_builder_unref(rmlvo: *mut xkb_rmlvo_builder);
+        pub fn xkb_keysym_get_name(
+            keysym: xkb_keysym_t,
+            buffer: *mut ::core::ffi::c_char,
+            size: size_t,
+        ) -> ::core::ffi::c_int;
+        pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
+        pub fn xkb_context_unref(context: *mut xkb_context);
+        pub fn xkb_context_include_path_append(
+            context: *mut xkb_context,
+            path: *const ::core::ffi::c_char,
+        ) -> ::core::ffi::c_int;
+        pub fn xkb_keymap_new_from_rmlvo(
+            rmlvo: *const xkb_rmlvo_builder,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_compile_flags,
+        ) -> *mut xkb_keymap;
+        pub fn xkb_keymap_new_from_names2(
+            context: *mut xkb_context,
+            names: *const xkb_rule_names,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_compile_flags,
+        ) -> *mut xkb_keymap;
+        pub fn xkb_keymap_new_from_file(
+            context: *mut xkb_context,
+            file: *mut FILE,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_compile_flags,
+        ) -> *mut xkb_keymap;
+        pub fn xkb_keymap_new_from_string(
+            context: *mut xkb_context,
+            string: *const ::core::ffi::c_char,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_compile_flags,
+        ) -> *mut xkb_keymap;
+        pub fn xkb_keymap_new_from_buffer(
+            context: *mut xkb_context,
+            buffer: *const ::core::ffi::c_char,
+            length: size_t,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_compile_flags,
+        ) -> *mut xkb_keymap;
+        pub fn xkb_keymap_unref(keymap: *mut xkb_keymap);
+        pub fn xkb_keymap_get_as_string2(
+            keymap: *mut xkb_keymap,
+            format: xkb_keymap_format,
+            flags: xkb_keymap_serialize_flags,
+        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_keymap_num_leds(keymap: *mut xkb_keymap) -> xkb_led_index_t;
+        pub fn xkb_event_get_type(event: *const xkb_event) -> xkb_event_type;
+        pub fn xkb_event_get_keycode(event: *const xkb_event) -> xkb_keycode_t;
+        pub fn xkb_events_next(events: *mut xkb_events) -> *const xkb_event;
+        pub fn xkb_machine_process_key(
+            machine: *mut xkb_machine,
+            key: xkb_keycode_t,
+            direction: xkb_key_direction,
+            events: *mut xkb_events,
+        ) -> xkb_error_code;
+        pub fn xkb_state_new(keymap: *mut xkb_keymap) -> *mut xkb_state;
+        pub fn xkb_state_unref(state: *mut xkb_state);
+        pub fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap;
+        pub fn xkb_state_update_key(
+            state: *mut xkb_state,
+            key: xkb_keycode_t,
+            direction: xkb_key_direction,
+        ) -> xkb_state_component;
+        pub fn xkb_state_update_event(
+            state: *mut xkb_state,
+            event: *const xkb_event,
+        ) -> xkb_state_component;
+        pub fn xkb_state_key_get_syms(
+            state: *mut xkb_state,
+            key: xkb_keycode_t,
+            syms_out: *mut *const xkb_keysym_t,
+        ) -> ::core::ffi::c_int;
+        pub fn xkb_state_serialize_mods(
+            state: *mut xkb_state,
+            components: xkb_state_component,
+        ) -> xkb_mod_mask_t;
+        pub fn xkb_state_serialize_layout(
+            state: *mut xkb_state,
+            components: xkb_state_component,
+        ) -> xkb_layout_index_t;
+        pub fn xkb_state_led_index_is_active(
+            state: *mut xkb_state,
+            idx: xkb_led_index_t,
+        ) -> ::core::ffi::c_int;
+    }
+}
+pub mod keymap_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_keymap {
+        pub ctx: *mut xkb_context,
+        pub refcnt: ::core::ffi::c_int,
+        pub flags: xkb_keymap_compile_flags,
+        pub format: xkb_keymap_format,
+        pub num_leds: xkb_led_index_t,
+        pub leds: [xkb_led; 32],
+        pub min_key_code: xkb_keycode_t,
+        pub max_key_code: xkb_keycode_t,
+        pub num_keys: xkb_keycode_t,
+        pub num_keys_low: xkb_keycode_t,
+        pub keys: *mut xkb_key,
+        pub c2rust_unnamed: C2Rust_Unnamed_3,
+        pub types: *mut xkb_key_type,
+        pub num_types: darray_size_t,
+        pub num_sym_interprets: darray_size_t,
+        pub sym_interprets: *mut xkb_sym_interpret,
+        pub mods: xkb_mod_set,
+        pub canonical_state_mask: xkb_mod_mask_t,
+        pub redirect_key_auto: xkb_keycode_t,
+        pub num_groups: xkb_layout_index_t,
+        pub num_group_names: xkb_layout_index_t,
+        pub group_names: *mut xkb_atom_t,
+        pub keycodes_section_name: *mut ::core::ffi::c_char,
+        pub symbols_section_name: *mut ::core::ffi::c_char,
+        pub types_section_name: *mut ::core::ffi::c_char,
+        pub compat_section_name: *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_mod_set {
+        pub mods: [xkb_mod; 32],
+        pub num_mods: xkb_mod_index_t,
+        pub explicit_vmods: xkb_mod_mask_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_mod {
+        pub name: xkb_atom_t,
+        pub type_0: mod_type,
+        pub mapping: xkb_mod_mask_t,
+    }
+    pub type mod_type = ::core::ffi::c_uint;
+    pub const MOD_BOTH: mod_type = 3;
+    pub const MOD_VIRT: mod_type = 2;
+    pub const MOD_REAL: mod_type = 1;
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_sym_interpret {
+        pub sym: xkb_keysym_t,
+        pub match_0: xkb_match_operation,
+        pub mods: xkb_mod_mask_t,
+        pub virtual_mod: xkb_mod_index_t,
+        pub level_one_only: bool,
+        #[bitfield(name = "repeat", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "required", ty = "bool", bits = "1..=1")]
+        pub repeat_required: [u8; 1],
+        pub num_actions: xkb_action_count_t,
+        pub a: C2Rust_Unnamed_1,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_1 {
+        pub action: xkb_action,
+        pub actions: *mut xkb_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union xkb_action {
+        pub type_0: xkb_action_type,
+        pub mods: xkb_mod_action,
+        pub group: xkb_group_action,
+        pub ctrls: xkb_controls_action,
+        pub dflt: xkb_pointer_default_action,
+        pub screen: xkb_switch_screen_action,
+        pub ptr: xkb_pointer_action,
+        pub btn: xkb_pointer_button_action,
+        pub redirect: xkb_redirect_key_action,
+        pub priv_0: xkb_private_action,
+        pub internal: xkb_internal_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_internal_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_internal_action_flags,
+        pub c2rust_unnamed: C2Rust_Unnamed_2,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_2 {
+        pub clear_latched_mods: xkb_mod_mask_t,
+    }
+    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
+    pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
+    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
+    pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
+    pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
+    pub const ACTION_TYPE_UNKNOWN: xkb_action_type = 18;
+    pub const ACTION_TYPE_UNSUPPORTED_LEGACY: xkb_action_type = 17;
+    pub const ACTION_TYPE_REDIRECT_KEY: xkb_action_type = 16;
+    pub const ACTION_TYPE_CTRL_LOCK: xkb_action_type = 15;
+    pub const ACTION_TYPE_CTRL_SET: xkb_action_type = 14;
+    pub const ACTION_TYPE_SWITCH_VT: xkb_action_type = 13;
+    pub const ACTION_TYPE_TERMINATE: xkb_action_type = 12;
+    pub const ACTION_TYPE_PTR_DEFAULT: xkb_action_type = 11;
+    pub const ACTION_TYPE_PTR_LOCK: xkb_action_type = 10;
+    pub const ACTION_TYPE_PTR_BUTTON: xkb_action_type = 9;
+    pub const ACTION_TYPE_PTR_MOVE: xkb_action_type = 8;
+    pub const ACTION_TYPE_GROUP_LOCK: xkb_action_type = 7;
+    pub const ACTION_TYPE_GROUP_LATCH: xkb_action_type = 6;
+    pub const ACTION_TYPE_GROUP_SET: xkb_action_type = 5;
+    pub const ACTION_TYPE_MOD_LOCK: xkb_action_type = 4;
+    pub const ACTION_TYPE_MOD_LATCH: xkb_action_type = 3;
+    pub const ACTION_TYPE_MOD_SET: xkb_action_type = 2;
+    pub const ACTION_TYPE_VOID: xkb_action_type = 1;
+    pub const ACTION_TYPE_NONE: xkb_action_type = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_private_action {
+        pub type_0: xkb_action_type,
+        pub data: [uint8_t; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_redirect_key_action {
+        pub type_0: xkb_action_type,
+        pub keycode: xkb_keycode_t,
+        pub affect: xkb_mod_mask_t,
+        pub mods: xkb_mod_mask_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_pointer_button_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub count: uint8_t,
+        pub button: uint8_t,
+    }
+    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
+    pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
+    pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
+    pub const ACTION_LOCK_ON_RELEASE: xkb_action_flags = 1024;
+    pub const ACTION_SAME_SCREEN: xkb_action_flags = 512;
+    pub const ACTION_ACCEL: xkb_action_flags = 256;
+    pub const ACTION_ABSOLUTE_Y: xkb_action_flags = 128;
+    pub const ACTION_ABSOLUTE_X: xkb_action_flags = 64;
+    pub const ACTION_ABSOLUTE_SWITCH: xkb_action_flags = 32;
+    pub const ACTION_MODS_LOOKUP_MODMAP: xkb_action_flags = 16;
+    pub const ACTION_LOCK_NO_UNLOCK: xkb_action_flags = 8;
+    pub const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
+    pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
+    pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_pointer_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub x: int16_t,
+        pub y: int16_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_switch_screen_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub screen: int8_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_pointer_default_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub value: int8_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_controls_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub ctrls: xkb_action_controls,
+    }
+    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
+    pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
+    pub const CONTROL_ALL: xkb_action_controls = 2088959;
+    pub const CONTROL_ALL_V1: xkb_action_controls = 2088455;
+    pub const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
+    pub const CONTROL_BELL: xkb_action_controls = 524288;
+    pub const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
+    pub const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
+    pub const CONTROL_AX: xkb_action_controls = 65536;
+    pub const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
+    pub const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
+    pub const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
+    pub const CONTROL_SLOW: xkb_action_controls = 2048;
+    pub const CONTROL_REPEAT: xkb_action_controls = 1024;
+    pub const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
+    pub const CONTROL_OVERLAY8: xkb_action_controls = 256;
+    pub const CONTROL_OVERLAY7: xkb_action_controls = 128;
+    pub const CONTROL_OVERLAY6: xkb_action_controls = 64;
+    pub const CONTROL_OVERLAY5: xkb_action_controls = 32;
+    pub const CONTROL_OVERLAY4: xkb_action_controls = 16;
+    pub const CONTROL_OVERLAY3: xkb_action_controls = 8;
+    pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
+    pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
+    pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_group_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub group: int32_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_mod_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub mods: xkb_mods,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_mods {
+        pub mods: xkb_mod_mask_t,
+        pub mask: xkb_mod_mask_t,
+    }
+    pub type xkb_action_count_t = uint16_t;
+    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub const MATCH_EXACTLY: xkb_match_operation = 4;
+    pub const MATCH_ALL: xkb_match_operation = 3;
+    pub const MATCH_ANY: xkb_match_operation = 2;
+    pub const MATCH_ANY_OR_NONE: xkb_match_operation = 1;
+    pub const MATCH_NONE: xkb_match_operation = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_key_type {
+        pub name: xkb_atom_t,
+        pub mods: xkb_mods,
+        pub required: bool,
+        pub num_levels: xkb_level_index_t,
+        pub num_level_names: xkb_level_index_t,
+        pub level_names: *mut xkb_atom_t,
+        pub num_entries: darray_size_t,
+        pub entries: *mut xkb_key_type_entry,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_key_type_entry {
+        pub level: xkb_level_index_t,
+        pub mods: xkb_mods,
+        pub preserve: xkb_mods,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_3 {
+        pub c2rust_unnamed: C2Rust_Unnamed_5,
+        pub c2rust_unnamed_0: C2Rust_Unnamed_4,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_4 {
+        pub num_key_aliases: darray_size_t,
+        pub key_aliases: *mut xkb_key_alias,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_key_alias {
+        pub real: xkb_atom_t,
+        pub alias: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_5 {
+        pub num_key_names: darray_size_t,
+        pub key_names: *mut KeycodeMatch,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union KeycodeMatch {
+        pub c2rust_unnamed: C2Rust_Unnamed_8,
+        pub key: C2Rust_Unnamed_7,
+        pub alias: C2Rust_Unnamed_6,
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_6 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "real", ty = "xkb_atom_t", bits = "3..=31")]
+        pub found_c2rust_unnamed_is_alias_real: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_7 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "low", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "index", ty = "darray_size_t", bits = "3..=31")]
+        pub found_low_is_alias_index: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_8 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "c2rust_unnamed_0", ty = "darray_size_t", bits = "3..=31")]
+        pub found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_key {
+        pub keycode: xkb_keycode_t,
+        pub name: xkb_atom_t,
+        pub explicit: xkb_explicit_components,
+        pub modmap: xkb_mod_mask_t,
+        pub vmodmap: xkb_mod_mask_t,
+        pub overlays: xkb_overlay_mask_t,
+        #[bitfield(name = "overlays_inline", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "repeats", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "out_of_range_pending_group", ty = "bool", bits = "3..=3")]
+        #[bitfield(
+            name = "out_of_range_group_policy",
+            ty = "xkb_layout_out_of_range_policy",
+            bits = "4..=7"
+        )]
+        #[bitfield(
+            name = "out_of_range_group_number",
+            ty = "xkb_layout_index_t",
+            bits = "8..=15"
+        )]
+        #[bitfield(name = "num_groups", ty = "xkb_layout_index_t", bits = "16..=23")]
+        pub overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups:
+            [u8; 3],
+        pub groups: *mut xkb_group,
+        pub c2rust_unnamed: C2Rust_Unnamed_9,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_9 {
+        pub overlay_key: *const xkb_key,
+        pub overlays_keys: *mut *const xkb_key,
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_group {
+        #[bitfield(name = "explicit_symbols", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "explicit_actions", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "explicit_type", ty = "bool", bits = "3..=3")]
+        pub explicit_symbols_explicit_actions_implicit_actions_explicit_type: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+        pub type_0: *const xkb_key_type,
+        pub levels: *mut xkb_level,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_level {
+        pub num_syms: xkb_keysym_count_t,
+        pub num_actions: xkb_action_count_t,
+        pub c2rust_unnamed: C2Rust_Unnamed_12,
+        pub s: C2Rust_Unnamed_11,
+        pub a: C2Rust_Unnamed_10,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_10 {
+        pub action: xkb_action,
+        pub actions: *mut xkb_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_11 {
+        pub sym: xkb_keysym_t,
+        pub syms: *mut xkb_keysym_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union C2Rust_Unnamed_12 {
+        pub upper: xkb_keysym_t,
+        pub has_upper: bool,
+    }
+    pub type xkb_keysym_count_t = uint16_t;
+    pub type xkb_overlay_mask_t = uint8_t;
+    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
+    pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
+    pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
+    pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
+    pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
+    pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_led {
+        pub name: xkb_atom_t,
+        #[bitfield(name = "which_groups", ty = "xkb_state_component", bits = "0..=30")]
+        #[bitfield(name = "pending_groups", ty = "bool", bits = "31..=31")]
+        pub which_groups_pending_groups: [u8; 4],
+        pub groups: xkb_layout_mask_t,
+        pub which_mods: xkb_state_component,
+        pub mods: xkb_mods,
+        pub ctrls: xkb_action_controls,
+    }
+    pub type C2Rust_Unnamed_13 = ::core::ffi::c_uint;
+    pub const _LAST_XKB_EVENT_TYPE: C2Rust_Unnamed_13 = 4;
+    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
+    use super::atom_h::xkb_atom_t;
+    use super::context_h::xkb_context;
+    use super::darray_h::darray_size_t;
+    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_uintn_h::{uint16_t, uint8_t};
+    use super::xkbcommon_h::{
+        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
+        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
+        xkb_level_index_t, xkb_mod_index_t, xkb_mod_mask_t, xkb_state_component,
+    };
+}
+pub mod rmlvo_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder {
+        pub rules: *mut ::core::ffi::c_char,
+        pub model: *mut ::core::ffi::c_char,
+        pub layouts: xkb_rmlvo_builder_layouts,
+        pub options: xkb_rmlvo_builder_options,
+        pub refcnt: ::core::ffi::c_int,
+        pub ctx: *mut xkb_context,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_options {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_rmlvo_builder_option,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_option {
+        pub option: *mut ::core::ffi::c_char,
+        pub layout: xkb_layout_index_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_layouts {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_rmlvo_builder_layout,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rmlvo_builder_layout {
+        pub layout: *mut ::core::ffi::c_char,
+        pub variant: *mut ::core::ffi::c_char,
+    }
+    use super::context_h::xkb_context;
+    use super::darray_h::darray_size_t;
+    use super::xkbcommon_h::xkb_layout_index_t;
+}
+pub mod xkbcommon_compose_h {
+    extern "C" {
+        pub type xkb_compose_state;
+    }
+}
+pub mod test_h {
+    pub type key_seq_state = ::core::ffi::c_uint;
+    pub const FINISH: key_seq_state = 5;
+    pub const NEXT: key_seq_state = 4;
+    pub const BOTH: key_seq_state = 3;
+    pub const UP: key_seq_state = 2;
+    pub const REPEAT: key_seq_state = 1;
+    pub const DOWN: key_seq_state = 0;
+    pub type test_context_flags = ::core::ffi::c_uint;
+    pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
+    pub const CONTEXT_NO_FLAG: test_context_flags = 0;
+    pub type test_compile_buffer_t = Option<
+        unsafe extern "C" fn(
+            *mut xkb_context,
+            xkb_keymap_format,
+            *const ::core::ffi::c_char,
+            size_t,
+            *mut ::core::ffi::c_void,
+        ) -> *mut xkb_keymap,
+    >;
+    pub type test_third_party_compile_buffer_t = Option<
+        unsafe extern "C" fn(
+            *const ::core::ffi::c_char,
+            size_t,
+            *mut ::core::ffi::c_void,
+            *mut *mut ::core::ffi::c_char,
+            *mut size_t,
+        ) -> ::core::ffi::c_int,
+    >;
+    pub const EVDEV_OFFSET: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+    use super::keymap_h::xkb_keymap;
+    use super::xkbcommon_h::xkb_keymap_format;
+}
+pub mod tools_common_h {
+    pub type print_state_options = ::core::ffi::c_uint;
+    pub const DEFAULT_PRINT_OPTIONS: print_state_options = 15;
+    pub const PRINT_UNILINE: print_state_options = 8;
+    pub const PRINT_VERBOSE: print_state_options = 4;
+    pub const PRINT_VERBOSE_ONE_LINE_FIELDS: print_state_options = 3;
+    pub const PRINT_ALL_FIELDS: print_state_options = 3;
+    pub const PRINT_UNICODE: print_state_options = 2;
+    pub const PRINT_LAYOUT: print_state_options = 1;
+    use super::xkbcommon_compose_h::xkb_compose_state;
+    use super::xkbcommon_h::{
+        xkb_consumed_mode, xkb_key_direction, xkb_keycode_t, xkb_state, XKB_CONSUMED_MODE_XKB,
+        XKB_KEY_UP,
+    };
+    extern "C" {
+        pub fn tools_print_keycode_state(
+            prefix: *const ::core::ffi::c_char,
+            state: *mut xkb_state,
+            compose_state: *mut xkb_compose_state,
+            keycode: xkb_keycode_t,
+            direction: xkb_key_direction,
+            consumed_mode: xkb_consumed_mode,
+            options: print_state_options,
+        );
+    }
+}
+pub mod stdlib_h {
+    pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
+            -> *mut ::core::ffi::c_void;
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+        pub fn getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn unsetenv(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+        pub fn mkdtemp(__template: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    }
+}
+pub mod string_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn memcpy(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+        pub fn memset(
+            __s: *mut ::core::ffi::c_void,
+            __c: ::core::ffi::c_int,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+        pub fn strcmp(
+            __s1: *const ::core::ffi::c_char,
+            __s2: *const ::core::ffi::c_char,
+        ) -> ::core::ffi::c_int;
+        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+    }
+}
+pub mod stat_h {
+    use super::struct_stat_h::stat;
+    use super::types_h::__mode_t;
+    extern "C" {
+        pub fn fstat(__fd: ::core::ffi::c_int, __buf: *mut stat) -> ::core::ffi::c_int;
+        pub fn mkdir(__path: *const ::core::ffi::c_char, __mode: __mode_t) -> ::core::ffi::c_int;
+    }
+}
+pub mod utils_h {
+    #[inline]
+    pub unsafe extern "C" fn streq(
+        mut s1: *const ::core::ffi::c_char,
+        mut s2: *const ::core::ffi::c_char,
+    ) -> bool {
+        unsafe {
+            if !s1.is_null() && !s2.is_null() {
+            } else {
+                __assert_fail(
+                    b"s1 && s2\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../src/utils.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    94 as ::core::ffi::c_uint,
+                    b"_Bool streq(const char *, const char *)\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                );
+            };
+            return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn isempty(mut s: *const ::core::ffi::c_char) -> bool {
+        unsafe {
+            return s.is_null()
+                || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+                    == '\0' as i32;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn vasprintf_safe(
+        mut fmt: *const ::core::ffi::c_char,
+        mut args: ::core::ffi::VaList,
+    ) -> *mut ::core::ffi::c_char {
+        unsafe {
+            let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            let mut len: ::core::ffi::c_int = 0;
+            len = vasprintf(&raw mut str, fmt, args);
+            if len == -1 as ::core::ffi::c_int {
+                return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            }
+            return str;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn asprintf_safe(
+        mut fmt: *const ::core::ffi::c_char,
+        mut c2rust_args: ...
+    ) -> *mut ::core::ffi::c_char {
+        unsafe {
+            let mut args: ::core::ffi::VaList;
+            let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            args = c2rust_args.clone();
+            str = vasprintf_safe(fmt, args);
+            return str;
+        }
+    }
+    use super::__stddef_null_h::NULL;
+    use super::assert_h::__assert_fail;
+    use super::stdio_h::vasprintf;
+    use super::string_h::strcmp;
+}
+pub mod include_locale_h {
+    pub const LC_ALL: ::core::ffi::c_int = __LC_ALL;
+    use super::locale_h::__LC_ALL;
+    extern "C" {
+        pub fn setlocale(
+            __category: ::core::ffi::c_int,
+            __locale: *const ::core::ffi::c_char,
+        ) -> *mut ::core::ffi::c_char;
+    }
+}
+pub mod utils_numbers_h {
+    #[inline]
+    pub unsafe extern "C" fn parse_dec_to_uint32_t(
+        mut s: *const ::core::ffi::c_char,
+        mut len: size_t,
+        mut out: *mut uint32_t,
+    ) -> ::core::ffi::c_int {
+        unsafe {
+            let mut result: uint32_t = 0 as uint32_t;
+            let mut i: size_t = 0;
+            i = 0 as size_t;
+            while i < len
+                && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
+                    as ::core::ffi::c_uchar as ::core::ffi::c_uint)
+                    < 10 as ::core::ffi::c_uint
+                && result <= (4294967295 as uint32_t).wrapping_div(10 as uint32_t)
+                && result.wrapping_mul(10 as uint32_t)
+                    <= (4294967295 as uint32_t).wrapping_sub(
+                        (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
+                            as ::core::ffi::c_uchar as uint32_t,
+                    )
+            {
+                result = result.wrapping_mul(10 as uint32_t).wrapping_add(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint32_t,
+                );
+                i = i.wrapping_add(1);
+            }
+            *out = result as uint32_t;
+            return if i >= len
+                || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
+                    as ::core::ffi::c_uchar as ::core::ffi::c_uint
+                    >= 10 as ::core::ffi::c_uint
+            {
+                i as ::core::ffi::c_int
+            } else {
+                -1 as ::core::ffi::c_int
+            };
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::stdint_uintn_h::uint32_t;
+}
+pub mod xkbcommon_keysyms_h {
+    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub mod __stddef_null_h {
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+    pub const NULL_0: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+pub mod stdint_h {
+    pub const SIZE_MAX: ::core::ffi::c_ulong = 18446744073709551615 as ::core::ffi::c_ulong;
+}
+pub mod assert_h {
+    extern "C" {
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+pub mod errno_h {
+    extern "C" {
+        pub fn __errno_location() -> *mut ::core::ffi::c_int;
+    }
+}
+pub mod utils_paths_h {
+    extern "C" {
+        pub fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool;
+    }
+}
+pub mod rules_h {
+    pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
+}
+pub mod locale_h {
+    pub const __LC_ALL: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
+}
+pub mod stdbool_h {
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+pub use self::__stddef_null_h::{NULL, NULL_0};
+pub use self::__stddef_size_t_h::size_t;
+use self::assert_h::__assert_fail;
+pub use self::atom_h::{atom_table, xkb_atom_t};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::darray_h::{darray_next_alloc, darray_size_t, darray_string};
+use self::errno_h::__errno_location;
+pub use self::include_locale_h::{setlocale, LC_ALL};
+pub use self::internal::{__builtin_va_list, __va_list_tag};
+pub use self::keymap_h::{
+    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
+    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
+    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
+    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
+    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
+    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
+    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_13, C2Rust_Unnamed_2,
+    C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
+    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
+    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
+    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
+    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
+    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
+    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
+    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
+    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
+    EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT, EXPLICIT_SYMBOLS, EXPLICIT_TYPES,
+    EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
+    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
+    _ACTION_TYPE_NUM_ENTRIES, _LAST_XKB_EVENT_TYPE,
+};
+pub use self::locale_h::__LC_ALL;
+pub use self::rmlvo_h::{
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
+    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+};
+pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
+use self::stat_h::{fstat, mkdir};
+pub use self::stdbool_h::{false_0, true_0};
+pub use self::stdint_h::SIZE_MAX;
+pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdio_h::{
+    fclose, feof, ferror, fileno, fopen, fprintf, fread, fwrite, printf, setvbuf, stderr, stdout,
+    va_list, vasprintf, BUFSIZ, _IONBF,
+};
+pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
+use self::string_h::{memcpy, memset, strcmp, strdup, strerror, strlen};
+pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
+pub use self::struct_stat_h::stat;
+pub use self::struct_timespec_h::timespec;
+pub use self::test_h::{
+    key_seq_state, test_compile_buffer_t, test_context_flags, test_third_party_compile_buffer_t,
+    BOTH, CONTEXT_ALLOW_ENVIRONMENT_NAMES, CONTEXT_NO_FLAG, DOWN, EVDEV_OFFSET, FINISH, NEXT,
+    REPEAT, UP,
+};
+pub use self::tools_common_h::{
+    print_state_options, tools_print_keycode_state, DEFAULT_PRINT_OPTIONS, PRINT_ALL_FIELDS,
+    PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
+};
+pub use self::types_h::{
+    __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __int16_t, __int32_t, __int8_t, __mode_t,
+    __nlink_t, __off64_t, __off_t, __syscall_slong_t, __time_t, __uid_t, __uint16_t, __uint32_t,
+    __uint64_t, __uint8_t,
+};
+pub use self::utils_h::{asprintf_safe, isempty, streq, vasprintf_safe};
+pub use self::utils_numbers_h::parse_dec_to_uint32_t;
+use self::utils_paths_h::is_absolute_path;
+use self::xkbcommon_compose_h::xkb_compose_state;
+pub use self::xkbcommon_errors_h::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
+pub use self::xkbcommon_h::{
+    xkb_consumed_mode, xkb_context_flags, xkb_context_include_path_append, xkb_context_new,
+    xkb_context_unref, xkb_event, xkb_event_get_keycode, xkb_event_get_type, xkb_event_type,
+    xkb_events, xkb_events_next, xkb_key_direction, xkb_keycode_t, xkb_keymap_compile_flags,
+    xkb_keymap_format, xkb_keymap_get_as_string2, xkb_keymap_new_from_buffer,
+    xkb_keymap_new_from_file, xkb_keymap_new_from_names2, xkb_keymap_new_from_rmlvo,
+    xkb_keymap_new_from_string, xkb_keymap_num_leds, xkb_keymap_serialize_flags, xkb_keymap_unref,
+    xkb_keysym_get_name, xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t,
+    xkb_layout_out_of_range_policy, xkb_led_index_t, xkb_led_mask_t, xkb_level_index_t,
+    xkb_log_level, xkb_machine, xkb_machine_process_key, xkb_mod_index_t, xkb_mod_mask_t,
+    xkb_rmlvo_builder_append_layout, xkb_rmlvo_builder_append_option, xkb_rmlvo_builder_flags,
+    xkb_rmlvo_builder_new, xkb_rmlvo_builder_unref, xkb_rule_names, xkb_state, xkb_state_component,
+    xkb_state_get_keymap, xkb_state_key_get_syms, xkb_state_led_index_is_active, xkb_state_new,
+    xkb_state_serialize_layout, xkb_state_serialize_mods, xkb_state_unref, xkb_state_update_event,
+    xkb_state_update_key, XKB_CONSUMED_MODE_GTK, XKB_CONSUMED_MODE_XKB,
+    XKB_CONTEXT_NO_DEFAULT_INCLUDES, XKB_CONTEXT_NO_ENVIRONMENT_NAMES, XKB_CONTEXT_NO_FLAGS,
+    XKB_CONTEXT_NO_SECURE_GETENV, XKB_EVENT_TYPE_COMPONENTS_CHANGE, XKB_EVENT_TYPE_KEY_DOWN,
+    XKB_EVENT_TYPE_KEY_REPEATED, XKB_EVENT_TYPE_KEY_UP, XKB_KEYMAP_COMPILE_NO_FLAGS,
+    XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XKB_KEYMAP_SERIALIZE_EXPLICIT, XKB_KEYMAP_SERIALIZE_KEEP_UNUSED, XKB_KEYMAP_SERIALIZE_NO_FLAGS,
+    XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT, XKB_KEY_DOWN, XKB_KEY_REPEATED,
+    XKB_KEY_UP, XKB_LAYOUT_INVALID, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
+    XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL,
+    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+    XKB_RMLVO_BUILDER_NO_FLAGS, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
+    XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
+    XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
+    XKB_STATE_MODS_LOCKED,
+};
+pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use self::FILE_h::FILE;
+pub type events_consume_flags = ::core::ffi::c_uint;
+pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
+pub const ALL_EVENTS: events_consume_flags = 0;
+pub const MAX_FILE_SIZE: C2Rust_Unnamed_14 = 1048576;
+pub type C2Rust_Unnamed_14 = ::core::ffi::c_uint;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_15 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut darray_string,
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_init() {
+    unsafe {
+        setvbuf(
+            stdout,
+            ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            _IONBF,
+            BUFSIZ as size_t,
+        );
+        setlocale(LC_ALL, b"\0".as_ptr() as *const ::core::ffi::c_char);
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
+    unsafe {
+        fprintf(
+            stderr,
+            b"  Layout: base: %d, latched: %d, locked: %d, effective: %u\n\0".as_ptr()
+                as *const ::core::ffi::c_char,
+            xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_DEPRESSED),
+            xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LATCHED),
+            xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LOCKED),
+            xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_EFFECTIVE),
+        );
+        fprintf(
+            stderr,
+            b"  Modifiers: base: %#x, latched: %#x, locked: %#x, effective: %#x\n\0".as_ptr()
+                as *const ::core::ffi::c_char,
+            xkb_state_serialize_mods(state, XKB_STATE_MODS_DEPRESSED),
+            xkb_state_serialize_mods(state, XKB_STATE_MODS_LATCHED),
+            xkb_state_serialize_mods(state, XKB_STATE_MODS_LOCKED),
+            xkb_state_serialize_mods(state, XKB_STATE_MODS_EFFECTIVE),
+        );
+        let mut keymap: *mut xkb_keymap = xkb_state_get_keymap(state);
+        let mut leds: xkb_led_mask_t = 0 as xkb_led_mask_t;
+        let mut led: xkb_led_index_t = 0 as xkb_led_index_t;
+        while led < xkb_keymap_num_leds(keymap) {
+            if xkb_state_led_index_is_active(state, led) > 0 as ::core::ffi::c_int {
+                leds = (leds as ::core::ffi::c_uint | (1 as ::core::ffi::c_uint) << led)
+                    as xkb_led_mask_t;
+            }
+            led = led.wrapping_add(1);
+        }
+        fprintf(
+            stderr,
+            b"  LEDs: 0x%x\n\0".as_ptr() as *const ::core::ffi::c_char,
+            leds,
+        );
+    }
+}
+unsafe extern "C" fn consume_events(
+    mut sm: *mut xkb_machine,
+    mut events: *mut xkb_events,
+    mut state: *mut xkb_state,
+    mut flags: events_consume_flags,
+    mut kc: *mut xkb_keycode_t,
+) -> bool {
+    unsafe {
+        let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
+        loop {
+            event = xkb_events_next(events);
+            if event.is_null() {
+                break;
+            }
+            match xkb_event_get_type(event) as ::core::ffi::c_uint {
+                1 | 2 | 3 => {
+                    *kc = xkb_event_get_keycode(event);
+                    if flags as ::core::ffi::c_uint
+                        & UNTIL_KEY_EVENT as ::core::ffi::c_int as ::core::ffi::c_uint
+                        != 0
+                    {
+                        return true_0 != 0;
+                    }
+                }
+                4 => {
+                    xkb_state_update_event(state, event);
+                }
+                _ => {}
+            }
+        }
+        return true_0 != 0;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_key_seq_va(
+    mut keymap: *mut xkb_keymap,
+    mut sm: *mut xkb_machine,
+    mut events: *mut xkb_events,
+    mut ap: ::core::ffi::VaList,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        if sm.is_null() as ::core::ffi::c_int ^ events.is_null() as ::core::ffi::c_int == 0 {
+        } else {
+            __assert_fail(
+                b"!(!sm ^ !events)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                137 as ::core::ffi::c_uint,
+                b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        fprintf(stderr, b"----\n\0".as_ptr() as *const ::core::ffi::c_char);
+        let state: *mut xkb_state = xkb_state_new(keymap) as *mut xkb_state;
+        if !state.is_null() {
+        } else {
+            __assert_fail(
+                b"state\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                142 as ::core::ffi::c_uint,
+                b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        let mut count: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+        let mut ksbuf: [::core::ffi::c_char; 31] = [0; 31];
+        's_21: loop {
+            let kc: xkb_keycode_t =
+                (ap.arg::<::core::ffi::c_int>() + EVDEV_OFFSET) as xkb_keycode_t;
+            let op: ::core::ffi::c_int = ap.arg::<::core::ffi::c_int>();
+            let mut opstr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            match op {
+                0 => {
+                    opstr = b"DOWN\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                1 => {
+                    opstr = b"REPEAT\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                2 => {
+                    opstr = b"UP\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                3 => {
+                    opstr = b"BOTH\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                4 => {
+                    opstr = b"NEXT\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                5 => {
+                    opstr = b"FINISH\0".as_ptr() as *const ::core::ffi::c_char;
+                }
+                _ => {
+                    fprintf(
+                        stderr,
+                        b"ERROR: Unsupported operation: %d\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        op,
+                    );
+                    c2rust_current_block = 10334003491957544446;
+                    break;
+                }
+            }
+            let mut kc_new: xkb_keycode_t = kc;
+            if !events.is_null() {
+                if op == DOWN as ::core::ffi::c_int
+                    || op == REPEAT as ::core::ffi::c_int
+                    || op == BOTH as ::core::ffi::c_int
+                {
+                    if xkb_machine_process_key(
+                        sm,
+                        kc,
+                        (if op == REPEAT as ::core::ffi::c_int {
+                            XKB_KEY_REPEATED as ::core::ffi::c_int
+                        } else {
+                            XKB_KEY_DOWN as ::core::ffi::c_int
+                        }) as xkb_key_direction,
+                        events,
+                    ) as u64
+                        == 0
+                    {
+                    } else {
+                        __assert_fail(
+                            b"!xkb_machine_process_key( sm, kc, (op == REPEAT ? XKB_KEY_REPEATED : XKB_KEY_DOWN), events )\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            174 as ::core::ffi::c_uint,
+                            b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                        );
+                    };
+                    if consume_events(sm, events, state, UNTIL_KEY_EVENT, &raw mut kc_new)
+                        as ::core::ffi::c_int
+                        != 0
+                    {
+                    } else {
+                        __assert_fail(
+                            b"consume_events(sm, events, state, UNTIL_KEY_EVENT, &kc_new)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            175 as ::core::ffi::c_uint,
+                            b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                        );
+                    };
+                }
+                if op == UP as ::core::ffi::c_int || op == BOTH as ::core::ffi::c_int {
+                    if op == BOTH as ::core::ffi::c_int {
+                        if consume_events(sm, events, state, ALL_EVENTS, &raw mut kc_new)
+                            as ::core::ffi::c_int
+                            != 0
+                        {
+                        } else {
+                            __assert_fail(
+                                b"consume_events(sm, events, state, ALL_EVENTS, &kc_new)\0"
+                                    .as_ptr() as *const ::core::ffi::c_char,
+                                b"../test/common.c\0".as_ptr()
+                                    as *const ::core::ffi::c_char,
+                                180 as ::core::ffi::c_uint,
+                                b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                                    .as_ptr() as *const ::core::ffi::c_char,
+                            );
+                        };
+                    }
+                    if xkb_machine_process_key(sm, kc, XKB_KEY_UP, events) as ::core::ffi::c_int
+                        == 0 as ::core::ffi::c_int
+                    {
+                    } else {
+                        __assert_fail(
+                            b"xkb_machine_process_key(sm, kc, XKB_KEY_UP, events) == 0\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            183 as ::core::ffi::c_uint,
+                            b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                        );
+                    };
+                    if consume_events(sm, events, state, UNTIL_KEY_EVENT, &raw mut kc_new)
+                        as ::core::ffi::c_int
+                        != 0
+                    {
+                    } else {
+                        __assert_fail(
+                            b"consume_events(sm, events, state, UNTIL_KEY_EVENT, &kc_new)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            184 as ::core::ffi::c_uint,
+                            b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                        );
+                    };
+                }
+            }
+            let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+            let nsyms: ::core::ffi::c_int =
+                xkb_state_key_get_syms(state, kc_new, &raw mut syms) as ::core::ffi::c_int;
+            if !events.is_null() {
+                if consume_events(sm, events, state, ALL_EVENTS, &raw mut kc_new)
+                    as ::core::ffi::c_int
+                    != 0
+                {
+                } else {
+                    __assert_fail(
+                        b"consume_events(sm, events, state, ALL_EVENTS, &kc_new)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                        b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        193 as ::core::ffi::c_uint,
+                        b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+            } else {
+                if op == DOWN as ::core::ffi::c_int
+                    || op == REPEAT as ::core::ffi::c_int
+                    || op == BOTH as ::core::ffi::c_int
+                {
+                    xkb_state_update_key(
+                        state,
+                        kc,
+                        (if op == REPEAT as ::core::ffi::c_int {
+                            XKB_KEY_REPEATED as ::core::ffi::c_int
+                        } else {
+                            XKB_KEY_DOWN as ::core::ffi::c_int
+                        }) as xkb_key_direction,
+                    );
+                }
+                if op == UP as ::core::ffi::c_int || op == BOTH as ::core::ffi::c_int {
+                    xkb_state_update_key(state, kc, XKB_KEY_UP);
+                }
+            }
+            let direction: xkb_key_direction = (if op == DOWN as ::core::ffi::c_int {
+                XKB_KEY_DOWN as ::core::ffi::c_int
+            } else if op == REPEAT as ::core::ffi::c_int {
+                XKB_KEY_REPEATED as ::core::ffi::c_int
+            } else {
+                XKB_KEY_UP as ::core::ffi::c_int
+            }) as xkb_key_direction;
+            tools_print_keycode_state(
+                b"\0".as_ptr() as *const ::core::ffi::c_char,
+                state,
+                ::core::ptr::null_mut::<xkb_compose_state>(),
+                kc,
+                direction,
+                XKB_CONSUMED_MODE_XKB,
+                (PRINT_ALL_FIELDS as ::core::ffi::c_int | PRINT_UNILINE as ::core::ffi::c_int)
+                    as print_state_options,
+            );
+            count = count.wrapping_add(1);
+            fprintf(
+                stderr,
+                b"#%02u op %-6s got %d syms for keycode %3u\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                count,
+                opstr,
+                nsyms,
+                kc,
+            );
+            if kc_new != kc {
+                fprintf(
+                    stderr,
+                    b" (redirected to %3u)\0".as_ptr() as *const ::core::ffi::c_char,
+                    kc_new,
+                );
+            }
+            fprintf(stderr, b": [\0".as_ptr() as *const ::core::ffi::c_char);
+            let mut keysym: xkb_keysym_t = 0;
+            let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+            while i < nsyms {
+                keysym = ap.arg::<::core::ffi::c_int>() as xkb_keysym_t;
+                xkb_keysym_get_name(
+                    *syms.offset(i as isize),
+                    &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                );
+                fprintf(
+                    stderr,
+                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    if i != 0 as ::core::ffi::c_int {
+                        b", \0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                    &raw mut ksbuf as *mut ::core::ffi::c_char,
+                );
+                if keysym == FINISH as ::core::ffi::c_int as xkb_keysym_t
+                    || keysym == NEXT as ::core::ffi::c_int as xkb_keysym_t
+                {
+                    xkb_keysym_get_name(
+                        *syms.offset(i as isize),
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    );
+                    fprintf(
+                        stderr,
+                        b"\nERROR: Did not expect keysym: %s.\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    );
+                    c2rust_current_block = 10334003491957544446;
+                    break 's_21;
+                } else if keysym != *syms.offset(i as isize) {
+                    xkb_keysym_get_name(
+                        keysym,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    );
+                    fprintf(
+                        stderr,
+                        b"\nERROR: Expected keysym: %s. \0".as_ptr() as *const ::core::ffi::c_char,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    );
+                    xkb_keysym_get_name(
+                        *syms.offset(i as isize),
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    );
+                    fprintf(
+                        stderr,
+                        b" Got keysym: %s.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    );
+                    c2rust_current_block = 10334003491957544446;
+                    break 's_21;
+                } else {
+                    i += 1;
+                }
+            }
+            if nsyms == 0 as ::core::ffi::c_int {
+                keysym = ap.arg::<::core::ffi::c_int>() as xkb_keysym_t;
+                if keysym != XKB_KEY_NoSymbol as xkb_keysym_t {
+                    xkb_keysym_get_name(
+                        keysym,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    );
+                    fprintf(
+                        stderr,
+                        b"\nERROR: Expected %s, but got no keysyms.\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    );
+                    c2rust_current_block = 10334003491957544446;
+                    break;
+                }
+            }
+            fprintf(stderr, b"]\n\0".as_ptr() as *const ::core::ffi::c_char);
+            keysym = ap.arg::<::core::ffi::c_int>() as xkb_keysym_t;
+            if keysym == NEXT as ::core::ffi::c_int as xkb_keysym_t {
+                continue;
+            }
+            if keysym == FINISH as ::core::ffi::c_int as xkb_keysym_t {
+                c2rust_current_block = 17836213544692497527;
+                break;
+            }
+            xkb_keysym_get_name(
+                keysym,
+                &raw mut ksbuf as *mut ::core::ffi::c_char,
+                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+            );
+            fprintf(
+                stderr,
+                b"\nERROR: Expected keysym: %s. Didn't get it.\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                &raw mut ksbuf as *mut ::core::ffi::c_char,
+            );
+            c2rust_current_block = 10334003491957544446;
+            break;
+        }
+        match c2rust_current_block {
+            10334003491957544446 => {
+                fprintf(
+                    stderr,
+                    b"Current state:\n\0".as_ptr() as *const ::core::ffi::c_char,
+                );
+                print_detailed_state(state);
+                xkb_state_unref(state);
+                return 0 as ::core::ffi::c_int;
+            }
+            _ => {
+                xkb_state_unref(state);
+                return 1 as ::core::ffi::c_int;
+            }
+        };
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_key_seq(
+    mut keymap: *mut xkb_keymap,
+    mut c2rust_args: ...
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut ap: ::core::ffi::VaList;
+        let mut ret: ::core::ffi::c_int = 0;
+        ap = c2rust_args.clone();
+        ret = test_key_seq_va(
+            keymap,
+            ::core::ptr::null_mut::<xkb_machine>(),
+            ::core::ptr::null_mut::<xkb_events>(),
+            ap,
+        );
+        return ret;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_key_seq2(
+    mut keymap: *mut xkb_keymap,
+    mut sm: *mut xkb_machine,
+    mut events: *mut xkb_events,
+    mut c2rust_args: ...
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut ap: ::core::ffi::VaList;
+        let mut ret: ::core::ffi::c_int = 0;
+        ap = c2rust_args.clone();
+        ret = test_key_seq_va(keymap, sm, events, ap);
+        return ret;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_makedir(
+    mut parent: *const ::core::ffi::c_char,
+    mut path: *const ::core::ffi::c_char,
+) -> *mut ::core::ffi::c_char {
+    unsafe {
+        let mut dirname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut err: ::core::ffi::c_int = 0;
+        dirname = asprintf_safe(
+            b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
+            parent,
+            path,
+        );
+        if !dirname.is_null() {
+        } else {
+            __assert_fail(
+                b"dirname\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                311 as ::core::ffi::c_uint,
+                b"char *test_makedir(const char *, const char *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        err = mkdir(dirname, 0o777 as __mode_t);
+        if err == 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"err == 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                317 as ::core::ffi::c_uint,
+                b"char *test_makedir(const char *, const char *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        return dirname;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_maketempdir(
+    mut template: *const ::core::ffi::c_char,
+) -> *mut ::core::ffi::c_char {
+    unsafe {
+        let mut tmpdir: *mut ::core::ffi::c_char = asprintf_safe(
+            b"/tmp/%s\0".as_ptr() as *const ::core::ffi::c_char,
+            template,
+        );
+        if !tmpdir.is_null() {
+        } else {
+            __assert_fail(
+                b"tmpdir != NULL\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                343 as ::core::ffi::c_uint,
+                b"char *test_maketempdir(const char *)\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        let mut tmp: *mut ::core::ffi::c_char = mkdtemp(tmpdir);
+        if tmp == tmpdir {
+        } else {
+            __assert_fail(
+                b"tmp == tmpdir\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                345 as ::core::ffi::c_uint,
+                b"char *test_maketempdir(const char *)\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        return tmpdir;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_get_path(
+    mut path_rel: *const ::core::ffi::c_char,
+) -> *mut ::core::ffi::c_char {
+    unsafe {
+        let mut path: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut srcdir: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        srcdir = getenv(b"top_srcdir\0".as_ptr() as *const ::core::ffi::c_char);
+        if srcdir.is_null() {
+            srcdir = b".\0".as_ptr() as *const ::core::ffi::c_char;
+        }
+        if is_absolute_path(path_rel) {
+            return strdup(path_rel);
+        }
+        path = asprintf_safe(
+            b"%s/test/data%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+            srcdir,
+            if *path_rel.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 0 {
+                b"/\0".as_ptr() as *const ::core::ffi::c_char
+            } else {
+                b"\0".as_ptr() as *const ::core::ffi::c_char
+            },
+            path_rel,
+        );
+        if path.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to allocate path for %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path_rel,
+            );
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        return path;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn read_file(
+    mut path: *const ::core::ffi::c_char,
+    mut file: *mut FILE,
+) -> *mut ::core::ffi::c_char {
+    unsafe {
+        if file.is_null() {
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        *__errno_location() = 0 as ::core::ffi::c_int;
+        let fd: ::core::ffi::c_int = fileno(file) as ::core::ffi::c_int;
+        if fd < 0 as ::core::ffi::c_int {
+            fprintf(
+                stderr,
+                b"Error getting file descriptor for %s: %s\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                path,
+                strerror(*__errno_location()),
+            );
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        *__errno_location() = 0 as ::core::ffi::c_int;
+        let mut info: stat = stat {
+            st_dev: 0,
+            st_ino: 0,
+            st_nlink: 0,
+            st_mode: 0,
+            st_uid: 0,
+            st_gid: 0,
+            __pad0: 0,
+            st_rdev: 0,
+            st_size: 0,
+            st_blksize: 0,
+            st_blocks: 0,
+            st_atim: timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            },
+            st_mtim: timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            },
+            st_ctim: timespec {
+                tv_sec: 0,
+                tv_nsec: 0,
+            },
+            __glibc_reserved: [0; 3],
+        };
+        if fstat(fd, &raw mut info) != 0 as ::core::ffi::c_int {
+            fprintf(
+                stderr,
+                b"Error getting file stats for %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+                strerror(*__errno_location()),
+            );
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        let size: size_t = info.st_size as size_t;
+        if size > MAX_FILE_SIZE as ::core::ffi::c_int as size_t {
+            fprintf(
+                stderr,
+                b"Error: file %s exceeds maximum size\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        let mut ret: *mut ::core::ffi::c_char =
+            malloc(size.wrapping_add(1 as size_t)) as *mut ::core::ffi::c_char;
+        if ret.is_null() {
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        *ret.offset(size as isize) = '\0' as i32 as ::core::ffi::c_char;
+        *__errno_location() = 0 as ::core::ffi::c_int;
+        let count: size_t = fread(
+            ret as *mut ::core::ffi::c_void,
+            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+            size,
+            file,
+        ) as size_t;
+        if count != size {
+            if feof(file) == 0 {
+                printf(
+                    b"Error reading file %s: unexpected end of file\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    path,
+                );
+            } else if ferror(file) != 0 {
+                fprintf(
+                    stderr,
+                    b"Error reading file %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    path,
+                    strerror(*__errno_location()),
+                );
+            }
+            free(ret as *mut ::core::ffi::c_void);
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        return ret;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_read_file(
+    mut path_rel: *const ::core::ffi::c_char,
+) -> *mut ::core::ffi::c_char {
+    unsafe {
+        let mut path: *mut ::core::ffi::c_char = test_get_path(path_rel);
+        if path.is_null() {
+            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        }
+        let mut file: *mut FILE =
+            fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        let mut ret: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        if !file.is_null() {
+            ret = read_file(path, file);
+        }
+        if !file.is_null() {
+            fclose(file);
+        }
+        free(path as *mut ::core::ffi::c_void);
+        return ret;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_context {
+    unsafe {
+        let mut ctx_flags: xkb_context_flags = XKB_CONTEXT_NO_DEFAULT_INCLUDES;
+        if test_flags as ::core::ffi::c_uint
+            & CONTEXT_ALLOW_ENVIRONMENT_NAMES as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            unsetenv(b"XKB_DEFAULT_RULES\0".as_ptr() as *const ::core::ffi::c_char);
+            unsetenv(b"XKB_DEFAULT_MODEL\0".as_ptr() as *const ::core::ffi::c_char);
+            unsetenv(b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const ::core::ffi::c_char);
+            unsetenv(b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const ::core::ffi::c_char);
+            unsetenv(b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const ::core::ffi::c_char);
+        } else {
+            ctx_flags = (ctx_flags as ::core::ffi::c_uint
+                | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_context_flags;
+        }
+        let ctx: *mut xkb_context = xkb_context_new(ctx_flags) as *mut xkb_context;
+        if ctx.is_null() {
+            return ::core::ptr::null_mut::<xkb_context>();
+        }
+        let path: *mut ::core::ffi::c_char =
+            test_get_path(b"\0".as_ptr() as *const ::core::ffi::c_char) as *mut ::core::ffi::c_char;
+        if path.is_null() {
+            xkb_context_unref(ctx);
+            return ::core::ptr::null_mut::<xkb_context>();
+        }
+        xkb_context_include_path_append(ctx, path);
+        free(path as *mut ::core::ffi::c_void);
+        return ctx;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_file(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut path_rel: *const ::core::ffi::c_char,
+) -> *mut xkb_keymap {
+    unsafe {
+        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut path: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        path = test_get_path(path_rel);
+        if path.is_null() {
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        file = fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        if file.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to open path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            free(path as *mut ::core::ffi::c_void);
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        if !file.is_null() {
+        } else {
+            __assert_fail(
+                b"file != NULL\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                496 as ::core::ffi::c_uint,
+                b"struct xkb_keymap *test_compile_file(struct xkb_context *, enum xkb_keymap_format, const char *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        keymap = xkb_keymap_new_from_file(context, file, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
+        fclose(file);
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to compile path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            free(path as *mut ::core::ffi::c_void);
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        fprintf(
+            stderr,
+            b"Successfully compiled path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+            path,
+        );
+        free(path as *mut ::core::ffi::c_void);
+        return keymap;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_string(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut string: *const ::core::ffi::c_char,
+) -> *mut xkb_keymap {
+    unsafe {
+        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        keymap =
+            xkb_keymap_new_from_string(context, string, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to compile string\n\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        return keymap;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_buffer(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut buf: *const ::core::ffi::c_char,
+    mut len: size_t,
+) -> *mut xkb_keymap {
+    unsafe {
+        return test_compile_buffer2(context, format, XKB_KEYMAP_COMPILE_STRICT_MODE, buf, len);
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_buffer2(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut flags: xkb_keymap_compile_flags,
+    mut buf: *const ::core::ffi::c_char,
+    mut len: size_t,
+) -> *mut xkb_keymap {
+    unsafe {
+        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        keymap = xkb_keymap_new_from_buffer(context, buf, len, format, flags);
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to compile keymap from memory buffer\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        return keymap;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_rules(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut rules: *const ::core::ffi::c_char,
+    mut model: *const ::core::ffi::c_char,
+    mut layout: *const ::core::ffi::c_char,
+    mut variant: *const ::core::ffi::c_char,
+    mut options: *const ::core::ffi::c_char,
+) -> *mut xkb_keymap {
+    unsafe {
+        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut rmlvo: xkb_rule_names = xkb_rule_names {
+            rules: if isempty(rules) as ::core::ffi::c_int != 0 {
+                ::core::ptr::null::<::core::ffi::c_char>()
+            } else {
+                rules
+            },
+            model: if isempty(model) as ::core::ffi::c_int != 0 {
+                ::core::ptr::null::<::core::ffi::c_char>()
+            } else {
+                model
+            },
+            layout: if isempty(layout) as ::core::ffi::c_int != 0 {
+                ::core::ptr::null::<::core::ffi::c_char>()
+            } else {
+                layout
+            },
+            variant: if isempty(variant) as ::core::ffi::c_int != 0 {
+                ::core::ptr::null::<::core::ffi::c_char>()
+            } else {
+                variant
+            },
+            options: if isempty(options) as ::core::ffi::c_int != 0 {
+                ::core::ptr::null::<::core::ffi::c_char>()
+            } else {
+                options
+            },
+        };
+        if rules.is_null()
+            && model.is_null()
+            && layout.is_null()
+            && variant.is_null()
+            && options.is_null()
+        {
+            keymap = xkb_keymap_new_from_names2(
+                context,
+                ::core::ptr::null::<xkb_rule_names>(),
+                format,
+                XKB_KEYMAP_COMPILE_STRICT_MODE,
+            );
+        } else {
+            keymap = xkb_keymap_new_from_names2(
+                context,
+                &raw mut rmlvo,
+                format,
+                XKB_KEYMAP_COMPILE_STRICT_MODE,
+            );
+        }
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to compile RMLVO: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                rules,
+                model,
+                layout,
+                variant,
+                options,
+            );
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        return keymap;
+    }
+}
+unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
+    mut context: *mut xkb_context,
+    mut names: *const xkb_rule_names,
+) -> *mut xkb_rmlvo_builder {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        let mut rmlvo: *mut xkb_rmlvo_builder = xkb_rmlvo_builder_new(
+            context,
+            (*names).rules,
+            (*names).model,
+            XKB_RMLVO_BUILDER_NO_FLAGS,
+        );
+        if rmlvo.is_null() {
+            fprintf(
+                stderr,
+                b"ERROR: xkb_rmlvo_builder_new() failed\n\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+            return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+        }
+        let mut buf: [::core::ffi::c_char; 1024] = [
+            0 as ::core::ffi::c_int as ::core::ffi::c_char,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ];
+        let mut loptions: C2Rust_Unnamed_15 = C2Rust_Unnamed_15 {
+            size: 0 as darray_size_t,
+            alloc: 0 as darray_size_t,
+            item: ::core::ptr::null_mut::<darray_string>(),
+        };
+        if !isempty((*names).options) {
+            let mut o: *const ::core::ffi::c_char = (*names).options;
+            loop {
+                if !(*o as ::core::ffi::c_int != '\0' as i32) {
+                    c2rust_current_block = 11777552016271000781;
+                    break;
+                }
+                let mut option: *const ::core::ffi::c_char = o;
+                while *o as ::core::ffi::c_int != '\0' as i32
+                    && *o as ::core::ffi::c_int != ',' as i32
+                    && *o as ::core::ffi::c_int != OPTIONS_GROUP_SPECIFIER_PREFIX
+                {
+                    o = o.offset(1);
+                }
+                let len: size_t = o.offset_from(option) as ::core::ffi::c_long as size_t;
+                if len >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize {
+                    c2rust_current_block = 4427821232739340156;
+                    break;
+                }
+                memcpy(
+                    &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
+                    option as *const ::core::ffi::c_void,
+                    len,
+                );
+                buf[len as usize] = '\0' as i32 as ::core::ffi::c_char;
+                let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
+                if *o as ::core::ffi::c_int == OPTIONS_GROUP_SPECIFIER_PREFIX {
+                    o = o.offset(1);
+                    let mut count: ::core::ffi::c_int =
+                        parse_dec_to_uint32_t(o, SIZE_MAX as size_t, &raw mut layout);
+                    if count > 0 as ::core::ffi::c_int
+                        && layout > 0 as xkb_layout_index_t
+                        && layout <= XKB_MAX_GROUPS as xkb_layout_index_t
+                    {
+                        o = o.offset(count as isize);
+                        layout = layout.wrapping_sub(1);
+                    } else {
+                        layout = XKB_LAYOUT_INVALID as xkb_layout_index_t;
+                    }
+                    let layout_index_end: *const ::core::ffi::c_char = o;
+                    while *o as ::core::ffi::c_int != '\0' as i32
+                        && *o as ::core::ffi::c_int != ',' as i32
+                    {
+                        o = o.offset(1);
+                    }
+                    if count <= 0 as ::core::ffi::c_int || layout_index_end != o {
+                        layout = XKB_LAYOUT_INVALID as xkb_layout_index_t;
+                    }
+                }
+                if layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
+                    let mut opt: *mut ::core::ffi::c_char =
+                        strdup(&raw mut buf as *mut ::core::ffi::c_char);
+                    if opt.is_null() {
+                        c2rust_current_block = 4427821232739340156;
+                        break;
+                    }
+                    let mut __oldSize: darray_size_t = loptions.size;
+                    let mut __newSize: darray_size_t =
+                        (layout as darray_size_t).wrapping_add(1 as darray_size_t);
+                    loptions.size = __newSize;
+                    if __newSize > __oldSize {
+                        let mut __need: darray_size_t = __newSize;
+                        if __need > loptions.alloc {
+                            loptions.alloc = darray_next_alloc(
+                                loptions.alloc,
+                                __need,
+                                ::core::mem::size_of::<darray_string>() as size_t,
+                            );
+                            loptions.item =
+                                realloc(
+                                    loptions.item as *mut ::core::ffi::c_void,
+                                    (loptions.alloc as size_t).wrapping_mul(
+                                        ::core::mem::size_of::<darray_string>() as size_t,
+                                    ),
+                                ) as *mut darray_string;
+                        }
+                        memset(
+                            loptions.item.offset(__oldSize as isize) as *mut darray_string
+                                as *mut ::core::ffi::c_void,
+                            0 as ::core::ffi::c_int,
+                            (__newSize.wrapping_sub(__oldSize) as size_t)
+                                .wrapping_mul(::core::mem::size_of::<darray_string>() as size_t),
+                        );
+                    }
+                    let ref mut c2rust_fresh0 = (*loptions.item.offset(layout as isize)).size;
+                    *c2rust_fresh0 = (*loptions.item.offset(layout as isize))
+                        .size
+                        .wrapping_add(1 as darray_size_t);
+                    let mut __need_0: darray_size_t = *c2rust_fresh0;
+                    if __need_0 > (*loptions.item.offset(layout as isize)).alloc {
+                        let ref mut c2rust_fresh1 = (*loptions.item.offset(layout as isize)).alloc;
+                        *c2rust_fresh1 = darray_next_alloc(
+                            (*loptions.item.offset(layout as isize)).alloc,
+                            __need_0,
+                            ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                        );
+                        let ref mut c2rust_fresh2 = (*loptions.item.offset(layout as isize)).item;
+                        *c2rust_fresh2 = realloc(
+                            (*loptions.item.offset(layout as isize)).item
+                                as *mut ::core::ffi::c_void,
+                            (*c2rust_fresh1 as size_t)
+                                .wrapping_mul(
+                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t
+                                ),
+                        ) as *mut *mut ::core::ffi::c_char;
+                    }
+                    let ref mut c2rust_fresh3 =
+                        *(*loptions.item.offset(layout as isize)).item.offset(
+                            (*loptions.item.offset(layout as isize))
+                                .size
+                                .wrapping_sub(1 as darray_size_t)
+                                as isize,
+                        );
+                    *c2rust_fresh3 = opt;
+                } else if !xkb_rmlvo_builder_append_option(
+                    rmlvo,
+                    &raw mut buf as *mut ::core::ffi::c_char,
+                ) {
+                    c2rust_current_block = 4427821232739340156;
+                    break;
+                }
+                if *o as ::core::ffi::c_int == ',' as i32 {
+                    o = o.offset(1);
+                }
+            }
+        } else {
+            c2rust_current_block = 11777552016271000781;
+        }
+        match c2rust_current_block {
+            11777552016271000781 => {
+                if !isempty((*names).layout) {
+                    let mut l: *const ::core::ffi::c_char = (*names).layout;
+                    let mut v: *const ::core::ffi::c_char = (*names).variant;
+                    if (*names).variant.is_null() {
+                        v = b"\0".as_ptr() as *const ::core::ffi::c_char;
+                    }
+                    let mut layout_count: xkb_layout_index_t = 0 as xkb_layout_index_t;
+                    loop {
+                        if !(*l as ::core::ffi::c_int != '\0' as i32) {
+                            c2rust_current_block = 14498840325876589332;
+                            break;
+                        }
+                        let mut layout_0: *const ::core::ffi::c_char = l;
+                        let mut variant: *const ::core::ffi::c_char = v;
+                        let mut start: *mut ::core::ffi::c_char =
+                            &raw mut buf as *mut ::core::ffi::c_char;
+                        let mut buf_size: size_t =
+                            ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t;
+                        while *l as ::core::ffi::c_int != '\0' as i32
+                            && *l as ::core::ffi::c_int != ',' as i32
+                        {
+                            l = l.offset(1);
+                        }
+                        while *v as ::core::ffi::c_int != '\0' as i32
+                            && *v as ::core::ffi::c_int != ',' as i32
+                        {
+                            v = v.offset(1);
+                        }
+                        let mut len_0: size_t =
+                            l.offset_from(layout_0) as ::core::ffi::c_long as size_t;
+                        if len_0 >= buf_size {
+                            c2rust_current_block = 4427821232739340156;
+                            break;
+                        }
+                        memcpy(
+                            start as *mut ::core::ffi::c_void,
+                            layout_0 as *const ::core::ffi::c_void,
+                            len_0,
+                        );
+                        *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
+                        start = start.offset(len_0 as isize);
+                        buf_size = buf_size.wrapping_sub(len_0.wrapping_add(1 as size_t));
+                        len_0 = v.offset_from(variant) as ::core::ffi::c_long as size_t;
+                        if len_0 >= buf_size {
+                            c2rust_current_block = 4427821232739340156;
+                            break;
+                        }
+                        start = start.offset(1);
+                        memcpy(
+                            start as *mut ::core::ffi::c_void,
+                            variant as *const ::core::ffi::c_void,
+                            len_0,
+                        );
+                        *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
+                        let mut opts: *mut *mut ::core::ffi::c_char =
+                            ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                        let mut opts_count: size_t = 0 as size_t;
+                        if layout_count < loptions.size as xkb_layout_index_t {
+                            opts = (*loptions.item.offset(layout_count as isize)).item;
+                            opts_count =
+                                (*loptions.item.offset(layout_count as isize)).size as size_t;
+                        }
+                        if !xkb_rmlvo_builder_append_layout(
+                            rmlvo,
+                            &raw mut buf as *mut ::core::ffi::c_char,
+                            start,
+                            opts as *mut *const ::core::ffi::c_char,
+                            opts_count,
+                        ) {
+                            c2rust_current_block = 4427821232739340156;
+                            break;
+                        }
+                        if *l as ::core::ffi::c_int == ',' as i32 {
+                            l = l.offset(1);
+                        }
+                        if *v as ::core::ffi::c_int == ',' as i32 {
+                            v = v.offset(1);
+                        }
+                        layout_count = layout_count.wrapping_add(1 as xkb_layout_index_t);
+                    }
+                } else {
+                    c2rust_current_block = 14498840325876589332;
+                }
+            }
+            _ => {}
+        }
+        match c2rust_current_block {
+            4427821232739340156 => {
+                fprintf(
+                    stderr,
+                    b"ERROR: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"xkb_rules_names_to_rmlvo_builder\0".as_ptr() as *const ::core::ffi::c_char,
+                );
+                xkb_rmlvo_builder_unref(rmlvo);
+                rmlvo = ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+            }
+            _ => {}
+        }
+        let mut opts_0: *mut darray_string = ::core::ptr::null_mut::<darray_string>();
+        if !loptions.item.is_null() {
+            opts_0 = loptions.item.offset(0 as ::core::ffi::c_int as isize) as *mut darray_string;
+            while opts_0 < loptions.item.offset(loptions.size as isize) as *mut darray_string {
+                let mut opt_0: *mut *mut ::core::ffi::c_char =
+                    ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                if !(*opts_0).item.is_null() {
+                    opt_0 = (*opts_0).item.offset(0 as ::core::ffi::c_int as isize)
+                        as *mut *mut ::core::ffi::c_char;
+                    while opt_0
+                        < (*opts_0).item.offset((*opts_0).size as isize)
+                            as *mut *mut ::core::ffi::c_char
+                    {
+                        free(*opt_0 as *mut ::core::ffi::c_void);
+                        opt_0 = opt_0.offset(1);
+                    }
+                }
+                free((*opts_0).item as *mut ::core::ffi::c_void);
+                (*opts_0).item = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                (*opts_0).size = 0 as darray_size_t;
+                (*opts_0).alloc = 0 as darray_size_t;
+                opts_0 = opts_0.offset(1);
+            }
+        }
+        free(loptions.item as *mut ::core::ffi::c_void);
+        loptions.item = ::core::ptr::null_mut::<darray_string>();
+        loptions.size = 0 as darray_size_t;
+        loptions.alloc = 0 as darray_size_t;
+        return rmlvo;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_rmlvo(
+    mut context: *mut xkb_context,
+    mut format: xkb_keymap_format,
+    mut rules: *const ::core::ffi::c_char,
+    mut model: *const ::core::ffi::c_char,
+    mut layout: *const ::core::ffi::c_char,
+    mut variant: *const ::core::ffi::c_char,
+    mut options: *const ::core::ffi::c_char,
+) -> *mut xkb_keymap {
+    unsafe {
+        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let names: xkb_rule_names = xkb_rule_names {
+            rules: rules,
+            model: model,
+            layout: layout,
+            variant: variant,
+            options: options,
+        };
+        let mut rmlvo: *mut xkb_rmlvo_builder =
+            xkb_rules_names_to_rmlvo_builder(context, &raw const names);
+        if rmlvo.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to create RMLVO builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                rules,
+                model,
+                layout,
+                variant,
+                options,
+            );
+            return ::core::ptr::null_mut::<xkb_keymap>();
+        }
+        if xkb_keymap_new_from_rmlvo(rmlvo, format, 4294967295 as xkb_keymap_compile_flags)
+            .is_null()
+        {
+        } else {
+            __assert_fail(
+                b"!xkb_keymap_new_from_rmlvo(rmlvo, format, -1)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                752 as ::core::ffi::c_uint,
+                b"struct xkb_keymap *test_compile_rmlvo(struct xkb_context *, enum xkb_keymap_format, const char *, const char *, const char *, const char *, const char *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        if xkb_keymap_new_from_rmlvo(rmlvo, format, 65535 as xkb_keymap_compile_flags).is_null() {
+        } else {
+            __assert_fail(
+                b"!xkb_keymap_new_from_rmlvo(rmlvo, format, 0xffff)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                753 as ::core::ffi::c_uint,
+                b"struct xkb_keymap *test_compile_rmlvo(struct xkb_context *, enum xkb_keymap_format, const char *, const char *, const char *, const char *, const char *)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        keymap = xkb_keymap_new_from_rmlvo(rmlvo, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
+        xkb_rmlvo_builder_unref(rmlvo);
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Failed to compile RMLVO from builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                rules,
+                model,
+                layout,
+                variant,
+                options,
+            );
+        }
+        return keymap;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_output(
+    mut ctx: *mut xkb_context,
+    mut input_format: xkb_keymap_format,
+    mut output_format: xkb_keymap_format,
+    mut compile_buffer: test_compile_buffer_t,
+    mut compile_buffer_private: *mut ::core::ffi::c_void,
+    mut test_title: *const ::core::ffi::c_char,
+    mut keymap_str: *const ::core::ffi::c_char,
+    mut keymap_len: size_t,
+    mut rel_path: *const ::core::ffi::c_char,
+    mut update_output_files: bool,
+) -> bool {
+    unsafe {
+        return test_compile_output2(
+            ctx,
+            input_format,
+            output_format,
+            (XKB_KEYMAP_SERIALIZE_PRETTY as ::core::ffi::c_int
+                | XKB_KEYMAP_SERIALIZE_KEEP_UNUSED as ::core::ffi::c_int)
+                as xkb_keymap_serialize_flags,
+            compile_buffer,
+            compile_buffer_private,
+            test_title,
+            keymap_str,
+            keymap_len,
+            rel_path,
+            update_output_files,
+        );
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_compile_output2(
+    mut ctx: *mut xkb_context,
+    mut input_format: xkb_keymap_format,
+    mut output_format: xkb_keymap_format,
+    mut serialize_flags: xkb_keymap_serialize_flags,
+    mut compile_buffer: test_compile_buffer_t,
+    mut compile_buffer_private: *mut ::core::ffi::c_void,
+    mut test_title: *const ::core::ffi::c_char,
+    mut keymap_str: *const ::core::ffi::c_char,
+    mut keymap_len: size_t,
+    mut rel_path: *const ::core::ffi::c_char,
+    mut update_output_files: bool,
+) -> bool {
+    unsafe {
+        let mut success: ::core::ffi::c_int = true_0;
+        if !test_title.is_null() {
+            fprintf(
+                stderr,
+                b"*** %s ***\n\0".as_ptr() as *const ::core::ffi::c_char,
+                test_title,
+            );
+        }
+        let mut keymap: *mut xkb_keymap = compile_buffer.expect("non-null function pointer")(
+            ctx,
+            input_format,
+            keymap_str,
+            keymap_len,
+            compile_buffer_private,
+        );
+        if rel_path.is_null() {
+            if !keymap.is_null() {
+                let mut got: *mut ::core::ffi::c_char =
+                    xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
+                xkb_keymap_unref(keymap);
+                if !got.is_null() {
+                } else {
+                    __assert_fail(
+                        b"got\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        810 as ::core::ffi::c_uint,
+                        b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+                fprintf(
+                    stderr,
+                    b"Unexpected keymap compilation success:\n%s\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    got,
+                );
+                free(got as *mut ::core::ffi::c_void);
+            }
+            return keymap.is_null();
+        }
+        if keymap.is_null() {
+            fprintf(
+                stderr,
+                b"Unexpected keymap compilation failure\n\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+            return false_0 != 0;
+        }
+        let mut got_0: *mut ::core::ffi::c_char =
+            xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
+        if got_0.is_null() {
+            fprintf(
+                stderr,
+                b"Unexpected keymap serialization failure\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+            return false_0 != 0;
+        }
+        xkb_keymap_unref(keymap);
+        let path: *mut ::core::ffi::c_char = test_get_path(rel_path) as *mut ::core::ffi::c_char;
+        if !path.is_null() {
+        } else {
+            __assert_fail(
+                b"path\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                833 as ::core::ffi::c_uint,
+                b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        if update_output_files {
+            fprintf(
+                stderr,
+                b"Writing golden test output to: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            let mut file: *mut FILE =
+                fopen(path, b"wb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            if !file.is_null() {
+            } else {
+                __assert_fail(
+                    b"file\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    838 as ::core::ffi::c_uint,
+                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            fwrite(
+                got_0 as *const ::core::ffi::c_void,
+                1 as size_t,
+                strlen(got_0),
+                file,
+            );
+            fclose(file);
+        } else {
+            fprintf(
+                stderr,
+                b"Reading golden test output: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            let expected: *mut ::core::ffi::c_char =
+                test_read_file(rel_path) as *mut ::core::ffi::c_char;
+            if !expected.is_null() {
+            } else {
+                __assert_fail(
+                    b"expected\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    844 as ::core::ffi::c_uint,
+                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            static mut label: [*const ::core::ffi::c_char; 2] = [
+                b"Golden test\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Roundtrip\0".as_ptr() as *const ::core::ffi::c_char,
+            ];
+            let mut test_round_trip: bool = output_format as ::core::ffi::c_uint
+                == input_format as ::core::ffi::c_uint
+                || output_format as ::core::ffi::c_uint
+                    == XKB_KEYMAP_USE_ORIGINAL_FORMAT as ::core::ffi::c_uint;
+            let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+            while (k as usize)
+                < (::core::mem::size_of::<[*const ::core::ffi::c_char; 2]>() as usize)
+                    .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
+                && success != 0
+            {
+                if streq(expected, got_0) {
+                    fprintf(
+                        stderr,
+                        b"%s succeeded.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        label[k as usize],
+                    );
+                    if !test_round_trip {
+                        break;
+                    }
+                    keymap = compile_buffer.expect("non-null function pointer")(
+                        ctx,
+                        input_format,
+                        expected,
+                        strlen(expected),
+                        compile_buffer_private,
+                    );
+                    if keymap.is_null() {
+                        fprintf(
+                            stderr,
+                            b"Unexpected keymap roundtrip compilation failure\n\0".as_ptr()
+                                as *const ::core::ffi::c_char,
+                        );
+                        success = false_0;
+                        break;
+                    } else {
+                        free(got_0 as *mut ::core::ffi::c_void);
+                        got_0 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
+                        if got_0.is_null() {
+                            fprintf(
+                                stderr,
+                                b"Unexpected keymap roundtrip serialization failure\n\0".as_ptr()
+                                    as *const ::core::ffi::c_char,
+                            );
+                            success = false_0;
+                        }
+                        xkb_keymap_unref(keymap);
+                        test_round_trip = false_0 != 0;
+                    }
+                } else {
+                    fprintf(
+                        stderr,
+                        b"%s failed: dumped map differs from expected.\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        label[k as usize],
+                    );
+                    fprintf(
+                        stderr,
+                        b"Path to expected file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        path,
+                    );
+                    fprintf(
+                        stderr,
+                        b"Length: expected %zu, got: %zu\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        strlen(expected),
+                        strlen(got_0),
+                    );
+                    fprintf(
+                        stderr,
+                        b"Dumped map:\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    );
+                    fprintf(
+                        stderr,
+                        b"%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        got_0,
+                    );
+                    success = false_0;
+                }
+                k = k.wrapping_add(1);
+            }
+            free(expected as *mut ::core::ffi::c_void);
+        }
+        free(got_0 as *mut ::core::ffi::c_void);
+        free(path as *mut ::core::ffi::c_void);
+        return success != 0;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn test_third_pary_compile_output(
+    mut compile_buffer: test_third_party_compile_buffer_t,
+    mut compile_buffer_private: *mut ::core::ffi::c_void,
+    mut test_title: *const ::core::ffi::c_char,
+    mut keymap_in: *const ::core::ffi::c_char,
+    mut keymap_in_size: size_t,
+    mut rel_path: *const ::core::ffi::c_char,
+    mut update_output_files: bool,
+) -> bool {
+    unsafe {
+        let mut success: ::core::ffi::c_int = true_0;
+        fprintf(
+            stderr,
+            b"*** %s ***\n\0".as_ptr() as *const ::core::ffi::c_char,
+            test_title,
+        );
+        let mut got: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut got_size: size_t = 0 as size_t;
+        let mut ret: ::core::ffi::c_int = compile_buffer.expect("non-null function pointer")(
+            keymap_in,
+            keymap_in_size,
+            compile_buffer_private,
+            &raw mut got,
+            &raw mut got_size,
+        );
+        if rel_path.is_null() {
+            if ret == EXIT_SUCCESS {
+                fprintf(
+                    stderr,
+                    b"Unexpected keymap compilation success:\nstdout:\n%s\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    got,
+                );
+            }
+            free(got as *mut ::core::ffi::c_void);
+            return ret != EXIT_SUCCESS;
+        }
+        if ret != EXIT_SUCCESS || isempty(got) as ::core::ffi::c_int != 0 {
+            fprintf(
+                stderr,
+                b"Unexpected keymap compilation failure.\nstdout:\n%s\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                got,
+            );
+            free(got as *mut ::core::ffi::c_void);
+            return false_0 != 0;
+        }
+        let mut path: *mut ::core::ffi::c_char = test_get_path(rel_path);
+        if !path.is_null() {
+        } else {
+            __assert_fail(
+                b"path\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                927 as ::core::ffi::c_uint,
+                b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+            );
+        };
+        if update_output_files {
+            fprintf(
+                stderr,
+                b"Writing golden test output to: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            let mut file: *mut FILE =
+                fopen(path, b"wb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            if !file.is_null() {
+            } else {
+                __assert_fail(
+                    b"file\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    932 as ::core::ffi::c_uint,
+                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            fwrite(
+                got as *const ::core::ffi::c_void,
+                1 as size_t,
+                got_size,
+                file,
+            );
+            fclose(file);
+        } else {
+            fprintf(
+                stderr,
+                b"Reading golden test output: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            let mut expected: *mut ::core::ffi::c_char = test_read_file(rel_path);
+            if !expected.is_null() {
+            } else {
+                __assert_fail(
+                    b"expected\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    938 as ::core::ffi::c_uint,
+                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            let mut label: [*const ::core::ffi::c_char; 2] = [
+                b"Golden test\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Roundtrip\0".as_ptr() as *const ::core::ffi::c_char,
+            ];
+            let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+            while (k as usize)
+                < (::core::mem::size_of::<[*const ::core::ffi::c_char; 2]>() as usize)
+                    .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
+                && success != 0
+            {
+                if streq(expected, got) {
+                    fprintf(
+                        stderr,
+                        b"%s succeeded.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        label[k as usize],
+                    );
+                    if !(k > 0 as ::core::ffi::c_uint) {
+                        break;
+                    }
+                } else {
+                    fprintf(
+                        stderr,
+                        b"%s failed: dumped map differs from expected.\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        label[k as usize],
+                    );
+                    fprintf(
+                        stderr,
+                        b"Path to expected file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        path,
+                    );
+                    fprintf(
+                        stderr,
+                        b"Length: expected %zu, got: %zu\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        strlen(expected),
+                        strlen(got),
+                    );
+                    fprintf(
+                        stderr,
+                        b"Dumped map:\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    );
+                    fprintf(
+                        stderr,
+                        b"%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        got,
+                    );
+                    success = false_0;
+                }
+                k = k.wrapping_add(1);
+            }
+            free(expected as *mut ::core::ffi::c_void);
+        }
+        free(got as *mut ::core::ffi::c_void);
+        free(path as *mut ::core::ffi::c_void);
+        return success != 0;
+    }
+}

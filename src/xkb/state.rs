@@ -1,0 +1,6762 @@
+use c2rust_bitfields;
+
+pub mod internal {
+
+    pub type __builtin_va_list = [__va_list_tag; 1];
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+
+    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
+}
+
+pub mod types_h {
+
+    pub type __int8_t = i8;
+
+    pub type __uint8_t = u8;
+
+    pub type __int16_t = i16;
+
+    pub type __uint16_t = u16;
+
+    pub type __int32_t = i32;
+
+    pub type __uint32_t = u32;
+}
+
+pub mod stdint_intn_h {
+
+    pub type int8_t = __int8_t;
+
+    pub type int16_t = __int16_t;
+
+    pub type int32_t = __int32_t;
+    use super::types_h::{__int16_t, __int32_t, __int8_t};
+}
+
+pub mod stdint_uintn_h {
+
+    pub type uint8_t = __uint8_t;
+
+    pub type uint16_t = __uint16_t;
+
+    pub type uint32_t = __uint32_t;
+    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
+}
+
+pub mod __stddef_size_t_h {
+
+    pub type size_t = usize;
+}
+
+pub mod sys_types_h {
+
+    pub type ssize_t = isize;
+}
+
+pub mod stdlib_h {
+
+    pub type __compar_fn_t = Option<
+        unsafe extern "C" fn(
+            *const ::core::ffi::c_void,
+            *const ::core::ffi::c_void,
+        ) -> ::core::ffi::c_int,
+    >;
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+
+        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
+            -> *mut ::core::ffi::c_void;
+
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+
+        pub fn qsort(
+            __base: *mut ::core::ffi::c_void,
+            __nmemb: size_t,
+            __size: size_t,
+            __compar: __compar_fn_t,
+        );
+    }
+}
+
+pub mod __stdarg___gnuc_va_list_h {
+
+    pub type __gnuc_va_list = __builtin_va_list;
+    use super::internal::__builtin_va_list;
+}
+
+pub mod stdio_h {
+
+    pub type va_list = __gnuc_va_list;
+    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+}
+
+pub mod xkbcommon_errors_h {
+
+    pub type xkb_error_code = ::core::ffi::c_int;
+
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
+
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
+
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
+
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
+
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
+
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
+
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
+
+    pub const XKB_SUCCESS: xkb_error_code = 0;
+
+    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
+}
+
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::atom_table;
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    extern "C" {
+
+        pub fn xkb_log(
+            ctx: *mut xkb_context,
+            level: xkb_log_level,
+            verbosity: ::core::ffi::c_int,
+            fmt: *const ::core::ffi::c_char,
+            ...
+        );
+    }
+}
+
+pub mod atom_h {
+
+    pub type xkb_atom_t = darray_size_t;
+
+    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    use super::darray_h::darray_size_t;
+    extern "C" {
+
+        pub type atom_table;
+    }
+}
+
+pub mod darray_h {
+
+    pub type darray_size_t = ::core::ffi::c_uint;
+    #[inline]
+
+    pub unsafe extern "C" fn darray_next_alloc(
+        mut alloc: darray_size_t,
+        mut need: darray_size_t,
+        mut itemSize: size_t,
+    ) -> darray_size_t {
+        unsafe {
+            if (need as size_t)
+                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
+                    .wrapping_mul(2 as ::core::ffi::c_uint)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_div(itemSize)
+                    .wrapping_div(2 as size_t)
+            {
+            } else {
+                __assert_fail(
+                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    220 as ::core::ffi::c_uint,
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if alloc == 0 as darray_size_t {
+                alloc = 4 as darray_size_t;
+            }
+            while alloc < need {
+                alloc = alloc.wrapping_mul(2 as darray_size_t);
+            }
+            return alloc;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::__assert_fail;
+}
+
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+
+    pub type xkb_log_level = ::core::ffi::c_uint;
+
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+
+    pub type xkb_layout_index_t = uint32_t;
+
+    pub type xkb_keycode_t = uint32_t;
+
+    pub type xkb_mod_mask_t = uint32_t;
+
+    pub type xkb_mod_index_t = uint32_t;
+
+    pub type xkb_keysym_t = uint32_t;
+
+    pub type xkb_level_index_t = uint32_t;
+
+    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+
+    pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
+
+    pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
+
+    pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
+
+    pub type xkb_state_component = ::core::ffi::c_uint;
+
+    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
+
+    pub const XKB_STATE_LEDS: xkb_state_component = 256;
+
+    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
+
+    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
+
+    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
+
+    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
+
+    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
+
+    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
+
+    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
+
+    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
+
+    pub type xkb_layout_mask_t = uint32_t;
+
+    pub type xkb_led_index_t = uint32_t;
+
+    pub type xkb_keymap_format = ::core::ffi::c_uint;
+
+    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
+
+    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
+
+    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+
+    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
+
+    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
+
+    pub type xkb_key_direction = ::core::ffi::c_uint;
+
+    pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
+
+    pub const XKB_KEY_DOWN: xkb_key_direction = 1;
+
+    pub const XKB_KEY_UP: xkb_key_direction = 0;
+
+    pub type xkb_led_mask_t = uint32_t;
+
+    pub type xkb_event_type = ::core::ffi::c_uint;
+
+    pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
+
+    pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
+
+    pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
+
+    pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
+
+    pub type xkb_a11y_flags = ::core::ffi::c_uint;
+
+    pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
+
+    pub const XKB_A11Y_LATCH_TO_LOCK: xkb_a11y_flags = 1;
+
+    pub const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
+
+    pub type xkb_keyboard_control_flags = ::core::ffi::c_uint;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY7: xkb_keyboard_control_flags = 128;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY6: xkb_keyboard_control_flags = 64;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY5: xkb_keyboard_control_flags = 32;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY4: xkb_keyboard_control_flags = 16;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY3: xkb_keyboard_control_flags = 8;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY2: xkb_keyboard_control_flags = 4;
+
+    pub const XKB_KEYBOARD_CONTROL_OVERLAY1: xkb_keyboard_control_flags = 2;
+
+    pub const XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS: xkb_keyboard_control_flags = 1;
+
+    pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
+
+    pub type xkb_events_flags = ::core::ffi::c_uint;
+
+    pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_state_components_update {
+        pub size: size_t,
+        pub components: xkb_state_component,
+        pub affect_latched_mods: xkb_mod_mask_t,
+        pub latched_mods: xkb_mod_mask_t,
+        pub affect_locked_mods: xkb_mod_mask_t,
+        pub locked_mods: xkb_mod_mask_t,
+        pub latched_layout: int32_t,
+        pub locked_layout: int32_t,
+        pub affect_controls: xkb_keyboard_control_flags,
+        pub controls: xkb_keyboard_control_flags,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_layout_policy_update {
+        pub size: size_t,
+        pub policy: xkb_layout_out_of_range_policy,
+        pub redirect: xkb_layout_index_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_state_update {
+        pub size: size_t,
+        pub components: *const xkb_state_components_update,
+        pub layout_policy: *const xkb_layout_policy_update,
+    }
+
+    pub type xkb_consumed_mode = ::core::ffi::c_uint;
+
+    pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
+
+    pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
+
+    pub type xkb_state_match = ::core::ffi::c_uint;
+
+    pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
+
+    pub const XKB_STATE_MATCH_ALL: xkb_state_match = 2;
+
+    pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
+
+    pub const XKB_KEYCODE_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+
+    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+
+    pub const XKB_LEVEL_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+
+    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+
+    pub const XKB_LED_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+    use super::keymap_h::xkb_keymap;
+    use super::stdint_intn_h::int32_t;
+    use super::stdint_uintn_h::uint32_t;
+    extern "C" {
+
+        pub fn xkb_keysym_to_utf8(
+            keysym: xkb_keysym_t,
+            buffer: *mut ::core::ffi::c_char,
+            size: size_t,
+        ) -> ::core::ffi::c_int;
+
+        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> uint32_t;
+
+        pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
+
+        pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
+
+        pub fn xkb_context_unref(context: *mut xkb_context);
+
+        pub fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap;
+
+        pub fn xkb_keymap_unref(keymap: *mut xkb_keymap);
+
+        pub fn xkb_keymap_num_mods(keymap: *mut xkb_keymap) -> xkb_mod_index_t;
+
+        pub fn xkb_keymap_mod_get_index(
+            keymap: *mut xkb_keymap,
+            name: *const ::core::ffi::c_char,
+        ) -> xkb_mod_index_t;
+
+        pub fn xkb_keymap_layout_get_index(
+            keymap: *mut xkb_keymap,
+            name: *const ::core::ffi::c_char,
+        ) -> xkb_layout_index_t;
+
+        pub fn xkb_keymap_led_get_index(
+            keymap: *mut xkb_keymap,
+            name: *const ::core::ffi::c_char,
+        ) -> xkb_led_index_t;
+
+        pub fn xkb_keymap_num_layouts_for_key(
+            keymap: *mut xkb_keymap,
+            key: xkb_keycode_t,
+        ) -> xkb_layout_index_t;
+
+        pub fn xkb_keymap_key_get_syms_by_level(
+            keymap: *mut xkb_keymap,
+            key: xkb_keycode_t,
+            layout: xkb_layout_index_t,
+            level: xkb_level_index_t,
+            syms_out: *mut *const xkb_keysym_t,
+        ) -> ::core::ffi::c_int;
+    }
+}
+
+pub mod keymap_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_keymap {
+        pub ctx: *mut xkb_context,
+        pub refcnt: ::core::ffi::c_int,
+        pub flags: xkb_keymap_compile_flags,
+        pub format: xkb_keymap_format,
+        pub num_leds: xkb_led_index_t,
+        pub leds: [xkb_led; 32],
+        pub min_key_code: xkb_keycode_t,
+        pub max_key_code: xkb_keycode_t,
+        pub num_keys: xkb_keycode_t,
+        pub num_keys_low: xkb_keycode_t,
+        pub keys: *mut xkb_key,
+        pub c2rust_unnamed: C2Rust_Unnamed_3,
+        pub types: *mut xkb_key_type,
+        pub num_types: darray_size_t,
+        pub num_sym_interprets: darray_size_t,
+        pub sym_interprets: *mut xkb_sym_interpret,
+        pub mods: xkb_mod_set,
+        pub canonical_state_mask: xkb_mod_mask_t,
+        pub redirect_key_auto: xkb_keycode_t,
+        pub num_groups: xkb_layout_index_t,
+        pub num_group_names: xkb_layout_index_t,
+        pub group_names: *mut xkb_atom_t,
+        pub keycodes_section_name: *mut ::core::ffi::c_char,
+        pub symbols_section_name: *mut ::core::ffi::c_char,
+        pub types_section_name: *mut ::core::ffi::c_char,
+        pub compat_section_name: *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_mod_set {
+        pub mods: [xkb_mod; 32],
+        pub num_mods: xkb_mod_index_t,
+        pub explicit_vmods: xkb_mod_mask_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_mod {
+        pub name: xkb_atom_t,
+        pub type_0: mod_type,
+        pub mapping: xkb_mod_mask_t,
+    }
+
+    pub type mod_type = ::core::ffi::c_uint;
+
+    pub const MOD_BOTH: mod_type = 3;
+
+    pub const MOD_VIRT: mod_type = 2;
+
+    pub const MOD_REAL: mod_type = 1;
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct xkb_sym_interpret {
+        pub sym: xkb_keysym_t,
+        pub match_0: xkb_match_operation,
+        pub mods: xkb_mod_mask_t,
+        pub virtual_mod: xkb_mod_index_t,
+        pub level_one_only: bool,
+        #[bitfield(name = "repeat", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "required", ty = "bool", bits = "1..=1")]
+        pub repeat_required: [u8; 1],
+        pub num_actions: xkb_action_count_t,
+        pub a: C2Rust_Unnamed_1,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_1 {
+        pub action: xkb_action,
+        pub actions: *mut xkb_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union xkb_action {
+        pub type_0: xkb_action_type,
+        pub mods: xkb_mod_action,
+        pub group: xkb_group_action,
+        pub ctrls: xkb_controls_action,
+        pub dflt: xkb_pointer_default_action,
+        pub screen: xkb_switch_screen_action,
+        pub ptr: xkb_pointer_action,
+        pub btn: xkb_pointer_button_action,
+        pub redirect: xkb_redirect_key_action,
+        pub priv_0: xkb_private_action,
+        pub internal: xkb_internal_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_internal_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_internal_action_flags,
+        pub c2rust_unnamed: C2Rust_Unnamed_2,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_2 {
+        pub clear_latched_mods: xkb_mod_mask_t,
+    }
+
+    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+
+    pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
+
+    pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
+
+    pub type xkb_action_type = ::core::ffi::c_uint;
+
+    pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
+
+    pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
+
+    pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
+
+    pub const ACTION_TYPE_UNKNOWN: xkb_action_type = 18;
+
+    pub const ACTION_TYPE_UNSUPPORTED_LEGACY: xkb_action_type = 17;
+
+    pub const ACTION_TYPE_REDIRECT_KEY: xkb_action_type = 16;
+
+    pub const ACTION_TYPE_CTRL_LOCK: xkb_action_type = 15;
+
+    pub const ACTION_TYPE_CTRL_SET: xkb_action_type = 14;
+
+    pub const ACTION_TYPE_SWITCH_VT: xkb_action_type = 13;
+
+    pub const ACTION_TYPE_TERMINATE: xkb_action_type = 12;
+
+    pub const ACTION_TYPE_PTR_DEFAULT: xkb_action_type = 11;
+
+    pub const ACTION_TYPE_PTR_LOCK: xkb_action_type = 10;
+
+    pub const ACTION_TYPE_PTR_BUTTON: xkb_action_type = 9;
+
+    pub const ACTION_TYPE_PTR_MOVE: xkb_action_type = 8;
+
+    pub const ACTION_TYPE_GROUP_LOCK: xkb_action_type = 7;
+
+    pub const ACTION_TYPE_GROUP_LATCH: xkb_action_type = 6;
+
+    pub const ACTION_TYPE_GROUP_SET: xkb_action_type = 5;
+
+    pub const ACTION_TYPE_MOD_LOCK: xkb_action_type = 4;
+
+    pub const ACTION_TYPE_MOD_LATCH: xkb_action_type = 3;
+
+    pub const ACTION_TYPE_MOD_SET: xkb_action_type = 2;
+
+    pub const ACTION_TYPE_VOID: xkb_action_type = 1;
+
+    pub const ACTION_TYPE_NONE: xkb_action_type = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_private_action {
+        pub type_0: xkb_action_type,
+        pub data: [uint8_t; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_redirect_key_action {
+        pub type_0: xkb_action_type,
+        pub keycode: xkb_keycode_t,
+        pub affect: xkb_mod_mask_t,
+        pub mods: xkb_mod_mask_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_pointer_button_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub count: uint8_t,
+        pub button: uint8_t,
+    }
+
+    pub type xkb_action_flags = ::core::ffi::c_uint;
+
+    pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
+
+    pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
+
+    pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
+
+    pub const ACTION_LOCK_ON_RELEASE: xkb_action_flags = 1024;
+
+    pub const ACTION_SAME_SCREEN: xkb_action_flags = 512;
+
+    pub const ACTION_ACCEL: xkb_action_flags = 256;
+
+    pub const ACTION_ABSOLUTE_Y: xkb_action_flags = 128;
+
+    pub const ACTION_ABSOLUTE_X: xkb_action_flags = 64;
+
+    pub const ACTION_ABSOLUTE_SWITCH: xkb_action_flags = 32;
+
+    pub const ACTION_MODS_LOOKUP_MODMAP: xkb_action_flags = 16;
+
+    pub const ACTION_LOCK_NO_UNLOCK: xkb_action_flags = 8;
+
+    pub const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
+
+    pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
+
+    pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_pointer_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub x: int16_t,
+        pub y: int16_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_switch_screen_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub screen: int8_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_pointer_default_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub value: int8_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_controls_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub ctrls: xkb_action_controls,
+    }
+
+    pub type xkb_action_controls = ::core::ffi::c_uint;
+
+    pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
+
+    pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
+
+    pub const CONTROL_ALL: xkb_action_controls = 2088959;
+
+    pub const CONTROL_ALL_V1: xkb_action_controls = 2088455;
+
+    pub const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
+
+    pub const CONTROL_BELL: xkb_action_controls = 524288;
+
+    pub const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
+
+    pub const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
+
+    pub const CONTROL_AX: xkb_action_controls = 65536;
+
+    pub const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
+
+    pub const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
+
+    pub const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
+
+    pub const CONTROL_SLOW: xkb_action_controls = 2048;
+
+    pub const CONTROL_REPEAT: xkb_action_controls = 1024;
+
+    pub const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
+
+    pub const CONTROL_OVERLAY8: xkb_action_controls = 256;
+
+    pub const CONTROL_OVERLAY7: xkb_action_controls = 128;
+
+    pub const CONTROL_OVERLAY6: xkb_action_controls = 64;
+
+    pub const CONTROL_OVERLAY5: xkb_action_controls = 32;
+
+    pub const CONTROL_OVERLAY4: xkb_action_controls = 16;
+
+    pub const CONTROL_OVERLAY3: xkb_action_controls = 8;
+
+    pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
+
+    pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
+
+    pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_group_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub group: int32_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_mod_action {
+        pub type_0: xkb_action_type,
+        pub flags: xkb_action_flags,
+        pub mods: xkb_mods,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_mods {
+        pub mods: xkb_mod_mask_t,
+        pub mask: xkb_mod_mask_t,
+    }
+
+    pub type xkb_action_count_t = uint16_t;
+
+    pub type xkb_match_operation = ::core::ffi::c_uint;
+
+    pub const MATCH_EXACTLY: xkb_match_operation = 4;
+
+    pub const MATCH_ALL: xkb_match_operation = 3;
+
+    pub const MATCH_ANY: xkb_match_operation = 2;
+
+    pub const MATCH_ANY_OR_NONE: xkb_match_operation = 1;
+
+    pub const MATCH_NONE: xkb_match_operation = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_key_type {
+        pub name: xkb_atom_t,
+        pub mods: xkb_mods,
+        pub required: bool,
+        pub num_levels: xkb_level_index_t,
+        pub num_level_names: xkb_level_index_t,
+        pub level_names: *mut xkb_atom_t,
+        pub num_entries: darray_size_t,
+        pub entries: *mut xkb_key_type_entry,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_key_type_entry {
+        pub level: xkb_level_index_t,
+        pub mods: xkb_mods,
+        pub preserve: xkb_mods,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_3 {
+        pub c2rust_unnamed: C2Rust_Unnamed_5,
+        pub c2rust_unnamed_0: C2Rust_Unnamed_4,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_4 {
+        pub num_key_aliases: darray_size_t,
+        pub key_aliases: *mut xkb_key_alias,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_key_alias {
+        pub real: xkb_atom_t,
+        pub alias: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_5 {
+        pub num_key_names: darray_size_t,
+        pub key_names: *mut KeycodeMatch,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union KeycodeMatch {
+        pub c2rust_unnamed: C2Rust_Unnamed_8,
+        pub key: C2Rust_Unnamed_7,
+        pub alias: C2Rust_Unnamed_6,
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_6 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "real", ty = "xkb_atom_t", bits = "3..=31")]
+        pub found_c2rust_unnamed_is_alias_real: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_7 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "low", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "index", ty = "darray_size_t", bits = "3..=31")]
+        pub found_low_is_alias_index: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_8 {
+        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "c2rust_unnamed_0", ty = "darray_size_t", bits = "3..=31")]
+        pub found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [u8; 4],
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct xkb_key {
+        pub keycode: xkb_keycode_t,
+        pub name: xkb_atom_t,
+        pub explicit: xkb_explicit_components,
+        pub modmap: xkb_mod_mask_t,
+        pub vmodmap: xkb_mod_mask_t,
+        pub overlays: xkb_overlay_mask_t,
+        #[bitfield(name = "overlays_inline", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "repeats", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "out_of_range_pending_group", ty = "bool", bits = "3..=3")]
+        #[bitfield(
+            name = "out_of_range_group_policy",
+            ty = "xkb_layout_out_of_range_policy",
+            bits = "4..=7"
+        )]
+        #[bitfield(
+            name = "out_of_range_group_number",
+            ty = "xkb_layout_index_t",
+            bits = "8..=15"
+        )]
+        #[bitfield(name = "num_groups", ty = "xkb_layout_index_t", bits = "16..=23")]
+        pub overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups:
+            [u8; 3],
+        pub groups: *mut xkb_group,
+        pub c2rust_unnamed: C2Rust_Unnamed_9,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_9 {
+        pub overlay_key: *const xkb_key,
+        pub overlays_keys: *mut *const xkb_key,
+    }
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct xkb_group {
+        #[bitfield(name = "explicit_symbols", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "explicit_actions", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
+        #[bitfield(name = "explicit_type", ty = "bool", bits = "3..=3")]
+        pub explicit_symbols_explicit_actions_implicit_actions_explicit_type: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+        pub type_0: *const xkb_key_type,
+        pub levels: *mut xkb_level,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_level {
+        pub num_syms: xkb_keysym_count_t,
+        pub num_actions: xkb_action_count_t,
+        pub c2rust_unnamed: C2Rust_Unnamed_12,
+        pub s: C2Rust_Unnamed_11,
+        pub a: C2Rust_Unnamed_10,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_10 {
+        pub action: xkb_action,
+        pub actions: *mut xkb_action,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_11 {
+        pub sym: xkb_keysym_t,
+        pub syms: *mut xkb_keysym_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_12 {
+        pub upper: xkb_keysym_t,
+        pub has_upper: bool,
+    }
+
+    pub type xkb_keysym_count_t = uint16_t;
+
+    pub type xkb_overlay_mask_t = uint8_t;
+
+    pub type xkb_explicit_components = ::core::ffi::c_uint;
+
+    pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
+
+    pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
+
+    pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
+
+    pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
+
+    pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
+
+    pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+
+    pub struct xkb_led {
+        pub name: xkb_atom_t,
+        #[bitfield(name = "which_groups", ty = "xkb_state_component", bits = "0..=30")]
+        #[bitfield(name = "pending_groups", ty = "bool", bits = "31..=31")]
+        pub which_groups_pending_groups: [u8; 4],
+        pub groups: xkb_layout_mask_t,
+        pub which_mods: xkb_state_component,
+        pub mods: xkb_mods,
+        pub ctrls: xkb_action_controls,
+    }
+
+    pub type xkb_overlay_index_t = uint8_t;
+
+    pub const XKB_MOD_ALL: C2Rust_Unnamed_23 = 4294967295;
+
+    pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
+
+    pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
+
+    pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
+
+    pub type C2Rust_Unnamed_23 = ::core::ffi::c_uint;
+
+    pub type real_mod_index = ::core::ffi::c_uint;
+
+    pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
+
+    pub const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
+
+    pub const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
+
+    pub const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
+
+    pub const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
+
+    pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
+
+    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
+
+    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as ::core::ffi::c_int as xkb_mod_mask_t;
+
+    pub const XKB_OVERLAY_MAX_X11: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
+
+    pub const XKB_OVERLAY_MAX: ::core::ffi::c_ulong = (::core::mem::size_of::<xkb_overlay_mask_t>()
+        as ::core::ffi::c_ulong)
+        .wrapping_mul(CHAR_BIT as ::core::ffi::c_ulong);
+
+    pub const XKB_OVERLAY1_CONTROLS_OFFSET: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    #[inline]
+
+    pub unsafe extern "C" fn format_max_overlays(
+        mut format: xkb_keymap_format,
+    ) -> xkb_overlay_index_t {
+        unsafe {
+            return (if format as ::core::ffi::c_uint
+                == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                XKB_OVERLAY_MAX_X11 as usize
+            } else {
+                XKB_OVERLAY_MAX as usize
+            }) as xkb_overlay_index_t;
+        }
+    }
+    #[inline]
+
+    pub unsafe extern "C" fn XkbKey(
+        mut keymap: *mut xkb_keymap,
+        mut kc: xkb_keycode_t,
+    ) -> *const xkb_key {
+        unsafe {
+            if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
+                return ::core::ptr::null::<xkb_key>();
+            } else if kc < (*keymap).num_keys_low {
+                return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
+            } else {
+                let mut lower: xkb_keycode_t = (*keymap).num_keys_low;
+                let mut upper: xkb_keycode_t = (*keymap).num_keys;
+                while lower < upper {
+                    let mid: xkb_keycode_t = lower.wrapping_add(
+                        upper
+                            .wrapping_sub(1 as xkb_keycode_t)
+                            .wrapping_sub(lower)
+                            .wrapping_div(2 as xkb_keycode_t),
+                    );
+                    let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
+                    if (*key).keycode < kc {
+                        lower = mid.wrapping_add(1 as xkb_keycode_t);
+                    } else if (*key).keycode > kc {
+                        upper = mid;
+                    } else {
+                        return key;
+                    }
+                }
+                return ::core::ptr::null::<xkb_key>();
+            };
+        }
+    }
+    #[inline]
+
+    pub unsafe extern "C" fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
+        unsafe {
+            return (*entry).mods.mods == 0 as xkb_mod_mask_t
+                || (*entry).mods.mask != 0 as xkb_mod_mask_t;
+        }
+    }
+    use super::__stddef_null_h::NULL;
+    use super::atom_h::xkb_atom_t;
+    use super::context_h::xkb_context;
+    use super::darray_h::darray_size_t;
+    use super::limits_h::CHAR_BIT;
+    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_uintn_h::{uint16_t, uint8_t};
+    use super::xkbcommon_h::{
+        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
+        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
+        xkb_level_index_t, xkb_mod_index_t, xkb_mod_mask_t, xkb_state_component,
+        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+    };
+    extern "C" {
+
+        pub fn XkbLevelsSameSyms(a: *const xkb_level, b: *const xkb_level) -> bool;
+
+        pub fn XkbWrapGroupIntoRange(
+            group: int32_t,
+            num_groups: xkb_layout_index_t,
+            out_of_range_group_policy: xkb_layout_out_of_range_policy,
+            out_of_range_group_number: xkb_layout_index_t,
+        ) -> xkb_layout_index_t;
+
+        pub fn xkb_keymap_key_get_level(
+            keymap: *mut xkb_keymap,
+            key: *const xkb_key,
+            layout: xkb_layout_index_t,
+            level: xkb_level_index_t,
+        ) -> *mut xkb_level;
+
+        pub fn xkb_keymap_key_get_actions_by_level(
+            keymap: *mut xkb_keymap,
+            key: *const xkb_key,
+            layout: xkb_layout_index_t,
+            level: xkb_level_index_t,
+            actions: *mut *const xkb_action,
+        ) -> xkb_action_count_t;
+    }
+}
+
+pub mod state_priv_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_event {
+        pub type_0: xkb_event_type,
+        pub c2rust_unnamed: C2Rust_Unnamed_17,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub union C2Rust_Unnamed_17 {
+        pub keycode: xkb_keycode_t,
+        pub components: C2Rust_Unnamed_18,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct C2Rust_Unnamed_18 {
+        pub components: state_components,
+        pub changed: xkb_state_component,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct state_components {
+        pub base_group: int32_t,
+        pub latched_group: int32_t,
+        pub locked_group: int32_t,
+        pub group: xkb_layout_index_t,
+        pub base_mods: xkb_mod_mask_t,
+        pub latched_mods: xkb_mod_mask_t,
+        pub locked_mods: xkb_mod_mask_t,
+        pub mods: xkb_mod_mask_t,
+        pub leds: xkb_led_mask_t,
+        pub controls: xkb_action_controls,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_state_update_v1 {
+        pub size: size_t,
+        pub components: *const xkb_state_components_update_v1,
+        pub layout_policy: *const xkb_layout_policy_update_v1,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_layout_policy_update_v1 {
+        pub size: size_t,
+        pub policy: xkb_layout_out_of_range_policy,
+        pub redirect: xkb_layout_index_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+
+    pub struct xkb_state_components_update_v1 {
+        pub size: size_t,
+        pub components: xkb_state_component,
+        pub affect_latched_mods: xkb_mod_mask_t,
+        pub latched_mods: xkb_mod_mask_t,
+        pub affect_locked_mods: xkb_mod_mask_t,
+        pub locked_mods: xkb_mod_mask_t,
+        pub latched_layout: int32_t,
+        pub locked_layout: int32_t,
+        pub affect_controls: xkb_keyboard_control_flags,
+        pub controls: xkb_keyboard_control_flags,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::keymap_h::xkb_action_controls;
+    use super::stdint_intn_h::int32_t;
+    use super::xkbcommon_h::{
+        xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t, xkb_layout_index_t,
+        xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t, xkb_state_component,
+    };
+}
+
+pub mod messages_codes_h {
+
+    pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
+
+    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+
+    pub type xkb_log_verbosity = ::core::ffi::c_int;
+
+    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
+
+    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
+
+    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
+
+    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
+
+    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
+
+    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
+
+    pub type xkb_message_code = ::core::ffi::c_uint;
+
+    pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
+
+    pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
+
+    pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
+
+    pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: xkb_message_code = 965;
+
+    pub const XKB_ERROR_INVALID_IDENTIFIER: xkb_message_code = 949;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: xkb_message_code = 935;
+
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT_: xkb_message_code = 914;
+
+    pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: xkb_message_code = 903;
+
+    pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: xkb_message_code = 901;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: xkb_message_code = 893;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_ACTION: xkb_message_code = 883;
+
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT_: xkb_message_code = 876;
+
+    pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: xkb_message_code = 844;
+
+    pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: xkb_message_code = 822;
+
+    pub const XKB_ERROR_UNKNOWN_FIELD: xkb_message_code = 812;
+
+    pub const XKB_WARNING_CONFLICTING_MODMAP: xkb_message_code = 800;
+
+    pub const XKB_ERROR_INVALID_VALUE: xkb_message_code = 796;
+
+    pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: xkb_message_code = 784;
+
+    pub const XKB_WARNING_UNDEFINED_KEYCODE: xkb_message_code = 770;
+
+    pub const XKB_ERROR_INVALID_XKB_SYNTAX: xkb_message_code = 769;
+
+    pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: xkb_message_code = 762;
+
+    pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: xkb_message_code = 742;
+
+    pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: xkb_message_code = 711;
+
+    pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: xkb_message_code = 700;
+
+    pub const XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT: xkb_message_code = 693;
+
+    pub const XKB_ERROR_INVALID_COMPOSE_SYNTAX: xkb_message_code = 685;
+
+    pub const XKB_ERROR_INVALID_COMPOSE_LOCALE: xkb_message_code = 679;
+
+    pub const XKB_ERROR_INVALID_INCLUDED_FILE: xkb_message_code = 661;
+
+    pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: xkb_message_code = 645;
+
+    pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: xkb_message_code = 639;
+
+    pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
+
+    pub const XKB_ERROR_INVALID_REAL_MODIFIER: xkb_message_code = 623;
+
+    pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: xkb_message_code = 607;
+
+    pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: xkb_message_code = 595;
+
+    pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: xkb_message_code = 588;
+
+    pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
+
+    pub const XKB_ERROR_INVALID_ACTION_FIELD: xkb_message_code = 563;
+
+    pub const XKB_ERROR_INVALID_FILE_ENCODING: xkb_message_code = 542;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_NAME: xkb_message_code = 523;
+
+    pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: xkb_message_code = 516;
+
+    pub const XKB_WARNING_NUMERIC_KEYSYM: xkb_message_code = 489;
+
+    pub const XKB_ERROR_INVALID_OPERATION: xkb_message_code = 478;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: xkb_message_code = 461;
+
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE_: xkb_message_code = 450;
+
+    pub const XKB_WARNING_MISSING_DEFAULT_SECTION: xkb_message_code = 433;
+
+    pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: xkb_message_code = 428;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: xkb_message_code = 407;
+
+    pub const XKB_ERROR_RECURSIVE_INCLUDE: xkb_message_code = 386;
+
+    pub const XKB_WARNING_DUPLICATE_ENTRY: xkb_message_code = 378;
+
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_: xkb_message_code = 371;
+
+    pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: xkb_message_code = 362;
+
+    pub const XKB_ERROR_OVERLAPPING_OVERLAY: xkb_message_code = 355;
+
+    pub const XKB_ERROR_UNKNOWN_OPERATOR: xkb_message_code = 345;
+
+    pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: xkb_message_code = 338;
+
+    pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: xkb_message_code = 312;
+
+    pub const XKB_WARNING_NON_BASE_GROUP_NAME: xkb_message_code = 305;
+
+    pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: xkb_message_code = 302;
+
+    pub const XKB_WARNING_DEPRECATED_KEYSYM: xkb_message_code = 301;
+
+    pub const XKB_WARNING_UNDEFINED_KEY_TYPE: xkb_message_code = 286;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: xkb_message_code = 266;
+
+    pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: xkb_message_code = 254;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: xkb_message_code = 239;
+
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: xkb_message_code = 237;
+
+    pub const XKB_ERROR_UNKNOWN_STATEMENT: xkb_message_code = 222;
+
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_: xkb_message_code = 214;
+
+    pub const XKB_ERROR_INVALID_MODMAP_ENTRY: xkb_message_code = 206;
+
+    pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: xkb_message_code = 203;
+
+    pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: xkb_message_code = 195;
+
+    pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: xkb_message_code = 193;
+
+    pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: xkb_message_code = 183;
+
+    pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: xkb_message_code = 172;
+
+    pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
+
+    pub const XKB_ERROR_WRONG_STATEMENT_TYPE: xkb_message_code = 150;
+
+    pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
+
+    pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: xkb_message_code = 123;
+
+    pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: xkb_message_code = 107;
+
+    pub const XKB_WARNING_ILLEGAL_KEYCODE_ALIAS: xkb_message_code = 101;
+
+    pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: xkb_message_code = 82;
+
+    pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
+
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: xkb_message_code = 60;
+
+    pub const XKB_ERROR_INTEGER_OVERFLOW: xkb_message_code = 52;
+
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: xkb_message_code = 43;
+
+    pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
+
+    pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
+}
+
+pub mod xkbcommon_features_h {
+
+    pub type xkb_feature = ::core::ffi::c_uint;
+
+    pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
+
+    pub const XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS: xkb_feature = 31200;
+
+    pub const XKB_FEATURE_ENUM_COMPOSE_STATUS: xkb_feature = 31000;
+
+    pub const XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS: xkb_feature = 30200;
+
+    pub const XKB_FEATURE_ENUM_COMPOSE_FORMAT: xkb_feature = 30000;
+
+    pub const XKB_FEATURE_ENUM_EVENTS_FLAGS: xkb_feature = 27600;
+
+    pub const XKB_FEATURE_ENUM_KEY_DIRECTION: xkb_feature = 27020;
+
+    pub const XKB_FEATURE_ENUM_EVENT_TYPE: xkb_feature = 27000;
+
+    pub const XKB_FEATURE_ENUM_CONSUMED_MODE: xkb_feature = 24840;
+
+    pub const XKB_FEATURE_ENUM_STATE_MATCH: xkb_feature = 24820;
+
+    pub const XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS: xkb_feature = 24060;
+
+    pub const XKB_FEATURE_ENUM_A11Y_FLAGS: xkb_feature = 24040;
+
+    pub const XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY: xkb_feature = 24020;
+
+    pub const XKB_FEATURE_ENUM_STATE_COMPONENT: xkb_feature = 24000;
+
+    pub const XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS: xkb_feature = 21600;
+
+    pub const XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS: xkb_feature = 21400;
+
+    pub const XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS: xkb_feature = 21200;
+
+    pub const XKB_FEATURE_ENUM_KEYMAP_FORMAT: xkb_feature = 21000;
+
+    pub const XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS: xkb_feature = 18200;
+
+    pub const XKB_FEATURE_ENUM_KEYSYM_FLAGS: xkb_feature = 9200;
+
+    pub const XKB_FEATURE_ENUM_LOG_LEVEL: xkb_feature = 5100;
+
+    pub const XKB_FEATURE_ENUM_CONTEXT_FLAGS: xkb_feature = 3200;
+
+    pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
+
+    pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
+    use super::stdint_uintn_h::uint32_t;
+    extern "C" {
+
+        pub fn xkb_feature_supported(feature: xkb_feature, value: uint32_t) -> bool;
+    }
+}
+
+pub mod string_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+
+        pub fn memcpy(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+
+        pub fn memmove(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+
+        pub fn memset(
+            __s: *mut ::core::ffi::c_void,
+            __c: ::core::ffi::c_int,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+    }
+}
+
+pub mod utils_numbers_h {
+    #[inline]
+
+    pub unsafe extern "C" fn popcount32(mut x: uint32_t) -> ::core::ffi::c_uint {
+        unsafe {
+            return (x as ::core::ffi::c_ulong).count_ones() as i32 as ::core::ffi::c_uint;
+        }
+    }
+    use super::stdint_uintn_h::uint32_t;
+}
+
+pub mod limits_h {
+
+    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
+    use super::internal::__CHAR_BIT__;
+}
+
+pub mod util_mem_h {
+    #[inline]
+
+    pub unsafe extern "C" fn xkb_check_versioned_struct_size_(
+        mut v1_size: size_t,
+        mut min_size: size_t,
+        mut lib_size: size_t,
+        mut caller_size: size_t,
+        mut caller_data: *const ::core::ffi::c_void,
+    ) -> xkb_error_code {
+        unsafe {
+            if v1_size <= min_size {
+            } else {
+                __assert_fail(
+                    b"v1_size <= min_size\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    54 as ::core::ffi::c_uint,
+                    b"enum xkb_error_code xkb_check_versioned_struct_size_(size_t, size_t, size_t, size_t, const void *)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if min_size <= lib_size {
+            } else {
+                __assert_fail(
+                    b"min_size <= lib_size\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    55 as ::core::ffi::c_uint,
+                    b"enum xkb_error_code xkb_check_versioned_struct_size_(size_t, size_t, size_t, size_t, const void *)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if caller_size < v1_size {
+                return XKB_ERROR_ABI_INVALID_STRUCT_SIZE;
+            }
+            if caller_size < min_size {
+                return XKB_ERROR_ABI_BACKWARD_COMPAT;
+            }
+            if caller_size <= lib_size {
+                return XKB_SUCCESS;
+            }
+            let mut p: *const ::core::ffi::c_uchar =
+                (caller_data as *const ::core::ffi::c_uchar).offset(lib_size as isize);
+            let mut end: *const ::core::ffi::c_uchar =
+                (caller_data as *const ::core::ffi::c_uchar).offset(caller_size as isize);
+            while p < end {
+                let c2rust_fresh1 = p;
+                p = p.offset(1);
+                if *c2rust_fresh1 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                    return XKB_ERROR_ABI_FORWARD_COMPAT;
+                }
+            }
+            return XKB_SUCCESS;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::__assert_fail;
+    use super::xkbcommon_errors_h::{
+        xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+        XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_SUCCESS,
+    };
+}
+
+pub mod utils_h {
+    #[inline]
+
+    pub unsafe extern "C" fn one_bit_set(mut x: uint32_t) -> ::core::ffi::c_int {
+        unsafe {
+            return (x != 0 && x & x.wrapping_sub(1 as uint32_t) == 0 as uint32_t)
+                as ::core::ffi::c_int;
+        }
+    }
+    use super::stdint_uintn_h::uint32_t;
+}
+
+pub mod utf8_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+
+        pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: size_t) -> bool;
+    }
+}
+
+pub mod assert_h {
+    extern "C" {
+
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+
+pub mod stdint_h {
+
+    pub const INT32_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
+}
+
+pub mod __stddef_null_h {
+
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+
+pub mod stdbool_h {
+
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+
+pub mod xkbcommon_keysyms_h {
+
+    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
+pub use self::__stddef_null_h::NULL;
+pub use self::__stddef_size_t_h::size_t;
+use self::assert_h::__assert_fail;
+pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
+pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
+pub use self::keymap_h::{
+    entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
+    xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
+    xkb_keymap, xkb_keymap_key_get_actions_by_level, xkb_keymap_key_get_level, xkb_keysym_count_t,
+    xkb_led, xkb_level, xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
+    xkb_overlay_index_t, xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action,
+    xkb_pointer_default_action, xkb_private_action, xkb_redirect_key_action,
+    xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1, C2Rust_Unnamed_10,
+    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_23, C2Rust_Unnamed_3,
+    C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
+    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
+    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
+    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
+    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
+    EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT, EXPLICIT_SYMBOLS, EXPLICIT_TYPES,
+    EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
+    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
+    XKB_MAX_GROUPS, XKB_MOD_ALL, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1,
+    XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
+    XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
+    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
+};
+pub use self::limits_h::CHAR_BIT;
+pub use self::messages_codes_h::{
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
+    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
+    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
+    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
+    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
+    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
+    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
+    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
+    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
+    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
+    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
+    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
+    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
+    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
+    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
+    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+};
+pub use self::state_priv_h::{
+    state_components, xkb_event, xkb_layout_policy_update_v1, xkb_state_components_update_v1,
+    xkb_state_update_v1, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
+};
+pub use self::stdbool_h::{false_0, true_0};
+pub use self::stdint_h::INT32_MAX;
+pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdio_h::va_list;
+pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc};
+use self::string_h::{memcpy, memmove, memset};
+pub use self::sys_types_h::ssize_t;
+pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
+use self::utf8_h::is_valid_utf8;
+pub use self::util_mem_h::xkb_check_versioned_struct_size_;
+pub use self::utils_h::one_bit_set;
+pub use self::utils_numbers_h::popcount32;
+pub use self::xkbcommon_errors_h::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
+pub use self::xkbcommon_features_h::{
+    xkb_feature, xkb_feature_supported, XKB_FEATURE_ENUM_A11Y_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS, XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT,
+    XKB_FEATURE_ENUM_COMPOSE_FORMAT, XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_STATUS, XKB_FEATURE_ENUM_CONSUMED_MODE,
+    XKB_FEATURE_ENUM_CONTEXT_FLAGS, XKB_FEATURE_ENUM_ERROR_CODE, XKB_FEATURE_ENUM_EVENTS_FLAGS,
+    XKB_FEATURE_ENUM_EVENT_TYPE, XKB_FEATURE_ENUM_FEATURE, XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS,
+    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS, XKB_FEATURE_ENUM_KEYMAP_FORMAT,
+    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS, XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS,
+    XKB_FEATURE_ENUM_KEYSYM_FLAGS, XKB_FEATURE_ENUM_KEY_DIRECTION,
+    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY, XKB_FEATURE_ENUM_LOG_LEVEL,
+    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
+    XKB_FEATURE_ENUM_STATE_MATCH,
+};
+pub use self::xkbcommon_h::{
+    xkb_a11y_flags, xkb_consumed_mode, xkb_context_ref, xkb_context_unref, xkb_event_type,
+    xkb_events_flags, xkb_key_direction, xkb_keyboard_control_flags, xkb_keycode_t,
+    xkb_keymap_compile_flags, xkb_keymap_format, xkb_keymap_key_get_syms_by_level,
+    xkb_keymap_layout_get_index, xkb_keymap_led_get_index, xkb_keymap_mod_get_index,
+    xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref,
+    xkb_keysym_t, xkb_keysym_to_upper, xkb_keysym_to_utf32, xkb_keysym_to_utf8, xkb_layout_index_t,
+    xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_layout_policy_update, xkb_led_index_t,
+    xkb_led_mask_t, xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
+    xkb_rule_names, xkb_state_component, xkb_state_components_update, xkb_state_match,
+    xkb_state_update, XKB_A11Y_LATCH_SIMULTANEOUS_KEYS, XKB_A11Y_LATCH_TO_LOCK, XKB_A11Y_NO_FLAGS,
+    XKB_CONSUMED_MODE_GTK, XKB_CONSUMED_MODE_XKB, XKB_EVENTS_NO_FLAGS,
+    XKB_EVENT_TYPE_COMPONENTS_CHANGE, XKB_EVENT_TYPE_KEY_DOWN, XKB_EVENT_TYPE_KEY_REPEATED,
+    XKB_EVENT_TYPE_KEY_UP, XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS, XKB_KEYBOARD_CONTROL_NO_FLAGS,
+    XKB_KEYBOARD_CONTROL_OVERLAY1, XKB_KEYBOARD_CONTROL_OVERLAY2, XKB_KEYBOARD_CONTROL_OVERLAY3,
+    XKB_KEYBOARD_CONTROL_OVERLAY4, XKB_KEYBOARD_CONTROL_OVERLAY5, XKB_KEYBOARD_CONTROL_OVERLAY6,
+    XKB_KEYBOARD_CONTROL_OVERLAY7, XKB_KEYBOARD_CONTROL_OVERLAY8, XKB_KEYCODE_INVALID,
+    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
+    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP, XKB_LAYOUT_INVALID,
+    XKB_LAYOUT_OUT_OF_RANGE_CLAMP, XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+    XKB_LED_INVALID, XKB_LEVEL_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID,
+    XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
+    XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MATCH_ALL,
+    XKB_STATE_MATCH_ANY, XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_STATE_MODS_DEPRESSED,
+    XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
+};
+pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_machine {
+    pub state: xkb_state,
+    pub overlays: C2Rust_Unnamed_13,
+    pub config: machine_config,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_config {
+    pub modifiers: machine_modifiers_config,
+    pub shortcuts: machine_shortcuts_config,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_shortcuts_config {
+    pub mask: xkb_mod_mask_t,
+    pub targets: *mut xkb_layout_index_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_modifiers_config {
+    pub mask: xkb_mod_mask_t,
+    pub mappings_num: darray_size_t,
+    pub mappings: *mut machine_mods_mapping,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_mods_mapping {
+    pub source: xkb_mod_mask_t,
+    pub target: xkb_mod_mask_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_13 {
+    pub enabled: xkb_overlay_mask_t,
+    pub order: uint32_t,
+    pub keys: C2Rust_Unnamed_14,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_14 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_overlaid_key,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_overlaid_key {
+    pub old: *const xkb_key,
+    pub new: *const xkb_key,
+    pub refcnt: ::core::ffi::c_int,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_state {
+    pub components: state_components,
+    pub controls: machine_controls,
+    pub set_mods: xkb_mod_mask_t,
+    pub clear_mods: xkb_mod_mask_t,
+    pub mod_key_count: [int16_t; 32],
+    pub flags: xkb_a11y_flags,
+    pub refcnt: ::core::ffi::c_int,
+    pub filters: C2Rust_Unnamed_15,
+    pub keymap: *mut xkb_keymap,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_15 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_filter,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_filter {
+    pub action: xkb_action,
+    pub key: *const xkb_key,
+    pub func: Option<
+        unsafe extern "C" fn(
+            *mut xkb_state,
+            *mut xkb_events,
+            *mut xkb_filter,
+            *const xkb_key,
+            xkb_key_direction,
+        ) -> bool,
+    >,
+    pub priv_0: uint32_t,
+    pub refcnt: ::core::ffi::c_int,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_events {
+    pub next: darray_size_t,
+    pub queue: C2Rust_Unnamed_16,
+    pub ctx: *mut xkb_context,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_16 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_event,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_controls {
+    pub out_of_range_group: C2Rust_Unnamed_19,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_19 {
+    pub policy: xkb_layout_out_of_range_policy,
+    pub redirect_group: xkb_layout_index_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_machine_options {
+    pub a11y_affect: xkb_a11y_flags,
+    pub a11y_flags: xkb_a11y_flags,
+    pub mods: machine_mods_mappings,
+    pub shortcuts: xkb_shortcuts_config_options,
+    pub ctx: *mut xkb_context,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_shortcuts_config_options {
+    pub mask: xkb_mod_mask_t,
+    pub targets: C2Rust_Unnamed_20,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_20 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_layout_index_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct machine_mods_mappings {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut machine_mods_mapping,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_21 {
+    pub new: Option<unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> ()>,
+    pub func: Option<
+        unsafe extern "C" fn(
+            *mut xkb_state,
+            *mut xkb_events,
+            *mut xkb_filter,
+            *const xkb_key,
+            xkb_key_direction,
+        ) -> bool,
+    >,
+}
+
+pub const XKB_FILTER_CONSUME: xkb_filter_result = 0;
+
+pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub union group_latch_priv {
+    pub priv_0: uint32_t,
+    pub c2rust_unnamed: C2Rust_Unnamed_22,
+}
+#[derive(Copy, Clone, BitfieldStruct)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_22 {
+    #[bitfield(name = "latch", ty = "::core::ffi::c_uint", bits = "0..=1")]
+    #[bitfield(name = "group_delta", ty = "int32_t", bits = "2..=31")]
+    pub latch_group_delta: [u8; 4],
+}
+
+pub type xkb_key_latch_state = ::core::ffi::c_uint;
+
+pub const _KEY_LATCH_STATE_NUM_ENTRIES: xkb_key_latch_state = 3;
+
+pub const LATCH_PENDING: xkb_key_latch_state = 2;
+
+pub const LATCH_KEY_DOWN: xkb_key_latch_state = 1;
+
+pub const NO_LATCH: xkb_key_latch_state = 0;
+
+pub const XKB_STATE_MATCH_FLAGS: C2Rust_Unnamed_24 = 65539;
+
+pub type xkb_filter_result = ::core::ffi::c_uint;
+
+pub type C2Rust_Unnamed_24 = ::core::ffi::c_uint;
+static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
+    explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
+    c2rust_padding: [0; 7],
+    type_0: ::core::ptr::null::<xkb_key_type>(),
+    levels: ::core::ptr::null_mut::<xkb_level>(),
+};
+static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
+    keycode: 0,
+    name: 0,
+    explicit: 0 as xkb_explicit_components,
+    modmap: 0,
+    vmodmap: 0,
+    overlays: 0,
+    overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+    groups: ::core::ptr::null_mut::<xkb_group>(),
+    c2rust_unnamed: C2Rust_Unnamed_9 {
+        overlay_key: ::core::ptr::null::<xkb_key>(),
+    },
+};
+static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
+    num_syms: 0 as xkb_keysym_count_t,
+    num_actions: 1 as xkb_action_count_t,
+    c2rust_unnamed: C2Rust_Unnamed_12 {
+        upper: XKB_KEY_NoSymbol as xkb_keysym_t,
+    },
+    s: C2Rust_Unnamed_11 {
+        sym: XKB_KEY_NoSymbol as xkb_keysym_t,
+    },
+    a: C2Rust_Unnamed_10 {
+        action: xkb_action {
+            internal: xkb_internal_action {
+                type_0: ACTION_TYPE_INTERNAL,
+                flags: INTERNAL_BREAKS_GROUP_LATCH,
+                c2rust_unnamed: C2Rust_Unnamed_2 {
+                    clear_latched_mods: 0 as ::core::ffi::c_int as xkb_mod_mask_t,
+                },
+            },
+        },
+    },
+};
+
+unsafe extern "C" fn get_entry_for_mods(
+    mut type_0: *const xkb_key_type,
+    mut mods: xkb_mod_mask_t,
+) -> *const xkb_key_type_entry {
+    unsafe {
+        let mut i: darray_size_t = 0 as darray_size_t;
+        while i < (*type_0).num_entries {
+            if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
+                as ::core::ffi::c_int
+                != 0
+                && (*(*type_0).entries.offset(i as isize)).mods.mask == mods
+            {
+                return (*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry;
+            }
+            i = i.wrapping_add(1);
+        }
+        return ::core::ptr::null::<xkb_key_type_entry>();
+    }
+}
+
+unsafe extern "C" fn get_entry_for_key_state(
+    mut state: *mut xkb_state,
+    mut key: *const xkb_key,
+    mut group: xkb_layout_index_t,
+) -> *const xkb_key_type_entry {
+    unsafe {
+        let type_0: *const xkb_key_type = (*(*key).groups.offset(group as isize)).type_0;
+        let mut active_mods: xkb_mod_mask_t = (*state).components.mods & (*type_0).mods.mask;
+        return get_entry_for_mods(type_0, active_mods);
+    }
+}
+#[inline]
+
+unsafe extern "C" fn state_key_get_level(
+    mut state: *mut xkb_state,
+    mut key: *const xkb_key,
+    mut layout: xkb_layout_index_t,
+) -> xkb_level_index_t {
+    unsafe {
+        if layout >= (*key).num_groups() {
+            return XKB_LEVEL_INVALID as xkb_level_index_t;
+        }
+        let entry: *const xkb_key_type_entry =
+            get_entry_for_key_state(state, key, layout) as *const xkb_key_type_entry;
+        return if !entry.is_null() {
+            (*entry).level
+        } else {
+            0 as xkb_level_index_t
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_level(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut layout: xkb_layout_index_t,
+) -> xkb_level_index_t {
+    unsafe {
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        return if !key.is_null() {
+            state_key_get_level(state, key, layout)
+        } else {
+            XKB_LEVEL_INVALID as xkb_level_index_t
+        };
+    }
+}
+#[inline]
+
+unsafe extern "C" fn state_key_get_layout(
+    mut state: *mut xkb_state,
+    mut key: *const xkb_key,
+) -> xkb_layout_index_t {
+    unsafe {
+        return XkbWrapGroupIntoRange(
+            (*state).components.group as int32_t,
+            (*key).num_groups(),
+            (*key).out_of_range_group_policy(),
+            (*key).out_of_range_group_number(),
+        );
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_layout(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> xkb_layout_index_t {
+    unsafe {
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        if key.is_null() {
+            return XKB_LAYOUT_INVALID as xkb_layout_index_t;
+        }
+        return state_key_get_layout(state, key);
+    }
+}
+
+static mut dummy_action: xkb_action = xkb_action {
+    type_0: ACTION_TYPE_NONE,
+};
+
+unsafe extern "C" fn xkb_key_get_actions(
+    mut state: *mut xkb_state,
+    mut key: *const xkb_key,
+    mut actions: *mut *const xkb_action,
+) -> xkb_action_count_t {
+    unsafe {
+        let mut count: xkb_action_count_t = 0;
+        let layout: xkb_layout_index_t = state_key_get_layout(state, key) as xkb_layout_index_t;
+        let level: xkb_level_index_t = state_key_get_level(state, key, layout) as xkb_level_index_t;
+        if !(level == XKB_LEVEL_INVALID as xkb_level_index_t) {
+            count =
+                xkb_keymap_key_get_actions_by_level((*state).keymap, key, layout, level, actions)
+                    as xkb_action_count_t;
+            if !(count == 0) {
+                return count;
+            }
+        }
+        *actions = &raw const dummy_action;
+        return 1 as xkb_action_count_t;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
+    unsafe {
+        let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
+        let mut iter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
+        if !(*state).filters.item.is_null() {
+            iter = (*state)
+                .filters
+                .item
+                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_filter;
+            while iter
+                < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
+            {
+                if (*iter).func.is_some() {
+                    iter = iter.offset(1);
+                } else {
+                    filter = iter;
+                    break;
+                }
+            }
+        }
+        if filter.is_null() {
+            let mut __oldSize: darray_size_t = (*state).filters.size;
+            let mut __newSize: darray_size_t =
+                (*state).filters.size.wrapping_add(1 as darray_size_t);
+            (*state).filters.size = __newSize;
+            if __newSize > __oldSize {
+                let mut __need: darray_size_t = __newSize;
+                if __need > (*state).filters.alloc {
+                    (*state).filters.alloc = darray_next_alloc(
+                        (*state).filters.alloc,
+                        __need,
+                        ::core::mem::size_of::<xkb_filter>() as size_t,
+                    );
+                    (*state).filters.item = realloc(
+                        (*state).filters.item as *mut ::core::ffi::c_void,
+                        ((*state).filters.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<xkb_filter>() as size_t),
+                    ) as *mut xkb_filter;
+                }
+                memset(
+                    (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter
+                        as *mut ::core::ffi::c_void,
+                    0 as ::core::ffi::c_int,
+                    (__newSize.wrapping_sub(__oldSize) as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_filter>() as size_t),
+                );
+            }
+            filter = (*state)
+                .filters
+                .item
+                .offset((*state).filters.size.wrapping_sub(1 as darray_size_t) as isize)
+                as *mut xkb_filter;
+        }
+        (*filter).refcnt = 1 as ::core::ffi::c_int;
+        return filter;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_set_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        (*filter).priv_0 = (*state).components.base_group as uint32_t;
+        if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*state).components.base_group = (*filter).action.group.group;
+        } else {
+            (*state).components.base_group += (*filter).action.group.group;
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_set_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            (*filter).action.group.flags = ((*filter).action.group.flags as ::core::ffi::c_uint
+                & !(ACTION_LOCK_CLEAR as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                as xkb_action_flags;
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        's_38: {
+            match direction as ::core::ffi::c_uint {
+                1 => {
+                    (*filter).refcnt += 1;
+                }
+                2 => {}
+                _ => {
+                    (*filter).refcnt -= 1;
+                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    }
+                    break 's_38;
+                }
+            }
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        }
+        (*state).components.base_group = (*filter).priv_0 as int32_t;
+        if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*state).components.locked_group = 0 as ::core::ffi::c_int as int32_t;
+        }
+        (*filter).func = None;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn get_state_component_changes(
+    mut a: *const state_components,
+    mut b: *const state_components,
+) -> xkb_state_component {
+    unsafe {
+        let mut mask: xkb_state_component = 0 as xkb_state_component;
+        if (*a).group != (*b).group {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).base_group != (*b).base_group {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).latched_group != (*b).latched_group {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).locked_group != (*b).locked_group {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).mods != (*b).mods {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).base_mods != (*b).base_mods {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).latched_mods != (*b).latched_mods {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).locked_mods != (*b).locked_mods {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).leds != (*b).leds {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_LEDS as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        if (*a).controls as ::core::ffi::c_uint != (*b).controls as ::core::ffi::c_uint {
+            mask = (mask as ::core::ffi::c_uint
+                | XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_state_component;
+        }
+        return mask;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_lock_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            return;
+        } else if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*state).components.locked_group = (*filter).action.group.group;
+        } else {
+            (*state).components.locked_group += (*filter).action.group.group;
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_lock_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            if (*filter).action.group.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+                && direction as ::core::ffi::c_uint
+                    == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                (*filter).action.group.flags = ((*filter).action.group.flags as ::core::ffi::c_uint
+                    & !(ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                    as xkb_action_flags;
+            }
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        's_47: {
+            match direction as ::core::ffi::c_uint {
+                1 => {
+                    (*filter).refcnt += 1;
+                }
+                2 => {}
+                _ => {
+                    (*filter).refcnt -= 1;
+                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    }
+                    break 's_47;
+                }
+            }
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        }
+        if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            if (*filter).action.group.flags as ::core::ffi::c_uint
+                & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+            {
+                (*state).components.locked_group = (*filter).action.group.group;
+            } else {
+                (*state).components.locked_group += (*filter).action.group.group;
+            }
+        }
+        (*filter).func = None;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_action_breaks_latch(
+    mut action: *const xkb_action,
+    mut flag: xkb_internal_action_flags,
+    mut mask: xkb_mod_mask_t,
+) -> bool {
+    unsafe {
+        match (*action).type_0 as ::core::ffi::c_uint {
+            0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return true_0 != 0,
+            20 => {
+                return (*action).internal.flags as ::core::ffi::c_uint
+                    & flag as ::core::ffi::c_uint
+                    != 0
+                    && (*action).internal.c2rust_unnamed.clear_latched_mods & mask == mask;
+            }
+            _ => return false_0 != 0,
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_latch_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        let priv_0: group_latch_priv = group_latch_priv {
+            c2rust_unnamed: {
+                let mut init = C2Rust_Unnamed_22 {
+                    latch_group_delta: [0; 4],
+                };
+                init.set_latch(LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint);
+                init.set_group_delta(
+                    if (*filter).action.group.flags as ::core::ffi::c_uint
+                        & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                        != 0
+                    {
+                        (*filter).action.group.group - (*state).components.base_group
+                    } else {
+                        (*filter).action.group.group
+                    },
+                );
+                init
+            },
+        };
+        (*filter).priv_0 = priv_0.priv_0;
+        if (*filter).action.group.flags as ::core::ffi::c_uint
+            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*state).components.base_group = (*filter).action.group.group;
+        } else {
+            (*state).components.base_group += (*filter).action.group.group;
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_group_latch_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        let mut priv_0: group_latch_priv = group_latch_priv {
+            priv_0: (*filter).priv_0,
+        };
+        let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch() as xkb_key_latch_state;
+        if direction as ::core::ffi::c_uint
+            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
+            let count: xkb_action_count_t =
+                xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
+            if latch as ::core::ffi::c_uint
+                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                if (*state).flags as ::core::ffi::c_uint
+                    & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
+                    while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                        if xkb_action_breaks_latch(
+                            actions.offset(k as isize) as *const xkb_action,
+                            INTERNAL_BREAKS_GROUP_LATCH,
+                            0 as xkb_mod_mask_t,
+                        ) {
+                            latch = NO_LATCH;
+                            break;
+                        } else {
+                            k = k.wrapping_add(1);
+                        }
+                    }
+                } else {
+                    latch = NO_LATCH;
+                }
+            } else if latch as ::core::ffi::c_uint
+                == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                let sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
+                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0;
+                let flags: xkb_action_flags = ((*filter).action.group.flags as ::core::ffi::c_uint
+                    & !(ACTION_LATCH_TO_LOCK as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                    as xkb_action_flags;
+                let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
+                while (k_0 as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                    if (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
+                        == ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                        && (*actions.offset(k_0 as isize)).group.group
+                            == (*filter).action.group.group
+                        && (*actions.offset(k_0 as isize)).group.flags as ::core::ffi::c_uint
+                            == (*filter).action.group.flags as ::core::ffi::c_uint
+                        || (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
+                            == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+                            && sticky_keys as ::core::ffi::c_int != 0
+                            && (*actions.offset(k_0 as isize)).group.flags as ::core::ffi::c_uint
+                                == flags as ::core::ffi::c_uint
+                    {
+                        if (*filter).action.group.flags as ::core::ffi::c_uint
+                            & ACTION_LATCH_TO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                            != 0
+                            && (*filter).action.group.group != 0 as int32_t
+                        {
+                            (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
+                            (*filter).func = Some(
+                                xkb_filter_group_lock_func
+                                    as unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                            )
+                                as Option<
+                                    unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                                >;
+                            xkb_filter_group_lock_new(state, events, filter);
+                            (*state).components.latched_group -=
+                                priv_0.c2rust_unnamed.group_delta();
+                            (*filter).key = key;
+                            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                        }
+                    } else if xkb_action_breaks_latch(
+                        actions.offset(k_0 as isize) as *const xkb_action,
+                        INTERNAL_BREAKS_GROUP_LATCH,
+                        0 as xkb_mod_mask_t,
+                    ) {
+                        (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
+                        (*filter).func = None;
+                        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                    }
+                    k_0 = k_0.wrapping_add(1);
+                }
+            } else {
+                if latch as ::core::ffi::c_uint
+                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                } else {
+                    __assert_fail(
+                        b"latch == NO_LATCH\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        568 as ::core::ffi::c_uint,
+                        b"_Bool xkb_filter_group_latch_func(struct xkb_state *, struct xkb_events *, struct xkb_filter *, const struct xkb_key *, enum xkb_key_direction)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+            }
+        } else if !(key != (*filter).key) {
+            if direction as ::core::ffi::c_uint
+                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            } else if (*filter).action.group.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+                && (*state).components.locked_group != 0
+            {
+                if latch as ::core::ffi::c_uint
+                    == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                    (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
+                } else {
+                    (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
+                }
+                (*state).components.locked_group = 0 as ::core::ffi::c_int as int32_t;
+                (*filter).func = None;
+            } else if latch as ::core::ffi::c_uint
+                == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
+                (*filter).func = None;
+            } else if latch as ::core::ffi::c_uint
+                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                latch = LATCH_PENDING;
+                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
+                (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta();
+            }
+        }
+        priv_0
+            .c2rust_unnamed
+            .set_latch(latch as ::core::ffi::c_uint as ::core::ffi::c_uint);
+        (*filter).priv_0 = priv_0.priv_0;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_set_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        let unlock: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
+            | ACTION_LOCK_CLEAR as ::core::ffi::c_int)
+            as xkb_action_flags;
+        if (*filter).action.mods.flags as ::core::ffi::c_uint & unlock as ::core::ffi::c_uint
+            == unlock as ::core::ffi::c_uint
+        {
+            (*filter).priv_0 =
+                ((*filter).action.mods.mods.mask & !(*state).components.locked_mods) as uint32_t;
+            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+        } else {
+            (*filter).priv_0 = (*filter).action.mods.mods.mask as uint32_t;
+        }
+        (*state).set_mods |= (*filter).priv_0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_set_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            (*filter).action.mods.flags = ((*filter).action.mods.flags as ::core::ffi::c_uint
+                & !(ACTION_LOCK_CLEAR as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                as xkb_action_flags;
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        's_38: {
+            match direction as ::core::ffi::c_uint {
+                1 => {
+                    (*filter).refcnt += 1;
+                }
+                2 => {}
+                _ => {
+                    (*filter).refcnt -= 1;
+                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    }
+                    break 's_38;
+                }
+            }
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        }
+        (*state).clear_mods |= (*filter).priv_0;
+        let unlock: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
+            | ACTION_LOCK_CLEAR as ::core::ffi::c_int)
+            as xkb_action_flags;
+        if (*filter).action.mods.flags as ::core::ffi::c_uint & unlock as ::core::ffi::c_uint
+            == ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+        }
+        (*filter).func = None;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_lock_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        (*filter).priv_0 =
+            ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as uint32_t;
+        if (*filter).priv_0 != 0
+            && (*filter).action.mods.flags as ::core::ffi::c_uint
+                & ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+        {
+            if (*filter).action.mods.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+            {
+                (*state).components.locked_mods &= !(*filter).priv_0;
+            }
+            (*filter).func = None;
+        } else {
+            (*state).set_mods |= (*filter).action.mods.mods.mask;
+            if (*filter).action.mods.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+            {
+                (*state).components.locked_mods |= (*filter).action.mods.mods.mask;
+            }
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_lock_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        's_32: {
+            match direction as ::core::ffi::c_uint {
+                1 => {
+                    (*filter).refcnt += 1;
+                }
+                2 => {}
+                _ => {
+                    (*filter).refcnt -= 1;
+                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    }
+                    break 's_32;
+                }
+            }
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        }
+        (*state).clear_mods |= (*filter).action.mods.mods.mask;
+        if (*filter).action.mods.flags as ::core::ffi::c_uint
+            & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+            == 0
+        {
+            (*state).components.locked_mods &= !(*filter).priv_0;
+        }
+        (*filter).func = None;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_latch_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
+            | ACTION_LATCH_ON_PRESS as ::core::ffi::c_int)
+            as xkb_action_flags;
+        if (*filter).action.mods.flags as ::core::ffi::c_uint
+            & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+            && (*filter).action.mods.flags as ::core::ffi::c_uint
+                & unlockOnPress as ::core::ffi::c_uint
+                != 0
+            && (*state).components.locked_mods & (*filter).action.mods.mods.mask
+                == (*filter).action.mods.mods.mask
+        {
+            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+            (*filter).func = None;
+        } else if (*filter).action.mods.flags as ::core::ffi::c_uint
+            & ACTION_LATCH_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*filter).priv_0 = LATCH_PENDING as ::core::ffi::c_int as uint32_t;
+            (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
+        } else {
+            (*filter).priv_0 = LATCH_KEY_DOWN as ::core::ffi::c_int as uint32_t;
+            (*state).set_mods |= (*filter).action.mods.mods.mask;
+        };
+    }
+}
+
+unsafe extern "C" fn xkb_filter_mod_latch_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        let mut latch: xkb_key_latch_state = (*filter).priv_0 as xkb_key_latch_state;
+        if direction as ::core::ffi::c_uint
+            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
+            let count: xkb_action_count_t =
+                xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
+            if latch as ::core::ffi::c_uint
+                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                if (*state).flags as ::core::ffi::c_uint
+                    & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
+                    while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                        if xkb_action_breaks_latch(
+                            actions.offset(k as isize) as *const xkb_action,
+                            INTERNAL_BREAKS_MOD_LATCH,
+                            (*filter).action.mods.mods.mask,
+                        ) {
+                            latch = NO_LATCH;
+                            break;
+                        } else {
+                            k = k.wrapping_add(1);
+                        }
+                    }
+                } else {
+                    latch = NO_LATCH;
+                }
+            } else if latch as ::core::ffi::c_uint
+                == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                let sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
+                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0;
+                let flags: xkb_action_flags = ((*filter).action.mods.flags as ::core::ffi::c_uint
+                    & !(ACTION_LATCH_TO_LOCK as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                    as xkb_action_flags;
+                let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
+                while (k_0 as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                    if ((*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
+                        == ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                        && (*actions.offset(k_0 as isize)).mods.flags as ::core::ffi::c_uint
+                            == (*filter).action.mods.flags as ::core::ffi::c_uint
+                        || (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
+                            == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+                            && sticky_keys as ::core::ffi::c_int != 0
+                            && (*actions.offset(k_0 as isize)).mods.flags as ::core::ffi::c_uint
+                                == flags as ::core::ffi::c_uint)
+                        && (*actions.offset(k_0 as isize)).mods.mods.mask
+                            == (*filter).action.mods.mods.mask
+                    {
+                        if (*filter).action.mods.flags as ::core::ffi::c_uint
+                            & ACTION_LATCH_TO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                            != 0
+                        {
+                            (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
+                            (*filter).func = Some(
+                                xkb_filter_mod_lock_func
+                                    as unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                            )
+                                as Option<
+                                    unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                                >;
+                            xkb_filter_mod_lock_new(state, events, filter);
+                        } else {
+                            (*filter).action.type_0 = ACTION_TYPE_MOD_SET;
+                            (*filter).func = Some(
+                                xkb_filter_mod_set_func
+                                    as unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                            )
+                                as Option<
+                                    unsafe extern "C" fn(
+                                        *mut xkb_state,
+                                        *mut xkb_events,
+                                        *mut xkb_filter,
+                                        *const xkb_key,
+                                        xkb_key_direction,
+                                    )
+                                        -> bool,
+                                >;
+                            xkb_filter_mod_set_new(state, events, filter);
+                        }
+                        (*filter).key = key;
+                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    } else if xkb_action_breaks_latch(
+                        actions.offset(k_0 as isize) as *const xkb_action,
+                        INTERNAL_BREAKS_MOD_LATCH,
+                        (*filter).action.mods.mods.mask,
+                    ) {
+                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                        (*filter).func = None;
+                        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                    }
+                    k_0 = k_0.wrapping_add(1);
+                }
+            } else {
+                if latch as ::core::ffi::c_uint
+                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                } else {
+                    __assert_fail(
+                        b"latch == NO_LATCH\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        855 as ::core::ffi::c_uint,
+                        b"_Bool xkb_filter_mod_latch_func(struct xkb_state *, struct xkb_events *, struct xkb_filter *, const struct xkb_key *, enum xkb_key_direction)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+            }
+        } else if !(key != (*filter).key) {
+            if direction as ::core::ffi::c_uint
+                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            } else {
+                let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
+                    | ACTION_LATCH_ON_PRESS as ::core::ffi::c_int)
+                    as xkb_action_flags;
+                if (*filter).action.mods.flags as ::core::ffi::c_uint
+                    & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                    && (*filter).action.mods.flags as ::core::ffi::c_uint
+                        & unlockOnPress as ::core::ffi::c_uint
+                        == 0
+                    && (*state).components.locked_mods & (*filter).action.mods.mods.mask
+                        == (*filter).action.mods.mods.mask
+                {
+                    if latch as ::core::ffi::c_uint
+                        == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
+                    {
+                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                    } else {
+                        (*state).clear_mods |= (*filter).action.mods.mods.mask;
+                    }
+                    (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+                    (*filter).func = None;
+                } else if latch as ::core::ffi::c_uint
+                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                    (*state).clear_mods |= (*filter).action.mods.mods.mask;
+                    (*filter).func = None;
+                } else if (*filter).action.mods.flags as ::core::ffi::c_uint
+                    & ACTION_LATCH_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    == 0
+                {
+                    latch = LATCH_PENDING;
+                    (*state).clear_mods |= (*filter).action.mods.mods.mask;
+                    (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
+                }
+            }
+        }
+        (*filter).priv_0 = latch as uint32_t;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_ctrls_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        if (*filter).action.type_0 as ::core::ffi::c_uint
+            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            (*filter).priv_0 = (!((*state).components.controls as ::core::ffi::c_uint)
+                & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
+                as uint32_t;
+        } else {
+            (*filter).priv_0 = ((*state).components.controls as ::core::ffi::c_uint
+                & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
+                as uint32_t;
+        }
+        if (*filter).action.type_0 as ::core::ffi::c_uint
+            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+            || (*filter).action.ctrls.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+        {
+            (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
+                | (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
+                as xkb_action_controls;
+        }
+    }
+}
+
+unsafe extern "C" fn xkb_filter_ctrls_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        's_32: {
+            match direction as ::core::ffi::c_uint {
+                1 => {
+                    (*filter).refcnt += 1;
+                }
+                2 => {}
+                _ => {
+                    (*filter).refcnt -= 1;
+                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
+                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    }
+                    break 's_32;
+                }
+            }
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        }
+        if (*filter).action.type_0 as ::core::ffi::c_uint
+            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+            || (*filter).action.ctrls.flags as ::core::ffi::c_uint
+                & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+        {
+            let old: xkb_action_controls = (*state).components.controls;
+            (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
+                & !((*filter).priv_0 as xkb_action_controls as ::core::ffi::c_uint))
+                as xkb_action_controls;
+            if old as ::core::ffi::c_uint
+                & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+                && (*state).components.controls as ::core::ffi::c_uint
+                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    == 0
+            {
+                clear_all_latches_and_locks(state, events);
+            }
+        }
+        (*filter).func = None;
+        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+    }
+}
+
+unsafe extern "C" fn append_redirect_key_events(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut redirect: *const xkb_redirect_key_action,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        let mut changed: xkb_state_component = 0 as xkb_state_component;
+        let mask: xkb_mod_mask_t = (*redirect).affect;
+        let mut event: *mut xkb_event = ::core::ptr::null_mut::<xkb_event>();
+        let mut last_components: state_components = (*state).components;
+        if !(*events).queue.item.is_null() && (*events).queue.size != 0 {
+            event = (*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize)
+                as *mut xkb_event;
+            while (*events).queue.size > 0 as darray_size_t
+                && event
+                    >= (*events)
+                        .queue
+                        .item
+                        .offset(0 as ::core::ffi::c_int as isize)
+                        as *mut xkb_event
+            {
+                if (*event).type_0 as ::core::ffi::c_uint
+                    == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                    last_components = (*event).c2rust_unnamed.components.components;
+                    break;
+                } else {
+                    event = event.offset(-1);
+                }
+            }
+        }
+        if mask != 0 {
+            let mut new: state_components = last_components;
+            new.base_mods = new.base_mods & !mask | (*redirect).mods;
+            new.latched_mods = new.latched_mods & !mask | (*redirect).mods;
+            new.locked_mods = new.locked_mods & !mask | (*redirect).mods;
+            new.mods = new.mods & !mask | (*redirect).mods;
+            changed = get_state_component_changes(&raw mut last_components, &raw mut new);
+            if changed as u64 != 0 {
+                (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+                let mut __need: darray_size_t = (*events).queue.size;
+                if __need > (*events).queue.alloc {
+                    (*events).queue.alloc = darray_next_alloc(
+                        (*events).queue.alloc,
+                        __need,
+                        ::core::mem::size_of::<xkb_event>() as size_t,
+                    );
+                    (*events).queue.item = realloc(
+                        (*events).queue.item as *mut ::core::ffi::c_void,
+                        ((*events).queue.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ) as *mut xkb_event;
+                }
+                *(*events)
+                    .queue
+                    .item
+                    .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                    xkb_event {
+                        type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                        c2rust_unnamed: C2Rust_Unnamed_17 {
+                            components: C2Rust_Unnamed_18 {
+                                components: new,
+                                changed: changed,
+                            },
+                        },
+                    };
+            }
+        }
+        (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+        let mut __need_0: darray_size_t = (*events).queue.size;
+        if __need_0 > (*events).queue.alloc {
+            (*events).queue.alloc = darray_next_alloc(
+                (*events).queue.alloc,
+                __need_0,
+                ::core::mem::size_of::<xkb_event>() as size_t,
+            );
+            (*events).queue.item = realloc(
+                (*events).queue.item as *mut ::core::ffi::c_void,
+                ((*events).queue.alloc as size_t)
+                    .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+            ) as *mut xkb_event;
+        }
+        *(*events)
+            .queue
+            .item
+            .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) = xkb_event {
+            type_0: (if direction as ::core::ffi::c_uint
+                == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                XKB_EVENT_TYPE_KEY_UP as ::core::ffi::c_int
+            } else if direction as ::core::ffi::c_uint
+                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                XKB_EVENT_TYPE_KEY_REPEATED as ::core::ffi::c_int
+            } else {
+                XKB_EVENT_TYPE_KEY_DOWN as ::core::ffi::c_int
+            }) as xkb_event_type,
+            c2rust_unnamed: C2Rust_Unnamed_17 {
+                keycode: (*redirect).keycode,
+            },
+        };
+        if mask != 0 && changed as ::core::ffi::c_uint != 0 {
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need_1: darray_size_t = (*events).queue.size;
+            if __need_1 > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need_1,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: last_components,
+                            changed: changed,
+                        },
+                    },
+                };
+        }
+        return true_0 != 0;
+    }
+}
+
+unsafe extern "C" fn xkb_filter_redirect_key_new(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+) {
+    unsafe {
+        if events.is_null()
+            || (*filter).action.redirect.keycode == XKB_KEYCODE_INVALID as xkb_keycode_t
+        {
+            (*filter).func = None;
+            return;
+        }
+        append_redirect_key_events(
+            state,
+            events,
+            &raw mut (*filter).action.redirect,
+            XKB_KEY_DOWN,
+        );
+    }
+}
+
+unsafe extern "C" fn xkb_filter_redirect_key_func(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut filter: *mut xkb_filter,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> bool {
+    unsafe {
+        if key != (*filter).key {
+            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        }
+        if direction as ::core::ffi::c_uint
+            == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            append_redirect_key_events(
+                state,
+                events,
+                &raw mut (*filter).action.redirect,
+                XKB_KEY_UP,
+            );
+            (*filter).func = None;
+            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        } else if direction as ::core::ffi::c_uint
+            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
+            let count: xkb_action_count_t =
+                xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
+            let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
+            while (a as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                if (*actions.offset(a as isize)).type_0 as ::core::ffi::c_uint
+                    == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as ::core::ffi::c_uint
+                    && (*actions.offset(a as isize)).redirect.keycode
+                        != (*filter).action.redirect.keycode
+                {
+                    append_redirect_key_events(
+                        state,
+                        events,
+                        &raw mut (*filter).action.redirect,
+                        XKB_KEY_UP,
+                    );
+                    (*filter).func = None;
+                    return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                }
+                a = a.wrapping_add(1);
+            }
+        }
+        append_redirect_key_events(state, events, &raw mut (*filter).action.redirect, direction);
+        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+    }
+}
+
+static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
+    [
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_mod_set_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_mod_set_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_mod_latch_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_mod_latch_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_mod_lock_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_mod_lock_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_group_set_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_group_set_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_group_latch_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_group_latch_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_group_lock_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_group_lock_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_ctrls_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_ctrls_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_ctrls_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_ctrls_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: Some(
+                xkb_filter_redirect_key_new
+                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+            ),
+            func: Some(
+                xkb_filter_redirect_key_func
+                    as unsafe extern "C" fn(
+                        *mut xkb_state,
+                        *mut xkb_events,
+                        *mut xkb_filter,
+                        *const xkb_key,
+                        xkb_key_direction,
+                    ) -> bool,
+            ),
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+        C2Rust_Unnamed_21 {
+            new: None,
+            func: None,
+        },
+    ]
+};
+
+unsafe extern "C" fn xkb_filter_apply_all(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) {
+    unsafe {
+        let mut consumed: bool = false_0 != 0;
+        let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
+        if !(*state).filters.item.is_null() {
+            filter = (*state)
+                .filters
+                .item
+                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_filter;
+            while filter
+                < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
+            {
+                if !(*filter).func.is_none() {
+                    if (*filter).func.expect("non-null function pointer")(
+                        state, events, filter, key, direction,
+                    ) as ::core::ffi::c_int
+                        == XKB_FILTER_CONSUME as ::core::ffi::c_int
+                    {
+                        consumed = true_0 != 0;
+                    }
+                }
+                filter = filter.offset(1);
+            }
+        }
+        if consumed as ::core::ffi::c_int != 0
+            || direction as ::core::ffi::c_uint
+                == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            return;
+        }
+        let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
+        let count: xkb_action_count_t =
+            xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
+        let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
+        while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+            if !((*actions.offset(k as isize)).type_0 as ::core::ffi::c_uint
+                >= _ACTION_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint)
+            {
+                if !filter_action_funcs[(*actions.offset(k as isize)).type_0 as usize]
+                    .new
+                    .is_none()
+                {
+                    filter = xkb_filter_new(state);
+                    (*filter).key = key;
+                    (*filter).action = *actions.offset(k as isize);
+                    if (*state).components.controls as ::core::ffi::c_uint
+                        & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                        != 0
+                    {
+                        if (*filter).action.type_0 as ::core::ffi::c_uint
+                            == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+                        {
+                            (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
+                            if (*state).flags as ::core::ffi::c_uint
+                                & XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
+                                    as ::core::ffi::c_uint
+                                != 0
+                            {
+                                (*filter).action.mods.flags = ((*filter).action.mods.flags
+                                    as ::core::ffi::c_uint
+                                    | ACTION_LATCH_TO_LOCK as ::core::ffi::c_int
+                                        as ::core::ffi::c_uint)
+                                    as xkb_action_flags;
+                            }
+                        } else if (*filter).action.type_0 as ::core::ffi::c_uint
+                            == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+                        {
+                            (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
+                            if (*state).flags as ::core::ffi::c_uint
+                                & XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
+                                    as ::core::ffi::c_uint
+                                != 0
+                            {
+                                (*filter).action.group.flags = ((*filter).action.group.flags
+                                    as ::core::ffi::c_uint
+                                    | ACTION_LATCH_TO_LOCK as ::core::ffi::c_int
+                                        as ::core::ffi::c_uint)
+                                    as xkb_action_flags;
+                            }
+                        }
+                    }
+                    if (*filter).action.type_0 as ::core::ffi::c_uint
+                        == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as ::core::ffi::c_uint
+                    {
+                        (*filter).action.redirect.affect = mod_mask_get_effective(
+                            (*state).keymap,
+                            (*filter).action.redirect.affect,
+                        );
+                        (*filter).action.redirect.mods =
+                            mod_mask_get_effective((*state).keymap, (*filter).action.redirect.mods);
+                    }
+                    (*filter).func = filter_action_funcs[(*filter).action.type_0 as usize].func;
+                    filter_action_funcs[(*filter).action.type_0 as usize]
+                        .new
+                        .expect("non-null function pointer")(
+                        state, events, filter
+                    );
+                }
+            }
+            k = k.wrapping_add(1);
+        }
+    }
+}
+#[inline]
+
+unsafe extern "C" fn xkb_state_init(
+    mut state: *mut xkb_state,
+    mut keymap: *mut xkb_keymap,
+    mut a11y_affect: xkb_a11y_flags,
+    mut a11y_flags: xkb_a11y_flags,
+) {
+    unsafe {
+        (*state).flags = a11y_flags;
+        if (*keymap).format as ::core::ffi::c_uint
+            != XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as ::core::ffi::c_uint
+            && a11y_affect as ::core::ffi::c_uint
+                & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+        {
+            (*state).flags = ((*state).flags as ::core::ffi::c_uint
+                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_a11y_flags;
+        }
+        (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
+        (*state).refcnt = 1 as ::core::ffi::c_int;
+        (*state).keymap = xkb_keymap_ref(keymap);
+        xkb_state_update_derived(state);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
+    unsafe {
+        let state: *mut xkb_state =
+            calloc(1 as size_t, ::core::mem::size_of::<xkb_state>() as size_t) as *mut xkb_state;
+        if state.is_null() {
+            return ::core::ptr::null_mut::<xkb_state>();
+        }
+        xkb_state_init(state, keymap, XKB_A11Y_NO_FLAGS, XKB_A11Y_NO_FLAGS);
+        return state;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
+    unsafe {
+        if (*state).refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"state->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                1243 as ::core::ffi::c_uint,
+                b"struct xkb_state *xkb_state_ref(struct xkb_state *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        (*state).refcnt += 1;
+        return state;
+    }
+}
+#[inline]
+
+unsafe extern "C" fn xkb_state_destroy(mut state: *mut xkb_state) {
+    unsafe {
+        xkb_keymap_unref((*state).keymap);
+        free((*state).filters.item as *mut ::core::ffi::c_void);
+        (*state).filters.item = ::core::ptr::null_mut::<xkb_filter>();
+        (*state).filters.size = 0 as darray_size_t;
+        (*state).filters.alloc = 0 as darray_size_t;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_unref(mut state: *mut xkb_state) {
+    unsafe {
+        if state.is_null() || (*state).refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"!state || state->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                1258 as ::core::ffi::c_uint,
+                b"void xkb_state_unref(struct xkb_state *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        if state.is_null() || {
+            (*state).refcnt -= 1;
+            (*state).refcnt > 0 as ::core::ffi::c_int
+        } {
+            return;
+        }
+        xkb_state_destroy(state);
+        free(state as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
+    unsafe {
+        return (*state).keymap;
+    }
+}
+
+unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
+    unsafe {
+        let mut idx: xkb_led_index_t = 0;
+        let mut led: *const xkb_led = ::core::ptr::null::<xkb_led>();
+        (*state).components.leds = 0 as xkb_led_mask_t;
+        let mut c2rust_current_block_23: u64;
+        idx = 0 as xkb_led_index_t;
+        led = &raw mut (*(*state).keymap).leds as *mut xkb_led;
+        while idx < (*(*state).keymap).num_leds {
+            if (*led).which_mods as ::core::ffi::c_uint != 0 as ::core::ffi::c_uint
+                && (*led).mods.mask != 0 as xkb_mod_mask_t
+            {
+                let mut mod_mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+                if (*led).which_mods as ::core::ffi::c_uint
+                    & XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    mod_mask |= (*state).components.mods;
+                }
+                if (*led).which_mods as ::core::ffi::c_uint
+                    & XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    mod_mask |= (*state).components.base_mods;
+                }
+                if (*led).which_mods as ::core::ffi::c_uint
+                    & XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    mod_mask |= (*state).components.latched_mods;
+                }
+                if (*led).which_mods as ::core::ffi::c_uint
+                    & XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
+                    != 0
+                {
+                    mod_mask |= (*state).components.locked_mods;
+                }
+                if (*led).mods.mask & mod_mask != 0 {
+                    (*state).components.leds = ((*state).components.leds as ::core::ffi::c_uint
+                        | (1 as ::core::ffi::c_uint) << idx)
+                        as xkb_led_mask_t;
+                    c2rust_current_block_23 = 16559507199688588974;
+                } else {
+                    c2rust_current_block_23 = 13586036798005543211;
+                }
+            } else {
+                c2rust_current_block_23 = 13586036798005543211;
+            }
+            match c2rust_current_block_23 {
+                13586036798005543211 => {
+                    if (*led).which_groups() as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                        if ((*led).groups != 0) as ::core::ffi::c_int as ::core::ffi::c_long
+                            != 0 as ::core::ffi::c_long
+                        {
+                            let mut group_mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
+                            if (*state).components.group < 32 as xkb_layout_index_t {
+                            } else {
+                                __assert_fail(
+                                    b"state->components.group < XKB_MAX_GROUPS\0".as_ptr()
+                                        as *const ::core::ffi::c_char,
+                                    b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                    1306 as ::core::ffi::c_uint,
+                                    b"void xkb_state_led_update_all(struct xkb_state *)\0".as_ptr()
+                                        as *const ::core::ffi::c_char,
+                                );
+                            };
+                            if (*state).components.locked_group >= 0 as int32_t
+                                && (*state).components.locked_group < 32 as int32_t
+                            {
+                            } else {
+                                __assert_fail(
+                                    b"state->components.locked_group >= 0 && state->components.locked_group < XKB_MAX_GROUPS\0"
+                                        .as_ptr() as *const ::core::ffi::c_char,
+                                    b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                    1308 as ::core::ffi::c_uint,
+                                    b"void xkb_state_led_update_all(struct xkb_state *)\0"
+                                        .as_ptr() as *const ::core::ffi::c_char,
+                                );
+                            };
+                            if (*led).which_groups() as ::core::ffi::c_int
+                                & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int
+                                != 0
+                            {
+                                group_mask = (group_mask as ::core::ffi::c_uint
+                                    | (1 as ::core::ffi::c_uint) << (*state).components.group)
+                                    as xkb_layout_mask_t;
+                            }
+                            if (*led).which_groups() as ::core::ffi::c_int
+                                & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int
+                                != 0
+                            {
+                                group_mask = (group_mask as ::core::ffi::c_uint
+                                    | (1 as ::core::ffi::c_uint)
+                                        << (*state).components.locked_group)
+                                    as xkb_layout_mask_t;
+                            }
+                            if (*led).which_groups() as ::core::ffi::c_int
+                                & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int
+                                != 0
+                                && (*state).components.base_group != 0 as int32_t
+                            {
+                                group_mask |= (*led).groups;
+                            }
+                            if (*led).which_groups() as ::core::ffi::c_int
+                                & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
+                                != 0
+                                && (*state).components.latched_group != 0 as int32_t
+                            {
+                                group_mask |= (*led).groups;
+                            }
+                            if (*led).groups & group_mask != 0 {
+                                (*state).components.leds = ((*state).components.leds
+                                    as ::core::ffi::c_uint
+                                    | (1 as ::core::ffi::c_uint) << idx)
+                                    as xkb_led_mask_t;
+                                c2rust_current_block_23 = 16559507199688588974;
+                            } else {
+                                c2rust_current_block_23 = 14359455889292382949;
+                            }
+                        } else if (*led).which_groups() as ::core::ffi::c_int
+                            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int
+                            != 0
+                            && (*state).components.base_group == 0 as int32_t
+                            || (*led).which_groups() as ::core::ffi::c_int
+                                & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
+                                != 0
+                                && (*state).components.latched_group == 0 as int32_t
+                        {
+                            (*state).components.leds = ((*state).components.leds
+                                as ::core::ffi::c_uint
+                                | (1 as ::core::ffi::c_uint) << idx)
+                                as xkb_led_mask_t;
+                            c2rust_current_block_23 = 16559507199688588974;
+                        } else {
+                            c2rust_current_block_23 = 14359455889292382949;
+                        }
+                    } else {
+                        c2rust_current_block_23 = 14359455889292382949;
+                    }
+                    match c2rust_current_block_23 {
+                        16559507199688588974 => {}
+                        _ => {
+                            if (*led).ctrls as ::core::ffi::c_uint
+                                & (*state).components.controls as ::core::ffi::c_uint
+                                != 0
+                            {
+                                (*state).components.leds = ((*state).components.leds
+                                    as ::core::ffi::c_uint
+                                    | (1 as ::core::ffi::c_uint) << idx)
+                                    as xkb_led_mask_t;
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+            idx = idx.wrapping_add(1);
+            led = led.offset(1);
+        }
+    }
+}
+
+unsafe extern "C" fn xkb_state_update_derived(mut state: *mut xkb_state) {
+    unsafe {
+        let mut wrapped: xkb_layout_index_t = 0;
+        (*state).components.mods = (*state).components.base_mods
+            | (*state).components.latched_mods
+            | (*state).components.locked_mods;
+        wrapped = XkbWrapGroupIntoRange(
+            (*state).components.locked_group,
+            (*(*state).keymap).num_groups,
+            (*state).controls.out_of_range_group.policy,
+            (*state).controls.out_of_range_group.redirect_group,
+        );
+        (*state).components.locked_group = (if wrapped == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+            0 as xkb_layout_index_t
+        } else {
+            wrapped
+        }) as int32_t;
+        wrapped = XkbWrapGroupIntoRange(
+            (*state).components.base_group
+                + (*state).components.latched_group
+                + (*state).components.locked_group,
+            (*(*state).keymap).num_groups,
+            (*state).controls.out_of_range_group.policy,
+            (*state).controls.out_of_range_group.redirect_group,
+        );
+        (*state).components.group = if wrapped == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+            0 as xkb_layout_index_t
+        } else {
+            wrapped
+        };
+        xkb_state_led_update_all(state);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_update_key(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut direction: xkb_key_direction,
+) -> xkb_state_component {
+    unsafe {
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        if key.is_null()
+            || direction as ::core::ffi::c_uint
+                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+                && !(*key).repeats()
+        {
+            return 0 as xkb_state_component;
+        }
+        let prev_components: state_components = (*state).components;
+        (*state).set_mods = 0 as xkb_mod_mask_t;
+        (*state).clear_mods = 0 as xkb_mod_mask_t;
+        xkb_filter_apply_all(state, ::core::ptr::null_mut::<xkb_events>(), key, direction);
+        let mut i: xkb_mod_index_t = 0;
+        let mut bit: xkb_mod_mask_t = 0;
+        i = 0 as xkb_mod_index_t;
+        bit = 1 as xkb_mod_mask_t;
+        while (*state).set_mods != 0 {
+            if (*state).set_mods & bit != 0 {
+                (*state).mod_key_count[i as usize] += 1;
+                (*state).components.base_mods |= bit;
+                (*state).set_mods &= !bit;
+            }
+            i = i.wrapping_add(1);
+            bit <<= 1 as ::core::ffi::c_int;
+        }
+        i = 0 as xkb_mod_index_t;
+        bit = 1 as xkb_mod_mask_t;
+        while (*state).clear_mods != 0 {
+            if (*state).clear_mods & bit != 0 {
+                (*state).mod_key_count[i as usize] -= 1;
+                if (*state).mod_key_count[i as usize] as ::core::ffi::c_int
+                    <= 0 as ::core::ffi::c_int
+                {
+                    (*state).components.base_mods &= !bit;
+                    (*state).mod_key_count[i as usize] = 0 as int16_t;
+                }
+                (*state).clear_mods &= !bit;
+            }
+            i = i.wrapping_add(1);
+            bit <<= 1 as ::core::ffi::c_int;
+        }
+        xkb_state_update_derived(state);
+        return get_state_component_changes(
+            &raw const prev_components,
+            &raw mut (*state).components,
+        );
+    }
+}
+
+static mut synthetic_key_level_entry: xkb_key_type_entry = xkb_key_type_entry {
+    level: 0 as xkb_level_index_t,
+    mods: xkb_mods { mods: 0, mask: 0 },
+    preserve: xkb_mods { mods: 0, mask: 0 },
+};
+
+static mut synthetic_key_type: xkb_key_type = unsafe {
+    xkb_key_type {
+        name: 0,
+        mods: xkb_mods { mods: 0, mask: 0 },
+        required: false,
+        num_levels: 1 as xkb_level_index_t,
+        num_level_names: 0,
+        level_names: ::core::ptr::null::<xkb_atom_t>() as *mut xkb_atom_t,
+        num_entries: 1 as darray_size_t,
+        entries: &raw const synthetic_key_level_entry as *mut xkb_key_type_entry,
+    }
+};
+
+static mut synthetic_key: xkb_key = xkb_key {
+    keycode: 0,
+    name: 0,
+    explicit: 0 as xkb_explicit_components,
+    modmap: 0,
+    vmodmap: 0,
+    overlays: 0,
+    overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+    groups: ::core::ptr::null_mut::<xkb_group>(),
+    c2rust_unnamed: C2Rust_Unnamed_9 {
+        overlay_key: ::core::ptr::null::<xkb_key>(),
+    },
+};
+
+unsafe extern "C" fn update_latch_modifiers(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut mask: xkb_mod_mask_t,
+    mut latches: xkb_mod_mask_t,
+) {
+    unsafe {
+        let clear: xkb_mod_mask_t = mask & !latches;
+        (*state).components.latched_mods &= !clear;
+        let mut synthetic_key_level_break_mod_latch: xkb_level = xkb_level {
+            num_syms: 0 as xkb_keysym_count_t,
+            num_actions: 1 as xkb_action_count_t,
+            c2rust_unnamed: C2Rust_Unnamed_12 {
+                upper: XKB_KEY_NoSymbol as xkb_keysym_t,
+            },
+            s: C2Rust_Unnamed_11 {
+                sym: XKB_KEY_NoSymbol as xkb_keysym_t,
+            },
+            a: C2Rust_Unnamed_10 {
+                action: xkb_action {
+                    internal: xkb_internal_action {
+                        type_0: ACTION_TYPE_INTERNAL,
+                        flags: INTERNAL_BREAKS_MOD_LATCH,
+                        c2rust_unnamed: C2Rust_Unnamed_2 {
+                            clear_latched_mods: clear,
+                        },
+                    },
+                },
+            },
+        };
+        let mut synthetic_key_group_break_mod_latch: xkb_group = {
+            let mut init = xkb_group {
+                explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
+                c2rust_padding: [0; 7],
+                type_0: &raw mut synthetic_key_type,
+                levels: &raw mut synthetic_key_level_break_mod_latch,
+            };
+            init.set_explicit_symbols(false);
+            init.set_explicit_actions(false);
+            init.set_implicit_actions(false);
+            init.set_explicit_type(false);
+            init
+        };
+        let synthetic_key_break_mod_latch: xkb_key = {
+            let mut init = xkb_key {
+                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+                keycode: 0,
+                name: 0,
+                explicit: 0 as xkb_explicit_components,
+                modmap: 0,
+                vmodmap: 0,
+                overlays: 0,
+                groups: &raw mut synthetic_key_group_break_mod_latch,
+                c2rust_unnamed: C2Rust_Unnamed_9 {
+                    overlay_key: ::core::ptr::null::<xkb_key>(),
+                },
+            };
+            init.set_overlays_inline(false);
+            init.set_repeats(false);
+            init.set_implicit_actions(false);
+            init.set_out_of_range_pending_group(false);
+            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
+            init.set_out_of_range_group_number(0);
+            init.set_num_groups(1 as xkb_layout_index_t);
+            init
+        };
+        xkb_filter_apply_all(
+            state,
+            events,
+            &raw const synthetic_key_break_mod_latch,
+            XKB_KEY_DOWN,
+        );
+        let key: *const xkb_key = &raw const synthetic_key;
+        let latch_mods: xkb_action = xkb_action {
+            mods: xkb_mod_action {
+                type_0: ACTION_TYPE_MOD_LATCH,
+                flags: 0 as xkb_action_flags,
+                mods: xkb_mods {
+                    mods: 0,
+                    mask: mask & latches,
+                },
+            },
+        };
+        let filter: *mut xkb_filter = xkb_filter_new(state) as *mut xkb_filter;
+        (*filter).key = key;
+        (*filter).func = Some(
+            xkb_filter_mod_latch_func
+                as unsafe extern "C" fn(
+                    *mut xkb_state,
+                    *mut xkb_events,
+                    *mut xkb_filter,
+                    *const xkb_key,
+                    xkb_key_direction,
+                ) -> bool,
+        )
+            as Option<
+                unsafe extern "C" fn(
+                    *mut xkb_state,
+                    *mut xkb_events,
+                    *mut xkb_filter,
+                    *const xkb_key,
+                    xkb_key_direction,
+                ) -> bool,
+            >;
+        (*filter).action = latch_mods;
+        xkb_filter_mod_latch_new(state, events, filter);
+        xkb_filter_mod_latch_func(state, events, filter, key, XKB_KEY_UP);
+    }
+}
+
+unsafe extern "C" fn update_latch_group(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut group: int32_t,
+) {
+    unsafe {
+        xkb_filter_apply_all(
+            state,
+            events,
+            &raw const synthetic_key_break_group_latch,
+            XKB_KEY_DOWN,
+        );
+        let key: *const xkb_key = &raw const synthetic_key;
+        let latch_group: xkb_action = xkb_action {
+            group: xkb_group_action {
+                type_0: ACTION_TYPE_GROUP_LATCH,
+                flags: ACTION_ABSOLUTE_SWITCH,
+                group: group,
+            },
+        };
+        let filter: *mut xkb_filter = xkb_filter_new(state) as *mut xkb_filter;
+        (*filter).key = key;
+        (*filter).func = Some(
+            xkb_filter_group_latch_func
+                as unsafe extern "C" fn(
+                    *mut xkb_state,
+                    *mut xkb_events,
+                    *mut xkb_filter,
+                    *const xkb_key,
+                    xkb_key_direction,
+                ) -> bool,
+        )
+            as Option<
+                unsafe extern "C" fn(
+                    *mut xkb_state,
+                    *mut xkb_events,
+                    *mut xkb_filter,
+                    *const xkb_key,
+                    xkb_key_direction,
+                ) -> bool,
+            >;
+        (*filter).action = latch_group;
+        xkb_filter_group_latch_new(state, events, filter);
+        xkb_filter_group_latch_func(state, events, filter, key, XKB_KEY_UP);
+    }
+}
+#[inline]
+
+unsafe extern "C" fn resolve_to_canonical_mods(
+    mut keymap: *mut xkb_keymap,
+    mut mods: xkb_mod_mask_t,
+) -> xkb_mod_mask_t {
+    unsafe {
+        return mods & (*keymap).canonical_state_mask
+            | mod_mask_get_effective(keymap, mods & !(*keymap).canonical_state_mask);
+    }
+}
+
+unsafe extern "C" fn state_update_latched_locked(
+    mut state: *mut xkb_state,
+    mut update: *const xkb_state_components_update,
+    mut events: *mut xkb_events,
+) {
+    unsafe {
+        let affect_locked_mods: xkb_mod_mask_t =
+            resolve_to_canonical_mods((*state).keymap, (*update).affect_locked_mods)
+                as xkb_mod_mask_t;
+        if affect_locked_mods != 0 {
+            let locked_mods: xkb_mod_mask_t =
+                resolve_to_canonical_mods((*state).keymap, (*update).locked_mods) as xkb_mod_mask_t;
+            (*state).components.locked_mods &= !affect_locked_mods;
+            (*state).components.locked_mods |= locked_mods & affect_locked_mods;
+        }
+        if (*update).components as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            (*state).components.locked_group = (*update).locked_layout;
+        }
+        let affect_latched_mods: xkb_mod_mask_t =
+            resolve_to_canonical_mods((*state).keymap, (*update).affect_latched_mods)
+                as xkb_mod_mask_t;
+        if affect_latched_mods != 0 {
+            let latched_mods: xkb_mod_mask_t =
+                resolve_to_canonical_mods((*state).keymap, (*update).latched_mods)
+                    as xkb_mod_mask_t;
+            update_latch_modifiers(state, events, affect_latched_mods, latched_mods);
+        }
+        if (*update).components as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            update_latch_group(state, events, (*update).latched_layout);
+        }
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_update_latched_locked(
+    mut state: *mut xkb_state,
+    mut affect_latched_mods: xkb_mod_mask_t,
+    mut latched_mods: xkb_mod_mask_t,
+    mut affect_latched_layout: bool,
+    mut latched_layout: int32_t,
+    mut affect_locked_mods: xkb_mod_mask_t,
+    mut locked_mods: xkb_mod_mask_t,
+    mut affect_locked_layout: bool,
+    mut locked_layout: int32_t,
+) -> xkb_state_component {
+    unsafe {
+        let previous_components: state_components = (*state).components;
+        let components: xkb_state_component =
+            ((if affect_latched_mods != 0 || latched_mods != 0 {
+                XKB_STATE_MODS_LATCHED as ::core::ffi::c_int
+            } else {
+                0 as ::core::ffi::c_int
+            }) | (if affect_locked_mods != 0 || locked_mods != 0 {
+                XKB_STATE_MODS_LOCKED as ::core::ffi::c_int
+            } else {
+                0 as ::core::ffi::c_int
+            }) | (if affect_latched_layout as ::core::ffi::c_int != 0 {
+                XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
+            } else {
+                0 as ::core::ffi::c_int
+            }) | (if affect_locked_layout as ::core::ffi::c_int != 0 {
+                XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int
+            } else {
+                0 as ::core::ffi::c_int
+            })) as xkb_state_component;
+        let update: xkb_state_components_update = xkb_state_components_update {
+            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            components: components,
+            affect_latched_mods: affect_latched_mods,
+            latched_mods: latched_mods,
+            affect_locked_mods: affect_locked_mods,
+            locked_mods: locked_mods,
+            latched_layout: latched_layout,
+            locked_layout: locked_layout,
+            affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
+            controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
+        };
+        state_update_latched_locked(
+            state,
+            &raw const update,
+            ::core::ptr::null_mut::<xkb_events>(),
+        );
+        xkb_state_update_derived(state);
+        return get_state_component_changes(
+            &raw const previous_components,
+            &raw mut (*state).components,
+        );
+    }
+}
+#[inline]
+
+unsafe extern "C" fn clear_all_latches_and_locks(
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+) {
+    unsafe {
+        static mut components: xkb_state_component = (XKB_STATE_MODS_LATCHED as ::core::ffi::c_int
+            | XKB_STATE_MODS_LOCKED as ::core::ffi::c_int
+            | XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
+            | XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int)
+            as xkb_state_component;
+        let update: xkb_state_components_update = xkb_state_components_update {
+            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            components: components,
+            affect_latched_mods: XKB_MOD_ALL as ::core::ffi::c_uint as xkb_mod_mask_t,
+            latched_mods: 0 as xkb_mod_mask_t,
+            affect_locked_mods: XKB_MOD_ALL as ::core::ffi::c_uint as xkb_mod_mask_t,
+            locked_mods: 0 as xkb_mod_mask_t,
+            latched_layout: 0 as int32_t,
+            locked_layout: 0 as int32_t,
+            affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
+            controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
+        };
+        state_update_latched_locked(state, &raw const update, events);
+    }
+}
+
+unsafe extern "C" fn state_update_enabled_controls(
+    mut state: *mut xkb_state,
+    mut affect: xkb_keyboard_control_flags,
+    mut controls: xkb_keyboard_control_flags,
+    mut events: *mut xkb_events,
+) {
+    unsafe {
+        let had_sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
+            & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0;
+        affect = (affect as xkb_action_controls as ::core::ffi::c_uint
+            & CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as ::core::ffi::c_uint)
+            as xkb_keyboard_control_flags;
+        (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
+            & !(affect as ::core::ffi::c_uint))
+            as xkb_action_controls;
+        (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
+            | controls as xkb_action_controls as ::core::ffi::c_uint
+                & affect as ::core::ffi::c_uint)
+            as xkb_action_controls;
+        if had_sticky_keys as ::core::ffi::c_int != 0
+            && (*state).components.controls as ::core::ffi::c_uint
+                & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
+                == 0
+        {
+            clear_all_latches_and_locks(state, events);
+        }
+        xkb_state_update_derived(state);
+    }
+}
+
+unsafe extern "C" fn state_update_layout_policy(
+    mut state: *mut xkb_state,
+    mut update: *const xkb_layout_policy_update,
+) -> xkb_error_code {
+    unsafe {
+        if xkb_feature_supported(
+            XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
+            (*update).policy as ::core::ffi::c_int as uint32_t,
+        ) {
+            if (*update).policy as ::core::ffi::c_uint
+                == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                if (*update).redirect < (*(*state).keymap).num_groups {
+                    (*state).controls.out_of_range_group.redirect_group = (*update).redirect;
+                } else {
+                    xkb_log(
+                        (*(*state).keymap).ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"[XKB-%03d] Layout policy: unsupported layout index %u > %u\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                        (*update).redirect.wrapping_add(1 as xkb_layout_index_t),
+                        (*(*state).keymap).num_groups,
+                    );
+                    return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
+                }
+            }
+            (*state).controls.out_of_range_group.policy = (*update).policy;
+            return XKB_SUCCESS;
+        } else {
+            xkb_log(
+                (*(*state).keymap).ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Unsupported layout policy: %d\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int,
+                (*update).policy as ::core::ffi::c_uint,
+            );
+            return XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY;
+        };
+    }
+}
+
+unsafe extern "C" fn log_abi_error(
+    mut ctx: *mut xkb_context,
+    mut func: *const ::core::ffi::c_char,
+    mut error: xkb_error_code,
+) {
+    unsafe {
+        match error as ::core::ffi::c_int {
+            450 => {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] %s: ABI error: unsupported versioned struct\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    XKB_ERROR_ABI_INVALID_STRUCT_SIZE as ::core::ffi::c_int,
+                    func,
+                );
+            }
+            914 => {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] %s: ABI version mismatch: missing newer required fields\n\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                    XKB_ERROR_ABI_BACKWARD_COMPAT as ::core::ffi::c_int,
+                    func,
+                );
+            }
+            876 => {
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] %s: ABI version mismatch: cannot use newer fields\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    XKB_ERROR_ABI_FORWARD_COMPAT as ::core::ffi::c_int,
+                    func,
+                );
+            }
+            _ => {
+                if false {
+                } else {
+                    __assert_fail(
+                        b"false\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        1716 as ::core::ffi::c_uint,
+                        b"void log_abi_error(struct xkb_context *restrict, const char *restrict, enum xkb_error_code)\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                    );
+                };
+            }
+        };
+    }
+}
+
+unsafe extern "C" fn check_state_update_abi_(
+    mut ctx: *mut xkb_context,
+    mut func: *const ::core::ffi::c_char,
+    mut update: *const xkb_state_update,
+) -> xkb_error_code {
+    unsafe {
+        let mut error: xkb_error_code = XKB_SUCCESS;
+        error = xkb_check_versioned_struct_size_(
+            ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+            ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+            ::core::mem::size_of::<xkb_state_update>() as size_t,
+            (*update).size,
+            update as *const ::core::ffi::c_void,
+        );
+        if error as ::core::ffi::c_int != 0
+            || !(*update).components.is_null() && {
+                error = xkb_check_versioned_struct_size_(
+                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+                    ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+                    (*(*update).components).size,
+                    (*update).components as *const ::core::ffi::c_void,
+                );
+                error as ::core::ffi::c_int != 0
+            }
+            || !(*update).layout_policy.is_null() && {
+                error = xkb_check_versioned_struct_size_(
+                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
+                    ::core::mem::size_of::<xkb_layout_policy_update>() as size_t,
+                    (*(*update).layout_policy).size,
+                    (*update).layout_policy as *const ::core::ffi::c_void,
+                );
+                error as ::core::ffi::c_int != 0
+            }
+        {
+            log_abi_error(ctx, func, error);
+        }
+        return error;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_update_synthetic(
+    mut state: *mut xkb_state,
+    mut update: *const xkb_state_update,
+    mut changed: *mut xkb_state_component,
+) -> xkb_error_code {
+    unsafe {
+        let mut error: xkb_error_code = check_state_update_abi_(
+            (*(*state).keymap).ctx,
+            b"xkb_state_update_synthetic\0".as_ptr() as *const ::core::ffi::c_char,
+            update,
+        );
+        if error as u64 != 0 {
+            return error;
+        }
+        let previous_components: state_components = (*state).components;
+        if !(*update).layout_policy.is_null() {
+            error = state_update_layout_policy(state, (*update).layout_policy);
+            if error as u64 != 0 {
+                return error;
+            }
+        }
+        if !(*update).components.is_null() {
+            let components: *const xkb_state_components_update = (*update).components;
+            state_update_enabled_controls(
+                state,
+                (*components).affect_controls,
+                (*components).controls,
+                ::core::ptr::null_mut::<xkb_events>(),
+            );
+            state_update_latched_locked(state, components, ::core::ptr::null_mut::<xkb_events>());
+        }
+        xkb_state_update_derived(state);
+        if !changed.is_null() {
+            *changed = get_state_component_changes(
+                &raw const previous_components,
+                &raw mut (*state).components,
+            );
+        }
+        return XKB_SUCCESS;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_update_mask(
+    mut state: *mut xkb_state,
+    mut base_mods: xkb_mod_mask_t,
+    mut latched_mods: xkb_mod_mask_t,
+    mut locked_mods: xkb_mod_mask_t,
+    mut base_group: xkb_layout_index_t,
+    mut latched_group: xkb_layout_index_t,
+    mut locked_group: xkb_layout_index_t,
+) -> xkb_state_component {
+    unsafe {
+        let prev_components: state_components = (*state).components;
+        (*state).components.base_mods = resolve_to_canonical_mods((*state).keymap, base_mods);
+        (*state).components.latched_mods = resolve_to_canonical_mods((*state).keymap, latched_mods);
+        (*state).components.locked_mods = resolve_to_canonical_mods((*state).keymap, locked_mods);
+        (*state).components.base_group = base_group as int32_t;
+        (*state).components.latched_group = latched_group as int32_t;
+        (*state).components.locked_group = locked_group as int32_t;
+        xkb_state_update_derived(state);
+        return get_state_component_changes(
+            &raw const prev_components,
+            &raw mut (*state).components,
+        );
+    }
+}
+
+unsafe extern "C" fn should_do_caps_transformation(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> bool {
+    unsafe {
+        return xkb_state_mod_index_is_active(
+            state,
+            XKB_MOD_INDEX_CAPS as ::core::ffi::c_int as xkb_mod_index_t,
+            XKB_STATE_MODS_EFFECTIVE,
+        ) > 0 as ::core::ffi::c_int
+            && xkb_state_mod_index_is_consumed(
+                state,
+                kc,
+                XKB_MOD_INDEX_CAPS as ::core::ffi::c_int as xkb_mod_index_t,
+            ) == 0 as ::core::ffi::c_int;
+    }
+}
+
+unsafe extern "C" fn should_do_ctrl_transformation(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> bool {
+    unsafe {
+        return xkb_state_mod_index_is_active(
+            state,
+            XKB_MOD_INDEX_CTRL as ::core::ffi::c_int as xkb_mod_index_t,
+            XKB_STATE_MODS_EFFECTIVE,
+        ) > 0 as ::core::ffi::c_int
+            && xkb_state_mod_index_is_consumed(
+                state,
+                kc,
+                XKB_MOD_INDEX_CTRL as ::core::ffi::c_int as xkb_mod_index_t,
+            ) == 0 as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_syms(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut syms_out: *mut *const xkb_keysym_t,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut level: xkb_level_index_t = 0;
+        let mut key: *const xkb_key = ::core::ptr::null::<xkb_key>();
+        let mut leveli: *const xkb_level = ::core::ptr::null::<xkb_level>();
+        let mut num_syms: xkb_keysym_count_t = 0;
+        let layout: xkb_layout_index_t = xkb_state_key_get_layout(state, kc) as xkb_layout_index_t;
+        if !(layout == XKB_LAYOUT_INVALID as xkb_layout_index_t) {
+            level = xkb_state_key_get_level(state, kc, layout) as xkb_level_index_t;
+            if !(level == XKB_LEVEL_INVALID as xkb_level_index_t) {
+                key = XkbKey((*state).keymap, kc) as *const xkb_key;
+                if !key.is_null() {
+                    leveli = xkb_keymap_key_get_level((*state).keymap, key, layout, level);
+                    if !leveli.is_null() {
+                        num_syms = (*leveli).num_syms;
+                        if !(num_syms as ::core::ffi::c_int == 0 as ::core::ffi::c_int) {
+                            if should_do_caps_transformation(state, kc) {
+                                if num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+                                    *syms_out = if (*leveli).c2rust_unnamed.has_upper
+                                        as ::core::ffi::c_int
+                                        != 0
+                                    {
+                                        (*leveli)
+                                            .s
+                                            .syms
+                                            .offset(num_syms as ::core::ffi::c_int as isize)
+                                    } else {
+                                        (*leveli).s.syms
+                                    };
+                                } else {
+                                    *syms_out = &raw const (*leveli).c2rust_unnamed.upper;
+                                }
+                            } else {
+                                *syms_out =
+                                    if num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+                                        (*leveli).s.syms as *const xkb_keysym_t
+                                    } else {
+                                        &raw const (*leveli).s.sym
+                                    };
+                            }
+                            return num_syms as ::core::ffi::c_int;
+                        }
+                    }
+                }
+            }
+        }
+        *syms_out = ::core::ptr::null::<xkb_keysym_t>();
+        return 0 as ::core::ffi::c_int;
+    }
+}
+
+unsafe extern "C" fn XkbToControl(mut ch: ::core::ffi::c_char) -> ::core::ffi::c_char {
+    unsafe {
+        let mut c: ::core::ffi::c_char = ch;
+        if c as ::core::ffi::c_int >= '@' as i32 && (c as ::core::ffi::c_int) < '\u{7f}' as i32
+            || c as ::core::ffi::c_int == ' ' as i32
+        {
+            c = (c as ::core::ffi::c_int & 0x1f as ::core::ffi::c_int) as ::core::ffi::c_char;
+        } else if c as ::core::ffi::c_int == '2' as i32 {
+            c = '\0' as i32 as ::core::ffi::c_char;
+        } else if c as ::core::ffi::c_int >= '3' as i32 && c as ::core::ffi::c_int <= '7' as i32 {
+            c = (c as ::core::ffi::c_int - ('3' as i32 - '\u{1b}' as i32)) as ::core::ffi::c_char;
+        } else if c as ::core::ffi::c_int == '8' as i32 {
+            c = '\u{7f}' as i32 as ::core::ffi::c_char;
+        } else if c as ::core::ffi::c_int == '/' as i32 {
+            c = ('_' as i32 & 0x1f as ::core::ffi::c_int) as ::core::ffi::c_char;
+        }
+        return c;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_one_sym(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> xkb_keysym_t {
+    unsafe {
+        let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+        let num_syms: ::core::ffi::c_int =
+            xkb_state_key_get_syms(state, kc, &raw mut syms) as ::core::ffi::c_int;
+        if num_syms != 1 as ::core::ffi::c_int {
+            return XKB_KEY_NoSymbol as xkb_keysym_t;
+        } else {
+            return *syms.offset(0 as ::core::ffi::c_int as isize);
+        };
+    }
+}
+
+unsafe extern "C" fn get_one_sym_for_string(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> xkb_keysym_t {
+    unsafe {
+        let layout: xkb_layout_index_t = xkb_state_key_get_layout(state, kc) as xkb_layout_index_t;
+        let num_layouts: xkb_layout_index_t =
+            xkb_keymap_num_layouts_for_key((*state).keymap, kc) as xkb_layout_index_t;
+        let mut level: xkb_level_index_t = xkb_state_key_get_level(state, kc, layout);
+        if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
+            || num_layouts == 0 as xkb_layout_index_t
+            || level == XKB_LEVEL_INVALID as xkb_level_index_t
+        {
+            return XKB_KEY_NoSymbol as xkb_keysym_t;
+        }
+        let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+        let mut nsyms: ::core::ffi::c_int =
+            xkb_keymap_key_get_syms_by_level((*state).keymap, kc, layout, level, &raw mut syms);
+        if nsyms != 1 as ::core::ffi::c_int {
+            return XKB_KEY_NoSymbol as xkb_keysym_t;
+        }
+        let mut sym: xkb_keysym_t = *syms.offset(0 as ::core::ffi::c_int as isize);
+        if should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
+            && sym > 127 as xkb_keysym_t
+        {
+            let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
+            while i < num_layouts {
+                level = xkb_state_key_get_level(state, kc, i);
+                if !(level == XKB_LEVEL_INVALID as xkb_level_index_t) {
+                    nsyms = xkb_keymap_key_get_syms_by_level(
+                        (*state).keymap,
+                        kc,
+                        i,
+                        level,
+                        &raw mut syms,
+                    );
+                    if nsyms == 1 as ::core::ffi::c_int
+                        && *syms.offset(0 as ::core::ffi::c_int as isize) <= 127 as xkb_keysym_t
+                    {
+                        sym = *syms.offset(0 as ::core::ffi::c_int as isize);
+                        break;
+                    }
+                }
+                i = i.wrapping_add(1);
+            }
+        }
+        if should_do_caps_transformation(state, kc) {
+            sym = xkb_keysym_to_upper(sym);
+        }
+        return sym;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_utf8(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut buffer: *mut ::core::ffi::c_char,
+    mut size: size_t,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        let mut nsyms: ::core::ffi::c_int = 0;
+        let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+        let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
+        if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
+            nsyms = 1 as ::core::ffi::c_int;
+            syms = &raw const sym;
+        } else {
+            nsyms = xkb_state_key_get_syms(state, kc, &raw mut syms);
+        }
+        let mut offset: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut tmp: [::core::ffi::c_char; 5] = [0; 5];
+        let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        loop {
+            if !(i < nsyms) {
+                c2rust_current_block = 11050875288958768710;
+                break;
+            }
+            let mut ret: ::core::ffi::c_int = xkb_keysym_to_utf8(
+                *syms.offset(i as isize),
+                &raw mut tmp as *mut ::core::ffi::c_char,
+                ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t,
+            );
+            if ret <= 0 as ::core::ffi::c_int {
+                c2rust_current_block = 17545813786824981435;
+                break;
+            }
+            ret -= 1;
+            if (offset as size_t).wrapping_add(ret as size_t) <= size {
+                memcpy(
+                    buffer.offset(offset as isize) as *mut ::core::ffi::c_void,
+                    &raw mut tmp as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+                    ret as size_t,
+                );
+            }
+            offset += ret;
+            i += 1;
+        }
+        match c2rust_current_block {
+            11050875288958768710 => {
+                if offset as size_t >= size {
+                    if size > 0 as size_t {
+                        *buffer.offset(size.wrapping_sub(1 as size_t) as isize) =
+                            '\0' as i32 as ::core::ffi::c_char;
+                    }
+                    return offset;
+                } else {
+                    *buffer.offset(offset as isize) = '\0' as i32 as ::core::ffi::c_char;
+                    if is_valid_utf8(buffer, offset as size_t) {
+                        if offset == 1 as ::core::ffi::c_int
+                            && *buffer.offset(0 as ::core::ffi::c_int as isize)
+                                as ::core::ffi::c_uint
+                                <= 127 as ::core::ffi::c_uint
+                            && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
+                        {
+                            *buffer.offset(0 as ::core::ffi::c_int as isize) =
+                                XkbToControl(*buffer.offset(0 as ::core::ffi::c_int as isize));
+                        }
+                        return offset;
+                    }
+                }
+            }
+            _ => {}
+        }
+        if size > 0 as size_t {
+            *buffer.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as ::core::ffi::c_char;
+        }
+        return 0 as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_utf32(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> uint32_t {
+    unsafe {
+        let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
+        let mut cp: uint32_t = xkb_keysym_to_utf32(sym);
+        if cp <= 127 as uint32_t
+            && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
+        {
+            cp = XkbToControl(cp as ::core::ffi::c_char) as uint32_t;
+        }
+        return cp;
+    }
+}
+#[inline]
+
+unsafe extern "C" fn serialize_mods(
+    mut components: *const state_components,
+    mut type_0: xkb_state_component,
+) -> xkb_mod_mask_t {
+    unsafe {
+        let mut ret: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            return (*components).mods;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= (*components).base_mods;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= (*components).latched_mods;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= (*components).locked_mods;
+        }
+        return ret;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_serialize_mods(
+    mut state: *mut xkb_state,
+    mut type_0: xkb_state_component,
+) -> xkb_mod_mask_t {
+    unsafe {
+        return serialize_mods(&raw mut (*state).components, type_0);
+    }
+}
+#[inline]
+
+unsafe extern "C" fn serialize_layout(
+    mut components: *const state_components,
+    mut type_0: xkb_state_component,
+) -> xkb_layout_index_t {
+    unsafe {
+        let mut ret: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            return (*components).group;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret = ret.wrapping_add((*components).base_group as xkb_layout_index_t);
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret = ret.wrapping_add((*components).latched_group as xkb_layout_index_t);
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret = ret.wrapping_add((*components).locked_group as xkb_layout_index_t);
+        }
+        return ret;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_serialize_layout(
+    mut state: *mut xkb_state,
+    mut type_0: xkb_state_component,
+) -> xkb_layout_index_t {
+    unsafe {
+        return serialize_layout(&raw mut (*state).components, type_0);
+    }
+}
+#[inline]
+
+unsafe extern "C" fn serialize_controls(
+    mut components: *const state_components,
+    mut type_0: xkb_state_component,
+) -> xkb_keyboard_control_flags {
+    unsafe {
+        return (if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ((*components).controls as ::core::ffi::c_uint
+                & CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as ::core::ffi::c_uint)
+                as xkb_keyboard_control_flags as ::core::ffi::c_uint
+        } else {
+            0 as ::core::ffi::c_uint
+        }) as xkb_keyboard_control_flags;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_serialize_enabled_controls(
+    mut state: *const xkb_state,
+    mut type_0: xkb_state_component,
+) -> xkb_keyboard_control_flags {
+    unsafe {
+        return serialize_controls(&raw const (*state).components, type_0);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn mod_mask_get_effective(
+    mut keymap: *mut xkb_keymap,
+    mut mods: xkb_mod_mask_t,
+) -> xkb_mod_mask_t {
+    unsafe {
+        let mut mask: xkb_mod_mask_t = mods & MOD_REAL_MASK_ALL;
+        let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
+        let mut i: xkb_mod_index_t = 0;
+        i = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+        mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
+            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
+            as *mut xkb_mod;
+        while i < (*keymap).mods.num_mods {
+            if mods & (1 as xkb_mod_mask_t) << i != 0 {
+                mask |= (*mod_0).mapping;
+            }
+            i = i.wrapping_add(1);
+            mod_0 = mod_0.offset(1);
+        }
+        return mask;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_index_is_active(
+    mut state: *mut xkb_state,
+    mut idx: xkb_mod_index_t,
+    mut type_0: xkb_state_component,
+) -> ::core::ffi::c_int {
+    unsafe {
+        if (idx >= xkb_keymap_num_mods((*state).keymap)) as ::core::ffi::c_int
+            as ::core::ffi::c_long
+            != 0
+        {
+            return -1 as ::core::ffi::c_int;
+        }
+        let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
+        if mapping == 0 {
+            return 0 as ::core::ffi::c_int;
+        }
+        return (xkb_state_serialize_mods(state, type_0) & mapping == mapping)
+            as ::core::ffi::c_int;
+    }
+}
+
+unsafe extern "C" fn match_mod_masks(
+    mut state: *mut xkb_state,
+    mut type_0: xkb_state_component,
+    mut match_0: xkb_state_match,
+    mut wanted: xkb_mod_mask_t,
+) -> bool {
+    unsafe {
+        let active: xkb_mod_mask_t = xkb_state_serialize_mods(state, type_0) as xkb_mod_mask_t;
+        if match_0 as ::core::ffi::c_uint
+            & XKB_STATE_MATCH_NON_EXCLUSIVE as ::core::ffi::c_int as ::core::ffi::c_uint
+            == 0
+            && active & !wanted != 0
+        {
+            return false_0 != 0;
+        }
+        if match_0 as ::core::ffi::c_uint
+            & XKB_STATE_MATCH_ANY as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            return active & wanted != 0;
+        }
+        return active & wanted == wanted;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
+    mut state: *mut xkb_state,
+    mut type_0: xkb_state_component,
+    mut match_0: xkb_state_match,
+    mut c2rust_args: ...
+) -> ::core::ffi::c_int {
+    unsafe {
+        if match_0 as ::core::ffi::c_uint
+            & !(XKB_STATE_MATCH_FLAGS as ::core::ffi::c_int as xkb_state_match
+                as ::core::ffi::c_uint)
+            != 0
+        {
+            return -2 as ::core::ffi::c_int;
+        }
+        let mut ap: ::core::ffi::VaList;
+        let mut wanted: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let num_mods: xkb_mod_index_t = xkb_keymap_num_mods((*state).keymap) as xkb_mod_index_t;
+        ap = c2rust_args.clone();
+        loop {
+            let mut idx: xkb_mod_index_t = ap.arg::<xkb_mod_index_t>();
+            if idx == XKB_MOD_INVALID as xkb_mod_index_t {
+                break;
+            }
+            if (idx >= num_mods) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+                ret = -1 as ::core::ffi::c_int;
+                break;
+            } else {
+                wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
+            }
+        }
+        if ret == -1 as ::core::ffi::c_int {
+            return ret;
+        }
+        if wanted == 0 {
+            return 0 as ::core::ffi::c_int;
+        }
+        return match_mod_masks(state, type_0, match_0, wanted) as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_name_is_active(
+    mut state: *mut xkb_state,
+    mut name: *const ::core::ffi::c_char,
+    mut type_0: xkb_state_component,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let idx: xkb_mod_index_t =
+            xkb_keymap_mod_get_index((*state).keymap, name) as xkb_mod_index_t;
+        if idx == XKB_MOD_INVALID as xkb_mod_index_t {
+            return -1 as ::core::ffi::c_int;
+        }
+        return xkb_state_mod_index_is_active(state, idx, type_0);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_names_are_active(
+    mut state: *mut xkb_state,
+    mut type_0: xkb_state_component,
+    mut match_0: xkb_state_match,
+    mut c2rust_args: ...
+) -> ::core::ffi::c_int {
+    unsafe {
+        if match_0 as ::core::ffi::c_uint
+            & !(XKB_STATE_MATCH_FLAGS as ::core::ffi::c_int as xkb_state_match
+                as ::core::ffi::c_uint)
+            != 0
+        {
+            return -2 as ::core::ffi::c_int;
+        }
+        let mut ap: ::core::ffi::VaList;
+        let mut wanted: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        ap = c2rust_args.clone();
+        loop {
+            let mut str: *const ::core::ffi::c_char = ap.arg::<*const ::core::ffi::c_char>();
+            if str.is_null() {
+                break;
+            }
+            let idx: xkb_mod_index_t =
+                xkb_keymap_mod_get_index((*state).keymap, str) as xkb_mod_index_t;
+            if idx == XKB_MOD_INVALID as xkb_mod_index_t {
+                ret = -1 as ::core::ffi::c_int;
+                break;
+            } else {
+                wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
+            }
+        }
+        if ret == -1 as ::core::ffi::c_int {
+            return ret;
+        }
+        if wanted == 0 {
+            return 0 as ::core::ffi::c_int;
+        }
+        return match_mod_masks(state, type_0, match_0, wanted) as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_layout_index_is_active(
+    mut state: *mut xkb_state,
+    mut idx: xkb_layout_index_t,
+    mut type_0: xkb_state_component,
+) -> ::core::ffi::c_int {
+    unsafe {
+        if idx >= (*(*state).keymap).num_groups {
+            return -1 as ::core::ffi::c_int;
+        }
+        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= ((*state).components.group == idx) as ::core::ffi::c_int;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= ((*state).components.base_group == idx as int32_t) as ::core::ffi::c_int;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= ((*state).components.latched_group == idx as int32_t) as ::core::ffi::c_int;
+        }
+        if type_0 as ::core::ffi::c_uint
+            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0
+        {
+            ret |= ((*state).components.locked_group == idx as int32_t) as ::core::ffi::c_int;
+        }
+        return ret;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_layout_name_is_active(
+    mut state: *mut xkb_state,
+    mut name: *const ::core::ffi::c_char,
+    mut type_0: xkb_state_component,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let idx: xkb_layout_index_t =
+            xkb_keymap_layout_get_index((*state).keymap, name) as xkb_layout_index_t;
+        if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+            return -1 as ::core::ffi::c_int;
+        }
+        return xkb_state_layout_index_is_active(state, idx, type_0);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_led_index_is_active(
+    mut state: *mut xkb_state,
+    mut idx: xkb_led_index_t,
+) -> ::core::ffi::c_int {
+    unsafe {
+        if idx >= (*(*state).keymap).num_leds
+            || (*(*state).keymap).leds[idx as usize].name == XKB_ATOM_NONE as xkb_atom_t
+        {
+            return -1 as ::core::ffi::c_int;
+        }
+        return ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0)
+            as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_led_name_is_active(
+    mut state: *mut xkb_state,
+    mut name: *const ::core::ffi::c_char,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let idx: xkb_led_index_t =
+            xkb_keymap_led_get_index((*state).keymap, name) as xkb_led_index_t;
+        if idx == XKB_LED_INVALID as xkb_led_index_t {
+            return -1 as ::core::ffi::c_int;
+        }
+        return xkb_state_led_index_is_active(state, idx);
+    }
+}
+
+unsafe extern "C" fn key_get_consumed(
+    mut state: *mut xkb_state,
+    mut key: *const xkb_key,
+    mut mode: xkb_consumed_mode,
+) -> xkb_mod_mask_t {
+    unsafe {
+        let group: xkb_layout_index_t =
+            xkb_state_key_get_layout(state, (*key).keycode) as xkb_layout_index_t;
+        if group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+            return 0 as xkb_mod_mask_t;
+        }
+        let mut preserve: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut consumed: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let matching_entry: *const xkb_key_type_entry =
+            get_entry_for_key_state(state, key, group) as *const xkb_key_type_entry;
+        if !matching_entry.is_null() {
+            preserve = (*matching_entry).preserve.mask;
+        }
+        let type_0: *const xkb_key_type = (*(*key).groups.offset(group as isize)).type_0;
+        match mode as ::core::ffi::c_uint {
+            0 => {
+                consumed = (*type_0).mods.mask;
+            }
+            1 => {
+                let no_mods_entry: *const xkb_key_type_entry =
+                    get_entry_for_mods(type_0, 0 as xkb_mod_mask_t) as *const xkb_key_type_entry;
+                let no_mods_leveli: xkb_level_index_t = if !no_mods_entry.is_null() {
+                    (*no_mods_entry).level
+                } else {
+                    0 as xkb_level_index_t
+                };
+                let no_mods_level: *const xkb_level = (*(*key).groups.offset(group as isize))
+                    .levels
+                    .offset(no_mods_leveli as isize)
+                    as *mut xkb_level;
+                let mut i: darray_size_t = 0 as darray_size_t;
+                while i < (*type_0).num_entries {
+                    let entry: *const xkb_key_type_entry =
+                        (*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry;
+                    if entry_is_active(entry) {
+                        let level: *const xkb_level = (*(*key).groups.offset(group as isize))
+                            .levels
+                            .offset((*entry).level as isize)
+                            as *mut xkb_level;
+                        if !XkbLevelsSameSyms(level, no_mods_level) {
+                            if entry == matching_entry
+                                || one_bit_set((*entry).mods.mask as uint32_t) != 0
+                            {
+                                consumed |= (*entry).mods.mask & !(*entry).preserve.mask;
+                            }
+                        }
+                    }
+                    i = i.wrapping_add(1);
+                }
+            }
+            _ => {}
+        }
+        return consumed & !preserve;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_index_is_consumed2(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut idx: xkb_mod_index_t,
+    mut mode: xkb_consumed_mode,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as ::core::ffi::c_int
+            as ::core::ffi::c_long
+            != 0
+        {
+            return -1 as ::core::ffi::c_int;
+        }
+        let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
+        if mapping == 0 {
+            return 0 as ::core::ffi::c_int;
+        }
+        return (mapping & key_get_consumed(state, key, mode) == mapping) as ::core::ffi::c_int;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_index_is_consumed(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut idx: xkb_mod_index_t,
+) -> ::core::ffi::c_int {
+    unsafe {
+        return xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_mod_mask_remove_consumed(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut mask: xkb_mod_mask_t,
+) -> xkb_mod_mask_t {
+    unsafe {
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        if key.is_null() {
+            return 0 as xkb_mod_mask_t;
+        }
+        return resolve_to_canonical_mods((*state).keymap, mask)
+            & !key_get_consumed(state, key, XKB_CONSUMED_MODE_XKB);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_consumed_mods2(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+    mut mode: xkb_consumed_mode,
+) -> xkb_mod_mask_t {
+    unsafe {
+        match mode as ::core::ffi::c_uint {
+            0 | 1 => {}
+            _ => {
+                xkb_log(
+                    (*(*state).keymap).ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"%s: unrecognized consumed modifiers mode: %d\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const ::core::ffi::c_char,
+                    mode as ::core::ffi::c_uint,
+                );
+                return 0 as xkb_mod_mask_t;
+            }
+        }
+        let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
+        if key.is_null() {
+            return 0 as xkb_mod_mask_t;
+        }
+        return key_get_consumed(state, key, mode);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_key_get_consumed_mods(
+    mut state: *mut xkb_state,
+    mut kc: xkb_keycode_t,
+) -> xkb_mod_mask_t {
+    unsafe {
+        return xkb_state_key_get_consumed_mods2(state, kc, XKB_CONSUMED_MODE_XKB);
+    }
+}
+
+static mut default_machine_options: xkb_machine_options = xkb_machine_options {
+    a11y_affect: XKB_A11Y_NO_FLAGS,
+    a11y_flags: XKB_A11Y_NO_FLAGS,
+    mods: machine_mods_mappings {
+        size: 0,
+        alloc: 0,
+        item: ::core::ptr::null_mut::<machine_mods_mapping>(),
+    },
+    shortcuts: xkb_shortcuts_config_options {
+        mask: 0 as xkb_mod_mask_t,
+        targets: C2Rust_Unnamed_20 {
+            size: 0 as darray_size_t,
+            alloc: 0 as darray_size_t,
+            item: ::core::ptr::null::<xkb_layout_index_t>() as *mut xkb_layout_index_t,
+        },
+    },
+    ctx: ::core::ptr::null::<xkb_context>() as *mut xkb_context,
+};
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_new(
+    mut context: *mut xkb_context,
+) -> *mut xkb_machine_options {
+    unsafe {
+        let opt: *mut xkb_machine_options = calloc(
+            1 as size_t,
+            ::core::mem::size_of::<xkb_machine_options>() as size_t,
+        ) as *mut xkb_machine_options;
+        if opt.is_null() {
+            return ::core::ptr::null_mut::<xkb_machine_options>();
+        }
+        *opt = xkb_machine_options {
+            a11y_affect: XKB_A11Y_NO_FLAGS,
+            a11y_flags: XKB_A11Y_NO_FLAGS,
+            mods: machine_mods_mappings {
+                size: 0,
+                alloc: 0,
+                item: ::core::ptr::null_mut::<machine_mods_mapping>(),
+            },
+            shortcuts: xkb_shortcuts_config_options {
+                mask: 0 as xkb_mod_mask_t,
+                targets: C2Rust_Unnamed_20 {
+                    size: 0 as darray_size_t,
+                    alloc: 0 as darray_size_t,
+                    item: ::core::ptr::null_mut::<xkb_layout_index_t>(),
+                },
+            },
+            ctx: xkb_context_ref(context),
+        };
+        return opt;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options) {
+    unsafe {
+        if options.is_null() {
+            return;
+        }
+        free((*options).shortcuts.targets.item as *mut ::core::ffi::c_void);
+        (*options).shortcuts.targets.item = ::core::ptr::null_mut::<xkb_layout_index_t>();
+        (*options).shortcuts.targets.size = 0 as darray_size_t;
+        (*options).shortcuts.targets.alloc = 0 as darray_size_t;
+        free((*options).mods.item as *mut ::core::ffi::c_void);
+        (*options).mods.item = ::core::ptr::null_mut::<machine_mods_mapping>();
+        (*options).mods.size = 0 as darray_size_t;
+        (*options).mods.alloc = 0 as darray_size_t;
+        xkb_context_unref((*options).ctx);
+        free(options as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_update_a11y_flags(
+    mut options: *mut xkb_machine_options,
+    mut affect: xkb_a11y_flags,
+    mut flags: xkb_a11y_flags,
+) -> xkb_error_code {
+    unsafe {
+        static mut XKB_A11Y_FLAGS: xkb_a11y_flags = (XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
+            | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int)
+            as xkb_a11y_flags;
+        if affect as ::core::ffi::c_uint & !(XKB_A11Y_FLAGS as ::core::ffi::c_uint) != 0 {
+            xkb_log(
+                (*options).ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"%s: unrecognized state flags: %#x\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const ::core::ffi::c_char,
+                flags as ::core::ffi::c_uint & !(XKB_A11Y_FLAGS as ::core::ffi::c_uint),
+            );
+            return XKB_ERROR_UNSUPPORTED_A11Y_FLAGS;
+        }
+        (*options).a11y_affect = ((*options).a11y_affect as ::core::ffi::c_uint
+            | affect as ::core::ffi::c_uint) as xkb_a11y_flags;
+        (*options).a11y_flags = ((*options).a11y_flags as ::core::ffi::c_uint
+            & !(affect as ::core::ffi::c_uint)) as xkb_a11y_flags;
+        (*options).a11y_flags = ((*options).a11y_flags as ::core::ffi::c_uint
+            | flags as ::core::ffi::c_uint & affect as ::core::ffi::c_uint)
+            as xkb_a11y_flags;
+        return XKB_SUCCESS;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_remap_mods(
+    mut options: *mut xkb_machine_options,
+    mut source: xkb_mod_mask_t,
+    mut target: xkb_mod_mask_t,
+) -> xkb_error_code {
+    unsafe {
+        if source == 0 {
+            if target == 0 {
+                (*options).mods.size = 0 as darray_size_t;
+                let mut __need: darray_size_t = (*options).mods.size;
+                if __need > (*options).mods.alloc {
+                    (*options).mods.alloc = darray_next_alloc(
+                        (*options).mods.alloc,
+                        __need,
+                        ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                    );
+                    (*options).mods.item = realloc(
+                        (*options).mods.item as *mut ::core::ffi::c_void,
+                        ((*options).mods.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as size_t),
+                    ) as *mut machine_mods_mapping;
+                }
+                return XKB_SUCCESS;
+            } else {
+                return XKB_ERROR_UNSUPPORTED_MODIFIER_MASK;
+            }
+        }
+        let mut mapping: *mut machine_mods_mapping =
+            ::core::ptr::null_mut::<machine_mods_mapping>();
+        let mut m: darray_size_t = 0 as darray_size_t;
+        if !(*options).mods.item.is_null() {
+            m = 0 as darray_size_t;
+            mapping = (*options)
+                .mods
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut machine_mods_mapping;
+            while m < (*options).mods.size {
+                if (*mapping).source == source {
+                    if target == 0 {
+                        let mut __index: darray_size_t = m;
+                        if __index < (*options).mods.size.wrapping_sub(1 as darray_size_t) {
+                            memmove(
+                                (*options).mods.item.offset(__index as isize)
+                                    as *mut machine_mods_mapping
+                                    as *mut ::core::ffi::c_void,
+                                (*options)
+                                    .mods
+                                    .item
+                                    .offset(__index.wrapping_add(1 as darray_size_t) as isize)
+                                    as *mut machine_mods_mapping
+                                    as *const ::core::ffi::c_void,
+                                ((*options)
+                                    .mods
+                                    .size
+                                    .wrapping_sub(1 as darray_size_t)
+                                    .wrapping_sub(__index)
+                                    as size_t)
+                                    .wrapping_mul(
+                                        ::core::mem::size_of::<machine_mods_mapping>() as size_t
+                                    ),
+                            );
+                        }
+                        (*options).mods.size = (*options).mods.size.wrapping_sub(1);
+                    } else {
+                        (*mapping).target = target;
+                    }
+                    return XKB_SUCCESS;
+                }
+                m = m.wrapping_add(1);
+                mapping = mapping.offset(1);
+            }
+        }
+        if target != 0 {
+            (*options).mods.size = (*options).mods.size.wrapping_add(1 as darray_size_t);
+            let mut __need_0: darray_size_t = (*options).mods.size;
+            if __need_0 > (*options).mods.alloc {
+                (*options).mods.alloc = darray_next_alloc(
+                    (*options).mods.alloc,
+                    __need_0,
+                    ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                );
+                (*options).mods.item = realloc(
+                    (*options).mods.item as *mut ::core::ffi::c_void,
+                    ((*options).mods.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as size_t),
+                ) as *mut machine_mods_mapping;
+            }
+            *(*options)
+                .mods
+                .item
+                .offset((*options).mods.size.wrapping_sub(1 as darray_size_t) as isize) =
+                machine_mods_mapping {
+                    source: source,
+                    target: target,
+                };
+        }
+        return XKB_SUCCESS;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_update_shortcut_mods(
+    mut options: *mut xkb_machine_options,
+    mut affect: xkb_mod_mask_t,
+    mut mask: xkb_mod_mask_t,
+) -> xkb_error_code {
+    unsafe {
+        (*options).shortcuts.mask &= !affect;
+        (*options).shortcuts.mask |= mask & affect;
+        return XKB_SUCCESS;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_options_remap_shortcut_layout(
+    mut options: *mut xkb_machine_options,
+    mut source: xkb_layout_index_t,
+    mut target: xkb_layout_index_t,
+) -> xkb_error_code {
+    unsafe {
+        if source >= XKB_MAX_GROUPS as xkb_layout_index_t
+            || target >= XKB_MAX_GROUPS as xkb_layout_index_t
+        {
+            return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
+        }
+        if target == source {
+            return XKB_SUCCESS;
+        }
+        let mut config: *mut xkb_shortcuts_config_options = &raw mut (*options).shortcuts;
+        if source >= (*config).targets.size as xkb_layout_index_t {
+            let mut new: xkb_layout_index_t = (*config).targets.size as xkb_layout_index_t;
+            (*config).targets.size = source.wrapping_add(1 as xkb_layout_index_t) as darray_size_t;
+            let mut __need: darray_size_t = (*config).targets.size;
+            if __need > (*config).targets.alloc {
+                (*config).targets.alloc = darray_next_alloc(
+                    (*config).targets.alloc,
+                    __need,
+                    ::core::mem::size_of::<xkb_layout_index_t>() as size_t,
+                );
+                (*config).targets.item = realloc(
+                    (*config).targets.item as *mut ::core::ffi::c_void,
+                    ((*config).targets.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_layout_index_t>() as size_t),
+                ) as *mut xkb_layout_index_t;
+            }
+            while new < source {
+                *(*config).targets.item.offset(new as isize) =
+                    XKB_LAYOUT_INVALID as xkb_layout_index_t;
+                new = new.wrapping_add(1);
+            }
+        }
+        *(*config).targets.item.offset(source as isize) = if source == target {
+            XKB_LAYOUT_INVALID as xkb_layout_index_t
+        } else {
+            target
+        };
+        return XKB_SUCCESS;
+    }
+}
+
+unsafe extern "C" fn cmp_mod_masks(
+    mut a: *const ::core::ffi::c_void,
+    mut b: *const ::core::ffi::c_void,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let m1: xkb_mod_mask_t = *(a as *mut xkb_mod_mask_t);
+        let m2: xkb_mod_mask_t = *(b as *mut xkb_mod_mask_t);
+        if m1 == m2 {
+            return 0 as ::core::ffi::c_int;
+        }
+        if m1 == 0 {
+            return 1 as ::core::ffi::c_int;
+        }
+        if m2 == 0 {
+            return -1 as ::core::ffi::c_int;
+        }
+        let overlap: xkb_mod_mask_t = m1 & m2;
+        if overlap == m1 {
+            return 1 as ::core::ffi::c_int;
+        }
+        if overlap == m2 {
+            return -1 as ::core::ffi::c_int;
+        }
+        let count1: ::core::ffi::c_uint = popcount32(m1 as uint32_t) as ::core::ffi::c_uint;
+        let count2: ::core::ffi::c_uint = popcount32(m2 as uint32_t) as ::core::ffi::c_uint;
+        if count1 > count2 {
+            return -1 as ::core::ffi::c_int;
+        }
+        if count1 < count2 {
+            return 1 as ::core::ffi::c_int;
+        }
+        return if m1 < m2 {
+            -1 as ::core::ffi::c_int
+        } else {
+            1 as ::core::ffi::c_int
+        };
+    }
+}
+
+unsafe extern "C" fn machine_set_mods(
+    mut sm: *mut xkb_machine,
+    mut raw_mappings: *const machine_mods_mappings,
+) -> bool {
+    unsafe {
+        if !((*raw_mappings).size == 0 as darray_size_t) {
+            let mut mappings: machine_mods_mappings = machine_mods_mappings {
+                size: 0 as darray_size_t,
+                alloc: 0 as darray_size_t,
+                item: ::core::ptr::null_mut::<machine_mods_mapping>(),
+            };
+            let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+            let mut mapping: *const machine_mods_mapping =
+                ::core::ptr::null::<machine_mods_mapping>();
+            let invalid: xkb_mod_mask_t = !(*(*sm).state.keymap).canonical_state_mask;
+            if !(*raw_mappings).item.is_null() {
+                mapping = (*raw_mappings)
+                    .item
+                    .offset(0 as ::core::ffi::c_int as isize)
+                    as *mut machine_mods_mapping;
+                while mapping
+                    < (*raw_mappings).item.offset((*raw_mappings).size as isize)
+                        as *mut machine_mods_mapping
+                        as *const machine_mods_mapping
+                {
+                    if !((*mapping).source == 0
+                        || (*mapping).target == 0
+                        || (*mapping).source & invalid != 0
+                        || (*mapping).target & invalid != 0)
+                    {
+                        mappings.size = mappings.size.wrapping_add(1 as darray_size_t);
+                        let mut __need: darray_size_t = mappings.size;
+                        if __need > mappings.alloc {
+                            mappings.alloc = darray_next_alloc(
+                                mappings.alloc,
+                                __need,
+                                ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                            );
+                            mappings.item =
+                                realloc(
+                                    mappings.item as *mut ::core::ffi::c_void,
+                                    (mappings.alloc as size_t).wrapping_mul(
+                                        ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                                    ),
+                                ) as *mut machine_mods_mapping;
+                        }
+                        *mappings
+                            .item
+                            .offset(mappings.size.wrapping_sub(1 as darray_size_t) as isize) =
+                            *mapping;
+                        mask |= (*mapping).source;
+                    }
+                    mapping = mapping.offset(1);
+                }
+            }
+            qsort(
+                mappings.item as *mut ::core::ffi::c_void,
+                mappings.size as size_t,
+                ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                Some(
+                    cmp_mod_masks
+                        as unsafe extern "C" fn(
+                            *const ::core::ffi::c_void,
+                            *const ::core::ffi::c_void,
+                        ) -> ::core::ffi::c_int,
+                ),
+            );
+            (*sm).config.modifiers.mappings = mappings.item as *mut machine_mods_mapping;
+            if !(&raw mut (*sm).config.modifiers.mappings_num).is_null() {
+                *&raw mut (*sm).config.modifiers.mappings_num = mappings.size;
+            }
+            mappings.item = ::core::ptr::null_mut::<machine_mods_mapping>();
+            mappings.size = 0 as darray_size_t;
+            mappings.alloc = 0 as darray_size_t;
+            (*sm).config.modifiers.mask = mask;
+        } else {
+            (*sm).config.modifiers = machine_modifiers_config {
+                mask: 0 as xkb_mod_mask_t,
+                mappings_num: 0 as darray_size_t,
+                mappings: ::core::ptr::null_mut::<machine_mods_mapping>(),
+            } as machine_modifiers_config;
+        }
+        return true_0 != 0;
+    }
+}
+
+unsafe extern "C" fn machine_set_shortcuts(
+    mut sm: *mut xkb_machine,
+    mut options: *const xkb_shortcuts_config_options,
+) -> bool {
+    unsafe {
+        if (*options).targets.size == 0 as darray_size_t {
+            (*sm).config.shortcuts = machine_shortcuts_config {
+                mask: 0 as xkb_mod_mask_t,
+                targets: ::core::ptr::null_mut::<xkb_layout_index_t>(),
+            } as machine_shortcuts_config;
+            return true_0 != 0;
+        }
+        let keymap: *mut xkb_keymap = (*sm).state.keymap;
+        let mut count: xkb_layout_index_t =
+            if (*keymap).num_groups < (*options).targets.size as xkb_layout_index_t {
+                (*keymap).num_groups
+            } else {
+                (*options).targets.size as xkb_layout_index_t
+            };
+        while count > 1 as xkb_layout_index_t {
+            if *(*options)
+                .targets
+                .item
+                .offset(count.wrapping_sub(1 as xkb_layout_index_t) as isize)
+                < (*keymap).num_groups
+            {
+                break;
+            }
+            count = count.wrapping_sub(1);
+        }
+        if count == 0 {
+            return true_0 != 0;
+        }
+        let mut mask: xkb_mod_mask_t = (*options).mask;
+        if mask != 0 {
+            mask &= ((1 as ::core::ffi::c_ulong) << xkb_keymap_num_mods(keymap))
+                .wrapping_sub(1 as ::core::ffi::c_ulong) as xkb_mod_mask_t;
+        }
+        if mask == 0 {
+            return true_0 != 0;
+        }
+        let targets: *mut xkb_layout_index_t = calloc(
+            (*keymap).num_groups as size_t,
+            ::core::mem::size_of::<xkb_layout_index_t>() as size_t,
+        ) as *mut xkb_layout_index_t;
+        if targets.is_null() {
+            return false_0 != 0;
+        }
+        let mut l: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        while l < count {
+            *targets.offset(l as isize) =
+                if *(*options).targets.item.offset(l as isize) < (*keymap).num_groups {
+                    *(*options).targets.item.offset(l as isize)
+                } else {
+                    XKB_LAYOUT_INVALID as xkb_layout_index_t
+                };
+            l = l.wrapping_add(1);
+        }
+        let mut l_0: xkb_layout_index_t = count;
+        while l_0 < (*keymap).num_groups {
+            *targets.offset(l_0 as isize) = XKB_LAYOUT_INVALID as xkb_layout_index_t;
+            l_0 = l_0.wrapping_add(1);
+        }
+        (*sm).config.shortcuts = machine_shortcuts_config {
+            mask: mask,
+            targets: targets,
+        } as machine_shortcuts_config;
+        return true_0 != 0;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_new(
+    mut keymap: *mut xkb_keymap,
+    mut options: *const xkb_machine_options,
+) -> *mut xkb_machine {
+    unsafe {
+        let machine: *mut xkb_machine =
+            calloc(1 as size_t, ::core::mem::size_of::<xkb_machine>() as size_t)
+                as *mut xkb_machine;
+        if machine.is_null() {
+            return ::core::ptr::null_mut::<xkb_machine>();
+        }
+        if options.is_null() {
+            options = &raw const default_machine_options;
+        }
+        xkb_state_init(
+            &raw mut (*machine).state,
+            keymap,
+            (*options).a11y_affect,
+            (*options).a11y_flags,
+        );
+        if !machine_set_mods(machine, &raw const (*options).mods)
+            || !machine_set_shortcuts(machine, &raw const (*options).shortcuts)
+        {
+            xkb_machine_unref(machine);
+            return ::core::ptr::null_mut::<xkb_machine>();
+        } else {
+            (*machine).overlays.keys.item = ::core::ptr::null_mut::<xkb_overlaid_key>();
+            (*machine).overlays.keys.size = 0 as darray_size_t;
+            (*machine).overlays.keys.alloc = 0 as darray_size_t;
+            return machine;
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
+    unsafe {
+        if (*sm).state.refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"sm->state.refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                2953 as ::core::ffi::c_uint,
+                b"struct xkb_machine *xkb_machine_ref(struct xkb_machine *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        (*sm).state.refcnt += 1;
+        return sm;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_unref(mut sm: *mut xkb_machine) {
+    unsafe {
+        if sm.is_null() || (*sm).state.refcnt > 0 as ::core::ffi::c_int {
+        } else {
+            __assert_fail(
+                b"!sm || sm->state.refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
+                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
+                2961 as ::core::ffi::c_uint,
+                b"void xkb_machine_unref(struct xkb_machine *)\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+            );
+        };
+        if sm.is_null() || {
+            (*sm).state.refcnt -= 1;
+            (*sm).state.refcnt > 0 as ::core::ffi::c_int
+        } {
+            return;
+        }
+        xkb_state_destroy(&raw mut (*sm).state);
+        free((*sm).overlays.keys.item as *mut ::core::ffi::c_void);
+        (*sm).overlays.keys.item = ::core::ptr::null_mut::<xkb_overlaid_key>();
+        (*sm).overlays.keys.size = 0 as darray_size_t;
+        (*sm).overlays.keys.alloc = 0 as darray_size_t;
+        free((*sm).config.shortcuts.targets as *mut ::core::ffi::c_void);
+        free((*sm).config.modifiers.mappings as *mut ::core::ffi::c_void);
+        free(sm as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_get_keymap(mut sm: *const xkb_machine) -> *mut xkb_keymap {
+    unsafe {
+        return (*sm).state.keymap;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_get_state(mut sm: *mut xkb_machine) -> *mut xkb_state {
+    unsafe {
+        return &raw mut (*sm).state;
+    }
+}
+
+unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
+    unsafe {
+        let mask: xkb_overlay_mask_t =
+            ((*sm).state.components.controls as ::core::ffi::c_uint >> XKB_OVERLAY1_CONTROLS_OFFSET
+                & ((1 as ::core::ffi::c_uint) << XKB_OVERLAY_MAX as usize)
+                    .wrapping_sub(1 as ::core::ffi::c_uint)) as xkb_overlay_mask_t;
+        let mut added: xkb_overlay_mask_t = (mask as ::core::ffi::c_int
+            & !((*sm).overlays.enabled as ::core::ffi::c_int))
+            as xkb_overlay_mask_t;
+        let mut order: uint32_t = (*sm).overlays.order;
+        let overlay_max: xkb_overlay_index_t =
+            format_max_overlays((*(*sm).state.keymap).format) as xkb_overlay_index_t;
+        let mut n: uint8_t = 0 as uint8_t;
+        while (n as ::core::ffi::c_int) < overlay_max as ::core::ffi::c_int {
+            let mut overlay_idx: xkb_overlay_index_t =
+                (order >> n as ::core::ffi::c_int * 4 as ::core::ffi::c_int & 0xf as uint32_t)
+                    as xkb_overlay_index_t;
+            if overlay_idx == 0 {
+                break;
+            }
+            let overlay_mask: xkb_overlay_mask_t = ((1 as ::core::ffi::c_uint)
+                << (overlay_idx as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint))
+                as xkb_overlay_mask_t;
+            if overlay_mask as ::core::ffi::c_int & mask as ::core::ffi::c_int != 0 {
+                added = (added as ::core::ffi::c_int & !(overlay_mask as ::core::ffi::c_int))
+                    as xkb_overlay_mask_t;
+                n = n.wrapping_add(1);
+            } else {
+                let head: uint32_t = ((1 as uint32_t)
+                    << n as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
+                    .wrapping_sub(1 as uint32_t);
+                order = order & head | order >> 4 as ::core::ffi::c_int & !head;
+            }
+        }
+        let mut k: xkb_overlay_index_t = 0 as xkb_overlay_index_t;
+        while added != 0 {
+            if added as ::core::ffi::c_int & 0x1 as ::core::ffi::c_int != 0 {
+                order <<= 4 as ::core::ffi::c_int;
+                order = (order as ::core::ffi::c_uint
+                    | (k as ::core::ffi::c_uint).wrapping_add(1 as ::core::ffi::c_uint))
+                    as uint32_t;
+            }
+            k = k.wrapping_add(1);
+            added = (added as ::core::ffi::c_int >> 1 as ::core::ffi::c_int) as xkb_overlay_mask_t;
+        }
+        (*sm).overlays.order = order;
+        (*sm).overlays.enabled = mask;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_process_synthetic(
+    mut sm: *mut xkb_machine,
+    mut update: *const xkb_state_update,
+    mut events: *mut xkb_events,
+) -> xkb_error_code {
+    unsafe {
+        let mut error: xkb_error_code = check_state_update_abi_(
+            (*(*sm).state.keymap).ctx,
+            b"xkb_machine_process_synthetic\0".as_ptr() as *const ::core::ffi::c_char,
+            update,
+        );
+        if error as u64 != 0 {
+            return error;
+        }
+        let state: *mut xkb_state = &raw mut (*sm).state;
+        let previous_components: state_components = (*state).components;
+        if !(*update).layout_policy.is_null() {
+            error = state_update_layout_policy(state, (*update).layout_policy);
+            if error as u64 != 0 {
+                return error;
+            }
+        }
+        if !(*update).components.is_null() {
+            let components: *const xkb_state_components_update = (*update).components;
+            state_update_enabled_controls(
+                state,
+                (*components).affect_controls,
+                (*components).controls,
+                events,
+            );
+            state_update_latched_locked(state, components, events);
+        }
+        xkb_state_update_derived(state);
+        let changed: xkb_state_component = get_state_component_changes(
+            &raw const previous_components,
+            &raw mut (*state).components,
+        ) as xkb_state_component;
+        if changed as u64 != 0 {
+            if changed as ::core::ffi::c_uint
+                & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+            {
+                machine_update_overlays(sm);
+            }
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need: darray_size_t = (*events).queue.size;
+            if __need > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: (*state).components,
+                            changed: changed,
+                        },
+                    },
+                };
+        }
+        return XKB_SUCCESS;
+    }
+}
+
+unsafe extern "C" fn do_remap_modifiers(
+    mut mappings: *const machine_modifiers_config,
+    mut state: *mut xkb_state,
+    mut events: *mut xkb_events,
+    mut key: *const xkb_key,
+) -> ssize_t {
+    unsafe {
+        if (*mappings).mask & (*state).components.mods == 0 {
+            return -1 as ::core::ffi::c_int as ssize_t;
+        }
+        let layout: xkb_layout_index_t = state_key_get_layout(state, key) as xkb_layout_index_t;
+        if layout >= (*key).num_groups() {
+            return -1 as ::core::ffi::c_int as ssize_t;
+        }
+        let type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
+        let mut affect: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut m: darray_size_t = 0 as darray_size_t;
+        while m < (*mappings).mappings_num {
+            let mapping: *const machine_mods_mapping =
+                (*mappings).mappings.offset(m as isize) as *mut machine_mods_mapping;
+            if (*mapping).source & (*state).components.mods == (*mapping).source
+                && (*mapping).source & affect == 0
+                && (*mapping).source & (*type_0).mods.mask == 0
+            {
+                affect |= (*(*mappings).mappings.offset(m as isize)).source;
+                mods |= (*(*mappings).mappings.offset(m as isize)).target;
+            }
+            m = m.wrapping_add(1);
+        }
+        if affect == 0 {
+            return -1 as ::core::ffi::c_int as ssize_t;
+        }
+        let mut new: xkb_state = *state;
+        new.components.base_mods = new.components.base_mods & !affect | mods;
+        new.components.latched_mods = new.components.latched_mods & !affect;
+        new.components.locked_mods = new.components.locked_mods & !affect;
+        xkb_state_update_derived(&raw mut new);
+        let mut event_idx: ssize_t = -1 as ::core::ffi::c_int as ssize_t;
+        let changed: xkb_state_component =
+            get_state_component_changes(&raw mut (*state).components, &raw mut new.components)
+                as xkb_state_component;
+        if changed as u64 != 0 {
+            event_idx = (*events).queue.size as ssize_t;
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need: darray_size_t = (*events).queue.size;
+            if __need > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: new.components,
+                            changed: changed,
+                        },
+                    },
+                };
+        }
+        (*state).components.mods = new.components.mods;
+        return event_idx;
+    }
+}
+
+unsafe extern "C" fn do_shortcuts_tweak(
+    mut config: *const machine_shortcuts_config,
+    mut state: *mut xkb_state,
+    mut previous_components: *const state_components,
+    mut events: *mut xkb_events,
+    mut remap_event: ssize_t,
+) -> ssize_t {
+    unsafe {
+        if !(*config).targets.is_null()
+            && (*state).components.mods & (*config).mask != 0
+            && *(*config).targets.offset((*state).components.group as isize)
+                != XKB_LAYOUT_INVALID as xkb_layout_index_t
+        {
+            let mut new: xkb_state = *state;
+            if remap_event < 0 as ssize_t {
+                remap_event = (*events).queue.size as ssize_t;
+                (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+                let mut __need: darray_size_t = (*events).queue.size;
+                if __need > (*events).queue.alloc {
+                    (*events).queue.alloc = darray_next_alloc(
+                        (*events).queue.alloc,
+                        __need,
+                        ::core::mem::size_of::<xkb_event>() as size_t,
+                    );
+                    (*events).queue.item = realloc(
+                        (*events).queue.item as *mut ::core::ffi::c_void,
+                        ((*events).queue.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ) as *mut xkb_event;
+                }
+                *(*events)
+                    .queue
+                    .item
+                    .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                    xkb_event {
+                        type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                        c2rust_unnamed: C2Rust_Unnamed_17 {
+                            components: C2Rust_Unnamed_18 {
+                                components: state_components {
+                                    base_group: 0 as int32_t,
+                                    latched_group: 0,
+                                    locked_group: 0,
+                                    group: 0,
+                                    base_mods: 0,
+                                    latched_mods: 0,
+                                    locked_mods: 0,
+                                    mods: 0,
+                                    leds: 0,
+                                    controls: 0 as xkb_action_controls,
+                                },
+                                changed: 0 as xkb_state_component,
+                            },
+                        },
+                    };
+            } else {
+                new.components = (*(*events).queue.item.offset(remap_event as isize))
+                    .c2rust_unnamed
+                    .components
+                    .components;
+            }
+            new.components.base_group =
+                *(*config).targets.offset((*state).components.group as isize) as int32_t
+                    - (*state).components.latched_group
+                    - (*state).components.locked_group;
+            xkb_state_update_derived(&raw mut new);
+            let changed: xkb_state_component =
+                get_state_component_changes(previous_components, &raw mut new.components)
+                    as xkb_state_component;
+            (*(*events).queue.item.offset(remap_event as isize))
+                .c2rust_unnamed
+                .components
+                .changed = changed;
+            (*(*events).queue.item.offset(remap_event as isize))
+                .c2rust_unnamed
+                .components
+                .components = new.components;
+            (*state).components.group = new.components.group;
+        }
+        return remap_event;
+    }
+}
+
+unsafe extern "C" fn undo_tweaks(
+    mut state: *const xkb_state,
+    mut previous_components: *const state_components,
+    mut events: *mut xkb_events,
+) {
+    unsafe {
+        let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
+        if !(*events).queue.item.is_null() && (*events).queue.size != 0 {
+            event = (*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize)
+                as *mut xkb_event;
+            while (*events).queue.size > 0 as darray_size_t
+                && event
+                    >= (*events)
+                        .queue
+                        .item
+                        .offset(0 as ::core::ffi::c_int as isize)
+                        as *mut xkb_event as *const xkb_event
+            {
+                if (*event).type_0 as ::core::ffi::c_uint
+                    == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+                {
+                    break;
+                }
+                event = event.offset(-1);
+            }
+        }
+        if event.is_null() {
+            return;
+        }
+        let changed: xkb_state_component = get_state_component_changes(
+            previous_components,
+            &raw const (*event).c2rust_unnamed.components.components,
+        ) as xkb_state_component;
+        if changed as u64 != 0 {
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need: darray_size_t = (*events).queue.size;
+            if __need > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: *previous_components,
+                            changed: changed,
+                        },
+                    },
+                };
+        }
+    }
+}
+
+unsafe extern "C" fn process_overlayable_key(
+    mut sm: *mut xkb_machine,
+    mut key: *const xkb_key,
+    mut direction: xkb_key_direction,
+) -> *const xkb_key {
+    unsafe {
+        let mut entry: *mut xkb_overlaid_key = ::core::ptr::null_mut::<xkb_overlaid_key>();
+        let mut available_entry: *mut xkb_overlaid_key =
+            ::core::ptr::null_mut::<xkb_overlaid_key>();
+        if !(*sm).overlays.keys.item.is_null() {
+            entry = (*sm)
+                .overlays
+                .keys
+                .item
+                .offset(0 as ::core::ffi::c_int as isize)
+                as *mut xkb_overlaid_key;
+            while entry
+                < (*sm)
+                    .overlays
+                    .keys
+                    .item
+                    .offset((*sm).overlays.keys.size as isize)
+                    as *mut xkb_overlaid_key
+            {
+                if (*entry).old == key {
+                    match direction as ::core::ffi::c_uint {
+                        1 => {
+                            (*entry).refcnt += 1;
+                        }
+                        2 => {}
+                        0 | _ => {
+                            (*entry).refcnt -= 1;
+                        }
+                    }
+                    if (*entry).refcnt <= 0 as ::core::ffi::c_int {
+                        (*entry).old = ::core::ptr::null::<xkb_key>();
+                    }
+                    return (*entry).new;
+                } else if (*entry).old.is_null() && available_entry.is_null() {
+                    available_entry = entry;
+                }
+                entry = entry.offset(1);
+            }
+        }
+        if direction as ::core::ffi::c_uint
+            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            let mut new: *const xkb_key = key;
+            if (*key).overlays as ::core::ffi::c_int & (*sm).overlays.enabled as ::core::ffi::c_int
+                != 0
+            {
+                let mut stack: uint32_t = (*sm).overlays.order;
+                while stack != 0 {
+                    let overlay: xkb_overlay_index_t = (stack & 0xf as uint32_t)
+                        .wrapping_sub(1 as uint32_t)
+                        as xkb_overlay_index_t;
+                    let mask: xkb_overlay_mask_t = ((1 as ::core::ffi::c_uint)
+                        << overlay as ::core::ffi::c_int)
+                        as xkb_overlay_mask_t;
+                    if (*key).overlays as ::core::ffi::c_int & mask as ::core::ffi::c_int != 0 {
+                        if (*key).overlays_inline() {
+                            new = (*key).c2rust_unnamed.overlay_key;
+                        } else {
+                            let low: xkb_overlay_mask_t = ((*key).overlays as ::core::ffi::c_int
+                                & (mask as ::core::ffi::c_uint)
+                                    .wrapping_sub(1 as ::core::ffi::c_uint)
+                                    as xkb_overlay_mask_t
+                                    as ::core::ffi::c_int)
+                                as xkb_overlay_mask_t;
+                            let index: xkb_overlay_index_t =
+                                popcount32(low as uint32_t) as xkb_overlay_index_t;
+                            new = *(*key).c2rust_unnamed.overlays_keys.offset(index as isize);
+                        }
+                        break;
+                    } else {
+                        stack >>= 4 as ::core::ffi::c_int;
+                    }
+                }
+            }
+            if !available_entry.is_null() {
+                entry = available_entry;
+            } else {
+                let idx: darray_size_t = (*sm).overlays.keys.size;
+                (*sm).overlays.keys.size = idx.wrapping_add(1 as darray_size_t);
+                let mut __need: darray_size_t = (*sm).overlays.keys.size;
+                if __need > (*sm).overlays.keys.alloc {
+                    (*sm).overlays.keys.alloc = darray_next_alloc(
+                        (*sm).overlays.keys.alloc,
+                        __need,
+                        ::core::mem::size_of::<xkb_overlaid_key>() as size_t,
+                    );
+                    (*sm).overlays.keys.item =
+                        realloc(
+                            (*sm).overlays.keys.item as *mut ::core::ffi::c_void,
+                            ((*sm).overlays.keys.alloc as size_t)
+                                .wrapping_mul(::core::mem::size_of::<xkb_overlaid_key>() as size_t),
+                        ) as *mut xkb_overlaid_key;
+                }
+                entry = (*sm).overlays.keys.item.offset(idx as isize) as *mut xkb_overlaid_key;
+            }
+            (*entry).old = key;
+            (*entry).new = new;
+            (*entry).refcnt = 1 as ::core::ffi::c_int;
+            return new;
+        }
+        return key;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_machine_process_key(
+    mut sm: *mut xkb_machine,
+    mut kc: xkb_keycode_t,
+    mut direction: xkb_key_direction,
+    mut events: *mut xkb_events,
+) -> xkb_error_code {
+    unsafe {
+        (*events).queue.size = 0 as darray_size_t;
+        (*events).next = 0 as darray_size_t;
+        let state: *mut xkb_state = &raw mut (*sm).state;
+        let mut key: *const xkb_key = XkbKey((*state).keymap, kc);
+        if key.is_null()
+            || direction as ::core::ffi::c_uint
+                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+                && !(*key).repeats()
+        {
+            return XKB_SUCCESS;
+        }
+        let previous_components: state_components = (*state).components;
+        if (*key).overlays != 0 {
+            key = process_overlayable_key(sm, key, direction);
+        }
+        let mut remap_event: ssize_t =
+            do_remap_modifiers(&raw mut (*sm).config.modifiers, state, events, key);
+        remap_event = do_shortcuts_tweak(
+            &raw mut (*sm).config.shortcuts,
+            state,
+            &raw const previous_components,
+            events,
+            remap_event,
+        );
+        (*state).set_mods = 0 as xkb_mod_mask_t;
+        (*state).clear_mods = 0 as xkb_mod_mask_t;
+        xkb_filter_apply_all(state, events, key, direction);
+        let mut i: xkb_mod_index_t = 0;
+        let mut bit: xkb_mod_mask_t = 0;
+        i = 0 as xkb_mod_index_t;
+        bit = 1 as xkb_mod_mask_t;
+        while (*state).set_mods != 0 {
+            if (*state).set_mods & bit != 0 {
+                (*state).mod_key_count[i as usize] += 1;
+                (*state).components.base_mods |= bit;
+                (*state).set_mods &= !bit;
+            }
+            i = i.wrapping_add(1);
+            bit <<= 1 as ::core::ffi::c_int;
+        }
+        i = 0 as xkb_mod_index_t;
+        bit = 1 as xkb_mod_mask_t;
+        while (*state).clear_mods != 0 {
+            if (*state).clear_mods & bit != 0 {
+                (*state).mod_key_count[i as usize] -= 1;
+                if (*state).mod_key_count[i as usize] as ::core::ffi::c_int
+                    <= 0 as ::core::ffi::c_int
+                {
+                    (*state).components.base_mods &= !bit;
+                    (*state).mod_key_count[i as usize] = 0 as int16_t;
+                }
+                (*state).clear_mods &= !bit;
+            }
+            i = i.wrapping_add(1);
+            bit <<= 1 as ::core::ffi::c_int;
+        }
+        xkb_state_update_derived(state);
+        let mut has_key_event: bool = false_0 != 0;
+        let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
+        if !(*events).queue.item.is_null() {
+            event = (*events)
+                .queue
+                .item
+                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_event;
+            while event
+                < (*events).queue.item.offset((*events).queue.size as isize) as *mut xkb_event
+                    as *const xkb_event
+            {
+                match (*event).type_0 as ::core::ffi::c_uint {
+                    1 | 2 | 3 => {
+                        has_key_event = true_0 != 0;
+                    }
+                    _ => {}
+                }
+                event = event.offset(1);
+            }
+        }
+        if !has_key_event {
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need: darray_size_t = (*events).queue.size;
+            if __need > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: (if direction as ::core::ffi::c_uint
+                        == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
+                    {
+                        XKB_EVENT_TYPE_KEY_UP as ::core::ffi::c_int
+                    } else if direction as ::core::ffi::c_uint
+                        == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
+                    {
+                        XKB_EVENT_TYPE_KEY_REPEATED as ::core::ffi::c_int
+                    } else {
+                        XKB_EVENT_TYPE_KEY_DOWN as ::core::ffi::c_int
+                    }) as xkb_event_type,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        keycode: (*key).keycode,
+                    },
+                };
+        }
+        if remap_event >= 0 as ssize_t {
+            undo_tweaks(state, &raw const previous_components, events);
+        }
+        let changed: xkb_state_component = get_state_component_changes(
+            &raw const previous_components,
+            &raw mut (*state).components,
+        ) as xkb_state_component;
+        if changed as u64 != 0 {
+            if changed as ::core::ffi::c_uint
+                & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+            {
+                machine_update_overlays(sm);
+            }
+            (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
+            let mut __need_0: darray_size_t = (*events).queue.size;
+            if __need_0 > (*events).queue.alloc {
+                (*events).queue.alloc = darray_next_alloc(
+                    (*events).queue.alloc,
+                    __need_0,
+                    ::core::mem::size_of::<xkb_event>() as size_t,
+                );
+                (*events).queue.item = realloc(
+                    (*events).queue.item as *mut ::core::ffi::c_void,
+                    ((*events).queue.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ) as *mut xkb_event;
+            }
+            *(*events)
+                .queue
+                .item
+                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
+                xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: (*state).components,
+                            changed: changed,
+                        },
+                    },
+                };
+        }
+        return XKB_SUCCESS;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_events_new_batch(
+    mut context: *mut xkb_context,
+    mut flags: xkb_events_flags,
+) -> *mut xkb_events {
+    unsafe {
+        static mut XKB_EVENTS_FLAGS: xkb_events_flags = XKB_EVENTS_NO_FLAGS;
+        if flags as ::core::ffi::c_uint & !(XKB_EVENTS_FLAGS as ::core::ffi::c_uint) != 0 {
+            xkb_log(
+                context,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"%s: unrecognized events batch flags: %#x\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                b"xkb_events_new_batch\0".as_ptr() as *const ::core::ffi::c_char,
+                flags as ::core::ffi::c_uint & !(XKB_EVENTS_FLAGS as ::core::ffi::c_uint),
+            );
+            return ::core::ptr::null_mut::<xkb_events>();
+        }
+        let mut events: *mut xkb_events =
+            calloc(1 as size_t, ::core::mem::size_of::<xkb_events>() as size_t) as *mut xkb_events;
+        if events.is_null() {
+            xkb_log(
+                context,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] %s: cannot allocate state events collection\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                b"xkb_events_new_batch\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+            return events;
+        }
+        (*events).queue.item = ::core::ptr::null_mut::<xkb_event>();
+        (*events).queue.size = 0 as darray_size_t;
+        (*events).queue.alloc = 0 as darray_size_t;
+        (*events).next = 0 as darray_size_t;
+        (*events).ctx = xkb_context_ref(context);
+        return events;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_events_destroy(mut events: *mut xkb_events) {
+    unsafe {
+        if events.is_null() {
+            return;
+        }
+        free((*events).queue.item as *mut ::core::ffi::c_void);
+        (*events).queue.item = ::core::ptr::null_mut::<xkb_event>();
+        (*events).queue.size = 0 as darray_size_t;
+        (*events).queue.alloc = 0 as darray_size_t;
+        xkb_context_unref((*events).ctx);
+        free(events as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
+    unsafe {
+        if (*events).next < (*events).queue.size {
+            let c2rust_fresh0 = (*events).next;
+            (*events).next = (*events).next.wrapping_add(1);
+            let index: darray_size_t = c2rust_fresh0;
+            return (*events).queue.item.offset(index as isize) as *mut xkb_event;
+        } else {
+            return ::core::ptr::null::<xkb_event>();
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type {
+    unsafe {
+        return (*event).type_0;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
+    unsafe {
+        match (*event).type_0 as ::core::ffi::c_uint {
+            1 | 2 | 3 => return (*event).c2rust_unnamed.keycode,
+            _ => return XKB_KEYCODE_INVALID as xkb_keycode_t,
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_get_changed_components(
+    mut event: *const xkb_event,
+) -> xkb_state_component {
+    unsafe {
+        return (if (*event).type_0 as ::core::ffi::c_uint
+            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            (*event).c2rust_unnamed.components.changed as ::core::ffi::c_uint
+        } else {
+            0 as ::core::ffi::c_uint
+        }) as xkb_state_component;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_serialize_enabled_controls(
+    mut event: *const xkb_event,
+    mut components: xkb_state_component,
+) -> xkb_keyboard_control_flags {
+    unsafe {
+        return (if (*event).type_0 as ::core::ffi::c_uint
+            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            serialize_controls(
+                &raw const (*event).c2rust_unnamed.components.components,
+                components,
+            ) as ::core::ffi::c_uint
+        } else {
+            0 as ::core::ffi::c_uint
+        }) as xkb_keyboard_control_flags;
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_serialize_mods(
+    mut event: *const xkb_event,
+    mut components: xkb_state_component,
+) -> xkb_mod_mask_t {
+    unsafe {
+        return if (*event).type_0 as ::core::ffi::c_uint
+            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            serialize_mods(
+                &raw const (*event).c2rust_unnamed.components.components,
+                components,
+            )
+        } else {
+            0 as xkb_mod_mask_t
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_event_serialize_layout(
+    mut event: *const xkb_event,
+    mut components: xkb_state_component,
+) -> xkb_layout_index_t {
+    unsafe {
+        return if (*event).type_0 as ::core::ffi::c_uint
+            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            serialize_layout(
+                &raw const (*event).c2rust_unnamed.components.components,
+                components,
+            )
+        } else {
+            XKB_LAYOUT_INVALID as xkb_layout_index_t
+        };
+    }
+}
+#[no_mangle]
+
+pub unsafe extern "C" fn xkb_state_update_event(
+    mut state: *mut xkb_state,
+    mut event: *const xkb_event,
+) -> xkb_state_component {
+    unsafe {
+        if (*event).type_0 as ::core::ffi::c_uint
+            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            let prev_components: state_components = (*state).components;
+            (*state).components = (*event).c2rust_unnamed.components.components;
+            return get_state_component_changes(
+                &raw const prev_components,
+                &raw mut (*state).components,
+            );
+        } else {
+            return 0 as xkb_state_component;
+        };
+    }
+}
+unsafe extern "C" fn c2rust_run_static_initializers() {
+    unsafe {
+        synthetic_key_group_break_group_latch = {
+            let mut init = xkb_group {
+                explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
+                c2rust_padding: [0; 7],
+                type_0: &raw mut synthetic_key_type,
+                levels: &raw mut synthetic_key_level_break_group_latch,
+            };
+            init.set_explicit_symbols(false);
+            init.set_explicit_actions(false);
+            init.set_implicit_actions(false);
+            init.set_explicit_type(false);
+            init
+        };
+        synthetic_key_break_group_latch = {
+            let mut init = xkb_key {
+                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+                keycode: 0,
+                name: 0,
+                explicit: 0 as xkb_explicit_components,
+                modmap: 0,
+                vmodmap: 0,
+                overlays: 0,
+                groups: &raw mut synthetic_key_group_break_group_latch,
+                c2rust_unnamed: C2Rust_Unnamed_9 {
+                    overlay_key: ::core::ptr::null::<xkb_key>(),
+                },
+            };
+            init.set_overlays_inline(false);
+            init.set_repeats(false);
+            init.set_implicit_actions(false);
+            init.set_out_of_range_pending_group(false);
+            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
+            init.set_out_of_range_group_number(0);
+            init.set_num_groups(1 as xkb_layout_index_t);
+            init
+        };
+        synthetic_key = {
+            let mut init = xkb_key {
+                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+                keycode: 0 as xkb_keycode_t,
+                name: 0,
+                explicit: 0 as xkb_explicit_components,
+                modmap: 0,
+                vmodmap: 0,
+                overlays: 0,
+                groups: ::core::ptr::null_mut::<xkb_group>(),
+                c2rust_unnamed: C2Rust_Unnamed_9 {
+                    overlay_key: ::core::ptr::null::<xkb_key>(),
+                },
+            };
+            init.set_overlays_inline(false);
+            init.set_repeats(false);
+            init.set_implicit_actions(false);
+            init.set_out_of_range_pending_group(false);
+            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
+            init.set_out_of_range_group_number(0);
+            init.set_num_groups(0);
+            init
+        };
+    }
+}
+#[used]
+#[cfg_attr(target_os = "linux", link_section = ".init_array")]
+#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
+#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
+static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];

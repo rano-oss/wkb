@@ -1,0 +1,7938 @@
+use c2rust_bitfields;
+use libc;
+pub mod internal {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+}
+pub mod types_h {
+    pub type __uint32_t = u32;
+    pub type __int64_t = i64;
+}
+pub mod stdint_intn_h {
+    pub type int64_t = __int64_t;
+    use super::types_h::__int64_t;
+}
+pub mod stdint_uintn_h {
+    pub type uint32_t = __uint32_t;
+    use super::types_h::__uint32_t;
+}
+pub mod __stddef_size_t_h {
+    pub type size_t = usize;
+}
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::{atom_table, xkb_atom_t};
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    extern "C" {
+        pub fn xkb_atom_intern(
+            ctx: *mut xkb_context,
+            string: *const ::core::ffi::c_char,
+            len: size_t,
+        ) -> xkb_atom_t;
+        pub fn xkb_log(
+            ctx: *mut xkb_context,
+            level: xkb_log_level,
+            verbosity: ::core::ffi::c_int,
+            fmt: *const ::core::ffi::c_char,
+            ...
+        );
+    }
+}
+pub mod atom_h {
+    pub type xkb_atom_t = darray_size_t;
+    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    use super::darray_h::darray_size_t;
+    extern "C" {
+        pub type atom_table;
+    }
+}
+pub mod darray_h {
+    pub type darray_size_t = ::core::ffi::c_uint;
+}
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_flags = ::core::ffi::c_uint;
+    pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
+    pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
+    pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
+    use super::stdint_uintn_h::uint32_t;
+    extern "C" {
+        pub fn xkb_keysym_from_name(
+            name: *const ::core::ffi::c_char,
+            flags: xkb_keysym_flags,
+        ) -> xkb_keysym_t;
+    }
+}
+pub mod ast_h {
+    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub const FILE_TYPE_INVALID: xkb_file_type = 7;
+    pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
+    pub const FILE_TYPE_RULES: xkb_file_type = 6;
+    pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
+    pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
+    pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
+    pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
+    pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
+    pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
+    pub const FILE_TYPE_TYPES: xkb_file_type = 1;
+    pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
+    pub type stmt_type = ::core::ffi::c_uint;
+    pub const _STMT_NUM_VALUES: stmt_type = 37;
+    pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
+    pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
+    pub const STMT_LED_NAME: stmt_type = 34;
+    pub const STMT_LED_MAP: stmt_type = 33;
+    pub const STMT_GROUP_COMPAT: stmt_type = 32;
+    pub const STMT_MODMAP: stmt_type = 31;
+    pub const STMT_SYMBOLS: stmt_type = 30;
+    pub const STMT_VMOD: stmt_type = 29;
+    pub const STMT_INTERP: stmt_type = 28;
+    pub const STMT_TYPE: stmt_type = 27;
+    pub const STMT_VAR: stmt_type = 26;
+    pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
+    pub const STMT_EXPR_INVERT: stmt_type = 24;
+    pub const STMT_EXPR_NEGATE: stmt_type = 23;
+    pub const STMT_EXPR_NOT: stmt_type = 22;
+    pub const STMT_EXPR_ASSIGN: stmt_type = 21;
+    pub const STMT_EXPR_DIVIDE: stmt_type = 20;
+    pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
+    pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
+    pub const STMT_EXPR_ADD: stmt_type = 17;
+    pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
+    pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
+    pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
+    pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
+    pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
+    pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
+    pub const STMT_EXPR_IDENT: stmt_type = 10;
+    pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
+    pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
+    pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
+    pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
+    pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
+    pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
+    pub const STMT_ALIAS: stmt_type = 3;
+    pub const STMT_KEYCODE: stmt_type = 2;
+    pub const STMT_INCLUDE: stmt_type = 1;
+    pub const STMT_UNKNOWN: stmt_type = 0;
+    pub type merge_mode = ::core::ffi::c_uint;
+    pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
+    pub const MERGE_REPLACE: merge_mode = 3;
+    pub const MERGE_OVERRIDE: merge_mode = 2;
+    pub const MERGE_AUGMENT: merge_mode = 1;
+    pub const MERGE_DEFAULT: merge_mode = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _ParseCommon {
+        pub next: *mut _ParseCommon,
+        pub type_0: stmt_type,
+    }
+    pub type ParseCommon = _ParseCommon;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _IncludeStmt {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub stmt: *mut ::core::ffi::c_char,
+        pub file: *mut ::core::ffi::c_char,
+        pub map: *mut ::core::ffi::c_char,
+        pub modifier: *mut ::core::ffi::c_char,
+        pub next_incl: *mut _IncludeStmt,
+    }
+    pub type IncludeStmt = _IncludeStmt;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union ExprDef {
+        pub common: ParseCommon,
+        pub ident: ExprIdent,
+        pub string: ExprString,
+        pub boolean: ExprBoolean,
+        pub integer: ExprInteger,
+        pub key_name: ExprKeyName,
+        pub keysym: ExprKeySym,
+        pub binary: ExprBinary,
+        pub unary: ExprUnary,
+        pub field_ref: ExprFieldRef,
+        pub array_ref: ExprArrayRef,
+        pub action: ExprAction,
+        pub actions: ExprActionList,
+        pub keysym_list: ExprKeysymList,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprKeysymList {
+        pub common: ParseCommon,
+        pub syms: C2Rust_Unnamed_1,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_1 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_keysym_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprActionList {
+        pub common: ParseCommon,
+        pub actions: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprAction {
+        pub common: ParseCommon,
+        pub name: xkb_atom_t,
+        pub args: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprArrayRef {
+        pub common: ParseCommon,
+        pub element: xkb_atom_t,
+        pub field: xkb_atom_t,
+        pub entry: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprFieldRef {
+        pub common: ParseCommon,
+        pub element: xkb_atom_t,
+        pub field: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprUnary {
+        pub common: ParseCommon,
+        pub child: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprBinary {
+        pub common: ParseCommon,
+        pub left: *mut ExprDef,
+        pub right: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprKeySym {
+        pub common: ParseCommon,
+        pub keysym: xkb_keysym_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprKeyName {
+        pub common: ParseCommon,
+        pub key_name: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprInteger {
+        pub common: ParseCommon,
+        pub ival: int64_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprBoolean {
+        pub common: ParseCommon,
+        pub set: bool,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprString {
+        pub common: ParseCommon,
+        pub str: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ExprIdent {
+        pub common: ParseCommon,
+        pub ident: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct VarDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub name: *mut ExprDef,
+        pub value: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct VModDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub name: xkb_atom_t,
+        pub value: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct KeycodeDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub name: xkb_atom_t,
+        pub value: int64_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct KeyAliasDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub alias: xkb_atom_t,
+        pub real: xkb_atom_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct KeyTypeDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub name: xkb_atom_t,
+        pub body: *mut VarDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct SymbolsDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub keyName: xkb_atom_t,
+        pub symbols: *mut VarDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct ModMapDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub modifier: xkb_atom_t,
+        pub keys: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct GroupCompatDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub group: int64_t,
+        pub def: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct InterpDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub sym: xkb_keysym_t,
+        pub match_0: *mut ExprDef,
+        pub def: *mut VarDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct LedNameDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub virtual_0: bool,
+        pub ndx: int64_t,
+        pub name: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct LedMapDef {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub name: xkb_atom_t,
+        pub body: *mut VarDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct UnknownStatement {
+        pub common: ParseCommon,
+        pub name: *mut ::core::ffi::c_char,
+    }
+    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub const MAP_IS_ALTGR: xkb_map_flags = 128;
+    pub const MAP_HAS_FN: xkb_map_flags = 64;
+    pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
+    pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
+    pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
+    pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
+    pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
+    pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct XkbFile {
+        pub common: ParseCommon,
+        pub name: *mut ::core::ffi::c_char,
+        pub defs: *mut ParseCommon,
+        pub file_type: xkb_file_type,
+        pub flags: xkb_map_flags,
+    }
+    use super::atom_h::xkb_atom_t;
+    use super::darray_h::darray_size_t;
+    use super::stdint_intn_h::int64_t;
+    use super::xkbcommon_h::xkb_keysym_t;
+}
+pub mod messages_codes_h {
+    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
+    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
+    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
+    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
+    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
+    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
+    pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
+    pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
+    pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: xkb_message_code = 965;
+    pub const XKB_ERROR_INVALID_IDENTIFIER: xkb_message_code = 949;
+    pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: xkb_message_code = 935;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT_: xkb_message_code = 914;
+    pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: xkb_message_code = 903;
+    pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: xkb_message_code = 901;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: xkb_message_code = 893;
+    pub const XKB_WARNING_CONFLICTING_KEY_ACTION: xkb_message_code = 883;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT_: xkb_message_code = 876;
+    pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: xkb_message_code = 844;
+    pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: xkb_message_code = 822;
+    pub const XKB_ERROR_UNKNOWN_FIELD: xkb_message_code = 812;
+    pub const XKB_WARNING_CONFLICTING_MODMAP: xkb_message_code = 800;
+    pub const XKB_ERROR_INVALID_VALUE: xkb_message_code = 796;
+    pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: xkb_message_code = 784;
+    pub const XKB_WARNING_UNDEFINED_KEYCODE: xkb_message_code = 770;
+    pub const XKB_ERROR_INVALID_XKB_SYNTAX: xkb_message_code = 769;
+    pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: xkb_message_code = 762;
+    pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: xkb_message_code = 742;
+    pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: xkb_message_code = 711;
+    pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: xkb_message_code = 700;
+    pub const XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT: xkb_message_code = 693;
+    pub const XKB_ERROR_INVALID_COMPOSE_SYNTAX: xkb_message_code = 685;
+    pub const XKB_ERROR_INVALID_COMPOSE_LOCALE: xkb_message_code = 679;
+    pub const XKB_ERROR_INVALID_INCLUDED_FILE: xkb_message_code = 661;
+    pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: xkb_message_code = 645;
+    pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: xkb_message_code = 639;
+    pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
+    pub const XKB_ERROR_INVALID_REAL_MODIFIER: xkb_message_code = 623;
+    pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: xkb_message_code = 607;
+    pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: xkb_message_code = 595;
+    pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: xkb_message_code = 588;
+    pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
+    pub const XKB_ERROR_INVALID_ACTION_FIELD: xkb_message_code = 563;
+    pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
+    pub const XKB_ERROR_INVALID_FILE_ENCODING: xkb_message_code = 542;
+    pub const XKB_WARNING_CONFLICTING_KEY_NAME: xkb_message_code = 523;
+    pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: xkb_message_code = 516;
+    pub const XKB_WARNING_NUMERIC_KEYSYM: xkb_message_code = 489;
+    pub const XKB_ERROR_INVALID_OPERATION: xkb_message_code = 478;
+    pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: xkb_message_code = 461;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE_: xkb_message_code = 450;
+    pub const XKB_WARNING_MISSING_DEFAULT_SECTION: xkb_message_code = 433;
+    pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: xkb_message_code = 428;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: xkb_message_code = 407;
+    pub const XKB_ERROR_RECURSIVE_INCLUDE: xkb_message_code = 386;
+    pub const XKB_WARNING_DUPLICATE_ENTRY: xkb_message_code = 378;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_: xkb_message_code = 371;
+    pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: xkb_message_code = 362;
+    pub const XKB_ERROR_OVERLAPPING_OVERLAY: xkb_message_code = 355;
+    pub const XKB_ERROR_UNKNOWN_OPERATOR: xkb_message_code = 345;
+    pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: xkb_message_code = 338;
+    pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: xkb_message_code = 312;
+    pub const XKB_WARNING_NON_BASE_GROUP_NAME: xkb_message_code = 305;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: xkb_message_code = 302;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM: xkb_message_code = 301;
+    pub const XKB_WARNING_UNDEFINED_KEY_TYPE: xkb_message_code = 286;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: xkb_message_code = 266;
+    pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: xkb_message_code = 254;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: xkb_message_code = 239;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: xkb_message_code = 237;
+    pub const XKB_ERROR_UNKNOWN_STATEMENT: xkb_message_code = 222;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_: xkb_message_code = 214;
+    pub const XKB_ERROR_INVALID_MODMAP_ENTRY: xkb_message_code = 206;
+    pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: xkb_message_code = 203;
+    pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: xkb_message_code = 195;
+    pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: xkb_message_code = 193;
+    pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: xkb_message_code = 183;
+    pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: xkb_message_code = 172;
+    pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
+    pub const XKB_ERROR_WRONG_STATEMENT_TYPE: xkb_message_code = 150;
+    pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
+    pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: xkb_message_code = 123;
+    pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: xkb_message_code = 107;
+    pub const XKB_WARNING_ILLEGAL_KEYCODE_ALIAS: xkb_message_code = 101;
+    pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: xkb_message_code = 82;
+    pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: xkb_message_code = 60;
+    pub const XKB_ERROR_INTEGER_OVERFLOW: xkb_message_code = 52;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: xkb_message_code = 43;
+    pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
+    pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
+}
+pub mod scanner_utils_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct sval {
+        pub len: size_t,
+        pub start: *const ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner_loc {
+        pub line: size_t,
+        pub column: size_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner {
+        pub pos: size_t,
+        pub len: size_t,
+        pub s: *const ::core::ffi::c_char,
+        pub buf: [::core::ffi::c_char; 1024],
+        pub buf_pos: size_t,
+        pub token_pos: size_t,
+        pub cached_pos: size_t,
+        pub cached_loc: scanner_loc,
+        pub file_name: *const ::core::ffi::c_char,
+        pub ctx: *mut xkb_context,
+        pub priv_0: *mut ::core::ffi::c_void,
+    }
+    #[inline]
+    pub unsafe extern "C" fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
+        unsafe {
+            return s1.len == s2.len
+                && istrncmp(s1.start, s2.start, s1.len) == 0 as ::core::ffi::c_int;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+    use super::utils_h::istrncmp;
+    extern "C" {
+        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    }
+}
+pub mod parser_h {
+    pub type yytokentype = ::core::ffi::c_int;
+    pub const ALTERNATE_GROUP: yytokentype = 77;
+    pub const FUNCTION_KEYS: yytokentype = 76;
+    pub const KEYPAD_KEYS: yytokentype = 75;
+    pub const MODIFIER_KEYS: yytokentype = 74;
+    pub const ALPHANUMERIC_KEYS: yytokentype = 73;
+    pub const HIDDEN: yytokentype = 72;
+    pub const DEFAULT: yytokentype = 71;
+    pub const PARTIAL: yytokentype = 70;
+    pub const KEYNAME: yytokentype = 65;
+    pub const IDENT: yytokentype = 64;
+    pub const FLOAT: yytokentype = 63;
+    pub const INTEGER: yytokentype = 62;
+    pub const DECIMAL_DIGIT: yytokentype = 61;
+    pub const STRING: yytokentype = 60;
+    pub const INVERT: yytokentype = 55;
+    pub const EXCLAM: yytokentype = 54;
+    pub const SEMI: yytokentype = 53;
+    pub const COMMA: yytokentype = 52;
+    pub const DOT: yytokentype = 51;
+    pub const CBRACKET: yytokentype = 50;
+    pub const OBRACKET: yytokentype = 49;
+    pub const CPAREN: yytokentype = 48;
+    pub const OPAREN: yytokentype = 47;
+    pub const CBRACE: yytokentype = 46;
+    pub const OBRACE: yytokentype = 45;
+    pub const TIMES: yytokentype = 44;
+    pub const DIVIDE: yytokentype = 43;
+    pub const MINUS: yytokentype = 42;
+    pub const PLUS: yytokentype = 41;
+    pub const EQUALS: yytokentype = 40;
+    pub const VIRTUAL: yytokentype = 38;
+    pub const LOGO: yytokentype = 37;
+    pub const SOLID: yytokentype = 36;
+    pub const OUTLINE: yytokentype = 35;
+    pub const TEXT: yytokentype = 34;
+    pub const OVERLAY: yytokentype = 33;
+    pub const SECTION: yytokentype = 32;
+    pub const ROW: yytokentype = 31;
+    pub const KEYS: yytokentype = 30;
+    pub const SHAPE: yytokentype = 29;
+    pub const INDICATOR: yytokentype = 28;
+    pub const MODIFIER_MAP: yytokentype = 27;
+    pub const GROUP: yytokentype = 26;
+    pub const ALIAS: yytokentype = 25;
+    pub const KEY: yytokentype = 24;
+    pub const ACTION_TOK: yytokentype = 23;
+    pub const INTERPRET: yytokentype = 22;
+    pub const TYPE: yytokentype = 21;
+    pub const VIRTUAL_MODS: yytokentype = 20;
+    pub const ALTERNATE: yytokentype = 14;
+    pub const REPLACE: yytokentype = 13;
+    pub const AUGMENT: yytokentype = 12;
+    pub const OVERRIDE: yytokentype = 11;
+    pub const INCLUDE: yytokentype = 10;
+    pub const XKB_LAYOUT: yytokentype = 8;
+    pub const XKB_SEMANTICS: yytokentype = 7;
+    pub const XKB_GEOMETRY: yytokentype = 6;
+    pub const XKB_COMPATMAP: yytokentype = 5;
+    pub const XKB_SYMBOLS: yytokentype = 4;
+    pub const XKB_TYPES: yytokentype = 3;
+    pub const XKB_KEYCODES: yytokentype = 2;
+    pub const XKB_KEYMAP: yytokentype = 1;
+    pub const ERROR_TOK: yytokentype = 255;
+    pub const YYUNDEF: yytokentype = 257;
+    pub const YYerror: yytokentype = 256;
+    pub const END_OF_FILE: yytokentype = 0;
+    pub const YYEMPTY: yytokentype = -2;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub union YYSTYPE {
+        pub num: int64_t,
+        pub file_type: xkb_file_type,
+        pub str: *mut ::core::ffi::c_char,
+        pub sval: sval,
+        pub atom: xkb_atom_t,
+        pub merge: merge_mode,
+        pub mapFlags: xkb_map_flags,
+        pub keysym: xkb_keysym_t,
+        pub any: *mut ParseCommon,
+        pub anyList: C2Rust_Unnamed_6,
+        pub noSymbolOrActionList: uint32_t,
+        pub expr: *mut ExprDef,
+        pub exprList: C2Rust_Unnamed_5,
+        pub var: *mut VarDef,
+        pub varList: C2Rust_Unnamed_4,
+        pub vmod: *mut VModDef,
+        pub vmodList: C2Rust_Unnamed_3,
+        pub interp: *mut InterpDef,
+        pub keyType: *mut KeyTypeDef,
+        pub syms: *mut SymbolsDef,
+        pub modMask: *mut ModMapDef,
+        pub groupCompat: *mut GroupCompatDef,
+        pub ledMap: *mut LedMapDef,
+        pub ledName: *mut LedNameDef,
+        pub keyCode: *mut KeycodeDef,
+        pub keyAlias: *mut KeyAliasDef,
+        pub unknown: *mut UnknownStatement,
+        pub geom: *mut ::core::ffi::c_void,
+        pub file: *mut XkbFile,
+        pub fileList: C2Rust_Unnamed_2,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_2 {
+        pub head: *mut XkbFile,
+        pub last: *mut XkbFile,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_3 {
+        pub head: *mut VModDef,
+        pub last: *mut VModDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_4 {
+        pub head: *mut VarDef,
+        pub last: *mut VarDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_5 {
+        pub head: *mut ExprDef,
+        pub last: *mut ExprDef,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_6 {
+        pub head: *mut ParseCommon,
+        pub last: *mut ParseCommon,
+    }
+    use super::ast_h::{
+        merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
+        KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
+        UnknownStatement, VModDef, VarDef, XkbFile,
+    };
+    use super::atom_h::xkb_atom_t;
+    use super::scanner_utils_h::sval;
+    use super::stdint_intn_h::int64_t;
+    use super::stdint_uintn_h::uint32_t;
+    use super::xkbcommon_h::xkb_keysym_t;
+}
+pub mod stdlib_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+    }
+}
+pub mod string_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn memcpy(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+        pub fn strcmp(
+            __s1: *const ::core::ffi::c_char,
+            __s2: *const ::core::ffi::c_char,
+        ) -> ::core::ffi::c_int;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn stpcpy(
+            __dest: *mut ::core::ffi::c_char,
+            __src: *const ::core::ffi::c_char,
+        ) -> *mut ::core::ffi::c_char;
+    }
+}
+pub mod utils_h {
+    #[inline]
+    pub unsafe extern "C" fn streq(
+        mut s1: *const ::core::ffi::c_char,
+        mut s2: *const ::core::ffi::c_char,
+    ) -> bool {
+        unsafe {
+            if !s1.is_null() && !s2.is_null() {
+            } else {
+                __assert_fail(
+                    b"s1 && s2\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"../src/utils.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    94 as ::core::ffi::c_uint,
+                    __ASSERT_FUNCTION.as_ptr(),
+                );
+            };
+            return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
+        }
+    }
+    #[inline]
+    pub unsafe extern "C" fn streq_not_null(
+        mut s1: *const ::core::ffi::c_char,
+        mut s2: *const ::core::ffi::c_char,
+    ) -> bool {
+        unsafe {
+            if s1.is_null() || s2.is_null() {
+                return false_0 != 0;
+            }
+            return streq(s1, s2);
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::{__assert_fail, __ASSERT_FUNCTION};
+    use super::stdbool_h::false_0;
+    use super::string_h::strcmp;
+    extern "C" {
+        pub fn istrncmp(
+            a: *const ::core::ffi::c_char,
+            b: *const ::core::ffi::c_char,
+            n: size_t,
+        ) -> ::core::ffi::c_int;
+    }
+}
+pub mod keysym_h {
+    pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    use super::xkbcommon_h::xkb_keysym_t;
+    extern "C" {
+        pub fn xkb_keysym_is_deprecated(
+            keysym: xkb_keysym_t,
+            name: *const ::core::ffi::c_char,
+            reference_name: *mut *const ::core::ffi::c_char,
+        ) -> bool;
+    }
+}
+pub mod xkbcomp_priv_h {
+    #[inline]
+    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const ::core::ffi::c_char {
+        unsafe {
+            return if !(*file).name.is_null() {
+                (*file).name as *const ::core::ffi::c_char
+            } else {
+                b"(unnamed map)\0".as_ptr() as *const ::core::ffi::c_char
+            };
+        }
+    }
+    use super::ast_h::XkbFile;
+    extern "C" {
+        pub fn FreeXkbFile(file: *mut XkbFile);
+    }
+}
+pub mod ast_build_h {
+    use super::__stddef_size_t_h::size_t;
+    use super::ast_h::{
+        merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, IncludeStmt,
+        InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
+        ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_KEYCODES,
+        MERGE_DEFAULT, STMT_UNKNOWN,
+    };
+    use super::atom_h::xkb_atom_t;
+    use super::context_h::xkb_context;
+    use super::scanner_utils_h::{scanner, sval};
+    use super::stdint_intn_h::int64_t;
+    use super::xkbcommon_h::xkb_keysym_t;
+    extern "C" {
+        pub fn ExprCreateString(str: xkb_atom_t) -> *mut ExprDef;
+        pub fn ExprCreateInteger(ival: int64_t) -> *mut ExprDef;
+        pub fn ExprCreateFloat() -> *mut ExprDef;
+        pub fn ExprCreateKeyName(key_name: xkb_atom_t) -> *mut ExprDef;
+        pub fn ExprCreateKeySym(keysym: xkb_keysym_t) -> *mut ExprDef;
+        pub fn ExprCreateIdent(ident: xkb_atom_t) -> *mut ExprDef;
+        pub fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef;
+        pub fn ExprCreateBinary(
+            op: stmt_type,
+            left: *mut ExprDef,
+            right: *mut ExprDef,
+        ) -> *mut ExprDef;
+        pub fn ExprCreateFieldRef(element: xkb_atom_t, field: xkb_atom_t) -> *mut ExprDef;
+        pub fn ExprCreateArrayRef(
+            element: xkb_atom_t,
+            field: xkb_atom_t,
+            entry: *mut ExprDef,
+        ) -> *mut ExprDef;
+        pub fn ExprEmptyList() -> *mut ExprDef;
+        pub fn ExprCreateAction(name: xkb_atom_t, args: *mut ExprDef) -> *mut ExprDef;
+        pub fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef;
+        pub fn ExprCreateKeySymList(sym: xkb_keysym_t) -> *mut ExprDef;
+        pub fn ExprAppendKeySymList(list: *mut ExprDef, sym: xkb_keysym_t) -> *mut ExprDef;
+        pub fn ExprKeySymListAppendString(
+            param: *mut scanner,
+            expr: *mut ExprDef,
+            string: *const ::core::ffi::c_char,
+        ) -> *mut ExprDef;
+        pub fn KeysymParseString(
+            scanner: *mut scanner,
+            string: *const ::core::ffi::c_char,
+        ) -> xkb_keysym_t;
+        pub fn KeycodeCreate(name: xkb_atom_t, value: int64_t) -> *mut KeycodeDef;
+        pub fn KeyAliasCreate(alias: xkb_atom_t, real: xkb_atom_t) -> *mut KeyAliasDef;
+        pub fn VModCreate(name: xkb_atom_t, value: *mut ExprDef) -> *mut VModDef;
+        pub fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef;
+        pub fn BoolVarCreate(ident: xkb_atom_t, set: bool) -> *mut VarDef;
+        pub fn InterpCreate(sym: xkb_keysym_t, match_0: *mut ExprDef) -> *mut InterpDef;
+        pub fn KeyTypeCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut KeyTypeDef;
+        pub fn SymbolsCreate(keyName: xkb_atom_t, symbols: *mut VarDef) -> *mut SymbolsDef;
+        pub fn GroupCompatCreate(group: int64_t, def: *mut ExprDef) -> *mut GroupCompatDef;
+        pub fn ModMapCreate(modifier: xkb_atom_t, keys: *mut ExprDef) -> *mut ModMapDef;
+        pub fn LedMapCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut LedMapDef;
+        pub fn LedNameCreate(ndx: int64_t, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef;
+        pub fn UnknownStatementCreate(_: stmt_type, name: sval) -> *mut UnknownStatement;
+        pub fn IncludeCreate(
+            ctx: *mut xkb_context,
+            str: *mut ::core::ffi::c_char,
+            merge: merge_mode,
+        ) -> *mut IncludeStmt;
+        pub fn XkbFileCreate(
+            type_0: xkb_file_type,
+            name: *mut ::core::ffi::c_char,
+            defs: *mut ParseCommon,
+            flags: xkb_map_flags,
+        ) -> *mut XkbFile;
+        pub fn FreeStmt(stmt: *mut ParseCommon);
+    }
+}
+pub mod parser_priv_h {
+    use super::parser_h::YYSTYPE;
+    use super::scanner_utils_h::scanner;
+    extern "C" {
+        pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> ::core::ffi::c_int;
+    }
+}
+pub mod assert_h {
+    pub const __ASSERT_FUNCTION: [::core::ffi::c_char; 40] = unsafe {
+        ::core::mem::transmute::<[u8; 40], [::core::ffi::c_char; 40]>(
+            *b"_Bool streq(const char *, const char *)\0",
+        )
+    };
+    extern "C" {
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+pub mod __stddef_null_h {
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+pub mod stdbool_h {
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub mod xkbcommon_keysyms_h {
+    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_KEY_VoidSymbol: ::core::ffi::c_int = 0xffffff as ::core::ffi::c_int;
+    pub const XKB_KEY_0: ::core::ffi::c_int = 0x30 as ::core::ffi::c_int;
+    pub const XKB_KEY_section: ::core::ffi::c_int = 0xa7 as ::core::ffi::c_int;
+}
+pub use self::__stddef_null_h::NULL;
+pub use self::__stddef_size_t_h::size_t;
+pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
+use self::ast_build_h::{
+    BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
+    ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
+    ExprCreateInteger, ExprCreateKeyName, ExprCreateKeySym, ExprCreateKeySymList, ExprCreateString,
+    ExprCreateUnary, ExprEmptyList, ExprKeySymListAppendString, FreeStmt, GroupCompatCreate,
+    IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, KeysymParseString,
+    LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate,
+    VarCreate, XkbFileCreate,
+};
+pub use self::ast_h::{
+    stmt_type, xkb_file_type, C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef,
+    ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName,
+    ExprKeySym, ExprKeysymList, ExprString, ExprUnary, IncludeStmt, KeyAliasDef, KeycodeDef,
+    VModDef, VarDef, _ParseCommon, merge_mode, xkb_map_flags, GroupCompatDef, InterpDef,
+    KeyTypeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement,
+    XkbFile, _IncludeStmt, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
+    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
+    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
+    MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
+    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
+    STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
+    STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
+    STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
+    STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY,
+    STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT,
+    STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP,
+    STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES,
+};
+pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
+pub use self::context_h::{
+    xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+};
+pub use self::darray_h::darray_size_t;
+pub use self::internal::__va_list_tag;
+pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
+pub use self::messages_codes_h::{
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
+    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
+    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
+    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
+    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
+    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
+    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
+    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
+    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
+    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
+    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
+    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
+    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
+    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
+    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
+    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+};
+pub use self::parser_h::{
+    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
+    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
+    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
+    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
+    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
+    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
+    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
+    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
+    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
+};
+use self::parser_priv_h::_xkbcommon_lex;
+pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
+pub use self::stdbool_h::{false_0, true_0};
+pub use self::stdint_intn_h::int64_t;
+pub use self::stdint_uintn_h::uint32_t;
+use self::stdlib_h::{free, malloc};
+use self::string_h::{memcpy, stpcpy, strcmp, strlen};
+pub use self::types_h::{__int64_t, __uint32_t};
+pub use self::utils_h::{istrncmp, streq, streq_not_null};
+pub use self::xkbcommon_h::{
+    xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
+    XKB_KEYSYM_CASE_INSENSITIVE, XKB_KEYSYM_MAX, XKB_KEYSYM_NO_FLAGS, XKB_LOG_LEVEL_CRITICAL,
+    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+};
+pub use self::xkbcommon_keysyms_h::{
+    XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
+};
+pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct parser_param {
+    pub ctx: *mut xkb_context,
+    pub scanner: *mut scanner,
+    pub rtrn: *mut XkbFile,
+    pub more_maps: bool,
+}
+pub type yy_state_t = yytype_int16;
+pub type yytype_int16 = ::core::ffi::c_short;
+pub type yysymbol_kind_t = ::core::ffi::c_int;
+pub const YYSYMBOL_MapName: yysymbol_kind_t = 148;
+pub const YYSYMBOL_OptMapName: yysymbol_kind_t = 147;
+pub const YYSYMBOL_String: yysymbol_kind_t = 146;
+pub const YYSYMBOL_Ident: yysymbol_kind_t = 145;
+pub const YYSYMBOL_KeyCode: yysymbol_kind_t = 144;
+pub const YYSYMBOL_Integer: yysymbol_kind_t = 143;
+pub const YYSYMBOL_Float: yysymbol_kind_t = 142;
+pub const YYSYMBOL_Number: yysymbol_kind_t = 141;
+pub const YYSYMBOL_SignedNumber: yysymbol_kind_t = 140;
+pub const YYSYMBOL_KeySymLit: yysymbol_kind_t = 139;
+pub const YYSYMBOL_KeySym: yysymbol_kind_t = 138;
+pub const YYSYMBOL_KeySyms: yysymbol_kind_t = 137;
+pub const YYSYMBOL_NonEmptyKeySyms: yysymbol_kind_t = 136;
+pub const YYSYMBOL_KeySymList: yysymbol_kind_t = 135;
+pub const YYSYMBOL_MultiKeySymList: yysymbol_kind_t = 134;
+pub const YYSYMBOL_Terminal: yysymbol_kind_t = 133;
+pub const YYSYMBOL_OptTerminal: yysymbol_kind_t = 132;
+pub const YYSYMBOL_Lhs: yysymbol_kind_t = 131;
+pub const YYSYMBOL_Action: yysymbol_kind_t = 130;
+pub const YYSYMBOL_Actions: yysymbol_kind_t = 129;
+pub const YYSYMBOL_NonEmptyActions: yysymbol_kind_t = 128;
+pub const YYSYMBOL_ActionList: yysymbol_kind_t = 127;
+pub const YYSYMBOL_MultiActionList: yysymbol_kind_t = 126;
+pub const YYSYMBOL_Term: yysymbol_kind_t = 125;
+pub const YYSYMBOL_Expr: yysymbol_kind_t = 124;
+pub const YYSYMBOL_ExprList: yysymbol_kind_t = 123;
+pub const YYSYMBOL_MergeMode: yysymbol_kind_t = 122;
+pub const YYSYMBOL_OptMergeMode: yysymbol_kind_t = 121;
+pub const YYSYMBOL_Element: yysymbol_kind_t = 120;
+pub const YYSYMBOL_FieldSpec: yysymbol_kind_t = 119;
+pub const YYSYMBOL_DoodadType: yysymbol_kind_t = 118;
+pub const YYSYMBOL_DoodadDecl: yysymbol_kind_t = 117;
+pub const YYSYMBOL_Coord: yysymbol_kind_t = 116;
+pub const YYSYMBOL_CoordList: yysymbol_kind_t = 115;
+pub const YYSYMBOL_OutlineInList: yysymbol_kind_t = 114;
+pub const YYSYMBOL_OutlineList: yysymbol_kind_t = 113;
+pub const YYSYMBOL_OverlayKey: yysymbol_kind_t = 112;
+pub const YYSYMBOL_OverlayKeyList: yysymbol_kind_t = 111;
+pub const YYSYMBOL_OverlayDecl: yysymbol_kind_t = 110;
+pub const YYSYMBOL_Key: yysymbol_kind_t = 109;
+pub const YYSYMBOL_Keys: yysymbol_kind_t = 108;
+pub const YYSYMBOL_RowBodyItem: yysymbol_kind_t = 107;
+pub const YYSYMBOL_RowBody: yysymbol_kind_t = 106;
+pub const YYSYMBOL_SectionBodyItem: yysymbol_kind_t = 105;
+pub const YYSYMBOL_SectionBody: yysymbol_kind_t = 104;
+pub const YYSYMBOL_SectionDecl: yysymbol_kind_t = 103;
+pub const YYSYMBOL_ShapeDecl: yysymbol_kind_t = 102;
+pub const YYSYMBOL_UnknownCompoundStatementDecl: yysymbol_kind_t = 101;
+pub const YYSYMBOL_UnknownDecl: yysymbol_kind_t = 100;
+pub const YYSYMBOL_LedNameDecl: yysymbol_kind_t = 99;
+pub const YYSYMBOL_LedMapDecl: yysymbol_kind_t = 98;
+pub const YYSYMBOL_KeyOrKeySym: yysymbol_kind_t = 97;
+pub const YYSYMBOL_KeyOrKeySymList: yysymbol_kind_t = 96;
+pub const YYSYMBOL_ModMapDecl: yysymbol_kind_t = 95;
+pub const YYSYMBOL_GroupCompatDecl: yysymbol_kind_t = 94;
+pub const YYSYMBOL_NoSymbolOrActionList: yysymbol_kind_t = 93;
+pub const YYSYMBOL_MultiKeySymOrActionList: yysymbol_kind_t = 92;
+pub const YYSYMBOL_SymbolsVarDecl: yysymbol_kind_t = 91;
+pub const YYSYMBOL_SymbolsBody: yysymbol_kind_t = 90;
+pub const YYSYMBOL_OptSymbolsBody: yysymbol_kind_t = 89;
+pub const YYSYMBOL_SymbolsDecl: yysymbol_kind_t = 88;
+pub const YYSYMBOL_KeyTypeDecl: yysymbol_kind_t = 87;
+pub const YYSYMBOL_VarDeclList: yysymbol_kind_t = 86;
+pub const YYSYMBOL_InterpretMatch: yysymbol_kind_t = 85;
+pub const YYSYMBOL_InterpretDecl: yysymbol_kind_t = 84;
+pub const YYSYMBOL_VModDef: yysymbol_kind_t = 83;
+pub const YYSYMBOL_VModDefList: yysymbol_kind_t = 82;
+pub const YYSYMBOL_VModDecl: yysymbol_kind_t = 81;
+pub const YYSYMBOL_KeyAliasDecl: yysymbol_kind_t = 80;
+pub const YYSYMBOL_KeyNameDecl: yysymbol_kind_t = 79;
+pub const YYSYMBOL_VarDecl: yysymbol_kind_t = 78;
+pub const YYSYMBOL_Decl: yysymbol_kind_t = 77;
+pub const YYSYMBOL_DeclList: yysymbol_kind_t = 76;
+pub const YYSYMBOL_Flag: yysymbol_kind_t = 75;
+pub const YYSYMBOL_Flags: yysymbol_kind_t = 74;
+pub const YYSYMBOL_OptFlags: yysymbol_kind_t = 73;
+pub const YYSYMBOL_FileType: yysymbol_kind_t = 72;
+pub const YYSYMBOL_XkbMapConfig: yysymbol_kind_t = 71;
+pub const YYSYMBOL_XkbMapConfigList: yysymbol_kind_t = 70;
+pub const YYSYMBOL_XkbCompositeType: yysymbol_kind_t = 69;
+pub const YYSYMBOL_XkbCompositeMap: yysymbol_kind_t = 68;
+pub const YYSYMBOL_XkbFile: yysymbol_kind_t = 67;
+pub const YYSYMBOL_YYACCEPT: yysymbol_kind_t = 66;
+pub const YYSYMBOL_ALTERNATE_GROUP: yysymbol_kind_t = 65;
+pub const YYSYMBOL_FUNCTION_KEYS: yysymbol_kind_t = 64;
+pub const YYSYMBOL_KEYPAD_KEYS: yysymbol_kind_t = 63;
+pub const YYSYMBOL_MODIFIER_KEYS: yysymbol_kind_t = 62;
+pub const YYSYMBOL_ALPHANUMERIC_KEYS: yysymbol_kind_t = 61;
+pub const YYSYMBOL_HIDDEN: yysymbol_kind_t = 60;
+pub const YYSYMBOL_DEFAULT: yysymbol_kind_t = 59;
+pub const YYSYMBOL_PARTIAL: yysymbol_kind_t = 58;
+pub const YYSYMBOL_KEYNAME: yysymbol_kind_t = 57;
+pub const YYSYMBOL_IDENT: yysymbol_kind_t = 56;
+pub const YYSYMBOL_FLOAT: yysymbol_kind_t = 55;
+pub const YYSYMBOL_INTEGER: yysymbol_kind_t = 54;
+pub const YYSYMBOL_DECIMAL_DIGIT: yysymbol_kind_t = 53;
+pub const YYSYMBOL_STRING: yysymbol_kind_t = 52;
+pub const YYSYMBOL_INVERT: yysymbol_kind_t = 51;
+pub const YYSYMBOL_EXCLAM: yysymbol_kind_t = 50;
+pub const YYSYMBOL_SEMI: yysymbol_kind_t = 49;
+pub const YYSYMBOL_COMMA: yysymbol_kind_t = 48;
+pub const YYSYMBOL_DOT: yysymbol_kind_t = 47;
+pub const YYSYMBOL_CBRACKET: yysymbol_kind_t = 46;
+pub const YYSYMBOL_OBRACKET: yysymbol_kind_t = 45;
+pub const YYSYMBOL_CPAREN: yysymbol_kind_t = 44;
+pub const YYSYMBOL_OPAREN: yysymbol_kind_t = 43;
+pub const YYSYMBOL_CBRACE: yysymbol_kind_t = 42;
+pub const YYSYMBOL_OBRACE: yysymbol_kind_t = 41;
+pub const YYSYMBOL_TIMES: yysymbol_kind_t = 40;
+pub const YYSYMBOL_DIVIDE: yysymbol_kind_t = 39;
+pub const YYSYMBOL_MINUS: yysymbol_kind_t = 38;
+pub const YYSYMBOL_PLUS: yysymbol_kind_t = 37;
+pub const YYSYMBOL_EQUALS: yysymbol_kind_t = 36;
+pub const YYSYMBOL_VIRTUAL: yysymbol_kind_t = 35;
+pub const YYSYMBOL_LOGO: yysymbol_kind_t = 34;
+pub const YYSYMBOL_SOLID: yysymbol_kind_t = 33;
+pub const YYSYMBOL_OUTLINE: yysymbol_kind_t = 32;
+pub const YYSYMBOL_TEXT: yysymbol_kind_t = 31;
+pub const YYSYMBOL_OVERLAY: yysymbol_kind_t = 30;
+pub const YYSYMBOL_SECTION: yysymbol_kind_t = 29;
+pub const YYSYMBOL_ROW: yysymbol_kind_t = 28;
+pub const YYSYMBOL_KEYS: yysymbol_kind_t = 27;
+pub const YYSYMBOL_SHAPE: yysymbol_kind_t = 26;
+pub const YYSYMBOL_INDICATOR: yysymbol_kind_t = 25;
+pub const YYSYMBOL_MODIFIER_MAP: yysymbol_kind_t = 24;
+pub const YYSYMBOL_GROUP: yysymbol_kind_t = 23;
+pub const YYSYMBOL_ALIAS: yysymbol_kind_t = 22;
+pub const YYSYMBOL_KEY: yysymbol_kind_t = 21;
+pub const YYSYMBOL_ACTION_TOK: yysymbol_kind_t = 20;
+pub const YYSYMBOL_INTERPRET: yysymbol_kind_t = 19;
+pub const YYSYMBOL_TYPE: yysymbol_kind_t = 18;
+pub const YYSYMBOL_VIRTUAL_MODS: yysymbol_kind_t = 17;
+pub const YYSYMBOL_ALTERNATE: yysymbol_kind_t = 16;
+pub const YYSYMBOL_REPLACE: yysymbol_kind_t = 15;
+pub const YYSYMBOL_AUGMENT: yysymbol_kind_t = 14;
+pub const YYSYMBOL_OVERRIDE: yysymbol_kind_t = 13;
+pub const YYSYMBOL_INCLUDE: yysymbol_kind_t = 12;
+pub const YYSYMBOL_XKB_LAYOUT: yysymbol_kind_t = 11;
+pub const YYSYMBOL_XKB_SEMANTICS: yysymbol_kind_t = 10;
+pub const YYSYMBOL_XKB_GEOMETRY: yysymbol_kind_t = 9;
+pub const YYSYMBOL_XKB_COMPATMAP: yysymbol_kind_t = 8;
+pub const YYSYMBOL_XKB_SYMBOLS: yysymbol_kind_t = 7;
+pub const YYSYMBOL_XKB_TYPES: yysymbol_kind_t = 6;
+pub const YYSYMBOL_XKB_KEYCODES: yysymbol_kind_t = 5;
+pub const YYSYMBOL_XKB_KEYMAP: yysymbol_kind_t = 4;
+pub const YYSYMBOL_ERROR_TOK: yysymbol_kind_t = 3;
+pub const YYSYMBOL_YYUNDEF: yysymbol_kind_t = 2;
+pub const YYSYMBOL_YYerror: yysymbol_kind_t = 1;
+pub const YYSYMBOL_YYEOF: yysymbol_kind_t = 0;
+pub const YYSYMBOL_YYEMPTY: yysymbol_kind_t = -2;
+pub type yytype_uint8 = ::core::ffi::c_uchar;
+pub type yytype_int8 = ::core::ffi::c_schar;
+pub type yy_state_fast_t = ::core::ffi::c_int;
+pub const YYENOMEM: C2Rust_Unnamed_10 = -2;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct yypcontext_t {
+    pub yyssp: *mut yy_state_t,
+    pub yytoken: yysymbol_kind_t,
+}
+pub const YYARGS_MAX: C2Rust_Unnamed_7 = 5;
+pub type C2Rust_Unnamed_7 = ::core::ffi::c_uint;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_8 {
+    pub head: *mut ExprDef,
+    pub last: *mut ExprDef,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_9 {
+    pub head: *mut ExprDef,
+    pub last: *mut ExprDef,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub union yyalloc {
+    pub yyss_alloc: yy_state_t,
+    pub yyvs_alloc: YYSTYPE,
+}
+pub type C2Rust_Unnamed_10 = ::core::ffi::c_int;
+unsafe extern "C" fn _xkbcommon_error(
+    mut param: *mut parser_param,
+    mut msg: *const ::core::ffi::c_char,
+) {
+    unsafe {
+        let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+        xkb_log(
+            (*(*param).scanner).ctx,
+            XKB_LOG_LEVEL_ERROR,
+            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            b"[XKB-%03d] %s:%zu:%zu: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+            XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
+            (*(*param).scanner).file_name,
+            loc.line,
+            loc.column,
+            msg,
+        );
+    }
+}
+unsafe extern "C" fn resolve_keysym(
+    mut param: *mut parser_param,
+    mut name: sval,
+    mut sym_rtrn: *mut xkb_keysym_t,
+) -> bool {
+    unsafe {
+        let mut sym: xkb_keysym_t = 0;
+        if isvaleq(
+            name,
+            sval {
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
+                    .wrapping_sub(1 as size_t),
+                start: b"any\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+        ) as ::core::ffi::c_int
+            != 0
+            || isvaleq(
+                name,
+                sval {
+                    len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as size_t)
+                        .wrapping_sub(1 as size_t),
+                    start: b"nosymbol\0".as_ptr() as *const ::core::ffi::c_char,
+                },
+            ) as ::core::ffi::c_int
+                != 0
+        {
+            *sym_rtrn = XKB_KEY_NoSymbol as xkb_keysym_t;
+            return true_0 != 0;
+        }
+        if isvaleq(
+            name,
+            sval {
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
+                    .wrapping_sub(1 as size_t),
+                start: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+        ) as ::core::ffi::c_int
+            != 0
+            || isvaleq(
+                name,
+                sval {
+                    len: (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as size_t)
+                        .wrapping_sub(1 as size_t),
+                    start: b"voidsymbol\0".as_ptr() as *const ::core::ffi::c_char,
+                },
+            ) as ::core::ffi::c_int
+                != 0
+        {
+            *sym_rtrn = XKB_KEY_VoidSymbol as xkb_keysym_t;
+            return true_0 != 0;
+        }
+        let mut buf: [::core::ffi::c_char; 31] = [0; 31];
+        if name.len >= ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize {
+            return false_0 != 0;
+        }
+        memcpy(
+            &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
+            name.start as *const ::core::ffi::c_void,
+            name.len,
+        );
+        buf[name.len as usize] = '\0' as i32 as ::core::ffi::c_char;
+        sym = xkb_keysym_from_name(
+            &raw mut buf as *mut ::core::ffi::c_char,
+            XKB_KEYSYM_NO_FLAGS,
+        );
+        if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
+            *sym_rtrn = sym;
+            if ((*(*param).ctx).log_verbosity >= 2 as ::core::ffi::c_int) as ::core::ffi::c_int
+                as ::core::ffi::c_long
+                != 0
+            {
+                let mut ref_name: *const ::core::ffi::c_char =
+                    ::core::ptr::null::<::core::ffi::c_char>();
+                if xkb_keysym_is_deprecated(
+                    sym,
+                    &raw mut buf as *mut ::core::ffi::c_char,
+                    &raw mut ref_name,
+                ) {
+                    if ref_name.is_null() {
+                        let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+                        xkb_log(
+                            (*(*param).scanner).ctx,
+                            XKB_LOG_LEVEL_WARNING,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%s\".\n\0".as_ptr()
+                                as *const ::core::ffi::c_char,
+                            XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
+                            (*(*param).scanner).file_name,
+                            loc.line,
+                            loc.column,
+                            &raw mut buf as *mut ::core::ffi::c_char,
+                        );
+                    } else {
+                        let mut loc_0: scanner_loc = scanner_token_location((*param).scanner);
+                        xkb_log(
+                            (*(*param).scanner).ctx,
+                            XKB_LOG_LEVEL_WARNING,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%s\"; please use \"%s\" instead.\n\0"
+                                .as_ptr() as *const ::core::ffi::c_char,
+                            XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
+                            (*(*param).scanner).file_name,
+                            loc_0.line,
+                            loc_0.column,
+                            &raw mut buf as *mut ::core::ffi::c_char,
+                            ref_name,
+                        );
+                    }
+                }
+            }
+            return true_0 != 0;
+        }
+        return false_0 != 0;
+    }
+}
+pub const YY_NULLPTR: *mut ::core::ffi::c_void =
+    ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+pub const YYSTACK_GAP_MAXIMUM: ::core::ffi::c_long =
+    ::core::mem::size_of::<yyalloc>() as ::core::ffi::c_long - 1 as ::core::ffi::c_long;
+pub const YYFINAL: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
+pub const YYLAST: ::core::ffi::c_int = 928 as ::core::ffi::c_int;
+pub const YYNTOKENS: ::core::ffi::c_int = 66 as ::core::ffi::c_int;
+pub const YYMAXUTOK: ::core::ffi::c_int = 257 as ::core::ffi::c_int;
+static mut yytranslate: [yytype_int8; 258] = [
+    0 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    7 as ::core::ffi::c_int as yytype_int8,
+    8 as ::core::ffi::c_int as yytype_int8,
+    9 as ::core::ffi::c_int as yytype_int8,
+    10 as ::core::ffi::c_int as yytype_int8,
+    11 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    12 as ::core::ffi::c_int as yytype_int8,
+    13 as ::core::ffi::c_int as yytype_int8,
+    14 as ::core::ffi::c_int as yytype_int8,
+    15 as ::core::ffi::c_int as yytype_int8,
+    16 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    17 as ::core::ffi::c_int as yytype_int8,
+    18 as ::core::ffi::c_int as yytype_int8,
+    19 as ::core::ffi::c_int as yytype_int8,
+    20 as ::core::ffi::c_int as yytype_int8,
+    21 as ::core::ffi::c_int as yytype_int8,
+    22 as ::core::ffi::c_int as yytype_int8,
+    23 as ::core::ffi::c_int as yytype_int8,
+    24 as ::core::ffi::c_int as yytype_int8,
+    25 as ::core::ffi::c_int as yytype_int8,
+    26 as ::core::ffi::c_int as yytype_int8,
+    27 as ::core::ffi::c_int as yytype_int8,
+    28 as ::core::ffi::c_int as yytype_int8,
+    29 as ::core::ffi::c_int as yytype_int8,
+    30 as ::core::ffi::c_int as yytype_int8,
+    31 as ::core::ffi::c_int as yytype_int8,
+    32 as ::core::ffi::c_int as yytype_int8,
+    33 as ::core::ffi::c_int as yytype_int8,
+    34 as ::core::ffi::c_int as yytype_int8,
+    35 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    36 as ::core::ffi::c_int as yytype_int8,
+    37 as ::core::ffi::c_int as yytype_int8,
+    38 as ::core::ffi::c_int as yytype_int8,
+    39 as ::core::ffi::c_int as yytype_int8,
+    40 as ::core::ffi::c_int as yytype_int8,
+    41 as ::core::ffi::c_int as yytype_int8,
+    42 as ::core::ffi::c_int as yytype_int8,
+    43 as ::core::ffi::c_int as yytype_int8,
+    44 as ::core::ffi::c_int as yytype_int8,
+    45 as ::core::ffi::c_int as yytype_int8,
+    46 as ::core::ffi::c_int as yytype_int8,
+    47 as ::core::ffi::c_int as yytype_int8,
+    48 as ::core::ffi::c_int as yytype_int8,
+    49 as ::core::ffi::c_int as yytype_int8,
+    50 as ::core::ffi::c_int as yytype_int8,
+    51 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    52 as ::core::ffi::c_int as yytype_int8,
+    53 as ::core::ffi::c_int as yytype_int8,
+    54 as ::core::ffi::c_int as yytype_int8,
+    55 as ::core::ffi::c_int as yytype_int8,
+    56 as ::core::ffi::c_int as yytype_int8,
+    57 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    58 as ::core::ffi::c_int as yytype_int8,
+    59 as ::core::ffi::c_int as yytype_int8,
+    60 as ::core::ffi::c_int as yytype_int8,
+    61 as ::core::ffi::c_int as yytype_int8,
+    62 as ::core::ffi::c_int as yytype_int8,
+    63 as ::core::ffi::c_int as yytype_int8,
+    64 as ::core::ffi::c_int as yytype_int8,
+    65 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+];
+unsafe extern "C" fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const ::core::ffi::c_char {
+    unsafe {
+        static mut yy_sname: [*const ::core::ffi::c_char; 150] = [
+            b"end of file\0".as_ptr() as *const ::core::ffi::c_char,
+            b"error\0".as_ptr() as *const ::core::ffi::c_char,
+            b"invalid token\0".as_ptr() as *const ::core::ffi::c_char,
+            b"invalid token\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_keymap\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_keycodes\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_types\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_symbols\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_compatibility\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_geometry\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_semantics\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_layout\0".as_ptr() as *const ::core::ffi::c_char,
+            b"include\0".as_ptr() as *const ::core::ffi::c_char,
+            b"override\0".as_ptr() as *const ::core::ffi::c_char,
+            b"augment\0".as_ptr() as *const ::core::ffi::c_char,
+            b"replace\0".as_ptr() as *const ::core::ffi::c_char,
+            b"alternate\0".as_ptr() as *const ::core::ffi::c_char,
+            b"virtual_modifiers\0".as_ptr() as *const ::core::ffi::c_char,
+            b"type\0".as_ptr() as *const ::core::ffi::c_char,
+            b"interpret\0".as_ptr() as *const ::core::ffi::c_char,
+            b"action\0".as_ptr() as *const ::core::ffi::c_char,
+            b"key\0".as_ptr() as *const ::core::ffi::c_char,
+            b"alias\0".as_ptr() as *const ::core::ffi::c_char,
+            b"group\0".as_ptr() as *const ::core::ffi::c_char,
+            b"modifier_map\0".as_ptr() as *const ::core::ffi::c_char,
+            b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
+            b"shape\0".as_ptr() as *const ::core::ffi::c_char,
+            b"keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"row\0".as_ptr() as *const ::core::ffi::c_char,
+            b"section\0".as_ptr() as *const ::core::ffi::c_char,
+            b"overlay\0".as_ptr() as *const ::core::ffi::c_char,
+            b"text\0".as_ptr() as *const ::core::ffi::c_char,
+            b"outline\0".as_ptr() as *const ::core::ffi::c_char,
+            b"solid\0".as_ptr() as *const ::core::ffi::c_char,
+            b"logo\0".as_ptr() as *const ::core::ffi::c_char,
+            b"virtual\0".as_ptr() as *const ::core::ffi::c_char,
+            b"=\0".as_ptr() as *const ::core::ffi::c_char,
+            b"+\0".as_ptr() as *const ::core::ffi::c_char,
+            b"-\0".as_ptr() as *const ::core::ffi::c_char,
+            b"/\0".as_ptr() as *const ::core::ffi::c_char,
+            b"*\0".as_ptr() as *const ::core::ffi::c_char,
+            b"{\0".as_ptr() as *const ::core::ffi::c_char,
+            b"}\0".as_ptr() as *const ::core::ffi::c_char,
+            b"(\0".as_ptr() as *const ::core::ffi::c_char,
+            b")\0".as_ptr() as *const ::core::ffi::c_char,
+            b"[\0".as_ptr() as *const ::core::ffi::c_char,
+            b"]\0".as_ptr() as *const ::core::ffi::c_char,
+            b".\0".as_ptr() as *const ::core::ffi::c_char,
+            b",\0".as_ptr() as *const ::core::ffi::c_char,
+            b";\0".as_ptr() as *const ::core::ffi::c_char,
+            b"!\0".as_ptr() as *const ::core::ffi::c_char,
+            b"~\0".as_ptr() as *const ::core::ffi::c_char,
+            b"string literal\0".as_ptr() as *const ::core::ffi::c_char,
+            b"decimal digit\0".as_ptr() as *const ::core::ffi::c_char,
+            b"integer literal\0".as_ptr() as *const ::core::ffi::c_char,
+            b"float literal\0".as_ptr() as *const ::core::ffi::c_char,
+            b"identifier\0".as_ptr() as *const ::core::ffi::c_char,
+            b"key name\0".as_ptr() as *const ::core::ffi::c_char,
+            b"partial\0".as_ptr() as *const ::core::ffi::c_char,
+            b"default\0".as_ptr() as *const ::core::ffi::c_char,
+            b"hidden\0".as_ptr() as *const ::core::ffi::c_char,
+            b"alphanumeric_keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"modifier_keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"keypad_keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"function_keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"alternate_group\0".as_ptr() as *const ::core::ffi::c_char,
+            b"$accept\0".as_ptr() as *const ::core::ffi::c_char,
+            b"XkbFile\0".as_ptr() as *const ::core::ffi::c_char,
+            b"XkbCompositeMap\0".as_ptr() as *const ::core::ffi::c_char,
+            b"XkbCompositeType\0".as_ptr() as *const ::core::ffi::c_char,
+            b"XkbMapConfigList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"XkbMapConfig\0".as_ptr() as *const ::core::ffi::c_char,
+            b"FileType\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OptFlags\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Flags\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Flag\0".as_ptr() as *const ::core::ffi::c_char,
+            b"DeclList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Decl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"VarDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyNameDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyAliasDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"VModDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"VModDefList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"VModDef\0".as_ptr() as *const ::core::ffi::c_char,
+            b"InterpretDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"InterpretMatch\0".as_ptr() as *const ::core::ffi::c_char,
+            b"VarDeclList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyTypeDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SymbolsDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OptSymbolsBody\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SymbolsBody\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SymbolsVarDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"MultiKeySymOrActionList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"NoSymbolOrActionList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"GroupCompatDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"ModMapDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyOrKeySymList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyOrKeySym\0".as_ptr() as *const ::core::ffi::c_char,
+            b"LedMapDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"LedNameDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"UnknownDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"UnknownCompoundStatementDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"ShapeDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SectionDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SectionBody\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SectionBodyItem\0".as_ptr() as *const ::core::ffi::c_char,
+            b"RowBody\0".as_ptr() as *const ::core::ffi::c_char,
+            b"RowBodyItem\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Keys\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Key\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OverlayDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OverlayKeyList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OverlayKey\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OutlineList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OutlineInList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"CoordList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Coord\0".as_ptr() as *const ::core::ffi::c_char,
+            b"DoodadDecl\0".as_ptr() as *const ::core::ffi::c_char,
+            b"DoodadType\0".as_ptr() as *const ::core::ffi::c_char,
+            b"FieldSpec\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Element\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OptMergeMode\0".as_ptr() as *const ::core::ffi::c_char,
+            b"MergeMode\0".as_ptr() as *const ::core::ffi::c_char,
+            b"ExprList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Expr\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Term\0".as_ptr() as *const ::core::ffi::c_char,
+            b"MultiActionList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"ActionList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"NonEmptyActions\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Actions\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Action\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Lhs\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OptTerminal\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Terminal\0".as_ptr() as *const ::core::ffi::c_char,
+            b"MultiKeySymList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeySymList\0".as_ptr() as *const ::core::ffi::c_char,
+            b"NonEmptyKeySyms\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeySyms\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeySym\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeySymLit\0".as_ptr() as *const ::core::ffi::c_char,
+            b"SignedNumber\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Number\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Float\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Integer\0".as_ptr() as *const ::core::ffi::c_char,
+            b"KeyCode\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Ident\0".as_ptr() as *const ::core::ffi::c_char,
+            b"String\0".as_ptr() as *const ::core::ffi::c_char,
+            b"OptMapName\0".as_ptr() as *const ::core::ffi::c_char,
+            b"MapName\0".as_ptr() as *const ::core::ffi::c_char,
+            ::core::ptr::null::<::core::ffi::c_char>(),
+        ];
+        return yy_sname[yysymbol as usize];
+    }
+}
+pub const YYPACT_NINF: ::core::ffi::c_int = -280 as ::core::ffi::c_int;
+static mut yypact: [yytype_int16; 384] = [
+    7 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    32 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    578 as ::core::ffi::c_int as yytype_int16,
+    847 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -12 as ::core::ffi::c_int as yytype_int16,
+    -12 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    22 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    463 as ::core::ffi::c_int as yytype_int16,
+    10 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    458 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    172 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    135 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    78 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    114 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    324 as ::core::ffi::c_int as yytype_int16,
+    120 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -18 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    134 as ::core::ffi::c_int as yytype_int16,
+    143 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -30 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    175 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    179 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    182 as ::core::ffi::c_int as yytype_int16,
+    190 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    197 as ::core::ffi::c_int as yytype_int16,
+    213 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    248 as ::core::ffi::c_int as yytype_int16,
+    222 as ::core::ffi::c_int as yytype_int16,
+    263 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    237 as ::core::ffi::c_int as yytype_int16,
+    261 as ::core::ffi::c_int as yytype_int16,
+    135 as ::core::ffi::c_int as yytype_int16,
+    258 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    293 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    142 as ::core::ffi::c_int as yytype_int16,
+    289 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    869 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    597 as ::core::ffi::c_int as yytype_int16,
+    269 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    35 as ::core::ffi::c_int as yytype_int16,
+    461 as ::core::ffi::c_int as yytype_int16,
+    296 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    287 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    825 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -6 as ::core::ffi::c_int as yytype_int16,
+    228 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    301 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    294 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    639 as ::core::ffi::c_int as yytype_int16,
+    654 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    478 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    306 as ::core::ffi::c_int as yytype_int16,
+    311 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    318 as ::core::ffi::c_int as yytype_int16,
+    -27 as ::core::ffi::c_int as yytype_int16,
+    313 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    13 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    285 as ::core::ffi::c_int as yytype_int16,
+    696 as ::core::ffi::c_int as yytype_int16,
+    319 as ::core::ffi::c_int as yytype_int16,
+    96 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    330 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    419 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    711 as ::core::ffi::c_int as yytype_int16,
+    372 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    753 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    325 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    418 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    322 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    323 as ::core::ffi::c_int as yytype_int16,
+    331 as ::core::ffi::c_int as yytype_int16,
+    520 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    337 as ::core::ffi::c_int as yytype_int16,
+    130 as ::core::ffi::c_int as yytype_int16,
+    133 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    170 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    341 as ::core::ffi::c_int as yytype_int16,
+    597 as ::core::ffi::c_int as yytype_int16,
+    290 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    343 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    344 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    189 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    346 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    355 as ::core::ffi::c_int as yytype_int16,
+    -25 as ::core::ffi::c_int as yytype_int16,
+    358 as ::core::ffi::c_int as yytype_int16,
+    319 as ::core::ffi::c_int as yytype_int16,
+    377 as ::core::ffi::c_int as yytype_int16,
+    773 as ::core::ffi::c_int as yytype_int16,
+    375 as ::core::ffi::c_int as yytype_int16,
+    364 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    386 as ::core::ffi::c_int as yytype_int16,
+    368 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    370 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    869 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -38 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    253 as ::core::ffi::c_int as yytype_int16,
+    253 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    266 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    540 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    845 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    96 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    796 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    381 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    227 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    384 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    30 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    208 as ::core::ffi::c_int as yytype_int16,
+    582 as ::core::ffi::c_int as yytype_int16,
+    239 as ::core::ffi::c_int as yytype_int16,
+    242 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    180 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    400 as ::core::ffi::c_int as yytype_int16,
+    89 as ::core::ffi::c_int as yytype_int16,
+    -24 as ::core::ffi::c_int as yytype_int16,
+    405 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    423 as ::core::ffi::c_int as yytype_int16,
+    112 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    433 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    113 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    403 as ::core::ffi::c_int as yytype_int16,
+    425 as ::core::ffi::c_int as yytype_int16,
+    384 as ::core::ffi::c_int as yytype_int16,
+    117 as ::core::ffi::c_int as yytype_int16,
+    427 as ::core::ffi::c_int as yytype_int16,
+    -24 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+];
+static mut yydefact: [yytype_uint8; 384] = [
+    18 as ::core::ffi::c_int as yytype_uint8,
+    4 as ::core::ffi::c_int as yytype_uint8,
+    21 as ::core::ffi::c_int as yytype_uint8,
+    22 as ::core::ffi::c_int as yytype_uint8,
+    23 as ::core::ffi::c_int as yytype_uint8,
+    24 as ::core::ffi::c_int as yytype_uint8,
+    25 as ::core::ffi::c_int as yytype_uint8,
+    26 as ::core::ffi::c_int as yytype_uint8,
+    27 as ::core::ffi::c_int as yytype_uint8,
+    28 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    2 as ::core::ffi::c_int as yytype_uint8,
+    3 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    17 as ::core::ffi::c_int as yytype_uint8,
+    20 as ::core::ffi::c_int as yytype_uint8,
+    1 as ::core::ffi::c_int as yytype_uint8,
+    6 as ::core::ffi::c_int as yytype_uint8,
+    12 as ::core::ffi::c_int as yytype_uint8,
+    13 as ::core::ffi::c_int as yytype_uint8,
+    15 as ::core::ffi::c_int as yytype_uint8,
+    14 as ::core::ffi::c_int as yytype_uint8,
+    16 as ::core::ffi::c_int as yytype_uint8,
+    7 as ::core::ffi::c_int as yytype_uint8,
+    8 as ::core::ffi::c_int as yytype_uint8,
+    218 as ::core::ffi::c_int as yytype_uint8,
+    218 as ::core::ffi::c_int as yytype_uint8,
+    19 as ::core::ffi::c_int as yytype_uint8,
+    219 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    217 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    10 as ::core::ffi::c_int as yytype_uint8,
+    31 as ::core::ffi::c_int as yytype_uint8,
+    18 as ::core::ffi::c_int as yytype_uint8,
+    142 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    9 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    144 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    147 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    29 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    5 as ::core::ffi::c_int as yytype_uint8,
+    11 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    132 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    137 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    127 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    214 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    215 as ::core::ffi::c_int as yytype_uint8,
+    32 as ::core::ffi::c_int as yytype_uint8,
+    34 as ::core::ffi::c_int as yytype_uint8,
+    35 as ::core::ffi::c_int as yytype_uint8,
+    30 as ::core::ffi::c_int as yytype_uint8,
+    33 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    37 as ::core::ffi::c_int as yytype_uint8,
+    39 as ::core::ffi::c_int as yytype_uint8,
+    38 as ::core::ffi::c_int as yytype_uint8,
+    40 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    45 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    43 as ::core::ffi::c_int as yytype_uint8,
+    44 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    176 as ::core::ffi::c_int as yytype_uint8,
+    129 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    47 as ::core::ffi::c_int as yytype_uint8,
+    214 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    55 as ::core::ffi::c_int as yytype_uint8,
+    56 as ::core::ffi::c_int as yytype_uint8,
+    216 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    201 as ::core::ffi::c_int as yytype_uint8,
+    199 as ::core::ffi::c_int as yytype_uint8,
+    202 as ::core::ffi::c_int as yytype_uint8,
+    203 as ::core::ffi::c_int as yytype_uint8,
+    200 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    60 as ::core::ffi::c_int as yytype_uint8,
+    198 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    211 as ::core::ffi::c_int as yytype_uint8,
+    210 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    209 as ::core::ffi::c_int as yytype_uint8,
+    185 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    180 as ::core::ffi::c_int as yytype_uint8,
+    184 as ::core::ffi::c_int as yytype_uint8,
+    183 as ::core::ffi::c_int as yytype_uint8,
+    182 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    53 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    66 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    50 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    213 as ::core::ffi::c_int as yytype_uint8,
+    212 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    132 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    137 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    176 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    156 as ::core::ffi::c_int as yytype_uint8,
+    173 as ::core::ffi::c_int as yytype_uint8,
+    163 as ::core::ffi::c_int as yytype_uint8,
+    161 as ::core::ffi::c_int as yytype_uint8,
+    164 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    177 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    54 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    59 as ::core::ffi::c_int as yytype_uint8,
+    81 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    65 as ::core::ffi::c_int as yytype_uint8,
+    68 as ::core::ffi::c_int as yytype_uint8,
+    73 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    85 as ::core::ffi::c_int as yytype_uint8,
+    87 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    116 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    121 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    99 as ::core::ffi::c_int as yytype_uint8,
+    101 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    97 as ::core::ffi::c_int as yytype_uint8,
+    102 as ::core::ffi::c_int as yytype_uint8,
+    100 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    51 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    158 as ::core::ffi::c_int as yytype_uint8,
+    161 as ::core::ffi::c_int as yytype_uint8,
+    157 as ::core::ffi::c_int as yytype_uint8,
+    174 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    171 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    159 as ::core::ffi::c_int as yytype_uint8,
+    160 as ::core::ffi::c_int as yytype_uint8,
+    150 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    178 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    61 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    201 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    195 as ::core::ffi::c_int as yytype_uint8,
+    200 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    169 as ::core::ffi::c_int as yytype_uint8,
+    168 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    189 as ::core::ffi::c_int as yytype_uint8,
+    188 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    82 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    89 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    207 as ::core::ffi::c_int as yytype_uint8,
+    208 as ::core::ffi::c_int as yytype_uint8,
+    206 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    205 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    96 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    150 as ::core::ffi::c_int as yytype_uint8,
+    172 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    165 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    149 as ::core::ffi::c_int as yytype_uint8,
+    152 as ::core::ffi::c_int as yytype_uint8,
+    153 as ::core::ffi::c_int as yytype_uint8,
+    151 as ::core::ffi::c_int as yytype_uint8,
+    154 as ::core::ffi::c_int as yytype_uint8,
+    155 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    63 as ::core::ffi::c_int as yytype_uint8,
+    58 as ::core::ffi::c_int as yytype_uint8,
+    80 as ::core::ffi::c_int as yytype_uint8,
+    193 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    192 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    76 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    74 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    64 as ::core::ffi::c_int as yytype_uint8,
+    67 as ::core::ffi::c_int as yytype_uint8,
+    70 as ::core::ffi::c_int as yytype_uint8,
+    69 as ::core::ffi::c_int as yytype_uint8,
+    83 as ::core::ffi::c_int as yytype_uint8,
+    84 as ::core::ffi::c_int as yytype_uint8,
+    88 as ::core::ffi::c_int as yytype_uint8,
+    117 as ::core::ffi::c_int as yytype_uint8,
+    204 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    93 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    94 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    106 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    104 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    95 as ::core::ffi::c_int as yytype_uint8,
+    90 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    170 as ::core::ffi::c_int as yytype_uint8,
+    162 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    179 as ::core::ffi::c_int as yytype_uint8,
+    194 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    167 as ::core::ffi::c_int as yytype_uint8,
+    166 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    196 as ::core::ffi::c_int as yytype_uint8,
+    187 as ::core::ffi::c_int as yytype_uint8,
+    186 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    103 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    113 as ::core::ffi::c_int as yytype_uint8,
+    175 as ::core::ffi::c_int as yytype_uint8,
+    148 as ::core::ffi::c_int as yytype_uint8,
+    191 as ::core::ffi::c_int as yytype_uint8,
+    190 as ::core::ffi::c_int as yytype_uint8,
+    79 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    197 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    150 as ::core::ffi::c_int as yytype_uint8,
+    109 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    108 as ::core::ffi::c_int as yytype_uint8,
+    98 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    111 as ::core::ffi::c_int as yytype_uint8,
+    112 as ::core::ffi::c_int as yytype_uint8,
+    110 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    107 as ::core::ffi::c_int as yytype_uint8,
+];
+static mut yypgoto: [yytype_int16; 83] = [
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    434 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    443 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    469 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -45 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    356 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    244 as ::core::ffi::c_int as yytype_int16,
+    251 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    249 as ::core::ffi::c_int as yytype_int16,
+    466 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    302 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    187 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    138 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    144 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    257 as ::core::ffi::c_int as yytype_int16,
+    -196 as ::core::ffi::c_int as yytype_int16,
+    259 as ::core::ffi::c_int as yytype_int16,
+    470 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -46 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -279 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -176 as ::core::ffi::c_int as yytype_int16,
+    231 as ::core::ffi::c_int as yytype_int16,
+    -181 as ::core::ffi::c_int as yytype_int16,
+    -35 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    474 as ::core::ffi::c_int as yytype_int16,
+    247 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    240 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    500 as ::core::ffi::c_int as yytype_int16,
+    -182 as ::core::ffi::c_int as yytype_int16,
+    236 as ::core::ffi::c_int as yytype_int16,
+    291 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -44 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+    -37 as ::core::ffi::c_int as yytype_int16,
+    -23 as ::core::ffi::c_int as yytype_int16,
+    528 as ::core::ffi::c_int as yytype_int16,
+    -280 as ::core::ffi::c_int as yytype_int16,
+];
+static mut yydefgoto: [yytype_int16; 83] = [
+    0 as ::core::ffi::c_int as yytype_int16,
+    10 as ::core::ffi::c_int as yytype_int16,
+    11 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    12 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    13 as ::core::ffi::c_int as yytype_int16,
+    14 as ::core::ffi::c_int as yytype_int16,
+    15 as ::core::ffi::c_int as yytype_int16,
+    35 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    241 as ::core::ffi::c_int as yytype_int16,
+    72 as ::core::ffi::c_int as yytype_int16,
+    73 as ::core::ffi::c_int as yytype_int16,
+    74 as ::core::ffi::c_int as yytype_int16,
+    94 as ::core::ffi::c_int as yytype_int16,
+    95 as ::core::ffi::c_int as yytype_int16,
+    75 as ::core::ffi::c_int as yytype_int16,
+    104 as ::core::ffi::c_int as yytype_int16,
+    181 as ::core::ffi::c_int as yytype_int16,
+    76 as ::core::ffi::c_int as yytype_int16,
+    77 as ::core::ffi::c_int as yytype_int16,
+    186 as ::core::ffi::c_int as yytype_int16,
+    187 as ::core::ffi::c_int as yytype_int16,
+    188 as ::core::ffi::c_int as yytype_int16,
+    189 as ::core::ffi::c_int as yytype_int16,
+    247 as ::core::ffi::c_int as yytype_int16,
+    78 as ::core::ffi::c_int as yytype_int16,
+    79 as ::core::ffi::c_int as yytype_int16,
+    195 as ::core::ffi::c_int as yytype_int16,
+    196 as ::core::ffi::c_int as yytype_int16,
+    211 as ::core::ffi::c_int as yytype_int16,
+    81 as ::core::ffi::c_int as yytype_int16,
+    82 as ::core::ffi::c_int as yytype_int16,
+    83 as ::core::ffi::c_int as yytype_int16,
+    84 as ::core::ffi::c_int as yytype_int16,
+    85 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    213 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    327 as ::core::ffi::c_int as yytype_int16,
+    369 as ::core::ffi::c_int as yytype_int16,
+    370 as ::core::ffi::c_int as yytype_int16,
+    214 as ::core::ffi::c_int as yytype_int16,
+    355 as ::core::ffi::c_int as yytype_int16,
+    356 as ::core::ffi::c_int as yytype_int16,
+    202 as ::core::ffi::c_int as yytype_int16,
+    203 as ::core::ffi::c_int as yytype_int16,
+    204 as ::core::ffi::c_int as yytype_int16,
+    205 as ::core::ffi::c_int as yytype_int16,
+    215 as ::core::ffi::c_int as yytype_int16,
+    87 as ::core::ffi::c_int as yytype_int16,
+    169 as ::core::ffi::c_int as yytype_int16,
+    89 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    47 as ::core::ffi::c_int as yytype_int16,
+    288 as ::core::ffi::c_int as yytype_int16,
+    289 as ::core::ffi::c_int as yytype_int16,
+    171 as ::core::ffi::c_int as yytype_int16,
+    248 as ::core::ffi::c_int as yytype_int16,
+    226 as ::core::ffi::c_int as yytype_int16,
+    172 as ::core::ffi::c_int as yytype_int16,
+    173 as ::core::ffi::c_int as yytype_int16,
+    227 as ::core::ffi::c_int as yytype_int16,
+    174 as ::core::ffi::c_int as yytype_int16,
+    121 as ::core::ffi::c_int as yytype_int16,
+    175 as ::core::ffi::c_int as yytype_int16,
+    251 as ::core::ffi::c_int as yytype_int16,
+    300 as ::core::ffi::c_int as yytype_int16,
+    252 as ::core::ffi::c_int as yytype_int16,
+    347 as ::core::ffi::c_int as yytype_int16,
+    197 as ::core::ffi::c_int as yytype_int16,
+    106 as ::core::ffi::c_int as yytype_int16,
+    269 as ::core::ffi::c_int as yytype_int16,
+    270 as ::core::ffi::c_int as yytype_int16,
+    123 as ::core::ffi::c_int as yytype_int16,
+    124 as ::core::ffi::c_int as yytype_int16,
+    152 as ::core::ffi::c_int as yytype_int16,
+    176 as ::core::ffi::c_int as yytype_int16,
+    125 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    30 as ::core::ffi::c_int as yytype_int16,
+];
+static mut yytable: [yytype_int16; 929] = [
+    88 as ::core::ffi::c_int as yytype_int16,
+    71 as ::core::ffi::c_int as yytype_int16,
+    253 as ::core::ffi::c_int as yytype_int16,
+    250 as ::core::ffi::c_int as yytype_int16,
+    264 as ::core::ffi::c_int as yytype_int16,
+    333 as ::core::ffi::c_int as yytype_int16,
+    335 as ::core::ffi::c_int as yytype_int16,
+    1 as ::core::ffi::c_int as yytype_int16,
+    249 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    336 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    111 as ::core::ffi::c_int as yytype_int16,
+    96 as ::core::ffi::c_int as yytype_int16,
+    113 as ::core::ffi::c_int as yytype_int16,
+    -71 as ::core::ffi::c_int as yytype_int16,
+    200 as ::core::ffi::c_int as yytype_int16,
+    367 as ::core::ffi::c_int as yytype_int16,
+    132 as ::core::ffi::c_int as yytype_int16,
+    133 as ::core::ffi::c_int as yytype_int16,
+    112 as ::core::ffi::c_int as yytype_int16,
+    -71 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    128 as ::core::ffi::c_int as yytype_int16,
+    98 as ::core::ffi::c_int as yytype_int16,
+    129 as ::core::ffi::c_int as yytype_int16,
+    118 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    16 as ::core::ffi::c_int as yytype_int16,
+    368 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    114 as ::core::ffi::c_int as yytype_int16,
+    115 as ::core::ffi::c_int as yytype_int16,
+    231 as ::core::ffi::c_int as yytype_int16,
+    116 as ::core::ffi::c_int as yytype_int16,
+    128 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    129 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    44 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    260 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    66 as ::core::ffi::c_int as yytype_int16,
+    261 as ::core::ffi::c_int as yytype_int16,
+    301 as ::core::ffi::c_int as yytype_int16,
+    32 as ::core::ffi::c_int as yytype_int16,
+    127 as ::core::ffi::c_int as yytype_int16,
+    2 as ::core::ffi::c_int as yytype_int16,
+    3 as ::core::ffi::c_int as yytype_int16,
+    4 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    6 as ::core::ffi::c_int as yytype_int16,
+    7 as ::core::ffi::c_int as yytype_int16,
+    8 as ::core::ffi::c_int as yytype_int16,
+    9 as ::core::ffi::c_int as yytype_int16,
+    146 as ::core::ffi::c_int as yytype_int16,
+    357 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    200 as ::core::ffi::c_int as yytype_int16,
+    33 as ::core::ffi::c_int as yytype_int16,
+    336 as ::core::ffi::c_int as yytype_int16,
+    271 as ::core::ffi::c_int as yytype_int16,
+    201 as ::core::ffi::c_int as yytype_int16,
+    68 as ::core::ffi::c_int as yytype_int16,
+    69 as ::core::ffi::c_int as yytype_int16,
+    177 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    272 as ::core::ffi::c_int as yytype_int16,
+    92 as ::core::ffi::c_int as yytype_int16,
+    273 as ::core::ffi::c_int as yytype_int16,
+    375 as ::core::ffi::c_int as yytype_int16,
+    99 as ::core::ffi::c_int as yytype_int16,
+    285 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    274 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    96 as ::core::ffi::c_int as yytype_int16,
+    286 as ::core::ffi::c_int as yytype_int16,
+    107 as ::core::ffi::c_int as yytype_int16,
+    315 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    210 as ::core::ffi::c_int as yytype_int16,
+    191 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    190 as ::core::ffi::c_int as yytype_int16,
+    274 as ::core::ffi::c_int as yytype_int16,
+    334 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    206 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    338 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    100 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    339 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    194 as ::core::ffi::c_int as yytype_int16,
+    108 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    253 as ::core::ffi::c_int as yytype_int16,
+    250 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    344 as ::core::ffi::c_int as yytype_int16,
+    348 as ::core::ffi::c_int as yytype_int16,
+    350 as ::core::ffi::c_int as yytype_int16,
+    249 as ::core::ffi::c_int as yytype_int16,
+    222 as ::core::ffi::c_int as yytype_int16,
+    222 as ::core::ffi::c_int as yytype_int16,
+    -124 as ::core::ffi::c_int as yytype_int16,
+    366 as ::core::ffi::c_int as yytype_int16,
+    222 as ::core::ffi::c_int as yytype_int16,
+    222 as ::core::ffi::c_int as yytype_int16,
+    265 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    274 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    117 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    254 as ::core::ffi::c_int as yytype_int16,
+    266 as ::core::ffi::c_int as yytype_int16,
+    267 as ::core::ffi::c_int as yytype_int16,
+    268 as ::core::ffi::c_int as yytype_int16,
+    239 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    373 as ::core::ffi::c_int as yytype_int16,
+    376 as ::core::ffi::c_int as yytype_int16,
+    126 as ::core::ffi::c_int as yytype_int16,
+    360 as ::core::ffi::c_int as yytype_int16,
+    301 as ::core::ffi::c_int as yytype_int16,
+    381 as ::core::ffi::c_int as yytype_int16,
+    374 as ::core::ffi::c_int as yytype_int16,
+    377 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    301 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    336 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    210 as ::core::ffi::c_int as yytype_int16,
+    221 as ::core::ffi::c_int as yytype_int16,
+    223 as ::core::ffi::c_int as yytype_int16,
+    130 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    229 as ::core::ffi::c_int as yytype_int16,
+    230 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    302 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    304 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    305 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    114 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    277 as ::core::ffi::c_int as yytype_int16,
+    182 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    99 as ::core::ffi::c_int as yytype_int16,
+    170 as ::core::ffi::c_int as yytype_int16,
+    131 as ::core::ffi::c_int as yytype_int16,
+    178 as ::core::ffi::c_int as yytype_int16,
+    199 as ::core::ffi::c_int as yytype_int16,
+    150 as ::core::ffi::c_int as yytype_int16,
+    151 as ::core::ffi::c_int as yytype_int16,
+    180 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    217 as ::core::ffi::c_int as yytype_int16,
+    183 as ::core::ffi::c_int as yytype_int16,
+    99 as ::core::ffi::c_int as yytype_int16,
+    345 as ::core::ffi::c_int as yytype_int16,
+    193 as ::core::ffi::c_int as yytype_int16,
+    220 as ::core::ffi::c_int as yytype_int16,
+    198 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    99 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    134 as ::core::ffi::c_int as yytype_int16,
+    218 as ::core::ffi::c_int as yytype_int16,
+    245 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    306 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    307 as ::core::ffi::c_int as yytype_int16,
+    191 as ::core::ffi::c_int as yytype_int16,
+    135 as ::core::ffi::c_int as yytype_int16,
+    190 as ::core::ffi::c_int as yytype_int16,
+    364 as ::core::ffi::c_int as yytype_int16,
+    136 as ::core::ffi::c_int as yytype_int16,
+    100 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    137 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    228 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    325 as ::core::ffi::c_int as yytype_int16,
+    299 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    206 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    99 as ::core::ffi::c_int as yytype_int16,
+    138 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    266 as ::core::ffi::c_int as yytype_int16,
+    267 as ::core::ffi::c_int as yytype_int16,
+    268 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    139 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    324 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    359 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    141 as ::core::ffi::c_int as yytype_int16,
+    103 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    352 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    236 as ::core::ffi::c_int as yytype_int16,
+    143 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    144 as ::core::ffi::c_int as yytype_int16,
+    280 as ::core::ffi::c_int as yytype_int16,
+    88 as ::core::ffi::c_int as yytype_int16,
+    325 as ::core::ffi::c_int as yytype_int16,
+    259 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    140 as ::core::ffi::c_int as yytype_int16,
+    362 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    305 as ::core::ffi::c_int as yytype_int16,
+    363 as ::core::ffi::c_int as yytype_int16,
+    91 as ::core::ffi::c_int as yytype_int16,
+    307 as ::core::ffi::c_int as yytype_int16,
+    90 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    225 as ::core::ffi::c_int as yytype_int16,
+    290 as ::core::ffi::c_int as yytype_int16,
+    291 as ::core::ffi::c_int as yytype_int16,
+    292 as ::core::ffi::c_int as yytype_int16,
+    293 as ::core::ffi::c_int as yytype_int16,
+    142 as ::core::ffi::c_int as yytype_int16,
+    294 as ::core::ffi::c_int as yytype_int16,
+    295 as ::core::ffi::c_int as yytype_int16,
+    145 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    147 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    337 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    148 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    311 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    192 as ::core::ffi::c_int as yytype_int16,
+    163 as ::core::ffi::c_int as yytype_int16,
+    164 as ::core::ffi::c_int as yytype_int16,
+    149 as ::core::ffi::c_int as yytype_int16,
+    153 as ::core::ffi::c_int as yytype_int16,
+    165 as ::core::ffi::c_int as yytype_int16,
+    216 as ::core::ffi::c_int as yytype_int16,
+    166 as ::core::ffi::c_int as yytype_int16,
+    262 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    219 as ::core::ffi::c_int as yytype_int16,
+    237 as ::core::ffi::c_int as yytype_int16,
+    323 as ::core::ffi::c_int as yytype_int16,
+    238 as ::core::ffi::c_int as yytype_int16,
+    167 as ::core::ffi::c_int as yytype_int16,
+    168 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    119 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    120 as ::core::ffi::c_int as yytype_int16,
+    255 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    257 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    256 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    258 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    201 as ::core::ffi::c_int as yytype_int16,
+    -181 as ::core::ffi::c_int as yytype_int16,
+    275 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    284 as ::core::ffi::c_int as yytype_int16,
+    163 as ::core::ffi::c_int as yytype_int16,
+    164 as ::core::ffi::c_int as yytype_int16,
+    296 as ::core::ffi::c_int as yytype_int16,
+    297 as ::core::ffi::c_int as yytype_int16,
+    165 as ::core::ffi::c_int as yytype_int16,
+    -139 as ::core::ffi::c_int as yytype_int16,
+    166 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    119 as ::core::ffi::c_int as yytype_int16,
+    -214 as ::core::ffi::c_int as yytype_int16,
+    120 as ::core::ffi::c_int as yytype_int16,
+    167 as ::core::ffi::c_int as yytype_int16,
+    168 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    119 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    120 as ::core::ffi::c_int as yytype_int16,
+    308 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    312 as ::core::ffi::c_int as yytype_int16,
+    314 as ::core::ffi::c_int as yytype_int16,
+    317 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    358 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    318 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    320 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    329 as ::core::ffi::c_int as yytype_int16,
+    163 as ::core::ffi::c_int as yytype_int16,
+    164 as ::core::ffi::c_int as yytype_int16,
+    328 as ::core::ffi::c_int as yytype_int16,
+    331 as ::core::ffi::c_int as yytype_int16,
+    322 as ::core::ffi::c_int as yytype_int16,
+    332 as ::core::ffi::c_int as yytype_int16,
+    166 as ::core::ffi::c_int as yytype_int16,
+    282 as ::core::ffi::c_int as yytype_int16,
+    351 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    167 as ::core::ffi::c_int as yytype_int16,
+    168 as ::core::ffi::c_int as yytype_int16,
+    97 as ::core::ffi::c_int as yytype_int16,
+    109 as ::core::ffi::c_int as yytype_int16,
+    110 as ::core::ffi::c_int as yytype_int16,
+    119 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    120 as ::core::ffi::c_int as yytype_int16,
+    330 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    354 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    207 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    365 as ::core::ffi::c_int as yytype_int16,
+    208 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    209 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    371 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    372 as ::core::ffi::c_int as yytype_int16,
+    378 as ::core::ffi::c_int as yytype_int16,
+    278 as ::core::ffi::c_int as yytype_int16,
+    287 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    22 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    379 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    382 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    27 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    207 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    179 as ::core::ffi::c_int as yytype_int16,
+    208 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    209 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    309 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    243 as ::core::ffi::c_int as yytype_int16,
+    310 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    313 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    80 as ::core::ffi::c_int as yytype_int16,
+    353 as ::core::ffi::c_int as yytype_int16,
+    279 as ::core::ffi::c_int as yytype_int16,
+    383 as ::core::ffi::c_int as yytype_int16,
+    86 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    380 as ::core::ffi::c_int as yytype_int16,
+    244 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    2 as ::core::ffi::c_int as yytype_int16,
+    3 as ::core::ffi::c_int as yytype_int16,
+    4 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    6 as ::core::ffi::c_int as yytype_int16,
+    7 as ::core::ffi::c_int as yytype_int16,
+    8 as ::core::ffi::c_int as yytype_int16,
+    9 as ::core::ffi::c_int as yytype_int16,
+    319 as ::core::ffi::c_int as yytype_int16,
+    245 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    321 as ::core::ffi::c_int as yytype_int16,
+    246 as ::core::ffi::c_int as yytype_int16,
+    341 as ::core::ffi::c_int as yytype_int16,
+    343 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    122 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    346 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    243 as ::core::ffi::c_int as yytype_int16,
+    342 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    105 as ::core::ffi::c_int as yytype_int16,
+    349 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    316 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    298 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    243 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    299 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    246 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    340 as ::core::ffi::c_int as yytype_int16,
+    17 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    22 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    245 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    246 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    243 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    361 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    299 as ::core::ffi::c_int as yytype_int16,
+    101 as ::core::ffi::c_int as yytype_int16,
+    102 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    246 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    185 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    240 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    242 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    263 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    281 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    283 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    324 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    224 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    201 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    224 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    165 as ::core::ffi::c_int as yytype_int16,
+    154 as ::core::ffi::c_int as yytype_int16,
+    155 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    156 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    157 as ::core::ffi::c_int as yytype_int16,
+    158 as ::core::ffi::c_int as yytype_int16,
+    159 as ::core::ffi::c_int as yytype_int16,
+    160 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    161 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    162 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+    2 as ::core::ffi::c_int as yytype_int16,
+    3 as ::core::ffi::c_int as yytype_int16,
+    4 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    6 as ::core::ffi::c_int as yytype_int16,
+    7 as ::core::ffi::c_int as yytype_int16,
+    8 as ::core::ffi::c_int as yytype_int16,
+    9 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    93 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    70 as ::core::ffi::c_int as yytype_int16,
+];
+static mut yycheck: [yytype_int16; 929] = [
+    46 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    200 as ::core::ffi::c_int as yytype_int16,
+    284 as ::core::ffi::c_int as yytype_int16,
+    44 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    12 as ::core::ffi::c_int as yytype_int16,
+    13 as ::core::ffi::c_int as yytype_int16,
+    14 as ::core::ffi::c_int as yytype_int16,
+    15 as ::core::ffi::c_int as yytype_int16,
+    16 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    47 as ::core::ffi::c_int as yytype_int16,
+    67 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    0 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    47 as ::core::ffi::c_int as yytype_int16,
+    17 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    22 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    32 as ::core::ffi::c_int as yytype_int16,
+    33 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    35 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    244 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    87 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    117 as ::core::ffi::c_int as yytype_int16,
+    44 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    129 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    367 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    138 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    132 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    145 as ::core::ffi::c_int as yytype_int16,
+    145 as ::core::ffi::c_int as yytype_int16,
+    138 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    138 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    286 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    144 as ::core::ffi::c_int as yytype_int16,
+    145 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    145 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    165 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    305 as ::core::ffi::c_int as yytype_int16,
+    307 as ::core::ffi::c_int as yytype_int16,
+    322 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    163 as ::core::ffi::c_int as yytype_int16,
+    164 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    167 as ::core::ffi::c_int as yytype_int16,
+    168 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    181 as ::core::ffi::c_int as yytype_int16,
+    182 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    184 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    181 as ::core::ffi::c_int as yytype_int16,
+    182 as ::core::ffi::c_int as yytype_int16,
+    181 as ::core::ffi::c_int as yytype_int16,
+    182 as ::core::ffi::c_int as yytype_int16,
+    185 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    199 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    339 as ::core::ffi::c_int as yytype_int16,
+    340 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    199 as ::core::ffi::c_int as yytype_int16,
+    345 as ::core::ffi::c_int as yytype_int16,
+    199 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    163 as ::core::ffi::c_int as yytype_int16,
+    164 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    217 as ::core::ffi::c_int as yytype_int16,
+    167 as ::core::ffi::c_int as yytype_int16,
+    168 as ::core::ffi::c_int as yytype_int16,
+    220 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    217 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    217 as ::core::ffi::c_int as yytype_int16,
+    220 as ::core::ffi::c_int as yytype_int16,
+    207 as ::core::ffi::c_int as yytype_int16,
+    220 as ::core::ffi::c_int as yytype_int16,
+    209 as ::core::ffi::c_int as yytype_int16,
+    136 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    128 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    130 as ::core::ffi::c_int as yytype_int16,
+    143 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    134 as ::core::ffi::c_int as yytype_int16,
+    244 as ::core::ffi::c_int as yytype_int16,
+    148 as ::core::ffi::c_int as yytype_int16,
+    137 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    140 as ::core::ffi::c_int as yytype_int16,
+    153 as ::core::ffi::c_int as yytype_int16,
+    142 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    256 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    149 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    256 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    256 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    166 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    272 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    286 as ::core::ffi::c_int as yytype_int16,
+    276 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    27 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    305 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    322 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    216 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    340 as ::core::ffi::c_int as yytype_int16,
+    232 as ::core::ffi::c_int as yytype_int16,
+    233 as ::core::ffi::c_int as yytype_int16,
+    234 as ::core::ffi::c_int as yytype_int16,
+    235 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    237 as ::core::ffi::c_int as yytype_int16,
+    238 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    257 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    275 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    48 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    336 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    43 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    51 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    55 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    30 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    32 as ::core::ffi::c_int as yytype_int16,
+    33 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    36 as ::core::ffi::c_int as yytype_int16,
+    57 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    44 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    6 as ::core::ffi::c_int as yytype_int16,
+    7 as ::core::ffi::c_int as yytype_int16,
+    8 as ::core::ffi::c_int as yytype_int16,
+    9 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    37 as ::core::ffi::c_int as yytype_int16,
+    38 as ::core::ffi::c_int as yytype_int16,
+    39 as ::core::ffi::c_int as yytype_int16,
+    40 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    49 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    14 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    132 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    30 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    32 as ::core::ffi::c_int as yytype_int16,
+    33 as ::core::ffi::c_int as yytype_int16,
+    34 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    256 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    257 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    261 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    326 as ::core::ffi::c_int as yytype_int16,
+    212 as ::core::ffi::c_int as yytype_int16,
+    377 as ::core::ffi::c_int as yytype_int16,
+    46 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    374 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    272 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    274 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    305 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    68 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    307 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    303 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    317 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    265 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    4 as ::core::ffi::c_int as yytype_int16,
+    5 as ::core::ffi::c_int as yytype_int16,
+    6 as ::core::ffi::c_int as yytype_int16,
+    7 as ::core::ffi::c_int as yytype_int16,
+    8 as ::core::ffi::c_int as yytype_int16,
+    9 as ::core::ffi::c_int as yytype_int16,
+    10 as ::core::ffi::c_int as yytype_int16,
+    11 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    52 as ::core::ffi::c_int as yytype_int16,
+    53 as ::core::ffi::c_int as yytype_int16,
+    54 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    27 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    50 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    45 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    42 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    41 as ::core::ffi::c_int as yytype_int16,
+    18 as ::core::ffi::c_int as yytype_int16,
+    19 as ::core::ffi::c_int as yytype_int16,
+    20 as ::core::ffi::c_int as yytype_int16,
+    21 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    23 as ::core::ffi::c_int as yytype_int16,
+    24 as ::core::ffi::c_int as yytype_int16,
+    25 as ::core::ffi::c_int as yytype_int16,
+    26 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    28 as ::core::ffi::c_int as yytype_int16,
+    29 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    31 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    58 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+    60 as ::core::ffi::c_int as yytype_int16,
+    61 as ::core::ffi::c_int as yytype_int16,
+    62 as ::core::ffi::c_int as yytype_int16,
+    63 as ::core::ffi::c_int as yytype_int16,
+    64 as ::core::ffi::c_int as yytype_int16,
+    65 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    56 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    -1 as ::core::ffi::c_int as yytype_int16,
+    59 as ::core::ffi::c_int as yytype_int16,
+];
+#[no_mangle]
+pub unsafe extern "C" fn parse(
+    mut ctx: *mut xkb_context,
+    mut scanner: *mut scanner,
+    mut map: *const ::core::ffi::c_char,
+) -> *mut XkbFile {
+    unsafe {
+        let mut ret: ::core::ffi::c_int = 0;
+        let mut first: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut param: parser_param = parser_param {
+            ctx: ctx,
+            scanner: scanner,
+            rtrn: ::core::ptr::null_mut::<XkbFile>(),
+            more_maps: false_0 != 0,
+        };
+        loop {
+            ret = _xkbcommon_parse(&raw mut param);
+            if !(ret == 0 as ::core::ffi::c_int && param.more_maps as ::core::ffi::c_int != 0) {
+                break;
+            }
+            if !map.is_null() {
+                if streq_not_null(map, (*param.rtrn).name) {
+                    return param.rtrn;
+                } else {
+                    FreeXkbFile(param.rtrn);
+                }
+            } else if (*param.rtrn).flags as ::core::ffi::c_uint
+                & MAP_IS_DEFAULT as ::core::ffi::c_int as ::core::ffi::c_uint
+                != 0
+            {
+                FreeXkbFile(first);
+                return param.rtrn;
+            } else if first.is_null() {
+                first = param.rtrn;
+            } else {
+                FreeXkbFile(param.rtrn);
+            }
+            param.rtrn = ::core::ptr::null_mut::<XkbFile>();
+        }
+        if ret != 0 as ::core::ffi::c_int {
+            FreeXkbFile(first);
+            FreeXkbFile(param.rtrn);
+            return ::core::ptr::null_mut::<XkbFile>();
+        }
+        if !first.is_null() {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_WARNING,
+                XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
+                b"[XKB-%03d] No map in include statement, but \"%s\" contains several; Using first defined map, \"%s\"\n\0"
+                    .as_ptr() as *const ::core::ffi::c_char,
+                XKB_WARNING_MISSING_DEFAULT_SECTION as ::core::ffi::c_int,
+                (*scanner).file_name,
+                safe_map_name(first),
+            );
+        }
+        return first;
+    }
+}
+static mut yystos: [yytype_uint8; 384] = [
+    0 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    58 as ::core::ffi::c_int as yytype_uint8,
+    59 as ::core::ffi::c_int as yytype_uint8,
+    60 as ::core::ffi::c_int as yytype_uint8,
+    61 as ::core::ffi::c_int as yytype_uint8,
+    62 as ::core::ffi::c_int as yytype_uint8,
+    63 as ::core::ffi::c_int as yytype_uint8,
+    64 as ::core::ffi::c_int as yytype_uint8,
+    65 as ::core::ffi::c_int as yytype_uint8,
+    67 as ::core::ffi::c_int as yytype_uint8,
+    68 as ::core::ffi::c_int as yytype_uint8,
+    71 as ::core::ffi::c_int as yytype_uint8,
+    73 as ::core::ffi::c_int as yytype_uint8,
+    74 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    0 as ::core::ffi::c_int as yytype_uint8,
+    4 as ::core::ffi::c_int as yytype_uint8,
+    5 as ::core::ffi::c_int as yytype_uint8,
+    6 as ::core::ffi::c_int as yytype_uint8,
+    7 as ::core::ffi::c_int as yytype_uint8,
+    8 as ::core::ffi::c_int as yytype_uint8,
+    9 as ::core::ffi::c_int as yytype_uint8,
+    10 as ::core::ffi::c_int as yytype_uint8,
+    11 as ::core::ffi::c_int as yytype_uint8,
+    69 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    147 as ::core::ffi::c_int as yytype_uint8,
+    148 as ::core::ffi::c_int as yytype_uint8,
+    147 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    70 as ::core::ffi::c_int as yytype_uint8,
+    76 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    71 as ::core::ffi::c_int as yytype_uint8,
+    73 as ::core::ffi::c_int as yytype_uint8,
+    12 as ::core::ffi::c_int as yytype_uint8,
+    13 as ::core::ffi::c_int as yytype_uint8,
+    14 as ::core::ffi::c_int as yytype_uint8,
+    15 as ::core::ffi::c_int as yytype_uint8,
+    16 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    121 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    17 as ::core::ffi::c_int as yytype_uint8,
+    18 as ::core::ffi::c_int as yytype_uint8,
+    19 as ::core::ffi::c_int as yytype_uint8,
+    20 as ::core::ffi::c_int as yytype_uint8,
+    21 as ::core::ffi::c_int as yytype_uint8,
+    22 as ::core::ffi::c_int as yytype_uint8,
+    23 as ::core::ffi::c_int as yytype_uint8,
+    24 as ::core::ffi::c_int as yytype_uint8,
+    25 as ::core::ffi::c_int as yytype_uint8,
+    26 as ::core::ffi::c_int as yytype_uint8,
+    28 as ::core::ffi::c_int as yytype_uint8,
+    29 as ::core::ffi::c_int as yytype_uint8,
+    31 as ::core::ffi::c_int as yytype_uint8,
+    32 as ::core::ffi::c_int as yytype_uint8,
+    33 as ::core::ffi::c_int as yytype_uint8,
+    34 as ::core::ffi::c_int as yytype_uint8,
+    35 as ::core::ffi::c_int as yytype_uint8,
+    50 as ::core::ffi::c_int as yytype_uint8,
+    56 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    59 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    79 as ::core::ffi::c_int as yytype_uint8,
+    80 as ::core::ffi::c_int as yytype_uint8,
+    81 as ::core::ffi::c_int as yytype_uint8,
+    84 as ::core::ffi::c_int as yytype_uint8,
+    87 as ::core::ffi::c_int as yytype_uint8,
+    88 as ::core::ffi::c_int as yytype_uint8,
+    94 as ::core::ffi::c_int as yytype_uint8,
+    95 as ::core::ffi::c_int as yytype_uint8,
+    98 as ::core::ffi::c_int as yytype_uint8,
+    99 as ::core::ffi::c_int as yytype_uint8,
+    100 as ::core::ffi::c_int as yytype_uint8,
+    101 as ::core::ffi::c_int as yytype_uint8,
+    102 as ::core::ffi::c_int as yytype_uint8,
+    103 as ::core::ffi::c_int as yytype_uint8,
+    117 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    56 as ::core::ffi::c_int as yytype_uint8,
+    82 as ::core::ffi::c_int as yytype_uint8,
+    83 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    29 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    53 as ::core::ffi::c_int as yytype_uint8,
+    54 as ::core::ffi::c_int as yytype_uint8,
+    56 as ::core::ffi::c_int as yytype_uint8,
+    85 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    53 as ::core::ffi::c_int as yytype_uint8,
+    54 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    25 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    55 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    132 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    142 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    45 as ::core::ffi::c_int as yytype_uint8,
+    47 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    37 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    53 as ::core::ffi::c_int as yytype_uint8,
+    54 as ::core::ffi::c_int as yytype_uint8,
+    144 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    18 as ::core::ffi::c_int as yytype_uint8,
+    19 as ::core::ffi::c_int as yytype_uint8,
+    21 as ::core::ffi::c_int as yytype_uint8,
+    23 as ::core::ffi::c_int as yytype_uint8,
+    24 as ::core::ffi::c_int as yytype_uint8,
+    25 as ::core::ffi::c_int as yytype_uint8,
+    26 as ::core::ffi::c_int as yytype_uint8,
+    29 as ::core::ffi::c_int as yytype_uint8,
+    31 as ::core::ffi::c_int as yytype_uint8,
+    37 as ::core::ffi::c_int as yytype_uint8,
+    38 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    43 as ::core::ffi::c_int as yytype_uint8,
+    50 as ::core::ffi::c_int as yytype_uint8,
+    51 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    129 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    83 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    45 as ::core::ffi::c_int as yytype_uint8,
+    50 as ::core::ffi::c_int as yytype_uint8,
+    89 as ::core::ffi::c_int as yytype_uint8,
+    90 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    96 as ::core::ffi::c_int as yytype_uint8,
+    97 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    45 as ::core::ffi::c_int as yytype_uint8,
+    113 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    116 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    25 as ::core::ffi::c_int as yytype_uint8,
+    28 as ::core::ffi::c_int as yytype_uint8,
+    30 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    98 as ::core::ffi::c_int as yytype_uint8,
+    104 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    110 as ::core::ffi::c_int as yytype_uint8,
+    117 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    127 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    43 as ::core::ffi::c_int as yytype_uint8,
+    37 as ::core::ffi::c_int as yytype_uint8,
+    38 as ::core::ffi::c_int as yytype_uint8,
+    39 as ::core::ffi::c_int as yytype_uint8,
+    40 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    45 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    29 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    56 as ::core::ffi::c_int as yytype_uint8,
+    93 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    38 as ::core::ffi::c_int as yytype_uint8,
+    53 as ::core::ffi::c_int as yytype_uint8,
+    54 as ::core::ffi::c_int as yytype_uint8,
+    55 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    43 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    44 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    97 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    116 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    27 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    106 as ::core::ffi::c_int as yytype_uint8,
+    107 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    44 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    129 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    137 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    107 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    111 as ::core::ffi::c_int as yytype_uint8,
+    112 as ::core::ffi::c_int as yytype_uint8,
+    44 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    52 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    46 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    41 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    108 as ::core::ffi::c_int as yytype_uint8,
+    109 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    36 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    48 as ::core::ffi::c_int as yytype_uint8,
+    57 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    112 as ::core::ffi::c_int as yytype_uint8,
+    42 as ::core::ffi::c_int as yytype_uint8,
+    49 as ::core::ffi::c_int as yytype_uint8,
+    109 as ::core::ffi::c_int as yytype_uint8,
+];
+#[no_mangle]
+pub unsafe extern "C" fn parse_next(
+    mut ctx: *mut xkb_context,
+    mut scanner: *mut scanner,
+    mut xkb_file: *mut *mut XkbFile,
+) -> bool {
+    unsafe {
+        let mut ret: ::core::ffi::c_int = 0;
+        let mut param: parser_param = parser_param {
+            ctx: ctx,
+            scanner: scanner,
+            rtrn: ::core::ptr::null_mut::<XkbFile>(),
+            more_maps: false_0 != 0,
+        };
+        ret = _xkbcommon_parse(&raw mut param);
+        if ret == 0 as ::core::ffi::c_int && param.more_maps as ::core::ffi::c_int != 0 {
+            *xkb_file = param.rtrn;
+            return true_0 != 0;
+        } else {
+            FreeXkbFile(param.rtrn);
+            *xkb_file = ::core::ptr::null_mut::<XkbFile>();
+            return ret == 0 as ::core::ffi::c_int;
+        };
+    }
+}
+static mut yyr1: [yytype_uint8; 220] = [
+    0 as ::core::ffi::c_int as yytype_uint8,
+    66 as ::core::ffi::c_int as yytype_uint8,
+    67 as ::core::ffi::c_int as yytype_uint8,
+    67 as ::core::ffi::c_int as yytype_uint8,
+    67 as ::core::ffi::c_int as yytype_uint8,
+    68 as ::core::ffi::c_int as yytype_uint8,
+    69 as ::core::ffi::c_int as yytype_uint8,
+    69 as ::core::ffi::c_int as yytype_uint8,
+    69 as ::core::ffi::c_int as yytype_uint8,
+    70 as ::core::ffi::c_int as yytype_uint8,
+    70 as ::core::ffi::c_int as yytype_uint8,
+    71 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    72 as ::core::ffi::c_int as yytype_uint8,
+    73 as ::core::ffi::c_int as yytype_uint8,
+    73 as ::core::ffi::c_int as yytype_uint8,
+    74 as ::core::ffi::c_int as yytype_uint8,
+    74 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    75 as ::core::ffi::c_int as yytype_uint8,
+    76 as ::core::ffi::c_int as yytype_uint8,
+    76 as ::core::ffi::c_int as yytype_uint8,
+    76 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    77 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    78 as ::core::ffi::c_int as yytype_uint8,
+    79 as ::core::ffi::c_int as yytype_uint8,
+    80 as ::core::ffi::c_int as yytype_uint8,
+    81 as ::core::ffi::c_int as yytype_uint8,
+    82 as ::core::ffi::c_int as yytype_uint8,
+    82 as ::core::ffi::c_int as yytype_uint8,
+    83 as ::core::ffi::c_int as yytype_uint8,
+    83 as ::core::ffi::c_int as yytype_uint8,
+    84 as ::core::ffi::c_int as yytype_uint8,
+    85 as ::core::ffi::c_int as yytype_uint8,
+    85 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    86 as ::core::ffi::c_int as yytype_uint8,
+    87 as ::core::ffi::c_int as yytype_uint8,
+    88 as ::core::ffi::c_int as yytype_uint8,
+    89 as ::core::ffi::c_int as yytype_uint8,
+    89 as ::core::ffi::c_int as yytype_uint8,
+    90 as ::core::ffi::c_int as yytype_uint8,
+    90 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    91 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    92 as ::core::ffi::c_int as yytype_uint8,
+    93 as ::core::ffi::c_int as yytype_uint8,
+    93 as ::core::ffi::c_int as yytype_uint8,
+    93 as ::core::ffi::c_int as yytype_uint8,
+    94 as ::core::ffi::c_int as yytype_uint8,
+    95 as ::core::ffi::c_int as yytype_uint8,
+    96 as ::core::ffi::c_int as yytype_uint8,
+    96 as ::core::ffi::c_int as yytype_uint8,
+    97 as ::core::ffi::c_int as yytype_uint8,
+    97 as ::core::ffi::c_int as yytype_uint8,
+    98 as ::core::ffi::c_int as yytype_uint8,
+    99 as ::core::ffi::c_int as yytype_uint8,
+    99 as ::core::ffi::c_int as yytype_uint8,
+    100 as ::core::ffi::c_int as yytype_uint8,
+    101 as ::core::ffi::c_int as yytype_uint8,
+    102 as ::core::ffi::c_int as yytype_uint8,
+    102 as ::core::ffi::c_int as yytype_uint8,
+    103 as ::core::ffi::c_int as yytype_uint8,
+    104 as ::core::ffi::c_int as yytype_uint8,
+    104 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    105 as ::core::ffi::c_int as yytype_uint8,
+    106 as ::core::ffi::c_int as yytype_uint8,
+    106 as ::core::ffi::c_int as yytype_uint8,
+    107 as ::core::ffi::c_int as yytype_uint8,
+    107 as ::core::ffi::c_int as yytype_uint8,
+    108 as ::core::ffi::c_int as yytype_uint8,
+    108 as ::core::ffi::c_int as yytype_uint8,
+    109 as ::core::ffi::c_int as yytype_uint8,
+    109 as ::core::ffi::c_int as yytype_uint8,
+    110 as ::core::ffi::c_int as yytype_uint8,
+    111 as ::core::ffi::c_int as yytype_uint8,
+    111 as ::core::ffi::c_int as yytype_uint8,
+    112 as ::core::ffi::c_int as yytype_uint8,
+    113 as ::core::ffi::c_int as yytype_uint8,
+    113 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    114 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    115 as ::core::ffi::c_int as yytype_uint8,
+    116 as ::core::ffi::c_int as yytype_uint8,
+    117 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    118 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    119 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    120 as ::core::ffi::c_int as yytype_uint8,
+    121 as ::core::ffi::c_int as yytype_uint8,
+    121 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    122 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    123 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    124 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    125 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    126 as ::core::ffi::c_int as yytype_uint8,
+    127 as ::core::ffi::c_int as yytype_uint8,
+    127 as ::core::ffi::c_int as yytype_uint8,
+    128 as ::core::ffi::c_int as yytype_uint8,
+    129 as ::core::ffi::c_int as yytype_uint8,
+    129 as ::core::ffi::c_int as yytype_uint8,
+    130 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    131 as ::core::ffi::c_int as yytype_uint8,
+    132 as ::core::ffi::c_int as yytype_uint8,
+    132 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    133 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    134 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    135 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    136 as ::core::ffi::c_int as yytype_uint8,
+    137 as ::core::ffi::c_int as yytype_uint8,
+    137 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    138 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    139 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    140 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    141 as ::core::ffi::c_int as yytype_uint8,
+    142 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    143 as ::core::ffi::c_int as yytype_uint8,
+    144 as ::core::ffi::c_int as yytype_uint8,
+    144 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    145 as ::core::ffi::c_int as yytype_uint8,
+    146 as ::core::ffi::c_int as yytype_uint8,
+    147 as ::core::ffi::c_int as yytype_uint8,
+    147 as ::core::ffi::c_int as yytype_uint8,
+    148 as ::core::ffi::c_int as yytype_uint8,
+];
+static mut yyr2: [yytype_int8; 220] = [
+    0 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    7 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    7 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    5 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    4 as ::core::ffi::c_int as yytype_int8,
+    6 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    3 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    2 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+    0 as ::core::ffi::c_int as yytype_int8,
+    1 as ::core::ffi::c_int as yytype_int8,
+];
+pub const YYINITDEPTH: ::core::ffi::c_int = 200 as ::core::ffi::c_int;
+pub const YYMAXDEPTH: ::core::ffi::c_int = 10000 as ::core::ffi::c_int;
+unsafe extern "C" fn yypcontext_expected_tokens(
+    mut yyctx: *const yypcontext_t,
+    mut yyarg: *mut yysymbol_kind_t,
+    mut yyargn: ::core::ffi::c_int,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut yycount: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut yyn: ::core::ffi::c_int =
+            yypact[*(*yyctx).yyssp as ::core::ffi::c_int as usize] as ::core::ffi::c_int;
+        if !(yyn == YYPACT_NINF) {
+            let mut yyxbegin: ::core::ffi::c_int = if yyn < 0 as ::core::ffi::c_int {
+                -yyn
+            } else {
+                0 as ::core::ffi::c_int
+            };
+            let mut yychecklim: ::core::ffi::c_int = YYLAST - yyn + 1 as ::core::ffi::c_int;
+            let mut yyxend: ::core::ffi::c_int = if yychecklim < YYNTOKENS {
+                yychecklim
+            } else {
+                YYNTOKENS
+            };
+            let mut yyx: ::core::ffi::c_int = 0;
+            yyx = yyxbegin;
+            while yyx < yyxend {
+                if yycheck[(yyx + yyn) as usize] as ::core::ffi::c_int == yyx
+                    && yyx != YYSYMBOL_YYerror as ::core::ffi::c_int
+                    && true
+                {
+                    if yyarg.is_null() {
+                        yycount += 1;
+                    } else if yycount == yyargn {
+                        return 0 as ::core::ffi::c_int;
+                    } else {
+                        let c2rust_fresh4 = yycount;
+                        yycount = yycount + 1;
+                        *yyarg.offset(c2rust_fresh4 as isize) = yyx as yysymbol_kind_t;
+                    }
+                }
+                yyx += 1;
+            }
+        }
+        if !yyarg.is_null()
+            && yycount == 0 as ::core::ffi::c_int
+            && (0 as ::core::ffi::c_int) < yyargn
+        {
+            *yyarg.offset(0 as ::core::ffi::c_int as isize) = YYSYMBOL_YYEMPTY;
+        }
+        return yycount;
+    }
+}
+unsafe extern "C" fn yy_syntax_error_arguments(
+    mut yyctx: *const yypcontext_t,
+    mut yyarg: *mut yysymbol_kind_t,
+    mut yyargn: ::core::ffi::c_int,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut yycount: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        if (*yyctx).yytoken as ::core::ffi::c_int != YYSYMBOL_YYEMPTY as ::core::ffi::c_int {
+            let mut yyn: ::core::ffi::c_int = 0;
+            if !yyarg.is_null() {
+                *yyarg.offset(yycount as isize) = (*yyctx).yytoken;
+            }
+            yycount += 1;
+            yyn = yypcontext_expected_tokens(
+                yyctx,
+                if !yyarg.is_null() {
+                    yyarg.offset(1 as ::core::ffi::c_int as isize)
+                } else {
+                    yyarg
+                },
+                yyargn - 1 as ::core::ffi::c_int,
+            );
+            if yyn == YYENOMEM as ::core::ffi::c_int {
+                return YYENOMEM as ::core::ffi::c_int;
+            } else {
+                yycount += yyn;
+            }
+        }
+        return yycount;
+    }
+}
+unsafe extern "C" fn yysyntax_error(
+    mut yymsg_alloc: *mut ::core::ffi::c_long,
+    mut yymsg: *mut *mut ::core::ffi::c_char,
+    mut yyctx: *const yypcontext_t,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut yyformat: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
+        let mut yysize: ::core::ffi::c_long = 0 as ::core::ffi::c_long;
+        let mut yycount: ::core::ffi::c_int = yy_syntax_error_arguments(
+            yyctx,
+            &raw mut yyarg as *mut yysymbol_kind_t,
+            YYARGS_MAX as ::core::ffi::c_int,
+        );
+        if yycount == YYENOMEM as ::core::ffi::c_int {
+            return YYENOMEM as ::core::ffi::c_int;
+        }
+        match yycount {
+            1 => {
+                yyformat = b"syntax error, unexpected %s\0".as_ptr() as *const ::core::ffi::c_char;
+            }
+            2 => {
+                yyformat = b"syntax error, unexpected %s, expecting %s\0".as_ptr()
+                    as *const ::core::ffi::c_char;
+            }
+            3 => {
+                yyformat = b"syntax error, unexpected %s, expecting %s or %s\0".as_ptr()
+                    as *const ::core::ffi::c_char;
+            }
+            4 => {
+                yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s\0".as_ptr()
+                    as *const ::core::ffi::c_char;
+            }
+            5 => {
+                yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s or %s\0".as_ptr()
+                    as *const ::core::ffi::c_char;
+            }
+            0 | _ => {
+                yyformat = b"syntax error\0".as_ptr() as *const ::core::ffi::c_char;
+            }
+        }
+        yysize = strlen(yyformat) as ::core::ffi::c_long
+            - (2 as ::core::ffi::c_int * yycount) as ::core::ffi::c_long
+            + 1 as ::core::ffi::c_long;
+        let mut yyi: ::core::ffi::c_int = 0;
+        yyi = 0 as ::core::ffi::c_int;
+        while yyi < yycount {
+            let mut yysize1: ::core::ffi::c_long =
+                yysize + strlen(yysymbol_name(yyarg[yyi as usize])) as ::core::ffi::c_long;
+            if yysize <= yysize1
+                && yysize1
+                    <= (if (9223372036854775807 as ::core::ffi::c_long as ::core::ffi::c_ulong)
+                        < -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                    {
+                        9223372036854775807 as ::core::ffi::c_long as ::core::ffi::c_ulong
+                    } else {
+                        -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                    }) as ::core::ffi::c_long
+            {
+                yysize = yysize1;
+            } else {
+                return YYENOMEM as ::core::ffi::c_int;
+            }
+            yyi += 1;
+        }
+        if *yymsg_alloc < yysize {
+            *yymsg_alloc = 2 as ::core::ffi::c_long * yysize;
+            if !(yysize <= *yymsg_alloc
+                && *yymsg_alloc
+                    <= (if (9223372036854775807 as ::core::ffi::c_long as ::core::ffi::c_ulong)
+                        < -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                    {
+                        9223372036854775807 as ::core::ffi::c_long as ::core::ffi::c_ulong
+                    } else {
+                        -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                    }) as ::core::ffi::c_long)
+            {
+                *yymsg_alloc = (if (9223372036854775807 as ::core::ffi::c_long
+                    as ::core::ffi::c_ulong)
+                    < -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                {
+                    9223372036854775807 as ::core::ffi::c_long as ::core::ffi::c_ulong
+                } else {
+                    -1 as ::core::ffi::c_int as ::core::ffi::c_ulong
+                }) as ::core::ffi::c_long;
+            }
+            return -1 as ::core::ffi::c_int;
+        }
+        let mut yyp: *mut ::core::ffi::c_char = *yymsg;
+        let mut yyi_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        loop {
+            *yyp = *yyformat;
+            if !(*yyp as ::core::ffi::c_int != '\0' as i32) {
+                break;
+            }
+            if *yyp as ::core::ffi::c_int == '%' as i32
+                && *yyformat.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+                    == 's' as i32
+                && yyi_0 < yycount
+            {
+                let c2rust_fresh3 = yyi_0;
+                yyi_0 = yyi_0 + 1;
+                yyp = stpcpy(yyp, yysymbol_name(yyarg[c2rust_fresh3 as usize]));
+                yyformat = yyformat.offset(2 as ::core::ffi::c_int as isize);
+            } else {
+                yyp = yyp.offset(1);
+                yyformat = yyformat.offset(1);
+            }
+        }
+        return 0 as ::core::ffi::c_int;
+    }
+}
+unsafe extern "C" fn yydestruct(
+    mut yymsg: *const ::core::ffi::c_char,
+    mut yykind: yysymbol_kind_t,
+    mut yyvaluep: *mut YYSTYPE,
+    mut param: *mut parser_param,
+) {
+    unsafe {
+        if yymsg.is_null() {
+            yymsg = b"Deleting\0".as_ptr() as *const ::core::ffi::c_char;
+        }
+        match yykind as ::core::ffi::c_int {
+            52 => {
+                free((*yyvaluep).str as *mut ::core::ffi::c_void);
+            }
+            67 => {
+                if (*param).rtrn.is_null() {
+                    FreeXkbFile((*yyvaluep).file);
+                }
+            }
+            68 => {
+                if (*param).rtrn.is_null() {
+                    FreeXkbFile((*yyvaluep).file);
+                }
+            }
+            70 => {
+                FreeXkbFile((*yyvaluep).fileList.head);
+            }
+            71 => {
+                if (*param).rtrn.is_null() {
+                    FreeXkbFile((*yyvaluep).file);
+                }
+            }
+            76 => {
+                FreeStmt((*yyvaluep).anyList.head);
+            }
+            77 => {
+                FreeStmt((*yyvaluep).any);
+            }
+            78 => {
+                FreeStmt((*yyvaluep).var as *mut ParseCommon);
+            }
+            79 => {
+                FreeStmt((*yyvaluep).keyCode as *mut ParseCommon);
+            }
+            80 => {
+                FreeStmt((*yyvaluep).keyAlias as *mut ParseCommon);
+            }
+            81 => {
+                FreeStmt((*yyvaluep).vmodList.head as *mut ParseCommon);
+            }
+            82 => {
+                FreeStmt((*yyvaluep).vmodList.head as *mut ParseCommon);
+            }
+            83 => {
+                FreeStmt((*yyvaluep).vmod as *mut ParseCommon);
+            }
+            84 => {
+                FreeStmt((*yyvaluep).interp as *mut ParseCommon);
+            }
+            85 => {
+                FreeStmt((*yyvaluep).interp as *mut ParseCommon);
+            }
+            86 => {
+                FreeStmt((*yyvaluep).varList.head as *mut ParseCommon);
+            }
+            87 => {
+                FreeStmt((*yyvaluep).keyType as *mut ParseCommon);
+            }
+            88 => {
+                FreeStmt((*yyvaluep).syms as *mut ParseCommon);
+            }
+            89 => {
+                FreeStmt((*yyvaluep).varList.head as *mut ParseCommon);
+            }
+            90 => {
+                FreeStmt((*yyvaluep).varList.head as *mut ParseCommon);
+            }
+            91 => {
+                FreeStmt((*yyvaluep).var as *mut ParseCommon);
+            }
+            92 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            94 => {
+                FreeStmt((*yyvaluep).groupCompat as *mut ParseCommon);
+            }
+            95 => {
+                FreeStmt((*yyvaluep).modMask as *mut ParseCommon);
+            }
+            96 => {
+                FreeStmt((*yyvaluep).exprList.head as *mut ParseCommon);
+            }
+            97 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            98 => {
+                FreeStmt((*yyvaluep).ledMap as *mut ParseCommon);
+            }
+            99 => {
+                FreeStmt((*yyvaluep).ledName as *mut ParseCommon);
+            }
+            115 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            116 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            123 => {
+                FreeStmt((*yyvaluep).exprList.head as *mut ParseCommon);
+            }
+            124 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            125 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            126 => {
+                FreeStmt((*yyvaluep).exprList.head as *mut ParseCommon);
+            }
+            127 => {
+                FreeStmt((*yyvaluep).exprList.head as *mut ParseCommon);
+            }
+            128 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            129 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            130 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            131 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            132 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            133 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            134 => {
+                FreeStmt((*yyvaluep).exprList.head as *mut ParseCommon);
+            }
+            135 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            136 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            137 => {
+                FreeStmt((*yyvaluep).expr as *mut ParseCommon);
+            }
+            147 => {
+                free((*yyvaluep).str as *mut ::core::ffi::c_void);
+            }
+            148 => {
+                free((*yyvaluep).str as *mut ::core::ffi::c_void);
+            }
+            _ => {}
+        };
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_int {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        let mut yychar: ::core::ffi::c_int = 0;
+        static mut yyval_default: YYSTYPE = YYSTYPE { num: 0 };
+        let mut yylval: YYSTYPE = yyval_default;
+        let mut _xkbcommon_nerrs: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut yystate: yy_state_fast_t = 0 as yy_state_fast_t;
+        let mut yyerrstatus: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut yystacksize: ::core::ffi::c_long = YYINITDEPTH as ::core::ffi::c_long;
+        let mut yyssa: [yy_state_t; 200] = [0; 200];
+        let mut yyss: *mut yy_state_t = &raw mut yyssa as *mut yy_state_t;
+        let mut yyssp: *mut yy_state_t = yyss;
+        let mut yyvsa: [YYSTYPE; 200] = [YYSTYPE { num: 0 }; 200];
+        let mut yyvs: *mut YYSTYPE = &raw mut yyvsa as *mut YYSTYPE;
+        let mut yyvsp: *mut YYSTYPE = yyvs;
+        let mut yyn: ::core::ffi::c_int = 0;
+        let mut yyresult: ::core::ffi::c_int = 0;
+        let mut yytoken: yysymbol_kind_t = YYSYMBOL_YYEMPTY;
+        let mut yyval: YYSTYPE = YYSTYPE { num: 0 };
+        let mut yymsgbuf: [::core::ffi::c_char; 128] = [0; 128];
+        let mut yymsg: *mut ::core::ffi::c_char = &raw mut yymsgbuf as *mut ::core::ffi::c_char;
+        let mut yymsg_alloc: ::core::ffi::c_long =
+            ::core::mem::size_of::<[::core::ffi::c_char; 128]>() as ::core::ffi::c_long;
+        let mut yylen: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        yychar = YYEMPTY as ::core::ffi::c_int;
+        's_60: loop {
+            (false && (0 as ::core::ffi::c_int <= yystate && yystate < 384 as ::core::ffi::c_int))
+                as ::core::ffi::c_int;
+            *yyssp = yystate as yy_state_t;
+            if yyss
+                .offset(yystacksize as isize)
+                .offset(-(1 as ::core::ffi::c_int as isize))
+                <= yyssp
+            {
+                let mut yysize: ::core::ffi::c_long =
+                    yyssp.offset_from(yyss) as ::core::ffi::c_long + 1 as ::core::ffi::c_long;
+                if YYMAXDEPTH as ::core::ffi::c_long <= yystacksize {
+                    c2rust_current_block = 9310790481625056212;
+                    break;
+                }
+                yystacksize *= 2 as ::core::ffi::c_long;
+                if (YYMAXDEPTH as ::core::ffi::c_long) < yystacksize {
+                    yystacksize = YYMAXDEPTH as ::core::ffi::c_long;
+                }
+                let mut yyss1: *mut yy_state_t = yyss;
+                let mut yyptr: *mut yyalloc = malloc(
+                    (yystacksize
+                        * (::core::mem::size_of::<yy_state_t>() as ::core::ffi::c_long
+                            + ::core::mem::size_of::<YYSTYPE>() as ::core::ffi::c_long)
+                        + (::core::mem::size_of::<yyalloc>() as ::core::ffi::c_long
+                            - 1 as ::core::ffi::c_long)) as size_t,
+                ) as *mut yyalloc;
+                if yyptr.is_null() {
+                    c2rust_current_block = 9310790481625056212;
+                    break;
+                }
+                let mut yynewbytes: ::core::ffi::c_long = 0;
+                ::libc::memcpy(
+                    &raw mut (*yyptr).yyss_alloc as *mut ::core::ffi::c_void,
+                    yyss as *const ::core::ffi::c_void,
+                    (yysize as usize).wrapping_mul(::core::mem::size_of::<yy_state_t>() as usize)
+                        as ::libc::size_t,
+                );
+                yyss = &raw mut (*yyptr).yyss_alloc;
+                yynewbytes = yystacksize
+                    * ::core::mem::size_of::<yy_state_t>() as ::core::ffi::c_long
+                    + YYSTACK_GAP_MAXIMUM;
+                yyptr = yyptr.offset(
+                    (yynewbytes / ::core::mem::size_of::<yyalloc>() as ::core::ffi::c_long)
+                        as isize,
+                );
+                let mut yynewbytes_0: ::core::ffi::c_long = 0;
+                ::libc::memcpy(
+                    &raw mut (*yyptr).yyvs_alloc as *mut ::core::ffi::c_void,
+                    yyvs as *const ::core::ffi::c_void,
+                    (yysize as usize).wrapping_mul(::core::mem::size_of::<YYSTYPE>() as usize)
+                        as ::libc::size_t,
+                );
+                yyvs = &raw mut (*yyptr).yyvs_alloc;
+                yynewbytes_0 = yystacksize
+                    * ::core::mem::size_of::<YYSTYPE>() as ::core::ffi::c_long
+                    + YYSTACK_GAP_MAXIMUM;
+                yyptr = yyptr.offset(
+                    (yynewbytes_0 / ::core::mem::size_of::<yyalloc>() as ::core::ffi::c_long)
+                        as isize,
+                );
+                if yyss1 != &raw mut yyssa as *mut yy_state_t {
+                    free(yyss1 as *mut ::core::ffi::c_void);
+                }
+                yyssp = yyss
+                    .offset(yysize as isize)
+                    .offset(-(1 as ::core::ffi::c_int as isize));
+                yyvsp = yyvs
+                    .offset(yysize as isize)
+                    .offset(-(1 as ::core::ffi::c_int as isize));
+                if yyss
+                    .offset(yystacksize as isize)
+                    .offset(-(1 as ::core::ffi::c_int as isize))
+                    <= yyssp
+                {
+                    c2rust_current_block = 7267896227379959561;
+                    break;
+                }
+            }
+            if yystate == YYFINAL {
+                c2rust_current_block = 5508412643396263508;
+                break;
+            }
+            yyn = yypact[yystate as usize] as ::core::ffi::c_int;
+            if yyn == YYPACT_NINF {
+                c2rust_current_block = 16146138031620631371;
+            } else {
+                if yychar == YYEMPTY as ::core::ffi::c_int {
+                    yychar = _xkbcommon_lex(&raw mut yylval, (*param).scanner);
+                }
+                if yychar <= END_OF_FILE as ::core::ffi::c_int {
+                    yychar = END_OF_FILE as ::core::ffi::c_int;
+                    yytoken = YYSYMBOL_YYEOF;
+                    c2rust_current_block = 3689906465960840878;
+                } else if yychar == YYerror as ::core::ffi::c_int {
+                    yychar = YYUNDEF as ::core::ffi::c_int;
+                    yytoken = YYSYMBOL_YYerror;
+                    c2rust_current_block = 12965144090463719536;
+                } else {
+                    yytoken = (if 0 as ::core::ffi::c_int <= yychar && yychar <= YYMAXUTOK {
+                        yytranslate[yychar as usize] as yysymbol_kind_t as ::core::ffi::c_int
+                    } else {
+                        YYSYMBOL_YYUNDEF as ::core::ffi::c_int
+                    }) as yysymbol_kind_t;
+                    c2rust_current_block = 3689906465960840878;
+                }
+                match c2rust_current_block {
+                    12965144090463719536 => {}
+                    _ => {
+                        yyn += yytoken as ::core::ffi::c_int;
+                        if yyn < 0 as ::core::ffi::c_int
+                            || YYLAST < yyn
+                            || yycheck[yyn as usize] as ::core::ffi::c_int
+                                != yytoken as ::core::ffi::c_int
+                        {
+                            c2rust_current_block = 16146138031620631371;
+                        } else {
+                            yyn = yytable[yyn as usize] as ::core::ffi::c_int;
+                            if yyn <= 0 as ::core::ffi::c_int {
+                                yyn = -yyn;
+                                c2rust_current_block = 18373490478049949584;
+                            } else {
+                                if yyerrstatus != 0 {
+                                    yyerrstatus -= 1;
+                                }
+                                yystate = yyn as yy_state_fast_t;
+                                yyvsp = yyvsp.offset(1);
+                                *yyvsp = yylval;
+                                yychar = YYEMPTY as ::core::ffi::c_int;
+                                c2rust_current_block = 10430565463943277256;
+                            }
+                        }
+                    }
+                }
+            }
+            match c2rust_current_block {
+                16146138031620631371 => {
+                    yyn = yydefact[yystate as usize] as ::core::ffi::c_int;
+                    if yyn == 0 as ::core::ffi::c_int {
+                        yytoken = (if yychar == YYEMPTY as ::core::ffi::c_int {
+                            YYSYMBOL_YYEMPTY as ::core::ffi::c_int
+                        } else if 0 as ::core::ffi::c_int <= yychar && yychar <= YYMAXUTOK {
+                            yytranslate[yychar as usize] as yysymbol_kind_t as ::core::ffi::c_int
+                        } else {
+                            YYSYMBOL_YYUNDEF as ::core::ffi::c_int
+                        }) as yysymbol_kind_t;
+                        if yyerrstatus == 0 {
+                            _xkbcommon_nerrs += 1;
+                            let mut yyctx: yypcontext_t = yypcontext_t {
+                                yyssp: yyssp,
+                                yytoken: yytoken,
+                            };
+                            let mut yymsgp: *const ::core::ffi::c_char =
+                                b"syntax error\0".as_ptr() as *const ::core::ffi::c_char;
+                            let mut yysyntax_error_status: ::core::ffi::c_int = 0;
+                            yysyntax_error_status = yysyntax_error(
+                                &raw mut yymsg_alloc,
+                                &raw mut yymsg,
+                                &raw mut yyctx,
+                            );
+                            if yysyntax_error_status == 0 as ::core::ffi::c_int {
+                                yymsgp = yymsg;
+                            } else if yysyntax_error_status == -1 as ::core::ffi::c_int {
+                                if yymsg != &raw mut yymsgbuf as *mut ::core::ffi::c_char {
+                                    free(yymsg as *mut ::core::ffi::c_void);
+                                }
+                                yymsg = malloc(yymsg_alloc as size_t) as *mut ::core::ffi::c_char;
+                                if !yymsg.is_null() {
+                                    yysyntax_error_status = yysyntax_error(
+                                        &raw mut yymsg_alloc,
+                                        &raw mut yymsg,
+                                        &raw mut yyctx,
+                                    );
+                                    yymsgp = yymsg;
+                                } else {
+                                    yymsg = &raw mut yymsgbuf as *mut ::core::ffi::c_char;
+                                    yymsg_alloc =
+                                        ::core::mem::size_of::<[::core::ffi::c_char; 128]>()
+                                            as ::core::ffi::c_long;
+                                    yysyntax_error_status = YYENOMEM as ::core::ffi::c_int;
+                                }
+                            }
+                            _xkbcommon_error(param, yymsgp);
+                            if yysyntax_error_status == YYENOMEM as ::core::ffi::c_int {
+                                c2rust_current_block = 9310790481625056212;
+                                break;
+                            }
+                        }
+                        if yyerrstatus == 3 as ::core::ffi::c_int {
+                            if yychar <= END_OF_FILE as ::core::ffi::c_int {
+                                if yychar == END_OF_FILE as ::core::ffi::c_int {
+                                    c2rust_current_block = 7267896227379959561;
+                                    break;
+                                }
+                            } else {
+                                yydestruct(
+                                    b"Error: discarding\0".as_ptr() as *const ::core::ffi::c_char,
+                                    yytoken,
+                                    &raw mut yylval,
+                                    param,
+                                );
+                                yychar = YYEMPTY as ::core::ffi::c_int;
+                            }
+                        }
+                        c2rust_current_block = 12965144090463719536;
+                    } else {
+                        c2rust_current_block = 18373490478049949584;
+                    }
+                }
+                _ => {}
+            }
+            match c2rust_current_block {
+                18373490478049949584 => {
+                    yylen = yyr2[yyn as usize] as ::core::ffi::c_int;
+                    yyval = *yyvsp.offset((1 as ::core::ffi::c_int - yylen) as isize);
+                    match yyn {
+                        2 => {
+                            (*param).rtrn = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).file;
+                            yyval.file = (*param).rtrn;
+                            (*param).more_maps = !(*param).rtrn.is_null();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        3 => {
+                            (*param).rtrn = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).file;
+                            yyval.file = (*param).rtrn;
+                            (*param).more_maps = !(*param).rtrn.is_null();
+                            c2rust_current_block = 5508412643396263508;
+                            break;
+                        }
+                        4 => {
+                            (*param).rtrn = ::core::ptr::null_mut::<XkbFile>();
+                            yyval.file = (*param).rtrn;
+                            (*param).more_maps = false_0 != 0;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        5 => {
+                            yyval.file = XkbFileCreate(
+                                (*yyvsp.offset(-5 as ::core::ffi::c_int as isize)).file_type,
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).str,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .fileList
+                                    .head as *mut ParseCommon,
+                                (*yyvsp.offset(-6 as ::core::ffi::c_int as isize)).mapFlags,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        6 => {
+                            yyval.file_type = FILE_TYPE_KEYMAP;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        7 => {
+                            yyval.file_type = FILE_TYPE_KEYMAP;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        8 => {
+                            yyval.file_type = FILE_TYPE_KEYMAP;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        9 => {
+                            if !(*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                .file
+                                .is_null()
+                            {
+                                if !(*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .fileList
+                                    .head
+                                    .is_null()
+                                {
+                                    yyval.fileList.head = (*yyvsp
+                                        .offset(-1 as ::core::ffi::c_int as isize))
+                                    .fileList
+                                    .head;
+                                    (*yyval.fileList.last).common.next = &raw mut (*(*yyvsp
+                                        .offset(0 as ::core::ffi::c_int as isize))
+                                    .file)
+                                        .common
+                                        as *mut _ParseCommon;
+                                    yyval.fileList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).file;
+                                } else {
+                                    yyval.fileList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).file;
+                                    yyval.fileList.head = yyval.fileList.last;
+                                }
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        10 => {
+                            yyval.fileList.last = ::core::ptr::null_mut::<XkbFile>();
+                            yyval.fileList.head = yyval.fileList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        11 => {
+                            yyval.file = XkbFileCreate(
+                                (*yyvsp.offset(-5 as ::core::ffi::c_int as isize)).file_type,
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).str,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .anyList
+                                    .head,
+                                (*yyvsp.offset(-6 as ::core::ffi::c_int as isize)).mapFlags,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        12 => {
+                            yyval.file_type = FILE_TYPE_KEYCODES;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        13 => {
+                            yyval.file_type = FILE_TYPE_TYPES;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        14 => {
+                            yyval.file_type = FILE_TYPE_COMPAT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        15 => {
+                            yyval.file_type = FILE_TYPE_SYMBOLS;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        16 => {
+                            yyval.file_type = FILE_TYPE_GEOMETRY;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        17 => {
+                            yyval.mapFlags =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).mapFlags;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        18 => {
+                            yyval.mapFlags = 0 as xkb_map_flags;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        19 => {
+                            yyval.mapFlags = ((*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                .mapFlags
+                                as ::core::ffi::c_uint
+                                | (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).mapFlags
+                                    as ::core::ffi::c_uint)
+                                as xkb_map_flags;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        20 => {
+                            yyval.mapFlags =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).mapFlags;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        21 => {
+                            yyval.mapFlags = MAP_IS_PARTIAL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        22 => {
+                            yyval.mapFlags = MAP_IS_DEFAULT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        23 => {
+                            yyval.mapFlags = MAP_IS_HIDDEN;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        24 => {
+                            yyval.mapFlags = MAP_HAS_ALPHANUMERIC;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        25 => {
+                            yyval.mapFlags = MAP_HAS_MODIFIER;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        26 => {
+                            yyval.mapFlags = MAP_HAS_KEYPAD;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        27 => {
+                            yyval.mapFlags = MAP_HAS_FN;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        28 => {
+                            yyval.mapFlags = MAP_IS_ALTGR;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        29 => {
+                            if !(*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                .any
+                                .is_null()
+                            {
+                                if !(*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .anyList
+                                    .head
+                                    .is_null()
+                                {
+                                    yyval.anyList.head = (*yyvsp
+                                        .offset(-1 as ::core::ffi::c_int as isize))
+                                    .anyList
+                                    .head;
+                                    let ref mut c2rust_fresh0 = (*(*yyvsp
+                                        .offset(-1 as ::core::ffi::c_int as isize))
+                                    .anyList
+                                    .last)
+                                        .next;
+                                    *c2rust_fresh0 =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).any
+                                            as *mut _ParseCommon;
+                                    yyval.anyList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).any;
+                                } else {
+                                    yyval.anyList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).any;
+                                    yyval.anyList.head = yyval.anyList.last;
+                                }
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        30 => {
+                            let mut vmod: *mut VModDef = (*yyvsp
+                                .offset(0 as ::core::ffi::c_int as isize))
+                            .vmodList
+                            .head;
+                            while !vmod.is_null() {
+                                (*vmod).merge =
+                                    (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                                vmod = (*vmod).common.next as *mut VModDef;
+                            }
+                            if !(*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                .anyList
+                                .head
+                                .is_null()
+                            {
+                                yyval.anyList.head = (*yyvsp
+                                    .offset(-2 as ::core::ffi::c_int as isize))
+                                .anyList
+                                .head;
+                                let ref mut c2rust_fresh1 = (*(*yyvsp
+                                    .offset(-2 as ::core::ffi::c_int as isize))
+                                .anyList
+                                .last)
+                                    .next;
+                                *c2rust_fresh1 = &raw mut (*(*yyvsp
+                                    .offset(0 as ::core::ffi::c_int as isize))
+                                .vmodList
+                                .head)
+                                    .common
+                                    as *mut _ParseCommon;
+                                yyval.anyList.last = &raw mut (*(*yyvsp
+                                    .offset(0 as ::core::ffi::c_int as isize))
+                                .vmodList
+                                .last)
+                                    .common;
+                            } else {
+                                yyval.anyList.head = &raw mut (*(*yyvsp
+                                    .offset(0 as ::core::ffi::c_int as isize))
+                                .vmodList
+                                .head)
+                                    .common;
+                                yyval.anyList.last = &raw mut (*(*yyvsp
+                                    .offset(0 as ::core::ffi::c_int as isize))
+                                .vmodList
+                                .last)
+                                    .common;
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        31 => {
+                            yyval.anyList.last = ::core::ptr::null_mut::<ParseCommon>();
+                            yyval.anyList.head = yyval.anyList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        32 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        33 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).interp).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).interp
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        34 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyCode).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyCode
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        35 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyAlias).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyAlias
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        36 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyType).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keyType
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        37 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).syms).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).syms
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        38 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).modMask).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).modMask
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        39 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).groupCompat)
+                                .merge = (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                .groupCompat
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        40 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledMap).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledMap
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        41 => {
+                            (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledName).merge =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge;
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledName
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        42 => {
+                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        43 => {
+                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        44 => {
+                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        45 => {
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).unknown
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        46 => {
+                            yyval.any = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).unknown
+                                as *mut ParseCommon;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        47 => {
+                            yyval.any = IncludeCreate(
+                                (*param).ctx,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).merge,
+                            ) as *mut ParseCommon;
+                            free(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                    as *mut ::core::ffi::c_void,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        48 => {
+                            yyval.var = VarCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        49 => {
+                            yyval.var = BoolVarCreate(
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).atom,
+                                true_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        50 => {
+                            yyval.var = BoolVarCreate(
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).atom,
+                                false_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        51 => {
+                            yyval.keyCode = KeycodeCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).num,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        52 => {
+                            yyval.keyAlias = KeyAliasCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        53 => {
+                            yyval.vmodList =
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).vmodList;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        54 => {
+                            yyval.vmodList.head = (*yyvsp
+                                .offset(-2 as ::core::ffi::c_int as isize))
+                            .vmodList
+                            .head;
+                            (*yyval.vmodList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).vmod)
+                                    .common as *mut _ParseCommon;
+                            yyval.vmodList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).vmod;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        55 => {
+                            yyval.vmodList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).vmod;
+                            yyval.vmodList.head = yyval.vmodList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        56 => {
+                            yyval.vmod = VModCreate(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                                ::core::ptr::null_mut::<ExprDef>(),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        57 => {
+                            yyval.vmod = VModCreate(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        58 => {
+                            let ref mut c2rust_fresh2 =
+                                (*(*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).interp).def;
+                            *c2rust_fresh2 = (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                .varList
+                                .head;
+                            yyval.interp =
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).interp;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        59 => {
+                            yyval.interp = InterpCreate(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).keysym,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        60 => {
+                            yyval.interp = InterpCreate(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                                ::core::ptr::null_mut::<ExprDef>(),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        61 => {
+                            if !(*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                .var
+                                .is_null()
+                            {
+                                if !(*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head
+                                    .is_null()
+                                {
+                                    yyval.varList.head = (*yyvsp
+                                        .offset(-1 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head;
+                                    (*yyval.varList.last).common.next = &raw mut (*(*yyvsp
+                                        .offset(0 as ::core::ffi::c_int as isize))
+                                    .var)
+                                        .common
+                                        as *mut _ParseCommon;
+                                    yyval.varList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var;
+                                } else {
+                                    yyval.varList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var;
+                                    yyval.varList.head = yyval.varList.last;
+                                }
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        62 => {
+                            yyval.varList.last = ::core::ptr::null_mut::<VarDef>();
+                            yyval.varList.head = yyval.varList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        63 => {
+                            yyval.keyType = KeyTypeCreate(
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        64 => {
+                            yyval.syms = SymbolsCreate(
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        65 => {
+                            yyval.varList =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).varList;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        66 => {
+                            yyval.varList.last = ::core::ptr::null_mut::<VarDef>();
+                            yyval.varList.head = yyval.varList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        67 => {
+                            yyval.varList.head = (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                .varList
+                                .head;
+                            (*yyval.varList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var)
+                                    .common as *mut _ParseCommon;
+                            yyval.varList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        68 => {
+                            yyval.varList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var;
+                            yyval.varList.head = yyval.varList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        69 => {
+                            yyval.var = VarCreate(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        70 => {
+                            yyval.var = VarCreate(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        71 => {
+                            yyval.var = BoolVarCreate(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                                true_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        72 => {
+                            yyval.var = BoolVarCreate(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                                false_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        73 => {
+                            yyval.var = VarCreate(
+                                ::core::ptr::null_mut::<ExprDef>(),
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        74 => {
+                            yyval.expr = (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                .exprList
+                                .head;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        75 => {
+                            let mut list: C2Rust_Unnamed_9 = C2Rust_Unnamed_9 {
+                                head: (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                                last: (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .last,
+                            };
+                            let mut k: uint32_t = 0 as uint32_t;
+                            while k
+                                < (*yyvsp.offset(-3 as ::core::ffi::c_int as isize))
+                                    .noSymbolOrActionList
+                            {
+                                let syms: *mut ExprDef =
+                                    ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t)
+                                        as *mut ExprDef;
+                                if syms.is_null() {
+                                    c2rust_current_block = 7267896227379959561;
+                                    break 's_60;
+                                }
+                                (*syms).common.next =
+                                    &raw mut (*list.head).common as *mut _ParseCommon;
+                                list.head = syms;
+                                k = k.wrapping_add(1);
+                            }
+                            yyval.expr = list.head;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        76 => {
+                            yyval.expr = (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                .exprList
+                                .head;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        77 => {
+                            let mut list_0: C2Rust_Unnamed_8 = C2Rust_Unnamed_8 {
+                                head: (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                                last: (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .last,
+                            };
+                            let mut k_0: uint32_t = 0 as uint32_t;
+                            while k_0
+                                < (*yyvsp.offset(-3 as ::core::ffi::c_int as isize))
+                                    .noSymbolOrActionList
+                            {
+                                let acts: *mut ExprDef =
+                                    ExprCreateActionList(::core::ptr::null_mut::<ExprDef>())
+                                        as *mut ExprDef;
+                                if acts.is_null() {
+                                    c2rust_current_block = 7267896227379959561;
+                                    break 's_60;
+                                }
+                                (*acts).common.next =
+                                    &raw mut (*list_0.head).common as *mut _ParseCommon;
+                                list_0.head = acts;
+                                k_0 = k_0.wrapping_add(1);
+                            }
+                            yyval.expr = list_0.head;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        78 => {
+                            yyval.expr = ExprEmptyList();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        79 => {
+                            yyval.noSymbolOrActionList = (*yyvsp
+                                .offset(-3 as ::core::ffi::c_int as isize))
+                            .noSymbolOrActionList
+                            .wrapping_add(1 as uint32_t);
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        80 => {
+                            yyval.noSymbolOrActionList = 1 as uint32_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        81 => {
+                            yyval.noSymbolOrActionList = 0 as uint32_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        82 => {
+                            yyval.groupCompat = GroupCompatCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).num,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        83 => {
+                            yyval.modMask = ModMapCreate(
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        84 => {
+                            yyval.exprList.head = (*yyvsp
+                                .offset(-2 as ::core::ffi::c_int as isize))
+                            .exprList
+                            .head;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr)
+                                    .common as *mut _ParseCommon;
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        85 => {
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        86 => {
+                            yyval.expr = ExprCreateKeyName(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        87 => {
+                            yyval.expr = ExprCreateKeySym(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        88 => {
+                            yyval.ledMap = LedMapCreate(
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        89 => {
+                            yyval.ledName = LedNameCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).num,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                                false_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        90 => {
+                            yyval.ledName = LedNameCreate(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).num,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                                true_0 != 0,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        91 => {
+                            FreeStmt(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).expr
+                                    as *mut ParseCommon,
+                            );
+                            FreeStmt(
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr
+                                    as *mut ParseCommon,
+                            );
+                            yyval.unknown = UnknownStatementCreate(
+                                STMT_UNKNOWN_DECLARATION,
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).sval,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        92 => {
+                            FreeStmt(
+                                (*yyvsp.offset(-4 as ::core::ffi::c_int as isize)).expr
+                                    as *mut ParseCommon,
+                            );
+                            FreeStmt(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head as *mut ParseCommon,
+                            );
+                            yyval.unknown = UnknownStatementCreate(
+                                STMT_UNKNOWN_COMPOUND,
+                                (*yyvsp.offset(-5 as ::core::ffi::c_int as isize)).sval,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        93 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        94 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        95 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        96 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        97 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        98 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        99 => {
+                            FreeStmt(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var
+                                    as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        100 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        101 => {
+                            FreeStmt(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledMap
+                                    as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        102 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        103 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        104 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        105 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        106 => {
+                            FreeStmt(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var
+                                    as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        107 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        108 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        109 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        110 => {
+                            FreeStmt(
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        111 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        112 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        113 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        114 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        115 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        116 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        117 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        118 => {
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        119 => {
+                            FreeStmt(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr
+                                    as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        120 => {
+                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        121 => {
+                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        122 => {
+                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        123 => {
+                            FreeStmt(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .varList
+                                    .head as *mut ParseCommon,
+                            );
+                            yyval.geom = NULL;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        124 => {
+                            yyval.num = 0 as int64_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        125 => {
+                            yyval.num = 0 as int64_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        126 => {
+                            yyval.num = 0 as int64_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        127 => {
+                            yyval.num = 0 as int64_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        128 => {
+                            yyval.atom = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        129 => {
+                            yyval.atom = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        130 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"action\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        131 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"interpret\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        132 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"type\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        133 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"key\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        134 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"group\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        135 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"modifier_map\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 13]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        136 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        137 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"shape\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        138 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"row\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        139 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"section\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        140 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"text\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        141 => {
+                            yyval.merge = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).merge;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        142 => {
+                            yyval.merge = MERGE_DEFAULT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        143 => {
+                            yyval.merge = MERGE_DEFAULT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        144 => {
+                            yyval.merge = MERGE_AUGMENT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        145 => {
+                            yyval.merge = MERGE_OVERRIDE;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        146 => {
+                            yyval.merge = MERGE_REPLACE;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        147 => {
+                            let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+                            xkb_log(
+                                (*(*param).scanner).ctx,
+                                XKB_LOG_LEVEL_WARNING,
+                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                b"%s:%zu:%zu: ignored unsupported legacy merge mode \"alternate\"\n\0"
+                                    .as_ptr() as *const ::core::ffi::c_char,
+                                (*(*param).scanner).file_name,
+                                loc.line,
+                                loc.column,
+                            );
+                            yyval.merge = MERGE_DEFAULT;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        148 => {
+                            if !(*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                .expr
+                                .is_null()
+                            {
+                                if !(*yyvsp.offset(-2 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head
+                                    .is_null()
+                                {
+                                    yyval.exprList.head = (*yyvsp
+                                        .offset(-2 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head;
+                                    (*yyval.exprList.last).common.next = &raw mut (*(*yyvsp
+                                        .offset(0 as ::core::ffi::c_int as isize))
+                                    .expr)
+                                        .common
+                                        as *mut _ParseCommon;
+                                    yyval.exprList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                                } else {
+                                    yyval.exprList.last =
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                                    yyval.exprList.head = yyval.exprList.last;
+                                }
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        149 => {
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        150 => {
+                            yyval.exprList.last = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        151 => {
+                            yyval.expr = ExprCreateBinary(
+                                STMT_EXPR_DIVIDE,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        152 => {
+                            yyval.expr = ExprCreateBinary(
+                                STMT_EXPR_ADD,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        153 => {
+                            yyval.expr = ExprCreateBinary(
+                                STMT_EXPR_SUBTRACT,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        154 => {
+                            yyval.expr = ExprCreateBinary(
+                                STMT_EXPR_MULTIPLY,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        155 => {
+                            yyval.expr = ExprCreateBinary(
+                                STMT_EXPR_ASSIGN,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        156 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        157 => {
+                            yyval.expr = ExprCreateUnary(
+                                STMT_EXPR_NEGATE,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        158 => {
+                            yyval.expr = ExprCreateUnary(
+                                STMT_EXPR_UNARY_PLUS,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        159 => {
+                            yyval.expr = ExprCreateUnary(
+                                STMT_EXPR_NOT,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        160 => {
+                            yyval.expr = ExprCreateUnary(
+                                STMT_EXPR_INVERT,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        161 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        162 => {
+                            yyval.expr = ExprCreateAction(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        163 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        164 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        165 => {
+                            yyval.expr = (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        166 => {
+                            let mut expr: *mut ExprDef = ExprCreateActionList(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            yyval.exprList =
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).exprList;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*expr).common as *mut _ParseCommon;
+                            yyval.exprList.last = expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        167 => {
+                            yyval.exprList =
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).exprList;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr)
+                                    .common as *mut _ParseCommon;
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        168 => {
+                            yyval.exprList.last = ExprCreateActionList(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        169 => {
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        170 => {
+                            yyval.exprList =
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).exprList;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr)
+                                    .common as *mut _ParseCommon;
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        171 => {
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        172 => {
+                            yyval.expr = ExprCreateActionList(
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        173 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        174 => {
+                            yyval.expr = ExprCreateActionList(::core::ptr::null_mut::<ExprDef>());
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        175 => {
+                            yyval.expr = ExprCreateAction(
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize))
+                                    .exprList
+                                    .head,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        176 => {
+                            yyval.expr = ExprCreateIdent(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        177 => {
+                            yyval.expr = ExprCreateFieldRef(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        178 => {
+                            yyval.expr = ExprCreateArrayRef(
+                                XKB_ATOM_NONE as xkb_atom_t,
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        179 => {
+                            yyval.expr = ExprCreateArrayRef(
+                                (*yyvsp.offset(-5 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).atom,
+                                (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        180 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        181 => {
+                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        182 => {
+                            yyval.expr = ExprCreateString(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        183 => {
+                            yyval.expr = ExprCreateInteger(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        184 => {
+                            yyval.expr = ExprCreateFloat();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        185 => {
+                            yyval.expr = ExprCreateKeyName(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        186 => {
+                            let mut expr_0: *mut ExprDef = ExprCreateKeySymList(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                            );
+                            yyval.exprList =
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).exprList;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*expr_0).common as *mut _ParseCommon;
+                            yyval.exprList.last = expr_0;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        187 => {
+                            yyval.exprList =
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).exprList;
+                            (*yyval.exprList.last).common.next =
+                                &raw mut (*(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr)
+                                    .common as *mut _ParseCommon;
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        188 => {
+                            yyval.exprList.last = ExprCreateKeySymList(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                            );
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        189 => {
+                            yyval.exprList.last =
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            yyval.exprList.head = yyval.exprList.last;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        190 => {
+                            yyval.expr = ExprAppendKeySymList(
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        191 => {
+                            yyval.expr = ExprKeySymListAppendString(
+                                (*param).scanner,
+                                (*yyvsp.offset(-2 as ::core::ffi::c_int as isize)).expr,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                            );
+                            free(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                    as *mut ::core::ffi::c_void,
+                            );
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                c2rust_current_block = 9699707990742192723;
+                            }
+                        }
+                        192 => {
+                            yyval.expr = ExprCreateKeySymList(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
+                            );
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                c2rust_current_block = 9699707990742192723;
+                            }
+                        }
+                        193 => {
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                yyval.expr = ExprKeySymListAppendString(
+                                    (*param).scanner,
+                                    yyval.expr,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                                );
+                                free(
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                        as *mut ::core::ffi::c_void,
+                                );
+                                if yyval.expr.is_null() {
+                                    c2rust_current_block = 9017681648503218951;
+                                } else {
+                                    c2rust_current_block = 9699707990742192723;
+                                }
+                            }
+                        }
+                        194 => {
+                            yyval.expr = (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        195 => {
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                yyval.expr = ExprKeySymListAppendString(
+                                    (*param).scanner,
+                                    yyval.expr,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                                );
+                                free(
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                        as *mut ::core::ffi::c_void,
+                                );
+                                if yyval.expr.is_null() {
+                                    c2rust_current_block = 9017681648503218951;
+                                } else {
+                                    c2rust_current_block = 9699707990742192723;
+                                }
+                            }
+                        }
+                        196 => {
+                            yyval.expr = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        197 => {
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        198 => {
+                            yyval.keysym = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        199 => {
+                            yyval.keysym = KeysymParseString(
+                                (*param).scanner,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                            );
+                            free(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                    as *mut ::core::ffi::c_void,
+                            );
+                            if yyval.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                c2rust_current_block = 9699707990742192723;
+                            }
+                        }
+                        200 => {
+                            if !resolve_keysym(
+                                param,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval,
+                                &raw mut yyval.keysym,
+                            ) {
+                                let mut loc_0: scanner_loc =
+                                    scanner_token_location((*param).scanner);
+                                xkb_log(
+                                    (*(*param).scanner).ctx,
+                                    XKB_LOG_LEVEL_WARNING,
+                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                    b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%.*s\"\n\0"
+                                        .as_ptr()
+                                        as *const ::core::ffi::c_char,
+                                    XKB_WARNING_UNRECOGNIZED_KEYSYM as ::core::ffi::c_int,
+                                    (*(*param).scanner).file_name,
+                                    loc_0.line,
+                                    loc_0.column,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.len
+                                        as ::core::ffi::c_uint,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.start,
+                                );
+                                yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        201 => {
+                            yyval.keysym = XKB_KEY_section as xkb_keysym_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        202 => {
+                            yyval.keysym = (XKB_KEY_0 as xkb_keysym_t).wrapping_add(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num
+                                    as xkb_keysym_t,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        203 => {
+                            if (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num
+                                < XKB_KEYSYM_MIN as int64_t
+                            {
+                                let mut loc_1: scanner_loc =
+                                    scanner_token_location((*param).scanner);
+                                xkb_log(
+                                    (*(*param).scanner).ctx,
+                                    XKB_LOG_LEVEL_WARNING,
+                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                    b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"-%#06lx\" (%ld)\n\0"
+                                        .as_ptr() as *const ::core::ffi::c_char,
+                                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
+                                    (*(*param).scanner).file_name,
+                                    loc_1.line,
+                                    loc_1.column,
+                                    -(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                );
+                                yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                            } else {
+                                if (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num
+                                    <= XKB_KEYSYM_MAX as int64_t
+                                {
+                                    yyval.keysym = (*yyvsp.offset(0 as ::core::ffi::c_int as isize))
+                                        .num
+                                        as xkb_keysym_t;
+                                    if ((*(*param).ctx).log_verbosity >= 2 as ::core::ffi::c_int)
+                                        as ::core::ffi::c_int
+                                        as ::core::ffi::c_long
+                                        != 0
+                                    {
+                                        let mut ref_name: *const ::core::ffi::c_char =
+                                            ::core::ptr::null::<::core::ffi::c_char>();
+                                        if xkb_keysym_is_deprecated(
+                                            yyval.keysym,
+                                            ::core::ptr::null::<::core::ffi::c_char>(),
+                                            &raw mut ref_name,
+                                        ) {
+                                            if ref_name.is_null() {
+                                                let mut loc_2: scanner_loc =
+                                                    scanner_token_location((*param).scanner);
+                                                xkb_log(
+                                                    (*(*param).scanner).ctx,
+                                                    XKB_LOG_LEVEL_WARNING,
+                                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                                    b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%#06x\".\n\0"
+                                                        .as_ptr() as *const ::core::ffi::c_char,
+                                                    XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
+                                                    (*(*param).scanner).file_name,
+                                                    loc_2.line,
+                                                    loc_2.column,
+                                                    yyval.keysym,
+                                                );
+                                            } else {
+                                                let mut loc_3: scanner_loc =
+                                                    scanner_token_location((*param).scanner);
+                                                xkb_log(
+                                                    (*(*param).scanner).ctx,
+                                                    XKB_LOG_LEVEL_WARNING,
+                                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                                    b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%#06x\"; please use \"%s\" instead.\n\0"
+                                                        .as_ptr() as *const ::core::ffi::c_char,
+                                                    XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
+                                                    (*(*param).scanner).file_name,
+                                                    loc_3.line,
+                                                    loc_3.column,
+                                                    yyval.keysym,
+                                                    ref_name,
+                                                );
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    let mut loc_4: scanner_loc =
+                                        scanner_token_location((*param).scanner);
+                                    xkb_log(
+                                        (*(*param).scanner).ctx,
+                                        XKB_LOG_LEVEL_WARNING,
+                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%#06lx\" (%ld)\n\0"
+                                            .as_ptr() as *const ::core::ffi::c_char,
+                                        XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
+                                        (*(*param).scanner).file_name,
+                                        loc_4.line,
+                                        loc_4.column,
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                        (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                    );
+                                    yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                                }
+                                let mut loc_5: scanner_loc =
+                                    scanner_token_location((*param).scanner);
+                                xkb_log(
+                                    (*(*param).scanner).ctx,
+                                    XKB_LOG_LEVEL_WARNING,
+                                    XKB_LOG_VERBOSITY_COMPREHENSIVE as ::core::ffi::c_int,
+                                    b"[XKB-%03d] %s:%zu:%zu: numeric keysym \"%#06lx\" (%ld)\n\0"
+                                        .as_ptr()
+                                        as *const ::core::ffi::c_char,
+                                    XKB_WARNING_NUMERIC_KEYSYM as ::core::ffi::c_int,
+                                    (*(*param).scanner).file_name,
+                                    loc_5.line,
+                                    loc_5.column,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
+                                );
+                            }
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        204 => {
+                            yyval.num = -(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        205 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        206 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        207 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        208 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        209 => {
+                            yyval.num = 0 as int64_t;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        210 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        211 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        212 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        213 => {
+                            yyval.num = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        214 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.start,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.len,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        215 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                b"default\0".as_ptr() as *const ::core::ffi::c_char,
+                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
+                                    .wrapping_sub(1 as size_t),
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        216 => {
+                            yyval.atom = xkb_atom_intern(
+                                (*param).ctx,
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
+                                strlen((*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str),
+                            );
+                            free(
+                                (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str
+                                    as *mut ::core::ffi::c_void,
+                            );
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        217 => {
+                            yyval.str = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        218 => {
+                            yyval.str = ::core::ptr::null_mut::<::core::ffi::c_char>();
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        219 => {
+                            yyval.str = (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str;
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                        _ => {
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                    }
+                    match c2rust_current_block {
+                        9017681648503218951 => {
+                            _xkbcommon_nerrs += 1;
+                            yyvsp = yyvsp.offset(-(yylen as isize));
+                            yyssp = yyssp.offset(-(yylen as isize));
+                            yylen = 0 as ::core::ffi::c_int;
+                            yystate = *yyssp as yy_state_fast_t;
+                            c2rust_current_block = 12965144090463719536;
+                        }
+                        _ => {
+                            yyvsp = yyvsp.offset(-(yylen as isize));
+                            yyssp = yyssp.offset(-(yylen as isize));
+                            yylen = 0 as ::core::ffi::c_int;
+                            yyvsp = yyvsp.offset(1);
+                            *yyvsp = yyval;
+                            let yylhs: ::core::ffi::c_int =
+                                yyr1[yyn as usize] as ::core::ffi::c_int - YYNTOKENS;
+                            let yyi: ::core::ffi::c_int = yypgoto[yylhs as usize]
+                                as ::core::ffi::c_int
+                                + *yyssp as ::core::ffi::c_int;
+                            yystate = (if 0 as ::core::ffi::c_int <= yyi
+                                && yyi <= YYLAST
+                                && yycheck[yyi as usize] as ::core::ffi::c_int
+                                    == *yyssp as ::core::ffi::c_int
+                            {
+                                yytable[yyi as usize] as ::core::ffi::c_int
+                            } else {
+                                yydefgoto[yylhs as usize] as ::core::ffi::c_int
+                            }) as yy_state_fast_t;
+                            c2rust_current_block = 10430565463943277256;
+                        }
+                    }
+                }
+                _ => {}
+            }
+            match c2rust_current_block {
+                12965144090463719536 => {
+                    yyerrstatus = 3 as ::core::ffi::c_int;
+                    loop {
+                        yyn = yypact[yystate as usize] as ::core::ffi::c_int;
+                        if !(yyn == YYPACT_NINF) {
+                            yyn += YYSYMBOL_YYerror as ::core::ffi::c_int;
+                            if 0 as ::core::ffi::c_int <= yyn
+                                && yyn <= YYLAST
+                                && yycheck[yyn as usize] as ::core::ffi::c_int
+                                    == YYSYMBOL_YYerror as ::core::ffi::c_int
+                            {
+                                yyn = yytable[yyn as usize] as ::core::ffi::c_int;
+                                if (0 as ::core::ffi::c_int) < yyn {
+                                    break;
+                                }
+                            }
+                        }
+                        if yyssp == yyss {
+                            c2rust_current_block = 7267896227379959561;
+                            break 's_60;
+                        }
+                        yydestruct(
+                            b"Error: popping\0".as_ptr() as *const ::core::ffi::c_char,
+                            yystos[yystate as usize] as yysymbol_kind_t,
+                            yyvsp,
+                            param,
+                        );
+                        yyvsp = yyvsp.offset(-(1 as ::core::ffi::c_int as isize));
+                        yyssp = yyssp.offset(-(1 as ::core::ffi::c_int as isize));
+                        yystate = *yyssp as yy_state_fast_t;
+                    }
+                    yyvsp = yyvsp.offset(1);
+                    *yyvsp = yylval;
+                    yystate = yyn as yy_state_fast_t;
+                }
+                _ => {}
+            }
+            yyssp = yyssp.offset(1);
+        }
+        match c2rust_current_block {
+            5508412643396263508 => {
+                yyresult = 0 as ::core::ffi::c_int;
+            }
+            7267896227379959561 => {
+                yyresult = 1 as ::core::ffi::c_int;
+            }
+            _ => {
+                _xkbcommon_error(
+                    param,
+                    b"memory exhausted\0".as_ptr() as *const ::core::ffi::c_char,
+                );
+                yyresult = 2 as ::core::ffi::c_int;
+            }
+        }
+        if yychar != YYEMPTY as ::core::ffi::c_int {
+            yytoken = (if 0 as ::core::ffi::c_int <= yychar && yychar <= YYMAXUTOK {
+                yytranslate[yychar as usize] as yysymbol_kind_t as ::core::ffi::c_int
+            } else {
+                YYSYMBOL_YYUNDEF as ::core::ffi::c_int
+            }) as yysymbol_kind_t;
+            yydestruct(
+                b"Cleanup: discarding lookahead\0".as_ptr() as *const ::core::ffi::c_char,
+                yytoken,
+                &raw mut yylval,
+                param,
+            );
+        }
+        yyvsp = yyvsp.offset(-(yylen as isize));
+        yyssp = yyssp.offset(-(yylen as isize));
+        while yyssp != yyss {
+            yydestruct(
+                b"Cleanup: popping\0".as_ptr() as *const ::core::ffi::c_char,
+                yystos[*yyssp as ::core::ffi::c_int as usize] as yysymbol_kind_t,
+                yyvsp,
+                param,
+            );
+            yyvsp = yyvsp.offset(-(1 as ::core::ffi::c_int as isize));
+            yyssp = yyssp.offset(-(1 as ::core::ffi::c_int as isize));
+        }
+        if yyss != &raw mut yyssa as *mut yy_state_t {
+            free(yyss as *mut ::core::ffi::c_void);
+        }
+        if yymsg != &raw mut yymsgbuf as *mut ::core::ffi::c_char {
+            free(yymsg as *mut ::core::ffi::c_void);
+        }
+        return yyresult;
+    }
+}

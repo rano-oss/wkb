@@ -1,0 +1,1643 @@
+use c2rust_bitfields;
+pub mod internal {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct __va_list_tag {
+        pub gp_offset: ::core::ffi::c_uint,
+        pub fp_offset: ::core::ffi::c_uint,
+        pub overflow_arg_area: *mut ::core::ffi::c_void,
+        pub reg_save_area: *mut ::core::ffi::c_void,
+    }
+}
+pub mod __stddef_size_t_h {
+    pub type size_t = usize;
+}
+pub mod types_h {
+    pub type __uint64_t = u64;
+    pub type __off_t = ::core::ffi::c_long;
+    pub type __off64_t = ::core::ffi::c_long;
+}
+pub mod struct_FILE_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct _IO_FILE {
+        pub _flags: ::core::ffi::c_int,
+        pub _IO_read_ptr: *mut ::core::ffi::c_char,
+        pub _IO_read_end: *mut ::core::ffi::c_char,
+        pub _IO_read_base: *mut ::core::ffi::c_char,
+        pub _IO_write_base: *mut ::core::ffi::c_char,
+        pub _IO_write_ptr: *mut ::core::ffi::c_char,
+        pub _IO_write_end: *mut ::core::ffi::c_char,
+        pub _IO_buf_base: *mut ::core::ffi::c_char,
+        pub _IO_buf_end: *mut ::core::ffi::c_char,
+        pub _IO_save_base: *mut ::core::ffi::c_char,
+        pub _IO_backup_base: *mut ::core::ffi::c_char,
+        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _markers: *mut _IO_marker,
+        pub _chain: *mut _IO_FILE,
+        pub _fileno: ::core::ffi::c_int,
+        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _flags2: [u8; 3],
+        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _old_offset: __off_t,
+        pub _cur_column: ::core::ffi::c_ushort,
+        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _lock: *mut ::core::ffi::c_void,
+        pub _offset: __off64_t,
+        pub _codecvt: *mut _IO_codecvt,
+        pub _wide_data: *mut _IO_wide_data,
+        pub _freeres_list: *mut _IO_FILE,
+        pub _freeres_buf: *mut ::core::ffi::c_void,
+        pub _prevchain: *mut *mut _IO_FILE,
+        pub _mode: ::core::ffi::c_int,
+        pub _unused3: ::core::ffi::c_int,
+        pub _total_written: __uint64_t,
+        pub _unused2: [::core::ffi::c_char; 8],
+    }
+    pub type _IO_lock_t = ();
+    use super::types_h::{__off64_t, __off_t, __uint64_t};
+    extern "C" {
+        pub type _IO_wide_data;
+        pub type _IO_codecvt;
+        pub type _IO_marker;
+    }
+}
+pub mod FILE_h {
+    pub type FILE = _IO_FILE;
+    use super::struct_FILE_h::_IO_FILE;
+}
+pub mod context_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_context {
+        pub refcnt: ::core::ffi::c_int,
+        pub log_fn: Option<
+            unsafe extern "C" fn(
+                *mut xkb_context,
+                xkb_log_level,
+                *const ::core::ffi::c_char,
+                ::core::ffi::VaList,
+            ) -> (),
+        >,
+        pub log_level: xkb_log_level,
+        pub log_verbosity: ::core::ffi::c_int,
+        pub user_data: *mut ::core::ffi::c_void,
+        pub names_dflt: xkb_rule_names,
+        pub includes: C2Rust_Unnamed_0,
+        pub failed_includes: C2Rust_Unnamed,
+        pub atom_table: *mut atom_table,
+        pub x11_atom_cache: *mut ::core::ffi::c_void,
+        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_next: size_t,
+        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
+        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
+        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 7],
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_0 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut *mut ::core::ffi::c_char,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::atom_h::atom_table;
+    use super::darray_h::darray_size_t;
+    use super::internal::__va_list_tag;
+    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    extern "C" {
+        pub fn xkb_log(
+            ctx: *mut xkb_context,
+            level: xkb_log_level,
+            verbosity: ::core::ffi::c_int,
+            fmt: *const ::core::ffi::c_char,
+            ...
+        );
+    }
+}
+pub mod atom_h {
+    extern "C" {
+        pub type atom_table;
+    }
+}
+pub mod darray_h {
+    pub type darray_size_t = ::core::ffi::c_uint;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct darray_char {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut ::core::ffi::c_char,
+    }
+    #[inline]
+    pub unsafe extern "C" fn darray_next_alloc(
+        mut alloc: darray_size_t,
+        mut need: darray_size_t,
+        mut itemSize: size_t,
+    ) -> darray_size_t {
+        unsafe {
+            if (need as size_t)
+                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
+                    .wrapping_mul(2 as ::core::ffi::c_uint)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_div(itemSize)
+                    .wrapping_div(2 as size_t)
+            {
+            } else {
+                __assert_fail(
+                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    220 as ::core::ffi::c_uint,
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                        .as_ptr() as *const ::core::ffi::c_char,
+                );
+            };
+            if alloc == 0 as darray_size_t {
+                alloc = 4 as darray_size_t;
+            }
+            while alloc < need {
+                alloc = alloc.wrapping_mul(2 as darray_size_t);
+            }
+            return alloc;
+        }
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::assert_h::__assert_fail;
+}
+pub mod xkbcommon_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_rule_names {
+        pub rules: *const ::core::ffi::c_char,
+        pub model: *const ::core::ffi::c_char,
+        pub layout: *const ::core::ffi::c_char,
+        pub variant: *const ::core::ffi::c_char,
+        pub options: *const ::core::ffi::c_char,
+    }
+    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
+    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
+    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
+    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
+    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
+    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
+    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
+}
+pub mod messages_codes_h {
+    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
+    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
+    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
+    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
+    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
+    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
+    pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
+    pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
+    pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: xkb_message_code = 965;
+    pub const XKB_ERROR_INVALID_IDENTIFIER: xkb_message_code = 949;
+    pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: xkb_message_code = 935;
+    pub const XKB_ERROR_ABI_BACKWARD_COMPAT_: xkb_message_code = 914;
+    pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: xkb_message_code = 903;
+    pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: xkb_message_code = 901;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: xkb_message_code = 893;
+    pub const XKB_WARNING_CONFLICTING_KEY_ACTION: xkb_message_code = 883;
+    pub const XKB_ERROR_ABI_FORWARD_COMPAT_: xkb_message_code = 876;
+    pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: xkb_message_code = 844;
+    pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: xkb_message_code = 822;
+    pub const XKB_ERROR_UNKNOWN_FIELD: xkb_message_code = 812;
+    pub const XKB_WARNING_CONFLICTING_MODMAP: xkb_message_code = 800;
+    pub const XKB_ERROR_INVALID_VALUE: xkb_message_code = 796;
+    pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: xkb_message_code = 784;
+    pub const XKB_WARNING_UNDEFINED_KEYCODE: xkb_message_code = 770;
+    pub const XKB_ERROR_INVALID_XKB_SYNTAX: xkb_message_code = 769;
+    pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: xkb_message_code = 762;
+    pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: xkb_message_code = 742;
+    pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: xkb_message_code = 711;
+    pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: xkb_message_code = 700;
+    pub const XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT: xkb_message_code = 693;
+    pub const XKB_ERROR_INVALID_COMPOSE_SYNTAX: xkb_message_code = 685;
+    pub const XKB_ERROR_INVALID_COMPOSE_LOCALE: xkb_message_code = 679;
+    pub const XKB_ERROR_INVALID_INCLUDED_FILE: xkb_message_code = 661;
+    pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: xkb_message_code = 645;
+    pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: xkb_message_code = 639;
+    pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
+    pub const XKB_ERROR_INVALID_REAL_MODIFIER: xkb_message_code = 623;
+    pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: xkb_message_code = 607;
+    pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: xkb_message_code = 595;
+    pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: xkb_message_code = 588;
+    pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
+    pub const XKB_ERROR_INVALID_ACTION_FIELD: xkb_message_code = 563;
+    pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
+    pub const XKB_ERROR_INVALID_FILE_ENCODING: xkb_message_code = 542;
+    pub const XKB_WARNING_CONFLICTING_KEY_NAME: xkb_message_code = 523;
+    pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: xkb_message_code = 516;
+    pub const XKB_WARNING_NUMERIC_KEYSYM: xkb_message_code = 489;
+    pub const XKB_ERROR_INVALID_OPERATION: xkb_message_code = 478;
+    pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: xkb_message_code = 461;
+    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE_: xkb_message_code = 450;
+    pub const XKB_WARNING_MISSING_DEFAULT_SECTION: xkb_message_code = 433;
+    pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: xkb_message_code = 428;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: xkb_message_code = 407;
+    pub const XKB_ERROR_RECURSIVE_INCLUDE: xkb_message_code = 386;
+    pub const XKB_WARNING_DUPLICATE_ENTRY: xkb_message_code = 378;
+    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_: xkb_message_code = 371;
+    pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: xkb_message_code = 362;
+    pub const XKB_ERROR_OVERLAPPING_OVERLAY: xkb_message_code = 355;
+    pub const XKB_ERROR_UNKNOWN_OPERATOR: xkb_message_code = 345;
+    pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: xkb_message_code = 338;
+    pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: xkb_message_code = 312;
+    pub const XKB_WARNING_NON_BASE_GROUP_NAME: xkb_message_code = 305;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: xkb_message_code = 302;
+    pub const XKB_WARNING_DEPRECATED_KEYSYM: xkb_message_code = 301;
+    pub const XKB_WARNING_UNDEFINED_KEY_TYPE: xkb_message_code = 286;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: xkb_message_code = 266;
+    pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: xkb_message_code = 254;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: xkb_message_code = 239;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: xkb_message_code = 237;
+    pub const XKB_ERROR_UNKNOWN_STATEMENT: xkb_message_code = 222;
+    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_: xkb_message_code = 214;
+    pub const XKB_ERROR_INVALID_MODMAP_ENTRY: xkb_message_code = 206;
+    pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: xkb_message_code = 203;
+    pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: xkb_message_code = 195;
+    pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: xkb_message_code = 193;
+    pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: xkb_message_code = 183;
+    pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: xkb_message_code = 172;
+    pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
+    pub const XKB_ERROR_WRONG_STATEMENT_TYPE: xkb_message_code = 150;
+    pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
+    pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: xkb_message_code = 123;
+    pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: xkb_message_code = 107;
+    pub const XKB_WARNING_ILLEGAL_KEYCODE_ALIAS: xkb_message_code = 101;
+    pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: xkb_message_code = 82;
+    pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
+    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: xkb_message_code = 60;
+    pub const XKB_ERROR_INTEGER_OVERFLOW: xkb_message_code = 52;
+    pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: xkb_message_code = 43;
+    pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
+    pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
+}
+pub mod scanner_utils_h {
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner_loc {
+        pub line: size_t,
+        pub column: size_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct scanner {
+        pub pos: size_t,
+        pub len: size_t,
+        pub s: *const ::core::ffi::c_char,
+        pub buf: [::core::ffi::c_char; 1024],
+        pub buf_pos: size_t,
+        pub token_pos: size_t,
+        pub cached_pos: size_t,
+        pub cached_loc: scanner_loc,
+        pub file_name: *const ::core::ffi::c_char,
+        pub ctx: *mut xkb_context,
+        pub priv_0: *mut ::core::ffi::c_void,
+    }
+    use super::__stddef_size_t_h::size_t;
+    use super::context_h::xkb_context;
+}
+pub mod ast_h {
+    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub const FILE_TYPE_INVALID: xkb_file_type = 7;
+    pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
+    pub const FILE_TYPE_RULES: xkb_file_type = 6;
+    pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
+    pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
+    pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
+    pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
+    pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
+    pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
+    pub const FILE_TYPE_TYPES: xkb_file_type = 1;
+    pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
+    pub type stmt_type = ::core::ffi::c_uint;
+    pub const _STMT_NUM_VALUES: stmt_type = 37;
+    pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
+    pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
+    pub const STMT_LED_NAME: stmt_type = 34;
+    pub const STMT_LED_MAP: stmt_type = 33;
+    pub const STMT_GROUP_COMPAT: stmt_type = 32;
+    pub const STMT_MODMAP: stmt_type = 31;
+    pub const STMT_SYMBOLS: stmt_type = 30;
+    pub const STMT_VMOD: stmt_type = 29;
+    pub const STMT_INTERP: stmt_type = 28;
+    pub const STMT_TYPE: stmt_type = 27;
+    pub const STMT_VAR: stmt_type = 26;
+    pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
+    pub const STMT_EXPR_INVERT: stmt_type = 24;
+    pub const STMT_EXPR_NEGATE: stmt_type = 23;
+    pub const STMT_EXPR_NOT: stmt_type = 22;
+    pub const STMT_EXPR_ASSIGN: stmt_type = 21;
+    pub const STMT_EXPR_DIVIDE: stmt_type = 20;
+    pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
+    pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
+    pub const STMT_EXPR_ADD: stmt_type = 17;
+    pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
+    pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
+    pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
+    pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
+    pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
+    pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
+    pub const STMT_EXPR_IDENT: stmt_type = 10;
+    pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
+    pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
+    pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
+    pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
+    pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
+    pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
+    pub const STMT_ALIAS: stmt_type = 3;
+    pub const STMT_KEYCODE: stmt_type = 2;
+    pub const STMT_INCLUDE: stmt_type = 1;
+    pub const STMT_UNKNOWN: stmt_type = 0;
+    pub type merge_mode = ::core::ffi::c_uint;
+    pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
+    pub const MERGE_REPLACE: merge_mode = 3;
+    pub const MERGE_OVERRIDE: merge_mode = 2;
+    pub const MERGE_AUGMENT: merge_mode = 1;
+    pub const MERGE_DEFAULT: merge_mode = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _ParseCommon {
+        pub next: *mut _ParseCommon,
+        pub type_0: stmt_type,
+    }
+    pub type ParseCommon = _ParseCommon;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct _IncludeStmt {
+        pub common: ParseCommon,
+        pub merge: merge_mode,
+        pub stmt: *mut ::core::ffi::c_char,
+        pub file: *mut ::core::ffi::c_char,
+        pub map: *mut ::core::ffi::c_char,
+        pub modifier: *mut ::core::ffi::c_char,
+        pub next_incl: *mut _IncludeStmt,
+    }
+    pub type IncludeStmt = _IncludeStmt;
+    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub const MAP_IS_ALTGR: xkb_map_flags = 128;
+    pub const MAP_HAS_FN: xkb_map_flags = 64;
+    pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
+    pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
+    pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
+    pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
+    pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
+    pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct XkbFile {
+        pub common: ParseCommon,
+        pub name: *mut ::core::ffi::c_char,
+        pub defs: *mut ParseCommon,
+        pub file_type: xkb_file_type,
+        pub flags: xkb_map_flags,
+    }
+    extern "C" {
+        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const ::core::ffi::c_char;
+    }
+}
+pub mod keymap_file_iterator_h {
+    #[derive(Copy, Clone, BitfieldStruct)]
+    #[repr(C)]
+    pub struct xkb_file_include {
+        #[bitfield(name = "valid", ty = "bool", bits = "0..=0")]
+        #[bitfield(name = "explicit_section", ty = "bool", bits = "1..=1")]
+        pub valid_explicit_section: [u8; 1],
+        #[bitfield(padding)]
+        pub c2rust_padding: [u8; 3],
+        pub merge: merge_mode,
+        pub path: darray_size_t,
+        pub file: darray_size_t,
+        pub section: darray_size_t,
+        pub modifier: darray_size_t,
+        pub flags: xkb_map_flags,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_file_include_group {
+        pub start: darray_size_t,
+        pub end: darray_size_t,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_file_section {
+        pub name: darray_size_t,
+        pub file_type: xkb_file_type,
+        pub flags: xkb_map_flags,
+        pub include_groups: C2Rust_Unnamed_3,
+        pub includes: C2Rust_Unnamed_2,
+        pub buffer: darray_char,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_2 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_file_include,
+    }
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct C2Rust_Unnamed_3 {
+        pub size: darray_size_t,
+        pub alloc: darray_size_t,
+        pub item: *mut xkb_file_include_group,
+    }
+    pub type xkb_file_iterator_flags = ::core::ffi::c_uint;
+    pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
+    pub const XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR: xkb_file_iterator_flags = 1;
+    pub const XKB_FILE_ITERATOR_NO_FLAG: xkb_file_iterator_flags = 0;
+    #[derive(Copy, Clone)]
+    #[repr(C)]
+    pub struct xkb_file_iterator {
+        pub flags: xkb_file_iterator_flags,
+        pub finished: bool,
+        pub path: *const ::core::ffi::c_char,
+        pub map: *const ::core::ffi::c_char,
+        pub type_0: xkb_file_type,
+        pub scanner: scanner,
+        pub section: xkb_file_section,
+        pub pending_xkb_file: *mut XkbFile,
+        pub pending_section: *mut XkbFile,
+        pub ctx: *mut xkb_context,
+    }
+    use super::ast_h::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
+    use super::context_h::xkb_context;
+    use super::darray_h::{darray_char, darray_size_t};
+    use super::scanner_utils_h::scanner;
+}
+pub mod string_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn memcpy(
+            __dest: *mut ::core::ffi::c_void,
+            __src: *const ::core::ffi::c_void,
+            __n: size_t,
+        ) -> *mut ::core::ffi::c_void;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+    }
+}
+pub mod stdio_h {
+    use super::FILE_h::FILE;
+    extern "C" {
+        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn fopen(
+            __filename: *const ::core::ffi::c_char,
+            __modes: *const ::core::ffi::c_char,
+        ) -> *mut FILE;
+    }
+}
+pub mod stdlib_h {
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
+            -> *mut ::core::ffi::c_void;
+        pub fn free(__ptr: *mut ::core::ffi::c_void);
+    }
+}
+pub mod utils_h {
+    #[inline]
+    pub unsafe extern "C" fn strcpy_safe(
+        mut dest: *mut ::core::ffi::c_char,
+        mut size: size_t,
+        mut src: *const ::core::ffi::c_char,
+    ) -> *mut ::core::ffi::c_char {
+        unsafe {
+            if dest.is_null() || size == 0 || src.is_null() {
+                return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            }
+            let limit: *const ::core::ffi::c_char = dest
+                .offset(size as isize)
+                .offset(-(1 as ::core::ffi::c_int as isize));
+            while dest < limit as *mut ::core::ffi::c_char && *src as ::core::ffi::c_int != 0 {
+                let c2rust_fresh0 = src;
+                src = src.offset(1);
+                let c2rust_fresh1 = dest;
+                dest = dest.offset(1);
+                *c2rust_fresh1 = *c2rust_fresh0;
+            }
+            *dest = '\0' as i32 as ::core::ffi::c_char;
+            return if *src as ::core::ffi::c_int != 0 {
+                ::core::ptr::null_mut::<::core::ffi::c_char>()
+            } else {
+                dest
+            };
+        }
+    }
+    use super::__stddef_null_h::NULL;
+    use super::__stddef_size_t_h::size_t;
+}
+pub mod include_h {
+    use super::__stddef_size_t_h::size_t;
+    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile, FILE_TYPE_KEYCODES};
+    use super::context_h::xkb_context;
+    use super::FILE_h::FILE;
+    extern "C" {
+        pub fn FindFileInXkbPath(
+            ctx: *mut xkb_context,
+            parent_file_name: *const ::core::ffi::c_char,
+            name: *const ::core::ffi::c_char,
+            name_len: size_t,
+            type_0: xkb_file_type,
+            buf: *mut ::core::ffi::c_char,
+            buf_size: size_t,
+            offset: *mut ::core::ffi::c_uint,
+            required: bool,
+        ) -> *mut FILE;
+        pub fn ExceedsIncludeMaxDepth(
+            ctx: *mut xkb_context,
+            include_depth: ::core::ffi::c_uint,
+        ) -> bool;
+        pub fn ProcessIncludeFile(
+            ctx: *mut xkb_context,
+            stmt: *const IncludeStmt,
+            file_type: xkb_file_type,
+            path: *mut ::core::ffi::c_char,
+            path_size: size_t,
+        ) -> *mut XkbFile;
+    }
+}
+pub mod xkbcomp_priv_h {
+    use super::ast_h::XkbFile;
+    use super::context_h::xkb_context;
+    use super::scanner_utils_h::scanner;
+    use super::FILE_h::FILE;
+    use super::__stddef_size_t_h::size_t;
+    extern "C" {
+        pub fn XkbParseFile(
+            ctx: *mut xkb_context,
+            file: *mut FILE,
+            file_name: *const ::core::ffi::c_char,
+            map: *const ::core::ffi::c_char,
+        ) -> *mut XkbFile;
+        pub fn XkbParseStringInit(
+            ctx: *mut xkb_context,
+            scanner: *mut scanner,
+            string: *const ::core::ffi::c_char,
+            len: size_t,
+            file_name: *const ::core::ffi::c_char,
+            map: *const ::core::ffi::c_char,
+        ) -> bool;
+        pub fn XkbParseStringNext(
+            ctx: *mut xkb_context,
+            scanner: *mut scanner,
+            map: *const ::core::ffi::c_char,
+            out: *mut *mut XkbFile,
+        ) -> bool;
+        pub fn FreeXkbFile(file: *mut XkbFile);
+    }
+}
+pub mod __stddef_null_h {
+    pub const NULL: *mut ::core::ffi::c_void =
+        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+}
+pub mod assert_h {
+    extern "C" {
+        pub fn __assert_fail(
+            __assertion: *const ::core::ffi::c_char,
+            __file: *const ::core::ffi::c_char,
+            __line: ::core::ffi::c_uint,
+            __function: *const ::core::ffi::c_char,
+        ) -> !;
+    }
+}
+pub mod utils_paths_h {
+    extern "C" {
+        pub fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool;
+    }
+}
+pub mod stdbool_h {
+    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+}
+pub use self::__stddef_null_h::NULL;
+pub use self::__stddef_size_t_h::size_t;
+use self::assert_h::__assert_fail;
+pub use self::ast_h::{
+    _ParseCommon, merge_mode, xkb_file_type_to_string, xkb_map_flags, IncludeStmt, ParseCommon,
+    XkbFile, _IncludeStmt, stmt_type, xkb_file_type, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
+    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
+    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
+    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
+    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
+    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
+    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+};
+use self::atom_h::atom_table;
+pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
+use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
+pub use self::internal::__va_list_tag;
+pub use self::keymap_file_iterator_h::{
+    xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,
+    xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,
+    XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
+};
+pub use self::messages_codes_h::{
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
+    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
+    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
+    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
+    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
+    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
+    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
+    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
+    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
+    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
+    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
+    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
+    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
+    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
+    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
+    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+};
+pub use self::scanner_utils_h::{scanner, scanner_loc};
+pub use self::stdbool_h::{false_0, true_0};
+use self::stdio_h::{fclose, fopen};
+use self::stdlib_h::{calloc, free, realloc};
+use self::string_h::{memcpy, strlen};
+pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
+pub use self::types_h::{__off64_t, __off_t, __uint64_t};
+pub use self::utils_h::strcpy_safe;
+use self::utils_paths_h::is_absolute_path;
+pub use self::xkbcommon_h::{
+    xkb_keymap_compile_flags, xkb_keymap_format, xkb_log_level, xkb_rule_names,
+    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
+    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
+    XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+};
+use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
+pub use self::FILE_h::FILE;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_1 {
+    pub flag: xkb_map_flags,
+    pub name: *const ::core::ffi::c_char,
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_type_name(
+    mut type_0: xkb_file_type,
+) -> *const ::core::ffi::c_char {
+    unsafe {
+        if type_0 as ::core::ffi::c_uint
+            > FILE_TYPE_KEYMAP as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            return b"unknown\0".as_ptr() as *const ::core::ffi::c_char;
+        }
+        static mut xkb_file_type_strings: [*const ::core::ffi::c_char; 7] = [
+            b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
+            b"types\0".as_ptr() as *const ::core::ffi::c_char,
+            b"compatibility\0".as_ptr() as *const ::core::ffi::c_char,
+            b"symbols\0".as_ptr() as *const ::core::ffi::c_char,
+            b"geometry\0".as_ptr() as *const ::core::ffi::c_char,
+            b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
+            ::core::ptr::null::<::core::ffi::c_char>(),
+        ];
+        return xkb_file_type_strings[type_0 as usize];
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_merge_mode_name(mut merge: merge_mode) -> *const ::core::ffi::c_char {
+    unsafe {
+        if merge as ::core::ffi::c_uint
+            >= _MERGE_MODE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
+        {
+            return b"unknown\0".as_ptr() as *const ::core::ffi::c_char;
+        }
+        static mut merge_mode_strings: [*const ::core::ffi::c_char; 4] = [
+            b"default\0".as_ptr() as *const ::core::ffi::c_char,
+            b"augment\0".as_ptr() as *const ::core::ffi::c_char,
+            b"override\0".as_ptr() as *const ::core::ffi::c_char,
+            b"replace\0".as_ptr() as *const ::core::ffi::c_char,
+        ];
+        return merge_mode_strings[merge as usize];
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_map_flags_string_iter(
+    mut index: *mut ::core::ffi::c_uint,
+    mut flags: xkb_map_flags,
+) -> *const ::core::ffi::c_char {
+    unsafe {
+        if flags as u64 == 0 {
+            return ::core::ptr::null::<::core::ffi::c_char>();
+        }
+        static mut names: [C2Rust_Unnamed_1; 8] = [
+            C2Rust_Unnamed_1 {
+                flag: MAP_IS_DEFAULT,
+                name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_IS_PARTIAL,
+                name: b"partial\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_IS_HIDDEN,
+                name: b"hidden\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_HAS_ALPHANUMERIC,
+                name: b"alphanumeric\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_HAS_MODIFIER,
+                name: b"modifiers\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_HAS_KEYPAD,
+                name: b"keypad\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_HAS_FN,
+                name: b"fn\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+            C2Rust_Unnamed_1 {
+                flag: MAP_IS_ALTGR,
+                name: b"altgr\0".as_ptr() as *const ::core::ffi::c_char,
+            },
+        ];
+        while (*index as usize)
+            < (::core::mem::size_of::<[C2Rust_Unnamed_1; 8]>() as usize)
+                .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_1>() as usize)
+        {
+            if flags as ::core::ffi::c_uint & names[*index as usize].flag as ::core::ffi::c_uint
+                != 0
+            {
+                let c2rust_fresh2 = *index;
+                *index = (*index).wrapping_add(1);
+                return names[c2rust_fresh2 as usize].name;
+            }
+            *index = (*index).wrapping_add(1);
+        }
+        return ::core::ptr::null::<::core::ffi::c_char>();
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_resolve_file(
+    mut ctx: *mut xkb_context,
+    mut file_type: xkb_file_type,
+    mut path: *const ::core::ffi::c_char,
+    mut map: *const ::core::ffi::c_char,
+    mut resolved_path: *mut ::core::ffi::c_char,
+    mut resolved_path_size: size_t,
+    mut resolved_map: *mut ::core::ffi::c_char,
+    mut resolved_map_size: size_t,
+) -> *mut FILE {
+    unsafe {
+        let mut c2rust_current_block: u64;
+        let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut candidate: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let path_len: size_t = strlen(path) as size_t;
+        let absolute_path: bool = is_absolute_path(path) as bool;
+        if absolute_path {
+            file = fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        } else {
+            file = FindFileInXkbPath(
+                ctx,
+                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+                path_len,
+                file_type,
+                resolved_path,
+                resolved_path_size,
+                &raw mut offset,
+                true_0 != 0,
+            );
+        }
+        loop {
+            if file.is_null() {
+                c2rust_current_block = 16203760046146113240;
+                break;
+            }
+            let xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map) as *mut XkbFile;
+            if !xkb_file.is_null() {
+                if (file_type as ::core::ffi::c_uint)
+                    < _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
+                    && (*xkb_file).file_type as ::core::ffi::c_uint
+                        != file_type as ::core::ffi::c_uint
+                {
+                    xkb_log(
+                        ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"File of wrong type (expected %s, got %s); file \"%s\" ignored\n\0"
+                            .as_ptr() as *const ::core::ffi::c_char,
+                        xkb_file_type_to_string(file_type),
+                        xkb_file_type_to_string((*xkb_file).file_type),
+                        if absolute_path as ::core::ffi::c_int != 0 {
+                            path
+                        } else {
+                            resolved_path as *const ::core::ffi::c_char
+                        },
+                    );
+                    c2rust_current_block = 6705605813258909411;
+                } else if !map.is_null()
+                    || (*xkb_file).flags as ::core::ffi::c_uint != 0
+                        && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
+                {
+                    if strcpy_safe(
+                        resolved_map,
+                        resolved_map_size,
+                        if !(*xkb_file).name.is_null() {
+                            (*xkb_file).name as *const ::core::ffi::c_char
+                        } else {
+                            b"\0".as_ptr() as *const ::core::ffi::c_char
+                        },
+                    )
+                    .is_null()
+                    {
+                        FreeXkbFile(xkb_file);
+                        c2rust_current_block = 7064064774883755911;
+                        break;
+                    } else {
+                        c2rust_current_block = 4495394744059808450;
+                    }
+                } else if candidate.is_null() {
+                    candidate = file;
+                    if strcpy_safe(
+                        resolved_map,
+                        resolved_map_size,
+                        if !(*xkb_file).name.is_null() {
+                            (*xkb_file).name as *const ::core::ffi::c_char
+                        } else {
+                            b"\0".as_ptr() as *const ::core::ffi::c_char
+                        },
+                    )
+                    .is_null()
+                    {
+                        FreeXkbFile(xkb_file);
+                        c2rust_current_block = 7064064774883755911;
+                        break;
+                    } else {
+                        c2rust_current_block = 4495394744059808450;
+                    }
+                } else {
+                    c2rust_current_block = 6705605813258909411;
+                }
+            } else {
+                c2rust_current_block = 6705605813258909411;
+            }
+            match c2rust_current_block {
+                6705605813258909411 => {
+                    fclose(file);
+                    file = ::core::ptr::null_mut::<FILE>();
+                }
+                _ => {}
+            }
+            FreeXkbFile(xkb_file);
+            if !file.is_null() || absolute_path as ::core::ffi::c_int != 0 {
+                c2rust_current_block = 16203760046146113240;
+                break;
+            }
+            offset = offset.wrapping_add(1);
+            file = FindFileInXkbPath(
+                ctx,
+                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+                path_len,
+                file_type,
+                resolved_path,
+                resolved_path_size,
+                &raw mut offset,
+                true_0 != 0,
+            );
+        }
+        match c2rust_current_block {
+            16203760046146113240 => {
+                if file.is_null() {
+                    file = candidate;
+                } else if !candidate.is_null() {
+                    fclose(candidate);
+                }
+                if !(absolute_path as ::core::ffi::c_int != 0
+                    && !file.is_null()
+                    && strcpy_safe(resolved_path, resolved_path_size, path).is_null())
+                {
+                    return file;
+                }
+            }
+            _ => {}
+        }
+        xkb_log(
+            ctx,
+            XKB_LOG_LEVEL_ERROR,
+            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            b"[XKB-%03d] Cannot copy resolved path or section\n\0".as_ptr()
+                as *const ::core::ffi::c_char,
+            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+        );
+        fclose(file);
+        return ::core::ptr::null_mut::<FILE>();
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_section_init(mut section: *mut xkb_file_section) {
+    unsafe {
+        (*section).include_groups.item = ::core::ptr::null_mut::<xkb_file_include_group>();
+        (*section).include_groups.size = 0 as darray_size_t;
+        (*section).include_groups.alloc = 0 as darray_size_t;
+        (*section).includes.item = ::core::ptr::null_mut::<xkb_file_include>();
+        (*section).includes.size = 0 as darray_size_t;
+        (*section).includes.alloc = 0 as darray_size_t;
+        (*section).buffer.item = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        (*section).buffer.size = 0 as darray_size_t;
+        (*section).buffer.alloc = 0 as darray_size_t;
+        (*section).buffer.size = (*section).buffer.size.wrapping_add(1 as darray_size_t);
+        let mut __need: darray_size_t = (*section).buffer.size;
+        if __need > (*section).buffer.alloc {
+            (*section).buffer.alloc = darray_next_alloc(
+                (*section).buffer.alloc,
+                __need,
+                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+            );
+            (*section).buffer.item = realloc(
+                (*section).buffer.item as *mut ::core::ffi::c_void,
+                ((*section).buffer.alloc as size_t)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            ) as *mut ::core::ffi::c_char;
+        }
+        *(*section)
+            .buffer
+            .item
+            .offset((*section).buffer.size.wrapping_sub(1 as darray_size_t) as isize) =
+            '\0' as i32 as ::core::ffi::c_char;
+    }
+}
+unsafe extern "C" fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
+    unsafe {
+        (*section).include_groups.size = 0 as darray_size_t;
+        (*section).includes.size = 0 as darray_size_t;
+        (*section).buffer.size = 1 as darray_size_t;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_section_free(mut section: *mut xkb_file_section) {
+    unsafe {
+        if section.is_null() {
+            return;
+        }
+        free((*section).include_groups.item as *mut ::core::ffi::c_void);
+        (*section).include_groups.item = ::core::ptr::null_mut::<xkb_file_include_group>();
+        (*section).include_groups.size = 0 as darray_size_t;
+        (*section).include_groups.alloc = 0 as darray_size_t;
+        free((*section).includes.item as *mut ::core::ffi::c_void);
+        (*section).includes.item = ::core::ptr::null_mut::<xkb_file_include>();
+        (*section).includes.size = 0 as darray_size_t;
+        (*section).includes.alloc = 0 as darray_size_t;
+        free((*section).buffer.item as *mut ::core::ffi::c_void);
+        (*section).buffer.item = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        (*section).buffer.size = 0 as darray_size_t;
+        (*section).buffer.alloc = 0 as darray_size_t;
+    }
+}
+unsafe extern "C" fn xkb_file_section_set_meta_data(
+    mut ctx: *mut xkb_context,
+    mut section: *mut xkb_file_section,
+    mut xkb_file: *const XkbFile,
+) -> bool {
+    unsafe {
+        (*section).file_type = (*xkb_file).file_type;
+        (*section).flags = (*xkb_file).flags;
+        if !(*xkb_file).name.is_null() {
+            let mut idx: darray_size_t = (*section).buffer.size;
+            let mut __count: darray_size_t =
+                strlen((*xkb_file).name).wrapping_add(1 as size_t) as darray_size_t;
+            let mut __oldSize: darray_size_t = (*section).buffer.size;
+            (*section).buffer.size = __oldSize.wrapping_add(__count);
+            let mut __need: darray_size_t = (*section).buffer.size;
+            if __need > (*section).buffer.alloc {
+                (*section).buffer.alloc = darray_next_alloc(
+                    (*section).buffer.alloc,
+                    __need,
+                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                );
+                (*section).buffer.item = realloc(
+                    (*section).buffer.item as *mut ::core::ffi::c_void,
+                    ((*section).buffer.alloc as size_t)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                ) as *mut ::core::ffi::c_char;
+            }
+            memcpy(
+                (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
+                (*xkb_file).name as *const ::core::ffi::c_void,
+                (__count as size_t)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            );
+            (*section).name = idx;
+        } else {
+            (*section).name = 0 as darray_size_t;
+        }
+        return true_0 != 0;
+    }
+}
+unsafe extern "C" fn xkb_file_section_append_includes(
+    mut ctx: *mut xkb_context,
+    mut flags: xkb_file_iterator_flags,
+    mut section_path: *const ::core::ffi::c_char,
+    mut section: *mut xkb_file_section,
+    mut file_type: xkb_file_type,
+    mut include: *mut IncludeStmt,
+) -> bool {
+    unsafe {
+        let mut group: *mut xkb_file_include_group =
+            ::core::ptr::null_mut::<xkb_file_include_group>();
+        let mut stmt: *mut IncludeStmt = include;
+        while !stmt.is_null() {
+            let mut buf: [::core::ffi::c_char; 4096] = [0; 4096];
+            let mut xkb_file: *mut XkbFile = ProcessIncludeFile(
+                ctx,
+                stmt,
+                file_type,
+                &raw mut buf as *mut ::core::ffi::c_char,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            );
+            let valid: bool = !xkb_file.is_null();
+            if valid as ::core::ffi::c_int != 0
+                || flags as ::core::ffi::c_uint
+                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as ::core::ffi::c_int
+                        as ::core::ffi::c_uint
+                    == 0
+            {
+                let path: darray_size_t = (*section).buffer.size;
+                let mut __count: darray_size_t = strlen(&raw mut buf as *mut ::core::ffi::c_char)
+                    .wrapping_add(1 as size_t)
+                    as darray_size_t;
+                let mut __oldSize: darray_size_t = (*section).buffer.size;
+                (*section).buffer.size = __oldSize.wrapping_add(__count);
+                let mut __need: darray_size_t = (*section).buffer.size;
+                if __need > (*section).buffer.alloc {
+                    (*section).buffer.alloc = darray_next_alloc(
+                        (*section).buffer.alloc,
+                        __need,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                    );
+                    (*section).buffer.item = realloc(
+                        (*section).buffer.item as *mut ::core::ffi::c_void,
+                        ((*section).buffer.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    ) as *mut ::core::ffi::c_char;
+                }
+                memcpy(
+                    (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
+                    &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+                    (__count as size_t)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                );
+                let file: darray_size_t = (*section).buffer.size;
+                let mut __count_0: darray_size_t =
+                    strlen((*stmt).file).wrapping_add(1 as size_t) as darray_size_t;
+                let mut __oldSize_0: darray_size_t = (*section).buffer.size;
+                (*section).buffer.size = __oldSize_0.wrapping_add(__count_0);
+                let mut __need_0: darray_size_t = (*section).buffer.size;
+                if __need_0 > (*section).buffer.alloc {
+                    (*section).buffer.alloc = darray_next_alloc(
+                        (*section).buffer.alloc,
+                        __need_0,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                    );
+                    (*section).buffer.item = realloc(
+                        (*section).buffer.item as *mut ::core::ffi::c_void,
+                        ((*section).buffer.alloc as size_t)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    ) as *mut ::core::ffi::c_char;
+                }
+                memcpy(
+                    (*section).buffer.item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
+                    (*stmt).file as *const ::core::ffi::c_void,
+                    (__count_0 as size_t)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                );
+                let section_name: darray_size_t = if !(*stmt).map.is_null()
+                    || valid as ::core::ffi::c_int != 0 && !(*xkb_file).name.is_null()
+                {
+                    (*section).buffer.size
+                } else {
+                    0 as darray_size_t
+                };
+                if section_name != 0 {
+                    let mut __count_1: darray_size_t = strlen(
+                        (if !(*stmt).map.is_null() {
+                            (*stmt).map
+                        } else {
+                            (*xkb_file).name
+                        }),
+                    )
+                    .wrapping_add(1 as size_t)
+                        as darray_size_t;
+                    let mut __oldSize_1: darray_size_t = (*section).buffer.size;
+                    (*section).buffer.size = __oldSize_1.wrapping_add(__count_1);
+                    let mut __need_1: darray_size_t = (*section).buffer.size;
+                    if __need_1 > (*section).buffer.alloc {
+                        (*section).buffer.alloc = darray_next_alloc(
+                            (*section).buffer.alloc,
+                            __need_1,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        );
+                        (*section).buffer.item = realloc(
+                            (*section).buffer.item as *mut ::core::ffi::c_void,
+                            ((*section).buffer.alloc as size_t).wrapping_mul(
+                                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ),
+                        )
+                            as *mut ::core::ffi::c_char;
+                    }
+                    memcpy(
+                        (*section).buffer.item.offset(__oldSize_1 as isize)
+                            as *mut ::core::ffi::c_void,
+                        (if !(*stmt).map.is_null() {
+                            (*stmt).map
+                        } else {
+                            (*xkb_file).name
+                        }) as *const ::core::ffi::c_void,
+                        (__count_1 as size_t)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    );
+                }
+                let modifier: darray_size_t = if !(*stmt).modifier.is_null() {
+                    (*section).buffer.size
+                } else {
+                    0 as darray_size_t
+                };
+                if modifier != 0 {
+                    let mut __count_2: darray_size_t =
+                        strlen((*stmt).modifier).wrapping_add(1 as size_t) as darray_size_t;
+                    let mut __oldSize_2: darray_size_t = (*section).buffer.size;
+                    (*section).buffer.size = __oldSize_2.wrapping_add(__count_2);
+                    let mut __need_2: darray_size_t = (*section).buffer.size;
+                    if __need_2 > (*section).buffer.alloc {
+                        (*section).buffer.alloc = darray_next_alloc(
+                            (*section).buffer.alloc,
+                            __need_2,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        );
+                        (*section).buffer.item = realloc(
+                            (*section).buffer.item as *mut ::core::ffi::c_void,
+                            ((*section).buffer.alloc as size_t).wrapping_mul(
+                                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ),
+                        )
+                            as *mut ::core::ffi::c_char;
+                    }
+                    memcpy(
+                        (*section).buffer.item.offset(__oldSize_2 as isize)
+                            as *mut ::core::ffi::c_void,
+                        (*stmt).modifier as *const ::core::ffi::c_void,
+                        (__count_2 as size_t)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    );
+                }
+                let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {
+                    (*xkb_file).flags as ::core::ffi::c_uint
+                } else {
+                    0 as ::core::ffi::c_uint
+                }) as xkb_map_flags;
+                let inc: xkb_file_include = {
+                    let mut init = xkb_file_include {
+                        valid_explicit_section: [0; 1],
+                        c2rust_padding: [0; 3],
+                        merge: (*stmt).merge,
+                        path: path,
+                        file: file,
+                        section: section_name,
+                        modifier: modifier,
+                        flags: section_flags,
+                    };
+                    init.set_valid(valid);
+                    init.set_explicit_section(!(*stmt).map.is_null());
+                    init
+                };
+                let idx: darray_size_t = (*section).includes.size;
+                (*section).includes.size =
+                    (*section).includes.size.wrapping_add(1 as darray_size_t);
+                let mut __need_3: darray_size_t = (*section).includes.size;
+                if __need_3 > (*section).includes.alloc {
+                    (*section).includes.alloc = darray_next_alloc(
+                        (*section).includes.alloc,
+                        __need_3,
+                        ::core::mem::size_of::<xkb_file_include>() as size_t,
+                    );
+                    (*section).includes.item =
+                        realloc(
+                            (*section).includes.item as *mut ::core::ffi::c_void,
+                            ((*section).includes.alloc as size_t)
+                                .wrapping_mul(::core::mem::size_of::<xkb_file_include>() as size_t),
+                        ) as *mut xkb_file_include;
+                }
+                *(*section)
+                    .includes
+                    .item
+                    .offset((*section).includes.size.wrapping_sub(1 as darray_size_t) as isize) =
+                    inc;
+                if group.is_null() {
+                    let group_idx: darray_size_t = (*section).include_groups.size;
+                    (*section).include_groups.size = (*section)
+                        .include_groups
+                        .size
+                        .wrapping_add(1 as darray_size_t);
+                    let mut __need_4: darray_size_t = (*section).include_groups.size;
+                    if __need_4 > (*section).include_groups.alloc {
+                        (*section).include_groups.alloc = darray_next_alloc(
+                            (*section).include_groups.alloc,
+                            __need_4,
+                            ::core::mem::size_of::<xkb_file_include_group>() as size_t,
+                        );
+                        (*section).include_groups.item = realloc(
+                            (*section).include_groups.item as *mut ::core::ffi::c_void,
+                            ((*section).include_groups.alloc as size_t).wrapping_mul(
+                                ::core::mem::size_of::<xkb_file_include_group>() as size_t,
+                            ),
+                        )
+                            as *mut xkb_file_include_group;
+                    }
+                    *(*section).include_groups.item.offset(
+                        (*section)
+                            .include_groups
+                            .size
+                            .wrapping_sub(1 as darray_size_t) as isize,
+                    ) = xkb_file_include_group {
+                        start: idx,
+                        end: idx,
+                    };
+                    group = (*section).include_groups.item.offset(group_idx as isize)
+                        as *mut xkb_file_include_group;
+                } else {
+                    (*group).end = idx;
+                }
+                FreeXkbFile(xkb_file);
+            } else {
+                let name: *const ::core::ffi::c_char =
+                    xkb_file_section_get_string(section, (*section).name)
+                        as *const ::core::ffi::c_char;
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"[XKB-%03d] %s include failure in: %s%s%s%s\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                    xkb_file_type_name(file_type),
+                    section_path,
+                    if (*section).name != 0 {
+                        b" (section: \"\0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                    name,
+                    if (*section).name != 0 {
+                        b"\")\0".as_ptr() as *const ::core::ffi::c_char
+                    } else {
+                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                    },
+                );
+                FreeXkbFile(xkb_file);
+                return false_0 != 0;
+            }
+            stmt = (*stmt).next_incl as *mut IncludeStmt;
+        }
+        return true_0 != 0;
+    }
+}
+unsafe extern "C" fn xkb_file_section_process(
+    mut ctx: *mut xkb_context,
+    mut flags: xkb_file_iterator_flags,
+    mut path: *const ::core::ffi::c_char,
+    mut section: *mut xkb_file_section,
+    mut xkb_file: *const XkbFile,
+) -> bool {
+    unsafe {
+        let mut ok: bool = true_0 != 0;
+        let mut stmt: *mut ParseCommon = (*xkb_file).defs;
+        while !stmt.is_null() {
+            if (*stmt).type_0 as ::core::ffi::c_uint
+                == STMT_INCLUDE as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                ok = xkb_file_section_append_includes(
+                    ctx,
+                    flags,
+                    path,
+                    section,
+                    (*xkb_file).file_type,
+                    stmt as *mut IncludeStmt,
+                );
+                if !ok {
+                    break;
+                }
+            }
+            stmt = (*stmt).next as *mut ParseCommon;
+        }
+        return ok;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_section_parse(
+    mut ctx: *mut xkb_context,
+    mut iterator_flags: xkb_file_iterator_flags,
+    mut format: xkb_keymap_format,
+    mut compile_flags: xkb_keymap_compile_flags,
+    mut include_depth: ::core::ffi::c_uint,
+    mut path: *const ::core::ffi::c_char,
+    mut map: *const ::core::ffi::c_char,
+    mut section: *mut xkb_file_section,
+) -> bool {
+    unsafe {
+        if ExceedsIncludeMaxDepth(ctx, include_depth) {
+            return false_0 != 0;
+        }
+        let mut file: *mut FILE =
+            fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        if file.is_null() {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"Cannot open file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                path,
+            );
+            return false_0 != 0;
+        }
+        let mut xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map);
+        fclose(file);
+        if xkb_file.is_null() {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"Cannot parse map \"%s\" in file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                if !map.is_null() {
+                    map
+                } else {
+                    b"(no map)\0".as_ptr() as *const ::core::ffi::c_char
+                },
+                path,
+            );
+            return false_0 != 0;
+        }
+        xkb_file_section_reset(section);
+        let no_includes: bool = iterator_flags as ::core::ffi::c_uint
+            & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
+            != 0;
+        let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as ::core::ffi::c_int
+            != 0
+            && (no_includes as ::core::ffi::c_int != 0
+                || xkb_file_section_process(ctx, iterator_flags, path, section, xkb_file)
+                    as ::core::ffi::c_int
+                    != 0);
+        FreeXkbFile(xkb_file);
+        return ok;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_iterator_new_from_buffer(
+    mut ctx: *mut xkb_context,
+    mut iterator_flags: xkb_file_iterator_flags,
+    mut format: xkb_keymap_format,
+    mut compile_flags: xkb_keymap_compile_flags,
+    mut path: *const ::core::ffi::c_char,
+    mut map: *const ::core::ffi::c_char,
+    mut file_type: xkb_file_type,
+    mut string: *const ::core::ffi::c_char,
+    mut length: size_t,
+) -> *mut xkb_file_iterator {
+    unsafe {
+        let iter: *mut xkb_file_iterator = calloc(
+            1 as size_t,
+            ::core::mem::size_of::<xkb_file_iterator>() as size_t,
+        ) as *mut xkb_file_iterator;
+        if iter.is_null() {
+            xkb_log(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                b"[XKB-%03d] Cannot allocate file iterator\n\0".as_ptr()
+                    as *const ::core::ffi::c_char,
+                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+            );
+            return ::core::ptr::null_mut::<xkb_file_iterator>();
+        }
+        (*iter).flags = iterator_flags;
+        (*iter).ctx = ctx;
+        (*iter).path = path;
+        (*iter).map = map;
+        (*iter).type_0 = file_type;
+        xkb_file_section_init(&raw mut (*iter).section);
+        if !XkbParseStringInit(
+            ctx,
+            &raw mut (*iter).scanner,
+            string,
+            length,
+            path,
+            ::core::ptr::null::<::core::ffi::c_char>(),
+        ) {
+            xkb_file_iterator_free(iter);
+            return ::core::ptr::null_mut::<xkb_file_iterator>();
+        }
+        return iter;
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator) {
+    unsafe {
+        if iter.is_null() {
+            return;
+        }
+        xkb_file_section_free(&raw mut (*iter).section);
+        FreeXkbFile((*iter).pending_xkb_file);
+        free(iter as *mut ::core::ffi::c_void);
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_iterator_next(
+    mut iter: *mut xkb_file_iterator,
+    mut section: *mut *const xkb_file_section,
+) -> bool {
+    unsafe {
+        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut process_includes: bool = false;
+        let mut c2rust_current_block: u64;
+        if (*iter).finished {
+            *section = ::core::ptr::null::<xkb_file_section>();
+            return true_0 != 0;
+        }
+        loop {
+            xkb_file = ::core::ptr::null_mut::<XkbFile>();
+            if !(*iter).pending_xkb_file.is_null() {
+                if !(*iter).pending_section.is_null() {
+                    xkb_file = (*iter).pending_section;
+                    c2rust_current_block = 4521797313793381377;
+                } else {
+                    FreeXkbFile((*iter).pending_xkb_file);
+                    (*iter).pending_xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                    c2rust_current_block = 1394248824506584008;
+                }
+            } else {
+                c2rust_current_block = 1394248824506584008;
+            }
+            match c2rust_current_block {
+                1394248824506584008 => {
+                    if !XkbParseStringNext(
+                        (*iter).ctx,
+                        &raw mut (*iter).scanner,
+                        (*iter).map,
+                        &raw mut xkb_file,
+                    ) {
+                        xkb_log(
+                            (*iter).ctx,
+                            XKB_LOG_LEVEL_ERROR,
+                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            b"Error while parsing section in file: %s\n\0".as_ptr()
+                                as *const ::core::ffi::c_char,
+                            (*iter).path,
+                        );
+                        c2rust_current_block = 3132808253564788397;
+                        break;
+                    } else if xkb_file.is_null() {
+                        (*iter).finished = true_0 != 0;
+                        *section = ::core::ptr::null::<xkb_file_section>();
+                        return true_0 != 0;
+                    }
+                }
+                _ => {}
+            }
+            xkb_file_section_reset(&raw mut (*iter).section);
+            if !xkb_file_section_set_meta_data((*iter).ctx, &raw mut (*iter).section, xkb_file) {
+                c2rust_current_block = 3132808253564788397;
+                break;
+            }
+            *section = &raw mut (*iter).section;
+            if (*xkb_file).file_type as ::core::ffi::c_uint
+                == FILE_TYPE_KEYMAP as ::core::ffi::c_int as ::core::ffi::c_uint
+            {
+                (*iter).pending_xkb_file = xkb_file;
+                (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
+                (*iter).map = ::core::ptr::null::<::core::ffi::c_char>();
+                return true_0 != 0;
+            } else if (*iter).type_0 as ::core::ffi::c_uint
+                != FILE_TYPE_INVALID as ::core::ffi::c_int as ::core::ffi::c_uint
+                && (*xkb_file).file_type as ::core::ffi::c_uint
+                    != (*iter).type_0 as ::core::ffi::c_uint
+            {
+                if !(*iter).pending_xkb_file.is_null() {
+                    (*iter).pending_section = (*xkb_file).common.next as *mut XkbFile;
+                } else {
+                    xkb_log(
+                        (*iter).ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        b"File type mismatch: %s, section: %s\n\0".as_ptr()
+                            as *const ::core::ffi::c_char,
+                        (*iter).path,
+                        if !(*xkb_file).name.is_null() {
+                            (*xkb_file).name as *const ::core::ffi::c_char
+                        } else {
+                            b"(no name)\0".as_ptr() as *const ::core::ffi::c_char
+                        },
+                    );
+                    c2rust_current_block = 3132808253564788397;
+                    break;
+                }
+            } else {
+                if !(*iter).map.is_null() {
+                    (*iter).finished = true_0 != 0;
+                }
+                process_includes = (*iter).flags as ::core::ffi::c_uint
+                    & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
+                    == 0;
+                if process_includes as ::core::ffi::c_int != 0
+                    && !xkb_file_section_process(
+                        (*iter).ctx,
+                        (*iter).flags,
+                        (*iter).path,
+                        &raw mut (*iter).section,
+                        xkb_file,
+                    )
+                {
+                    c2rust_current_block = 3132808253564788397;
+                    break;
+                } else {
+                    c2rust_current_block = 11932355480408055363;
+                    break;
+                }
+            }
+        }
+        match c2rust_current_block {
+            3132808253564788397 => {
+                FreeXkbFile(xkb_file);
+                *section = ::core::ptr::null::<xkb_file_section>();
+                return false_0 != 0;
+            }
+            _ => {
+                if !(*iter).pending_section.is_null() {
+                    (*iter).pending_section = (*xkb_file).common.next as *mut XkbFile;
+                } else {
+                    FreeXkbFile(xkb_file);
+                }
+                return true_0 != 0;
+            }
+        };
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn xkb_file_section_get_string(
+    mut section: *const xkb_file_section,
+    mut idx: darray_size_t,
+) -> *const ::core::ffi::c_char {
+    unsafe {
+        return (*section).buffer.item.offset(idx as isize) as *mut ::core::ffi::c_char;
+    }
+}
