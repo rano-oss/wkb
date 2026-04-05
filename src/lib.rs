@@ -265,19 +265,4 @@ impl<C: Composer> WKB<C> {
     pub fn current_layout(&self) -> String {
         self.layout.clone()
     }
-
-    /// Find the keycode for caps lock in the current layout
-    pub fn caps_lock_key(&self) -> Option<u32> {
-        self.modifiers.caps_lock_key()
-    }
-
-    /// Find the keycode for num lock in the current layout
-    pub fn num_lock_key(&self) -> Option<u32> {
-        self.modifiers.num_lock_key()
-    }
-
-    /// Find the keycode for scroll lock in the current layout
-    pub fn scroll_lock_key(&self) -> Option<u32> {
-        self.modifiers.scroll_lock_key()
-    }
 }
