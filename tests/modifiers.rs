@@ -95,7 +95,7 @@ fn eisu_toggle_japanese(locale: &str) {
 
     for layout in base_wkb.layouts() {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Test all keys to ensure behavior matches
         for keycode in 0..701u32 {

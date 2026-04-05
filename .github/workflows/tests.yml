@@ -37,6 +37,7 @@ jobs:
         test_target:
           - caps_lock
           - num_lock
+          - caps_num_lock
     steps:
       - name: Install system dependencies
         run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
@@ -63,8 +64,11 @@ jobs:
       matrix:
         test_target:
           - compose
+          - ctrl_keys
+          - layouts
+          - led_lights
           - level
-          - modifiers_state
+          - modifiers
           - repeat
     steps:
       - name: Install system dependencies
