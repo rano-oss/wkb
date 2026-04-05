@@ -916,6 +916,27 @@ fn build_modifiers_from_keymap(
                         if let Some(&mod_type) = mod_name_to_type.get(&mod_name) {
                             let evdev_code = keycode - evdev_offset;
 
+                            // Special case: Lock modifier can be Caps_Lock or Eisu_toggle (JP layout)
+                            // Only treat as Caps if key produces Caps_Lock keysym
+                            if mod_type == ModType::Caps {
+                                let layout_idx = 0;
+                                let level_idx = 0;
+                                let mut syms_ptr: *const u32 = std::ptr::null();
+                                let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
+                                    keymap,
+                                    keycode,
+                                    layout_idx,
+                                    level_idx,
+                                    &mut syms_ptr,
+                                );
+
+                                // Check if produces Caps_Lock keysym (0xffe5)
+                                // Skip if produces Eisu_toggle (0xff30) or other non-caps keysym
+                                if num_syms != 1 || syms_ptr.is_null() || *syms_ptr != 0xffe5 {
+                                    continue; // Not real Caps Lock, skip it
+                                }
+                            }
+
                             // Create appropriate ModKind based on modifier type
                             let mod_kind = match mod_type {
                                 ModType::Caps | ModType::Num | ModType::Scroll => ModKind::Lock {
