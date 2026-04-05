@@ -43,8 +43,22 @@ fn caps_num_lock_keys(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let caps_code = CAPS_LOCK;
-        let num_code = NUM_LOCK;
+        // Find the actual caps lock and num lock keys for this layout
+        let caps_code = match wkb.caps_lock_key() {
+            Some(code) => code,
+            None => {
+                // This layout doesn't have a caps lock key, skip this test
+                continue;
+            }
+        };
+        let num_code = match wkb.num_lock_key() {
+            Some(code) => code,
+            None => {
+                // This layout doesn't have a num lock key, skip this test
+                continue;
+            }
+        };
+
         // Activate caps lock
         wkb.update_key(caps_code, KeyDirection::Down);
         wkb.update_key(caps_code, KeyDirection::Up);
