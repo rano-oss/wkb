@@ -1,6 +1,6 @@
 use test_case::test_matrix;
 use wkb::{
-    modifiers::{level_index, ALTGR},
+    modifiers::{level_index, ALTGR, CAPS_LOCK},
     KeyDirection, WKB,
 };
 use xkbcommon::{
@@ -207,26 +207,11 @@ fn caps_lock(locale: &str, level: usize) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual caps lock key for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-
-        if wkb.state_keymap.len() <= level {
-            continue;
-        }
-
-        if !set_modifier_level(&mut wkb, &mut xkb, level) {
-            continue;
-        }
+        set_modifier_level(&mut wkb, &mut xkb, level);
 
         // Activate caps lock
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        wkb.update_key(caps_code, wkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, wkb::KeyDirection::Down);
 
         test_all_keys_locale(wkb, xkb, layout, locale);
     }

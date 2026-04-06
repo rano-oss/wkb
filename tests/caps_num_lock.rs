@@ -98,30 +98,14 @@ fn caps_then_num_lock_sequence(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual caps lock and num lock keys for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-        let num_code = match wkb.num_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a num lock key, skip this test
-                continue;
-            }
-        };
-
         // Sample key to test (using 'a' key which is typically keycode 38 on evdev)
         let test_key = 38u32;
 
         // 1. Caps lock only
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_char1 = wkb.utf8(test_key);
         let xkb_char1 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
@@ -133,10 +117,10 @@ fn caps_then_num_lock_sequence(locale: &str) {
         );
 
         // 2. Add num lock (both active)
-        wkb.update_key(num_code, KeyDirection::Down);
-        wkb.update_key(num_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_char2 = wkb.utf8(test_key);
         let xkb_char2 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
@@ -148,10 +132,10 @@ fn caps_then_num_lock_sequence(locale: &str) {
         );
 
         // 3. Remove caps lock (num only)
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_char3 = wkb.utf8(test_key);
         let xkb_char3 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
@@ -181,30 +165,14 @@ fn keypad_with_locks(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        // Find the actual caps lock and num lock keys for this layout
-        let caps_code = match wkb.caps_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a caps lock key, skip this test
-                continue;
-            }
-        };
-        let num_code = match wkb.num_lock_key() {
-            Some(code) => code,
-            None => {
-                // This layout doesn't have a num lock key, skip this test
-                continue;
-            }
-        };
-
         // Keypad keys (evdev keycodes): KP_0=82, KP_1=79, KP_2=80, etc.
         let keypad_keys = vec![79, 80, 81, 75, 76, 77, 71, 72, 73, 82, 83, 86, 63, 106];
 
         // Test keypad keys with num lock only
-        wkb.update_key(num_code, KeyDirection::Down);
-        wkb.update_key(num_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(num_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         for &keycode in &keypad_keys {
             let wkb_char = wkb.utf8(keycode);
@@ -224,10 +192,10 @@ fn keypad_with_locks(locale: &str) {
         }
 
         // Add caps lock
-        wkb.update_key(caps_code, KeyDirection::Down);
-        wkb.update_key(caps_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(caps_code + 8), xkb::KeyDirection::Up);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         for &keycode in &keypad_keys {
             let wkb_char = wkb.utf8(keycode);
