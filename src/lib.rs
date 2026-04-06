@@ -105,13 +105,16 @@ impl<C: Composer> WKB<C> {
 
     pub fn leds_state(&self) -> u32 {
         let mut leds = 0;
-        if self.modifiers.locked(NUM_LOCK) {
+        if self.modifiers.locked_with_type(NUM_LOCK, ModType::Num) {
             leds |= 1;
         }
-        if self.modifiers.locked(CAPS_LOCK) {
+        if self.modifiers.locked_with_type(CAPS_LOCK, ModType::Caps) {
             leds |= 2;
         }
-        if self.modifiers.locked(SCROLL_LOCK) {
+        if self
+            .modifiers
+            .locked_with_type(SCROLL_LOCK, ModType::Scroll)
+        {
             leds |= 4;
         }
         leds
@@ -211,7 +214,8 @@ impl<C: Composer> WKB<C> {
             .state_keymap
             .get(base_level)
             .and_then(|m| m.get(&evdev_code).copied());
-        if key.is_some() {
+        // Only unlatch if no latch modifiers are currently pressed
+        if key.is_some() && !self.modifiers.any_latch_pressed() {
             self.modifiers.unlatch()
         }
         key

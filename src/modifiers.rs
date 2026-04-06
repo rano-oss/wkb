@@ -356,6 +356,15 @@ impl Modifiers {
         self.active_mod_type(ModType::Level3)
     }
 
+    pub fn any_latch_pressed(&self) -> bool {
+        self.0.values().any(|modifier| match modifier {
+            Modifier::Single(mod_kind) => matches!(mod_kind, ModKind::Latch { pressed: true, .. }),
+            Modifier::Leveled(map) => map
+                .values()
+                .any(|mod_kind| matches!(mod_kind, ModKind::Latch { pressed: true, .. })),
+        })
+    }
+
     pub fn level2(&self) -> bool {
         self.active_mod_type(ModType::Level2)
     }
@@ -420,6 +429,19 @@ impl Modifiers {
             .is_some_and(|modifier| match modifier {
                 Modifier::Single(mod_kind) => mod_kind.locked(),
                 Modifier::Leveled(map) => map.values().any(|mod_kind| mod_kind.locked()),
+            })
+    }
+
+    pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
+        self.0
+            .get(&evdev_code)
+            .is_some_and(|modifier| match modifier {
+                Modifier::Single(mod_kind) => {
+                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+                }
+                Modifier::Leveled(map) => map.values().any(|mod_kind| {
+                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+                }),
             })
     }
 
