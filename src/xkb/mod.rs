@@ -874,6 +874,7 @@ fn build_modifiers_from_keymap(
                 "ISO_Level5_Shift" | "LevelFive" => ModType::Level5,
                 "Lock" => ModType::Caps,
                 "Mod2" => ModType::Num, // Num_Lock is typically mapped to Mod2
+                "Mod5" => ModType::Level3, // Mod5 often used for Level3 (e.g., mm/zawgyi tilde_latch)
                 "Scroll_Lock" | "ScrollLock" => ModType::Scroll,
                 "Control" => ModType::None, // Control keys use ModType::None
                 _ => continue,              // Skip unknown modifiers
@@ -906,39 +907,93 @@ fn build_modifiers_from_keymap(
                     // Check both modmap and vmodmap
                     if (modmap & mod_mask) != 0 || (vmodmap & mod_mask) != 0 {
                         // This key produces this modifier
-                        let mod_name_ptr = keymap::xkb_keymap_mod_get_name(keymap, mod_idx);
-                        if mod_name_ptr.is_null() {
-                            continue;
+                        // First check if key produces a Level3/Level5 keysym (handles Mod5 mapping to Level3)
+                        let layout_idx = 0;
+                        let level_idx = 0;
+                        let mut syms_ptr: *const u32 = std::ptr::null();
+                        let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
+                            keymap,
+                            keycode,
+                            layout_idx,
+                            level_idx,
+                            &mut syms_ptr,
+                        );
+
+                        let keysym_mod_type = if num_syms == 1 && !syms_ptr.is_null() {
+                            let keysym = *syms_ptr;
+                            match keysym {
+                                // Level3 keysyms
+                                0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
+                                // Level5 keysyms
+                                0xfe11 | 0xfe12 | 0xfe13 => Some(ModType::Level5),
+                                _ => None,
+                            }
+                        } else {
+                            None
+                        };
+
+                        // If keysym indicates Level3/Level5, use that; otherwise check mod_name
+                        let mod_type = if let Some(mt) = keysym_mod_type {
+                            mt
+                        } else {
+                            let mod_name_ptr = keymap::xkb_keymap_mod_get_name(keymap, mod_idx);
+                            if mod_name_ptr.is_null() {
+                                continue;
+                            }
+                            let mod_name =
+                                CStr::from_ptr(mod_name_ptr).to_string_lossy().to_string();
+                            if let Some(&mt) = mod_name_to_type.get(&mod_name) {
+                                mt
+                            } else {
+                                continue; // Unknown modifier, skip
+                            }
+                        };
+
+                        let evdev_code = keycode - evdev_offset;
+
+                        // Special case: Lock modifier can be Caps_Lock or Eisu_toggle (JP layout)
+                        // Only treat as Caps if key produces Caps_Lock keysym
+                        if mod_type == ModType::Caps {
+                            // Check if produces Caps_Lock keysym (0xffe5)
+                            // Skip if produces Eisu_toggle (0xff30) or other non-caps keysym
+                            if num_syms != 1 || syms_ptr.is_null() || *syms_ptr != 0xffe5 {
+                                continue; // Not real Caps Lock, skip it
+                            }
                         }
 
-                        let mod_name = CStr::from_ptr(mod_name_ptr).to_string_lossy().to_string();
-
-                        if let Some(&mod_type) = mod_name_to_type.get(&mod_name) {
-                            let evdev_code = keycode - evdev_offset;
-
-                            // Special case: Lock modifier can be Caps_Lock or Eisu_toggle (JP layout)
-                            // Only treat as Caps if key produces Caps_Lock keysym
-                            if mod_type == ModType::Caps {
-                                let layout_idx = 0;
-                                let level_idx = 0;
-                                let mut syms_ptr: *const u32 = std::ptr::null();
-                                let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
-                                    keymap,
-                                    keycode,
-                                    layout_idx,
-                                    level_idx,
-                                    &mut syms_ptr,
-                                );
-
-                                // Check if produces Caps_Lock keysym (0xffe5)
-                                // Skip if produces Eisu_toggle (0xff30) or other non-caps keysym
-                                if num_syms != 1 || syms_ptr.is_null() || *syms_ptr != 0xffe5 {
-                                    continue; // Not real Caps Lock, skip it
+                        // Create appropriate ModKind based on modifier type
+                        // For Level3/Level5, check keysym to determine if Pressed/Latch/Lock
+                        let mod_kind = if mod_type == ModType::Level3 || mod_type == ModType::Level5
+                        {
+                            if num_syms == 1 && !syms_ptr.is_null() {
+                                let keysym = *syms_ptr;
+                                match keysym {
+                                    // Latch variants
+                                    0xfe04 | 0xfe12 => ModKind::Latch {
+                                        pressed: false,
+                                        latched: false,
+                                        mod_type,
+                                    },
+                                    // Lock variants
+                                    0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock {
+                                        pressed: false,
+                                        locked: 0,
+                                        mod_type,
+                                    },
+                                    // Default to Pressed for Shift variants or others
+                                    _ => ModKind::Pressed {
+                                        pressed: false,
+                                        mod_type,
+                                    },
+                                }
+                            } else {
+                                ModKind::Pressed {
+                                    pressed: false,
+                                    mod_type,
                                 }
                             }
-
-                            // Create appropriate ModKind based on modifier type
-                            let mod_kind = match mod_type {
+                        } else {
+                            match mod_type {
                                 ModType::Caps | ModType::Num | ModType::Scroll => ModKind::Lock {
                                     pressed: false,
                                     locked: 0,
@@ -948,19 +1003,22 @@ fn build_modifiers_from_keymap(
                                     pressed: false,
                                     mod_type,
                                 },
-                            };
+                            }
+                        };
 
-                            // Update the modifiers map
-                            modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
-                        }
+                        // Update the modifiers map
+                        modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
                     }
                 }
             }
 
             // Also check if this key produces a level shift keysym (like ISO_Level5_Shift)
             // This handles cases like level5(rctrl_switch) where RCTL produces ISO_Level5_Shift keysym
+            // Only treat as keysym-based modifier if key has ONE level (ONE_LEVEL type)
+            // Keys with multiple levels should produce chars at other levels, not act as pure modifiers
             let layout_idx = 0;
             let level_idx = 0;
+            let num_levels = keymap::xkb_keymap_num_levels_for_key(keymap, keycode, layout_idx);
             let mut syms_ptr: *const u32 = std::ptr::null();
             let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
                 keymap,
@@ -970,22 +1028,47 @@ fn build_modifiers_from_keymap(
                 &mut syms_ptr,
             );
 
-            if num_syms == 1 && !syms_ptr.is_null() {
+            if num_levels == 1 && num_syms == 1 && !syms_ptr.is_null() {
                 let keysym = *syms_ptr;
 
-                // Check if this keysym is a level shift
-                // ISO_Level3_Shift = 0xfe03, ISO_Level5_Shift = 0xfe11
-                let mod_type = match keysym {
-                    0xfe03 => Some(ModType::Level3), // ISO_Level3_Shift
-                    0xfe11 => Some(ModType::Level5), // ISO_Level5_Shift
+                // Check if this keysym is a level shift/latch/lock
+                // Level3: Shift=0xfe03, Latch=0xfe04, Shift_Lock=0xfe05, Lock=0xfe0d
+                // Level5: Shift=0xfe11, Latch=0xfe12, Lock=0xfe13
+                let mod_kind = match keysym {
+                    // Level3 variants
+                    0xfe03 => Some(ModKind::Pressed {
+                        pressed: false,
+                        mod_type: ModType::Level3,
+                    }),
+                    0xfe04 => Some(ModKind::Latch {
+                        pressed: false,
+                        latched: false,
+                        mod_type: ModType::Level3,
+                    }),
+                    0xfe05 | 0xfe0d => Some(ModKind::Lock {
+                        pressed: false,
+                        locked: 0,
+                        mod_type: ModType::Level3,
+                    }),
+                    // Level5 variants
+                    0xfe11 => Some(ModKind::Pressed {
+                        pressed: false,
+                        mod_type: ModType::Level5,
+                    }),
+                    0xfe12 => Some(ModKind::Latch {
+                        pressed: false,
+                        latched: false,
+                        mod_type: ModType::Level5,
+                    }),
+                    0xfe13 => Some(ModKind::Lock {
+                        pressed: false,
+                        locked: 0,
+                        mod_type: ModType::Level5,
+                    }),
                     _ => None,
                 };
 
-                if let Some(mod_type) = mod_type {
-                    let mod_kind = ModKind::Pressed {
-                        pressed: false,
-                        mod_type,
-                    };
+                if let Some(mod_kind) = mod_kind {
                     modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
                 }
             }
