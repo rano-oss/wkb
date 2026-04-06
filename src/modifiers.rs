@@ -99,10 +99,10 @@ impl ModKind {
     fn unlatch(&mut self) {
         match self {
             ModKind::Latch {
-                pressed,
+                pressed: _,
                 latched,
                 mod_type: _,
-            } => *latched = *pressed,
+            } => *latched = false,
             _ => {}
         }
     }
