@@ -85,8 +85,15 @@ impl ModKind {
                 mod_type: _,
             } => match key_direction {
                 KeyDirection::Down => {
-                    *pressed = true;
-                    *latched = true;
+                    if *latched {
+                        // Already latched - pressing again deactivates (toggle off)
+                        *pressed = false;
+                        *latched = false;
+                    } else {
+                        // Not latched - activate it
+                        *pressed = true;
+                        *latched = true;
+                    }
                 }
                 KeyDirection::Up => {
                     *pressed = false;
