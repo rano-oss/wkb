@@ -952,12 +952,36 @@ fn build_modifiers_from_keymap(
                         let evdev_code = keycode - evdev_offset;
 
                         // Special case: Lock modifier can be Caps_Lock or Eisu_toggle (JP layout)
-                        // Only treat as Caps if key produces Caps_Lock keysym
+                        // Only treat as Caps if key produces Caps_Lock keysym at ANY level
+                        // JP layout has: key <CAPS> {[ Eisu_toggle, Caps_Lock ]};
+                        // So level 0 = Eisu_toggle, level 1 = Caps_Lock
                         if mod_type == ModType::Caps {
-                            // Check if produces Caps_Lock keysym (0xffe5)
-                            // Skip if produces Eisu_toggle (0xff30) or other non-caps keysym
-                            if num_syms != 1 || syms_ptr.is_null() || *syms_ptr != 0xffe5 {
-                                continue; // Not real Caps Lock, skip it
+                            // Check ALL levels for Caps_Lock keysym (0xffe5)
+                            let num_levels_for_key =
+                                keymap::xkb_keymap_num_levels_for_key(keymap, keycode, layout_idx);
+                            let mut found_caps_lock = false;
+
+                            for check_level in 0..num_levels_for_key {
+                                let mut check_syms_ptr: *const u32 = std::ptr::null();
+                                let check_num_syms = keymap::xkb_keymap_key_get_syms_by_level(
+                                    keymap,
+                                    keycode,
+                                    layout_idx,
+                                    check_level,
+                                    &mut check_syms_ptr,
+                                );
+
+                                if check_num_syms == 1
+                                    && !check_syms_ptr.is_null()
+                                    && *check_syms_ptr == 0xffe5
+                                {
+                                    found_caps_lock = true;
+                                    break;
+                                }
+                            }
+
+                            if !found_caps_lock {
+                                continue; // Not real Caps Lock (e.g., pure Eisu_toggle), skip it
                             }
                         }
 
