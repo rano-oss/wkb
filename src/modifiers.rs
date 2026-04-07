@@ -356,15 +356,6 @@ impl Modifiers {
         self.active_mod_type(ModType::Level3)
     }
 
-    pub fn any_latch_pressed(&self) -> bool {
-        self.0.values().any(|modifier| match modifier {
-            Modifier::Single(mod_kind) => matches!(mod_kind, ModKind::Latch { pressed: true, .. }),
-            Modifier::Leveled(map) => map
-                .values()
-                .any(|mod_kind| matches!(mod_kind, ModKind::Latch { pressed: true, .. })),
-        })
-    }
-
     pub fn level2(&self) -> bool {
         self.active_mod_type(ModType::Level2)
     }

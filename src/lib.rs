@@ -194,7 +194,6 @@ impl<C: Composer> WKB<C> {
                 .get(base_level)
                 .and_then(|m| m.get(&evdev_code))
             {
-                self.modifiers.unlatch();
                 return Some(key);
             }
         }
@@ -205,7 +204,6 @@ impl<C: Composer> WKB<C> {
                 .get(base_level)
                 .and_then(|m| m.get(&evdev_code))
             {
-                self.modifiers.unlatch();
                 return Some(c);
             }
         }
@@ -214,16 +212,16 @@ impl<C: Composer> WKB<C> {
             .state_keymap
             .get(base_level)
             .and_then(|m| m.get(&evdev_code).copied());
-        // Only unlatch if no latch modifiers are currently pressed
-        if key.is_some() && !self.modifiers.any_latch_pressed() {
-            self.modifiers.unlatch()
-        }
         key
     }
 
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier {
+            // Non-modifier key: unlatch any latched modifiers on key press
+            if key_direction == KeyDirection::Down {
+                self.modifiers.unlatch();
+            }
             match key_direction {
                 KeyDirection::Up => self.pressed_keys.remove(&evdev_code),
                 KeyDirection::Down => self.pressed_keys.insert(evdev_code),
