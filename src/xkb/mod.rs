@@ -955,11 +955,13 @@ fn build_modifiers_from_keymap(
                         // Only treat as Caps if key produces Caps_Lock keysym at ANY level
                         // JP layout has: key <CAPS> {[ Eisu_toggle, Caps_Lock ]};
                         // So level 0 = Eisu_toggle, level 1 = Caps_Lock
+                        // We need to create a Leveled modifier for multi-level Caps keys
                         if mod_type == ModType::Caps {
                             // Check ALL levels for Caps_Lock keysym (0xffe5)
                             let num_levels_for_key =
                                 keymap::xkb_keymap_num_levels_for_key(keymap, keycode, layout_idx);
-                            let mut found_caps_lock = false;
+                            let mut caps_lock_levels = Vec::new();
+                            let mut non_caps_levels = Vec::new();
 
                             for check_level in 0..num_levels_for_key {
                                 let mut check_syms_ptr: *const u32 = std::ptr::null();
@@ -971,18 +973,44 @@ fn build_modifiers_from_keymap(
                                     &mut check_syms_ptr,
                                 );
 
-                                if check_num_syms == 1
-                                    && !check_syms_ptr.is_null()
-                                    && *check_syms_ptr == 0xffe5
-                                {
-                                    found_caps_lock = true;
-                                    break;
+                                if check_num_syms == 1 && !check_syms_ptr.is_null() {
+                                    if *check_syms_ptr == 0xffe5 {
+                                        caps_lock_levels.push(check_level);
+                                    } else {
+                                        non_caps_levels.push(check_level);
+                                    }
                                 }
                             }
 
-                            if !found_caps_lock {
+                            if caps_lock_levels.is_empty() {
                                 continue; // Not real Caps Lock (e.g., pure Eisu_toggle), skip it
                             }
+
+                            // If we have both Caps_Lock and non-Caps levels, create a Leveled modifier
+                            if !non_caps_levels.is_empty() {
+                                let mut level_map = BTreeMap::new();
+
+                                // Add Caps Lock for levels that have it
+                                for &level in &caps_lock_levels {
+                                    level_map.insert(
+                                        level as u8,
+                                        ModKind::Lock {
+                                            pressed: false,
+                                            locked: 0,
+                                            mod_type: ModType::Caps,
+                                        },
+                                    );
+                                }
+
+                                // Add None for levels that don't have Caps_Lock
+                                for &level in &non_caps_levels {
+                                    level_map.insert(level as u8, ModKind::None);
+                                }
+
+                                modifiers.set_modifier(evdev_code, Modifier::Leveled(level_map));
+                                continue; // Skip normal Single modifier creation
+                            }
+                            // Otherwise fall through to create Single modifier
                         }
 
                         // Create appropriate ModKind based on modifier type
