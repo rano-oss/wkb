@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     pub type __builtin_va_list = [__va_list_tag; 1];
     #[derive(Copy, Clone)]
@@ -133,10 +132,10 @@ pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
     pub const _IONBF: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
     pub const BUFSIZ: ::core::ffi::c_int = 8192 as ::core::ffi::c_int;
-    use super::FILE_h::FILE;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
     use super::__stddef_size_t_h::size_t;
-    use super::internal::__va_list_tag;
+    use super::FILE_h::FILE;
+
     extern "C" {
         pub static mut stdout: *mut FILE;
         pub static mut stderr: *mut FILE;
@@ -244,7 +243,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -1007,10 +1006,7 @@ pub mod tools_common_h {
     pub const PRINT_UNICODE: print_state_options = 2;
     pub const PRINT_LAYOUT: print_state_options = 1;
     use super::xkbcommon_compose_h::xkb_compose_state;
-    use super::xkbcommon_h::{
-        xkb_consumed_mode, xkb_key_direction, xkb_keycode_t, xkb_state, XKB_CONSUMED_MODE_XKB,
-        XKB_KEY_UP,
-    };
+    use super::xkbcommon_h::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t, xkb_state};
     extern "C" {
         pub fn tools_print_keycode_state(
             prefix: *const ::core::ffi::c_char,
@@ -1122,7 +1118,7 @@ pub mod utils_h {
             return str;
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::assert_h::__assert_fail;
     use super::stdio_h::vasprintf;
     use super::string_h::strcmp;
@@ -1241,25 +1237,24 @@ pub use self::keymap_h::{
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
     C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_13, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
-    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
-    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
-    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
-    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
-    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
-    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
-    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, _ACTION_TYPE_NUM_ENTRIES,
+    _LAST_XKB_EVENT_TYPE, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
     EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT, EXPLICIT_SYMBOLS, EXPLICIT_TYPES,
     EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
-    _ACTION_TYPE_NUM_ENTRIES, _LAST_XKB_EVENT_TYPE,
 };
 pub use self::locale_h::__LC_ALL;
 pub use self::rmlvo_h::{
@@ -1274,10 +1269,10 @@ pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
 pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
 pub use self::stdio_h::{
     fclose, feof, ferror, fileno, fopen, fprintf, fread, fwrite, printf, setvbuf, stderr, stdout,
-    va_list, vasprintf, BUFSIZ, _IONBF,
+    va_list, vasprintf, _IONBF, BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
-use self::string_h::{memcpy, memset, strcmp, strdup, strerror, strlen};
+use self::string_h::{memcpy, memset, strdup, strerror, strlen};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;

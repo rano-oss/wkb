@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -100,7 +99,7 @@ pub mod test_h {
     use super::messages_codes_h::XKB_LOG_VERBOSITY_MINIMAL;
     use super::xkbcommon_h::{
         xkb_context, xkb_context_set_log_level, xkb_context_set_log_verbosity, xkb_keymap,
-        xkb_keymap_format, xkb_log_level, XKB_LOG_LEVEL_CRITICAL,
+        xkb_keymap_format, XKB_LOG_LEVEL_CRITICAL,
     };
     extern "C" {
         pub fn test_get_context(flags: test_context_flags) -> *mut xkb_context;

@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -114,7 +113,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -279,13 +278,17 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::{NULL, NULL_0};
 pub use self::__stddef_size_t_h::size_t;
-use self::atom_h::atom_table;
+pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
+pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, stderr};
+use self::stdlib_h::{free, setenv};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
+pub use self::test_config_h::TEST_XKB_CONFIG_ROOT;
 pub use self::test_h::{
     test_context_flags, test_get_context, test_init, CONTEXT_ALLOW_ENVIRONMENT_NAMES,
     CONTEXT_NO_FLAG,
@@ -298,12 +301,6 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
-pub use self::stdbool_h::{false_0, true_0};
-use self::stdlib_h::{free, setenv};
-use self::string_h::strcmp;
-pub use self::test_config_h::TEST_XKB_CONFIG_ROOT;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct test_data {

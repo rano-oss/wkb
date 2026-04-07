@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 // use f128; // f128 is unstable, replaced with f64
 pub mod types_h {
     pub type __uint64_t = u64;
@@ -249,6 +248,7 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
+pub use self::__stddef_null_h::NULL;
 use self::assert_h::__assert_fail;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
@@ -281,7 +281,6 @@ pub use self::xkbcommon_h::{
     XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
 pub const OPT_STDEV: options = 12;
 pub const OPT_ITERATIONS: options = 11;
 pub const OPT_OPTION: options = 10;

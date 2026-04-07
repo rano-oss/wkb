@@ -104,13 +104,13 @@ impl ModKind {
     }
 
     fn unlatch(&mut self) {
-        match self {
-            ModKind::Latch {
-                pressed: _,
-                latched,
-                mod_type: _,
-            } => *latched = false,
-            _ => {}
+        if let ModKind::Latch {
+            pressed: _,
+            latched,
+            mod_type: _,
+        } = self
+        {
+            *latched = false
         }
     }
 

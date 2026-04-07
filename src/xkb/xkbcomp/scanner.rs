@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -127,7 +126,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_atom_intern(
@@ -620,7 +619,7 @@ pub mod scanner_utils_h {
     use super::utils_numbers_h::{
         parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
     };
-    use super::xkbcommon_h::{xkb_log_level, XKB_LOG_LEVEL_ERROR};
+    use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
     extern "C" {
         pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
     }
@@ -1141,9 +1140,9 @@ pub mod utils_h {
                 && ch as ::core::ffi::c_int <= '~' as i32;
         }
     }
+    use super::__stddef_size_t_h::size_t;
     use super::stdint_uintn_h::uint32_t;
     use super::FILE_h::FILE;
-    use super::__stddef_size_t_h::size_t;
     extern "C" {
         pub fn map_file(
             file: *mut FILE,
@@ -1551,11 +1550,12 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 pub use self::ast_h::{
-    stmt_type, xkb_file_type, C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef,
-    ExprBinary, ExprBoolean, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
-    ExprKeysymList, ExprString, ExprUnary, KeyAliasDef, KeyTypeDef, KeycodeDef, SymbolsDef,
-    VModDef, VarDef, _ParseCommon, merge_mode, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, UnknownStatement, XkbFile, FILE_TYPE_COMPAT,
+    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
+    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
+    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
+    GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
+    ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
+    _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
     FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
     FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
     MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
@@ -1568,7 +1568,7 @@ pub use self::ast_h::{
     STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
     STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+    STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
@@ -1578,15 +1578,16 @@ pub use self::darray_h::darray_size_t;
 use self::errno_h::__errno_location;
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -1618,7 +1619,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::parser_h::{
     yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
@@ -1643,10 +1644,9 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT64_MAX;
 pub use self::stdint_intn_h::int64_t;
 pub use self::stdint_uintn_h::{uint32_t, uint64_t, uint8_t};
-use self::string_h::{memchr, memcmp, strdup, strerror};
+use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
-use self::utf8_h::utf32_to_utf8;
 pub use self::utils_h::{
     is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit, map_file,
     unmap_file,

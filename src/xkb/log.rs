@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -114,7 +113,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_log(
@@ -196,7 +195,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
     use super::context_h::xkb_context;
-    use super::internal::__va_list_tag;
+
     extern "C" {
         pub type xkb_keymap;
         pub fn xkb_context_unref(context: *mut xkb_context);
@@ -359,7 +358,7 @@ pub mod test_h {
     }
 }
 pub mod stdio_h {
-    use super::internal::__va_list_tag;
+
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
@@ -493,22 +492,22 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::{NULL, NULL_0};
 pub use self::__stddef_size_t_h::size_t;
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
-use self::atom_h::atom_table;
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::internal::__va_list_tag;
 pub use self::locale_h::__LC_ALL;
 pub use self::messages_codes_h::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -540,12 +539,12 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, printf, stderr, vasprintf};
 pub use self::stdlib_h::{free, realloc, setenv, EXIT_SUCCESS};
-use self::string_h::{memcpy, strcmp, strlen};
+use self::string_h::{memcpy, strlen};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::test_h::{
     test_compile_buffer, test_context_flags, test_get_context, test_init,

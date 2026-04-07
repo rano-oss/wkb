@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -78,7 +77,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_log(
@@ -330,7 +329,7 @@ pub mod utils_h {
             };
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::string_h::strdup;
 }
 pub mod assert_h {
@@ -369,21 +368,21 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
-use self::atom_h::atom_table;
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -415,7 +414,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::rmlvo_h::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
@@ -426,7 +425,7 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::uint32_t;
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{strcmp, strdup};
+use self::string_h::strcmp;
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
 pub use self::xkbcommon_errors_h::{

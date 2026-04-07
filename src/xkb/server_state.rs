@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -145,7 +144,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -1117,7 +1116,7 @@ pub mod state_h {
             return ok;
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::__stddef_size_t_h::size_t;
     use super::assert_h::__assert_fail;
     use super::keymap_h::xkb_keymap;
@@ -1211,7 +1210,8 @@ pub use self::keymap_h::{
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
     C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_15, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
-    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, _ACTION_TYPE_NUM_ENTRIES,
+    _LAST_XKB_EVENT_TYPE, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
     ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
     ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
     ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
@@ -1230,8 +1230,7 @@ pub use self::keymap_h::{
     EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MOD_INDEX_CAPS,
     XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3,
-    XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, _ACTION_TYPE_NUM_ENTRIES,
-    _LAST_XKB_EVENT_TYPE, _XKB_MOD_INDEX_NUM_ENTRIES,
+    XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT,
 };
 pub use self::state_h::{
     _xkb_keymap_mod_get_mask, check_events, print_event, xkb_event_eq, EVDEV_OFFSET,
@@ -1245,7 +1244,7 @@ pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
 pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint64_t, uint8_t};
 use self::stdio_h::{fprintf, stderr};
 pub use self::stdlib_h::EXIT_SUCCESS;
-use self::string_h::{memcmp, memcpy};
+use self::string_h::memcpy;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::test_h::{
     key_seq_state, test_compile_buffer, test_compile_file, test_compile_rmlvo, test_compile_rules,

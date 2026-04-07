@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -205,13 +204,16 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::config_h::{DEFAULT_XKB_RULES, EXIT_INVALID_USAGE};
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
+pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, printf, stderr, stdout};
+pub use self::stdlib_h::{EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::xkbregistry_h::{
@@ -232,9 +234,6 @@ pub use self::xkbregistry_h::{
     RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO, RXKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdlib_h::{EXIT_FAILURE, EXIT_SUCCESS};
 unsafe extern "C" fn usage(mut progname: *const ::core::ffi::c_char, mut fp: *mut FILE) {
     unsafe {
         fprintf(

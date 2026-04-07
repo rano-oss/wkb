@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __dev_t = ::core::ffi::c_ulong;
@@ -164,11 +163,13 @@ pub mod mman_linux_h {
     pub const PROT_READ: ::core::ffi::c_int = 0x1 as ::core::ffi::c_int;
     pub const MAP_SHARED: ::core::ffi::c_int = 0x1 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_RDONLY;
 pub use self::mman_h::{mmap, munmap, MAP_FAILED};
+pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::stat_h::fstat;
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fdopen, fileno};
@@ -179,10 +180,8 @@ pub use self::types_h::{
     __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off64_t, __off_t,
     __syscall_slong_t, __time_t, __uid_t, __uint64_t,
 };
-pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::unistd_h::close;
+pub use self::FILE_h::FILE;
 #[no_mangle]
 pub unsafe extern "C" fn map_file(
     mut file: *mut FILE,

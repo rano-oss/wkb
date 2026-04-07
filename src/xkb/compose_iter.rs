@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -76,7 +75,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -187,7 +186,6 @@ pub mod compose_iter_h {
     use super::table_h::xkb_compose_table_entry;
 }
 pub use self::__stddef_size_t_h::size_t;
-use self::atom_h::atom_table;
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_size_t};

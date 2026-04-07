@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint32_t = u32;
     pub type __uint64_t = u64;
@@ -94,8 +93,8 @@ pub mod sys_types_h {
     use super::types_h::__pid_t;
 }
 pub mod stdio_h {
-    use super::FILE_h::FILE;
     use super::__stddef_size_t_h::size_t;
+    use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
         pub fn fprintf(
@@ -199,13 +198,19 @@ pub mod keysym_h {
     pub const XKB_KEYSYM_NAME_MAX_SIZE: ::core::ffi::c_int = 31 as ::core::ffi::c_int;
     pub const XKB_KEYSYM_UTF8_MAX_SIZE: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
+pub use self::keysym_h::{
+    XKB_KEYSYM_NAME_MAX_SIZE, XKB_KEYSYM_UNICODE_OFFSET, XKB_KEYSYM_UTF8_MAX_SIZE,
+};
 pub use self::stdint_uintn_h::uint32_t;
 use self::stdio_h::{fprintf, perror, snprintf, stderr};
 pub use self::stdlib_h::{exit, strtoul, strtoull, EXIT_FAILURE, EXIT_SUCCESS};
+use self::string_h::strcmp;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::sys_types_h::pid_t;
+pub use self::test_h::{test_init, TEST_SETUP_FAILURE};
 pub use self::types_h::{__off64_t, __off_t, __pid_t, __uint32_t, __uint64_t};
 use self::unistd_h::fork;
 pub use self::utils_h::{is_digit, is_surrogate};
@@ -215,12 +220,6 @@ pub use self::xkbcommon_h::{
     xkb_keysym_to_utf8, xkb_utf32_to_keysym, XKB_KEYSYM_CASE_INSENSITIVE, XKB_KEYSYM_NO_FLAGS,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-pub use self::keysym_h::{
-    XKB_KEYSYM_NAME_MAX_SIZE, XKB_KEYSYM_UNICODE_OFFSET, XKB_KEYSYM_UTF8_MAX_SIZE,
-};
-use self::string_h::strcmp;
-pub use self::test_h::{test_init, TEST_SETUP_FAILURE};
 unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut end: uint32_t) {
     unsafe {
         let mut buffer: [::core::ffi::c_char; 31] = [

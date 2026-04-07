@@ -95,8 +95,8 @@ impl<C: Composer> WKB<C> {
         ];
         for (code, bit) in mapping {
             if let Some(modifier) = self.modifiers.0.get(&code) {
-                match modifier {
-                    Modifier::Single(mk) => match mk {
+                if let Modifier::Single(mk) = modifier {
+                    match mk {
                         ModKind::Pressed { pressed: true, .. } => depressed |= bit,
                         ModKind::Lock {
                             pressed, locked: l, ..
@@ -121,8 +121,7 @@ impl<C: Composer> WKB<C> {
                             }
                         }
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 }
             }
         }
@@ -167,24 +166,25 @@ impl<C: Composer> WKB<C> {
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
 
-            self.modifiers.0.entry(code).and_modify(|m| match m {
-                Modifier::Single(mk) => match mk {
-                    ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
-                    ModKind::Lock {
-                        pressed, locked, ..
-                    } => {
-                        *pressed = is_depressed;
-                        *locked = if is_locked { 1 } else { 0 };
+            self.modifiers.0.entry(code).and_modify(|m| {
+                if let Modifier::Single(mk) = m {
+                    match mk {
+                        ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
+                        ModKind::Lock {
+                            pressed, locked, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *locked = if is_locked { 1 } else { 0 };
+                        }
+                        ModKind::Latch {
+                            pressed, latched, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *latched = is_latched;
+                        }
+                        _ => {}
                     }
-                    ModKind::Latch {
-                        pressed, latched, ..
-                    } => {
-                        *pressed = is_depressed;
-                        *latched = is_latched;
-                    }
-                    _ => {}
-                },
-                _ => {}
+                }
             });
         }
     }

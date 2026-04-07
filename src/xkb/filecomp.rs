@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;

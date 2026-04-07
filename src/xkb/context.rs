@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     pub type __builtin_va_list = [__va_list_tag; 1];
     #[derive(Copy, Clone)]
@@ -142,10 +141,10 @@ pub mod FILE_h {
 }
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
-    use super::FILE_h::FILE;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
     use super::__stddef_size_t_h::size_t;
-    use super::internal::__va_list_tag;
+    use super::FILE_h::FILE;
+
     extern "C" {
         pub static mut stderr: *mut FILE;
         pub fn fprintf(
@@ -218,7 +217,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_context_getenv(
@@ -449,7 +448,7 @@ pub mod utils_h {
             return str;
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::__stddef_size_t_h::size_t;
     use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::{vasprintf, vsnprintf};
@@ -531,7 +530,7 @@ pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
-use self::atom_h::{atom_table, atom_table_free, atom_table_new};
+use self::atom_h::{atom_table_free, atom_table_new};
 pub use self::bits_stat_h::__S_IFMT;
 pub use self::config_h::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,

@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -86,7 +85,6 @@ pub mod test_h {
     use super::__stddef_size_t_h::size_t;
     use super::xkbcommon_h::{
         xkb_context, xkb_keymap, xkb_keymap_compile_flags, xkb_keymap_format,
-        XKB_KEYMAP_COMPILE_NO_FLAGS,
     };
     extern "C" {
         pub fn test_init();
@@ -182,7 +180,7 @@ use self::assert_h::__assert_fail;
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, stderr};
 pub use self::stdlib_h::{exit, EXIT_FAILURE, EXIT_SUCCESS};
-use self::string_h::{strcmp, strlen};
+use self::string_h::strlen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::test_h::{
     test_compile_buffer2, test_compile_buffer_t, test_compile_output, test_context_flags,

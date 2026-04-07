@@ -30,6 +30,12 @@ pub struct ListComposer {
     pending: Vec<Token>,
 }
 
+impl Default for ListComposer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ListComposer {
     pub fn new() -> Self {
         Self {

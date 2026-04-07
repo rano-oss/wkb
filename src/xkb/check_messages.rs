@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
@@ -205,12 +204,14 @@ pub mod string_h {
         ) -> *mut ::core::ffi::c_char;
     }
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 pub use self::config_h::EXIT_INVALID_USAGE;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
 pub use self::messages_codes_h::{
-    xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
@@ -248,16 +249,15 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::messages_h::{xkb_message_entry, xkb_message_get, xkb_message_get_all};
 use self::stdio_h::{fprintf, printf, stderr};
 use self::stdlib_h::atoi;
+use self::string_h::strstr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-use self::string_h::strstr;
 unsafe extern "C" fn parse_message_code(
     mut raw_code: *mut ::core::ffi::c_char,
 ) -> xkb_message_code {

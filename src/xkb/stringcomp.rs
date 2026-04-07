@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -104,7 +103,6 @@ pub mod test_h {
     use super::__stddef_size_t_h::size_t;
     use super::xkbcommon_h::{
         xkb_context, xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags,
-        XKB_KEYMAP_SERIALIZE_NO_FLAGS,
     };
     extern "C" {
         pub fn test_init();
@@ -256,6 +254,7 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
 pub use self::keymap_compare_h::{
@@ -263,8 +262,10 @@ pub use self::keymap_compare_h::{
     XKB_KEYMAP_CMP_LEDS, XKB_KEYMAP_CMP_MODS, XKB_KEYMAP_CMP_POSSIBLY_DROPPED,
     XKB_KEYMAP_CMP_SYMBOLS, XKB_KEYMAP_CMP_TYPES,
 };
+pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, stderr};
-use self::string_h::{strcmp, strlen};
+pub use self::stdlib_h::{exit, free, EXIT_FAILURE, EXIT_SUCCESS};
+use self::string_h::strlen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::test_h::{
     test_compile_buffer_t, test_compile_output2, test_compile_rules, test_compile_string,
@@ -283,9 +284,6 @@ pub use self::xkbcommon_h::{
     XKB_KEYMAP_USE_ORIGINAL_FORMAT,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdlib_h::{exit, free, EXIT_FAILURE, EXIT_SUCCESS};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed {

@@ -750,9 +750,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
     unsafe {
         // Import necessary types and constants from rust-xkb modules
         use context::xkbcommon_h::XKB_CONTEXT_NO_FLAGS;
-        use keymap::xkbcommon_h::{
-            xkb_keymap_compile_flags, xkb_rule_names, XKB_KEYMAP_COMPILE_NO_FLAGS,
-        };
+        use keymap::xkbcommon_h::{xkb_rule_names, XKB_KEYMAP_COMPILE_NO_FLAGS};
 
         // Get all available layouts for this locale
         let all_layouts = if layout.is_none() {

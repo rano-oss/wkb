@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -82,7 +81,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
@@ -997,7 +996,7 @@ pub mod text_h {
         pub value: uint32_t,
     }
     use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_match_operation, xkb_mod_set, MATCH_NONE};
+    use super::keymap_h::{mod_type, xkb_match_operation, xkb_mod_set};
     use super::stdint_uintn_h::uint32_t;
     use super::xkbcommon_h::{xkb_keysym_t, xkb_mod_mask_t};
     extern "C" {
@@ -1175,7 +1174,7 @@ pub mod xkbcomp_priv_h {
     use super::stdbool_h::false_0;
     use super::stdint_uintn_h::{uint32_t, uint8_t};
     use super::text_h::LookupEntry;
-    use super::xkbcommon_h::{xkb_layout_index_t, xkb_log_level, XKB_LOG_LEVEL_ERROR};
+    use super::xkbcommon_h::{xkb_layout_index_t, XKB_LOG_LEVEL_ERROR};
     extern "C" {
         pub fn FreeXkbFile(file: *mut XkbFile);
     }
@@ -1186,12 +1185,12 @@ pub mod action_h {
     pub struct ActionsInfo {
         pub actions: [xkb_action; 21],
     }
-    use super::ast_h::{merge_mode, ExprDef, MERGE_DEFAULT};
-    use super::context_h::xkb_context;
-    use super::keymap_h::{xkb_action, xkb_keymap, xkb_mod_set, xkb_sym_interpret};
-    use super::xkbcommon_h::xkb_led_index_t;
+    use super::ast_h::{merge_mode, ExprDef};
+
+    use super::keymap_h::{xkb_action, xkb_keymap, xkb_mod_set};
+
     use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
-    use super::{si_field, C2Rust_Unnamed_18, LedInfo, SymInterpInfo};
+
     extern "C" {
         pub fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo);
         pub fn HandleActionDef(
@@ -1270,7 +1269,7 @@ pub mod utils_h {
             };
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::string_h::strdup;
     extern "C" {
         pub fn istrcmp(
@@ -1284,13 +1283,11 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod vmod_h {
-    use super::action_h::ActionsInfo;
-    use super::ast_h::{merge_mode, VModDef, MERGE_DEFAULT};
+
+    use super::ast_h::{merge_mode, VModDef};
     use super::context_h::xkb_context;
-    use super::keymap_h::{xkb_mod_set, xkb_sym_interpret};
-    use super::xkbcommon_h::xkb_led_index_t;
-    use super::xkbcomp_priv_h::xkb_keymap_info;
-    use super::{si_field, C2Rust_Unnamed_18, LedInfo, SymInterpInfo};
+    use super::keymap_h::xkb_mod_set;
+
     extern "C" {
         pub fn InitVMods(info: *mut xkb_mod_set, mods: *const xkb_mod_set, reset: bool);
         pub fn MergeModSets(
@@ -1375,7 +1372,7 @@ pub mod util_mem_h {
 }
 pub mod include_h {
     use super::__stddef_size_t_h::size_t;
-    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile, FILE_TYPE_KEYCODES};
+    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
         pub fn ExceedsIncludeMaxDepth(
@@ -1422,24 +1419,24 @@ pub use self::__stddef_size_t_h::size_t;
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
-    stmt_type, xkb_file_type, C2Rust_Unnamed_15, ExprAction, ExprActionList, ExprArrayRef,
-    ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName,
-    ExprKeySym, ExprKeysymList, ExprString, ExprUnary, IncludeStmt, InterpDef, LedMapDef, VModDef,
-    VarDef, _ParseCommon, merge_mode, stmt_type_to_string, xkb_map_flags, ParseCommon,
-    UnknownStatement, XkbFile, _IncludeStmt, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
-    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
-    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
-    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
-    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
-    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
-    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
+    xkb_map_flags, C2Rust_Unnamed_15, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
+    ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
+    ExprKeysymList, ExprString, ExprUnary, IncludeStmt, InterpDef, LedMapDef, ParseCommon,
+    UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
+    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
+    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
+    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
+    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
+    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
@@ -1463,9 +1460,9 @@ pub use self::keymap_h::{
     C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_13, C2Rust_Unnamed_14,
     C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
     C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbEscapeMapName,
-    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
-    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
     ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
     ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
@@ -1482,19 +1479,20 @@ pub use self::keymap_h::{
     EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
     FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
     MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MAX_ACTIONS_PER_LEVEL, MOD_BOTH,
-    MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT, XKB_MAX_LEDS, _ACTION_TYPE_NUM_ENTRIES,
+    MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT, XKB_MAX_LEDS,
 };
 pub use self::limits_h::CHAR_BIT;
 pub use self::messages_codes_h::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -1526,7 +1524,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT16_MAX;
@@ -1534,7 +1532,7 @@ pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
 pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{free, realloc};
-use self::string_h::{memcpy, memset, strdup};
+use self::string_h::{memcpy, memset};
 pub use self::text_h::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,

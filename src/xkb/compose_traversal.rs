@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -119,7 +118,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -300,8 +299,7 @@ pub mod test_h {
     use super::context_h::xkb_context;
     use super::messages_codes_h::XKB_LOG_VERBOSITY_MINIMAL;
     use super::xkbcommon_h::{
-        xkb_context_set_log_level, xkb_context_set_log_verbosity, xkb_log_level,
-        XKB_LOG_LEVEL_CRITICAL,
+        xkb_context_set_log_level, xkb_context_set_log_verbosity, XKB_LOG_LEVEL_CRITICAL,
     };
     extern "C" {
         pub fn test_get_path(path_rel: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
@@ -374,7 +372,6 @@ pub mod stdlib_h {
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
-use self::atom_h::atom_table;
 pub use self::bench_h::{bench, bench_elapsed_str, bench_start, bench_stop, bench_time};
 pub use self::compose_iter_h::{xkb_compose_table_for_each, xkb_compose_table_iter_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};

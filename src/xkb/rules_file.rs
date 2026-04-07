@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -119,7 +118,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
 }
 pub mod atom_h {
@@ -203,8 +202,8 @@ pub mod string_h {
     }
 }
 pub mod stdio_h {
-    use super::FILE_h::FILE;
     use super::__stddef_size_t_h::size_t;
+    use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
         pub fn fprintf(
@@ -307,16 +306,19 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
-use self::atom_h::atom_table;
+use self::assert_h::__assert_fail;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
+pub use self::keymap_h::XKB_MAX_GROUPS;
 use self::rules_h::xkb_components_from_rules_names;
+pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::uint32_t;
 use self::stdio_h::{fprintf, snprintf, stderr};
 pub use self::stdlib_h::{free, EXIT_SUCCESS};
-use self::string_h::{memcpy, strcmp, strncmp};
+use self::string_h::{memcpy, strncmp};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::test_h::{
     test_context_flags, test_get_context, test_get_path, test_init,
@@ -330,10 +332,6 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-use self::assert_h::__assert_fail;
-pub use self::keymap_h::XKB_MAX_GROUPS;
-pub use self::stdbool_h::{false_0, true_0};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct test_data {
@@ -430,7 +428,7 @@ unsafe extern "C" fn test_rules(mut ctx: *mut xkb_context, mut data: *const test
                 );
                 return (*data).should_fail;
             }
-            passed = (passed as ::core::ffi::c_int
+            passed = passed as ::core::ffi::c_int
                 & (streq_not_null(kccgst.keycodes, (*data).keycodes) as ::core::ffi::c_int != 0
                     && streq_not_null(kccgst.types, (*data).types) as ::core::ffi::c_int != 0
                     && streq_not_null(kccgst.compatibility, (*data).compat) as ::core::ffi::c_int
@@ -438,7 +436,7 @@ unsafe extern "C" fn test_rules(mut ctx: *mut xkb_context, mut data: *const test
                     && streq_not_null(kccgst.symbols, (*data).symbols) as ::core::ffi::c_int != 0
                     && streq_null(kccgst.geometry, (*data).geometry) as ::core::ffi::c_int != 0
                     && explicit_layouts == (*data).explicit_layouts)
-                    as ::core::ffi::c_int);
+                    as ::core::ffi::c_int;
             free(kccgst.keycodes as *mut ::core::ffi::c_void);
             free(kccgst.types as *mut ::core::ffi::c_void);
             free(kccgst.compatibility as *mut ::core::ffi::c_void);

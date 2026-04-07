@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 // use f128; // f128 is unstable, replaced with f64
 pub mod types_h {
     pub type __uint32_t = u32;
@@ -140,8 +139,8 @@ pub mod utils_h {
                     && ch as ::core::ffi::c_int <= 'F' as i32;
         }
     }
-    use super::FILE_h::FILE;
     use super::__stddef_size_t_h::size_t;
+    use super::FILE_h::FILE;
     extern "C" {
         pub fn map_file(
             file: *mut FILE,
@@ -545,11 +544,13 @@ pub mod __stddef_null_h {
 pub mod config_h {
     pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 }
+pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
+pub use self::config_h::EXIT_INVALID_USAGE;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::stdbool_h::false_0;
@@ -563,8 +564,6 @@ pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
-pub use self::config_h::EXIT_INVALID_USAGE;
 pub const OPT_STDEV: options = 0;
 pub type options = ::core::ffi::c_uint;
 #[no_mangle]

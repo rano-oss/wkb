@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -113,7 +112,7 @@ pub mod test_h {
     }
     use super::messages_codes_h::XKB_LOG_VERBOSITY_MINIMAL;
     use super::xkbcommon_h::{
-        xkb_context, xkb_context_set_log_level, xkb_context_set_log_verbosity, xkb_log_level,
+        xkb_context, xkb_context_set_log_level, xkb_context_set_log_verbosity,
         XKB_LOG_LEVEL_CRITICAL,
     };
     extern "C" {
@@ -182,6 +181,7 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
+pub use self::__stddef_null_h::NULL;
 use self::assert_h::__assert_fail;
 pub use self::bench_h::{bench, bench_elapsed_str, bench_start, bench_stop, bench_time};
 pub use self::messages_codes_h::{
@@ -208,7 +208,6 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-pub use self::__stddef_null_h::NULL;
 pub const BENCHMARK_ITERATIONS: ::core::ffi::c_int = 1000 as ::core::ffi::c_int;
 unsafe fn main_0() -> ::core::ffi::c_int {
     unsafe {

@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -114,7 +113,7 @@ pub mod context_h {
     use super::__stddef_size_t_h::size_t;
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
-    use super::internal::__va_list_tag;
+
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_log(
@@ -547,12 +546,12 @@ pub mod utils_h {
             };
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::__stddef_size_t_h::size_t;
 }
 pub mod include_h {
     use super::__stddef_size_t_h::size_t;
-    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile, FILE_TYPE_KEYCODES};
+    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     use super::FILE_h::FILE;
     extern "C" {
@@ -581,11 +580,11 @@ pub mod include_h {
     }
 }
 pub mod xkbcomp_priv_h {
+    use super::__stddef_size_t_h::size_t;
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::scanner_utils_h::scanner;
     use super::FILE_h::FILE;
-    use super::__stddef_size_t_h::size_t;
     extern "C" {
         pub fn XkbParseFile(
             ctx: *mut xkb_context,
@@ -635,10 +634,10 @@ pub mod stdbool_h {
 }
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
-    _ParseCommon, merge_mode, xkb_file_type_to_string, xkb_map_flags, IncludeStmt, ParseCommon,
-    XkbFile, _IncludeStmt, stmt_type, xkb_file_type, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
+    xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
     FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
     MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
@@ -650,10 +649,8 @@ pub use self::ast_h::{
     STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
     STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use self::atom_h::atom_table;
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
@@ -664,15 +661,16 @@ pub use self::keymap_file_iterator_h::{
     XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
 };
 pub use self::messages_codes_h::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -704,7 +702,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::stdbool_h::{false_0, true_0};
@@ -1171,13 +1169,11 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     0 as darray_size_t
                 };
                 if section_name != 0 {
-                    let mut __count_1: darray_size_t = strlen(
-                        (if !(*stmt).map.is_null() {
-                            (*stmt).map
-                        } else {
-                            (*xkb_file).name
-                        }),
-                    )
+                    let mut __count_1: darray_size_t = strlen(if !(*stmt).map.is_null() {
+                        (*stmt).map
+                    } else {
+                        (*xkb_file).name
+                    })
                     .wrapping_add(1 as size_t)
                         as darray_size_t;
                     let mut __oldSize_1: darray_size_t = (*section).buffer.size;

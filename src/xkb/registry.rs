@@ -1,4 +1,3 @@
-use c2rust_bitfields;
 pub mod internal {
     pub type __builtin_va_list = [__va_list_tag; 1];
     #[derive(Copy, Clone)]
@@ -153,10 +152,10 @@ pub mod FILE_h {
 }
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
-    use super::FILE_h::FILE;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
     use super::__stddef_size_t_h::size_t;
-    use super::internal::__va_list_tag;
+    use super::FILE_h::FILE;
+
     extern "C" {
         pub static mut stderr: *mut FILE;
         pub fn fprintf(
@@ -213,7 +212,7 @@ pub mod xmlIO_h {
             ::core::ffi::c_int,
         ) -> ::core::ffi::c_int,
     >;
-    use super::encoding_h::{xmlCharEncoding, xmlCharEncodingHandlerPtr, XML_CHAR_ENCODING_NONE};
+    use super::encoding_h::{xmlCharEncoding, xmlCharEncodingHandlerPtr};
     use super::tree_h::{xmlBufPtr, xmlParserInputBufferPtr};
     extern "C" {
         pub fn xmlParserInputBufferCreateMem(
@@ -852,13 +851,12 @@ pub mod parser_h {
     pub const XML_PARSE_NOENT: C2Rust_Unnamed = 2;
     pub const XML_PARSE_RECOVER: C2Rust_Unnamed = 1;
     use super::dict_h::xmlDictPtr;
-    use super::encoding_h::{xmlCharEncoding, XML_CHAR_ENCODING_NONE};
+    use super::encoding_h::xmlCharEncoding;
     use super::hash_h::xmlHashTablePtr;
     use super::tree_h::{
         _xmlNode, xmlAttrPtr, xmlDocPtr, xmlDtdPtr, xmlElementContentPtr, xmlEntityPtr,
-        xmlEnumerationPtr, xmlNodePtr, xmlParserCtxt, xmlParserCtxtPtr, xmlParserInputBuffer,
-        xmlParserInputBufferPtr, xmlParserInputPtr, xmlSAXHandler, xmlSAXHandlerPtr,
-        xmlSAXLocatorPtr,
+        xmlEnumerationPtr, xmlNodePtr, xmlParserCtxtPtr, xmlParserInputBufferPtr,
+        xmlParserInputPtr, xmlSAXHandlerPtr, xmlSAXLocatorPtr,
     };
     use super::valid_h::xmlValidCtxt;
     use super::xmlerror_h::{xmlError, xmlStructuredErrorFunc};
@@ -996,7 +994,7 @@ pub mod valid_h {
         unsafe extern "C" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ...) -> (),
     >;
     pub type xmlValidCtxtPtr = *mut xmlValidCtxt;
-    use super::tree_h::{xmlDoc, xmlDocPtr, xmlDtd, xmlDtdPtr, xmlNodePtr};
+    use super::tree_h::{xmlDocPtr, xmlDtdPtr, xmlNodePtr};
     use super::xmlautomata_h::{xmlAutomataPtr, xmlAutomataStatePtr};
     extern "C" {
         pub type _xmlValidState;
@@ -1317,7 +1315,7 @@ pub mod utils_h {
             return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
         }
     }
-    use super::__stddef_null_h::NULL;
+
     use super::__stddef_size_t_h::size_t;
     use super::assert_h::__assert_fail;
     use super::stdbool_h::{false_0, true_0};
@@ -1452,7 +1450,8 @@ pub use self::iconv_h::iconv_t;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
 pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
-    xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
@@ -1490,7 +1489,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::parser_h::{
     _xmlAttrHashBucket, _xmlParserCtxt, _xmlParserInput, _xmlParserNodeInfo, _xmlParserNodeInfoSeq,
@@ -3226,11 +3225,11 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 xdg,
             ) {
-                ret = (ret as ::core::ffi::c_int
+                ret = ret as ::core::ffi::c_int
                     | rxkb_context_include_path_append(
                         ctx,
                         &raw mut user_path as *mut ::core::ffi::c_char,
-                    ) as ::core::ffi::c_int);
+                    ) as ::core::ffi::c_int;
             }
         } else if !home.is_null() {
             if snprintf_safe(
@@ -3239,11 +3238,11 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/.config/xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 home,
             ) {
-                ret = (ret as ::core::ffi::c_int
+                ret = ret as ::core::ffi::c_int
                     | rxkb_context_include_path_append(
                         ctx,
                         &raw mut user_path as *mut ::core::ffi::c_char,
-                    ) as ::core::ffi::c_int);
+                    ) as ::core::ffi::c_int;
             }
         }
         if !home.is_null() {
@@ -3253,18 +3252,18 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/.xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 home,
             ) {
-                ret = (ret as ::core::ffi::c_int
+                ret = ret as ::core::ffi::c_int
                     | rxkb_context_include_path_append(
                         ctx,
                         &raw mut user_path as *mut ::core::ffi::c_char,
-                    ) as ::core::ffi::c_int);
+                    ) as ::core::ffi::c_int;
             }
         }
         let extra: *const ::core::ffi::c_char = rxkb_context_getenv(
             ctx,
             b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const ::core::ffi::c_char,
         );
-        ret = (ret as ::core::ffi::c_int
+        ret = ret as ::core::ffi::c_int
             | rxkb_context_include_path_append(
                 ctx,
                 if !extra.is_null() {
@@ -3272,7 +3271,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 } else {
                     DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
                 },
-            ) as ::core::ffi::c_int);
+            ) as ::core::ffi::c_int;
         let mut extensions: darray_string = darray_string {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
@@ -3287,14 +3286,14 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         }
         let mut versioned_path_length: size_t = 0 as size_t;
         if !extensions_path.is_null() {
-            ret = (ret as ::core::ffi::c_int
+            ret = ret as ::core::ffi::c_int
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
                     &raw mut extensions,
                     0 as darray_size_t,
                     0 as size_t,
-                ));
+                );
             versioned_path_length = strlen(extensions_path);
         }
         extensions_path = rxkb_context_getenv(
@@ -3305,14 +3304,14 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
             extensions_path = DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.as_ptr();
         }
         if !extensions_path.is_null() {
-            ret = (ret as ::core::ffi::c_int
+            ret = ret as ::core::ffi::c_int
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
                     &raw mut extensions,
                     extensions.size,
                     versioned_path_length,
-                ));
+                );
         }
         let mut ext_path: *mut *mut ::core::ffi::c_char =
             ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
@@ -3342,7 +3341,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 DFLT_XKB_CONFIG_ROOT.as_ptr()
             },
         ) as bool;
-        ret = (ret as ::core::ffi::c_int | has_root as ::core::ffi::c_int);
+        ret = ret as ::core::ffi::c_int | has_root as ::core::ffi::c_int;
         if !has_root
             && (root.is_null()
                 || *root.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
@@ -3361,9 +3360,9 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                     root
                 },
             );
-            ret = (ret as ::core::ffi::c_int
+            ret = ret as ::core::ffi::c_int
                 | rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr())
-                    as ::core::ffi::c_int);
+                    as ::core::ffi::c_int;
         }
         return ret != 0;
     }
