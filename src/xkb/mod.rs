@@ -990,21 +990,25 @@ fn build_modifiers_from_keymap(
                             if !non_caps_levels.is_empty() {
                                 let mut level_map = BTreeMap::new();
 
-                                // Add Caps Lock for levels that have it
-                                for &level in &caps_lock_levels {
-                                    level_map.insert(
-                                        level as u8,
-                                        ModKind::Lock {
-                                            pressed: false,
-                                            locked: 0,
-                                            mod_type: ModType::Caps,
-                                        },
-                                    );
-                                }
+                                // Determine the minimum level with Caps_Lock
+                                let min_caps_level = *caps_lock_levels.iter().min().unwrap();
 
-                                // Add None for levels that don't have Caps_Lock
-                                for &level in &non_caps_levels {
-                                    level_map.insert(level as u8, ModKind::None);
+                                // Add ModKind for all levels 0-7
+                                for level in 0..8u8 {
+                                    if level < min_caps_level as u8 {
+                                        // Below minimum Caps level: use None
+                                        level_map.insert(level, ModKind::None);
+                                    } else {
+                                        // At or above Caps level: use Caps Lock
+                                        level_map.insert(
+                                            level,
+                                            ModKind::Lock {
+                                                pressed: false,
+                                                locked: 0,
+                                                mod_type: ModType::Caps,
+                                            },
+                                        );
+                                    }
                                 }
 
                                 modifiers.set_modifier(evdev_code, Modifier::Leveled(level_map));
