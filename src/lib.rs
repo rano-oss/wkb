@@ -31,16 +31,43 @@ pub struct WKB<C: Composer> {
 }
 
 impl WKB<ListComposer> {
+    /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use wkb::WKB;
+    /// let wkb = WKB::new_from_names("us".to_string(), None);
+    /// ```
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         xkb::new_from_names(locale, layout)
     }
 
+    /// Create WKB instance from XKB keymap string
+    ///
+    /// This enables WKB to receive keymaps from Wayland compositors via the
+    /// wl_keyboard.keymap event, or from any source that provides XKB format.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use wkb::WKB;
+    ///
+    /// // Receive keymap string from Wayland compositor
+    /// let keymap_string = "xkb_keymap { ... }".to_string();
+    /// let wkb = WKB::new_from_string(keymap_string);
+    /// ```
     pub fn new_from_string(string: String) -> Self {
         xkb::new_from_string(string)
     }
 }
 
 impl<C: Composer> WKB<C> {
+    /// Get keymap string by reading from filesystem
+    ///
+    /// # Deprecated
+    /// This method just reads from `/usr/share/X11/xkb/symbols/` and doesn't
+    /// represent the actual WKB state. Use `new_from_string()` for proper
+    /// keymap interchange instead.
+    #[deprecated(since = "0.1.0", note = "Use new_from_string() for keymap interchange")]
     pub fn get_keymap_string(&self) -> String {
         if let Some(locale) = &self.locale {
             let path = std::path::Path::new(xkb::XKB_SYMBOLS_PATH);
