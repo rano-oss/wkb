@@ -368,23 +368,41 @@ impl Modifiers {
     }
 
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        self.0.iter().find_map(|(code, modifier)| match modifier {
-            Modifier::Single(mod_kind) => {
-                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                    Some((*code, None))
-                } else {
-                    None
-                }
-            }
-            Modifier::Leveled(map) => {
-                for (level, mod_kind) in map {
+        let mut other_mod = None;
+
+        for (code, modifier) in self.0.iter() {
+            match modifier {
+                Modifier::Single(mod_kind) => {
                     if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                        return Some((*code, Some(*level)));
+                        // Prefer Pressed over Latch/Lock
+                        match mod_kind {
+                            ModKind::Pressed { .. } => return Some((*code, None)),
+
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, None));
+                                }
+                            }
+                        }
                     }
                 }
-                None
+                Modifier::Leveled(map) => {
+                    for (level, mod_kind) in map {
+                        if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                            match mod_kind {
+                                ModKind::Pressed { .. } => return Some((*code, Some(*level))),
+                                _ => {
+                                    if other_mod.is_none() {
+                                        other_mod = Some((*code, Some(*level)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        })
+        }
+        other_mod
     }
 
     pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {

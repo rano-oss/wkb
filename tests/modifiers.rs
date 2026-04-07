@@ -416,3 +416,109 @@ fn modifiers_state_matches_xkbcommon() {
     update_both(&mut wkb, &mut xkb, 69, KeyDirection::Up);
     assert_same_modifiers_state(&wkb, &xkb, "releasing num lock");
 }
+
+#[test]
+fn test_mm_zawgyi_latch_sequence() {
+    use xkb::{self, Keycode};
+
+    let mut wkb = wkb::WKB::new_from_names("mm".to_string(), Some("zawgyi".to_string()));
+
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let keymap = xkb::Keymap::new_from_names(
+        &context,
+        "evdev",
+        "pc105",
+        "mm",
+        "zawgyi",
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap();
+    let mut xkb_state = xkb::State::new(&keymap);
+
+    let latch_key = 41; // TLDE key
+
+    eprintln!("\n=== Test: Press latch, release, then press Shift+latch ===\n");
+
+    // Step 1: Press latch
+    eprintln!("1. Press latch key {}", latch_key);
+    wkb.update_key(latch_key, KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Down);
+    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!(
+        "   XKB Mod5: {}",
+        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+    );
+
+    // Step 2: Release latch
+    eprintln!("\n2. Release latch key");
+    wkb.update_key(latch_key, KeyDirection::Up);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Up);
+    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!(
+        "   XKB Mod5: {}",
+        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+    );
+
+    // Step 3: Press Shift
+    eprintln!("\n3. Press Shift");
+    let shift_key = 42;
+    wkb.update_key(shift_key, KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(shift_key + 8), xkb::KeyDirection::Down);
+    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!(
+        "   XKB Mod5: {}",
+        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+    );
+
+    // Step 4: Press latch again (second press)
+    eprintln!("\n4. Press latch key again (second press)");
+    wkb.update_key(latch_key, KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Down);
+    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!(
+        "   XKB Mod5: {}",
+        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+    );
+
+    // Check key 2 with both active
+    eprintln!("\n5. Check key 2 value:");
+    let key_2_wkb = wkb.utf8(2);
+    let key_2_xkb = xkb_state.key_get_utf8(Keycode::new(10)).chars().last();
+    eprintln!(
+        "   WKB: {:?} (level2={} level3={})",
+        key_2_wkb,
+        wkb.modifiers.level2(),
+        wkb.modifiers.level3()
+    );
+    eprintln!("   XKB: {:?}", key_2_xkb);
+
+    assert_eq!(
+        wkb.modifiers.level3(),
+        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE),
+        "Level3 state should match XKB Mod5"
+    );
+    assert_eq!(key_2_wkb, key_2_xkb, "Key 2 character should match");
+}
+
+#[test]
+fn test_cm_modifier_type() {
+    let wkb = wkb::WKB::new_from_names("cm".to_string(), Some("qwerty".to_string()));
+
+    if let Some((code, level)) = wkb.modifiers.level3_code() {
+        eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
+
+        // Try to determine if it's Latch or Pressed
+        eprintln!("Modifiers map: {:#?}", wkb.modifiers);
+    }
+}
+
+#[test]
+fn test_ie_ogam_shift_type() {
+    let wkb = wkb::WKB::new_from_names("ie".to_string(), Some("ogam_is434".to_string()));
+
+    if let Some((code, level)) = wkb.modifiers.level2_code() {
+        eprintln!("ie/ogam_is434 Shift code: {} level: {:?}", code, level);
+        eprintln!("Modifiers: {:#?}", wkb.modifiers);
+    }
+}
