@@ -1018,19 +1018,27 @@ fn build_modifiers_from_keymap(
                         }
 
                         // Create appropriate ModKind based on modifier type
-                        // For Level3/Level5, check keysym to determine if Pressed/Latch/Lock
-                        let mod_kind = if mod_type == ModType::Level3 || mod_type == ModType::Level5
+                        // For Level2/Level3/Level5, check keysym to determine if Pressed/Latch/Lock
+                        let mod_kind = if mod_type == ModType::Level2
+                            || mod_type == ModType::Level3
+                            || mod_type == ModType::Level5
                         {
                             if num_syms == 1 && !syms_ptr.is_null() {
                                 let keysym = *syms_ptr;
                                 match keysym {
-                                    // Latch variants
+                                    // Level2 Lock: Shift_Lock
+                                    0xffe6 => ModKind::Lock {
+                                        pressed: false,
+                                        locked: 0,
+                                        mod_type,
+                                    },
+                                    // Level3/Level5 Latch variants
                                     0xfe04 | 0xfe12 => ModKind::Latch {
                                         pressed: false,
                                         latched: false,
                                         mod_type,
                                     },
-                                    // Lock variants
+                                    // Level3/Level5 Lock variants
                                     0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock {
                                         pressed: false,
                                         locked: 0,
