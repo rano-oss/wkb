@@ -238,11 +238,8 @@ unsafe fn build_wkb_from_keymap(
 
             if num_syms > 0 && !syms_ptr.is_null() {
                 let keysym = *syms_ptr;
-                let utf32 = keysym_utf::xkb_keysym_to_utf32(keysym);
-                if utf32 != 0 {
-                    if let Some(ch) = char::from_u32(utf32) {
-                        level_exceptions_keymap[level].insert(evdev_code, ch);
-                    }
+                if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
+                    level_exceptions_keymap[level].insert(evdev_code, ch);
                 }
             }
         }
@@ -367,11 +364,8 @@ unsafe fn build_wkb_from_keymap(
 
                     if num_syms > 0 && !syms_ptr.is_null() {
                         let keysym = *syms_ptr;
-                        let utf32 = keysym_utf::xkb_keysym_to_utf32(keysym);
-                        if utf32 != 0 {
-                            if let Some(ch) = char::from_u32(utf32) {
-                                state_keymap[level].insert(evdev_code, ch);
-                            }
+                        if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
+                            state_keymap[level].insert(evdev_code, ch);
                         }
                     }
                 }
@@ -1178,13 +1172,9 @@ fn build_composer_from_xkb(
             for i in 0..entry_ref.sequence_length {
                 let keysym = *entry_ref.sequence.offset(i as isize);
 
-                // Convert keysym to UTF-32
-                let utf32 = keysym_utf::xkb_keysym_to_utf32(keysym);
-
-                if utf32 != 0 {
-                    if let Some(ch) = char::from_u32(utf32) {
-                        tokens.push(crate::composer::Token::Char(ch));
-                    }
+                // Convert keysym to char
+                if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
+                    tokens.push(crate::composer::Token::Char(ch));
                 }
             }
 

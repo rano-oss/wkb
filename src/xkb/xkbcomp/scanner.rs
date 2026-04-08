@@ -1511,8 +1511,33 @@ pub mod utils_numbers_h {
 }
 pub mod utf8_h {
     use super::stdint_uintn_h::u32;
-    extern "C" {
-        pub fn utf32_to_utf8(unichar: u32, buffer: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
+
+    /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
+    ///
+    /// Writes UTF-8 bytes to buffer (including null terminator).
+    /// Returns total bytes written (including null), or 0 on failure.
+    #[inline]
+    pub fn utf32_to_utf8(unichar: u32, buffer: *mut ::core::ffi::c_char) -> ::core::ffi::c_int {
+        if buffer.is_null() {
+            return 0;
+        }
+
+        let Some(ch) = char::from_u32(unichar) else {
+            return 0;
+        };
+
+        unsafe {
+            let mut tmp = [0u8; 4];
+            let utf8_bytes = ch.encode_utf8(&mut tmp).as_bytes();
+
+            std::ptr::copy_nonoverlapping(utf8_bytes.as_ptr(), buffer as *mut u8, utf8_bytes.len());
+
+            // Null terminate
+            *buffer.add(utf8_bytes.len()) = 0;
+
+            // Return length + 1 for null terminator
+            (utf8_bytes.len() + 1) as ::core::ffi::c_int
+        }
     }
 }
 pub mod parser_priv_h {

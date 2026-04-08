@@ -1600,9 +1600,17 @@ pub mod utils_h {
 
 pub mod utf8_h {
     use super::__stddef_size_t_h::size_t;
-    extern "C" {
 
-        pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: size_t) -> bool;
+    /// Native Rust UTF-8 validation (replaces C FFI)
+    #[inline]
+    pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: size_t) -> bool {
+        if ss.is_null() {
+            return false;
+        }
+        unsafe {
+            let slice = std::slice::from_raw_parts(ss as *const u8, len);
+            std::str::from_utf8(slice).is_ok()
+        }
     }
 }
 

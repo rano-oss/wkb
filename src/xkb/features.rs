@@ -225,10 +225,8 @@ unsafe extern "C" fn is_supported_flag_value(
     mut accept_zero: bool,
     mut value: u32,
 ) -> bool {
-    unsafe {
-        return (accept_zero as ::core::ffi::c_int != 0 || value != 0)
-            && values as u32 & value == value;
-    }
+    return (accept_zero as ::core::ffi::c_int != 0 || value != 0)
+        && values as u32 & value == value;
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {
