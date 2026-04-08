@@ -18,7 +18,7 @@ pub mod stdint_intn_h {
     use super::types_h::__int64_t;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -111,10 +111,10 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
-    use super::stdint_uintn_h::uint32_t;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
+    use super::stdint_uintn_h::u32;
 }
 pub mod keymap_h {
     #[derive(Copy, Clone)]
@@ -405,7 +405,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::text_h::ModMaskText;
 pub use self::types_h::{__int64_t, __uint32_t};
 pub use self::xkbcommon_h::{

@@ -4,7 +4,7 @@ pub mod types_h {
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
 pub mod __stddef_size_t_h {
@@ -12,12 +12,10 @@ pub mod __stddef_size_t_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_surrogate(mut cp: uint32_t) -> bool {
-        unsafe {
-            return cp >= 0xd800 as uint32_t && cp <= 0xdfff as uint32_t;
-        }
+    pub unsafe extern "C" fn is_surrogate(mut cp: u32) -> bool {
+        return cp >= 0xd800 as u32 && cp <= 0xdfff as u32;
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -25,12 +23,12 @@ pub mod stdbool_h {
 }
 pub use self::__stddef_size_t_h::size_t;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::{uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::types_h::{__uint32_t, __uint8_t};
 pub use self::utils_h::is_surrogate;
 #[no_mangle]
 pub unsafe extern "C" fn utf32_to_utf8(
-    mut unichar: uint32_t,
+    mut unichar: u32,
     mut buffer: *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -39,22 +37,22 @@ pub unsafe extern "C" fn utf32_to_utf8(
         let mut shift: ::core::ffi::c_int = 0;
         let mut length: ::core::ffi::c_int = 0;
         let mut head: uint8_t = 0;
-        if unichar <= 0x7f as uint32_t {
+        if unichar <= 0x7f as u32 {
             *buffer.offset(0 as ::core::ffi::c_int as isize) = unichar as ::core::ffi::c_char;
             *buffer.offset(1 as ::core::ffi::c_int as isize) = '\0' as i32 as ::core::ffi::c_char;
             return 2 as ::core::ffi::c_int;
         } else {
-            if unichar <= 0x7ff as uint32_t {
+            if unichar <= 0x7ff as u32 {
                 length = 2 as ::core::ffi::c_int;
                 head = 0xc0 as uint8_t;
             } else {
                 if is_surrogate(unichar) {
                     c2rust_current_block = 5841877160196952624;
-                } else if unichar <= 0xffff as uint32_t {
+                } else if unichar <= 0xffff as u32 {
                     length = 3 as ::core::ffi::c_int;
                     head = 0xe0 as uint8_t;
                     c2rust_current_block = 17860125682698302841;
-                } else if unichar <= 0x10ffff as uint32_t {
+                } else if unichar <= 0x10ffff as u32 {
                     length = 4 as ::core::ffi::c_int;
                     head = 0xf0 as uint8_t;
                     c2rust_current_block = 17860125682698302841;
@@ -74,12 +72,12 @@ pub unsafe extern "C" fn utf32_to_utf8(
             shift = 0 as ::core::ffi::c_int;
             while count > 0 as ::core::ffi::c_int {
                 *buffer.offset(count as isize) =
-                    (0x80 as uint32_t | unichar >> shift & 0x3f as uint32_t) as ::core::ffi::c_char;
+                    (0x80 as u32 | unichar >> shift & 0x3f as u32) as ::core::ffi::c_char;
                 count -= 1;
                 shift += 6 as ::core::ffi::c_int;
             }
             *buffer.offset(0 as ::core::ffi::c_int as isize) =
-                (head as uint32_t | unichar >> shift & 0x3f as uint32_t) as ::core::ffi::c_char;
+                (head as u32 | unichar >> shift & 0x3f as u32) as ::core::ffi::c_char;
             *buffer.offset(length as isize) = '\0' as i32 as ::core::ffi::c_char;
             return length + 1 as ::core::ffi::c_int;
         };

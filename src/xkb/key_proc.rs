@@ -36,7 +36,7 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod struct_FILE_h {
@@ -177,12 +177,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
-    pub type xkb_keycode_t = uint32_t;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
+    pub type xkb_keycode_t = u32;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
+    pub type xkb_level_index_t = u32;
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
@@ -198,8 +198,8 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
     pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = uint32_t;
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
+    pub type xkb_led_index_t = u32;
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
@@ -219,7 +219,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEY_UP: xkb_key_direction = 0;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_errors_h::xkb_error_code;
     use super::FILE_h::FILE;
     extern "C" {
@@ -843,7 +843,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
 pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::{fprintf, stderr, stdout};
 pub use self::stdlib_h::{free, rand, srand, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};

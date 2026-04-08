@@ -14,7 +14,7 @@ pub mod types_h {
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
 pub mod __stddef_size_t_h {
@@ -104,9 +104,9 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
     pub type xkb_state_component = ::core::ffi::c_uint;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
@@ -123,7 +123,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
     pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
@@ -234,7 +234,7 @@ pub mod text_h {
     #[repr(C)]
     pub struct LookupEntry {
         pub name: *const ::core::ffi::c_char,
-        pub value: uint32_t,
+        pub value: u32,
     }
     pub type C2Rust_Unnamed_1 = ::core::ffi::c_uint;
     pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
@@ -251,7 +251,7 @@ pub mod text_h {
             }) as uint8_t;
         }
     }
-    use super::stdint_uintn_h::{uint32_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint8_t};
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
 }
 pub mod stdio_h {
@@ -361,7 +361,7 @@ pub use self::keymap_h::{
 };
 pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::{uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint8_t};
 use self::stdio_h::snprintf;
 use self::string_h::memcpy;
 pub use self::text_h::{
@@ -408,7 +408,7 @@ pub unsafe extern "C" fn LookupValue(
     unsafe {
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
-            if (*entry).value == value as uint32_t {
+            if (*entry).value == value as u32 {
                 return (*entry).name;
             }
             entry = entry.offset(1);
@@ -420,169 +420,169 @@ pub unsafe extern "C" fn LookupValue(
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
         name: b"Overlay3\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY3 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY3 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay4\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY4 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY4 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay5\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY5 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY5 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay6\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY6 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY6 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay7\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY7 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY7 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay8\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY8 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY8 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"RepeatKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_REPEAT as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Repeat\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_REPEAT as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AutoRepeat\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_REPEAT as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SlowKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_SLOW as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_SLOW as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"BounceKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_DEBOUNCE as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_DEBOUNCE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"StickyKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_STICKY_KEYS as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_STICKY_KEYS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"MouseKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_MOUSE_KEYS as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_MOUSE_KEYS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"MouseKeysAccel\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_MOUSE_KEYS_ACCEL as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_MOUSE_KEYS_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AccessXKeys\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_AX as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_AX as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AccessXTimeout\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_AX_TIMEOUT as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_AX_TIMEOUT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AccessXFeedback\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_AX_FEEDBACK as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_AX_FEEDBACK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AudibleBell\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_BELL as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_BELL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"IgnoreGroupLock\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_IGNORE_GROUP_LOCK as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_IGNORE_GROUP_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay1\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY1 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY1 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Overlay2\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_OVERLAY2 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_OVERLAY2 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
-        value: CONTROL_ALL_BOOLEAN_V1 as ::core::ffi::c_int as uint32_t,
+        value: CONTROL_ALL_BOOLEAN_V1 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"latched\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"locked\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"effective\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"compat\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"latched\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"locked\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"effective\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
-        value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as uint32_t,
+        value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
@@ -594,256 +594,256 @@ pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
 pub static mut buttonNames: [LookupEntry; 7] = [
     LookupEntry {
         name: b"Button1\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: b"Button2\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 2 as uint32_t,
+        value: 2 as u32,
     },
     LookupEntry {
         name: b"Button3\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 3 as uint32_t,
+        value: 3 as u32,
     },
     LookupEntry {
         name: b"Button4\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 4 as uint32_t,
+        value: 4 as u32,
     },
     LookupEntry {
         name: b"Button5\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 5 as uint32_t,
+        value: 5 as u32,
     },
     LookupEntry {
         name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
         name: b"LevelOne\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: b"Level1\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: b"AnyLevel\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut actionTypeNames: [LookupEntry; 43] = [
     LookupEntry {
         name: b"NoAction\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_NONE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"VoidAction\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_VOID as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_VOID as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SetMods\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_MOD_SET as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_MOD_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LatchMods\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockMods\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_MOD_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_MOD_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SetGroup\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LatchGroup\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockGroup\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"MovePtr\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"MovePointer\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"PtrBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"PointerButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockPtrBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockPtrButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockPointerButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockPointerBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SetPtrDflt\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SetPointerDefault\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Terminate\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"TerminateServer\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SwitchScreen\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_SWITCH_VT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_SWITCH_VT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"SetControls\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockControls\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_CTRL_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_CTRL_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"RedirectKey\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Redirect\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Private\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_PRIVATE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_PRIVATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"ISOLock\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"ActionMessage\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"MessageAction\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Message\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DeviceBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DevBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DevButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DeviceButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockDeviceBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockDevBtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockDevButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"LockDeviceButton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DeviceValuator\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DevVal\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DeviceVal\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"DevValuator\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as uint32_t,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
         name: b"NoneOf\0".as_ptr() as *const ::core::ffi::c_char,
-        value: MATCH_NONE as ::core::ffi::c_int as uint32_t,
+        value: MATCH_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AnyOfOrNone\0".as_ptr() as *const ::core::ffi::c_char,
-        value: MATCH_ANY_OR_NONE as ::core::ffi::c_int as uint32_t,
+        value: MATCH_ANY_OR_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AnyOf\0".as_ptr() as *const ::core::ffi::c_char,
-        value: MATCH_ANY as ::core::ffi::c_int as uint32_t,
+        value: MATCH_ANY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"AllOf\0".as_ptr() as *const ::core::ffi::c_char,
-        value: MATCH_ALL as ::core::ffi::c_int as uint32_t,
+        value: MATCH_ALL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"Exactly\0".as_ptr() as *const ::core::ffi::c_char,
-        value: MATCH_EXACTLY as ::core::ffi::c_int as uint32_t,
+        value: MATCH_EXACTLY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 #[no_mangle]
@@ -2182,15 +2182,15 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
         groupMaskNames = [
             LookupEntry {
                 name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
             LookupEntry {
                 name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
-                value: XKB_ALL_GROUPS as uint32_t,
+                value: XKB_ALL_GROUPS as u32,
             },
             LookupEntry {
                 name: ::core::ptr::null::<::core::ffi::c_char>(),
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
         ]
     }

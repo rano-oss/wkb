@@ -22,7 +22,7 @@ pub mod stdint_intn_h {
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint32_t, __uint64_t, __uint8_t};
 }
@@ -169,8 +169,8 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = uint32_t;
-    use super::stdint_uintn_h::uint32_t;
+    pub type xkb_keysym_t = u32;
+    use super::stdint_uintn_h::u32;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -421,7 +421,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_buf_appends_code_point(
         mut s: *mut scanner,
-        mut c: uint32_t,
+        mut c: u32,
     ) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(5 as size_t)
@@ -433,7 +433,7 @@ pub mod scanner_utils_h {
                 );
                 if count == 0 as ::core::ffi::c_int {
                     count = utf32_to_utf8(
-                        0xfffd as uint32_t,
+                        0xfffd as u32,
                         (&raw mut (*s).buf as *mut ::core::ffi::c_char)
                             .offset((*s).buf_pos as isize),
                     );
@@ -521,13 +521,13 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_unicode_code_point(
         mut s: *mut scanner,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> bool {
         unsafe {
             if !scanner_chr(s, '{' as i32 as ::core::ffi::c_char) {
                 return false_0 != 0;
             }
-            let mut cp: uint32_t = 0 as uint32_t;
+            let mut cp: u32 = 0 as u32;
             let count: ::core::ffi::c_int = parse_hex_to_uint32_t(
                 (*s).s.offset((*s).pos as isize),
                 (*s).len.wrapping_sub((*s).pos),
@@ -548,7 +548,7 @@ pub mod scanner_utils_h {
                 *out = cp;
                 return count > 0 as ::core::ffi::c_int
                     && (*s).pos == last_valid.wrapping_add(1 as size_t)
-                    && cp <= 0x10ffff as uint32_t;
+                    && cp <= 0x10ffff as u32;
             }
             (*s).pos = last_valid;
             return false_0 != 0;
@@ -612,7 +612,7 @@ pub mod scanner_utils_h {
     use super::stdbool_h::{false_0, true_0};
     use super::stdint_h::INT64_MAX;
     use super::stdint_intn_h::int64_t;
-    use super::stdint_uintn_h::{uint32_t, uint64_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint64_t, uint8_t};
     use super::string_h::{memchr, memcmp};
     use super::utf8_h::utf32_to_utf8;
     use super::utils_h::is_ascii;
@@ -998,7 +998,7 @@ pub mod parser_h {
         pub keysym: xkb_keysym_t,
         pub any: *mut ParseCommon,
         pub anyList: C2Rust_Unnamed_6,
-        pub noSymbolOrActionList: uint32_t,
+        pub noSymbolOrActionList: u32,
         pub expr: *mut ExprDef,
         pub exprList: C2Rust_Unnamed_5,
         pub var: *mut VarDef,
@@ -1057,7 +1057,7 @@ pub mod parser_h {
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use super::stdint_intn_h::int64_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod string_h {
@@ -1079,9 +1079,9 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_valid_char(mut cp: uint32_t) -> bool {
+    pub unsafe extern "C" fn is_valid_char(mut cp: u32) -> bool {
         unsafe {
-            return cp != 0 as uint32_t;
+            return cp != 0 as u32;
         }
     }
     #[inline]
@@ -1141,7 +1141,7 @@ pub mod utils_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::FILE_h::FILE;
     extern "C" {
         pub fn map_file(
@@ -1453,23 +1453,23 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0 as size_t;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
                     < 16 as ::core::ffi::c_uint
-                && result <= 4294967295 as uint32_t >> 4 as ::core::ffi::c_int
+                && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
             {
-                result = result.wrapping_mul(16 as uint32_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint32_t,
+                result = result.wrapping_mul(16 as u32).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as ::core::ffi::c_int
             } else {
@@ -1506,16 +1506,13 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::{uint32_t, uint64_t};
+    use super::stdint_uintn_h::{u32, uint64_t};
     use super::utils_h::is_xdigit;
 }
 pub mod utf8_h {
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn utf32_to_utf8(
-            unichar: uint32_t,
-            buffer: *mut ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn utf32_to_utf8(unichar: u32, buffer: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
     }
 }
 pub mod parser_priv_h {
@@ -1643,7 +1640,7 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT64_MAX;
 pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::{uint32_t, uint64_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint64_t, uint8_t};
 use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
@@ -1785,7 +1782,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                     } else if scanner_chr(s, 'e' as i32 as ::core::ffi::c_char) {
                         scanner_buf_append(s, '\u{1b}' as i32 as ::core::ffi::c_char);
                     } else if scanner_chr(s, 'u' as i32 as ::core::ffi::c_char) {
-                        let mut cp: uint32_t = 0 as uint32_t;
+                        let mut cp: u32 = 0 as u32;
                         if scanner_unicode_code_point(s, &raw mut cp) as ::core::ffi::c_int != 0
                             && is_valid_char(cp) as ::core::ffi::c_int != 0
                         {
@@ -1810,7 +1807,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                             );
                         }
                     } else if scanner_oct(s, &raw mut o) as ::core::ffi::c_int != 0
-                        && is_valid_char(o as uint32_t) as ::core::ffi::c_int != 0
+                        && is_valid_char(o as u32) as ::core::ffi::c_int != 0
                     {
                         scanner_buf_append(s, o as ::core::ffi::c_char);
                     } else if (*s).pos > start_pos {

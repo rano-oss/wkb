@@ -20,7 +20,7 @@ pub mod types_h {
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
 pub mod __stddef_size_t_h {
@@ -250,8 +250,8 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
-    pub type xkb_layout_mask_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
+    pub type xkb_layout_mask_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_component_names {
@@ -262,7 +262,7 @@ pub mod xkbcommon_h {
         pub types: *mut ::core::ffi::c_char,
     }
     pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod rmlvo_h {
     #[derive(Copy, Clone)]
@@ -767,29 +767,29 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0;
             i = 0 as size_t;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
                     < 10 as ::core::ffi::c_uint
-                && result <= (4294967295 as uint32_t).wrapping_div(10 as uint32_t)
-                && result.wrapping_mul(10 as uint32_t)
-                    <= (4294967295 as uint32_t).wrapping_sub(
+                && result <= (4294967295 as u32).wrapping_div(10 as u32)
+                && result.wrapping_mul(10 as u32)
+                    <= (4294967295 as u32).wrapping_sub(
                         (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as uint32_t,
+                            as ::core::ffi::c_uchar as u32,
                     )
             {
-                result = result.wrapping_mul(10 as uint32_t).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint32_t,
+                result = result.wrapping_mul(10 as u32).wrapping_add(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len
                 || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint
@@ -802,7 +802,7 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod include_h {
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
@@ -950,7 +950,7 @@ pub use self::scanner_utils_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
-pub use self::stdint_uintn_h::{uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::{memcpy, memmove, memset, strchr, strerror, strlen, strncmp};
@@ -1001,7 +1001,7 @@ pub struct C2Rust_Unnamed_1 {
 #[derive(Copy, Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct kccgst_buffer_slice {
-    #[bitfield(name = "length", ty = "uint32_t", bits = "0..=27")]
+    #[bitfield(name = "length", ty = "u32", bits = "0..=27")]
     #[bitfield(name = "kccgst", ty = "rules_kccgst", bits = "28..=31")]
     pub length_kccgst: [u8; 4],
     pub layout: xkb_layout_index_t,
@@ -6387,7 +6387,7 @@ unsafe extern "C" fn parse_layout_int_index(
                     as *const ::core::ffi::c_char,
             );
         };
-        let mut val: uint32_t = 0 as uint32_t;
+        let mut val: u32 = 0 as u32;
         let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
             s.offset(1 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_char,
             max_len.wrapping_sub(2 as size_t),
@@ -6396,12 +6396,12 @@ unsafe extern "C" fn parse_layout_int_index(
         if count <= 0 as ::core::ffi::c_int
             || *s.offset((1 as ::core::ffi::c_int + count) as isize) as ::core::ffi::c_int
                 != ']' as i32
-            || val == 0 as uint32_t
-            || val > XKB_MAX_GROUPS as uint32_t
+            || val == 0 as u32
+            || val > XKB_MAX_GROUPS as u32
         {
             return -1 as ::core::ffi::c_int;
         }
-        *out = val.wrapping_sub(1 as uint32_t) as xkb_layout_index_t;
+        *out = val.wrapping_sub(1 as u32) as xkb_layout_index_t;
         return count + 2 as ::core::ffi::c_int;
     }
 }
@@ -8968,8 +8968,8 @@ unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *
                             value_0,
                             idx,
                         );
-                        let length: uint32_t =
-                            (*buf).buffer.size.wrapping_sub(prev_buffer_length) as uint32_t;
+                        let length: u32 =
+                            (*buf).buffer.size.wrapping_sub(prev_buffer_length) as u32;
                         let slice: kccgst_buffer_slice = {
                             let mut init = kccgst_buffer_slice {
                                 length_kccgst: [0; 4],

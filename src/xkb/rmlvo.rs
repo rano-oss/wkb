@@ -15,7 +15,7 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod xkbcommon_errors_h {
@@ -148,12 +148,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
     pub type xkb_rmlvo_builder_flags = ::core::ffi::c_uint;
     pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
     pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
     use super::context_h::xkb_context;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
         pub fn xkb_context_unref(context: *mut xkb_context);
@@ -422,7 +422,7 @@ pub use self::rmlvo_h::{
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::strcmp;

@@ -27,7 +27,7 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod __stddef_size_t_h {
@@ -156,12 +156,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
-    pub type xkb_keycode_t = uint32_t;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
+    pub type xkb_keycode_t = u32;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
+    pub type xkb_level_index_t = u32;
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
@@ -177,15 +177,15 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
     pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = uint32_t;
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
+    pub type xkb_led_index_t = u32;
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
     pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod keymap_h {
     #[derive(Copy, Clone)]
@@ -952,12 +952,12 @@ pub mod text_h {
     #[repr(C)]
     pub struct LookupEntry {
         pub name: *const ::core::ffi::c_char,
-        pub value: uint32_t,
+        pub value: u32,
     }
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_action_type;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn LookupString(
             tab: *const LookupEntry,
@@ -1004,7 +1004,7 @@ pub mod xkbcomp_priv_h {
     pub struct pending_computation {
         pub expr: *mut ExprDef,
         pub computed: bool,
-        pub value: uint32_t,
+        pub value: u32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -1042,7 +1042,7 @@ pub mod xkbcomp_priv_h {
     use super::ast_h::ExprDef;
     use super::darray_h::darray_size_t;
     use super::keymap_h::{xkb_keymap, xkb_overlay_index_t};
-    use super::stdint_uintn_h::{uint32_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint8_t};
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::xkb_layout_index_t;
 }
@@ -1083,7 +1083,7 @@ pub mod expr_h {
     use super::context_h::xkb_context;
     use super::keymap_h::{mod_type, xkb_mod_set};
     use super::stdint_intn_h::int64_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_mod_mask_t};
     use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
@@ -1132,13 +1132,13 @@ pub mod expr_h {
         pub fn ExprResolveEnum(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            val_rtrn: *mut uint32_t,
+            val_rtrn: *mut u32,
             values: *const LookupEntry,
         ) -> bool;
         pub fn ExprResolveMask(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            mask_rtrn: *mut uint32_t,
+            mask_rtrn: *mut u32,
             values: *const LookupEntry,
         ) -> bool;
     }
@@ -1288,7 +1288,7 @@ pub use self::messages_codes_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::{INT16_MAX, INT16_MIN, INT8_MAX, INT8_MIN};
 pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::realloc;
 use self::string_h::{memcpy, memset, strlen};
 pub use self::text_h::{
@@ -1408,151 +1408,151 @@ pub unsafe extern "C" fn InitActionsInfo(
 static mut fieldStrings: [LookupEntry; 37] = [
     LookupEntry {
         name: b"clearLocks\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_CLEAR_LOCKS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_CLEAR_LOCKS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"latchToLock\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_LATCH_TO_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_LATCH_TO_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"genKeyEvent\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"generateKeyEvent\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"report\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_REPORT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_REPORT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_DEFAULT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"affect\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_AFFECT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_AFFECT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"increment\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_INCREMENT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_INCREMENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"modifiers\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"mods\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"group\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_GROUP as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_GROUP as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"x\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_X as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_X as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"y\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_Y as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_Y as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"accel\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"accelerate\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"repeat\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"button\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_BUTTON as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"value\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_VALUE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_VALUE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"controls\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"ctrls\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"type\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_TYPE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_TYPE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"count\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_COUNT as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_COUNT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"screen\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_SCREEN as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_SCREEN as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"same\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_SAME as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_SAME as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"sameServer\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_SAME as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_SAME as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"data\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_DATA as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_DATA as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"device\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"dev\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"key\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"keycode\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"kc\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"clearmods\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"clearmodifiers\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"lockOnRelease\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_LOCK_ON_RELEASE as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_LOCK_ON_RELEASE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"unlockOnPress\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_UNLOCK_ON_PRESS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_UNLOCK_ON_PRESS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"latchOnPress\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_FIELD_LATCH_ON_PRESS as ::core::ffi::c_int as uint32_t,
+        value: ACTION_FIELD_LATCH_ON_PRESS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 unsafe extern "C" fn stringToActionType(
@@ -1834,24 +1834,24 @@ unsafe extern "C" fn CheckModifierField(
 static mut lockWhich: [LookupEntry; 5] = [
     LookupEntry {
         name: b"both\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
     LookupEntry {
         name: b"lock\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"neither\0".as_ptr() as *const ::core::ffi::c_char,
         value: (ACTION_LOCK_NO_LOCK as ::core::ffi::c_int
-            | ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int) as uint32_t,
+            | ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int) as u32,
     },
     LookupEntry {
         name: b"unlock\0".as_ptr() as *const ::core::ffi::c_char,
-        value: ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as uint32_t,
+        value: ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 unsafe extern "C" fn CheckAffectField(
@@ -1866,7 +1866,7 @@ unsafe extern "C" fn CheckAffectField(
         if !array_ndx.is_null() {
             return ReportActionNotArray(ctx, action, ACTION_FIELD_AFFECT, strict);
         }
-        let mut flags: uint32_t = 0 as uint32_t;
+        let mut flags: u32 = 0 as u32;
         if !ExprResolveEnum(
             ctx,
             value,
@@ -2125,7 +2125,7 @@ unsafe extern "C" fn CheckGroupField(
             ) = pending_computation {
                 expr: *value_ptr,
                 computed: false,
-                value: 0 as uint32_t,
+                value: 0 as u32,
             };
             *value_ptr = ::core::ptr::null_mut::<ExprDef>();
             *group_rtrn = pending_index as int32_t;
@@ -2439,19 +2439,19 @@ unsafe extern "C" fn HandlePtrBtn(
 static mut ptrDflts: [LookupEntry; 4] = [
     LookupEntry {
         name: b"dfltbtn\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: b"defaultbutton\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: b"button\0".as_ptr() as *const ::core::ffi::c_char,
-        value: 1 as uint32_t,
+        value: 1 as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 unsafe extern "C" fn HandleSetPtrDflt(
@@ -2469,7 +2469,7 @@ unsafe extern "C" fn HandleSetPtrDflt(
         if field as ::core::ffi::c_uint
             == ACTION_FIELD_AFFECT as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            let mut val: uint32_t = 0 as uint32_t;
+            let mut val: u32 = 0 as u32;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
@@ -2680,7 +2680,7 @@ unsafe extern "C" fn HandleSetLockControls(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            let mut mask: uint32_t = 0 as uint32_t;
+            let mut mask: u32 = 0 as u32;
             let offset: uint8_t = (*keymap_info).features.controls_name_offset;
             if !ExprResolveMask(
                 ctx,

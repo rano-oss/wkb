@@ -18,7 +18,7 @@ pub mod types_h {
     pub type __off64_t = ::core::ffi::c_long;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod struct_FILE_h {
@@ -145,7 +145,7 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_component_names {
@@ -156,7 +156,7 @@ pub mod xkbcommon_h {
         pub types: *mut ::core::ffi::c_char,
     }
     use super::context_h::xkb_context;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_components_names_from_rules(
             context: *mut xkb_context,
@@ -315,7 +315,7 @@ pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 use self::rules_h::xkb_components_from_rules_names;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdio_h::{fprintf, snprintf, stderr};
 pub use self::stdlib_h::{free, EXIT_SUCCESS};
 use self::string_h::{memcpy, strncmp};

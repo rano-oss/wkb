@@ -17,7 +17,7 @@ pub mod stdint_intn_h {
     use super::types_h::__int64_t;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -114,12 +114,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     pub type xkb_keysym_flags = ::core::ffi::c_uint;
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_from_name(
             name: *const ::core::ffi::c_char,
@@ -651,7 +651,7 @@ pub mod parser_h {
         pub keysym: xkb_keysym_t,
         pub any: *mut ParseCommon,
         pub anyList: C2Rust_Unnamed_6,
-        pub noSymbolOrActionList: uint32_t,
+        pub noSymbolOrActionList: u32,
         pub expr: *mut ExprDef,
         pub exprList: C2Rust_Unnamed_5,
         pub var: *mut VarDef,
@@ -710,7 +710,7 @@ pub mod parser_h {
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use super::stdint_intn_h::int64_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod stdlib_h {
@@ -1016,7 +1016,7 @@ use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdlib_h::{free, malloc};
 use self::string_h::{memcpy, stpcpy, strlen};
 pub use self::types_h::{__int64_t, __uint32_t};
@@ -6678,7 +6678,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     .exprList
                                     .last,
                             };
-                            let mut k: uint32_t = 0 as uint32_t;
+                            let mut k: u32 = 0 as u32;
                             while k
                                 < (*yyvsp.offset(-3 as ::core::ffi::c_int as isize))
                                     .noSymbolOrActionList
@@ -6713,7 +6713,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     .exprList
                                     .last,
                             };
-                            let mut k_0: uint32_t = 0 as uint32_t;
+                            let mut k_0: u32 = 0 as u32;
                             while k_0
                                 < (*yyvsp.offset(-3 as ::core::ffi::c_int as isize))
                                     .noSymbolOrActionList
@@ -6741,15 +6741,15 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.noSymbolOrActionList = (*yyvsp
                                 .offset(-3 as ::core::ffi::c_int as isize))
                             .noSymbolOrActionList
-                            .wrapping_add(1 as uint32_t);
+                            .wrapping_add(1 as u32);
                             c2rust_current_block = 9699707990742192723;
                         }
                         80 => {
-                            yyval.noSymbolOrActionList = 1 as uint32_t;
+                            yyval.noSymbolOrActionList = 1 as u32;
                             c2rust_current_block = 9699707990742192723;
                         }
                         81 => {
-                            yyval.noSymbolOrActionList = 0 as uint32_t;
+                            yyval.noSymbolOrActionList = 0 as u32;
                             c2rust_current_block = 9699707990742192723;
                         }
                         82 => {

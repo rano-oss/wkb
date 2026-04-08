@@ -93,7 +93,7 @@ pub mod stdlib_h {
     }
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stdarg___gnuc_va_list_h {
@@ -1518,7 +1518,7 @@ pub use self::parser_h::{
 };
 use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
 pub use self::stdlib_h::{
     __compar_fn_t, calloc, free, getenv, qsort, realloc, secure_getenv, strtol,
@@ -1619,7 +1619,7 @@ pub const CONTEXT_NEW: context_state = 0;
 #[repr(C)]
 pub struct rxkb_object {
     pub parent: *mut rxkb_object,
-    pub refcount: uint32_t,
+    pub refcount: u32,
     pub link: list,
 }
 #[derive(Copy, Clone)]
@@ -1702,14 +1702,14 @@ unsafe extern "C" fn rxkb_log(
 }
 unsafe extern "C" fn rxkb_object_init(mut object: *mut rxkb_object, mut parent: *mut rxkb_object) {
     unsafe {
-        (*object).refcount = 1 as uint32_t;
+        (*object).refcount = 1 as u32;
         (*object).parent = parent;
         list_init(&raw mut (*object).link);
     }
 }
 unsafe extern "C" fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_void {
     unsafe {
-        if (*object).refcount >= 1 as uint32_t {
+        if (*object).refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1778,7 +1778,7 @@ pub unsafe extern "C" fn rxkb_iso639_code_unref(
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_iso639_code>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1789,7 +1789,7 @@ pub unsafe extern "C" fn rxkb_iso639_code_unref(
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_iso639_code_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -1866,7 +1866,7 @@ pub unsafe extern "C" fn rxkb_iso3166_code_unref(
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_iso3166_code>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1877,7 +1877,7 @@ pub unsafe extern "C" fn rxkb_iso3166_code_unref(
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_iso3166_code_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -1930,7 +1930,7 @@ pub unsafe extern "C" fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_option>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1941,7 +1941,7 @@ pub unsafe extern "C" fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_option_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -2090,7 +2090,7 @@ pub unsafe extern "C" fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_layout>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -2101,7 +2101,7 @@ pub unsafe extern "C" fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_layout_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -2210,7 +2210,7 @@ pub unsafe extern "C" fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut r
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_model>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -2221,7 +2221,7 @@ pub unsafe extern "C" fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut r
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_model_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -2345,7 +2345,7 @@ pub unsafe extern "C" fn rxkb_option_group_unref(
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_option_group>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -2356,7 +2356,7 @@ pub unsafe extern "C" fn rxkb_option_group_unref(
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_option_group_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);
@@ -2564,7 +2564,7 @@ pub unsafe extern "C" fn rxkb_context_unref(mut object: *mut rxkb_context) -> *m
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_context>();
         }
-        if (*object).base.refcount >= 1 as uint32_t {
+        if (*object).base.refcount >= 1 as u32 {
         } else {
             __assert_fail(
                 b"object->base.refcount >= 1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -2575,7 +2575,7 @@ pub unsafe extern "C" fn rxkb_context_unref(mut object: *mut rxkb_context) -> *m
             );
         };
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as uint32_t {
+        if (*object).base.refcount == 0 as u32 {
             rxkb_context_destroy(object);
             list_remove(&raw mut (*object).base.link);
             free(object as *mut ::core::ffi::c_void);

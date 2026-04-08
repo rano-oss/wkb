@@ -5,23 +5,20 @@ pub mod types_h {
 }
 pub mod stdint_uintn_h {
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t};
 }
 pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
 pub mod xkbcommon_h {
-    pub type xkb_keysym_t = uint32_t;
-    use super::stdint_uintn_h::uint32_t;
+    pub type xkb_keysym_t = u32;
+    use super::stdint_uintn_h::u32;
 }
 pub mod utf8_h {
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn utf32_to_utf8(
-            unichar: uint32_t,
-            buffer: *mut ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn utf32_to_utf8(unichar: u32, buffer: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
     }
 }
 pub mod xkbcommon_keysyms_h {
@@ -46,12 +43,12 @@ pub mod xkbcommon_keysyms_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_surrogate(mut cp: uint32_t) -> bool {
+    pub unsafe extern "C" fn is_surrogate(mut cp: u32) -> bool {
         unsafe {
-            return cp >= 0xd800 as uint32_t && cp <= 0xdfff as uint32_t;
+            return cp >= 0xd800 as u32 && cp <= 0xdfff as u32;
         }
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -72,7 +69,7 @@ pub use self::keysym_h::{
     XKB_KEYSYM_UNICODE_SURROGATE_MIN, XKB_KEYSYM_UTF8_MAX_SIZE,
 };
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t};
+pub use self::stdint_uintn_h::{u32, uint16_t};
 pub use self::types_h::{__uint16_t, __uint32_t};
 use self::utf8_h::utf32_to_utf8;
 pub use self::utils_h::is_surrogate;
@@ -100,14 +97,14 @@ unsafe extern "C" fn bin_search(
     mut table: *const codepair,
     mut length: size_t,
     mut keysym: xkb_keysym_t,
-) -> uint32_t {
+) -> u32 {
     unsafe {
         let mut first: size_t = 0 as size_t;
         let mut last: size_t = length;
         if keysym < (*table.offset(0 as ::core::ffi::c_int as isize)).keysym() as xkb_keysym_t
             || keysym > (*table.offset(length as isize)).keysym() as xkb_keysym_t
         {
-            return 0 as uint32_t;
+            return 0 as u32;
         }
         while last >= first {
             let mut mid: size_t = first.wrapping_add(last).wrapping_div(2 as size_t);
@@ -116,22 +113,22 @@ unsafe extern "C" fn bin_search(
             } else if (*table.offset(mid as isize)).keysym() as xkb_keysym_t > keysym {
                 last = mid.wrapping_sub(1 as size_t);
             } else {
-                return (*table.offset(mid as isize)).ucs as uint32_t;
+                return (*table.offset(mid as isize)).ucs as u32;
             }
         }
-        return NO_KEYSYM_UNICODE_CONVERSION as uint32_t;
+        return NO_KEYSYM_UNICODE_CONVERSION as u32;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_utf32(mut keysym: xkb_keysym_t) -> uint32_t {
+pub unsafe extern "C" fn xkb_keysym_to_utf32(mut keysym: xkb_keysym_t) -> u32 {
     unsafe {
         if keysym >= 0x20 as xkb_keysym_t && keysym <= 0x7e as xkb_keysym_t
             || keysym >= 0xa0 as xkb_keysym_t && keysym <= 0xff as xkb_keysym_t
         {
-            return keysym as uint32_t;
+            return keysym as u32;
         }
         if keysym == XKB_KEY_KP_Space as xkb_keysym_t {
-            return (XKB_KEY_space & 0x7f as ::core::ffi::c_int) as uint32_t;
+            return (XKB_KEY_space & 0x7f as ::core::ffi::c_int) as u32;
         }
         if keysym >= XKB_KEY_BackSpace as xkb_keysym_t && keysym <= XKB_KEY_Clear as xkb_keysym_t
             || keysym >= XKB_KEY_KP_Multiply as xkb_keysym_t
@@ -143,28 +140,28 @@ pub unsafe extern "C" fn xkb_keysym_to_utf32(mut keysym: xkb_keysym_t) -> uint32
             || keysym == XKB_KEY_KP_Enter as xkb_keysym_t
             || keysym == XKB_KEY_KP_Equal as xkb_keysym_t
         {
-            return keysym as uint32_t & 0x7f as uint32_t;
+            return keysym as u32 & 0x7f as u32;
         }
         if keysym >= XKB_KEYSYM_UNICODE_SURROGATE_MIN as xkb_keysym_t
             && keysym <= XKB_KEYSYM_UNICODE_SURROGATE_MAX as xkb_keysym_t
         {
-            return NO_KEYSYM_UNICODE_CONVERSION as uint32_t;
+            return NO_KEYSYM_UNICODE_CONVERSION as u32;
         }
         if XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t <= keysym
             && keysym <= XKB_KEYSYM_UNICODE_MAX as xkb_keysym_t
         {
-            return (keysym as uint32_t).wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as uint32_t);
+            return (keysym as u32).wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32);
         }
         if keysym >= XKB_KEY_XF86Numeric0 as xkb_keysym_t
             && keysym <= XKB_KEY_XF86Numeric9 as xkb_keysym_t
         {
-            return (keysym as uint32_t)
-                .wrapping_sub(XKB_KEY_XF86Numeric0 as uint32_t)
-                .wrapping_add(0x30 as uint32_t);
+            return (keysym as u32)
+                .wrapping_sub(XKB_KEY_XF86Numeric0 as u32)
+                .wrapping_add(0x30 as u32);
         }
         match keysym {
-            268964362 => return 0x2a as uint32_t,
-            268964363 => return 0x23 as uint32_t,
+            268964362 => return 0x2a as u32,
+            268964363 => return 0x23 as u32,
             _ => {
                 return bin_search(
                     &raw const keysymtab as *const codepair,
@@ -178,26 +175,24 @@ pub unsafe extern "C" fn xkb_keysym_to_utf32(mut keysym: xkb_keysym_t) -> uint32
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_utf32_to_keysym(mut ucs: uint32_t) -> xkb_keysym_t {
+pub unsafe extern "C" fn xkb_utf32_to_keysym(mut ucs: u32) -> xkb_keysym_t {
     unsafe {
-        if ucs >= 0x20 as uint32_t && ucs <= 0x7e as uint32_t
-            || ucs >= 0xa0 as uint32_t && ucs <= 0xff as uint32_t
-        {
+        if ucs >= 0x20 as u32 && ucs <= 0x7e as u32 || ucs >= 0xa0 as u32 && ucs <= 0xff as u32 {
             return ucs as xkb_keysym_t;
         }
-        if ucs >= (XKB_KEY_BackSpace & 0x7f as ::core::ffi::c_int) as uint32_t
-            && ucs <= (XKB_KEY_Clear & 0x7f as ::core::ffi::c_int) as uint32_t
-            || ucs == (XKB_KEY_Return & 0x7f as ::core::ffi::c_int) as uint32_t
-            || ucs == (XKB_KEY_Escape & 0x7f as ::core::ffi::c_int) as uint32_t
+        if ucs >= (XKB_KEY_BackSpace & 0x7f as ::core::ffi::c_int) as u32
+            && ucs <= (XKB_KEY_Clear & 0x7f as ::core::ffi::c_int) as u32
+            || ucs == (XKB_KEY_Return & 0x7f as ::core::ffi::c_int) as u32
+            || ucs == (XKB_KEY_Escape & 0x7f as ::core::ffi::c_int) as u32
         {
             return ucs as xkb_keysym_t | 0xff00 as xkb_keysym_t;
         }
-        if ucs == (XKB_KEY_Delete & 0x7f as ::core::ffi::c_int) as uint32_t {
+        if ucs == (XKB_KEY_Delete & 0x7f as ::core::ffi::c_int) as u32 {
             return XKB_KEY_Delete as xkb_keysym_t;
         }
-        if (ucs == 0 as uint32_t
+        if (ucs == 0 as u32
             || is_surrogate(ucs) as ::core::ffi::c_int != 0
-            || ucs > 0x10ffff as uint32_t) as ::core::ffi::c_int as ::core::ffi::c_long
+            || ucs > 0x10ffff as u32) as ::core::ffi::c_int as ::core::ffi::c_long
             != 0
         {
             return XKB_KEY_NoSymbol as xkb_keysym_t;
@@ -207,7 +202,7 @@ pub unsafe extern "C" fn xkb_utf32_to_keysym(mut ucs: uint32_t) -> xkb_keysym_t 
             < (::core::mem::size_of::<[codepair; 763]>() as usize)
                 .wrapping_div(::core::mem::size_of::<codepair>() as usize)
         {
-            if keysymtab[i as usize].ucs as uint32_t == ucs && !keysymtab[i as usize].deprecated() {
+            if keysymtab[i as usize].ucs as u32 == ucs && !keysymtab[i as usize].deprecated() {
                 return keysymtab[i as usize].keysym() as xkb_keysym_t;
             }
             i = i.wrapping_add(1);
@@ -222,12 +217,12 @@ pub unsafe extern "C" fn xkb_keysym_to_utf8(
     mut size: size_t,
 ) -> ::core::ffi::c_int {
     unsafe {
-        let mut codepoint: uint32_t = 0;
+        let mut codepoint: u32 = 0;
         if size < XKB_KEYSYM_UTF8_MAX_SIZE as size_t {
             return -1 as ::core::ffi::c_int;
         }
         codepoint = xkb_keysym_to_utf32(keysym);
-        if codepoint == NO_KEYSYM_UNICODE_CONVERSION as uint32_t {
+        if codepoint == NO_KEYSYM_UNICODE_CONVERSION as u32 {
             return 0 as ::core::ffi::c_int;
         }
         return utf32_to_utf8(codepoint, buffer);

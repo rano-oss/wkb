@@ -2,7 +2,7 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -78,51 +78,51 @@ pub mod enums_h {
     pub const XKB_CONTEXT_FLAGS_VALUES: xkb_enumerations_values = 7;
     pub const XKB_KEYSYM_FLAGS_VALUES: xkb_enumerations_values = 1;
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: xkb_enumerations_values = 0;
-    pub static mut xkb_log_level_values: [uint32_t; 5] = [
-        XKB_LOG_LEVEL_CRITICAL as ::core::ffi::c_int as uint32_t,
-        XKB_LOG_LEVEL_ERROR as ::core::ffi::c_int as uint32_t,
-        XKB_LOG_LEVEL_WARNING as ::core::ffi::c_int as uint32_t,
-        XKB_LOG_LEVEL_INFO as ::core::ffi::c_int as uint32_t,
-        XKB_LOG_LEVEL_DEBUG as ::core::ffi::c_int as uint32_t,
+    pub static mut xkb_log_level_values: [u32; 5] = [
+        XKB_LOG_LEVEL_CRITICAL as ::core::ffi::c_int as u32,
+        XKB_LOG_LEVEL_ERROR as ::core::ffi::c_int as u32,
+        XKB_LOG_LEVEL_WARNING as ::core::ffi::c_int as u32,
+        XKB_LOG_LEVEL_INFO as ::core::ffi::c_int as u32,
+        XKB_LOG_LEVEL_DEBUG as ::core::ffi::c_int as u32,
     ];
-    pub static mut xkb_error_code_values: [uint32_t; 9] = [
-        XKB_ERROR_INVALID as ::core::ffi::c_int as uint32_t,
-        XKB_SUCCESS as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_UNSUPPORTED_A11Y_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_ABI_INVALID_STRUCT_SIZE as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_ABI_FORWARD_COMPAT as ::core::ffi::c_int as uint32_t,
-        XKB_ERROR_ABI_BACKWARD_COMPAT as ::core::ffi::c_int as uint32_t,
+    pub static mut xkb_error_code_values: [u32; 9] = [
+        XKB_ERROR_INVALID as ::core::ffi::c_int as u32,
+        XKB_SUCCESS as ::core::ffi::c_int as u32,
+        XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int as u32,
+        XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int as u32,
+        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int as u32,
+        XKB_ERROR_UNSUPPORTED_A11Y_FLAGS as ::core::ffi::c_int as u32,
+        XKB_ERROR_ABI_INVALID_STRUCT_SIZE as ::core::ffi::c_int as u32,
+        XKB_ERROR_ABI_FORWARD_COMPAT as ::core::ffi::c_int as u32,
+        XKB_ERROR_ABI_BACKWARD_COMPAT as ::core::ffi::c_int as u32,
     ];
-    pub static mut xkb_feature_values: [uint32_t; 24] = [
-        XKB_FEATURE_ENUM_FEATURE as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_ERROR_CODE as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_CONTEXT_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_LOG_LEVEL as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYSYM_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYMAP_FORMAT as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_STATE_COMPONENT as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_A11Y_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_STATE_MATCH as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_CONSUMED_MODE as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_EVENT_TYPE as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_KEY_DIRECTION as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_EVENTS_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_COMPOSE_FORMAT as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_COMPOSE_STATUS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS as ::core::ffi::c_int as uint32_t,
-        XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as ::core::ffi::c_int as uint32_t,
+    pub static mut xkb_feature_values: [u32; 24] = [
+        XKB_FEATURE_ENUM_FEATURE as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_ERROR_CODE as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_CONTEXT_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_LOG_LEVEL as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYSYM_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYMAP_FORMAT as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_STATE_COMPONENT as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_A11Y_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_STATE_MATCH as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_CONSUMED_MODE as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_EVENT_TYPE as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_KEY_DIRECTION as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_EVENTS_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_COMPOSE_FORMAT as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_COMPOSE_STATUS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS as ::core::ffi::c_int as u32,
+        XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as ::core::ffi::c_int as u32,
     ];
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_errors_h::{
         XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
         XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -169,7 +169,7 @@ pub use self::enums_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_WIDTH;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 pub use self::types_h::__uint32_t;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -196,17 +196,17 @@ pub use self::xkbcommon_h::{
 };
 unsafe extern "C" fn is_supported_enum_value_mask(
     mut values: xkb_enumerations_values,
-    mut value: uint32_t,
+    mut value: u32,
 ) -> bool {
     unsafe {
-        return value < UINT32_WIDTH as uint32_t
+        return value < UINT32_WIDTH as u32
             && values as ::core::ffi::c_uint & (1 as ::core::ffi::c_uint) << value != 0;
     }
 }
 unsafe extern "C" fn is_supported_enum_value_array(
-    mut values: *const uint32_t,
+    mut values: *const u32,
     mut size: size_t,
-    mut value: uint32_t,
+    mut value: u32,
 ) -> bool {
     unsafe {
         let mut v: size_t = 0 as size_t;
@@ -223,33 +223,30 @@ unsafe extern "C" fn is_supported_enum_value_array(
 unsafe extern "C" fn is_supported_flag_value(
     mut values: xkb_enumerations_values,
     mut accept_zero: bool,
-    mut value: uint32_t,
+    mut value: u32,
 ) -> bool {
     unsafe {
         return (accept_zero as ::core::ffi::c_int != 0 || value != 0)
-            && values as uint32_t & value == value;
+            && values as u32 & value == value;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_feature_supported(
-    mut feature: xkb_feature,
-    mut value: uint32_t,
-) -> bool {
+pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {
     unsafe {
         match feature as ::core::ffi::c_uint {
             1 => {
                 return is_supported_enum_value_array(
-                    &raw const xkb_feature_values as *const uint32_t,
-                    (::core::mem::size_of::<[uint32_t; 24]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<uint32_t>() as size_t),
+                    &raw const xkb_feature_values as *const u32,
+                    (::core::mem::size_of::<[u32; 24]>() as size_t)
+                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
                     value,
                 );
             }
             1000 => {
                 return is_supported_enum_value_array(
-                    &raw const xkb_error_code_values as *const uint32_t,
-                    (::core::mem::size_of::<[uint32_t; 9]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<uint32_t>() as size_t),
+                    &raw const xkb_error_code_values as *const u32,
+                    (::core::mem::size_of::<[u32; 9]>() as size_t)
+                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
                     value,
                 );
             }
@@ -258,9 +255,9 @@ pub unsafe extern "C" fn xkb_feature_supported(
             }
             5100 => {
                 return is_supported_enum_value_array(
-                    &raw const xkb_log_level_values as *const uint32_t,
-                    (::core::mem::size_of::<[uint32_t; 5]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<uint32_t>() as size_t),
+                    &raw const xkb_log_level_values as *const u32,
+                    (::core::mem::size_of::<[u32; 5]>() as size_t)
+                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
                     value,
                 );
             }

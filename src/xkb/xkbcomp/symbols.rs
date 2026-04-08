@@ -32,7 +32,7 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint64_t, __uint8_t};
 }
@@ -229,12 +229,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
-    pub type xkb_keycode_t = uint32_t;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
+    pub type xkb_keycode_t = u32;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
+    pub type xkb_level_index_t = u32;
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
@@ -250,8 +250,8 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
     pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = uint32_t;
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
+    pub type xkb_led_index_t = u32;
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
@@ -261,7 +261,7 @@ pub mod xkbcommon_h {
     pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
     pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
     use super::context_h::xkb_context;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
         pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> ::core::ffi::c_int;
@@ -1140,12 +1140,12 @@ pub mod text_h {
     #[repr(C)]
     pub struct LookupEntry {
         pub name: *const ::core::ffi::c_char,
-        pub value: uint32_t,
+        pub value: u32,
     }
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::keymap_h::{xkb_action_type, xkb_mod_set};
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::{xkb_keysym_t, xkb_mod_index_t};
     extern "C" {
         pub fn ModIndexText(
@@ -1188,7 +1188,7 @@ pub mod xkbcomp_priv_h {
     pub struct pending_computation {
         pub expr: *mut ExprDef,
         pub computed: bool,
-        pub value: uint32_t,
+        pub value: u32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -1236,7 +1236,7 @@ pub mod xkbcomp_priv_h {
     use super::ast_h::{ExprDef, XkbFile};
     use super::darray_h::darray_size_t;
     use super::keymap_h::{xkb_keymap, xkb_overlay_index_t};
-    use super::stdint_uintn_h::{uint32_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint8_t};
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::xkb_layout_index_t;
     extern "C" {
@@ -1425,7 +1425,7 @@ pub mod utils_numbers_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn popcount32(mut x: uint32_t) -> ::core::ffi::c_uint {
+    pub unsafe extern "C" fn popcount32(mut x: u32) -> ::core::ffi::c_uint {
         unsafe {
             return (x as ::core::ffi::c_ulong).count_ones() as i32 as ::core::ffi::c_uint;
         }
@@ -1446,7 +1446,7 @@ pub mod utils_numbers_h {
     }
     use super::__stddef_size_t_h::size_t;
     use super::limits_h::CHAR_BIT;
-    use super::stdint_uintn_h::{uint32_t, uint64_t};
+    use super::stdint_uintn_h::{u32, uint64_t};
 }
 pub mod keysym_h {
     use super::xkbcommon_h::xkb_keysym_t;
@@ -1481,7 +1481,7 @@ pub mod expr_h {
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_mod_mask_t};
     use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
@@ -1520,7 +1520,7 @@ pub mod expr_h {
         pub fn ExprResolveEnum(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            val_rtrn: *mut uint32_t,
+            val_rtrn: *mut u32,
             values: *const LookupEntry,
         ) -> bool;
     }
@@ -1701,7 +1701,7 @@ pub use self::messages_codes_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT8_MAX;
 pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint64_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
 use self::stdio_h::{fprintf, stderr};
 use self::stdlib_h::{abort, atoi, calloc, free, realloc};
 use self::string_h::{memcpy, memmove, memset, strlen};
@@ -2516,7 +2516,7 @@ unsafe extern "C" fn overlays_get(
                 let low: xkb_overlay_mask_t = ((*info).overlays as ::core::ffi::c_uint
                     & (mask as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint))
                     as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = popcount32(low as uint32_t) as xkb_overlay_index_t;
+                let index: xkb_overlay_index_t = popcount32(low as u32) as xkb_overlay_index_t;
                 *key_out = *(*info).c2rust_unnamed.overlays_keys.offset(index as isize);
             }
         }
@@ -2551,7 +2551,7 @@ unsafe extern "C" fn overlays_insert(
                     & (mask as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint)
                         as xkb_overlay_mask_t as ::core::ffi::c_int)
                     as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = popcount32(low as uint32_t) as xkb_overlay_index_t;
+                let index: xkb_overlay_index_t = popcount32(low as u32) as xkb_overlay_index_t;
                 let ref mut c2rust_fresh4 =
                     *(*keyi).c2rust_unnamed.overlays_keys.offset(index as isize);
                 *c2rust_fresh4 = key;
@@ -2569,8 +2569,7 @@ unsafe extern "C" fn overlays_insert(
             let overlays: xkb_overlay_mask_t = ((*keyi).overlays as ::core::ffi::c_int
                 | mask as ::core::ffi::c_int)
                 as xkb_overlay_mask_t;
-            let alloc: xkb_overlay_index_t =
-                popcount32(overlays as uint32_t) as xkb_overlay_index_t;
+            let alloc: xkb_overlay_index_t = popcount32(overlays as u32) as xkb_overlay_index_t;
             let tmp: *mut *const xkb_key = calloc(
                 alloc as size_t,
                 ::core::mem::size_of::<*const xkb_key>() as size_t,
@@ -2584,7 +2583,7 @@ unsafe extern "C" fn overlays_insert(
                         .wrapping_sub(1 as ::core::ffi::c_uint)
                         as xkb_overlay_mask_t as ::core::ffi::c_int)
                     as xkb_overlay_mask_t;
-                let idx: xkb_overlay_index_t = popcount32(low_0 as uint32_t) as xkb_overlay_index_t;
+                let idx: xkb_overlay_index_t = popcount32(low_0 as u32) as xkb_overlay_index_t;
                 let ref mut c2rust_fresh5 = *tmp.offset(idx as isize);
                 *c2rust_fresh5 = (*keyi).c2rust_unnamed.overlay_key;
             }
@@ -2592,7 +2591,7 @@ unsafe extern "C" fn overlays_insert(
                 & (mask as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint)
                     as xkb_overlay_mask_t as ::core::ffi::c_int)
                 as xkb_overlay_mask_t;
-            let idx_0: xkb_overlay_index_t = popcount32(low_1 as uint32_t) as xkb_overlay_index_t;
+            let idx_0: xkb_overlay_index_t = popcount32(low_1 as u32) as xkb_overlay_index_t;
             let ref mut c2rust_fresh6 = *tmp.offset(idx_0 as isize);
             *c2rust_fresh6 = key;
             (*keyi).c2rust_unnamed.overlays_keys = tmp;
@@ -2603,8 +2602,7 @@ unsafe extern "C" fn overlays_insert(
             let overlays_0: xkb_overlay_mask_t = ((*keyi).overlays as ::core::ffi::c_int
                 | mask as ::core::ffi::c_int)
                 as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t =
-                popcount32(overlays_0 as uint32_t) as xkb_overlay_index_t;
+            let count: xkb_overlay_index_t = popcount32(overlays_0 as u32) as xkb_overlay_index_t;
             if count as ::core::ffi::c_int > (*keyi).overlays_alloc as ::core::ffi::c_int {
                 let alloc_0: xkb_overlay_index_t =
                     next_pow2(count as ::core::ffi::c_uint) as xkb_overlay_index_t;
@@ -2634,7 +2632,7 @@ unsafe extern "C" fn overlays_insert(
                 & (mask as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint)
                     as xkb_overlay_mask_t as ::core::ffi::c_int)
                 as xkb_overlay_mask_t;
-            let index_0: xkb_overlay_index_t = popcount32(low_2 as uint32_t) as xkb_overlay_index_t;
+            let index_0: xkb_overlay_index_t = popcount32(low_2 as u32) as xkb_overlay_index_t;
             if index_0 as ::core::ffi::c_int >= (*keyi).overlays_alloc as ::core::ffi::c_int {
                 fprintf(
                     stderr,
@@ -2724,7 +2722,7 @@ unsafe extern "C" fn merge_overlays(
                     | (*from).overlays as ::core::ffi::c_int)
                     as xkb_overlay_mask_t;
                 let count: xkb_overlay_index_t =
-                    popcount32(result_mask as uint32_t) as xkb_overlay_index_t;
+                    popcount32(result_mask as u32) as xkb_overlay_index_t;
                 if count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                     fprintf(
                         stderr,
@@ -2801,8 +2799,7 @@ unsafe extern "C" fn merge_overlays(
                             as xkb_overlay_mask_t as ::core::ffi::c_int)
                         as xkb_overlay_mask_t;
                     let bit: xkb_overlay_index_t =
-                        popcount32((lsb as uint32_t).wrapping_sub(1 as uint32_t))
-                            as xkb_overlay_index_t;
+                        popcount32((lsb as u32).wrapping_sub(1 as u32)) as xkb_overlay_index_t;
                     remaining = (remaining as ::core::ffi::c_int & !(lsb as ::core::ffi::c_int))
                         as xkb_overlay_mask_t;
                     if !(*src).overlays_clear()
@@ -4153,35 +4150,35 @@ unsafe extern "C" fn AddActionsToKey(
 static mut repeatEntries: [LookupEntry; 8] = [
     LookupEntry {
         name: b"true\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_YES as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"yes\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_YES as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"on\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_YES as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"false\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_NO as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"no\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_NO as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"off\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_NO as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
-        value: KEY_REPEAT_UNDEFINED as ::core::ffi::c_int as uint32_t,
+        value: KEY_REPEAT_UNDEFINED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
         name: ::core::ptr::null::<::core::ffi::c_char>(),
-        value: 0 as uint32_t,
+        value: 0 as u32,
     },
 ];
 unsafe extern "C" fn ExprResolveOverlayEntry(
@@ -4624,7 +4621,7 @@ unsafe extern "C" fn SetSymbolsField(
                 as ::core::ffi::c_int
                 != 0
         {
-            let mut val_0: uint32_t = 0 as uint32_t;
+            let mut val_0: u32 = 0 as u32;
             if !ExprResolveEnum(
                 (*info).ctx,
                 value,
@@ -4781,7 +4778,7 @@ unsafe extern "C" fn SetSymbolsField(
                 ) = pending_computation {
                     expr: *value_ptr,
                     computed: false,
-                    value: 0 as uint32_t,
+                    value: 0 as u32,
                 };
                 *value_ptr = ::core::ptr::null_mut::<ExprDef>();
                 (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;

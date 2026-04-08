@@ -15,7 +15,7 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod darray_h {
@@ -99,8 +99,8 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = uint32_t;
-    use super::stdint_uintn_h::uint32_t;
+    pub type xkb_keysym_t = u32;
+    use super::stdint_uintn_h::u32;
 }
 pub mod table_h {
     #[derive(Copy, Clone)]
@@ -125,8 +125,8 @@ pub mod table_h {
     #[repr(C)]
     pub struct compose_node {
         pub keysym: xkb_keysym_t,
-        pub lokid: uint32_t,
-        pub hikid: uint32_t,
+        pub lokid: u32,
+        pub hikid: u32,
         pub c2rust_unnamed: C2Rust_Unnamed_2,
     }
     #[derive(Copy, Clone)]
@@ -139,7 +139,7 @@ pub mod table_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_3 {
-        #[bitfield(name = "utf8", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "utf8", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub utf8_is_leaf: [u8; 4],
         pub keysym: xkb_keysym_t,
@@ -147,15 +147,15 @@ pub mod table_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_4 {
-        #[bitfield(name = "_pad", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
-        pub eqkid: uint32_t,
+        pub eqkid: u32,
     }
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_5 {
-        #[bitfield(name = "_pad", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
     }
@@ -170,7 +170,7 @@ pub mod table_h {
     use super::__stddef_size_t_h::size_t;
     use super::context_h::xkb_context;
     use super::darray_h::{darray_char, darray_size_t};
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
 }
@@ -190,7 +190,7 @@ pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_size_t};
 pub use self::internal::__va_list_tag;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
@@ -210,7 +210,7 @@ unsafe extern "C" fn for_each_helper(
     mut data: *mut ::core::ffi::c_void,
     mut syms: *mut xkb_keysym_t,
     mut nsyms: size_t,
-    mut p: uint32_t,
+    mut p: u32,
 ) {
     unsafe {
         if p == 0 {
@@ -265,7 +265,7 @@ pub unsafe extern "C" fn xkb_compose_table_for_each(
             data,
             &raw mut syms as *mut xkb_keysym_t,
             0 as size_t,
-            1 as uint32_t,
+            1 as u32,
         );
     }
 }

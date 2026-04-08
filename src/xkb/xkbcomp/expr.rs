@@ -27,7 +27,7 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod stdint_h {
@@ -138,12 +138,12 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = uint32_t;
-    pub type xkb_keycode_t = uint32_t;
-    pub type xkb_mod_mask_t = uint32_t;
-    pub type xkb_mod_index_t = uint32_t;
-    pub type xkb_keysym_t = uint32_t;
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
+    pub type xkb_keycode_t = u32;
+    pub type xkb_mod_mask_t = u32;
+    pub type xkb_mod_index_t = u32;
+    pub type xkb_keysym_t = u32;
+    pub type xkb_level_index_t = u32;
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
@@ -159,8 +159,8 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
     pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = uint32_t;
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
+    pub type xkb_led_index_t = u32;
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
@@ -168,7 +168,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
     pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod keymap_h {
     #[derive(Copy, Clone)]
@@ -869,11 +869,11 @@ pub mod text_h {
     #[repr(C)]
     pub struct LookupEntry {
         pub name: *const ::core::ffi::c_char,
-        pub value: uint32_t,
+        pub value: u32,
     }
     pub const GROUP_LAST_INDEX_NAME: [::core::ffi::c_char; 5] =
         unsafe { ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"last\0") };
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub static buttonNames: [LookupEntry; 0];
     }
@@ -908,7 +908,7 @@ pub mod xkbcomp_priv_h {
     pub struct pending_computation {
         pub expr: *mut ExprDef,
         pub computed: bool,
-        pub value: uint32_t,
+        pub value: u32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -946,7 +946,7 @@ pub mod xkbcomp_priv_h {
     use super::ast_h::ExprDef;
     use super::darray_h::darray_size_t;
     use super::keymap_h::{xkb_keymap, xkb_overlay_index_t};
-    use super::stdint_uintn_h::{uint32_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint8_t};
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::xkb_layout_index_t;
 }
@@ -994,29 +994,29 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0;
             i = 0 as size_t;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
                     < 10 as ::core::ffi::c_uint
-                && result <= (4294967295 as uint32_t).wrapping_div(10 as uint32_t)
-                && result.wrapping_mul(10 as uint32_t)
-                    <= (4294967295 as uint32_t).wrapping_sub(
+                && result <= (4294967295 as u32).wrapping_div(10 as u32)
+                && result.wrapping_mul(10 as u32)
+                    <= (4294967295 as u32).wrapping_sub(
                         (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as uint32_t,
+                            as ::core::ffi::c_uchar as u32,
                     )
             {
-                result = result.wrapping_mul(10 as uint32_t).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint32_t,
+                result = result.wrapping_mul(10 as u32).wrapping_add(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len
                 || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint
@@ -1029,7 +1029,7 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -1148,7 +1148,7 @@ pub use self::messages_codes_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::{intmax_t, SIZE_MAX, UINT32_MAX};
 pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -1196,7 +1196,7 @@ pub type IdentLookupFunc = Option<
         *mut xkb_context,
         *const ::core::ffi::c_void,
         xkb_atom_t,
-        *mut uint32_t,
+        *mut u32,
         *mut bool,
     ) -> bool,
 >;
@@ -1205,8 +1205,8 @@ pub type IdentLookupFunc = Option<
 pub struct named_integer_pattern {
     pub prefix: *const ::core::ffi::c_char,
     pub prefix_length: size_t,
-    pub min: uint32_t,
-    pub max: uint32_t,
+    pub min: u32,
+    pub max: u32,
     pub entries: *const LookupEntry,
     pub pending_entries: *const LookupEntry,
     pub is_mask: bool,
@@ -1276,7 +1276,7 @@ unsafe extern "C" fn SimpleLookup(
     mut ctx: *mut xkb_context,
     mut priv_0: *const ::core::ffi::c_void,
     mut field: xkb_atom_t,
-    mut val_rtrn: *mut uint32_t,
+    mut val_rtrn: *mut u32,
     mut pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
@@ -1299,7 +1299,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
     mut ctx: *mut xkb_context,
     mut priv_0: *const ::core::ffi::c_void,
     mut field: xkb_atom_t,
-    mut val_rtrn: *mut uint32_t,
+    mut val_rtrn: *mut u32,
     mut pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
@@ -1315,7 +1315,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                 parse_dec_to_uint32_t(
                     str.offset((*pattern).prefix_length as isize),
                     SIZE_MAX as size_t,
-                    val_rtrn as *mut uint32_t,
+                    val_rtrn as *mut u32,
                 ) as ::core::ffi::c_int
             } else {
                 0 as ::core::ffi::c_int
@@ -1342,7 +1342,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                 return false_0 != 0;
             }
             if (*pattern).is_mask {
-                if (*val_rtrn).wrapping_sub((*pattern).min) < 32 as uint32_t {
+                if (*val_rtrn).wrapping_sub((*pattern).min) < 32 as u32 {
                 } else {
                     __assert_fail(
                         b"*val_rtrn - pattern->min < 32\0".as_ptr()
@@ -1350,12 +1350,12 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                         b"../src/xkbcomp/expr.c\0".as_ptr()
                             as *const ::core::ffi::c_char,
                         114 as ::core::ffi::c_uint,
-                        b"_Bool NamedIntegerPatternLookup(struct xkb_context *, const void *, xkb_atom_t, uint32_t *, _Bool *)\0"
+                        b"_Bool NamedIntegerPatternLookup(struct xkb_context *, const void *, xkb_atom_t, u32 *, _Bool *)\0"
                             .as_ptr() as *const ::core::ffi::c_char,
                     );
                 };
-                *val_rtrn = ((1 as ::core::ffi::c_uint) << (*val_rtrn).wrapping_sub((*pattern).min))
-                    as uint32_t;
+                *val_rtrn =
+                    ((1 as ::core::ffi::c_uint) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
             }
             return true_0 != 0;
         } else {
@@ -1544,7 +1544,7 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
         let mut ok: bool = false_0 != 0;
         let mut l: int64_t = 0 as int64_t;
         let mut r: int64_t = 0 as int64_t;
-        let mut u: uint32_t = 0 as uint32_t;
+        let mut u: u32 = 0 as u32;
         let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         match (*expr).common.type_0 as ::core::ffi::c_uint {
@@ -1784,19 +1784,19 @@ pub unsafe extern "C" fn ExprResolveGroup(
         static mut pendingGroupIndexNames: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME.as_ptr(),
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
             LookupEntry {
                 name: ::core::ptr::null::<::core::ffi::c_char>(),
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const ::core::ffi::c_char,
             prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
                 .wrapping_sub(1 as size_t),
-            min: 1 as uint32_t,
-            max: (*keymap_info).features.max_groups as uint32_t,
+            min: 1 as u32,
+            max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
             pending_entries: &raw const pendingGroupIndexNames as *const LookupEntry,
             is_mask: false_0 != 0,
@@ -1814,7 +1814,7 @@ pub unsafe extern "C" fn ExprResolveGroup(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
-                        *mut uint32_t,
+                        *mut u32,
                         *mut bool,
                     ) -> bool,
             ),
@@ -1875,7 +1875,7 @@ pub unsafe extern "C" fn ExprResolveLevel(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
-                        *mut uint32_t,
+                        *mut u32,
                         *mut bool,
                     ) -> bool,
             ),
@@ -1918,7 +1918,7 @@ pub unsafe extern "C" fn ExprResolveButton(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
-                        *mut uint32_t,
+                        *mut u32,
                         *mut bool,
                     ) -> bool,
             ),
@@ -2006,7 +2006,7 @@ pub unsafe extern "C" fn ExprResolveString(
 pub unsafe extern "C" fn ExprResolveEnum(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut val_rtrn: *mut uint32_t,
+    mut val_rtrn: *mut u32,
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
@@ -2059,15 +2059,15 @@ pub unsafe extern "C" fn ExprResolveEnum(
 unsafe extern "C" fn ExprResolveMaskLookup(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut val_rtrn: *mut uint32_t,
+    mut val_rtrn: *mut u32,
     mut pending: *mut bool,
     mut lookup: IdentLookupFunc,
     mut lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
         let mut ok: bool = false_0 != 0;
-        let mut l: uint32_t = 0 as uint32_t;
-        let mut r: uint32_t = 0 as uint32_t;
+        let mut l: u32 = 0 as u32;
+        let mut r: u32 = 0 as u32;
         let mut v: int64_t = 0 as int64_t;
         let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
@@ -2094,7 +2094,7 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                     );
                     return false_0 != 0;
                 }
-                *val_rtrn = (*expr).integer.ival as uint32_t;
+                *val_rtrn = (*expr).integer.ival as u32;
                 return true_0 != 0;
             }
             4 | 6 | 7 | 8 | 9 => {
@@ -2223,7 +2223,7 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                     );
                     return false_0 != 0;
                 }
-                *val_rtrn = !(v as uint32_t);
+                *val_rtrn = !(v as u32);
                 return true_0 != 0;
             }
             25 | 23 | 22 => {
@@ -2280,7 +2280,7 @@ unsafe extern "C" fn ExprResolveMaskLookup(
 pub unsafe extern "C" fn ExprResolveMask(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut mask_rtrn: *mut uint32_t,
+    mut mask_rtrn: *mut u32,
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
@@ -2295,7 +2295,7 @@ pub unsafe extern "C" fn ExprResolveMask(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
-                        *mut uint32_t,
+                        *mut u32,
                         *mut bool,
                     ) -> bool,
             ),
@@ -2319,7 +2319,7 @@ pub unsafe extern "C" fn ExprResolveModMask(
         return ExprResolveMaskLookup(
             ctx,
             expr,
-            mask_rtrn as *mut uint32_t,
+            mask_rtrn as *mut u32,
             ::core::ptr::null_mut::<bool>(),
             Some(
                 LookupModMask
@@ -2387,19 +2387,19 @@ pub unsafe extern "C" fn ExprResolveGroupMask(
         static mut pendingGroupMaskNames: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME.as_ptr(),
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
             LookupEntry {
                 name: ::core::ptr::null::<::core::ffi::c_char>(),
-                value: 0 as uint32_t,
+                value: 0 as u32,
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const ::core::ffi::c_char,
             prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
                 .wrapping_sub(1 as size_t),
-            min: 1 as uint32_t,
-            max: (*keymap_info).features.max_groups as uint32_t,
+            min: 1 as u32,
+            max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
             pending_entries: &raw const pendingGroupMaskNames as *const LookupEntry,
             is_mask: true_0 != 0,
@@ -2408,7 +2408,7 @@ pub unsafe extern "C" fn ExprResolveGroupMask(
         return ExprResolveMaskLookup(
             (*keymap_info).keymap.ctx,
             expr,
-            group_rtrn as *mut uint32_t,
+            group_rtrn as *mut u32,
             pending_rtrn,
             Some(
                 NamedIntegerPatternLookup
@@ -2416,7 +2416,7 @@ pub unsafe extern "C" fn ExprResolveGroupMask(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
-                        *mut uint32_t,
+                        *mut u32,
                         *mut bool,
                     ) -> bool,
             ),
@@ -2430,8 +2430,8 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
             prefix: b"Level\0".as_ptr() as *const ::core::ffi::c_char,
             prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
                 .wrapping_sub(1 as size_t),
-            min: 1 as uint32_t,
-            max: XKB_LEVEL_MAX_IMPL as uint32_t,
+            min: 1 as u32,
+            max: XKB_LEVEL_MAX_IMPL as u32,
             entries: ::core::ptr::null::<LookupEntry>(),
             pending_entries: ::core::ptr::null::<LookupEntry>(),
             is_mask: false_0 != 0,

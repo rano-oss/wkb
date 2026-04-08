@@ -48,7 +48,7 @@ pub mod stdint_uintn_h {
     #[c2rust::src_loc = "25:1"]
     pub type uint16_t = __uint16_t;
     #[c2rust::src_loc = "26:1"]
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_size_t.h:19"]
@@ -234,17 +234,17 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "1119:5"]
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
     #[c2rust::src_loc = "253:1"]
-    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
     #[c2rust::src_loc = "183:1"]
-    pub type xkb_keycode_t = uint32_t;
+    pub type xkb_keycode_t = u32;
     #[c2rust::src_loc = "316:1"]
-    pub type xkb_mod_mask_t = uint32_t;
+    pub type xkb_mod_mask_t = u32;
     #[c2rust::src_loc = "295:1"]
-    pub type xkb_mod_index_t = uint32_t;
+    pub type xkb_mod_index_t = u32;
     #[c2rust::src_loc = "223:1"]
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     #[c2rust::src_loc = "269:1"]
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_level_index_t = u32;
     #[c2rust::src_loc = "3094:1"]
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
     #[c2rust::src_loc = "3113:5"]
@@ -276,9 +276,9 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "2268:5"]
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     #[c2rust::src_loc = "255:1"]
-    pub type xkb_layout_mask_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
     #[c2rust::src_loc = "345:1"]
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_led_index_t = u32;
     #[c2rust::src_loc = "1321:1"]
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     #[c2rust::src_loc = "1355:5"]
@@ -325,7 +325,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         #[c2rust::src_loc = "983:1"]
         pub fn xkb_context_unref(context: *mut xkb_context);
@@ -1429,7 +1429,7 @@ pub use self::rmlvo_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
 pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free};
 use self::string_h::strlen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};

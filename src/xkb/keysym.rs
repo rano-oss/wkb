@@ -11,7 +11,7 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod __stddef_size_t_h {
@@ -21,14 +21,14 @@ pub mod sys_types_h {
     pub type ssize_t = isize;
 }
 pub mod xkbcommon_h {
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     pub type xkb_keysym_flags = ::core::ffi::c_uint;
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn xkb_utf32_to_keysym(codepoint: uint32_t) -> xkb_keysym_t;
+        pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
     }
 }
 pub mod keysym_names_h {
@@ -26306,10 +26306,9 @@ pub mod keysym_names_h {
             explicit_count: 0 as uint8_t,
         },
     ];
-    pub static mut explicit_deprecated_aliases: [uint32_t; 1] =
-        [24103 as ::core::ffi::c_int as uint32_t];
+    pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as ::core::ffi::c_int as u32];
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+    use super::stdint_uintn_h::{u32, uint16_t, uint8_t};
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod stdlib_h {
@@ -26354,14 +26353,9 @@ pub mod string_h {
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn is_xdigit(mut ch: ::core::ffi::c_char) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= '0' as i32
-                && ch as ::core::ffi::c_int <= '9' as i32
-                || ch as ::core::ffi::c_int >= 'a' as i32
-                    && ch as ::core::ffi::c_int <= 'f' as i32
-                || ch as ::core::ffi::c_int >= 'A' as i32
-                    && ch as ::core::ffi::c_int <= 'F' as i32;
-        }
+        return ch as ::core::ffi::c_int >= '0' as i32 && ch as ::core::ffi::c_int <= '9' as i32
+            || ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'f' as i32
+            || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'F' as i32;
     }
     use super::__stddef_size_t_h::size_t;
     extern "C" {
@@ -26639,23 +26633,23 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0 as size_t;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
                     < 16 as ::core::ffi::c_uint
-                && result <= 4294967295 as uint32_t >> 4 as ::core::ffi::c_int
+                && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
             {
-                result = result.wrapping_mul(16 as uint32_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint32_t,
+                result = result.wrapping_mul(16 as u32).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as ::core::ffi::c_int
             } else {
@@ -26664,20 +26658,20 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::utils_h::is_xdigit;
 }
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
     use super::__stddef_size_t_h::size_t;
     use super::stdint_h::UINT32_MAX;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn utf8_next_code_point(
             s: *const ::core::ffi::c_char,
             max_size: size_t,
             size_out: *mut size_t,
-        ) -> uint32_t;
+        ) -> u32;
     }
 }
 pub mod assert_h {
@@ -26733,7 +26727,7 @@ pub use self::keysym_names_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::int32_t;
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free};
 use self::string_h::{memmove, strcmp, strdup, strlen, strncmp};
@@ -27020,11 +27014,11 @@ pub unsafe extern "C" fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iter
 }
 unsafe extern "C" fn parse_keysym_hex(
     mut s: *const ::core::ffi::c_char,
-    mut out: *mut uint32_t,
+    mut out: *mut u32,
 ) -> bool {
     unsafe {
         let count: ::core::ffi::c_int =
-            parse_hex_to_uint32_t(s, 8 as size_t, out as *mut uint32_t) as ::core::ffi::c_int;
+            parse_hex_to_uint32_t(s, 8 as size_t, out as *mut u32) as ::core::ffi::c_int;
         return count > 0 as ::core::ffi::c_int
             && *s.offset(count as isize) as ::core::ffi::c_int == '\0' as i32;
     }
@@ -27041,7 +27035,7 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
         }
         let mut entry: *const name_keysym = ::core::ptr::null::<name_keysym>();
         let mut tmp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut val: uint32_t = 0;
+        let mut val: u32 = 0;
         let mut icase: bool = flags as ::core::ffi::c_uint
             & XKB_KEYSYM_CASE_INSENSITIVE as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0;
@@ -27112,7 +27106,7 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
             ) {
                 return XKB_KEY_NoSymbol as xkb_keysym_t;
             }
-            return if val > 0xff as uint32_t && val <= 0x10ffff as uint32_t {
+            return if val > 0xff as u32 && val <= 0x10ffff as u32 {
                 (XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t).wrapping_add(val as xkb_keysym_t)
             } else {
                 xkb_utf32_to_keysym(val)
@@ -27126,7 +27120,7 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
             if !parse_keysym_hex(
                 name.offset(2 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_char,
                 &raw mut val,
-            ) || val > XKB_KEYSYM_MAX as uint32_t
+            ) || val > XKB_KEYSYM_MAX as u32
             {
                 return XKB_KEY_NoSymbol as xkb_keysym_t;
             }
@@ -27175,8 +27169,8 @@ pub unsafe extern "C" fn xkb_utf8_to_keysym(
             return 0 as xkb_keysym_t;
         }
         let mut length: size_t = 0 as size_t;
-        let codepoint: uint32_t = utf8_next_code_point(buffer, size, &raw mut length) as uint32_t;
-        return if codepoint == INVALID_UTF8_CODE_POINT as uint32_t || length == 0 as size_t {
+        let codepoint: u32 = utf8_next_code_point(buffer, size, &raw mut length) as u32;
+        return if codepoint == INVALID_UTF8_CODE_POINT as u32 || length == 0 as size_t {
             XKB_KEY_NoSymbol as xkb_keysym_t
         } else {
             xkb_utf32_to_keysym(codepoint)
@@ -27185,21 +27179,16 @@ pub unsafe extern "C" fn xkb_utf8_to_keysym(
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keysym_is_keypad(mut keysym: xkb_keysym_t) -> bool {
-    unsafe {
-        return keysym >= XKB_KEY_KP_Space as xkb_keysym_t
-            && keysym <= XKB_KEY_KP_Equal as xkb_keysym_t;
-    }
+    return keysym >= XKB_KEY_KP_Space as xkb_keysym_t
+        && keysym <= XKB_KEY_KP_Equal as xkb_keysym_t;
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keysym_is_modifier(mut keysym: xkb_keysym_t) -> bool {
-    unsafe {
-        return keysym >= XKB_KEY_Shift_L as xkb_keysym_t
-            && keysym <= XKB_KEY_Hyper_R as xkb_keysym_t
-            || keysym >= XKB_KEY_ISO_Lock as xkb_keysym_t
-                && keysym <= XKB_KEY_ISO_Level5_Lock as xkb_keysym_t
-            || keysym == XKB_KEY_Mode_switch as xkb_keysym_t
-            || keysym == XKB_KEY_Num_Lock as xkb_keysym_t;
-    }
+    return keysym >= XKB_KEY_Shift_L as xkb_keysym_t && keysym <= XKB_KEY_Hyper_R as xkb_keysym_t
+        || keysym >= XKB_KEY_ISO_Lock as xkb_keysym_t
+            && keysym <= XKB_KEY_ISO_Level5_Lock as xkb_keysym_t
+        || keysym == XKB_KEY_Mode_switch as xkb_keysym_t
+        || keysym == XKB_KEY_Num_Lock as xkb_keysym_t;
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keysym_is_deprecated(

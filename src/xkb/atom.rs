@@ -7,7 +7,7 @@ pub mod types_h {
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
 pub mod darray_h {
@@ -101,7 +101,7 @@ pub use self::__stddef_size_t_h::size_t;
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
-pub use self::stdint_uintn_h::{uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::{memset, strlen, strncmp, strndup};
 pub use self::types_h::{__uint32_t, __uint8_t};
@@ -120,16 +120,16 @@ pub struct C2Rust_Unnamed {
     pub item: *mut *mut ::core::ffi::c_char,
 }
 #[inline]
-unsafe extern "C" fn hash_buf(mut string: *const ::core::ffi::c_char, mut len: size_t) -> uint32_t {
+unsafe extern "C" fn hash_buf(mut string: *const ::core::ffi::c_char, mut len: size_t) -> u32 {
     unsafe {
-        let mut hash: uint32_t = 2166136261 as uint32_t;
+        let mut hash: u32 = 2166136261 as u32;
         let mut i: size_t = 0 as size_t;
         while i < len.wrapping_add(1 as size_t).wrapping_div(2 as size_t) {
-            hash ^= *string.offset(i as isize) as uint8_t as uint32_t;
-            hash = hash.wrapping_mul(0x1000193 as uint32_t);
+            hash ^= *string.offset(i as isize) as uint8_t as u32;
+            hash = hash.wrapping_mul(0x1000193 as u32);
             hash ^= *string.offset(len.wrapping_sub(1 as size_t).wrapping_sub(i) as isize)
-                as uint8_t as uint32_t;
-            hash = hash.wrapping_mul(0x1000193 as uint32_t);
+                as uint8_t as u32;
+            hash = hash.wrapping_mul(0x1000193 as u32);
             i = i.wrapping_add(1);
         }
         return hash;
@@ -259,7 +259,7 @@ pub unsafe extern "C" fn atom_intern(
             let mut j: darray_size_t = 1 as darray_size_t;
             while j < (*table).strings.size {
                 let mut s: *const ::core::ffi::c_char = *(*table).strings.item.offset(j as isize);
-                let mut hash: uint32_t = hash_buf(s, strlen(s));
+                let mut hash: u32 = hash_buf(s, strlen(s));
                 let mut i: size_t = 0 as size_t;
                 while i < (*table).index_size {
                     let mut index_pos: size_t = (hash as size_t).wrapping_add(i)
@@ -276,7 +276,7 @@ pub unsafe extern "C" fn atom_intern(
                 j = j.wrapping_add(1);
             }
         }
-        let mut hash_0: uint32_t = hash_buf(string, len);
+        let mut hash_0: u32 = hash_buf(string, len);
         let mut i_0: size_t = 0 as size_t;
         while i_0 < (*table).index_size {
             let mut index_pos_0: size_t = (hash_0 as size_t).wrapping_add(i_0)

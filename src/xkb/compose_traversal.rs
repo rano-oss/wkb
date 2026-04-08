@@ -18,7 +18,7 @@ pub mod types_h {
     pub type __off64_t = ::core::ffi::c_long;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod struct_FILE_h {
@@ -152,9 +152,9 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     use super::context_h::xkb_context;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_context_unref(context: *mut xkb_context);
         pub fn xkb_context_set_log_level(context: *mut xkb_context, level: xkb_log_level);
@@ -187,8 +187,8 @@ pub mod table_h {
     #[repr(C)]
     pub struct compose_node {
         pub keysym: xkb_keysym_t,
-        pub lokid: uint32_t,
-        pub hikid: uint32_t,
+        pub lokid: u32,
+        pub hikid: u32,
         pub c2rust_unnamed: C2Rust_Unnamed_2,
     }
     #[derive(Copy, Clone)]
@@ -201,7 +201,7 @@ pub mod table_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_3 {
-        #[bitfield(name = "utf8", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "utf8", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub utf8_is_leaf: [u8; 4],
         pub keysym: xkb_keysym_t,
@@ -209,15 +209,15 @@ pub mod table_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_4 {
-        #[bitfield(name = "_pad", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
-        pub eqkid: uint32_t,
+        pub eqkid: u32,
     }
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_5 {
-        #[bitfield(name = "_pad", ty = "uint32_t", bits = "0..=30")]
+        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
     }
@@ -232,7 +232,7 @@ pub mod table_h {
     use super::__stddef_size_t_h::size_t;
     use super::context_h::xkb_context;
     use super::darray_h::{darray_char, darray_size_t};
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
 }
@@ -382,7 +382,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdio_h::{fclose, fopen, fprintf, perror, stderr};
 use self::stdlib_h::free;
 use self::string_h::strcmp;

@@ -2,7 +2,7 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -276,23 +276,23 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0 as size_t;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
                     < 16 as ::core::ffi::c_uint
-                && result <= 4294967295 as uint32_t >> 4 as ::core::ffi::c_int
+                && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
             {
-                result = result.wrapping_mul(16 as uint32_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint32_t,
+                result = result.wrapping_mul(16 as u32).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as ::core::ffi::c_int
             } else {
@@ -301,7 +301,7 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     use super::utils_h::is_xdigit;
 }
 pub mod stdint_h {
@@ -340,7 +340,7 @@ pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::string_h::strcmp;
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::is_xdigit;
@@ -416,7 +416,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(
         if raw.is_null() {
             return 0 as xkb_keymap_format;
         }
-        let mut format: uint32_t = 0 as uint32_t;
+        let mut format: u32 = 0 as u32;
         if parse_hex_to_uint32_t(raw, SIZE_MAX as size_t, &raw mut format) > 0 as ::core::ffi::c_int
         {
             return (if xkb_keymap_is_supported_format(format as xkb_keymap_format)
@@ -425,7 +425,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(
             {
                 format
             } else {
-                0 as uint32_t
+                0 as u32
             }) as xkb_keymap_format;
         } else {
             let mut k: size_t = 0 as size_t;

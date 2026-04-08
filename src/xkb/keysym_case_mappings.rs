@@ -12,12 +12,12 @@ pub mod stdint_intn_h {
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
     pub type uint16_t = __uint16_t;
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod xkbcommon_h {
-    pub type xkb_keysym_t = uint32_t;
-    use super::stdint_uintn_h::uint32_t;
+    pub type xkb_keysym_t = u32;
+    use super::stdint_uintn_h::u32;
 }
 pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -29,7 +29,7 @@ pub mod keysym_h {
 pub use self::keysym_h::{XKB_KEYSYM_UNICODE_MIN, XKB_KEYSYM_UNICODE_OFFSET};
 pub use self::stdbool_h::false_0;
 pub use self::stdint_intn_h::int32_t;
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::types_h::{__int32_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::xkbcommon_h::xkb_keysym_t;
 #[derive(Copy, Clone, BitfieldStruct)]

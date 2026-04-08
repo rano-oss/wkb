@@ -17,7 +17,7 @@ pub mod stdint_intn_h {
     use super::types_h::__int64_t;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -239,7 +239,7 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_component_names {
@@ -249,9 +249,9 @@ pub mod xkbcommon_h {
         pub symbols: *mut ::core::ffi::c_char,
         pub types: *mut ::core::ffi::c_char,
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn xkb_utf32_to_keysym(codepoint: uint32_t) -> xkb_keysym_t;
+        pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
     }
 }
 pub mod ast_h {
@@ -641,13 +641,13 @@ pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
     use super::__stddef_size_t_h::size_t;
     use super::stdint_h::UINT32_MAX;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn utf8_next_code_point(
             s: *const ::core::ffi::c_char,
             max_size: size_t,
             size_out: *mut size_t,
-        ) -> uint32_t;
+        ) -> u32;
     }
 }
 pub mod stdint_h {
@@ -765,7 +765,7 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdlib_h::{calloc, free, malloc, realloc};
 use self::string_h::{strlen, strndup};
 pub use self::types_h::{__int64_t, __uint32_t};
@@ -1052,12 +1052,12 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                 break;
             }
             let mut count: size_t = 0 as size_t;
-            let mut cp: uint32_t = utf8_next_code_point(
+            let mut cp: u32 = utf8_next_code_point(
                 string.offset(idx as isize),
                 len.wrapping_sub(idx),
                 &raw mut count,
             );
-            if cp == INVALID_UTF8_CODE_POINT as uint32_t {
+            if cp == INVALID_UTF8_CODE_POINT as u32 {
                 let mut loc: scanner_loc = scanner_token_location(scanner);
                 xkb_log(
                     (*scanner).ctx,
@@ -1169,8 +1169,8 @@ pub unsafe extern "C" fn KeysymParseString(
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         }
         let mut count: size_t = 0 as size_t;
-        let cp: uint32_t = utf8_next_code_point(string, len, &raw mut count) as uint32_t;
-        if cp == INVALID_UTF8_CODE_POINT as uint32_t {
+        let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
+        if cp == INVALID_UTF8_CODE_POINT as u32 {
             let mut loc_0: scanner_loc = scanner_token_location(scanner);
             xkb_log(
                 (*scanner).ctx,

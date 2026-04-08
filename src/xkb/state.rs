@@ -47,7 +47,7 @@ pub mod stdint_uintn_h {
 
     pub type uint16_t = __uint16_t;
 
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 
@@ -264,17 +264,17 @@ pub mod xkbcommon_h {
 
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
 
-    pub type xkb_layout_index_t = uint32_t;
+    pub type xkb_layout_index_t = u32;
 
-    pub type xkb_keycode_t = uint32_t;
+    pub type xkb_keycode_t = u32;
 
-    pub type xkb_mod_mask_t = uint32_t;
+    pub type xkb_mod_mask_t = u32;
 
-    pub type xkb_mod_index_t = uint32_t;
+    pub type xkb_mod_index_t = u32;
 
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
 
-    pub type xkb_level_index_t = uint32_t;
+    pub type xkb_level_index_t = u32;
 
     pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
 
@@ -306,9 +306,9 @@ pub mod xkbcommon_h {
 
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
 
-    pub type xkb_layout_mask_t = uint32_t;
+    pub type xkb_layout_mask_t = u32;
 
-    pub type xkb_led_index_t = uint32_t;
+    pub type xkb_led_index_t = u32;
 
     pub type xkb_keymap_format = ::core::ffi::c_uint;
 
@@ -330,7 +330,7 @@ pub mod xkbcommon_h {
 
     pub const XKB_KEY_UP: xkb_key_direction = 0;
 
-    pub type xkb_led_mask_t = uint32_t;
+    pub type xkb_led_mask_t = u32;
 
     pub type xkb_event_type = ::core::ffi::c_uint;
 
@@ -434,7 +434,7 @@ pub mod xkbcommon_h {
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::stdint_intn_h::int32_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
 
         pub fn xkb_keysym_to_utf8(
@@ -443,7 +443,7 @@ pub mod xkbcommon_h {
             size: size_t,
         ) -> ::core::ffi::c_int;
 
-        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> uint32_t;
+        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
 
         pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
 
@@ -1477,10 +1477,10 @@ pub mod xkbcommon_features_h {
     pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 
     pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
 
-        pub fn xkb_feature_supported(feature: xkb_feature, value: uint32_t) -> bool;
+        pub fn xkb_feature_supported(feature: xkb_feature, value: u32) -> bool;
     }
 }
 
@@ -1511,12 +1511,12 @@ pub mod string_h {
 pub mod utils_numbers_h {
     #[inline]
 
-    pub unsafe extern "C" fn popcount32(mut x: uint32_t) -> ::core::ffi::c_uint {
+    pub unsafe extern "C" fn popcount32(mut x: u32) -> ::core::ffi::c_uint {
         unsafe {
             return (x as ::core::ffi::c_ulong).count_ones() as i32 as ::core::ffi::c_uint;
         }
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 
 pub mod limits_h {
@@ -1590,13 +1590,12 @@ pub mod util_mem_h {
 pub mod utils_h {
     #[inline]
 
-    pub unsafe extern "C" fn one_bit_set(mut x: uint32_t) -> ::core::ffi::c_int {
+    pub unsafe extern "C" fn one_bit_set(mut x: u32) -> ::core::ffi::c_int {
         unsafe {
-            return (x != 0 && x & x.wrapping_sub(1 as uint32_t) == 0 as uint32_t)
-                as ::core::ffi::c_int;
+            return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as ::core::ffi::c_int;
         }
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 
 pub mod utf8_h {
@@ -1736,7 +1735,7 @@ pub use self::state_priv_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
 pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
-pub use self::stdint_uintn_h::{uint16_t, uint32_t, uint8_t};
+pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::va_list;
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc};
 use self::string_h::{memcpy, memmove, memset};
@@ -1836,7 +1835,7 @@ pub struct machine_mods_mapping {
 
 pub struct C2Rust_Unnamed_13 {
     pub enabled: xkb_overlay_mask_t,
-    pub order: uint32_t,
+    pub order: u32,
     pub keys: C2Rust_Unnamed_14,
 }
 #[derive(Copy, Clone)]
@@ -1892,7 +1891,7 @@ pub struct xkb_filter {
             xkb_key_direction,
         ) -> bool,
     >,
-    pub priv_0: uint32_t,
+    pub priv_0: u32,
     pub refcnt: ::core::ffi::c_int,
 }
 #[derive(Copy, Clone)]
@@ -1980,7 +1979,7 @@ pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
 #[repr(C)]
 
 pub union group_latch_priv {
-    pub priv_0: uint32_t,
+    pub priv_0: u32,
     pub c2rust_unnamed: C2Rust_Unnamed_22,
 }
 #[derive(Copy, Clone, BitfieldStruct)]
@@ -2234,7 +2233,7 @@ unsafe extern "C" fn xkb_filter_group_set_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        (*filter).priv_0 = (*state).components.base_group as uint32_t;
+        (*filter).priv_0 = (*state).components.base_group as u32;
         if (*filter).action.group.flags as ::core::ffi::c_uint
             & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0
@@ -2656,10 +2655,10 @@ unsafe extern "C" fn xkb_filter_mod_set_new(
             == unlock as ::core::ffi::c_uint
         {
             (*filter).priv_0 =
-                ((*filter).action.mods.mods.mask & !(*state).components.locked_mods) as uint32_t;
+                ((*filter).action.mods.mods.mask & !(*state).components.locked_mods) as u32;
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = (*filter).action.mods.mods.mask as uint32_t;
+            (*filter).priv_0 = (*filter).action.mods.mods.mask as u32;
         }
         (*state).set_mods |= (*filter).priv_0;
     }
@@ -2716,7 +2715,7 @@ unsafe extern "C" fn xkb_filter_mod_lock_new(
 ) {
     unsafe {
         (*filter).priv_0 =
-            ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as uint32_t;
+            ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as u32;
         if (*filter).priv_0 != 0
             && (*filter).action.mods.flags as ::core::ffi::c_uint
                 & ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -2804,10 +2803,10 @@ unsafe extern "C" fn xkb_filter_mod_latch_new(
             & ACTION_LATCH_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0
         {
-            (*filter).priv_0 = LATCH_PENDING as ::core::ffi::c_int as uint32_t;
+            (*filter).priv_0 = LATCH_PENDING as ::core::ffi::c_int as u32;
             (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = LATCH_KEY_DOWN as ::core::ffi::c_int as uint32_t;
+            (*filter).priv_0 = LATCH_KEY_DOWN as ::core::ffi::c_int as u32;
             (*state).set_mods |= (*filter).action.mods.mods.mask;
         };
     }
@@ -2996,7 +2995,7 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                 }
             }
         }
-        (*filter).priv_0 = latch as uint32_t;
+        (*filter).priv_0 = latch as u32;
         return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
     }
 }
@@ -3012,11 +3011,11 @@ unsafe extern "C" fn xkb_filter_ctrls_new(
         {
             (*filter).priv_0 = (!((*state).components.controls as ::core::ffi::c_uint)
                 & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
-                as uint32_t;
+                as u32;
         } else {
             (*filter).priv_0 = ((*state).components.controls as ::core::ffi::c_uint
                 & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
-                as uint32_t;
+                as u32;
         }
         if (*filter).action.type_0 as ::core::ffi::c_uint
             == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -4313,7 +4312,7 @@ unsafe extern "C" fn state_update_layout_policy(
     unsafe {
         if xkb_feature_supported(
             XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
-            (*update).policy as ::core::ffi::c_int as uint32_t,
+            (*update).policy as ::core::ffi::c_int as u32,
         ) {
             if (*update).policy as ::core::ffi::c_uint
                 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -4783,14 +4782,12 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
 pub unsafe extern "C" fn xkb_state_key_get_utf32(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
-) -> uint32_t {
+) -> u32 {
     unsafe {
         let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
-        let mut cp: uint32_t = xkb_keysym_to_utf32(sym);
-        if cp <= 127 as uint32_t
-            && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
-        {
-            cp = XkbToControl(cp as ::core::ffi::c_char) as uint32_t;
+        let mut cp: u32 = xkb_keysym_to_utf32(sym);
+        if cp <= 127 as u32 && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0 {
+            cp = XkbToControl(cp as ::core::ffi::c_char) as u32;
         }
         return cp;
     }
@@ -5219,7 +5216,7 @@ unsafe extern "C" fn key_get_consumed(
                             as *mut xkb_level;
                         if !XkbLevelsSameSyms(level, no_mods_level) {
                             if entry == matching_entry
-                                || one_bit_set((*entry).mods.mask as uint32_t) != 0
+                                || one_bit_set((*entry).mods.mask as u32) != 0
                             {
                                 consumed |= (*entry).mods.mask & !(*entry).preserve.mask;
                             }
@@ -5613,8 +5610,8 @@ unsafe extern "C" fn cmp_mod_masks(
         if overlap == m2 {
             return -1 as ::core::ffi::c_int;
         }
-        let count1: ::core::ffi::c_uint = popcount32(m1 as uint32_t) as ::core::ffi::c_uint;
-        let count2: ::core::ffi::c_uint = popcount32(m2 as uint32_t) as ::core::ffi::c_uint;
+        let count1: ::core::ffi::c_uint = popcount32(m1 as u32) as ::core::ffi::c_uint;
+        let count2: ::core::ffi::c_uint = popcount32(m2 as u32) as ::core::ffi::c_uint;
         if count1 > count2 {
             return -1 as ::core::ffi::c_int;
         }
@@ -5892,13 +5889,13 @@ unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
         let mut added: xkb_overlay_mask_t = (mask as ::core::ffi::c_int
             & !((*sm).overlays.enabled as ::core::ffi::c_int))
             as xkb_overlay_mask_t;
-        let mut order: uint32_t = (*sm).overlays.order;
+        let mut order: u32 = (*sm).overlays.order;
         let overlay_max: xkb_overlay_index_t =
             format_max_overlays((*(*sm).state.keymap).format) as xkb_overlay_index_t;
         let mut n: uint8_t = 0 as uint8_t;
         while (n as ::core::ffi::c_int) < overlay_max as ::core::ffi::c_int {
             let mut overlay_idx: xkb_overlay_index_t =
-                (order >> n as ::core::ffi::c_int * 4 as ::core::ffi::c_int & 0xf as uint32_t)
+                (order >> n as ::core::ffi::c_int * 4 as ::core::ffi::c_int & 0xf as u32)
                     as xkb_overlay_index_t;
             if overlay_idx == 0 {
                 break;
@@ -5911,9 +5908,8 @@ unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
                     as xkb_overlay_mask_t;
                 n = n.wrapping_add(1);
             } else {
-                let head: uint32_t = ((1 as uint32_t)
-                    << n as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
-                    .wrapping_sub(1 as uint32_t);
+                let head: u32 = ((1 as u32) << n as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
+                    .wrapping_sub(1 as u32);
                 order = order & head | order >> 4 as ::core::ffi::c_int & !head;
             }
         }
@@ -5923,7 +5919,7 @@ unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
                 order <<= 4 as ::core::ffi::c_int;
                 order = (order as ::core::ffi::c_uint
                     | (k as ::core::ffi::c_uint).wrapping_add(1 as ::core::ffi::c_uint))
-                    as uint32_t;
+                    as u32;
             }
             k = k.wrapping_add(1);
             added = (added as ::core::ffi::c_int >> 1 as ::core::ffi::c_int) as xkb_overlay_mask_t;
@@ -6288,11 +6284,10 @@ unsafe extern "C" fn process_overlayable_key(
             if (*key).overlays as ::core::ffi::c_int & (*sm).overlays.enabled as ::core::ffi::c_int
                 != 0
             {
-                let mut stack: uint32_t = (*sm).overlays.order;
+                let mut stack: u32 = (*sm).overlays.order;
                 while stack != 0 {
-                    let overlay: xkb_overlay_index_t = (stack & 0xf as uint32_t)
-                        .wrapping_sub(1 as uint32_t)
-                        as xkb_overlay_index_t;
+                    let overlay: xkb_overlay_index_t =
+                        (stack & 0xf as u32).wrapping_sub(1 as u32) as xkb_overlay_index_t;
                     let mask: xkb_overlay_mask_t = ((1 as ::core::ffi::c_uint)
                         << overlay as ::core::ffi::c_int)
                         as xkb_overlay_mask_t;
@@ -6307,7 +6302,7 @@ unsafe extern "C" fn process_overlayable_key(
                                     as ::core::ffi::c_int)
                                 as xkb_overlay_mask_t;
                             let index: xkb_overlay_index_t =
-                                popcount32(low as uint32_t) as xkb_overlay_index_t;
+                                popcount32(low as u32) as xkb_overlay_index_t;
                             new = *(*key).c2rust_unnamed.overlays_keys.offset(index as isize);
                         }
                         break;

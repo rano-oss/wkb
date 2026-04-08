@@ -30,7 +30,7 @@ pub mod getopt_ext_h {
     }
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint32_t, __uint64_t};
 }
@@ -451,23 +451,23 @@ pub mod utils_numbers_h {
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
         mut len: size_t,
-        mut out: *mut uint32_t,
+        mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint32_t = 0 as uint32_t;
+            let mut result: u32 = 0 as u32;
             let mut i: size_t = 0 as size_t;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
                     < 16 as ::core::ffi::c_uint
-                && result <= 4294967295 as uint32_t >> 4 as ::core::ffi::c_int
+                && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
             {
-                result = result.wrapping_mul(16 as uint32_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint32_t,
+                result = result.wrapping_mul(16 as u32).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint32_t;
+            *out = result as u32;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as ::core::ffi::c_int
             } else {
@@ -504,7 +504,7 @@ pub mod utils_numbers_h {
         }
     }
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::{uint32_t, uint64_t};
+    use super::stdint_uintn_h::{u32, uint64_t};
     use super::utils_h::is_xdigit;
 }
 pub mod getopt_core_h {
@@ -554,7 +554,7 @@ pub use self::config_h::EXIT_INVALID_USAGE;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::stdbool_h::false_0;
-pub use self::stdint_uintn_h::{uint32_t, uint64_t};
+pub use self::stdint_uintn_h::{u32, uint64_t};
 use self::stdio_h::{fclose, fopen, fprintf, printf, stderr};
 pub use self::stdlib_h::{atof, exit, strtol, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -609,10 +609,10 @@ unsafe extern "C" fn print_stats(
 }
 unsafe extern "C" fn parse_keysym_hex(
     mut s: *const ::core::ffi::c_char,
-    mut out: *mut uint32_t,
+    mut out: *mut u32,
 ) -> bool {
     unsafe {
-        let mut result: uint32_t = 0 as uint32_t;
+        let mut result: u32 = 0 as u32;
         let mut i: ::core::ffi::c_uint = 0;
         i = 0 as ::core::ffi::c_uint;
         while i < 8 as ::core::ffi::c_uint
@@ -623,21 +623,21 @@ unsafe extern "C" fn parse_keysym_hex(
                 && *s.offset(i as isize) as ::core::ffi::c_int <= '9' as i32
             {
                 result = result.wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint32_t,
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u32,
                 );
             } else if 'a' as i32 <= *s.offset(i as isize) as ::core::ffi::c_int
                 && *s.offset(i as isize) as ::core::ffi::c_int <= 'f' as i32
             {
                 result = result.wrapping_add(
                     (10 as ::core::ffi::c_int + *s.offset(i as isize) as ::core::ffi::c_int
-                        - 'a' as i32) as uint32_t,
+                        - 'a' as i32) as u32,
                 );
             } else if 'A' as i32 <= *s.offset(i as isize) as ::core::ffi::c_int
                 && *s.offset(i as isize) as ::core::ffi::c_int <= 'F' as i32
             {
                 result = result.wrapping_add(
                     (10 as ::core::ffi::c_int + *s.offset(i as isize) as ::core::ffi::c_int
-                        - 'A' as i32) as uint32_t,
+                        - 'A' as i32) as u32,
                 );
             } else {
                 return false_0 != 0;
@@ -749,7 +749,7 @@ unsafe fn main_0(
                 b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
             );
         };
-        let mut dummy32: uint32_t = 0 as uint32_t;
+        let mut dummy32: u32 = 0 as u32;
         let mut dummy64: uint64_t = 0 as uint64_t;
         let mut max_iterations: ::core::ffi::c_uint = 0;
         printf(b"*** parse_hex_to_uint32_t ***\n\0".as_ptr() as *const ::core::ffi::c_char);
@@ -776,12 +776,11 @@ unsafe fn main_0(
         bench_start2(&raw mut _bench);
         let mut n: size_t = 0 as size_t;
         while n < size {
-            let mut val: uint32_t = 0 as uint32_t;
+            let mut val: u32 = 0 as u32;
             parse_hex_to_uint32_t(content.offset(n as isize), 8 as size_t, &raw mut val);
             ::core::ptr::write_volatile(
-                &mut dummy32 as *mut uint32_t,
-                ::core::ptr::read_volatile::<uint32_t>(&dummy32 as *const uint32_t)
-                    .wrapping_add(val),
+                &mut dummy32 as *mut u32,
+                ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32).wrapping_add(val),
             );
             n = n.wrapping_add(1);
         }
@@ -793,15 +792,15 @@ unsafe fn main_0(
             while k < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
                 let mut n_0: size_t = 0 as size_t;
                 while n_0 < size {
-                    let mut val_0: uint32_t = 0 as uint32_t;
+                    let mut val_0: u32 = 0 as u32;
                     parse_hex_to_uint32_t(
                         content.offset(n_0 as isize),
                         8 as size_t,
                         &raw mut val_0,
                     );
                     ::core::ptr::write_volatile(
-                        &mut dummy32 as *mut uint32_t,
-                        ::core::ptr::read_volatile::<uint32_t>(&dummy32 as *const uint32_t)
+                        &mut dummy32 as *mut u32,
+                        ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32)
                             .wrapping_add(val_0),
                     );
                     n_0 = n_0.wrapping_add(1);
@@ -862,12 +861,11 @@ unsafe fn main_0(
         bench_start2(&raw mut _bench_0);
         let mut n_1: size_t = 0 as size_t;
         while n_1 < size {
-            let mut val_1: uint32_t = 0 as uint32_t;
+            let mut val_1: u32 = 0 as u32;
             parse_keysym_hex(content.offset(n_1 as isize), &raw mut val_1);
             ::core::ptr::write_volatile(
-                &mut dummy32 as *mut uint32_t,
-                ::core::ptr::read_volatile::<uint32_t>(&dummy32 as *const uint32_t)
-                    .wrapping_add(val_1),
+                &mut dummy32 as *mut u32,
+                ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32).wrapping_add(val_1),
             );
             n_1 = n_1.wrapping_add(1);
         }
@@ -879,11 +877,11 @@ unsafe fn main_0(
             while k_0 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
                 let mut n_2: size_t = 0 as size_t;
                 while n_2 < size {
-                    let mut val_2: uint32_t = 0 as uint32_t;
+                    let mut val_2: u32 = 0 as u32;
                     parse_keysym_hex(content.offset(n_2 as isize), &raw mut val_2);
                     ::core::ptr::write_volatile(
-                        &mut dummy32 as *mut uint32_t,
-                        ::core::ptr::read_volatile::<uint32_t>(&dummy32 as *const uint32_t)
+                        &mut dummy32 as *mut u32,
+                        ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32)
                             .wrapping_add(val_2),
                     );
                     n_2 = n_2.wrapping_add(1);

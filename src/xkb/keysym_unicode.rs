@@ -6,7 +6,7 @@ pub mod types_h {
     pub type __pid_t = ::core::ffi::c_int;
 }
 pub mod stdint_uintn_h {
-    pub type uint32_t = __uint32_t;
+    pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
 pub mod __stddef_size_t_h {
@@ -63,12 +63,12 @@ pub mod FILE_h {
     use super::struct_FILE_h::_IO_FILE;
 }
 pub mod xkbcommon_h {
-    pub type xkb_keysym_t = uint32_t;
+    pub type xkb_keysym_t = u32;
     pub type xkb_keysym_flags = ::core::ffi::c_uint;
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
@@ -84,8 +84,8 @@ pub mod xkbcommon_h {
             buffer: *mut ::core::ffi::c_char,
             size: size_t,
         ) -> ::core::ffi::c_int;
-        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> uint32_t;
-        pub fn xkb_utf32_to_keysym(codepoint: uint32_t) -> xkb_keysym_t;
+        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
+        pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
     }
 }
 pub mod sys_types_h {
@@ -119,9 +119,9 @@ pub mod unistd_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_surrogate(mut cp: uint32_t) -> bool {
+    pub unsafe extern "C" fn is_surrogate(mut cp: u32) -> bool {
         unsafe {
-            return cp >= 0xd800 as uint32_t && cp <= 0xdfff as uint32_t;
+            return cp >= 0xd800 as u32 && cp <= 0xdfff as u32;
         }
     }
     #[inline]
@@ -131,7 +131,7 @@ pub mod utils_h {
                 && ch as ::core::ffi::c_int <= '9' as i32;
         }
     }
-    use super::stdint_uintn_h::uint32_t;
+    use super::stdint_uintn_h::u32;
 }
 pub mod wait_h {
     use super::types_h::__pid_t;
@@ -144,9 +144,9 @@ pub mod wait_h {
     }
 }
 pub mod assert_h {
-    pub const __ASSERT_FUNCTION: [::core::ffi::c_char; 58] = unsafe {
-        ::core::mem::transmute::<[u8; 58], [::core::ffi::c_char; 58]>(
-            *b"void test_unicode_keysyms_consistency(uint32_t, uint32_t)\0",
+    pub const __ASSERT_FUNCTION: [::core::ffi::c_char; 48] = unsafe {
+        ::core::mem::transmute::<[u8; 48], [::core::ffi::c_char; 48]>(
+            *b"void test_unicode_keysyms_consistency(u32, u32)\0",
         )
     };
     extern "C" {
@@ -204,7 +204,7 @@ pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::keysym_h::{
     XKB_KEYSYM_NAME_MAX_SIZE, XKB_KEYSYM_UNICODE_OFFSET, XKB_KEYSYM_UTF8_MAX_SIZE,
 };
-pub use self::stdint_uintn_h::uint32_t;
+pub use self::stdint_uintn_h::u32;
 use self::stdio_h::{fprintf, perror, snprintf, stderr};
 pub use self::stdlib_h::{exit, strtoul, strtoull, EXIT_FAILURE, EXIT_SUCCESS};
 use self::string_h::strcmp;
@@ -220,7 +220,7 @@ pub use self::xkbcommon_h::{
     xkb_keysym_to_utf8, xkb_utf32_to_keysym, XKB_KEYSYM_CASE_INSENSITIVE, XKB_KEYSYM_NO_FLAGS,
 };
 pub use self::FILE_h::FILE;
-unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut end: uint32_t) {
+unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u32) {
     unsafe {
         let mut buffer: [::core::ffi::c_char; 31] = [
             0 as ::core::ffi::c_int as ::core::ffi::c_char,
@@ -257,7 +257,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
         ];
         let mut utf8: [::core::ffi::c_char; 5] =
             [0 as ::core::ffi::c_int as ::core::ffi::c_char, 0, 0, 0, 0];
-        let mut cp: uint32_t = start;
+        let mut cp: u32 = start;
         while cp <= end {
             let mut unicode: xkb_keysym_t =
                 (XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t).wrapping_add(cp as xkb_keysym_t);
@@ -276,7 +276,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
                     __ASSERT_FUNCTION.as_ptr(),
                 );
             };
-            if cp == 0 as uint32_t || is_surrogate(cp) as ::core::ffi::c_int != 0 {
+            if cp == 0 as u32 || is_surrogate(cp) as ::core::ffi::c_int != 0 {
                 if canonical == 0 as xkb_keysym_t {
                 } else {
                     __assert_fail(
@@ -286,7 +286,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
                         __ASSERT_FUNCTION.as_ptr(),
                     );
                 };
-                if xkb_keysym_to_utf32(unicode) == 0 as uint32_t {
+                if xkb_keysym_to_utf32(unicode) == 0 as u32 {
                 } else {
                     __assert_fail(
                         b"xkb_keysym_to_utf32(unicode) == 0\0".as_ptr()
@@ -298,7 +298,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
                 };
                 let mut end_ptr: *mut ::core::ffi::c_char =
                     ::core::ptr::null_mut::<::core::ffi::c_char>();
-                if cp == 0 as uint32_t {
+                if cp == 0 as u32 {
                     if strtoull(
                         &raw mut buffer as *mut ::core::ffi::c_char,
                         &raw mut end_ptr,
@@ -377,7 +377,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
                     &raw mut buffer as *mut ::core::ffi::c_char,
                     XKB_KEYSYM_NO_FLAGS,
                 );
-                if (cp == 0 as uint32_t && ks == 0 as xkb_keysym_t) as ::core::ffi::c_int
+                if (cp == 0 as u32 && ks == 0 as xkb_keysym_t) as ::core::ffi::c_int
                     ^ (is_surrogate(cp) as ::core::ffi::c_int != 0 && ks == unicode)
                         as ::core::ffi::c_int
                     != 0
@@ -408,9 +408,9 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: uint32_t, mut e
                 };
             } else {
                 let __cond: bool = (canonical == unicode) as ::core::ffi::c_int
-                    ^ (0x20 as uint32_t <= cp
-                        && cp <= 0x100 as uint32_t
-                        && cp != 0x7f as uint32_t
+                    ^ (0x20 as u32 <= cp
+                        && cp <= 0x100 as u32
+                        && cp != 0x7f as u32
                         && canonical == cp
                         || canonical != unicode
                             && canonical != 0 as xkb_keysym_t
@@ -655,17 +655,16 @@ unsafe fn main_0(
         {
             NUM_PROCESSES = 4 as ::core::ffi::c_ulong;
         }
-        let max_codepoint: uint32_t = 0x10ffff as uint32_t;
-        let chunk: uint32_t =
-            (max_codepoint as ::core::ffi::c_ulong).wrapping_div(NUM_PROCESSES) as uint32_t;
+        let max_codepoint: u32 = 0x10ffff as u32;
+        let chunk: u32 = (max_codepoint as ::core::ffi::c_ulong).wrapping_div(NUM_PROCESSES) as u32;
         let vla = NUM_PROCESSES as usize;
         let mut pids: Vec<pid_t> = ::std::vec::from_elem(0, vla);
         let mut i: ::core::ffi::c_ulong = 0 as ::core::ffi::c_ulong;
         while i < NUM_PROCESSES {
             let mut pid: pid_t = fork() as pid_t;
             if pid == 0 as ::core::ffi::c_int {
-                let start: uint32_t = i.wrapping_mul(chunk as ::core::ffi::c_ulong) as uint32_t;
-                let end: uint32_t = if i == NUM_PROCESSES.wrapping_sub(1 as ::core::ffi::c_ulong) {
+                let start: u32 = i.wrapping_mul(chunk as ::core::ffi::c_ulong) as u32;
+                let end: u32 = if i == NUM_PROCESSES.wrapping_sub(1 as ::core::ffi::c_ulong) {
                     max_codepoint
                 } else {
                     start.wrapping_add(chunk)
