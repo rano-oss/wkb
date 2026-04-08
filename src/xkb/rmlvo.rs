@@ -362,8 +362,6 @@ pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
@@ -421,7 +419,6 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::u32;
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
@@ -517,7 +514,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                     b"\0".as_ptr() as *const ::core::ffi::c_char
                 },
             );
-            return false_0 != 0;
+            return false;
         }
         let new: xkb_rmlvo_builder_layout = xkb_rmlvo_builder_layout {
             layout: strdup_safe(layout),
@@ -540,7 +537,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                     b"\0".as_ptr() as *const ::core::ffi::c_char
                 },
             );
-            return false_0 != 0;
+            return false;
         }
         (*rmlvo).layouts.size = (*rmlvo).layouts.size.wrapping_add(1 as darray_size_t);
         let mut __need: darray_size_t = (*rmlvo).layouts.size;
@@ -585,7 +582,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                         b"\0".as_ptr() as *const ::core::ffi::c_char
                     },
                 );
-                return false_0 != 0;
+                return false;
             }
             (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
             let mut __need_0: darray_size_t = (*rmlvo).options.size;
@@ -607,7 +604,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                 .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = option;
             k = k.wrapping_add(1);
         }
-        return true_0 != 0;
+        return true;
     }
 }
 #[no_mangle]
@@ -617,7 +614,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
 ) -> bool {
     unsafe {
         if option.is_null() {
-            return false_0 != 0;
+            return false;
         }
         let mut prev: *const xkb_rmlvo_builder_option =
             ::core::ptr::null::<xkb_rmlvo_builder_option>();
@@ -635,7 +632,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
                 if (*prev).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
                     && strcmp((*prev).option, option) == 0 as ::core::ffi::c_int
                 {
-                    return true_0 != 0;
+                    return true;
                 }
                 prev = prev.offset(1);
             }
@@ -654,7 +651,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                 option,
             );
-            return false_0 != 0;
+            return false;
         }
         (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
         let mut __need: darray_size_t = (*rmlvo).options.size;
@@ -674,7 +671,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
             .options
             .item
             .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = new;
-        return true_0 != 0;
+        return true;
     }
 }
 #[no_mangle]
@@ -799,7 +796,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     (*layout).layout,
                 );
                 if count < 0 as ::core::ffi::c_int || count as size_t >= buf_size {
-                    return false_0 != 0;
+                    return false;
                 }
                 buf_size = buf_size.wrapping_sub(count as size_t);
                 start = start.offset(count as isize);
@@ -808,7 +805,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
             }
         }
         if buf_size <= 1 as size_t {
-            return false_0 != 0;
+            return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;
         start = start.offset(1);
@@ -838,7 +835,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     },
                 );
                 if count_0 < 0 as ::core::ffi::c_int || count_0 as size_t >= buf_size {
-                    return false_0 != 0;
+                    return false;
                 }
                 buf_size = buf_size.wrapping_sub(count_0 as size_t);
                 start = start.offset(count_0 as isize);
@@ -847,7 +844,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
             }
         }
         if buf_size <= 1 as size_t {
-            return false_0 != 0;
+            return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;
         start = start.offset(1);
@@ -875,7 +872,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     (*option).option,
                 );
                 if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
-                    return false_0 != 0;
+                    return false;
                 }
                 buf_size = buf_size.wrapping_sub(count_1 as size_t);
                 start = start.offset(count_1 as isize);
@@ -888,7 +885,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                         (*option).layout,
                     );
                     if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
-                        return false_0 != 0;
+                        return false;
                     }
                     buf_size = buf_size.wrapping_sub(count_1 as size_t);
                     start = start.offset(count_1 as isize);
@@ -898,9 +895,9 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
             }
         }
         if buf_size == 0 as size_t {
-            return false_0 != 0;
+            return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;
-        return true_0 != 0;
+        return true;
     }
 }

@@ -806,18 +806,15 @@ pub mod utils_h {
     ) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
-                return false_0 != 0;
+                return false;
             }
             return streq(s1, s2);
         }
     }
     use super::assert_h::__assert_fail;
-    use super::stdbool_h::false_0;
     use super::string_h::strcmp;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub mod assert_h {
     extern "C" {
@@ -896,7 +893,6 @@ pub use self::keymap_h::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
     XKB_KEYCODE_MAX_CONTIGUOUS,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::{fprintf, snprintf, stderr};
@@ -1135,22 +1131,22 @@ unsafe extern "C" fn test_floats(mut ctx: *mut xkb_context) {
             keymap_simple_test_data {
                 keymap: b"xkb_keymap {\n  xkb_geometry {\n    width=123.456;\n    width=123.0;\n    width=123.;\n    width=01.234;\n    width=01.0;\n    width=01.;\n    width=001.234;\n    width=001.0;\n    width=001.;\n  };};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                valid: true_0 != 0,
+                valid: true,
             },
             keymap_simple_test_data {
                 keymap: b"xkb_keymap { xkb_geometry { width=.123; }; };\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                valid: false_0 != 0,
+                valid: false,
             },
             keymap_simple_test_data {
                 keymap: b"xkb_keymap { xkb_geometry { width=1,23; }; };\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                valid: false_0 != 0,
+                valid: false,
             },
             keymap_simple_test_data {
                 keymap: b"xkb_keymap { xkb_geometry { width=1.23e2; }; };\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                valid: false_0 != 0,
+                valid: false,
             },
         ];
         let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
@@ -4007,48 +4003,48 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n  };\n  xkb_symbols {\n    key <j> { [j], overlay1 = <xxx> };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
-                lenient: false_0 != 0,
+                no_output: true,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: false_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: false,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n    <left> = 113;\n  };\n  xkb_symbols {\n    key <j> { [j], overlay1 = <kp1>, overlay2 = <left> };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
-                lenient: false_0 != 0,
+                no_output: true,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n  };\n  xkb_symbols {\n    key <j> { [j], overlay3 = <kp1> };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
-                lenient: false_0 != 0,
+                no_output: true,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n  };\n  xkb_symbols {\n    key <j> { [j], overlay3 = none };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
-                lenient: false_0 != 0,
+                no_output: true,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
@@ -4056,7 +4052,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n    <left> = 113;\n  };\n  xkb_symbols {\n    key <j>    { [j], overlay2 = <left> };\n    key <j>    { overlay1 = <kp1>, overlay2 = none };\n    key <kp1>  { [KP_1], overlay1 = none, overlay1 = <j> };\n    key <left> { [Left], overlay1 = <kp1> };\n    key <left> { overlay1 = none };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 no_output: false,
-                lenient: false_0 != 0,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed_0: C2Rust_Unnamed_21 {
                         expected_v1_1: b"keymaps/overlays-v1-1.xkb\0".as_ptr()
@@ -4074,7 +4070,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n    <left> = 113;\n  };\n  xkb_symbols {\n    key <j>    { [j], overlay1 = <kp1>, overlay1 = none };\n    key <kp1>  { [KP_1], overlay1 = <j> };\n    key <kp1>  { [KP_1], overlay2 = <left> };\n    key <kp1>  { [KP_1], overlay1 = none, overlay2 = none };\n    key <left> { [Left], overlay1 = none, overlay2 = none };\n    augment key <left> { [Left], overlay1 = <j> };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 no_output: false,
-                lenient: false_0 != 0,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed_0: C2Rust_Unnamed_21 {
                         expected_v1_1: b"keymaps/overlays-v1-1.xkb\0".as_ptr()
@@ -4092,7 +4088,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <1>    = 10;\n    <2>    = 11;\n    <3>    = 12;\n    <4>    = 13;\n    <j>    = 44;\n    <k>    = 45;\n    <kp1>  = 87;\n    <kp2>  = 88;\n    <f1>   = 67;\n    <f2>   = 68;\n    <f10>  = 76;\n    <f11>  = 95;\n    <left> = 113;\n    <down> = 116;\n  };\n  xkb_symbols {\n    key <1>    { [LockControls(controls=Overlay1)] };\n    key <2>    { [LockControls(controls=Overlay2)] };\n    key <3>    { [LockControls(controls=none)] };\n    key <4>    { [LockControls(controls=none)] };\n    key <j>    { [j], overlay1 = <kp1>, overlay2 = <left> };\n    key <k>    { [k], overlay1 = <kp2>, overlay2 = <down> };\n    key <kp1>  { [KP_1], overlay1 = none };\n    key <kp2>  { [KP_2] };\n    key <left> { [Left], overlay1 = <kp1> };\n    key <left> { overlay1 = none };\n    key <down> { [Down] };\n    key <f1>   { [F1] };\n    key <f2>   { [F2] };\n    key <f10>  { [F10] };\n    key <f11>  { [F11] };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 no_output: false,
-                lenient: true_0 != 0,
+                lenient: true,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed_0: C2Rust_Unnamed_21 {
                         expected_v1_1: b"keymaps/overlays-v1-2.xkb\0".as_ptr()
@@ -4109,12 +4105,12 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <j>    = 44;\n    <kp1>  = 87;\n    <left> = 113;\n  };\n  xkb_symbols {\n    key <j>    { [j], overlay[1] = <kp1>, overlay[2] = <left> };\n    key <kp1>  { [KP_1] };\n    key <left> { [Left] };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
-                lenient: false_0 != 0,
+                no_output: true,
+                lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: false_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: false,
                     },
                 },
             },
@@ -4122,7 +4118,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                 keymap: b"xkb_keymap {\n  xkb_keycodes {\n    <1>    = 10;\n    <2>    = 11;\n    <3>    = 12;\n    <4>    = 13;\n    <j>    = 44;\n    <k>    = 45;\n    <kp1>  = 87;\n    <kp2>  = 88;\n    <f1>   = 67;\n    <f2>   = 68;\n    <f10>  = 76;\n    <f11>  = 95;\n    <left> = 113;\n    <down> = 116;\n  };\n  xkb_symbols {\n    key <1> { [LockControls(controls=Overlay1)] };\n    key <2> { [LockControls(controls=Overlay2)] };\n    key <3> { [LockControls(controls=Overlay3)] };\n    key <4> { [LockControls(controls=Overlay4)] };\n    key <j> { [j] };\n    key <j> {\n      overlay1 = <left>, overlay2 = <left>,\n      overlay6 = <j>, overlay7 = <kp1>\n    };\n    key <j> {\n      overlay1 = <kp1>, overlay7 = none,\n      overlay3 = <f1>, overlay4 = <f10>\n    };\n    augment key <j> { overlay4 = <f1> };\n    key <k>    {\n      [k],\n      overlay1 = <kp2>,\n      overlay2 = <down>,\n      overlay3 = <f2>,\n      overlay4 = <f11>\n    };\n    key <kp1>  { [KP_1], overlay2 = <j> };\n    key <kp1>  { [KP_1], overlay1 = none, overlay2 = none, overlay3 = <f1> };\n    key <kp1>  { [KP_1], overlay3 = none };\n    key <kp2>  { [KP_2] };\n    key <left> { [Left], overlay3 = <f1>, overlay4 = <f10> };\n    key <down> { [Down] };\n    key <f1>   { [F1] };\n    key <f2>   { [F2] };\n    key <f10>  { [F10] };\n    key <f11>  { [F11] };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 no_output: false,
-                lenient: true_0 != 0,
+                lenient: true,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed_0: C2Rust_Unnamed_21 {
                         expected_v1_1: ::core::ptr::null::<::core::ffi::c_char>(),
@@ -4357,48 +4353,48 @@ unsafe extern "C" fn test_extended_layout_indices(
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_compat { interpret a { action = SetGroup(group=5); }; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
+                no_output: true,
                 lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes { indicator 1 = \"a\"; };\n  xkb_compat   { indicator \"a\" { groups=All-5; }; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
+                no_output: true,
                 lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: true_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: true,
+                        compiles_v2: true,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes { <> = 1; };\n  xkb_symbols  { name[5] = \"5\"; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
+                no_output: true,
                 lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
             keymap_multi_versions_test_data {
                 keymap: b"xkb_keymap {\n  xkb_keycodes { <> = 1; };\n  xkb_symbols  { key <> { [1], [2], [3], [4], [5] }; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                no_output: true_0 != 0,
+                no_output: true,
                 lenient: false,
                 c2rust_unnamed: C2Rust_Unnamed_20 {
                     c2rust_unnamed: C2Rust_Unnamed_22 {
-                        compiles_v1: false_0 != 0,
-                        compiles_v2: true_0 != 0,
+                        compiles_v1: false,
+                        compiles_v2: true,
                     },
                 },
             },
@@ -4705,7 +4701,7 @@ unsafe fn main_0(
 ) -> ::core::ffi::c_int {
     unsafe {
         test_init();
-        let mut update_output_files: bool = false_0 != 0;
+        let mut update_output_files: bool = false;
         let mut seed: ::core::ffi::c_uint =
             time(::core::ptr::null_mut::<time_t>()) as ::core::ffi::c_uint;
         let mut arg_index: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -4718,7 +4714,7 @@ unsafe fn main_0(
                 *argv.offset(arg_index as isize),
                 b"update\0".as_ptr() as *const ::core::ffi::c_char,
             ) {
-                update_output_files = true_0 != 0;
+                update_output_files = true;
             } else if streq(
                 *argv.offset(arg_index as isize),
                 b"--seed\0".as_ptr() as *const ::core::ffi::c_char,

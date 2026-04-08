@@ -1295,9 +1295,9 @@ pub mod utils_h {
     ) -> bool {
         unsafe {
             if eaccess(path, mode) != 0 as ::core::ffi::c_int {
-                return false_0 != 0;
+                return false;
             }
-            return true_0 != 0;
+            return true;
         }
     }
     #[inline]
@@ -1318,7 +1318,6 @@ pub mod utils_h {
 
     use super::__stddef_size_t_h::size_t;
     use super::assert_h::__assert_fail;
-    use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::vsnprintf;
     use super::string_h::{strcmp, strdup};
     use super::unistd_h::eaccess;
@@ -1410,8 +1409,6 @@ pub mod bits_stat_h {
     pub const __S_IFMT: ::core::ffi::c_int = 0o170000 as ::core::ffi::c_int;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
@@ -1517,7 +1514,6 @@ pub use self::parser_h::{
     XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
 };
 use self::stat_h::stat;
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::u32;
 pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
 pub use self::stdlib_h::{
@@ -2978,7 +2974,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                             b"Include path added: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
                             tmp,
                         );
-                        return true_0 != 0;
+                        return true;
                     }
                 }
             }
@@ -2990,7 +2986,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
             path,
             strerror(err),
         );
-        return false_0 != 0;
+        return false;
     }
 }
 unsafe extern "C" fn compare_str(
@@ -3200,7 +3196,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
 ) -> bool {
     unsafe {
         let mut user_path: [::core::ffi::c_char; 4096] = [0; 4096];
-        let mut ret: ::core::ffi::c_int = if false_0 != 0 { 1 } else { 0 };
+        let mut ret: ::core::ffi::c_int = if false { 1 } else { 0 };
         if (*ctx).context_state as ::core::ffi::c_uint
             != CONTEXT_NEW as ::core::ffi::c_int as ::core::ffi::c_uint
         {
@@ -3210,7 +3206,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"include paths can only be appended to a new context\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
             );
-            return false_0 != 0;
+            return false;
         }
         let home: *const ::core::ffi::c_char =
             rxkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const ::core::ffi::c_char);
@@ -3381,7 +3377,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
     unsafe {
         let mut path: *mut *mut ::core::ffi::c_char =
             ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
-        let mut success: bool = false_0 != 0;
+        let mut success: bool = false;
         if (*ctx).context_state as ::core::ffi::c_uint
             != CONTEXT_NEW as ::core::ffi::c_int as ::core::ffi::c_uint
         {
@@ -3391,7 +3387,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                 b"parse must only be called on a new context\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
             );
-            return false_0 != 0;
+            return false;
         }
         if !(*ctx).includes.item.is_null() && (*ctx).includes.size != 0 {
             path = (*ctx)
@@ -3426,7 +3422,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                         &raw mut rules as *mut ::core::ffi::c_char,
                         RXKB_POPULARITY_STANDARD,
                     ) {
-                        success = true_0 != 0;
+                        success = true;
                     }
                 }
                 if (*ctx).load_extra_rules_files as ::core::ffi::c_int != 0
@@ -3450,7 +3446,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                         &raw mut rules as *mut ::core::ffi::c_char,
                         RXKB_POPULARITY_EXOTIC,
                     ) {
-                        success = true_0 != 0;
+                        success = true;
                     }
                 }
                 path = path.offset(-1);
@@ -3564,7 +3560,7 @@ unsafe extern "C" fn parse_config_item(
                         b"true\0".as_ptr() as *const ::core::ffi::c_char as *const xmlChar,
                     ) != 0
                 {
-                    (*config).layout_specific = true_0 != 0;
+                    (*config).layout_specific = true;
                 }
                 xmlFree.expect("non-null function pointer")(
                     raw_layout_specific as *mut ::core::ffi::c_void,
@@ -3597,13 +3593,13 @@ unsafe extern "C" fn parse_config_item(
                         (*ci).line as ::core::ffi::c_int,
                     );
                     config_item_free(config);
-                    return false_0 != 0;
+                    return false;
                 }
-                return true_0 != 0;
+                return true;
             }
             ci = (*ci).next as *mut xmlNode;
         }
-        return false_0 != 0;
+        return false;
     }
 }
 unsafe extern "C" fn parse_model(
@@ -3618,7 +3614,7 @@ unsafe extern "C" fn parse_model(
             brief: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             vendor: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             popularity: popularity,
-            layout_specific: false_0 != 0,
+            layout_specific: false,
         };
         if parse_config_item(ctx, model, &raw mut config) {
             let mut m: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
@@ -3728,11 +3724,11 @@ unsafe extern "C" fn parse_variant(
             brief: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             vendor: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             popularity: popularity,
-            layout_specific: false_0 != 0,
+            layout_specific: false,
         };
         if parse_config_item(ctx, variant, &raw mut config) {
             let mut v: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
-            let mut exists: bool = false_0 != 0;
+            let mut exists: bool = false;
             v = ::core::ptr::null_mut::<rxkb_layout>();
             v = ((*ctx).layouts.next as *mut ::core::ffi::c_char)
                 .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
@@ -3741,7 +3737,7 @@ unsafe extern "C" fn parse_variant(
                 if streq_null((*v).variant, config.name) as ::core::ffi::c_int != 0
                     && streq((*v).name, (*l).name) as ::core::ffi::c_int != 0
                 {
-                    exists = true_0 != 0;
+                    exists = true;
                     break;
                 } else {
                     v = ((*v).base.link.next as *mut ::core::ffi::c_char)
@@ -3772,8 +3768,8 @@ unsafe extern "C" fn parse_variant(
                 while !ci.is_null() {
                     let mut node: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
                     if is_node(ci, b"configItem\0".as_ptr() as *const ::core::ffi::c_char) {
-                        let mut found_language_list: bool = false_0 != 0;
-                        let mut found_country_list: bool = false_0 != 0;
+                        let mut found_language_list: bool = false;
+                        let mut found_country_list: bool = false;
                         node = (*ci).children as *mut xmlNode;
                         while !node.is_null() {
                             if is_node(
@@ -3781,14 +3777,14 @@ unsafe extern "C" fn parse_variant(
                                 b"languageList\0".as_ptr() as *const ::core::ffi::c_char,
                             ) {
                                 parse_language_list(node, v);
-                                found_language_list = true_0 != 0;
+                                found_language_list = true;
                             }
                             if is_node(
                                 node,
                                 b"countryList\0".as_ptr() as *const ::core::ffi::c_char,
                             ) {
                                 parse_country_list(node, v);
-                                found_country_list = true_0 != 0;
+                                found_country_list = true;
                             }
                             node = (*node).next as *mut xmlNode;
                         }
@@ -3868,11 +3864,11 @@ unsafe extern "C" fn parse_layout(
             brief: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             vendor: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             popularity: popularity,
-            layout_specific: false_0 != 0,
+            layout_specific: false,
         };
         let mut l: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         let mut node: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
-        let mut exists: bool = false_0 != 0;
+        let mut exists: bool = false;
         if !parse_config_item(ctx, layout, &raw mut config) {
             return;
         }
@@ -3882,7 +3878,7 @@ unsafe extern "C" fn parse_layout(
             as *mut rxkb_layout;
         while &raw mut (*l).base.link != &raw mut (*ctx).layouts {
             if streq((*l).name, config.name) as ::core::ffi::c_int != 0 && (*l).variant.is_null() {
-                exists = true_0 != 0;
+                exists = true;
                 break;
             } else {
                 l = ((*l).base.link.next as *mut ::core::ffi::c_char)
@@ -3965,7 +3961,7 @@ unsafe extern "C" fn parse_option(
             brief: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             vendor: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             popularity: popularity,
-            layout_specific: false_0 != 0,
+            layout_specific: false,
         };
         if parse_config_item(ctx, option, &raw mut config) {
             let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
@@ -4006,12 +4002,12 @@ unsafe extern "C" fn parse_group(
             brief: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             vendor: ::core::ptr::null_mut::<::core::ffi::c_char>(),
             popularity: popularity,
-            layout_specific: false_0 != 0,
+            layout_specific: false,
         };
         let mut g: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut node: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         let mut multiple: *mut xmlChar = ::core::ptr::null_mut::<xmlChar>();
-        let mut exists: bool = false_0 != 0;
+        let mut exists: bool = false;
         if !parse_config_item(ctx, group, &raw mut config) {
             return;
         }
@@ -4021,7 +4017,7 @@ unsafe extern "C" fn parse_group(
             as *mut rxkb_option_group;
         while &raw mut (*g).base.link != &raw mut (*ctx).option_groups {
             if streq((*g).name, config.name) {
-                exists = true_0 != 0;
+                exists = true;
                 break;
             } else {
                 g = ((*g).base.link.next as *mut ::core::ffi::c_char)
@@ -4048,7 +4044,7 @@ unsafe extern "C" fn parse_group(
                     b"true\0".as_ptr() as *const ::core::ffi::c_char as *const xmlChar,
                 ) != 0
             {
-                (*g).allow_multiple = true_0 != 0;
+                (*g).allow_multiple = true;
             }
             xmlFree.expect("non-null function pointer")(multiple as *mut ::core::ffi::c_void);
             list_init(&raw mut (*g).options);
@@ -4162,7 +4158,7 @@ unsafe extern "C" fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) 
     unsafe {
         let mut dtd: *mut xmlDtd = ::core::ptr::null_mut::<xmlDtd>();
         let mut dtdvalid: *mut xmlValidCtxt = ::core::ptr::null_mut::<xmlValidCtxt>();
-        let mut success: bool = false_0 != 0;
+        let mut success: bool = false;
         let dtdstr: [::core::ffi::c_char; 1061] = ::core::mem::transmute::<
             [u8; 1061],
             [::core::ffi::c_char; 1061],
@@ -4210,16 +4206,16 @@ unsafe extern "C" fn parse(
     mut popularity: rxkb_popularity,
 ) -> bool {
     unsafe {
-        let mut success: bool = false_0 != 0;
+        let mut success: bool = false;
         let mut doc: *mut xmlDoc = ::core::ptr::null_mut::<xmlDoc>();
         let mut root: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         if !check_eaccess(path, R_OK) {
-            return false_0 != 0;
+            return false;
         }
         xmlCheckVersion(21210 as ::core::ffi::c_int);
         let mut xmlCtxt: xmlParserCtxtPtr = xmlNewParserCtxt();
         if xmlCtxt.is_null() {
-            return false_0 != 0;
+            return false;
         }
         xmlCtxtUseOptions(xmlCtxt, XML_PARSE_NONET as ::core::ffi::c_int);
         xmlSetGenericErrorFunc(
@@ -4251,7 +4247,7 @@ unsafe extern "C" fn parse(
             } else {
                 root = xmlDocGetRootElement(doc) as *mut xmlNode;
                 parse_rules_xml(ctx, root, popularity);
-                success = true_0 != 0;
+                success = true;
             }
             xmlFreeDoc(doc as xmlDocPtr);
         }

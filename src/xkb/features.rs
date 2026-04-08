@@ -149,8 +149,6 @@ pub mod enums_h {
     };
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub mod stdint_h {
     pub const UINT32_WIDTH: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
@@ -167,7 +165,6 @@ pub use self::enums_h::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_WIDTH;
 pub use self::stdint_uintn_h::u32;
 pub use self::types_h::__uint32_t;
@@ -212,11 +209,11 @@ unsafe extern "C" fn is_supported_enum_value_array(
         let mut v: size_t = 0 as size_t;
         while v < size {
             if *values.offset(v as isize) == value {
-                return true_0 != 0;
+                return true;
             }
             v = v.wrapping_add(1);
         }
-        return false_0 != 0;
+        return false;
     }
 }
 #[inline]
@@ -249,7 +246,7 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
                 );
             }
             3200 => {
-                return is_supported_flag_value(XKB_CONTEXT_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_CONTEXT_FLAGS_VALUES, true, value);
             }
             5100 => {
                 return is_supported_enum_value_array(
@@ -260,57 +257,57 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
                 );
             }
             9200 => {
-                return is_supported_flag_value(XKB_KEYSYM_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_KEYSYM_FLAGS_VALUES, true, value);
             }
             18200 => {
-                return is_supported_flag_value(XKB_RMLVO_BUILDER_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_RMLVO_BUILDER_FLAGS_VALUES, true, value);
             }
             21000 => return is_supported_enum_value_mask(XKB_KEYMAP_FORMAT_VALUES, value),
             21200 => {
                 return is_supported_flag_value(
                     XKB_KEYMAP_COMPILE_FLAGS_VALUES,
-                    true_0 != 0,
+                    true,
                     value,
                 );
             }
             21400 => {
                 return is_supported_flag_value(
                     XKB_KEYMAP_SERIALIZE_FLAGS_VALUES,
-                    true_0 != 0,
+                    true,
                     value,
                 );
             }
             21600 => {
                 return is_supported_flag_value(
                     XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
-                    true_0 != 0,
+                    true,
                     value,
                 );
             }
             24000 => {
-                return is_supported_flag_value(XKB_STATE_COMPONENT_VALUES, false_0 != 0, value);
+                return is_supported_flag_value(XKB_STATE_COMPONENT_VALUES, false, value);
             }
             24020 => {
                 return is_supported_enum_value_mask(XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, value);
             }
             24040 => {
-                return is_supported_flag_value(XKB_A11Y_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_A11Y_FLAGS_VALUES, true, value);
             }
             24060 => {
                 return is_supported_flag_value(
                     XKB_KEYBOARD_CONTROL_FLAGS_VALUES,
-                    true_0 != 0,
+                    true,
                     value,
                 );
             }
             24820 => {
-                return is_supported_flag_value(XKB_STATE_MATCH_VALUES, false_0 != 0, value);
+                return is_supported_flag_value(XKB_STATE_MATCH_VALUES, false, value);
             }
             24840 => return is_supported_enum_value_mask(XKB_CONSUMED_MODE_VALUES, value),
             27000 => return is_supported_enum_value_mask(XKB_EVENT_TYPE_VALUES, value),
             27020 => return is_supported_enum_value_mask(XKB_KEY_DIRECTION_VALUES, value),
             27600 => {
-                return is_supported_flag_value(XKB_EVENTS_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_EVENTS_FLAGS_VALUES, true, value);
             }
             30000 => {
                 return is_supported_enum_value_mask(XKB_COMPOSE_FORMAT_VALUES, value);
@@ -318,7 +315,7 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
             30200 => {
                 return is_supported_flag_value(
                     XKB_COMPOSE_COMPILE_FLAGS_VALUES,
-                    true_0 != 0,
+                    true,
                     value,
                 );
             }
@@ -326,12 +323,12 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
                 return is_supported_enum_value_mask(XKB_COMPOSE_STATUS_VALUES, value);
             }
             31200 => {
-                return is_supported_flag_value(XKB_COMPOSE_STATE_FLAGS_VALUES, true_0 != 0, value);
+                return is_supported_flag_value(XKB_COMPOSE_STATE_FLAGS_VALUES, true, value);
             }
             31300 => {
                 return is_supported_enum_value_mask(XKB_COMPOSE_FEED_RESULT_VALUES, value);
             }
-            _ => return false_0 != 0,
+            _ => return false,
         };
     }
 }

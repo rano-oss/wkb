@@ -972,7 +972,7 @@ pub mod state_h {
     ) -> bool {
         unsafe {
             if (*event1).type_0 as ::core::ffi::c_uint != (*event2).type_0 as ::core::ffi::c_uint {
-                return false_0 != 0;
+                return false;
             }
             match (*event1).type_0 as ::core::ffi::c_uint {
                 1 | 2 | 3 => {
@@ -987,7 +987,7 @@ pub mod state_h {
                         ::core::mem::size_of::<C2Rust_Unnamed_14>() as size_t,
                     ) == 0 as ::core::ffi::c_int;
                 }
-                _ => return false_0 != 0,
+                _ => return false,
             };
         }
     }
@@ -1055,7 +1055,7 @@ pub mod state_h {
         unsafe {
             let mut got: *const xkb_event = ::core::ptr::null::<xkb_event>();
             let mut got_count: size_t = 0 as size_t;
-            let mut ok: bool = true_0 != 0;
+            let mut ok: bool = true;
             if count == 1 as size_t
                 && (*events.offset(0 as ::core::ffi::c_int as isize)).type_0 as ::core::ffi::c_uint
                     == XKB_EVENT_TYPE_NONE as ::core::ffi::c_uint
@@ -1098,7 +1098,7 @@ pub mod state_h {
                         expected,
                     );
                     print_event(b"Got: \0".as_ptr() as *const ::core::ffi::c_char, got);
-                    ok = false_0 != 0;
+                    ok = false;
                     break;
                 }
             }
@@ -1111,7 +1111,7 @@ pub mod state_h {
                     count,
                     got_count,
                 );
-                ok = false_0 != 0;
+                ok = false;
             }
             return ok;
         }
@@ -1121,7 +1121,6 @@ pub mod state_h {
     use super::assert_h::__assert_fail;
     use super::keymap_h::xkb_keymap;
     use super::state_priv_h::{xkb_event, C2Rust_Unnamed_14};
-    use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::{fprintf, stderr};
     use super::string_h::memcmp;
     use super::xkbcommon_h::{
@@ -1164,8 +1163,6 @@ pub mod evdev_scancodes_h {
     pub const KEY_COMPOSE: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [::core::ffi::c_char; 6] =
@@ -1239,7 +1236,6 @@ pub use self::state_h::{
 pub use self::state_priv_h::{
     state_components, xkb_event, xkb_machine_get_state, C2Rust_Unnamed_13, C2Rust_Unnamed_14,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
 use self::stdio_h::{fprintf, stderr};
@@ -1712,12 +1708,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1730,12 +1726,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1748,12 +1744,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0 as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1766,12 +1762,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 1 as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1784,12 +1780,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0 as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1802,12 +1798,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 1 as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 error: XKB_ERROR_ABI_INVALID_STRUCT_SIZE,
             },
@@ -1820,12 +1816,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1838,12 +1834,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1856,12 +1852,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: ::core::mem::size_of::<xkb_layout_policy_update>() as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1874,12 +1870,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1892,12 +1888,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: ::core::mem::size_of::<xkb_state_components_update_newer>() as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1910,12 +1906,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as size_t,
                     extra: 0,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 error: XKB_SUCCESS,
             },
@@ -1928,12 +1924,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_FORWARD_COMPAT,
             },
@@ -1946,12 +1942,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_FORWARD_COMPAT,
             },
@@ -1964,12 +1960,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: ::core::mem::size_of::<xkb_state_components_update_newer>() as size_t,
                     extra: (1 as uint64_t) << 63 as ::core::ffi::c_int,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 layout_policy: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 error: XKB_ERROR_ABI_FORWARD_COMPAT,
             },
@@ -1982,12 +1978,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                 components: params {
                     size: 0,
                     extra: 0,
-                    enabled: false_0 != 0,
+                    enabled: false,
                 },
                 layout_policy: params {
                     size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as size_t,
                     extra: (1 as uint64_t) << 63 as ::core::ffi::c_int,
-                    enabled: true_0 != 0,
+                    enabled: true,
                 },
                 error: XKB_ERROR_ABI_FORWARD_COMPAT,
             },
@@ -2577,7 +2573,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
                         sm,
                         events,
                         state,
-                        true_0 != 0,
+                        true,
                         XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS,
                         XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS,
                     );
@@ -3301,7 +3297,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
                         sm,
                         events,
                         state,
-                        true_0 != 0,
+                        true,
                         XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS,
                         XKB_KEYBOARD_CONTROL_NO_FLAGS,
                     );
@@ -3534,7 +3530,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS,
             XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS,
         );
@@ -3542,7 +3538,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_DOWN,
         );
@@ -3565,7 +3561,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_UP,
         );
@@ -3610,7 +3606,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_DOWN,
         );
@@ -3667,7 +3663,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_UP,
         );
@@ -3698,7 +3694,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_DOWN,
         );
@@ -3718,7 +3714,7 @@ unsafe extern "C" fn test_sticky_keys(mut ctx: *mut xkb_context) {
             sm,
             events,
             state,
-            true_0 != 0,
+            true,
             (KEY_LEFTSHIFT + EVDEV_OFFSET) as xkb_keycode_t,
             XKB_KEY_UP,
         );
@@ -3868,17 +3864,17 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
             events,
             0 as xkb_mod_mask_t,
             0 as xkb_mod_mask_t,
-            false_0 != 0,
+            false,
             0 as int32_t,
             ctrl,
             ctrl,
-            false_0 != 0,
+            false,
             0 as int32_t,
         );
         let tests: [C2Rust_Unnamed_21; 3] = [
             C2Rust_Unnamed_21 {
                 keycode: (EVDEV_OFFSET + KEY_A) as xkb_keycode_t,
-                repeats: false_0 != 0,
+                repeats: false,
                 down: test_events {
                     events: [
                         xkb_event {
@@ -3920,7 +3916,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_21 {
                 keycode: (EVDEV_OFFSET + KEY_S) as xkb_keycode_t,
-                repeats: true_0 != 0,
+                repeats: true,
                 down: test_events {
                     events: [
                         xkb_event {
@@ -3962,7 +3958,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_21 {
                 keycode: (EVDEV_OFFSET + KEY_D) as xkb_keycode_t,
-                repeats: true_0 != 0,
+                repeats: true,
                 down: test_events {
                     events: [
                         xkb_event {

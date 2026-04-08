@@ -442,13 +442,12 @@ pub mod utils_h {
     ) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
-                return false_0 != 0;
+                return false;
             }
             return streq(s1, s2);
         }
     }
     use super::assert_h::{__assert_fail, __ASSERT_FUNCTION};
-    use super::stdbool_h::false_0;
     use super::string_h::strcmp;
 }
 pub mod include_locale_h {
@@ -486,8 +485,6 @@ pub mod locale_h {
     pub const __LC_ALL: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::{NULL, NULL_0};
 pub use self::__stddef_size_t_h::size_t;
@@ -541,7 +538,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, printf, stderr, vasprintf};
 pub use self::stdlib_h::{free, realloc, setenv, EXIT_SUCCESS};
 use self::string_h::{memcpy, strlen};
@@ -925,95 +921,95 @@ unsafe extern "C" fn test_keymaps() {
                 input: b"\0".as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-822] Failed to parse input xkb string\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b" \0".as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-822] Failed to parse input xkb string\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"\n\0".as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-822] Failed to parse input xkb string\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"xkb_keymap {\n\0".as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-769] (input string):1:12: syntax error, unexpected end of file\nerror: [XKB-822] Failed to parse input xkb string\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"xkb_keymap \"\\j\"\n { xkb_symbols = {};\n};\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"warning: [XKB-645] (input string):1:12: unknown escape sequence \"\\j\" in string literal\nerror: [XKB-769] (input string):2:16: syntax error, unexpected =, expecting {\nerror: [XKB-822] Failed to parse input xkb string\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"xkb_keymap {\n xkb_keycodes { <> = 1; };\n xkb_symbols { key <> { [\"\xC3\xBC\xFF\"] }; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-542] (input string):3:26: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position 3 (code point position: 2).\nerror: [XKB-822] Failed to parse input xkb string\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"xkb_keymap {\n  xkb_keycodes {\n    <> = 1;\n\n    alias <1> = <>;\n    alias <1> =\n                <>;\n  };\n  xkb_types \"\\400x\\j\" { };\n  xkb_compat {\n    interpret invalidKeysym +\n                              Any { repeat = true; };\n  };\n  xkb_symbols { key <> {[0x30, leftshoe]}; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"warning: [XKB-193] (input string):9:13: invalid octal escape sequence \"\\400\" in string literal\nwarning: [XKB-645] (input string):9:13: unknown escape sequence \"\\j\" in string literal\nwarning: [XKB-107] (input string):11:15: unrecognized keysym \"invalidKeysym\"\nwarning: [XKB-489] (input string):14:26: numeric keysym \"0x0030\" (48)\nwarning: [XKB-301] (input string):14:32: deprecated keysym \"leftshoe\".\nwarning: [XKB-433] No map in include statement, but \"(input string)\" contains several; Using first defined map, \"(unnamed map)\"\nwarning: [XKB-523] Alias of <1> for <> declared more than once; First definition ignored\nwarning: [XKB-286] The type \"TWO_LEVEL\" for key '<>' group 1 was not previously defined; Using the default type\nwarning: [XKB-516] Type \"ONE_LEVEL\" has 1 levels, but <> has 2 levels; Ignoring extra symbols\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_compat {\n    NoAction.data = 1;\n    interpret VoidSymbol { action= VoidAction(data=<garbage>); };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-563] The \"NoAction\" action takes no argument, but got \"data\" field; Action definition ignored\nerror: [XKB-563] The \"VoidAction\" action takes no argument, but got \"data\" field; Action definition ignored\nerror: Failed to compile xkb_compatibility\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_keycodes { <> = 1; };\n  xkb_symbols {\n    NoAction.data = 1;\n    key <> { [TerminateServer(data=<garbage>)] };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-563] The \"NoAction\" action takes no argument, but got \"data\" field; Action definition ignored\nerror: [XKB-563] The \"Terminate\" action takes no argument, but got \"data\" field; Action definition ignored\nerror: [XKB-796] Illegal action definition for <>; Action for group 1/level 1 ignored\nerror: Failed to compile xkb_symbols\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_compat {\n    interpret ISO_Lock+AnyOf(all) {\n      action= ISOLock(modifiers=modMapMods,affect=all);\n    };\n    interpret VoidSymbol+AnyOf(all) {\n      action= DeviceButton(data=<garbage>);\n    };\n  };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"warning: [XKB-362] Unsupported legacy action type \"ISOLock\".\nwarning: [XKB-362] Unsupported legacy action type \"DeviceButton\".\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_keycodes { foobar; };\n};\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-639] Default defined for unknown field \"foobar\"; Ignored\nerror: Failed to compile xkb_keycodes\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_types { foobar; };\n};\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"error: [XKB-639] Default defined for unknown field \"foobar\"; Ignored\nerror: Failed to compile xkb_types\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_compat { foobar; };\n};\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"error: [XKB-639] Default defined for unknown field \"foobar\"; Ignored\nerror: Failed to compile xkb_compatibility\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"default xkb_keymap {\n  xkb_symbols { foobar; };\n};\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"error: [XKB-639] Default defined for unknown field \"foobar\"; Ignored\nerror: Failed to compile xkb_symbols\nerror: [XKB-822] Failed to compile keymap\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
         ];
         let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
@@ -1120,46 +1116,46 @@ unsafe extern "C" fn test_compose() {
             test_data {
                 input: b"\0".as_ptr() as *const ::core::ffi::c_char,
                 log: ::core::ptr::null::<::core::ffi::c_char>(),
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b"\n\0".as_ptr() as *const ::core::ffi::c_char,
                 log: ::core::ptr::null::<::core::ffi::c_char>(),
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b"\xFF\n\0".as_ptr() as *const ::core::ffi::c_char,
                 log: b"error: [XKB-542] (input string):1:1: unexpected non-ASCII character.\nerror: [XKB-542] (input string):1:1: This could be a file encoding issue. Supported file encodings are ASCII and UTF-8.\nerror: (input string):1:1: failed to parse file\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"<leftshoe> : x\ninclude \"x\"\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"warning: [XKB-301] (input string):1:1: deprecated keysym \"leftshoe\".\nerror: (input string):2:9: failed to open included Compose file \"x\": No such file or directory\nerror: (input string):2:9: failed to parse file\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: true_0 != 0,
+                error: true,
             },
             test_data {
                 input: b"<a> : \"a\"\n\n<b> : \"i\\j\\xk\n<0x30> : \"\\400\" invalidKeysym\n<0> <1> <2> <3> <4> <5> <6> <7> <8> <9> <leftshoe> : \"\"\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"warning: [XKB-645] (input string):3:7: unknown escape sequence \"\\j\" in string literal\nwarning: [XKB-193] (input string):3:7: illegal hexadecimal escape sequence \"\\x\" in string literal\nerror: [XKB-685] (input string):3:7: unterminated string literal\nwarning: [XKB-193] (input string):4:10: illegal octal escape sequence \"\\400\" in string literal\nerror: (input string):4:17: unrecognized keysym \"invalidKeysym\" on right-hand side\nwarning: [XKB-301] (input string):5:41: deprecated keysym \"leftshoe\".\nwarning: [XKB-685] (input string):5:41: too many keysyms (11) on left-hand side; skipping line\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b":\n<a> :\n#\n<c> : \"a\" \"b\"\n<d> : a b\n\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 log: b"warning: (input string):1:1: expected at least one keysym on left-hand side; skipping line\nwarning: [XKB-685] (input string):2:5: right-hand side must have at least one of string or keysym; skipping line\nwarning: (input string):4:11: right-hand side can have at most one string; skipping line\nerror: [XKB-685] (input string):5:9: unrecognized modifier \"b\"\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: false_0 != 0,
+                error: false,
             },
             test_data {
                 input: b"<a> : a\n<a> : a\n<b>     : b\n<b> <c> : x\n<c> <d> : y\n<c>     : c\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
                 log: b"warning: (input string):2:7: this compose sequence is a duplicate of another; skipping line\nwarning: (input string):4:11: a sequence already exists which is a prefix of this sequence; overriding\nwarning: (input string):6:11: this compose sequence is a prefix of another; overriding\n\0"
                     .as_ptr() as *const ::core::ffi::c_char,
-                error: false_0 != 0,
+                error: false,
             },
         ];
         let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;

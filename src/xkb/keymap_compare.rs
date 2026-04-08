@@ -654,8 +654,6 @@ pub mod string_h {
     }
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
 pub use self::__stddef_size_t_h::size_t;
@@ -703,7 +701,6 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
@@ -726,7 +723,7 @@ unsafe extern "C" fn keymap_compare_mods(
     mut keymap2: *const xkb_keymap,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         let mod_max: xkb_mod_index_t = if (*keymap1).mods.num_mods < (*keymap2).mods.num_mods {
             (*keymap1).mods.num_mods
         } else {
@@ -753,7 +750,7 @@ unsafe extern "C" fn keymap_compare_mods(
                     name1,
                     name2,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*mod1).type_0 as ::core::ffi::c_uint != (*mod2).type_0 as ::core::ffi::c_uint {
                 xkb_log(
@@ -766,7 +763,7 @@ unsafe extern "C" fn keymap_compare_mods(
                     (*mod1).type_0 as ::core::ffi::c_uint,
                     (*mod2).type_0 as ::core::ffi::c_uint,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*mod1).mapping != (*mod2).mapping {
                 xkb_log(
@@ -779,7 +776,7 @@ unsafe extern "C" fn keymap_compare_mods(
                     (*mod1).mapping,
                     (*mod2).mapping,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             mod_0 = mod_0.wrapping_add(1);
         }
@@ -793,7 +790,7 @@ unsafe extern "C" fn keymap_compare_mods(
                 (*keymap1).mods.num_mods,
                 (*keymap2).mods.num_mods,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         return identical;
     }
@@ -804,7 +801,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
     mut keymap2: *const xkb_keymap,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         if (*keymap1).num_keys != (*keymap2).num_keys {
             xkb_log(
                 ctx,
@@ -815,7 +812,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 (*keymap1).num_keys,
                 (*keymap2).num_keys,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         if (*keymap1).min_key_code != (*keymap2).min_key_code {
             xkb_log(
@@ -826,7 +823,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         if (*keymap1).max_key_code != (*keymap2).max_key_code {
             xkb_log(
@@ -838,7 +835,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 (*keymap1).num_keys_low,
                 (*keymap2).num_keys_low,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         if (*keymap1).max_key_code != (*keymap2).max_key_code {
             xkb_log(
@@ -849,7 +846,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         let k_max: xkb_keycode_t = if (*keymap1).num_keys < (*keymap2).num_keys {
             (*keymap1).num_keys
@@ -871,7 +868,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                     (*key1).keycode,
                     (*key2).keycode,
                 );
-                identical = false_0 != 0;
+                identical = false;
             } else {
                 let kc: xkb_keycode_t = (*key1).keycode;
                 let name1: *const ::core::ffi::c_char =
@@ -889,7 +886,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                         name1,
                         name2,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
             }
             k = k.wrapping_add(1);
@@ -930,7 +927,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                     alias1,
                     alias2,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             let real1: *const ::core::ffi::c_char =
                 xkb_atom_text((*keymap1).ctx, (*entry1).real) as *const ::core::ffi::c_char;
@@ -948,7 +945,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                     real1,
                     real2,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             a = a.wrapping_add(1);
         }
@@ -963,7 +960,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
                 (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         return identical;
     }
@@ -974,7 +971,7 @@ unsafe extern "C" fn keymap_compare_leds(
     mut keymap2: *const xkb_keymap,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         let mut led_max: xkb_led_index_t = if (*keymap1).num_leds < (*keymap2).num_leds {
             (*keymap1).num_leds
         } else {
@@ -1001,7 +998,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     name1,
                     name2,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*led1).which_groups() as ::core::ffi::c_int
                 != (*led2).which_groups() as ::core::ffi::c_int
@@ -1017,7 +1014,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     (*led1).which_groups() as ::core::ffi::c_int,
                     (*led2).which_groups() as ::core::ffi::c_int,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*led1).groups != (*led2).groups {
                 xkb_log(
@@ -1031,7 +1028,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     (*led1).groups,
                     (*led2).groups,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*led1).which_mods as ::core::ffi::c_uint
                 != (*led2).which_mods as ::core::ffi::c_uint
@@ -1047,7 +1044,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     (*led1).which_mods as ::core::ffi::c_uint,
                     (*led2).which_mods as ::core::ffi::c_uint,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*led1).mods.mods != (*led2).mods.mods {
                 xkb_log(
@@ -1061,7 +1058,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     (*led1).mods.mods,
                     (*led2).mods.mods,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*led1).ctrls as ::core::ffi::c_uint != (*led2).ctrls as ::core::ffi::c_uint {
                 xkb_log(
@@ -1075,7 +1072,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     (*led1).ctrls as ::core::ffi::c_uint,
                     (*led2).ctrls as ::core::ffi::c_uint,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             led = led.wrapping_add(1);
         }
@@ -1088,7 +1085,7 @@ unsafe extern "C" fn keymap_compare_leds(
                 (*keymap1).num_leds,
                 (*keymap2).num_leds,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         return identical;
     }
@@ -1101,7 +1098,7 @@ unsafe extern "C" fn compare_types(
     mut type2: *const xkb_key_type,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         let name1: *const ::core::ffi::c_char =
             xkb_atom_text((*keymap1).ctx, (*type1).name) as *const ::core::ffi::c_char;
         let name2: *const ::core::ffi::c_char =
@@ -1116,7 +1113,7 @@ unsafe extern "C" fn compare_types(
                 name1,
                 name2,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         if (*type1).mods.mods != (*type2).mods.mods {
             xkb_log(
@@ -1129,7 +1126,7 @@ unsafe extern "C" fn compare_types(
                 (*type1).mods.mods,
                 (*type2).mods.mods,
             );
-            return false_0 != 0;
+            return false;
         }
         if (*type1).num_levels != (*type2).num_levels {
             xkb_log(
@@ -1142,7 +1139,7 @@ unsafe extern "C" fn compare_types(
                 (*type1).num_levels,
                 (*type2).num_levels,
             );
-            return false_0 != 0;
+            return false;
         }
         if (*type1).num_level_names != (*type2).num_level_names {
             xkb_log(
@@ -1155,7 +1152,7 @@ unsafe extern "C" fn compare_types(
                 (*type1).num_level_names,
                 (*type2).num_level_names,
             );
-            identical = false_0 != 0;
+            identical = false;
         } else {
             let mut l: xkb_level_index_t = 0 as xkb_level_index_t;
             while l < (*type1).num_level_names {
@@ -1177,7 +1174,7 @@ unsafe extern "C" fn compare_types(
                         lname1,
                         lname2,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 l = l.wrapping_add(1);
             }
@@ -1193,7 +1190,7 @@ unsafe extern "C" fn compare_types(
                 (*type1).num_entries,
                 (*type2).num_entries,
             );
-            identical = false_0 != 0;
+            identical = false;
         } else {
             let mut e: darray_size_t = 0 as darray_size_t;
             while e < (*type1).num_entries {
@@ -1213,7 +1210,7 @@ unsafe extern "C" fn compare_types(
                         (*entry1).level,
                         (*entry2).level,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*entry1).mods.mods != (*entry2).mods.mods {
                     xkb_log(
@@ -1227,7 +1224,7 @@ unsafe extern "C" fn compare_types(
                         (*entry1).mods.mods,
                         (*entry2).mods.mods,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*entry1).preserve.mods != (*entry2).preserve.mods {
                     xkb_log(
@@ -1241,7 +1238,7 @@ unsafe extern "C" fn compare_types(
                         (*entry1).preserve.mods,
                         (*entry2).preserve.mods,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 e = e.wrapping_add(1);
             }
@@ -1255,7 +1252,7 @@ unsafe extern "C" fn keymap_compare_types(
     mut keymap2: *const xkb_keymap,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         let t_max: darray_size_t = if (*keymap1).num_types < (*keymap2).num_types {
             (*keymap1).num_types
         } else {
@@ -1284,7 +1281,7 @@ unsafe extern "C" fn keymap_compare_types(
                 (*keymap1).num_types,
                 (*keymap2).num_types,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         return identical;
     }
@@ -1317,7 +1314,7 @@ unsafe extern "C" fn compare_groups(
                 name1,
                 name2,
             );
-            return false_0 != 0;
+            return false;
         }
         if (*(*group1).type_0).num_levels == (*(*group2).type_0).num_levels {
         } else {
@@ -1330,7 +1327,7 @@ unsafe extern "C" fn compare_groups(
                     .as_ptr() as *const ::core::ffi::c_char,
             );
         };
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         let mut l: xkb_level_index_t = 0 as xkb_level_index_t;
         while l < (*(*group1).type_0).num_levels {
             let level1: *const xkb_level = (*group1).levels.offset(l as isize) as *mut xkb_level;
@@ -1349,7 +1346,7 @@ unsafe extern "C" fn compare_groups(
                     (*level1).num_syms as ::core::ffi::c_int,
                     (*level2).num_syms as ::core::ffi::c_int,
                 );
-                identical = false_0 != 0;
+                identical = false;
             } else if (*level1).num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
                 let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
                 while (k as ::core::ffi::c_int) < (*level1).num_syms as ::core::ffi::c_int {
@@ -1369,7 +1366,7 @@ unsafe extern "C" fn compare_groups(
                             *(*level1).s.syms.offset(k as isize),
                             *(*level2).s.syms.offset(k as isize),
                         );
-                        identical = false_0 != 0;
+                        identical = false;
                     }
                     k = k.wrapping_add(1);
                 }
@@ -1386,7 +1383,7 @@ unsafe extern "C" fn compare_groups(
                     (*level1).s.sym,
                     (*level2).s.sym,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             if (*level1).num_actions as ::core::ffi::c_int
                 != (*level2).num_actions as ::core::ffi::c_int
@@ -1403,7 +1400,7 @@ unsafe extern "C" fn compare_groups(
                     (*level1).num_actions as ::core::ffi::c_int,
                     (*level2).num_actions as ::core::ffi::c_int,
                 );
-                identical = false_0 != 0;
+                identical = false;
             } else if (*level1).num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
                 let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
                 while (a as ::core::ffi::c_int) < (*level1).num_actions as ::core::ffi::c_int {
@@ -1422,7 +1419,7 @@ unsafe extern "C" fn compare_groups(
                             l,
                             a as ::core::ffi::c_int,
                         );
-                        identical = false_0 != 0;
+                        identical = false;
                     }
                     a = a.wrapping_add(1);
                 }
@@ -1439,7 +1436,7 @@ unsafe extern "C" fn compare_groups(
                     g,
                     l,
                 );
-                identical = false_0 != 0;
+                identical = false;
             }
             l = l.wrapping_add(1);
         }
@@ -1452,7 +1449,7 @@ unsafe extern "C" fn keymap_compare_symbols(
     mut keymap2: *const xkb_keymap,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         if (*keymap1).num_groups != (*keymap2).num_groups {
             xkb_log(
                 ctx,
@@ -1462,7 +1459,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                 (*keymap1).num_groups,
                 (*keymap2).num_groups,
             );
-            identical = false_0 != 0;
+            identical = false;
         }
         if (*keymap1).num_group_names != (*keymap2).num_group_names {
             xkb_log(
@@ -1474,7 +1471,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                 (*keymap1).num_group_names,
                 (*keymap2).num_group_names,
             );
-            identical = false_0 != 0;
+            identical = false;
         } else {
             let mut g: xkb_layout_index_t = 0 as xkb_layout_index_t;
             while g < (*keymap1).num_group_names {
@@ -1495,7 +1492,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         name1,
                         name2,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 g = g.wrapping_add(1);
             }
@@ -1520,7 +1517,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                     (*key1).keycode,
                     (*key2).keycode,
                 );
-                identical = false_0 != 0;
+                identical = false;
             } else {
                 let kc: xkb_keycode_t = (*key1).keycode;
                 if (*key1).modmap != (*key2).modmap {
@@ -1534,7 +1531,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         (*key1).modmap,
                         (*key2).modmap,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*key1).vmodmap != (*key2).vmodmap {
                     xkb_log(
@@ -1547,7 +1544,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         (*key1).vmodmap,
                         (*key2).vmodmap,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*key1).repeats() as ::core::ffi::c_int
                     != (*key2).repeats() as ::core::ffi::c_int
@@ -1562,7 +1559,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         (*key1).repeats() as ::core::ffi::c_int,
                         (*key2).repeats() as ::core::ffi::c_int,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*key1).out_of_range_group_policy() as ::core::ffi::c_int
                     != (*key2).out_of_range_group_policy() as ::core::ffi::c_int
@@ -1581,7 +1578,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         (*key1).out_of_range_group_number() as ::core::ffi::c_int,
                         (*key2).out_of_range_group_number() as ::core::ffi::c_int,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 if (*key1).num_groups() as ::core::ffi::c_int
                     != (*key2).num_groups() as ::core::ffi::c_int
@@ -1596,7 +1593,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         (*key1).num_groups() as ::core::ffi::c_int,
                         (*key2).num_groups() as ::core::ffi::c_int,
                     );
-                    identical = false_0 != 0;
+                    identical = false;
                 }
                 let g_max: xkb_layout_index_t = (if ((*key1).num_groups() as ::core::ffi::c_int)
                     < (*key2).num_groups() as ::core::ffi::c_int
@@ -1634,7 +1631,7 @@ pub unsafe extern "C" fn xkb_keymap_compare(
     mut properties: xkb_keymap_compare_property,
 ) -> bool {
     unsafe {
-        let mut identical: bool = true_0 != 0;
+        let mut identical: bool = true;
         if properties as ::core::ffi::c_uint
             & XKB_KEYMAP_CMP_MODS as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0
