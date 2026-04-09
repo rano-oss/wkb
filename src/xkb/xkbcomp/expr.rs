@@ -1033,23 +1033,12 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _ParseCommon, stmt_type, stmt_type_to_operator_char, stmt_type_to_string, C2Rust_Unnamed_13,
     ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
@@ -1340,18 +1329,6 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                 return false_0 != 0;
             }
             if (*pattern).is_mask {
-                if (*val_rtrn).wrapping_sub((*pattern).min) < 32 as u32 {
-                } else {
-                    __assert_fail(
-                        b"*val_rtrn - pattern->min < 32\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/expr.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        114 as ::core::ffi::c_uint,
-                        b"_Bool NamedIntegerPatternLookup(struct xkb_context *, const void *, xkb_atom_t, u32 *, _Bool *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 *val_rtrn =
                     ((1 as ::core::ffi::c_uint) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
             }

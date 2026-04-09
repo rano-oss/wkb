@@ -1296,18 +1296,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-#[c2rust::header_src = "/usr/include/assert.h:16"]
-pub mod assert_h {
-    extern "C" {
-        #[c2rust::src_loc = "67:1"]
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_null.h:17"]
 pub mod __stddef_null_h {
     #[c2rust::src_loc = "26:9"]
@@ -1328,7 +1316,6 @@ pub mod stdbool_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, xkb_log,
@@ -1471,16 +1458,6 @@ pub struct xkb_keymap_key_iterator {
 #[c2rust::src_loc = "26:1"]
 pub unsafe extern "C" fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
-        if (*keymap).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"keymap->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                29 as ::core::ffi::c_uint,
-                b"struct xkb_keymap *xkb_keymap_ref(struct xkb_keymap *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         (*keymap).refcnt += 1;
         return keymap;
     }
@@ -1509,16 +1486,6 @@ unsafe extern "C" fn clear_interpret(mut interp: *mut xkb_sym_interpret) {
 #[c2rust::src_loc = "50:1"]
 pub unsafe extern "C" fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
     unsafe {
-        if keymap.is_null() || (*keymap).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"!keymap || keymap->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                53 as ::core::ffi::c_uint,
-                b"void xkb_keymap_unref(struct xkb_keymap *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if keymap.is_null() || {
             (*keymap).refcnt -= 1;
             (*keymap).refcnt > 0 as ::core::ffi::c_int

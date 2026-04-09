@@ -26672,16 +26672,6 @@ pub mod utf8_decoding_h {
         ) -> u32;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     pub const XKB_KEY_Mode_switch: ::core::ffi::c_int = 0xff7e as ::core::ffi::c_int;
@@ -26712,7 +26702,6 @@ pub mod keysym_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::keysym_h::{
     XKB_KEYSYM_MAX_EXPLICIT, XKB_KEYSYM_UNICODE_MAX, XKB_KEYSYM_UNICODE_MIN,
     XKB_KEYSYM_UNICODE_OFFSET,
@@ -26983,20 +26972,6 @@ pub unsafe extern "C" fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iter
         {
             (*iter).index += 1;
             (*iter).keysym = keysym_to_name[(*iter).index as usize].keysym;
-            if (*iter).explicit as ::core::ffi::c_int != 0
-                || (*iter).keysym <= 0x1000100 as xkb_keysym_t
-                || (*iter).keysym >= 0x110ffff as xkb_keysym_t
-            {
-            } else {
-                __assert_fail(
-                    b"iter->explicit || iter->keysym <= XKB_KEYSYM_UNICODE_MIN || iter->keysym >= XKB_KEYSYM_UNICODE_MAX\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/keysym.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    210 as ::core::ffi::c_uint,
-                    b"_Bool xkb_keysym_iterator_next(struct xkb_keysym_iterator *)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
         } else {
             if (*iter).keysym >= keysym_to_name[(*iter).index as usize].keysym {
                 (*iter).index += 1;

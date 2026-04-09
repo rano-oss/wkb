@@ -109,23 +109,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -136,7 +119,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -614,41 +596,8 @@ pub mod keymap_h {
                     .offset(name as isize);
                 if match_0.c2rust_unnamed.found() {
                     if !match_0.c2rust_unnamed.is_alias() {
-                        if name == (*(*keymap).keys.offset(match_0.key.index() as isize)).name {
-                        } else {
-                            __assert_fail(
-                                b"name == keymap->keys[match.key.index].name\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/keymap.h\0".as_ptr() as *const ::core::ffi::c_char,
-                                843 as ::core::ffi::c_uint,
-                                b"struct xkb_key *XkbKeyByName(const struct xkb_keymap *, xkb_atom_t, _Bool)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         return (*keymap).keys.offset(match_0.key.index() as isize) as *mut xkb_key;
                     } else if use_aliases {
-                        if match_0.alias.real()
-                            == (*(*keymap).keys.offset(
-                                (*(*keymap)
-                                    .c2rust_unnamed
-                                    .c2rust_unnamed
-                                    .key_names
-                                    .offset(match_0.alias.real() as isize))
-                                .key
-                                .index() as isize,
-                            ))
-                            .name
-                        {
-                        } else {
-                            __assert_fail(
-                                b"match.alias.real == keymap->keys[keymap->key_names[match.alias.real].key.index].name\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                                b"../src/keymap.h\0".as_ptr() as *const ::core::ffi::c_char,
-                                847 as ::core::ffi::c_uint,
-                                b"struct xkb_key *XkbKeyByName(const struct xkb_keymap *, xkb_atom_t, _Bool)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         return (*keymap).keys.offset(
                             (*(*keymap)
                                 .c2rust_unnamed
@@ -665,7 +614,6 @@ pub mod keymap_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -1140,16 +1088,6 @@ pub mod expr_h {
         ) -> bool;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -1185,7 +1123,6 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::NULL;
 
 pub use self::action_h::ActionsInfo;
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, C2Rust_Unnamed_13, ExprAction,
     ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
@@ -1919,23 +1856,6 @@ unsafe extern "C" fn HandleSetLatchLockMods(
         if field as ::core::ffi::c_uint
             == ACTION_FIELD_UNLOCK_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            if type_0 as ::core::ffi::c_uint
-                == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-                || type_0 as ::core::ffi::c_uint
-                    == ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                || type_0 as ::core::ffi::c_uint
-                    == ACTION_TYPE_MOD_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-            } else {
-                __assert_fail(
-                    b"type == ACTION_TYPE_MOD_SET || type == ACTION_TYPE_MOD_LATCH || type == ACTION_TYPE_MOD_LOCK\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/action.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    324 as ::core::ffi::c_uint,
-                    b"enum xkb_parser_error HandleSetLatchLockMods(const struct xkb_keymap_info *, const struct xkb_mod_set *, union xkb_action *, enum action_field, const ExprDef *, const ExprDef *, ExprDef **)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if (*keymap_info).features.mods_unlock_on_press {
                 return CheckBooleanFlag(
                     ctx,

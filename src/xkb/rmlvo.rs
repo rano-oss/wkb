@@ -101,23 +101,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -128,7 +111,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -329,16 +311,6 @@ pub mod utils_h {
 
     use super::string_h::strdup;
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod string_h {
     extern "C" {
         pub fn strcmp(
@@ -361,7 +333,6 @@ pub mod rules_h {
 pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::internal::__va_list_tag;
@@ -675,16 +646,6 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_ref(
     mut rmlvo: *mut xkb_rmlvo_builder,
 ) -> *mut xkb_rmlvo_builder {
     unsafe {
-        if (*rmlvo).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"rmlvo->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/rmlvo.c\0".as_ptr() as *const ::core::ffi::c_char,
-                152 as ::core::ffi::c_uint,
-                b"struct xkb_rmlvo_builder *xkb_rmlvo_builder_ref(struct xkb_rmlvo_builder *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         (*rmlvo).refcnt += 1;
         return rmlvo;
     }
@@ -692,16 +653,6 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_ref(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
     unsafe {
-        if rmlvo.is_null() || (*rmlvo).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"!rmlvo || rmlvo->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/rmlvo.c\0".as_ptr() as *const ::core::ffi::c_char,
-                160 as ::core::ffi::c_uint,
-                b"void xkb_rmlvo_builder_unref(struct xkb_rmlvo_builder *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if rmlvo.is_null() || {
             (*rmlvo).refcnt -= 1;
             (*rmlvo).refcnt > 0 as ::core::ffi::c_int

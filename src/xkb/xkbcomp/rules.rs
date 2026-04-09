@@ -203,23 +203,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -230,7 +213,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -826,16 +808,6 @@ pub mod include_h {
         ) -> *mut FILE;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -866,7 +838,6 @@ pub mod stdbool_h {
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
@@ -1251,36 +1222,6 @@ unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_tok
         ) {
             return TOK_INCLUDE;
         }
-        if is_ident('+' as i32 as ::core::ffi::c_char) as ::core::ffi::c_int != 0 {
-        } else {
-            __assert_fail(
-                b"is_ident(MERGE_OVERRIDE_PREFIX)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                131 as ::core::ffi::c_uint,
-                b"enum rules_token lex(struct scanner *, union lvalue *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if is_ident('|' as i32 as ::core::ffi::c_char) as ::core::ffi::c_int != 0 {
-        } else {
-            __assert_fail(
-                b"is_ident(MERGE_AUGMENT_PREFIX)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                132 as ::core::ffi::c_uint,
-                b"enum rules_token lex(struct scanner *, union lvalue *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if is_ident('^' as i32 as ::core::ffi::c_char) as ::core::ffi::c_int != 0 {
-        } else {
-            __assert_fail(
-                b"is_ident(MERGE_REPLACE_PREFIX)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                133 as ::core::ffi::c_uint,
-                b"enum rules_token lex(struct scanner *, union lvalue *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if is_ident(scanner_peek(s)) {
             (*val).string.start = (*s).s.offset((*s).pos as isize);
             (*val).string.len = 0 as usize;
@@ -1538,23 +1479,6 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
         (*m).rmlvo
             .model
             .set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t);
-        if changed as ::core::ffi::c_uint
-            & RMLVO_LAYOUT as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-            || changed as ::core::ffi::c_uint
-                & RMLVO_VARIANT as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
-        {
-        } else {
-            __assert_fail(
-                b"(changed & RMLVO_LAYOUT) || !(changed & RMLVO_VARIANT)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                440 as ::core::ffi::c_uint,
-                b"struct matcher *matcher_new_from_rmlvo(const struct xkb_rmlvo_builder *, const char **)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         if changed as ::core::ffi::c_uint
             & RMLVO_LAYOUT as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0
@@ -6196,17 +6120,6 @@ unsafe extern "C" fn matcher_include(
         } else if expanded > 0 as ssize_t {
             stmt_file = &raw mut buf as *mut ::core::ffi::c_char;
             stmt_file_len = expanded as usize;
-            if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
-            } else {
-                __assert_fail(
-                    b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    604 as ::core::ffi::c_uint,
-                    b"void matcher_include(struct matcher *, struct scanner *, unsigned int, struct sval)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
         }
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
@@ -6237,18 +6150,6 @@ unsafe extern "C" fn matcher_include(
                     return;
                 }
             } else {
-                if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
-                } else {
-                    __assert_fail(
-                        b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/rules.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        628 as ::core::ffi::c_uint,
-                        b"void matcher_include(struct matcher *, struct scanner *, unsigned int, struct sval)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
             }
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
         } else if (expanded != 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -6267,19 +6168,6 @@ unsafe extern "C" fn matcher_include(
             );
         }
         while !file.is_null() {
-            if strlen_safe(&raw mut buf as *mut ::core::ffi::c_char)
-                < ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize
-            {
-            } else {
-                __assert_fail(
-                    b"strlen_safe(buf) < sizeof(buf)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    655 as ::core::ffi::c_uint,
-                    b"void matcher_include(struct matcher *, struct scanner *, unsigned int, struct sval)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             let mut ret: bool = read_rules_file(
                 (*m).ctx,
                 m,
@@ -6360,16 +6248,6 @@ unsafe extern "C" fn parse_layout_int_index(
     mut out: *mut xkb_layout_index_t,
 ) -> ::core::ffi::c_int {
     unsafe {
-        if max_len >= 3 as usize {
-        } else {
-            __assert_fail(
-                b"max_len >= 3\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                701 as ::core::ffi::c_uint,
-                b"int parse_layout_int_index(const char *, usize, xkb_layout_index_t *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         let mut val: u32 = 0 as u32;
         let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
             s.offset(1 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_char,
@@ -6636,18 +6514,6 @@ unsafe extern "C" fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         let mut c2rust_current_block_17: u64;
         match idx {
             XKB_LAYOUT_INVALID => {
-                if !is_mlvo_mask_defined(m, MLVO_LAYOUT) && !is_mlvo_mask_defined(m, MLVO_VARIANT) {
-                } else {
-                    __assert_fail(
-                        b"!is_mlvo_mask_defined(m, MLVO_LAYOUT) && !is_mlvo_mask_defined(m, MLVO_VARIANT)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/rules.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        884 as ::core::ffi::c_uint,
-                        b"void matcher_mapping_set_layout_bounds(struct matcher *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 (*m).mapping.has_layout_idx_range = false_0 != 0;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min =
                     XKB_LAYOUT_INVALID as xkb_layout_index_t;
@@ -6814,19 +6680,6 @@ unsafe extern "C" fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut sca
             );
         } else {
             if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
-                if (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
-                    != 0xffffffff as xkb_layout_index_t
-                {
-                } else {
-                    __assert_fail(
-                        b"m->mapping.layout_idx != XKB_LAYOUT_INVALID\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        983 as ::core::ffi::c_uint,
-                        b"_Bool matcher_mapping_verify(struct matcher *, struct scanner *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 match (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx {
                     4294967291 => {
                         c2rust_current_block = 4840043166261277618;
@@ -6883,20 +6736,6 @@ unsafe extern "C" fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut sca
                 436805222042109220 => {}
                 _ => {
                     if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-                        if (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
-                            != 0xffffffff as xkb_layout_index_t
-                        {
-                        } else {
-                            __assert_fail(
-                                b"m->mapping.variant_idx != XKB_LAYOUT_INVALID\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/rules.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                1006 as ::core::ffi::c_uint,
-                                b"_Bool matcher_mapping_verify(struct matcher *, struct scanner *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         match (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx {
                             4294967291 => {
                                 c2rust_current_block = 13345507216710712890;
@@ -7125,20 +6964,6 @@ unsafe extern "C" fn match_value(
             4 => return true_0 != 0,
             5 => return match_group(m, val, to),
             _ => {
-                if match_type as ::core::ffi::c_uint
-                    == MLVO_MATCH_NORMAL as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"match_type == MLVO_MATCH_NORMAL\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/rules.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        1145 as ::core::ffi::c_uint,
-                        b"_Bool match_value(struct matcher *, struct sval, struct sval, enum mlvo_match_type, enum wildcard_match_type)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 return svaleq(val, to);
             }
         };
@@ -7314,18 +7139,6 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                                            if layout_idx != 0xffffffff as xkb_layout_index_t {
-                                            } else {
-                                                __assert_fail(
-                                                    b"layout_idx != XKB_LAYOUT_INVALID\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    b"../src/xkbcomp/rules.c\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
-                                                        .as_ptr() as *const ::core::ffi::c_char,
-                                                );
-                                            };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
@@ -7616,18 +7429,6 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                                            if layout_idx != 0xffffffff as xkb_layout_index_t {
-                                            } else {
-                                                __assert_fail(
-                                                    b"layout_idx != XKB_LAYOUT_INVALID\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    b"../src/xkbcomp/rules.c\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
-                                                        .as_ptr() as *const ::core::ffi::c_char,
-                                                );
-                                            };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
@@ -7918,18 +7719,6 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                                            if layout_idx != 0xffffffff as xkb_layout_index_t {
-                                            } else {
-                                                __assert_fail(
-                                                    b"layout_idx != XKB_LAYOUT_INVALID\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    b"../src/xkbcomp/rules.c\0".as_ptr()
-                                                        as *const ::core::ffi::c_char,
-                                                    1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
-                                                        .as_ptr() as *const ::core::ffi::c_char,
-                                                );
-                                            };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
@@ -8797,20 +8586,6 @@ unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *
                                 }
                             }
                             _ => {
-                                if mlvo as ::core::ffi::c_uint
-                                    == MLVO_OPTION as ::core::ffi::c_int as ::core::ffi::c_uint
-                                {
-                                } else {
-                                    __assert_fail(
-                                        b"mlvo == MLVO_OPTION\0".as_ptr()
-                                            as *const ::core::ffi::c_char,
-                                        b"../src/xkbcomp/rules.c\0".as_ptr()
-                                            as *const ::core::ffi::c_char,
-                                        1537 as ::core::ffi::c_uint,
-                                        b"void matcher_rule_apply_if_matches(struct matcher *, struct scanner *)\0"
-                                            .as_ptr() as *const ::core::ffi::c_char,
-                                    );
-                                };
                                 let mut found_option: bool = false_0 != 0;
                                 if !(*m).rmlvo.options.item.is_null() {
                                     to = (*m)
@@ -8871,20 +8646,6 @@ unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *
                             match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_NONEMPTY);
                     }
                     _ => {
-                        if mlvo as ::core::ffi::c_uint
-                            == MLVO_OPTION as ::core::ffi::c_int as ::core::ffi::c_uint
-                        {
-                        } else {
-                            __assert_fail(
-                                b"mlvo == MLVO_OPTION\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/rules.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                1578 as ::core::ffi::c_uint,
-                                b"void matcher_rule_apply_if_matches(struct matcher *, struct scanner *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         if !(*m).rmlvo.options.item.is_null() {
                             to = (*m)
                                 .rmlvo

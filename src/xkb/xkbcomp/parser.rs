@@ -728,15 +728,6 @@ pub mod utils_h {
         mut s2: *const ::core::ffi::c_char,
     ) -> bool {
         unsafe {
-            if !s1.is_null() && !s2.is_null() {
-            } else {
-                __assert_fail(
-                    b"s1 && s2\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/utils.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    94 as ::core::ffi::c_uint,
-                    __ASSERT_FUNCTION.as_ptr(),
-                );
-            };
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
@@ -753,7 +744,6 @@ pub mod utils_h {
         }
     }
 
-    use super::assert_h::{__assert_fail, __ASSERT_FUNCTION};
     use super::stdbool_h::false_0;
     use super::string_h::strcmp;
     extern "C" {
@@ -869,21 +859,6 @@ pub mod parser_priv_h {
         pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> ::core::ffi::c_int;
     }
 }
-pub mod assert_h {
-    pub const __ASSERT_FUNCTION: [::core::ffi::c_char; 40] = unsafe {
-        ::core::mem::transmute::<[u8; 40], [::core::ffi::c_char; 40]>(
-            *b"_Bool streq(const char *, const char *)\0",
-        )
-    };
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -900,7 +875,6 @@ pub mod xkbcommon_keysyms_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 use self::ast_build_h::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
     ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,

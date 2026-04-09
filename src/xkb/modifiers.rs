@@ -722,53 +722,6 @@ pub mod keymap_h {
         ) -> xkb_mod_mask_t;
     }
 }
-pub mod test_h {
-    pub type key_seq_state = ::core::ffi::c_uint;
-    pub const FINISH: key_seq_state = 5;
-    pub const NEXT: key_seq_state = 4;
-    pub const BOTH: key_seq_state = 3;
-    pub const UP: key_seq_state = 2;
-    pub const REPEAT: key_seq_state = 1;
-    pub const DOWN: key_seq_state = 0;
-    pub type test_context_flags = ::core::ffi::c_uint;
-    pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
-    pub const CONTEXT_NO_FLAG: test_context_flags = 0;
-    pub const EVDEV_OFFSET: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-
-    use super::context_h::xkb_context;
-    use super::keymap_h::xkb_keymap;
-    use super::xkbcommon_h::xkb_keymap_format;
-    extern "C" {
-        pub fn test_init();
-        pub fn test_key_seq(keymap: *mut xkb_keymap, ...) -> ::core::ffi::c_int;
-        pub fn test_get_context(flags: test_context_flags) -> *mut xkb_context;
-        pub fn test_compile_file(
-            context: *mut xkb_context,
-            format: xkb_keymap_format,
-            path_rel: *const ::core::ffi::c_char,
-        ) -> *mut xkb_keymap;
-        pub fn test_compile_string(
-            context: *mut xkb_context,
-            format: xkb_keymap_format,
-            string: *const ::core::ffi::c_char,
-        ) -> *mut xkb_keymap;
-        pub fn test_compile_buffer(
-            context: *mut xkb_context,
-            format: xkb_keymap_format,
-            buf: *const ::core::ffi::c_char,
-            len: usize,
-        ) -> *mut xkb_keymap;
-        pub fn test_compile_rules(
-            context: *mut xkb_context,
-            format: xkb_keymap_format,
-            rules: *const ::core::ffi::c_char,
-            model: *const ::core::ffi::c_char,
-            layout: *const ::core::ffi::c_char,
-            variant: *const ::core::ffi::c_char,
-            options: *const ::core::ffi::c_char,
-        ) -> *mut xkb_keymap;
-    }
-}
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
@@ -784,16 +737,6 @@ pub mod string_h {
 
     extern "C" {
         pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
-    }
-}
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
     }
 }
 pub mod evdev_scancodes_h {
@@ -848,7 +791,6 @@ pub mod xkbcommon_names_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
@@ -895,11 +837,6 @@ use self::stdio_h::{fprintf, stderr};
 use self::string_h::strlen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::sys_types_h::ssize_t;
-pub use self::test_h::{
-    key_seq_state, test_compile_buffer, test_compile_file, test_compile_rules, test_compile_string,
-    test_context_flags, test_get_context, test_init, test_key_seq, BOTH,
-    CONTEXT_ALLOW_ENVIRONMENT_NAMES, CONTEXT_NO_FLAG, DOWN, EVDEV_OFFSET, FINISH, NEXT, REPEAT, UP,
-};
 pub use self::types_h::{
     __int16_t, __int32_t, __int8_t, __off64_t, __off_t, __uint16_t, __uint32_t, __uint64_t,
     __uint8_t,
@@ -1014,462 +951,6 @@ unsafe extern "C" fn test_modifiers_names(mut context: *mut xkb_context) {
             ::core::ptr::null::<::core::ffi::c_char>(),
             ::core::ptr::null::<::core::ffi::c_char>(),
         );
-        if !keymap.is_null() {
-        } else {
-            __assert_fail(
-                b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                64 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Shift\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_SHIFT as ::core::ffi::c_int as xkb_mod_index_t,
-            ShiftMask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_SHIFT, XKB_MOD_INDEX_SHIFT, ShiftMask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                68 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Lock\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_CAPS as ::core::ffi::c_int as xkb_mod_index_t,
-            LockMask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_CAPS, XKB_MOD_INDEX_CAPS, LockMask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                69 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Control\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_CTRL as ::core::ffi::c_int as xkb_mod_index_t,
-            ControlMask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_CTRL, XKB_MOD_INDEX_CTRL, ControlMask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                70 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod1\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD1 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_MOD1, XKB_MOD_INDEX_MOD1, Mod1Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                71 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod2\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD2 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod2Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_MOD2, XKB_MOD_INDEX_MOD2, Mod2Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                72 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod3\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD3 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod3Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_MOD3, XKB_MOD_INDEX_MOD3, Mod3Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                73 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod4\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD4 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_MOD4, XKB_MOD_INDEX_MOD4, Mod4Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                74 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod5\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod5Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_MOD5, XKB_MOD_INDEX_MOD5, Mod5Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                75 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod1\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD1 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_ALT, XKB_MOD_INDEX_MOD1, Mod1Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                78 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod2\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD2 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod2Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_NUM, XKB_MOD_INDEX_MOD2, Mod2Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                79 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_real_mod(
-            keymap,
-            b"Mod4\0".as_ptr() as *const ::core::ffi::c_char,
-            XKB_MOD_INDEX_MOD4 as ::core::ffi::c_int as xkb_mod_index_t,
-            Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_real_mod(keymap, XKB_MOD_NAME_LOGO, XKB_MOD_INDEX_MOD4, Mod4Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                80 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"Alt\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 2 as ::core::ffi::c_int) as xkb_mod_index_t,
-            Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_ALT, XKB_MOD_INDEX_MOD5 + 2, Mod1Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                84 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"Meta\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 11 as ::core::ffi::c_int)
-                as xkb_mod_index_t,
-            Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_META, XKB_MOD_INDEX_MOD5 + 11, Mod1Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                85 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"NumLock\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as xkb_mod_index_t,
-            Mod2Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_NUM, XKB_MOD_INDEX_MOD5 + 1, Mod2Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                86 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"Super\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 12 as ::core::ffi::c_int)
-                as xkb_mod_index_t,
-            Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_SUPER, XKB_MOD_INDEX_MOD5 + 12, Mod4Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                87 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"Hyper\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 13 as ::core::ffi::c_int)
-                as xkb_mod_index_t,
-            Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_HYPER, XKB_MOD_INDEX_MOD5 + 13, Mod4Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                88 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"LevelThree\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 3 as ::core::ffi::c_int) as xkb_mod_index_t,
-            Mod5Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_LEVEL3, XKB_MOD_INDEX_MOD5 + 3, Mod5Mask)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                89 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"ScrollLock\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 8 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_SCROLL, XKB_MOD_INDEX_MOD5 + 8, 0 )\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                90 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"LevelFive\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 9 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, XKB_VMOD_NAME_LEVEL5, XKB_MOD_INDEX_MOD5 + 9, 0)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                92 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if (*keymap).mods.num_mods == 21 as xkb_mod_index_t {
-        } else {
-            __assert_fail(
-                b"keymap->mods.num_mods == 21\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                94 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"LAlt\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 4 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, \"LAlt\", XKB_MOD_INDEX_MOD5 + 4, 0 )\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                95 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"RAlt\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 5 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, \"RAlt\", XKB_MOD_INDEX_MOD5 + 5, 0 )\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                96 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"LControl\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 7 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, \"LControl\", XKB_MOD_INDEX_MOD5 + 7, 0 )\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                97 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"RControl\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 6 as ::core::ffi::c_int) as xkb_mod_index_t,
-            0 as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, \"RControl\", XKB_MOD_INDEX_MOD5 + 6, 0 )\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                98 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if test_virtual_mod(
-            keymap,
-            b"AltGr\0".as_ptr() as *const ::core::ffi::c_char,
-            (XKB_MOD_INDEX_MOD5 as ::core::ffi::c_int + 10 as ::core::ffi::c_int)
-                as xkb_mod_index_t,
-            Mod5Mask as ::core::ffi::c_int as xkb_mod_mask_t,
-        ) as ::core::ffi::c_int
-            != 0
-        {
-        } else {
-            __assert_fail(
-                b"test_virtual_mod(keymap, \"AltGr\", XKB_MOD_INDEX_MOD5 + 10, Mod5Mask)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                99 as ::core::ffi::c_uint,
-                b"void test_modifiers_names(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         xkb_keymap_unref(keymap);
     }
 }
@@ -1483,436 +964,44 @@ unsafe extern "C" fn test_modmap_none(mut context: *mut xkb_context) {
             XKB_KEYMAP_FORMAT_TEXT_V1,
             b"keymaps/modmap-none.xkb\0".as_ptr() as *const ::core::ffi::c_char,
         );
-        if !keymap.is_null() {
-        } else {
-            __assert_fail(
-                b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                114 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"LVL3\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                117 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == NoModifier as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == NoModifier\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                119 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"LFSH\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                122 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == NoModifier as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == NoModifier\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                124 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"RTSH\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                127 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == NoModifier as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == NoModifier\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                129 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"LWIN\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                132 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod4Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                134 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"RWIN\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                137 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod4Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod4Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                139 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"LCTL\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                142 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == ControlMask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == ControlMask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                144 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"RCTL\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                147 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == ControlMask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == ControlMask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                149 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"LALT\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                152 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod1Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                154 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"RALT\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                157 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap
-            == (Mod2Mask as ::core::ffi::c_int | Mod5Mask as ::core::ffi::c_int) as xkb_mod_mask_t
-        {
-        } else {
-            __assert_fail(
-                b"key->modmap == (Mod2Mask | Mod5Mask)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                159 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"CAPS\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                162 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == LockMask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == LockMask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                164 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD01\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                167 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod1Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                169 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD02\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                172 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == NoModifier as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == NoModifier\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                174 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD03\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                177 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == NoModifier as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == NoModifier\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                179 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD04\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                182 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod1Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                184 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD05\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                187 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod2Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod2Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                189 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD06\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                192 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod3Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod3Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                194 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD07\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                197 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod1Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod1Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                199 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD08\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                202 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod2Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod2Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                204 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         keycode = xkb_keymap_key_by_name(keymap, b"AD09\0".as_ptr() as *const ::core::ffi::c_char);
-        if keycode != 0xffffffff as xkb_keycode_t {
-        } else {
-            __assert_fail(
-                b"keycode != XKB_KEYCODE_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                207 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         key = XkbKey(keymap, keycode);
-        if (*key).modmap == Mod3Mask as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"key->modmap == Mod3Mask\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                209 as ::core::ffi::c_uint,
-                b"void test_modmap_none(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         xkb_keymap_unref(keymap);
     }
 }
@@ -2007,139 +1096,18 @@ unsafe extern "C" fn test_explicit_virtual_modifiers(mut context: *mut xkb_conte
                 tests[k as usize].keymap,
                 strlen(tests[k as usize].keymap),
             );
-            if !keymap.is_null() {
-            } else {
-                __assert_fail(
-                    b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    331 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let m1_idx: xkb_mod_index_t =
                 xkb_keymap_mod_get_index(keymap, b"M1\0".as_ptr() as *const ::core::ffi::c_char)
                     as xkb_mod_index_t;
             let m2_idx: xkb_mod_index_t =
                 xkb_keymap_mod_get_index(keymap, b"M2\0".as_ptr() as *const ::core::ffi::c_char)
                     as xkb_mod_index_t;
-            if m1_idx == 8 as xkb_mod_index_t {
-            } else {
-                __assert_fail(
-                    b"m1_idx == 8\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    335 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if m2_idx == 9 as xkb_mod_index_t {
-            } else {
-                __assert_fail(
-                    b"m2_idx == 9\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    336 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if (*keymap).mods.mods[m1_idx as usize].type_0 as ::core::ffi::c_uint
-                == tests[k as usize].m1.type_0 as ::core::ffi::c_uint
-            {
-            } else {
-                __assert_fail(
-                    b"keymap->mods.mods[m1_idx].type == tests[k].m1.type\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    337 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if (*keymap).mods.mods[m2_idx as usize].type_0 as ::core::ffi::c_uint
-                == tests[k as usize].m2.type_0 as ::core::ffi::c_uint
-            {
-            } else {
-                __assert_fail(
-                    b"keymap->mods.mods[m2_idx].type == tests[k].m2.type\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    338 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let m1: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << m1_idx;
             let m2: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << m2_idx;
             let m1_mapping: xkb_mod_mask_t = mod_mask_get_effective(keymap, m1) as xkb_mod_mask_t;
             let m2_mapping: xkb_mod_mask_t = mod_mask_get_effective(keymap, m2) as xkb_mod_mask_t;
-            if m1_mapping == tests[k as usize].m1.mapping {
-            } else {
-                __assert_fail(
-                    b"m1_mapping == tests[k].m1.mapping\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    344 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if m2_mapping == tests[k as usize].m2.mapping {
-            } else {
-                __assert_fail(
-                    b"m2_mapping == tests[k].m2.mapping\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    345 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if mod_mask_get_effective(keymap, m1_mapping) == tests[k as usize].m1.mapping_effective
-            {
-            } else {
-                __assert_fail(
-                    b"mod_mask_get_effective(keymap, m1_mapping) == tests[k].m1.mapping_effective\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    348 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if mod_mask_get_effective(keymap, m2_mapping) == tests[k as usize].m2.mapping_effective
-            {
-            } else {
-                __assert_fail(
-                    b"mod_mask_get_effective(keymap, m2_mapping) == tests[k].m2.mapping_effective\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    350 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let mut state: *mut xkb_state = xkb_state_new(keymap);
-            if !state.is_null() {
-            } else {
-                __assert_fail(
-                    b"state\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    353 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let noise: xkb_mod_mask_t = 0x8000 as xkb_mod_mask_t;
-            if (*keymap).canonical_state_mask & noise == 0 as xkb_mod_mask_t {
-            } else {
-                __assert_fail(
-                    b"(keymap->canonical_state_mask & noise) == 0\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    358 as ::core::ffi::c_uint,
-                    b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let set_masks: [xkb_mod_mask_t; 2] = [m1_mapping, m2_mapping];
             let mut m: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while (m as usize)
@@ -2167,43 +1135,7 @@ unsafe extern "C" fn test_explicit_virtual_modifiers(mut context: *mut xkb_conte
                         expected,
                         got,
                     );
-                    if __cond as ::core::ffi::c_int != 0 {
-                    } else {
-                        __assert_fail(
-                            b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                            b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                            369 as ::core::ffi::c_uint,
-                            b"void test_explicit_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                        );
-                    };
                 }
-                if xkb_state_mod_index_is_active(state, m1_idx, XKB_STATE_MODS_EFFECTIVE)
-                    == (expected & m1_mapping == m1_mapping) as ::core::ffi::c_int
-                {
-                } else {
-                    __assert_fail(
-                        b"xkb_state_mod_index_is_active(state, m1_idx, XKB_STATE_MODS_EFFECTIVE) == ((expected & m1_mapping) == m1_mapping)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        374 as ::core::ffi::c_uint,
-                        b"void test_explicit_virtual_modifiers(struct xkb_context *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if xkb_state_mod_index_is_active(state, m2_idx, XKB_STATE_MODS_EFFECTIVE)
-                    == (expected & m2_mapping == m2_mapping) as ::core::ffi::c_int
-                {
-                } else {
-                    __assert_fail(
-                        b"xkb_state_mod_index_is_active(state, m2_idx, XKB_STATE_MODS_EFFECTIVE) == ((expected & m2_mapping) == m2_mapping)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        379 as ::core::ffi::c_uint,
-                        b"void test_explicit_virtual_modifiers(struct xkb_context *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 m = m.wrapping_add(1);
             }
             xkb_state_unref(state);
@@ -2223,27 +1155,7 @@ unsafe extern "C" fn test_virtual_modifiers_mapping_hack(mut context: *mut xkb_c
             ::core::ptr::null::<::core::ffi::c_char>(),
             ::core::ptr::null::<::core::ffi::c_char>(),
         );
-        if !keymap.is_null() {
-        } else {
-            __assert_fail(
-                b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                403 as ::core::ffi::c_uint,
-                b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         let mut state: *mut xkb_state = xkb_state_new(keymap);
-        if !state.is_null() {
-        } else {
-            __assert_fail(
-                b"state\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                406 as ::core::ffi::c_uint,
-                b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         static mut mods: [C2Rust_Unnamed_14; 21] = [
             C2Rust_Unnamed_14 {
                 name: XKB_MOD_NAME_SHIFT.as_ptr(),
@@ -2381,16 +1293,6 @@ unsafe extern "C" fn test_virtual_modifiers_mapping_hack(mut context: *mut xkb_c
                     mods[k as usize].index,
                     index,
                 );
-                if __cond as ::core::ffi::c_int != 0 {
-                } else {
-                    __assert_fail(
-                        b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        529 as ::core::ffi::c_uint,
-                        b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                    );
-                };
             }
             let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << index;
             xkb_state_update_mask(
@@ -2414,39 +1316,7 @@ unsafe extern "C" fn test_virtual_modifiers_mapping_hack(mut context: *mut xkb_c
                     mods[k as usize].mapping,
                     mapping,
                 );
-                if __cond_0 as ::core::ffi::c_int != 0 {
-                } else {
-                    __assert_fail(
-                        b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        536 as ::core::ffi::c_uint,
-                        b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                    );
-                };
             }
-            if mapping == xkb_keymap_mod_get_mask(keymap, mods[k as usize].name) {
-            } else {
-                __assert_fail(
-                    b"mapping == xkb_keymap_mod_get_mask(keymap, mods[k].name)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    537 as ::core::ffi::c_uint,
-                    b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
-            if mapping == xkb_keymap_mod_get_mask2(keymap, mods[k as usize].index) {
-            } else {
-                __assert_fail(
-                    b"mapping == xkb_keymap_mod_get_mask2(keymap, mods[k].index)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    538 as ::core::ffi::c_uint,
-                    b"void test_virtual_modifiers_mapping_hack(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             k = k.wrapping_add(1);
         }
         xkb_state_unref(state);
@@ -2494,382 +1364,6 @@ unsafe extern "C" fn test_pure_virtual_modifiers(mut context: *mut xkb_context) 
                     keymaps[k as usize].formats[f as usize],
                     keymaps[k as usize].path,
                 );
-                if !keymap.is_null() {
-                } else {
-                    __assert_fail(
-                        b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        574 as ::core::ffi::c_uint,
-                        b"void test_pure_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                    );
-                };
-                if test_key_seq(
-                    keymap,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x77 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    30 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x61 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x61 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    30 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x61 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    48 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x62 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x62 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    48 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x62 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    46 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x63 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x63 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    46 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x63 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    32 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x64 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x64 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    32 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x64 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    18 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x65 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x65 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    18 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x65 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    33 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x66 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x66 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    33 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x66 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    34 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x67 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x67 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    34 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x67 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    35 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x68 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x68 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    35 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x68 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    23 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x69 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x69 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    23 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x69 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    36 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6a as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6a as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    36 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6a as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    37 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6b as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6b as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    37 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6b as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    38 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6c as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6c as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    38 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6c as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    50 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6d as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6d as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    50 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6d as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    49 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6e as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6e as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    49 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6e as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    24 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x6f as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x6f as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    24 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x6f as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    25 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x70 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x70 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    25 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x70 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    16 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x71 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x71 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    16 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x71 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    19 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x72 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x72 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    19 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x72 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    31 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x73 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x73 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    31 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x73 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    20 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x74 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x74 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    20 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x74 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    22 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x75 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x75 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    22 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x75 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    47 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x76 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x76 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    42 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0xffe1 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x56 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    42 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0xffe1 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    47 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x76 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    30 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x61 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    31 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x73 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x31 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    100 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0xfe03 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x34 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    31 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x73 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x33 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    100 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0xfe03 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    16 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x71 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x32 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    16 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x71 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    48 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x62 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    46 as ::core::ffi::c_int,
-                    DOWN as ::core::ffi::c_int,
-                    0x63 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    17 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x35 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    46 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x63 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    48 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x62 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    30 as ::core::ffi::c_int,
-                    UP as ::core::ffi::c_int,
-                    0x61 as ::core::ffi::c_int,
-                    NEXT as ::core::ffi::c_int,
-                    21 as ::core::ffi::c_int,
-                    BOTH as ::core::ffi::c_int,
-                    0x79 as ::core::ffi::c_int,
-                    FINISH as ::core::ffi::c_int,
-                ) != 0
-                {
-                } else {
-                    __assert_fail(
-                        b"test_key_seq(keymap, KEY_W, BOTH, XKB_KEY_w, NEXT, KEY_A, DOWN, XKB_KEY_a, NEXT, KEY_W, BOTH, XKB_KEY_a, NEXT, KEY_A, UP, XKB_KEY_a, NEXT, KEY_B, DOWN, XKB_KEY_b, NEXT, KEY_W, BOTH, XKB_KEY_b, NEXT, KEY_B, UP, XKB_KEY_b, NEXT, KEY_C, DOWN, XKB_KEY_c, NEXT, KEY_W, BOTH, XKB_KEY_c, NEXT, KEY_C, UP, XKB_KEY_c, NEXT, KEY_D, DOWN, XKB_KEY_d, NEXT, KEY_W, BOTH, XKB_KEY_d, NEXT, KEY_D, UP, XKB_KEY_d, NEXT, KEY_E, DOWN, XKB_KEY_e, NEXT, KEY_W, BOTH, XKB_KEY_e, NEXT, KEY_E, UP, XKB_KEY_e, NEXT, KEY_F, DOWN, XKB_KEY_f, NEXT, KEY_W, BOTH, XKB_KEY_f, NEXT, KEY_F, UP, XKB_KEY_f, NEXT, KEY_G, DOWN, XKB_KEY_g, NEXT, KEY_W, BOTH, XKB_KEY_g, NEXT, KEY_G, UP, XKB_KEY_g, NEXT, KEY_H, DOWN, XKB_KEY_h, NEXT, KEY_W, BOTH, XKB_KEY_h, NEXT, KEY_H, UP, XKB_KEY_h, NEXT, KEY_I, DOWN, XKB_KEY_i, NEXT, KEY_W, BOTH, XKB_KEY_i, NEXT, KEY_I, UP, XKB_KEY_i, NEXT, KEY_J, DOWN, XKB_KEY_j, NEXT, KEY_W, BOTH, XKB_KEY_j, NEXT, KEY_J, UP, XKB_KEY_j, NEXT, KEY_K, DOWN, XKB_KEY_k, NEXT, KEY_W, BOTH, XKB_KEY_k, NEXT, KEY_K, UP, XKB_KEY_k, NEXT, KEY_L, DOWN, XKB_KEY_l, NEXT, KEY_W, BOTH, XKB_KEY_l, NEXT, KEY_L, UP, XKB_KEY_l, NEXT, KEY_M, DOWN, XKB_KEY_m, NEXT, KEY_W, BOTH, XKB_KEY_m, NEXT, KEY_M, UP, XKB_KEY_m, NEXT, KEY_N, DOWN, XKB_KEY_n, NEXT, KEY_W, BOTH, XKB_KEY_n, NEXT, KEY_N, UP, XKB_KEY_n, NEXT, KEY_O, DOWN, XKB_KEY_o, NEXT, KEY_W, BOTH, XKB_KEY_o, NEXT, KEY_O, UP, XKB_KEY_o, NEXT, KEY_P, DOWN, XKB_KEY_p, NEXT, KEY_W, BOTH, XKB_KEY_p, NEXT, KEY_P, UP, XKB_KEY_p, NEXT, KEY_Q, DOWN, XKB_KEY_q, NEXT, KEY_W, BOTH, XKB_KEY_q, NEXT, KEY_Q, UP, XKB_KEY_q, NEXT, KEY_R, DOWN, XKB_KEY_r, NEXT, KEY_W, BOTH, XKB_KEY_r, NEXT, KEY_R, UP, XKB_KEY_r, NEXT, KEY_S, DOWN, XKB_KEY_s, NEXT, KEY_W, BOTH, XKB_KEY_s, NEXT, KEY_S, UP, XKB_KEY_s, NEXT, KEY_T, DOWN, XKB_KEY_t, NEXT, KEY_W, BOTH, XKB_KEY_t, NEXT, KEY_T, UP, XKB_KEY_t, NEXT, KEY_U, DOWN, XKB_KEY_u, NEXT, KEY_W, BOTH, XKB_KEY_u, NEXT, KEY_U, UP, XKB_KEY_u, NEXT, KEY_V, DOWN, XKB_KEY_v, NEXT, KEY_W, BOTH, XKB_KEY_v, NEXT, KEY_LEFTSHIFT, DOWN, XKB_KEY_Shift_L, NEXT, KEY_W, BOTH, XKB_KEY_V, NEXT, KEY_LEFTSHIFT, UP, XKB_KEY_Shift_L, NEXT, KEY_V, UP, XKB_KEY_v, NEXT, KEY_A, DOWN, XKB_KEY_a, NEXT, KEY_S, DOWN, XKB_KEY_s, NEXT, KEY_W, BOTH, XKB_KEY_1, NEXT, KEY_RIGHTALT, DOWN, XKB_KEY_ISO_Level3_Shift, NEXT, KEY_W, BOTH, XKB_KEY_4, NEXT, KEY_S, UP, XKB_KEY_s, NEXT, KEY_W, BOTH, XKB_KEY_3, NEXT, KEY_RIGHTALT, UP, XKB_KEY_ISO_Level3_Shift, NEXT, KEY_Q, DOWN, XKB_KEY_q, NEXT, KEY_W, BOTH, XKB_KEY_2, NEXT, KEY_Q, UP, XKB_KEY_q, NEXT, KEY_B, DOWN, XKB_KEY_b, NEXT, KEY_C, DOWN, XKB_KEY_c, NEXT, KEY_W, BOTH, XKB_KEY_5, NEXT, KEY_C, UP, XKB_KEY_c, NEXT, KEY_B, UP, XKB_KEY_b, NEXT, KEY_A, UP, XKB_KEY_a, NEXT, KEY_Y, BOTH, XKB_KEY_y, FINISH)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        664 as ::core::ffi::c_uint,
-                        b"void test_pure_virtual_modifiers(struct xkb_context *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 xkb_keymap_unref(keymap);
                 f = f.wrapping_add(1);
             }
@@ -2886,16 +1380,6 @@ unsafe extern "C" fn test_pure_virtual_modifiers(mut context: *mut xkb_context) 
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const keymap_str as *const ::core::ffi::c_char,
         );
-        if keymap.is_null() {
-        } else {
-            __assert_fail(
-                b"!keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                677 as ::core::ffi::c_uint,
-                b"void test_pure_virtual_modifiers(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
     }
 }
 unsafe extern "C" fn xkb_keymap_mod_get_codes(
@@ -2912,16 +1396,6 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
         let mut k: xkb_keycode_t = xkb_keymap_min_keycode(keymap);
         while k <= xkb_keymap_max_keycode(keymap) && idx >= 0 as ssize_t {
             let state: *mut xkb_state = xkb_state_new(keymap) as *mut xkb_state;
-            if !state.is_null() {
-            } else {
-                __assert_fail(
-                    b"state\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    711 as ::core::ffi::c_uint,
-                    b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             static mut directions: [xkb_key_direction; 2] = [XKB_KEY_DOWN, XKB_KEY_UP];
             let mut d: usize = 0 as usize;
             while d
@@ -2933,22 +1407,6 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
                     && xkb_state_mod_index_is_active(state, mod_0, XKB_STATE_MODS_EFFECTIVE) != 0
                 {
                     if (idx as usize) < codes_size {
-                        if idx
-                            < (18446744073709551615 as ::core::ffi::c_ulong)
-                                .wrapping_div(2 as ::core::ffi::c_ulong)
-                                as ssize_t
-                        {
-                        } else {
-                            __assert_fail(
-                                b"idx < (ssize_t) (SIZE_MAX / 2)\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../test/modifiers.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                723 as ::core::ffi::c_uint,
-                                b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, usize)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         let c2rust_fresh0 = idx;
                         idx = idx + 1;
                         *codes_out.offset(c2rust_fresh0 as isize) = k;
@@ -2977,16 +1435,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
             ::core::ptr::null::<::core::ffi::c_char>(),
             ::core::ptr::null::<::core::ffi::c_char>(),
         );
-        if !keymap.is_null() {
-        } else {
-            __assert_fail(
-                b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                745 as ::core::ffi::c_uint,
-                b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         let mods: [C2Rust_Unnamed_16; 15] = [
             C2Rust_Unnamed_16 {
                 mod_0: XKB_MOD_NAME_SHIFT.as_ptr(),
@@ -3233,16 +1681,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
         {
             let mod_0: xkb_mod_index_t =
                 xkb_keymap_mod_get_index(keymap, mods[m as usize].mod_0) as xkb_mod_index_t;
-            if mod_0 != 0xffffffff as xkb_mod_index_t {
-            } else {
-                __assert_fail(
-                    b"mod != XKB_MOD_INVALID\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    773 as ::core::ffi::c_uint,
-                    b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let count: ssize_t = xkb_keymap_mod_get_codes(
                 keymap,
                 mod_0,
@@ -3250,16 +1688,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                 (::core::mem::size_of::<[xkb_keycode_t; 10]>() as usize)
                     .wrapping_div(::core::mem::size_of::<xkb_keycode_t>() as usize),
             ) as ssize_t;
-            if count >= 0 as ssize_t {
-            } else {
-                __assert_fail(
-                    b"count >= 0\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    776 as ::core::ffi::c_uint,
-                    b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let expected: *const xkb_keycode_t =
                 &raw const (*(&raw const mods as *const C2Rust_Unnamed_16).offset(m as isize))
                     .keycodes as *const xkb_keycode_t;
@@ -3279,16 +1707,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                             k,
                             count,
                         );
-                        if __cond as ::core::ffi::c_int != 0 {
-                        } else {
-                            __assert_fail(
-                                b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                                782 as ::core::ffi::c_uint,
-                                b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                            );
-                        };
                     }
                     break;
                 } else {
@@ -3301,16 +1719,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                             mods[m as usize].mod_0,
                             *expected.offset(k as isize),
                         );
-                        if __cond_0 as ::core::ffi::c_int != 0 {
-                        } else {
-                            __assert_fail(
-                                b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                                787 as ::core::ffi::c_uint,
-                                b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                            );
-                        };
                     }
                     let __cond_1: bool = got[k as usize]
                         == (*expected.offset(k as isize)).wrapping_add(8 as xkb_keycode_t);
@@ -3323,16 +1731,6 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                             (*expected.offset(k as isize)).wrapping_add(8 as xkb_keycode_t),
                             got[k as usize],
                         );
-                        if __cond_1 as ::core::ffi::c_int != 0 {
-                        } else {
-                            __assert_fail(
-                                b"__cond\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                                790 as ::core::ffi::c_uint,
-                                b"void test_get_modifier_keycodes(struct xkb_context *)\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                            );
-                        };
                     }
                     k = k.wrapping_add(1);
                 }
@@ -3347,15 +1745,6 @@ unsafe fn main_0() -> ::core::ffi::c_int {
     unsafe {
         test_init();
         let mut context: *mut xkb_context = test_get_context(CONTEXT_NO_FLAG);
-        if !context.is_null() {
-        } else {
-            __assert_fail(
-                b"context\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                804 as ::core::ffi::c_uint,
-                b"int main(void)\0".as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         test_modmap_none(context);
         test_modifiers_names(context);
         test_explicit_virtual_modifiers(context);

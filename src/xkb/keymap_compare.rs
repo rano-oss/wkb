@@ -601,16 +601,6 @@ pub mod utils_h {
         mut s2: *const ::core::ffi::c_char,
     ) -> bool {
         unsafe {
-            if !s1.is_null() && !s2.is_null() {
-            } else {
-                __assert_fail(
-                    b"s1 && s2\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/utils.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    94 as ::core::ffi::c_uint,
-                    b"_Bool streq(const char *, const char *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
@@ -626,18 +616,7 @@ pub mod utils_h {
             return streq(s1, s2);
         }
     }
-    use super::assert_h::__assert_fail;
     use super::string_h::strcmp;
-}
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -654,7 +633,6 @@ pub mod string_h {
 pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
@@ -1313,17 +1291,6 @@ unsafe extern "C" fn compare_groups(
             );
             return false;
         }
-        if (*(*group1).type_0).num_levels == (*(*group2).type_0).num_levels {
-        } else {
-            __assert_fail(
-                b"group1->type->num_levels == group2->type->num_levels\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/keymap-compare.c\0".as_ptr() as *const ::core::ffi::c_char,
-                386 as ::core::ffi::c_uint,
-                b"_Bool compare_groups(struct xkb_context *, const struct xkb_keymap *, const struct xkb_keymap *, xkb_keycode_t, xkb_layout_index_t, const struct xkb_group *, const struct xkb_group *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         let mut identical: bool = true;
         let mut l: xkb_level_index_t = 0 as xkb_level_index_t;
         while l < (*(*group1).type_0).num_levels {

@@ -255,23 +255,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -282,7 +265,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -458,16 +440,6 @@ pub mod utils_h {
         ) -> ::core::ffi::c_int;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod errno_h {
     extern "C" {
         pub fn __errno_location() -> *mut ::core::ffi::c_int;
@@ -525,7 +497,6 @@ pub mod errno_base_h {
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 use self::atom_h::{atom_table_free, atom_table_new};
 pub use self::bits_stat_h::__S_IFMT;
 pub use self::config_h::{
@@ -1168,16 +1139,6 @@ pub unsafe extern "C" fn xkb_context_include_path_get(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_ref(mut ctx: *mut xkb_context) -> *mut xkb_context {
     unsafe {
-        if (*ctx).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"ctx->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/context.c\0".as_ptr() as *const ::core::ffi::c_char,
-                402 as ::core::ffi::c_uint,
-                b"struct xkb_context *xkb_context_ref(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         (*ctx).refcnt += 1;
         return ctx;
     }
@@ -1185,16 +1146,6 @@ pub unsafe extern "C" fn xkb_context_ref(mut ctx: *mut xkb_context) -> *mut xkb_
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_unref(mut ctx: *mut xkb_context) {
     unsafe {
-        if ctx.is_null() || (*ctx).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"!ctx || ctx->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/context.c\0".as_ptr() as *const ::core::ffi::c_char,
-                414 as ::core::ffi::c_uint,
-                b"void xkb_context_unref(struct xkb_context *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if ctx.is_null() || {
             (*ctx).refcnt -= 1;
             (*ctx).refcnt > 0 as ::core::ffi::c_int

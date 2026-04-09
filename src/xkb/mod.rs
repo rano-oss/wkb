@@ -33,13 +33,11 @@ pub mod keymap;
 pub mod keymap_compare;
 pub mod keymap_formats;
 pub mod keymap_priv;
-pub mod server_state;
 pub mod state;
 
 // Keysym modules
 pub mod keysym;
 pub mod keysym_case_mappings;
-pub mod keysym_unicode;
 pub mod keysym_utf;
 
 // Parsing and text processing
@@ -56,41 +54,22 @@ pub mod utils_paths;
 pub mod utils_text;
 
 // Compilation modules
-pub mod buffercomp;
-pub mod filecomp;
-pub mod stringcomp;
 pub mod xkbcomp; // XKB compiler with all submodules
 
 // Compose support
 pub mod compile_compose;
-pub mod compose;
 pub mod compose_iter;
 pub mod compose_parse;
-pub mod compose_traversal;
 pub mod xkb_compose_map;
 
 // Rules and registry
 pub mod registry;
 pub mod registry_list;
 pub mod rmlvo;
-pub mod rules_file;
-pub mod rules_file_includes;
-pub mod rulescomp;
 
 // Messages and logging
 pub mod check_messages;
-pub mod log;
 pub mod messages;
-
-// Key processing
-pub mod key_proc;
-pub mod keyseq;
-
-// Extensions
-pub mod extensions_directories;
-
-// Lenient mode
-pub mod lenient_mode;
 
 // Rust-native wrapper types
 pub mod rust_types;

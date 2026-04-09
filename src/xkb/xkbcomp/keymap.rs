@@ -123,23 +123,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -150,7 +133,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -1236,23 +1218,12 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 use self::ast_build_h::FreeStmt;
 pub use self::ast_h::{
     _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags,
@@ -1671,22 +1642,6 @@ unsafe extern "C" fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mu
             if !(*(*key).groups.offset(group as isize)).explicit_actions() {
                 level = 0 as xkb_level_index_t;
                 while level < XkbKeyNumLevels(key, group) {
-                    if (*(*(*key).groups.offset(group as isize))
-                        .levels
-                        .offset(level as isize))
-                    .num_actions as ::core::ffi::c_int
-                        == 0 as ::core::ffi::c_int
-                    {
-                    } else {
-                        __assert_fail(
-                            b"key->groups[group].levels[level].num_actions == 0\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                            191 as ::core::ffi::c_uint,
-                            b"_Bool ApplyInterpsToKey(struct xkb_keymap *, struct xkb_key *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     let mut interp_iter: *mut *const xkb_sym_interpret =
                         ::core::ptr::null_mut::<*const xkb_sym_interpret>();
                     let mut interp: *const xkb_sym_interpret =
@@ -2251,17 +2206,6 @@ unsafe extern "C" fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -
                 .wrapping_div(::core::mem::size_of::<KeycodeMatch>() as usize)
                 .wrapping_mul(num_key_aliases as usize)
                 as darray_size_t;
-            if num_key_aliases <= (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-            } else {
-                __assert_fail(
-                    b"num_key_aliases <= keymap->num_key_names\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    528 as ::core::ffi::c_uint,
-                    b"_Bool UpdateDerivedKeymapFields(struct xkb_keymap_info *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             if min_alias >= required_space {
                 add_key_aliases(
                     keymap,
@@ -2457,17 +2401,6 @@ unsafe extern "C" fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -
                 mod_0 = mod_0.offset(1);
             }
         }
-        if (*keymap).canonical_state_mask == 0xff as ::core::ffi::c_int as xkb_mod_mask_t {
-        } else {
-            __assert_fail(
-                b"keymap->canonical_state_mask == MOD_REAL_MASK_ALL\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                664 as ::core::ffi::c_uint,
-                b"_Bool UpdateDerivedKeymapFields(struct xkb_keymap_info *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         let mut extra_canonical_mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         idx = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)

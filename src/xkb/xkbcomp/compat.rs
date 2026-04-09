@@ -114,23 +114,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -141,7 +124,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -1385,16 +1367,6 @@ pub mod include_h {
         ) -> *mut XkbFile;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
@@ -1414,7 +1386,6 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::{NULL, NULL_0};
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_15, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
@@ -1696,30 +1667,8 @@ unsafe extern "C" fn LEDText(
 ) -> *const ::core::ffi::c_char {
     unsafe {
         if ledi == &raw mut (*info).default_led {
-            if xkb_atom_text((*info).ctx, (*ledi).led.name).is_null() {
-            } else {
-                __assert_fail(
-                    b"xkb_atom_text(info->ctx, ledi->led.name) == NULL\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/compat.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    107 as ::core::ffi::c_uint,
-                    b"const char *LEDText(CompatInfo *, LedInfo *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             return b"default\0".as_ptr() as *const ::core::ffi::c_char;
         } else {
-            if !xkb_atom_text((*info).ctx, (*ledi).led.name).is_null() {
-            } else {
-                __assert_fail(
-                    b"xkb_atom_text(info->ctx, ledi->led.name) != NULL\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/compat.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    110 as ::core::ffi::c_uint,
-                    b"const char *LEDText(CompatInfo *, LedInfo *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             return xkb_atom_text((*info).ctx, (*ledi).led.name);
         };
     }
@@ -2587,19 +2536,6 @@ unsafe extern "C" fn SetInterpField(
                 }
                 match actions.size {
                     0 => {
-                        if (*si).interp.num_actions as ::core::ffi::c_int <= 1 as ::core::ffi::c_int
-                        {
-                        } else {
-                            __assert_fail(
-                                b"si->interp.num_actions <= 1\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/compat.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                556 as ::core::ffi::c_uint,
-                                b"_Bool SetInterpField(CompatInfo *, SymInterpInfo *, const char *, ExprDef *, ExprDef *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                     }
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;

@@ -503,16 +503,6 @@ pub mod getopt_core_h {
         pub static mut optarg: *mut ::core::ffi::c_char;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
@@ -537,7 +527,6 @@ pub mod config_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
@@ -719,15 +708,6 @@ unsafe fn main_0(
             b"../bench/custom-parsers.c\0".as_ptr() as *const ::core::ffi::c_char,
             b"r\0".as_ptr() as *const ::core::ffi::c_char,
         ) as *mut FILE;
-        if !file.is_null() {
-        } else {
-            __assert_fail(
-                b"file\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../bench/custom-parsers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                117 as ::core::ffi::c_uint,
-                b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
 
         // Convert FILE* to Rust File and map it
         use crate::xkb::utils::MappedFile;
@@ -759,15 +739,6 @@ unsafe fn main_0(
 
         let content = mapped.as_ptr();
         let size = mapped.len();
-        if !content.is_null() {
-        } else {
-            __assert_fail(
-                b"content\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../bench/custom-parsers.c\0".as_ptr() as *const ::core::ffi::c_char,
-                121 as ::core::ffi::c_uint,
-                b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         let mut dummy32: u32 = 0 as u32;
         let mut dummy64: uint64_t = 0 as uint64_t;
         let mut max_iterations: ::core::ffi::c_uint = 0;

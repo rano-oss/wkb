@@ -204,23 +204,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -231,7 +214,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 
 pub mod xkbcommon_h {
@@ -1530,26 +1512,6 @@ pub mod util_mem_h {
         mut caller_data: *const ::core::ffi::c_void,
     ) -> xkb_error_code {
         unsafe {
-            if v1_size <= min_size {
-            } else {
-                __assert_fail(
-                    b"v1_size <= min_size\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    54 as ::core::ffi::c_uint,
-                    b"enum xkb_error_code xkb_check_versioned_struct_size_(usize, usize, usize, usize, const void *)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
-            if min_size <= lib_size {
-            } else {
-                __assert_fail(
-                    b"min_size <= lib_size\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    55 as ::core::ffi::c_uint,
-                    b"enum xkb_error_code xkb_check_versioned_struct_size_(usize, usize, usize, usize, const void *)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if caller_size < v1_size {
                 return XKB_ERROR_ABI_INVALID_STRUCT_SIZE;
             }
@@ -1574,7 +1536,6 @@ pub mod util_mem_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
     use super::xkbcommon_errors_h::{
         xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
         XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_SUCCESS,
@@ -1607,17 +1568,6 @@ pub mod utf8_h {
     }
 }
 
-pub mod assert_h {
-    extern "C" {
-
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 
 pub mod stdint_h {
 
@@ -1644,7 +1594,6 @@ pub mod xkbcommon_keysyms_h {
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
@@ -2590,18 +2539,6 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
                     k_0 = k_0.wrapping_add(1);
                 }
             } else {
-                if latch as ::core::ffi::c_uint
-                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"latch == NO_LATCH\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        568 as ::core::ffi::c_uint,
-                        b"_Bool xkb_filter_group_latch_func(struct xkb_state *, struct xkb_events *, struct xkb_filter *, const struct xkb_key *, enum xkb_key_direction)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
             }
         } else if !(key != (*filter).key) {
             if direction as ::core::ffi::c_uint
@@ -2941,18 +2878,6 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                     k_0 = k_0.wrapping_add(1);
                 }
             } else {
-                if latch as ::core::ffi::c_uint
-                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"latch == NO_LATCH\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        855 as ::core::ffi::c_uint,
-                        b"_Bool xkb_filter_mod_latch_func(struct xkb_state *, struct xkb_events *, struct xkb_filter *, const struct xkb_key *, enum xkb_key_direction)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
             }
         } else if !(key != (*filter).key) {
             if direction as ::core::ffi::c_uint
@@ -3642,16 +3567,6 @@ pub unsafe extern "C" fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_
 
 pub unsafe extern "C" fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
     unsafe {
-        if (*state).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"state->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                1243 as ::core::ffi::c_uint,
-                b"struct xkb_state *xkb_state_ref(struct xkb_state *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         (*state).refcnt += 1;
         return state;
     }
@@ -3671,16 +3586,6 @@ unsafe extern "C" fn xkb_state_destroy(mut state: *mut xkb_state) {
 
 pub unsafe extern "C" fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
-        if state.is_null() || (*state).refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"!state || state->refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                1258 as ::core::ffi::c_uint,
-                b"void xkb_state_unref(struct xkb_state *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if state.is_null() || {
             (*state).refcnt -= 1;
             (*state).refcnt > 0 as ::core::ffi::c_int
@@ -3754,30 +3659,6 @@ unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
                             != 0 as ::core::ffi::c_long
                         {
                             let mut group_mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
-                            if (*state).components.group < 32 as xkb_layout_index_t {
-                            } else {
-                                __assert_fail(
-                                    b"state->components.group < XKB_MAX_GROUPS\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                                    1306 as ::core::ffi::c_uint,
-                                    b"void xkb_state_led_update_all(struct xkb_state *)\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                );
-                            };
-                            if (*state).components.locked_group >= 0 as int32_t
-                                && (*state).components.locked_group < 32 as int32_t
-                            {
-                            } else {
-                                __assert_fail(
-                                    b"state->components.locked_group >= 0 && state->components.locked_group < XKB_MAX_GROUPS\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
-                                    b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                                    1308 as ::core::ffi::c_uint,
-                                    b"void xkb_state_led_update_all(struct xkb_state *)\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
-                                );
-                            };
                             if (*led).which_groups() as ::core::ffi::c_int
                                 & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int
                                 != 0
@@ -4392,16 +4273,6 @@ unsafe extern "C" fn log_abi_error(
                 );
             }
             _ => {
-                if false {
-                } else {
-                    __assert_fail(
-                        b"false\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        1716 as ::core::ffi::c_uint,
-                        b"void log_abi_error(struct xkb_context *restrict, const char *restrict, enum xkb_error_code)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
             }
         };
     }
@@ -5823,16 +5694,6 @@ pub unsafe extern "C" fn xkb_machine_new(
 
 pub unsafe extern "C" fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
     unsafe {
-        if (*sm).state.refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"sm->state.refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                2953 as ::core::ffi::c_uint,
-                b"struct xkb_machine *xkb_machine_ref(struct xkb_machine *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         (*sm).state.refcnt += 1;
         return sm;
     }
@@ -5841,16 +5702,6 @@ pub unsafe extern "C" fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_m
 
 pub unsafe extern "C" fn xkb_machine_unref(mut sm: *mut xkb_machine) {
     unsafe {
-        if sm.is_null() || (*sm).state.refcnt > 0 as ::core::ffi::c_int {
-        } else {
-            __assert_fail(
-                b"!sm || sm->state.refcnt > 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/state.c\0".as_ptr() as *const ::core::ffi::c_char,
-                2961 as ::core::ffi::c_uint,
-                b"void xkb_machine_unref(struct xkb_machine *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
         if sm.is_null() || {
             (*sm).state.refcnt -= 1;
             (*sm).state.refcnt > 0 as ::core::ffi::c_int

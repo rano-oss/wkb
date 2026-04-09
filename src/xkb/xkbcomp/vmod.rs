@@ -342,22 +342,11 @@ pub mod expr_h {
         ) -> bool;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _ParseCommon, merge_mode, stmt_type, C2Rust_Unnamed_1, ExprAction, ExprActionList,
     ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
@@ -429,17 +418,6 @@ pub unsafe extern "C" fn MergeModSets(
             != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
         let mut vmod: xkb_mod_index_t = 0;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
-        if (*into).num_mods <= (*from).num_mods {
-        } else {
-            __assert_fail(
-                b"into->num_mods <= from->num_mods\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/vmod.c\0".as_ptr() as *const ::core::ffi::c_char,
-                40 as ::core::ffi::c_uint,
-                b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
@@ -447,163 +425,16 @@ pub unsafe extern "C" fn MergeModSets(
             if (*mod_0).type_0 as ::core::ffi::c_uint
                 != MOD_VIRT as ::core::ffi::c_int as ::core::ffi::c_uint
             {
-                if (*mod_0).type_0 as ::core::ffi::c_uint == 0 as ::core::ffi::c_uint
-                    && (*mod_0).name == 0 as xkb_atom_t
-                    || (*mod_0).type_0 as ::core::ffi::c_uint
-                        & MOD_REAL as ::core::ffi::c_int as ::core::ffi::c_uint
-                        != 0
-                        && (*into).mods[vmod as usize].type_0 as ::core::ffi::c_uint
-                            == (*mod_0).type_0 as ::core::ffi::c_uint
-                        && (*mod_0).name != 0 as xkb_atom_t
-                        && (*into).mods[vmod as usize].name == (*mod_0).name
-                {
-                } else {
-                    __assert_fail(
-                        b"(mod->type == 0 && mod->name == XKB_ATOM_NONE) || ((mod->type & MOD_REAL) && into->mods[vmod].type == mod->type && mod->name != XKB_ATOM_NONE && into->mods[vmod].name == mod->name)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        51 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
             } else if (*into).mods[vmod as usize].type_0 as ::core::ffi::c_uint
                 == 0 as ::core::ffi::c_uint
             {
-                if (*into).mods[vmod as usize].name == 0 as xkb_atom_t {
-                } else {
-                    __assert_fail(
-                        b"into->mods[vmod].name == XKB_ATOM_NONE\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        55 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*mod_0).type_0 as ::core::ffi::c_uint
-                    == MOD_VIRT as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"mod->type == MOD_VIRT\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        56 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*mod_0).name != 0 as xkb_atom_t {
-                } else {
-                    __assert_fail(
-                        b"mod->name != XKB_ATOM_NONE\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        57 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if vmod >= (*into).num_mods {
-                } else {
-                    __assert_fail(
-                        b"vmod >= into->num_mods\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        58 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 (*into).mods[vmod as usize] = *mod_0;
                 if (*from).explicit_vmods & mask != 0 {
                     (*into).explicit_vmods |= mask;
                 }
             } else {
-                if (*mod_0).type_0 as ::core::ffi::c_uint
-                    == MOD_VIRT as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"mod->type == MOD_VIRT\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        64 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*mod_0).name != 0 as xkb_atom_t {
-                } else {
-                    __assert_fail(
-                        b"mod->name != XKB_ATOM_NONE\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        65 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*into).mods[vmod as usize].type_0 as ::core::ffi::c_uint
-                    == (*mod_0).type_0 as ::core::ffi::c_uint
-                {
-                } else {
-                    __assert_fail(
-                        b"into->mods[vmod].type == mod->type\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        66 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*into).mods[vmod as usize].name == (*mod_0).name {
-                } else {
-                    __assert_fail(
-                        b"into->mods[vmod].name == mod->name\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/vmod.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        67 as ::core::ffi::c_uint,
-                        b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 if (*from).explicit_vmods & mask == 0 {
-                    if (*mod_0).mapping == 0 as xkb_mod_mask_t {
-                    } else {
-                        __assert_fail(
-                            b"mod->mapping == 0\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/vmod.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            71 as ::core::ffi::c_uint,
-                            b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                 } else if (*into).explicit_vmods & mask == 0 {
-                    if (*into).mods[vmod as usize].mapping == 0 as xkb_mod_mask_t {
-                    } else {
-                        __assert_fail(
-                            b"into->mods[vmod].mapping == 0\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/vmod.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            74 as ::core::ffi::c_uint,
-                            b"void MergeModSets(struct xkb_context *, struct xkb_mod_set *, const struct xkb_mod_set *, enum merge_mode)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     (*into).mods[vmod as usize].mapping = (*mod_0).mapping;
                     (*into).explicit_vmods |= mask;
                 } else if (*mod_0).mapping != (*into).mods[vmod as usize].mapping {

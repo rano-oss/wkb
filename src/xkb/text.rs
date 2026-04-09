@@ -311,16 +311,6 @@ pub mod utils_h {
         ) -> ::core::ffi::c_int;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -334,7 +324,6 @@ pub mod stdbool_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
@@ -1954,20 +1943,6 @@ pub unsafe extern "C" fn ModMaskText(
         ];
         let mut pos: usize = 0 as usize;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
-        if type_0 as ::core::ffi::c_uint == MOD_REAL as ::core::ffi::c_int as ::core::ffi::c_uint
-            || type_0 as ::core::ffi::c_uint
-                == MOD_BOTH as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-        } else {
-            __assert_fail(
-                b"type == MOD_REAL || type == MOD_BOTH\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/text.c\0".as_ptr() as *const ::core::ffi::c_char,
-                230 as ::core::ffi::c_uint,
-                b"const char *ModMaskText(struct xkb_context *, enum mod_type, const struct xkb_mod_set *, xkb_mod_mask_t)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         if mask == 0 as xkb_mod_mask_t {
             return b"none\0".as_ptr() as *const ::core::ffi::c_char;
         }
@@ -1988,19 +1963,6 @@ pub unsafe extern "C" fn ModMaskText(
                 b"0x%x\0".as_ptr() as *const ::core::ffi::c_char,
                 mask,
             ) as ::core::ffi::c_int;
-            if ret >= 0 as ::core::ffi::c_int
-                && (ret as usize) < ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
-            {
-            } else {
-                __assert_fail(
-                    b"ret >= 0 && (usize) ret < sizeof(buf)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/text.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    245 as ::core::ffi::c_uint,
-                    b"const char *ModMaskText(struct xkb_context *, enum mod_type, const struct xkb_mod_set *, xkb_mod_mask_t)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             pos = ret as usize;
         } else {
             mod_0 = &raw const (*mods).mods as *const xkb_mod;
@@ -2064,16 +2026,6 @@ pub unsafe extern "C" fn LedStateMaskText(
                     (1 as ::core::ffi::c_uint) << i,
                 )
                     as *const ::core::ffi::c_char;
-                if !maskText.is_null() {
-                } else {
-                    __assert_fail(
-                        b"maskText != NULL\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/text.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        283 as ::core::ffi::c_uint,
-                        b"const char *LedStateMaskText(struct xkb_context *, const LookupEntry *, enum xkb_state_component)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 ret = snprintf(
                     (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
                     (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
@@ -2135,16 +2087,6 @@ pub unsafe extern "C" fn ControlMaskText(
                     (1 as ::core::ffi::c_uint) << i,
                 )
                     as *const ::core::ffi::c_char;
-                if !maskText.is_null() {
-                } else {
-                    __assert_fail(
-                        b"maskText\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/text.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        323 as ::core::ffi::c_uint,
-                        b"const char *ControlMaskText(struct xkb_context *, enum xkb_keymap_format, enum xkb_action_controls)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 ret = snprintf(
                     (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
                     (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)

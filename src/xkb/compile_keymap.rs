@@ -215,16 +215,6 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdlib_h {
     pub const EXIT_FAILURE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -249,7 +239,6 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub use self::__stddef_null_h::NULL;
-use self::assert_h::__assert_fail;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
@@ -664,15 +653,6 @@ unsafe fn main_0(
                 while i < max_iterations {
                     let mut s: *mut ::core::ffi::c_char =
                         xkb_keymap_get_as_string2(keymap, keymap_output_format, serialize_flags);
-                    if !s.is_null() {
-                    } else {
-                        __assert_fail(
-                            b"s\0".as_ptr() as *const ::core::ffi::c_char,
-                            b"../bench/compile-keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                            334 as ::core::ffi::c_uint,
-                            b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     free(s as *mut ::core::ffi::c_void);
                     i = i.wrapping_add(1);
                 }
@@ -707,15 +687,6 @@ unsafe fn main_0(
                 bench_start2(&raw mut _bench);
                 let mut s_0: *mut ::core::ffi::c_char =
                     xkb_keymap_get_as_string2(keymap, keymap_output_format, serialize_flags);
-                if !s_0.is_null() {
-                } else {
-                    __assert_fail(
-                        b"s\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../bench/compile-keymap.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        356 as ::core::ffi::c_uint,
-                        b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 free(s_0 as *mut ::core::ffi::c_void);
                 bench_stop2(&raw mut _bench);
                 bench_elapsed(&raw mut _bench, &raw mut _t1);
@@ -728,16 +699,6 @@ unsafe fn main_0(
                             keymap_output_format,
                             serialize_flags,
                         );
-                        if !s_1.is_null() {
-                        } else {
-                            __assert_fail(
-                                b"s\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../bench/compile-keymap.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                356 as ::core::ffi::c_uint,
-                                b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         free(s_1 as *mut ::core::ffi::c_void);
                         k = k.wrapping_add(1);
                     }

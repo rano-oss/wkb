@@ -596,16 +596,6 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -635,7 +625,6 @@ pub mod utils_paths_h {
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
     xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
@@ -1106,20 +1095,6 @@ pub unsafe extern "C" fn expand_path(
                     return -1 as ::core::ffi::c_int as ssize_t;
                 }
                 count = count.wrapping_add(k);
-                if *buf.offset(count.wrapping_sub(1 as usize) as isize) as ::core::ffi::c_int
-                    == '\0' as i32
-                {
-                } else {
-                    __assert_fail(
-                        b"buf[count - 1] == '\\0'\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/include.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        306 as ::core::ffi::c_uint,
-                        b"ssize_t expand_path(struct xkb_context *, const char *, const char *, usize, enum xkb_file_type, char *, usize)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 return count as ssize_t - 1 as ssize_t;
             }
         };
@@ -1139,16 +1114,6 @@ pub unsafe extern "C" fn FindFileInXkbPath(
 ) -> *mut FILE {
     unsafe {
         let mut c2rust_current_block: u64;
-        if !is_absolute_path(name) {
-        } else {
-            __assert_fail(
-                b"!is_absolute_path(name)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
-                327 as ::core::ffi::c_uint,
-                b"FILE *FindFileInXkbPath(struct xkb_context *, const char *, const char *, usize, enum xkb_file_type, char *, usize, unsigned int *, _Bool)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut name_buffer: *mut ::core::ffi::c_char =
             ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1263,33 +1228,11 @@ pub unsafe extern "C" fn ProcessIncludeFile(
         } else if expanded > 0 as ssize_t {
             stmt_file = path;
             stmt_file_len = expanded as usize;
-            if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
-            } else {
-                __assert_fail(
-                    b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    407 as ::core::ffi::c_uint,
-                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
         }
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
-            if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
-            } else {
-                __assert_fail(
-                    b"stmt_file[stmt_file_len] == '\\0'\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    416 as ::core::ffi::c_uint,
-                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
         } else if (expanded != 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
             file = ::core::ptr::null_mut::<FILE>();

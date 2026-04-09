@@ -170,19 +170,6 @@ pub mod config_h {
         unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"evdev\0") };
     pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 }
-pub mod assert_h {
-    pub const __ASSERT_FUNCTION: [::core::ffi::c_char; 23] = unsafe {
-        ::core::mem::transmute::<[u8; 23], [::core::ffi::c_char; 23]>(*b"int main(int, char **)\0")
-    };
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut ::core::ffi::c_char;
@@ -205,7 +192,6 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::config_h::{DEFAULT_XKB_RULES, EXIT_INVALID_USAGE};
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
@@ -415,16 +401,6 @@ unsafe fn main_0(
                     } else {
                         printf(b"models:\n\0".as_ptr() as *const ::core::ffi::c_char);
                         m = rxkb_model_first(ctx);
-                        if !m.is_null() {
-                        } else {
-                            __assert_fail(
-                                b"m\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../tools/registry-list.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                132 as ::core::ffi::c_uint,
-                                __ASSERT_FUNCTION.as_ptr(),
-                            );
-                        };
                         while !m.is_null() {
                             let mut vendor: *const ::core::ffi::c_char = rxkb_model_get_vendor(m);
                             printf(
@@ -443,16 +419,6 @@ unsafe fn main_0(
                         printf(b"\n\0".as_ptr() as *const ::core::ffi::c_char);
                         printf(b"layouts:\n\0".as_ptr() as *const ::core::ffi::c_char);
                         l = rxkb_layout_first(ctx);
-                        if !l.is_null() {
-                        } else {
-                            __assert_fail(
-                                b"l\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../tools/registry-list.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                147 as ::core::ffi::c_uint,
-                                __ASSERT_FUNCTION.as_ptr(),
-                            );
-                        };
                         while !l.is_null() {
                             let mut iso639: *mut rxkb_iso639_code =
                                 ::core::ptr::null_mut::<rxkb_iso639_code>();
@@ -514,16 +480,6 @@ unsafe fn main_0(
                         printf(b"\n\0".as_ptr() as *const ::core::ffi::c_char);
                         printf(b"option_groups:\n\0".as_ptr() as *const ::core::ffi::c_char);
                         g = rxkb_option_group_first(ctx);
-                        if !g.is_null() {
-                        } else {
-                            __assert_fail(
-                                b"g\0".as_ptr() as *const ::core::ffi::c_char,
-                                b"../tools/registry-list.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                190 as ::core::ffi::c_uint,
-                                __ASSERT_FUNCTION.as_ptr(),
-                            );
-                        };
                         while !g.is_null() {
                             let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
                             printf(
@@ -540,16 +496,6 @@ unsafe fn main_0(
                                 },
                             );
                             o = rxkb_option_first(g);
-                            if !o.is_null() {
-                            } else {
-                                __assert_fail(
-                                    b"o\0".as_ptr() as *const ::core::ffi::c_char,
-                                    b"../tools/registry-list.c\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    203 as ::core::ffi::c_uint,
-                                    __ASSERT_FUNCTION.as_ptr(),
-                                );
-                            };
                             while !o.is_null() {
                                 let mut brief_0: *const ::core::ffi::c_char =
                                     rxkb_option_get_brief(o);

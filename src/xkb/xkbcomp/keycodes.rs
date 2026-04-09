@@ -110,23 +110,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -137,7 +120,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -1250,16 +1232,6 @@ pub mod include_h {
         ) -> *mut XkbFile;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -1273,7 +1245,6 @@ pub mod stdbool_h {
 }
 pub use self::__stddef_null_h::NULL;
 
-use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
@@ -1512,30 +1483,8 @@ unsafe extern "C" fn keycode_store_update_key(
         {
             return;
         } else if match_0.key.low() {
-            if match_0.key.index() < (*store).low.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->low)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    76 as ::core::ffi::c_uint,
-                    b"void keycode_store_update_key(KeycodeStore *, KeycodeMatch, xkb_atom_t)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             *(*store).low.item.offset(match_0.key.index() as isize) = name;
         } else {
-            if match_0.key.index() < (*store).high.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->high)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    80 as ::core::ffi::c_uint,
-                    b"void keycode_store_update_key(KeycodeStore *, KeycodeMatch, xkb_atom_t)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             (*(*store).high.item.offset(match_0.key.index() as isize)).name = name;
         }
         if name >= (*store).names.size {
@@ -1677,43 +1626,8 @@ unsafe extern "C" fn keycode_store_insert_key(
                     } else if (*entry).keycode > kc {
                         upper = mid;
                     } else {
-                        if (*entry).keycode != kc {
-                        } else {
-                            __assert_fail(
-                                b"entry->keycode != kc\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                132 as ::core::ffi::c_uint,
-                                b"_Bool keycode_store_insert_key(KeycodeStore *, xkb_keycode_t, xkb_atom_t)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                     }
                 }
-                if lower < idx {
-                } else {
-                    __assert_fail(
-                        b"lower < idx\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        135 as ::core::ffi::c_uint,
-                        b"_Bool keycode_store_insert_key(KeycodeStore *, xkb_keycode_t, xkb_atom_t)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
-                if (*(*store).high.item.offset(lower as isize)).keycode > kc {
-                } else {
-                    __assert_fail(
-                        b"darray_item(store->high, lower).keycode > kc\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        136 as ::core::ffi::c_uint,
-                        b"_Bool keycode_store_insert_key(KeycodeStore *, xkb_keycode_t, xkb_atom_t)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 let mut entry_0: *mut HighKeycodeEntry =
                     ::core::ptr::null_mut::<HighKeycodeEntry>();
                 if !(*store).high.item.is_null() {
@@ -1901,17 +1815,6 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
         {
             return;
         } else if match_0.key.low() {
-            if match_0.key.index() < (*store).low.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->low)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    210 as ::core::ffi::c_uint,
-                    b"void keycode_store_delete_key(KeycodeStore *, const KeycodeMatch)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let ref mut c2rust_fresh1 = (*(*store)
                 .names
                 .item
@@ -1942,17 +1845,6 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
                     XKB_ATOM_NONE as xkb_atom_t;
             }
         } else {
-            if match_0.key.index() < (*store).high.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->high)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    232 as ::core::ffi::c_uint,
-                    b"void keycode_store_delete_key(KeycodeStore *, const KeycodeMatch)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             let ref mut c2rust_fresh2 = (*(*store)
                 .names
                 .item
@@ -2029,30 +1921,8 @@ unsafe extern "C" fn keycode_store_get_keycode(
         {
             return XKB_KEYCODE_INVALID as xkb_keycode_t;
         } else if match_0.key.low() {
-            if match_0.key.index() < (*store).low.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->low)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    268 as ::core::ffi::c_uint,
-                    b"xkb_keycode_t keycode_store_get_keycode(const KeycodeStore *, KeycodeMatch)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             return match_0.key.index() as xkb_keycode_t;
         } else {
-            if match_0.key.index() < (*store).high.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->high)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    272 as ::core::ffi::c_uint,
-                    b"xkb_keycode_t keycode_store_get_keycode(const KeycodeStore *, KeycodeMatch)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             return (*(*store).high.item.offset(match_0.key.index() as isize)).keycode;
         };
     }
@@ -2068,30 +1938,8 @@ unsafe extern "C" fn keycode_store_get_key_name(
         {
             return XKB_ATOM_NONE as xkb_atom_t;
         } else if match_0.key.low() {
-            if match_0.key.index() < (*store).low.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->low)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    284 as ::core::ffi::c_uint,
-                    b"xkb_atom_t keycode_store_get_key_name(const KeycodeStore *, KeycodeMatch)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             return *(*store).low.item.offset(match_0.key.index() as isize);
         } else {
-            if match_0.key.index() < (*store).high.size {
-            } else {
-                __assert_fail(
-                    b"match.key.index < darray_size(store->high)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    288 as ::core::ffi::c_uint,
-                    b"xkb_atom_t keycode_store_get_key_name(const KeycodeStore *, KeycodeMatch)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             return (*(*store).high.item.offset(match_0.key.index() as isize)).name;
         };
     }
@@ -2369,18 +2217,6 @@ unsafe extern "C" fn AddKeyName(
                 let old_kc: xkb_keycode_t =
                     keycode_store_get_keycode(&raw mut (*info).keycodes, match_name)
                         as xkb_keycode_t;
-                if old_kc != 0xffffffff as xkb_keycode_t {
-                } else {
-                    __assert_fail(
-                        b"old_kc != XKB_KEYCODE_INVALID\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        510 as ::core::ffi::c_uint,
-                        b"_Bool AddKeyName(KeyNamesInfo *, xkb_keycode_t, xkb_atom_t, enum merge_mode, _Bool)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 if old_kc != kc {
                     if report {
                         let use_0: xkb_keycode_t = if clobber as ::core::ffi::c_int != 0 {
@@ -2419,18 +2255,6 @@ unsafe extern "C" fn AddKeyName(
             keycode_store_get_key_name(&raw mut (*info).keycodes, match_kc) as xkb_atom_t;
         if old_name != XKB_ATOM_NONE as xkb_atom_t {
             if old_name == name {
-                if keycode_store_get_keycode(&raw mut (*info).keycodes, match_name) == kc {
-                } else {
-                    __assert_fail(
-                        b"keycode_store_get_keycode(&info->keycodes, match_name) == kc\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        539 as ::core::ffi::c_uint,
-                        b"_Bool AddKeyName(KeyNamesInfo *, xkb_keycode_t, xkb_atom_t, enum merge_mode, _Bool)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 if report {
                     xkb_log(
                         (*info).ctx,
@@ -2537,18 +2361,6 @@ unsafe extern "C" fn MergeKeycodeStores(
                         .offset((*from).keycodes.high.size as isize)
                         as *mut HighKeycodeEntry as *const HighKeycodeEntry
                 {
-                    if (*new).name != 0 as xkb_atom_t {
-                    } else {
-                        __assert_fail(
-                            b"new->name != XKB_ATOM_NONE\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            609 as ::core::ffi::c_uint,
-                            b"void MergeKeycodeStores(KeyNamesInfo *, KeyNamesInfo *, enum merge_mode, _Bool)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     if !AddKeyName(into, (*new).keycode, (*new).name, merge, report) {
                         (*into).errorCount += 1;
                     }
@@ -3068,35 +2880,11 @@ unsafe extern "C" fn CopyKeyNamesToKeymap(
         if (*info).keycodes.low.size == 0 as darray_size_t
             && (*info).keycodes.high.size == 0 as darray_size_t
         {
-            if (*info).keycodes.min == 0xffffffff as xkb_keycode_t {
-            } else {
-                __assert_fail(
-                    b"info->keycodes.min == XKB_KEYCODE_INVALID\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    931 as ::core::ffi::c_uint,
-                    b"_Bool CopyKeyNamesToKeymap(struct xkb_keymap *, KeyNamesInfo *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             (*keymap).min_key_code = 8 as xkb_keycode_t;
             (*keymap).max_key_code = 255 as xkb_keycode_t;
             (*keymap).num_keys_low = (*keymap).max_key_code.wrapping_add(1 as xkb_keycode_t);
             (*keymap).num_keys = (*keymap).num_keys_low;
         } else {
-            if (*info).keycodes.min
-                <= (0xffffffff as xkb_keycode_t).wrapping_sub(1 as xkb_keycode_t)
-            {
-            } else {
-                __assert_fail(
-                    b"info->keycodes.min <= XKB_KEYCODE_MAX\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    937 as ::core::ffi::c_uint,
-                    b"_Bool CopyKeyNamesToKeymap(struct xkb_keymap *, KeyNamesInfo *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                );
-            };
             (*keymap).min_key_code = (*info).keycodes.min;
             (*keymap).max_key_code =
                 if (*info).keycodes.high.size == 0 as darray_size_t {
@@ -3149,16 +2937,6 @@ unsafe extern "C" fn CopyKeyNamesToKeymap(
                     .offset((*info).keycodes.high.size as isize)
                     as *mut HighKeycodeEntry as *const HighKeycodeEntry
             {
-                if (*entry).name != 0 as xkb_atom_t {
-                } else {
-                    __assert_fail(
-                        b"entry->name != XKB_ATOM_NONE\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/keycodes.c\0".as_ptr() as *const ::core::ffi::c_char,
-                        970 as ::core::ffi::c_uint,
-                        b"_Bool CopyKeyNamesToKeymap(struct xkb_keymap *, KeyNamesInfo *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 (*keys.offset(idx as isize)).keycode = (*entry).keycode;
                 (*keys.offset(idx as isize)).name = (*entry).name;
                 idx = idx.wrapping_add(1);
@@ -3204,18 +2982,6 @@ unsafe extern "C" fn CopyKeycodeNameLUT(
                             );
                             (*match_0).c2rust_unnamed.set_found((false_0 != 0) as bool);
                         } else {
-                            if !match_real.c2rust_unnamed.is_alias() {
-                            } else {
-                                __assert_fail(
-                                    b"!match_real.is_alias\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    b"../src/xkbcomp/keycodes.c\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    1007 as ::core::ffi::c_uint,
-                                    b"_Bool CopyKeycodeNameLUT(struct xkb_keymap *, KeyNamesInfo *)\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
-                                );
-                            };
                         }
                     } else if !(*match_0).key.low() {
                         (*match_0).key.set_index(

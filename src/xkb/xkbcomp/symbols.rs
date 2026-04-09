@@ -182,23 +182,6 @@ pub mod darray_h {
         mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as usize)
-                < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
-                    220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if alloc == 0 as darray_size_t {
                 alloc = 4 as darray_size_t;
             }
@@ -209,7 +192,6 @@ pub mod darray_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -707,39 +689,8 @@ pub mod keymap_h {
                     if !match_0.c2rust_unnamed.is_alias() {
                         let key_index = match_0.key.index();
                         let actual_name = (*(*keymap).keys.offset(key_index as isize)).name;
-                        if name == actual_name {
-                        } else {
-                            __assert_fail(
-                                b"name == keymap->keys[match.key.index].name\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/keymap.h\0".as_ptr() as *const ::core::ffi::c_char,
-                                843 as ::core::ffi::c_uint,
-                                __ASSERT_FUNCTION_0.as_ptr(),
-                            );
-                        };
                         return (*keymap).keys.offset(key_index as isize) as *mut xkb_key;
                     } else if use_aliases {
-                        if match_0.alias.real()
-                            == (*(*keymap).keys.offset(
-                                (*(*keymap)
-                                    .c2rust_unnamed
-                                    .c2rust_unnamed
-                                    .key_names
-                                    .offset(match_0.alias.real() as isize))
-                                .key
-                                .index() as isize,
-                            ))
-                            .name
-                        {
-                        } else {
-                            __assert_fail(
-                                b"match.alias.real == keymap->keys[keymap->key_names[match.alias.real].key.index].name\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                                b"../src/keymap.h\0".as_ptr() as *const ::core::ffi::c_char,
-                                847 as ::core::ffi::c_uint,
-                                __ASSERT_FUNCTION_0.as_ptr(),
-                            );
-                        };
                         return (*keymap).keys.offset(
                             (*(*keymap)
                                 .c2rust_unnamed
@@ -765,7 +716,6 @@ pub mod keymap_h {
         }
     }
 
-    use super::assert_h::{__assert_fail, __ASSERT_FUNCTION_0};
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -1561,21 +1511,6 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
-pub mod assert_h {
-    pub const __ASSERT_FUNCTION_0: [::core::ffi::c_char; 75] = unsafe {
-        ::core::mem::transmute::<[u8; 75], [::core::ffi::c_char; 75]>(
-            *b"struct xkb_key *XkbKeyByName(const struct xkb_keymap *, xkb_atom_t, _Bool)\0",
-        )
-    };
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
-}
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -1583,7 +1518,6 @@ pub mod stdbool_h {
 pub use self::__stddef_null_h::NULL;
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
-pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION_0};
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
@@ -2171,34 +2105,6 @@ unsafe extern "C" fn MergeGroups(
                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                     fromActionsCount = fromActionsCount.wrapping_add(1);
                 } else {
-                    if (*intoLevel).num_syms as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                        || (*intoLevel).num_actions as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                    {
-                    } else {
-                        __assert_fail(
-                            b"intoLevel->num_syms > 0 || intoLevel->num_actions > 0\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            366 as ::core::ffi::c_uint,
-                            b"_Bool MergeGroups(SymbolsInfo *, GroupInfo *, GroupInfo *, _Bool, _Bool, xkb_layout_index_t, xkb_atom_t)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
-                    if (*fromLevel).num_syms as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                        || (*fromLevel).num_actions as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                    {
-                    } else {
-                        __assert_fail(
-                            b"fromLevel->num_syms > 0 || fromLevel->num_actions > 0\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            367 as ::core::ffi::c_uint,
-                            b"_Bool MergeGroups(SymbolsInfo *, GroupInfo *, GroupInfo *, _Bool, _Bool, xkb_layout_index_t, xkb_atom_t)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     if !XkbLevelsSameSyms(fromLevel, intoLevel) {
                         if report as ::core::ffi::c_int != 0
                             && !(intoHasNoKeysym as ::core::ffi::c_int != 0
@@ -2601,17 +2507,6 @@ unsafe extern "C" fn overlays_insert(
             if count as ::core::ffi::c_int > (*keyi).overlays_alloc as ::core::ffi::c_int {
                 let alloc_0: xkb_overlay_index_t =
                     next_pow2(count as ::core::ffi::c_uint) as xkb_overlay_index_t;
-                if alloc_0 as ::core::ffi::c_int >= count as ::core::ffi::c_int {
-                } else {
-                    __assert_fail(
-                        b"alloc >= count\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/symbols.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        639 as ::core::ffi::c_uint,
-                        b"_Bool overlays_insert(KeyInfo *, xkb_overlay_index_t, const struct xkb_key *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 let tmp_0: *mut *const xkb_key = realloc(
                     (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
                     (alloc_0 as usize)
@@ -2641,20 +2536,6 @@ unsafe extern "C" fn overlays_insert(
             if (index_0 as ::core::ffi::c_uint)
                 < (count as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint)
             {
-                if (index_0 as ::core::ffi::c_int + 1 as ::core::ffi::c_int)
-                    < (*keyi).overlays_alloc as ::core::ffi::c_int
-                {
-                } else {
-                    __assert_fail(
-                        b"index + 1 < keyi->overlays_alloc\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/symbols.c\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        657 as ::core::ffi::c_uint,
-                        b"_Bool overlays_insert(KeyInfo *, xkb_overlay_index_t, const struct xkb_key *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                    );
-                };
                 memmove(
                     (*keyi)
                         .c2rust_unnamed
@@ -3492,21 +3373,6 @@ unsafe extern "C" fn GetGroupIndex(
     mut ndx_rtrn: *mut xkb_layout_index_t,
 ) -> bool {
     unsafe {
-        if field as ::core::ffi::c_uint
-            == GROUP_FIELD_SYMS as ::core::ffi::c_int as ::core::ffi::c_uint
-            || field as ::core::ffi::c_uint
-                == GROUP_FIELD_ACTS as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-        } else {
-            __assert_fail(
-                b"field == GROUP_FIELD_SYMS || field == GROUP_FIELD_ACTS\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
-                1116 as ::core::ffi::c_uint,
-                b"_Bool GetGroupIndex(SymbolsInfo *, KeyInfo *, ExprDef *, enum group_field, xkb_layout_index_t *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-            );
-        };
         let mut name: *const ::core::ffi::c_char = if field as ::core::ffi::c_uint
             == GROUP_FIELD_SYMS as ::core::ffi::c_int as ::core::ffi::c_uint
         {
@@ -3726,16 +3592,6 @@ unsafe extern "C" fn AddSymbolsToKey(
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
                 (*groupi).levels.item.offset(level as isize) as *mut xkb_level;
-            if (*leveli).num_syms as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-            } else {
-                __assert_fail(
-                    b"leveli->num_syms == 0\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    1216 as ::core::ffi::c_uint,
-                    b"_Bool AddSymbolsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             if ((*keysymList_0).syms.size > 65535 as darray_size_t) as ::core::ffi::c_int
                 as ::core::ffi::c_long
                 != 0
@@ -3764,18 +3620,6 @@ unsafe extern "C" fn AddSymbolsToKey(
                         .syms
                         .item
                         .offset(0 as ::core::ffi::c_int as isize);
-                    if (*leveli).s.sym != 0 as xkb_keysym_t {
-                    } else {
-                        __assert_fail(
-                            b"leveli->s.sym != XKB_KEY_NoSymbol\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            1234 as ::core::ffi::c_uint,
-                            b"_Bool AddSymbolsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                 }
                 _ => {
                     if (*keysymList_0).syms.size > 0 as darray_size_t {
@@ -3796,18 +3640,6 @@ unsafe extern "C" fn AddSymbolsToKey(
                     (*keysymList_0).syms.alloc = 0 as darray_size_t;
                     let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
                     while (k as ::core::ffi::c_int) < (*leveli).num_syms as ::core::ffi::c_int {
-                        if *(*leveli).s.syms.offset(k as isize) != 0 as xkb_keysym_t {
-                        } else {
-                            __assert_fail(
-                                b"leveli->s.syms[k] != XKB_KEY_NoSymbol\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                1242 as ::core::ffi::c_uint,
-                                b"_Bool AddSymbolsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         k = k.wrapping_add(1);
                     }
                 }
@@ -3913,16 +3745,6 @@ unsafe extern "C" fn AddActionsToKey(
             let mut c2rust_current_block_102: u64;
             let mut leveli: *mut xkb_level =
                 (*groupi).levels.item.offset(level as isize) as *mut xkb_level;
-            if (*leveli).num_actions as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-            } else {
-                __assert_fail(
-                    b"leveli->num_actions == 0\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    1298 as ::core::ffi::c_uint,
-                    b"_Bool AddActionsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             let mut num_actions: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             let mut act: *mut ExprDef = (*actionList).actions as *mut ExprDef;
             while !act.is_null() {
@@ -4062,52 +3884,11 @@ unsafe extern "C" fn AddActionsToKey(
                         while (k as ::core::ffi::c_int)
                             < (*leveli).num_actions as ::core::ffi::c_int
                         {
-                            if (*(*leveli).a.actions.offset(k as isize)).type_0
-                                as ::core::ffi::c_uint
-                                != ACTION_TYPE_NONE as ::core::ffi::c_int as ::core::ffi::c_uint
-                            {
-                            } else {
-                                __assert_fail(
-                                    b"leveli->a.actions[k].type != ACTION_TYPE_NONE\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                        as *const ::core::ffi::c_char,
-                                    1355 as ::core::ffi::c_uint,
-                                    b"_Bool AddActionsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
-                                );
-                            };
                             k = k.wrapping_add(1);
                         }
                     } else {
-                        if num_actions > actions.size {
-                        } else {
-                            __assert_fail(
-                                b"num_actions > darray_size(actions)\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                1359 as ::core::ffi::c_uint,
-                                b"_Bool AddActionsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         (*leveli).num_actions = 1 as xkb_action_count_t;
                         (*leveli).a.action = *actions.item.offset(0 as ::core::ffi::c_int as isize);
-                        if (*leveli).a.action.type_0 as ::core::ffi::c_uint
-                            != ACTION_TYPE_NONE as ::core::ffi::c_int as ::core::ffi::c_uint
-                        {
-                        } else {
-                            __assert_fail(
-                                b"leveli->a.action.type != ACTION_TYPE_NONE\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
-                                1362 as ::core::ffi::c_uint,
-                                b"_Bool AddActionsToKey(SymbolsInfo *, KeyInfo *, ExprDef *, ExprDef *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
-                            );
-                        };
                         free(actions.item as *mut ::core::ffi::c_void);
                         actions.item = ::core::ptr::null_mut::<xkb_action>();
                         actions.size = 0 as darray_size_t;
@@ -4354,20 +4135,6 @@ unsafe extern "C" fn SetSymbolsField(
             } else {
                 ndx = ndx.wrapping_sub(1);
                 if ndx >= (*keyi).groups.size as xkb_layout_index_t {
-                    if ((*keyi).groups.size as xkb_layout_index_t)
-                        < ndx.wrapping_add(1 as xkb_layout_index_t)
-                    {
-                    } else {
-                        __assert_fail(
-                            b"darray_size(keyi->groups) < ndx + 1\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            1503 as ::core::ffi::c_uint,
-                            b"_Bool SetSymbolsField(SymbolsInfo *, KeyInfo *, const char *, ExprDef *, ExprDef **)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                        );
-                    };
                     let mut __oldSize: darray_size_t = (*keyi).groups.size;
                     let mut __newSize: darray_size_t =
                         (ndx as darray_size_t).wrapping_add(1 as darray_size_t);
@@ -4876,19 +4643,6 @@ unsafe extern "C" fn SetGroupName(
             return false_0 != 0;
         }
         if group_to_use >= (*info).group_names.size as xkb_layout_index_t {
-            if ((*info).group_names.size as xkb_layout_index_t)
-                < group_to_use.wrapping_add(1 as xkb_layout_index_t)
-            {
-            } else {
-                __assert_fail(
-                    b"darray_size(info->group_names) < group_to_use + 1\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
-                    1783 as ::core::ffi::c_uint,
-                    b"_Bool SetGroupName(SymbolsInfo *, ExprDef *, ExprDef *, enum merge_mode)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
-                );
-            };
             let mut __oldSize: darray_size_t = (*info).group_names.size;
             let mut __newSize: darray_size_t =
                 (group_to_use as darray_size_t).wrapping_add(1 as darray_size_t);
