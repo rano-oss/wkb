@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -13,11 +13,11 @@ pub mod types_h {
     pub type __uint32_t = u32;
     pub type __int64_t = i64;
     pub type __uint64_t = u64;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
 }
 pub mod stdint_intn_h {
-    pub type int64_t = __int64_t;
+    pub type i64 = __int64_t;
     use super::types_h::__int64_t;
 }
 pub mod stdint_uintn_h {
@@ -145,7 +145,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -157,7 +157,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -175,7 +175,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -315,7 +315,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
-            if ((*s).pos >= (*s).len) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+            if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
             }
             return *(*s).s.offset((*s).pos as isize);
@@ -342,7 +342,7 @@ pub mod scanner_utils_h {
                 (*s).len.wrapping_sub((*s).pos),
             ) as *const i8;
             let new_pos: usize = if !nl.is_null() {
-                nl.offset_from((*s).s) as ::core::ffi::c_long as usize
+                nl.offset_from((*s).s) as i64 as usize
             } else {
                 (*s).len
             };
@@ -352,7 +352,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
-            if scanner_eof(s) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+            if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
             }
             let c2rust_fresh0 = (*s).pos;
@@ -364,7 +364,7 @@ pub mod scanner_utils_h {
     pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
-                as ::core::ffi::c_int as ::core::ffi::c_long
+                as ::core::ffi::c_int as i64
                 != 0
             {
                 return false_0 != 0;
@@ -467,7 +467,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_dec_int64(
         mut s: *mut scanner,
-        mut out: *mut int64_t,
+        mut out: *mut i64,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut val: uint64_t = 0 as uint64_t;
@@ -481,7 +481,7 @@ pub mod scanner_utils_h {
                     return -1 as ::core::ffi::c_int;
                 }
                 (*s).pos = (*s).pos.wrapping_add(count as usize);
-                *out = val as int64_t;
+                *out = val as i64;
             }
             return count;
         }
@@ -489,7 +489,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_hex_int64(
         mut s: *mut scanner,
-        mut out: *mut int64_t,
+        mut out: *mut i64,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut val: uint64_t = 0 as uint64_t;
@@ -503,7 +503,7 @@ pub mod scanner_utils_h {
                     return -1 as ::core::ffi::c_int;
                 }
                 (*s).pos = (*s).pos.wrapping_add(count as usize);
-                *out = val as int64_t;
+                *out = val as i64;
             }
             return count;
         }
@@ -597,7 +597,7 @@ pub mod scanner_utils_h {
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
     use super::stdint_h::INT64_MAX;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::stdint_uintn_h::{u32, uint64_t, uint8_t};
     use super::string_h::{memchr, memcmp};
     use super::utf8_h::utf32_to_utf8;
@@ -611,7 +611,7 @@ pub mod scanner_utils_h {
     }
 }
 pub mod ast_h {
-    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub type xkb_file_type = u32;
     pub const FILE_TYPE_INVALID: xkb_file_type = 7;
     pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
     pub const FILE_TYPE_RULES: xkb_file_type = 6;
@@ -623,7 +623,7 @@ pub mod ast_h {
     pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
     pub const FILE_TYPE_TYPES: xkb_file_type = 1;
     pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -662,7 +662,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -763,7 +763,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -805,7 +805,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub name: xkb_atom_t,
-        pub value: int64_t,
+        pub value: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -844,7 +844,7 @@ pub mod ast_h {
     pub struct GroupCompatDef {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub group: int64_t,
+        pub group: i64,
         pub def: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -862,7 +862,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub virtual_0: bool,
-        pub ndx: int64_t,
+        pub ndx: i64,
         pub name: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -879,7 +879,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub name: *mut i8,
     }
-    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub type xkb_map_flags = u32;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
     pub const MAP_HAS_FN: xkb_map_flags = 64;
     pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
@@ -899,7 +899,7 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod parser_h {
@@ -974,7 +974,7 @@ pub mod parser_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub union YYSTYPE {
-        pub num: int64_t,
+        pub num: i64,
         pub file_type: xkb_file_type,
         pub str: *mut i8,
         pub sval: sval,
@@ -1042,7 +1042,7 @@ pub mod parser_h {
     };
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
 }
@@ -1144,8 +1144,8 @@ pub mod utils_numbers_h {
             i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as ::core::ffi::c_uint)
-                    < 10 as ::core::ffi::c_uint
+                    as ::core::ffi::c_uchar as u32)
+                    < 10 as u32
                 && result <= (18446744073709551615 as uint64_t).wrapping_div(10 as uint64_t)
                 && result.wrapping_mul(10 as uint64_t)
                     <= (18446744073709551615 as uint64_t).wrapping_sub(
@@ -1161,8 +1161,8 @@ pub mod utils_numbers_h {
             *out = result as uint64_t;
             return if i >= len
                 || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as ::core::ffi::c_uint
-                    >= 10 as ::core::ffi::c_uint
+                    as ::core::ffi::c_uchar as u32
+                    >= 10 as u32
             {
                 i as ::core::ffi::c_int
             } else {
@@ -1438,9 +1438,8 @@ pub mod utils_numbers_h {
             let mut result: u32 = 0 as u32;
             let mut i: usize = 0 as usize;
             while i < len
-                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
-                    as ::core::ffi::c_uint)
-                    < 16 as ::core::ffi::c_uint
+                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32)
+                    < 16 as u32
                 && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
             {
                 result = result.wrapping_mul(16 as u32).wrapping_add(
@@ -1466,9 +1465,8 @@ pub mod utils_numbers_h {
             let mut result: uint64_t = 0 as uint64_t;
             let mut i: usize = 0 as usize;
             while i < len
-                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
-                    as ::core::ffi::c_uint)
-                    < 16 as ::core::ffi::c_uint
+                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32)
+                    < 16 as u32
                 && result <= 18446744073709551615 as uint64_t >> 4 as ::core::ffi::c_int
             {
                 result = result.wrapping_mul(16 as uint64_t).wrapping_add(
@@ -1533,7 +1531,7 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdint_h {
-    pub const INT64_MAX: ::core::ffi::c_long = 9223372036854775807 as ::core::ffi::c_long;
+    pub const INT64_MAX: i64 = 9223372036854775807 as i64;
 }
 pub mod errno_h {
     extern "C" {
@@ -1638,7 +1636,7 @@ pub use self::scanner_utils_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT64_MAX;
-pub use self::stdint_intn_h::int64_t;
+pub use self::stdint_intn_h::i64;
 pub use self::stdint_uintn_h::{u32, uint64_t, uint8_t};
 use self::string_h::strdup;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -1658,7 +1656,7 @@ pub use self::FILE_h::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe extern "C" fn number(
     mut s: *mut scanner,
-    mut out: *mut int64_t,
+    mut out: *mut i64,
     mut out_tok: *mut ::core::ffi::c_int,
 ) -> bool {
     unsafe {
@@ -1692,7 +1690,7 @@ unsafe extern "C" fn number(
                 _ => {}
             }
             if scanner_chr(s, DECIMAL_SEPARATOR) {
-                let mut dec: int64_t = 0;
+                let mut dec: i64 = 0;
                 if scanner_dec_int64(s, &raw mut dec) < 0 as ::core::ffi::c_int {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
                     return true_0 != 0;

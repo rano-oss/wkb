@@ -2,14 +2,14 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -17,7 +17,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -108,7 +108,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -118,7 +118,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -157,7 +157,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -171,7 +171,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[inline]
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
@@ -199,7 +199,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -220,7 +220,7 @@ pub mod xkbcommon_h {
     }
 }
 pub mod ast_h {
-    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub type xkb_file_type = u32;
     pub const FILE_TYPE_INVALID: xkb_file_type = 7;
     pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
     pub const FILE_TYPE_RULES: xkb_file_type = 6;
@@ -232,7 +232,7 @@ pub mod ast_h {
     pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
     pub const FILE_TYPE_TYPES: xkb_file_type = 1;
     pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -271,7 +271,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -500,7 +500,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub name: *mut i8,
     }
-    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub type xkb_map_flags = u32;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
     pub const MAP_HAS_FN: xkb_map_flags = 64;
     pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
@@ -587,16 +587,14 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
         unsafe {
-            return s.is_null()
-                || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32;
+            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
         }
     }
 
     use super::string_h::strdup;
 }
 pub mod utf8_decoding_h {
-    pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
+    pub const INVALID_UTF8_CODE_POINT: u32 = UINT32_MAX;
 
     use super::stdint_h::UINT32_MAX;
     extern "C" {
@@ -604,7 +602,7 @@ pub mod utf8_decoding_h {
     }
 }
 pub mod stdint_h {
-    pub const UINT32_MAX: ::core::ffi::c_uint = 4294967295 as ::core::ffi::c_uint;
+    pub const UINT32_MAX: u32 = 4294967295 as u32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -616,8 +614,8 @@ pub mod keymap_h {
     }
 }
 pub mod include_h {
-    pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = 124;
-    pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = 94;
+    pub const MERGE_AUGMENT_PREFIX: i32 = 124;
+    pub const MERGE_REPLACE_PREFIX: i32 = 94;
     extern "C" {
         pub fn ParseIncludeMap(
             str_inout: *mut *mut i8,
@@ -629,7 +627,7 @@ pub mod include_h {
     }
 }
 pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 pub use self::__stddef_null_h::NULL;
 
@@ -1001,10 +999,10 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                 xkb_log(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position %zu (code point position: %zu).\n\0"
                         .as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
                     (*scanner).file_name,
                     loc.line,
                     loc.column,
@@ -1020,7 +1018,7 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                     xkb_log(
                         (*scanner).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"%s:%zu:%zu: Cannot convert string to keysyms: Unicode code point U+04%X has no keysym equivalent(byte position: %zu, code point position: %zu).\n\0"
                             .as_ptr() as *const i8,
                         (*scanner).file_name,
@@ -1087,7 +1085,7 @@ pub unsafe extern "C" fn KeysymParseString(
             xkb_log(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s:%zu:%zu: Cannot convert string to single keysym: empty string.\n\0".as_ptr()
                     as *const i8,
                 (*scanner).file_name,
@@ -1103,10 +1101,10 @@ pub unsafe extern "C" fn KeysymParseString(
             xkb_log(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 (*scanner).file_name,
                 loc_0.line,
                 loc_0.column,
@@ -1117,10 +1115,10 @@ pub unsafe extern "C" fn KeysymParseString(
             xkb_log(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"%s\".\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 (*scanner).file_name,
                 loc_1.line,
                 loc_1.column,
@@ -1134,7 +1132,7 @@ pub unsafe extern "C" fn KeysymParseString(
             xkb_log(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s:%zu:%zu: Cannot convert string to single keysym: Unicode code point U+%04X has no keysym equivalent.\n\0"
                     .as_ptr() as *const i8,
                 (*scanner).file_name,
@@ -1406,7 +1404,7 @@ pub unsafe extern "C" fn IncludeCreate(
         tmp = str;
         stmt = strdup_safe(str);
         loop {
-            if !(!tmp.is_null() && *tmp as ::core::ffi::c_int != 0) {
+            if !(!tmp.is_null() && *tmp as i32 != 0) {
                 c2rust_current_block = 15125582407903384992;
                 break;
             }
@@ -1452,7 +1450,7 @@ pub unsafe extern "C" fn IncludeCreate(
                     (*incl).map = map;
                     (*incl).modifier = extra_data;
                     (*incl).next_incl = ::core::ptr::null_mut::<_IncludeStmt>();
-                    match nextop as ::core::ffi::c_int {
+                    match nextop as i32 {
                         MERGE_AUGMENT_PREFIX => {
                             merge = MERGE_AUGMENT;
                         }
@@ -1471,10 +1469,10 @@ pub unsafe extern "C" fn IncludeCreate(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Illegal include statement \"%s\"; Ignored\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
                     stmt,
                 );
                 FreeInclude(first);
@@ -1533,9 +1531,7 @@ pub unsafe extern "C" fn XkbFileFromComponents(
         let mut defsLast: *mut ParseCommon = ::core::ptr::null_mut::<ParseCommon>();
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         loop {
-            if !(type_0 as ::core::ffi::c_uint
-                <= LAST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as ::core::ffi::c_uint)
-            {
+            if !(type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as i32 as u32) {
                 c2rust_current_block = 13536709405535804910;
                 break;
             }
@@ -1603,7 +1599,7 @@ pub unsafe extern "C" fn FreeStmt(mut stmt: *mut ParseCommon) {
         let mut next: *mut ParseCommon = ::core::ptr::null_mut::<ParseCommon>();
         while !stmt.is_null() {
             next = (*stmt).next as *mut ParseCommon;
-            match (*stmt).type_0 as ::core::ffi::c_uint {
+            match (*stmt).type_0 as u32 {
                 1 => {
                     FreeInclude(stmt as *mut IncludeStmt);
                     stmt = ::core::ptr::null_mut::<ParseCommon>();
@@ -1676,7 +1672,7 @@ pub unsafe extern "C" fn FreeXkbFile(mut file: *mut XkbFile) {
         let mut next: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         while !file.is_null() {
             next = (*file).common.next as *mut XkbFile;
-            match (*file).file_type as ::core::ffi::c_uint {
+            match (*file).file_type as u32 {
                 5 => {
                     FreeXkbFile((*file).defs as *mut XkbFile);
                 }
@@ -1703,9 +1699,7 @@ static mut xkb_file_type_strings: [*const i8; 7] = [
 #[no_mangle]
 pub unsafe extern "C" fn xkb_file_type_to_string(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as ::core::ffi::c_uint
-            >= _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as i32 as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         return xkb_file_type_strings[type_0 as usize];
@@ -1753,9 +1747,7 @@ static mut stmt_type_strings: [*const i8; 37] = [
 #[no_mangle]
 pub unsafe extern "C" fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
     unsafe {
-        if type_0 as ::core::ffi::c_uint
-            >= _STMT_NUM_VALUES as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if type_0 as u32 >= _STMT_NUM_VALUES as i32 as u32 {
             return ::core::ptr::null::<i8>();
         }
         return stmt_type_strings[type_0 as usize];
@@ -1764,7 +1756,7 @@ pub unsafe extern "C" fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8
 #[no_mangle]
 pub unsafe extern "C" fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
     unsafe {
-        match type_0 as ::core::ffi::c_uint {
+        match type_0 as u32 {
             17 => return '+' as i32 as i8,
             18 => return '-' as i32 as i8,
             19 => return '*' as i32 as i8,

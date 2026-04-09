@@ -1,5 +1,5 @@
 pub mod messages_codes_h {
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;

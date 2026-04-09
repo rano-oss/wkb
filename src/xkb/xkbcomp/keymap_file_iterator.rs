@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -11,8 +11,8 @@ pub mod internal {
 
 pub mod types_h {
     pub type __uint64_t = u64;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
 }
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -129,7 +129,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct darray_char {
@@ -164,16 +164,16 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
 }
@@ -186,7 +186,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -299,7 +299,7 @@ pub mod scanner_utils_h {
     use super::context_h::xkb_context;
 }
 pub mod ast_h {
-    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub type xkb_file_type = u32;
     pub const FILE_TYPE_INVALID: xkb_file_type = 7;
     pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
     pub const FILE_TYPE_RULES: xkb_file_type = 6;
@@ -311,7 +311,7 @@ pub mod ast_h {
     pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
     pub const FILE_TYPE_TYPES: xkb_file_type = 1;
     pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -350,7 +350,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -375,7 +375,7 @@ pub mod ast_h {
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
-    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub type xkb_map_flags = u32;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
     pub const MAP_HAS_FN: xkb_map_flags = 64;
     pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
@@ -443,7 +443,7 @@ pub mod keymap_file_iterator_h {
         pub alloc: darray_size_t,
         pub item: *mut xkb_file_include_group,
     }
-    pub type xkb_file_iterator_flags = ::core::ffi::c_uint;
+    pub type xkb_file_iterator_flags = u32;
     pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
     pub const XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR: xkb_file_iterator_flags = 1;
     pub const XKB_FILE_ITERATOR_NO_FLAG: xkb_file_iterator_flags = 0;
@@ -536,13 +536,10 @@ pub mod include_h {
             type_0: xkb_file_type,
             buf: *mut i8,
             buf_size: usize,
-            offset: *mut ::core::ffi::c_uint,
+            offset: *mut u32,
             required: bool,
         ) -> *mut FILE;
-        pub fn ExceedsIncludeMaxDepth(
-            ctx: *mut xkb_context,
-            include_depth: ::core::ffi::c_uint,
-        ) -> bool;
+        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
         pub fn ProcessIncludeFile(
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
@@ -693,9 +690,7 @@ pub struct C2Rust_Unnamed_1 {
 #[no_mangle]
 pub unsafe extern "C" fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as ::core::ffi::c_uint
-            > FILE_TYPE_KEYMAP as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if type_0 as u32 > FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut xkb_file_type_strings: [*const i8; 7] = [
@@ -713,9 +708,7 @@ pub unsafe extern "C" fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const
 #[no_mangle]
 pub unsafe extern "C" fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8 {
     unsafe {
-        if merge as ::core::ffi::c_uint
-            >= _MERGE_MODE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as ::core::ffi::c_int as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut merge_mode_strings: [*const i8; 4] = [
@@ -729,7 +722,7 @@ pub unsafe extern "C" fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_map_flags_string_iter(
-    mut index: *mut ::core::ffi::c_uint,
+    mut index: *mut u32,
     mut flags: xkb_map_flags,
 ) -> *const i8 {
     unsafe {
@@ -774,9 +767,7 @@ pub unsafe extern "C" fn xkb_map_flags_string_iter(
             < (::core::mem::size_of::<[C2Rust_Unnamed_1; 8]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_1>() as usize)
         {
-            if flags as ::core::ffi::c_uint & names[*index as usize].flag as ::core::ffi::c_uint
-                != 0
-            {
+            if flags as u32 & names[*index as usize].flag as u32 != 0 {
                 let c2rust_fresh2 = *index;
                 *index = (*index).wrapping_add(1);
                 return names[c2rust_fresh2 as usize].name;
@@ -799,7 +790,7 @@ pub unsafe extern "C" fn xkb_resolve_file(
 ) -> *mut FILE {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+        let mut offset: u32 = 0 as u32;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut candidate: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let path_len: usize = strlen(path) as usize;
@@ -826,10 +817,8 @@ pub unsafe extern "C" fn xkb_resolve_file(
             }
             let xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map) as *mut XkbFile;
             if !xkb_file.is_null() {
-                if (file_type as ::core::ffi::c_uint)
-                    < _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
-                    && (*xkb_file).file_type as ::core::ffi::c_uint
-                        != file_type as ::core::ffi::c_uint
+                if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as u32
+                    && (*xkb_file).file_type as u32 != file_type as u32
                 {
                     xkb_log(
                         ctx,
@@ -847,8 +836,7 @@ pub unsafe extern "C" fn xkb_resolve_file(
                     );
                     c2rust_current_block = 6705605813258909411;
                 } else if !map.is_null()
-                    || (*xkb_file).flags as ::core::ffi::c_uint != 0
-                        && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
+                    || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
                 {
                     if strcpy_safe(
                         resolved_map,
@@ -1066,9 +1054,8 @@ unsafe extern "C" fn xkb_file_section_append_includes(
             );
             let valid: bool = !xkb_file.is_null();
             if valid as ::core::ffi::c_int != 0
-                || flags as ::core::ffi::c_uint
-                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as ::core::ffi::c_int
-                        as ::core::ffi::c_uint
+                || flags as u32
+                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as ::core::ffi::c_int as u32
                     == 0
             {
                 let path: darray_size_t = (*section).buffer.size;
@@ -1189,9 +1176,9 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     );
                 }
                 let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {
-                    (*xkb_file).flags as ::core::ffi::c_uint
+                    (*xkb_file).flags as u32
                 } else {
-                    0 as ::core::ffi::c_uint
+                    0 as u32
                 }) as xkb_map_flags;
                 let inc: xkb_file_include = {
                     let mut init = xkb_file_include {
@@ -1308,9 +1295,7 @@ unsafe extern "C" fn xkb_file_section_process(
         let mut ok: bool = true_0 != 0;
         let mut stmt: *mut ParseCommon = (*xkb_file).defs;
         while !stmt.is_null() {
-            if (*stmt).type_0 as ::core::ffi::c_uint
-                == STMT_INCLUDE as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            if (*stmt).type_0 as u32 == STMT_INCLUDE as ::core::ffi::c_int as u32 {
                 ok = xkb_file_section_append_includes(
                     ctx,
                     flags,
@@ -1334,7 +1319,7 @@ pub unsafe extern "C" fn xkb_file_section_parse(
     mut iterator_flags: xkb_file_iterator_flags,
     mut format: xkb_keymap_format,
     mut compile_flags: xkb_keymap_compile_flags,
-    mut include_depth: ::core::ffi::c_uint,
+    mut include_depth: u32,
     mut path: *const i8,
     mut map: *const i8,
     mut section: *mut xkb_file_section,
@@ -1372,9 +1357,8 @@ pub unsafe extern "C" fn xkb_file_section_parse(
             return false_0 != 0;
         }
         xkb_file_section_reset(section);
-        let no_includes: bool = iterator_flags as ::core::ffi::c_uint
-            & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0;
+        let no_includes: bool =
+            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as u32 != 0;
         let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as ::core::ffi::c_int
             != 0
             && (no_includes as ::core::ffi::c_int != 0
@@ -1501,17 +1485,13 @@ pub unsafe extern "C" fn xkb_file_iterator_next(
                 break;
             }
             *section = &raw mut (*iter).section;
-            if (*xkb_file).file_type as ::core::ffi::c_uint
-                == FILE_TYPE_KEYMAP as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
                 (*iter).pending_xkb_file = xkb_file;
                 (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
                 (*iter).map = ::core::ptr::null::<i8>();
                 return true_0 != 0;
-            } else if (*iter).type_0 as ::core::ffi::c_uint
-                != FILE_TYPE_INVALID as ::core::ffi::c_int as ::core::ffi::c_uint
-                && (*xkb_file).file_type as ::core::ffi::c_uint
-                    != (*iter).type_0 as ::core::ffi::c_uint
+            } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as ::core::ffi::c_int as u32
+                && (*xkb_file).file_type as u32 != (*iter).type_0 as u32
             {
                 if !(*iter).pending_xkb_file.is_null() {
                     (*iter).pending_section = (*xkb_file).common.next as *mut XkbFile;
@@ -1535,8 +1515,8 @@ pub unsafe extern "C" fn xkb_file_iterator_next(
                 if !(*iter).map.is_null() {
                     (*iter).finished = true_0 != 0;
                 }
-                process_includes = (*iter).flags as ::core::ffi::c_uint
-                    & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
+                process_includes = (*iter).flags as u32
+                    & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as u32
                     == 0;
                 if process_includes as ::core::ffi::c_int != 0
                     && !xkb_file_section_process(

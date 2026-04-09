@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -60,8 +60,7 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const i8;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
@@ -79,7 +78,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -91,7 +90,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -116,7 +115,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -138,7 +137,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
 pub mod ast_h {
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -177,7 +176,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -414,20 +413,15 @@ pub unsafe extern "C" fn MergeModSets(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let clobber: bool = merge as ::core::ffi::c_uint
-            != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+        let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
         let mut vmod: xkb_mod_index_t = 0;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
             let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
-            if (*mod_0).type_0 as ::core::ffi::c_uint
-                != MOD_VIRT as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-            } else if (*into).mods[vmod as usize].type_0 as ::core::ffi::c_uint
-                == 0 as ::core::ffi::c_uint
-            {
+            if (*mod_0).type_0 as u32 != MOD_VIRT as ::core::ffi::c_int as u32 {
+            } else if (*into).mods[vmod as usize].type_0 as u32 == 0 as u32 {
                 (*into).mods[vmod as usize] = *mod_0;
                 if (*from).explicit_vmods & mask != 0 {
                     (*into).explicit_vmods |= mask;
@@ -493,9 +487,7 @@ pub unsafe extern "C" fn HandleVModDef(
         mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
         while vmod < (*mods).num_mods {
             if (*mod_0).name == (*stmt).name {
-                if (*mod_0).type_0 as ::core::ffi::c_uint
-                    != MOD_VIRT as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                if (*mod_0).type_0 as u32 != MOD_VIRT as ::core::ffi::c_int as u32 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -512,8 +504,8 @@ pub unsafe extern "C" fn HandleVModDef(
                 } else if (*mods).explicit_vmods & mask == 0 {
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
-                    let clobber: bool = (*stmt).merge as ::core::ffi::c_uint
-                        != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+                    let clobber: bool =
+                        (*stmt).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
                     let use_0: xkb_mod_mask_t = if clobber as ::core::ffi::c_int != 0 {
                         mapping
                     } else {

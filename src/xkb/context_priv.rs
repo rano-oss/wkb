@@ -3,8 +3,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -22,7 +22,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -32,7 +32,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -88,7 +88,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -100,7 +100,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -108,13 +108,11 @@ pub mod xkbcommon_h {
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
     use super::context_h::xkb_context;
     extern "C" {
-        pub fn xkb_context_include_path_append_default(
-            context: *mut xkb_context,
-        ) -> ::core::ffi::c_int;
+        pub fn xkb_context_include_path_append_default(context: *mut xkb_context) -> i32;
     }
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -122,7 +120,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -210,7 +208,7 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod rmlvo_h {
-    pub type RMLVO = ::core::ffi::c_uint;
+    pub type RMLVO = u32;
     pub const RMLVO_OPTIONS: RMLVO = 16;
     pub const RMLVO_VARIANT: RMLVO = 8;
     pub const RMLVO_LAYOUT: RMLVO = 4;
@@ -235,8 +233,8 @@ pub mod config_h {
     use super::__stddef_null_h::NULL;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -252,9 +250,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
         unsafe {
-            return s.is_null()
-                || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32;
+            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
         }
     }
 }
@@ -349,10 +345,10 @@ pub unsafe extern "C" fn xkb_context_init_includes(mut ctx: *mut xkb_context) ->
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"[XKB-%03d] Failed to add any default include path (system path: %s)\n\0"
                             .as_ptr() as *const i8,
-                        XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as ::core::ffi::c_int,
+                        XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
                         xkb_context_include_path_get_system_path(ctx),
                     );
                     return false_0 != 0;
@@ -370,7 +366,7 @@ pub unsafe extern "C" fn xkb_context_num_failed_include_paths(
     mut ctx: *mut xkb_context,
 ) -> darray_size_t {
     unsafe {
-        return if xkb_context_init_includes(ctx) as ::core::ffi::c_int != 0 {
+        return if xkb_context_init_includes(ctx) as i32 != 0 {
             (*ctx).failed_includes.size
         } else {
             0 as darray_size_t
@@ -427,13 +423,13 @@ pub unsafe extern "C" fn xkb_atom_text(
 pub unsafe extern "C" fn xkb_log(
     mut ctx: *mut xkb_context,
     mut level: xkb_log_level,
-    mut verbosity: ::core::ffi::c_int,
+    mut verbosity: i32,
     mut fmt: *const i8,
     mut c2rust_args: ...
 ) {
     unsafe {
         let mut args: ::core::ffi::VaList;
-        if ((*ctx).log_level as ::core::ffi::c_uint) < level as ::core::ffi::c_uint
+        if ((*ctx).log_level as u32) < level as u32
             || (*ctx).log_verbosity < verbosity
         {
             return;
@@ -507,7 +503,7 @@ unsafe extern "C" fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) 
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         let mut layout: *const i8 =
             xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
-        if !layout.is_null() && (*ctx).use_environment_names() as ::core::ffi::c_int != 0 {
+        if !layout.is_null() && (*ctx).use_environment_names() as i32 != 0 {
             env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
@@ -539,27 +535,24 @@ pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
         let mut modified: RMLVO = 0 as RMLVO;
         if isempty((*rmlvo).rules) {
             (*rmlvo).rules = xkb_context_get_default_rules(ctx);
-            modified = (modified as ::core::ffi::c_uint
-                | RMLVO_RULES as ::core::ffi::c_int as ::core::ffi::c_uint)
+            modified = (modified as u32 | RMLVO_RULES as i32 as u32)
                 as RMLVO;
         }
         if isempty((*rmlvo).model) {
             (*rmlvo).model = xkb_context_get_default_model(ctx);
-            modified = (modified as ::core::ffi::c_uint
-                | RMLVO_MODEL as ::core::ffi::c_int as ::core::ffi::c_uint)
+            modified = (modified as u32 | RMLVO_MODEL as i32 as u32)
                 as RMLVO;
         }
         if isempty((*rmlvo).layout) {
             (*rmlvo).layout = xkb_context_get_default_layout(ctx);
-            modified = (modified as ::core::ffi::c_uint
-                | RMLVO_LAYOUT as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as RMLVO;
+            modified = (modified as u32
+                | RMLVO_LAYOUT as i32 as u32) as RMLVO;
             let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
             if !isempty((*rmlvo).variant) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Layout not provided, but variant set to \"%s\": ignoring variant and using defaults for both: layout=\"%s\", variant=\"%s\".\n\0"
                         .as_ptr() as *const i8,
                     (*rmlvo).variant,
@@ -572,15 +565,13 @@ pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
                 );
             }
             (*rmlvo).variant = variant;
-            modified = (modified as ::core::ffi::c_uint
-                | RMLVO_VARIANT as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as RMLVO;
+            modified = (modified as u32
+                | RMLVO_VARIANT as i32 as u32) as RMLVO;
         }
         if (*rmlvo).options.is_null() {
             (*rmlvo).options = xkb_context_get_default_options(ctx);
-            modified = (modified as ::core::ffi::c_uint
-                | RMLVO_OPTIONS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as RMLVO;
+            modified = (modified as u32
+                | RMLVO_OPTIONS as i32 as u32) as RMLVO;
         }
         return modified;
     }

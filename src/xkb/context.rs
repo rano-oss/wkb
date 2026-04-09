@@ -3,8 +3,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -12,19 +12,19 @@ pub mod internal {
 
 pub mod types_h {
     pub type __uint64_t = u64;
-    pub type __dev_t = ::core::ffi::c_ulong;
-    pub type __uid_t = ::core::ffi::c_uint;
-    pub type __gid_t = ::core::ffi::c_uint;
-    pub type __ino_t = ::core::ffi::c_ulong;
-    pub type __ino64_t = ::core::ffi::c_ulong;
-    pub type __mode_t = ::core::ffi::c_uint;
-    pub type __nlink_t = ::core::ffi::c_ulong;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
-    pub type __time_t = ::core::ffi::c_long;
-    pub type __blksize_t = ::core::ffi::c_long;
-    pub type __blkcnt_t = ::core::ffi::c_long;
-    pub type __syscall_slong_t = ::core::ffi::c_long;
+    pub type __dev_t = u64;
+    pub type __uid_t = u32;
+    pub type __gid_t = u32;
+    pub type __ino_t = u64;
+    pub type __ino64_t = u64;
+    pub type __mode_t = u32;
+    pub type __nlink_t = u64;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
+    pub type __time_t = i64;
+    pub type __blksize_t = i64;
+    pub type __blkcnt_t = i64;
+    pub type __syscall_slong_t = i64;
 }
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
@@ -45,7 +45,7 @@ pub mod struct_stat_h {
         pub st_mode: __mode_t,
         pub st_uid: __uid_t,
         pub st_gid: __gid_t,
-        pub __pad0: ::core::ffi::c_int,
+        pub __pad0: i32,
         pub st_rdev: __dev_t,
         pub st_size: __off_t,
         pub st_blksize: __blksize_t,
@@ -78,7 +78,7 @@ pub mod include_dirent_h {
     use super::dirent_h::dirent;
     extern "C" {
         pub type __dirstream;
-        pub fn closedir(__dirp: *mut DIR) -> ::core::ffi::c_int;
+        pub fn closedir(__dirp: *mut DIR) -> i32;
         pub fn opendir(__name: *const i8) -> *mut DIR;
         pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
     }
@@ -91,7 +91,7 @@ pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -105,8 +105,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -120,8 +120,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -145,30 +145,22 @@ pub mod stdio_h {
 
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
-        pub fn vfprintf(
-            __s: *mut FILE,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
+        pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
         pub fn vsnprintf(
             __s: *mut i8,
             __maxlen: usize,
             __format: *const i8,
             __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
-        pub fn vasprintf(
-            __ptr: *mut *mut i8,
-            __f: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
+        ) -> i32;
+        pub fn vasprintf(__ptr: *mut *mut i8, __f: *const i8, __arg: ::core::ffi::VaList) -> i32;
     }
 }
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -178,7 +170,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -219,7 +211,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -233,7 +225,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct darray_string {
@@ -268,13 +260,13 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
     pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
     pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_context_flags = ::core::ffi::c_uint;
+    pub type xkb_context_flags = u32;
     pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
     pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
     pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
@@ -283,7 +275,7 @@ pub mod xkbcommon_h {
 pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
     pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
@@ -291,19 +283,11 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
 pub mod stdlib_h {
-    pub type __compar_fn_t = Option<
-        unsafe extern "C" fn(
-            *const ::core::ffi::c_void,
-            *const ::core::ffi::c_void,
-        ) -> ::core::ffi::c_int,
-    >;
+    pub type __compar_fn_t =
+        Option<unsafe extern "C" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
 
     extern "C" {
-        pub fn strtol(
-            __nptr: *const i8,
-            __endptr: *mut *mut i8,
-            __base: ::core::ffi::c_int,
-        ) -> ::core::ffi::c_long;
+        pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
@@ -318,23 +302,23 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strlen(__s: *const i8) -> usize;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
+        pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
-        pub fn stat(__file: *const i8, __buf: *mut stat) -> ::core::ffi::c_int;
+        pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
-            return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
+            return istrncmp(s1, s2, len) == 0 as i32;
         }
     }
     #[inline]
@@ -350,18 +334,13 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
         unsafe {
-            return ch as ::core::ffi::c_int == ' ' as i32
-                || ch as ::core::ffi::c_int >= '\t' as i32
-                    && ch as ::core::ffi::c_int <= '\r' as i32;
+            return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn check_eaccess(
-        mut path: *const i8,
-        mut mode: ::core::ffi::c_int,
-    ) -> bool {
+    pub unsafe extern "C" fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
         unsafe {
-            if eaccess(path, mode) != 0 as ::core::ffi::c_int {
+            if eaccess(path, mode) != 0 as i32 {
                 return false_0 != 0;
             }
             return true_0 != 0;
@@ -376,10 +355,10 @@ pub mod utils_h {
     ) -> bool {
         unsafe {
             let mut ap: ::core::ffi::VaList;
-            let mut rc: ::core::ffi::c_int = 0;
+            let mut rc: i32 = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
+            return rc >= 0 as i32 && (rc as usize) < sz;
         }
     }
     #[inline]
@@ -389,9 +368,9 @@ pub mod utils_h {
     ) -> *mut i8 {
         unsafe {
             let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-            let mut len: ::core::ffi::c_int = 0;
+            let mut len: i32 = 0;
             len = vasprintf(&raw mut str, fmt, args);
-            if len == -1 as ::core::ffi::c_int {
+            if len == -1 as i32 {
                 return ::core::ptr::null_mut::<i8>();
             }
             return str;
@@ -413,26 +392,26 @@ pub mod utils_h {
     use super::string_h::strdup;
     use super::unistd_h::eaccess;
     extern "C" {
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> ::core::ffi::c_int;
+        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
     }
 }
 pub mod errno_h {
     extern "C" {
-        pub fn __errno_location() -> *mut ::core::ffi::c_int;
+        pub fn __errno_location() -> *mut i32;
     }
 }
 pub mod bits_stat_h {
-    pub const __S_IFMT: ::core::ffi::c_int = 0o170000 as ::core::ffi::c_int;
+    pub const __S_IFMT: i32 = 0o170000 as i32;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub mod unistd_h {
-    pub const R_OK: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
-    pub const X_OK: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const R_OK: i32 = 4 as i32;
+    pub const X_OK: i32 = 1 as i32;
     extern "C" {
-        pub fn eaccess(__name: *const i8, __type: ::core::ffi::c_int) -> ::core::ffi::c_int;
+        pub fn eaccess(__name: *const i8, __type: i32) -> i32;
     }
 }
 pub mod __stddef_null_h {
@@ -455,9 +434,9 @@ pub mod config_h {
         unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
 }
 pub mod errno_base_h {
-    pub const ENOMEM: ::core::ffi::c_int = 12 as ::core::ffi::c_int;
-    pub const EACCES: ::core::ffi::c_int = 13 as ::core::ffi::c_int;
-    pub const ENOTDIR: ::core::ffi::c_int = 20 as ::core::ffi::c_int;
+    pub const ENOMEM: i32 = 12 as i32;
+    pub const EACCES: i32 = 13 as i32;
+    pub const ENOTDIR: i32 = 20 as i32;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
@@ -510,7 +489,7 @@ pub use self::FILE_h::FILE;
 unsafe extern "C" fn context_include_path_append(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -538,7 +517,7 @@ unsafe extern "C" fn context_include_path_append(
             },
             __glibc_reserved: [0; 3],
         };
-        let mut err: ::core::ffi::c_int = ENOMEM;
+        let mut err: i32 = ENOMEM;
         let mut tmp: *mut i8 = strdup(path);
         if !tmp.is_null() {
             stat_buf = stat {
@@ -568,7 +547,7 @@ unsafe extern "C" fn context_include_path_append(
                 __glibc_reserved: [0; 3],
             };
             err = stat(path, &raw mut stat_buf);
-            if err != 0 as ::core::ffi::c_int {
+            if err != 0 as i32 {
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
                 err = ENOTDIR;
@@ -597,11 +576,11 @@ unsafe extern "C" fn context_include_path_append(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Include path added: %s\n\0".as_ptr() as *const i8,
                     tmp,
                 );
-                return 1 as ::core::ffi::c_int;
+                return 1 as i32;
             }
         }
         if !tmp.is_null() {
@@ -629,24 +608,24 @@ unsafe extern "C" fn context_include_path_append(
         xkb_log(
             ctx,
             XKB_LOG_LEVEL_INFO,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             b"Include path failed: \"%s\" (%s)\n\0".as_ptr() as *const i8,
             path,
             strerror(err),
         );
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_include_path_append(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
-        return if xkb_context_init_includes(ctx) as ::core::ffi::c_int != 0 {
+        return if xkb_context_init_includes(ctx) as i32 != 0 {
             context_include_path_append(ctx, path)
         } else {
-            0 as ::core::ffi::c_int
+            0 as i32
         };
     }
 }
@@ -699,7 +678,7 @@ pub unsafe extern "C" fn xkb_context_include_path_get_versioned_extensions_path(
 unsafe extern "C" fn compare_str(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         return strcmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
@@ -710,13 +689,13 @@ unsafe extern "C" fn add_direct_subdirectories(
     mut extensions: *mut darray_string,
     mut versioned_count: darray_size_t,
     mut versioned_path_length: usize,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut entry: *mut dirent = ::core::ptr::null_mut::<dirent>();
         let mut path_buf: [i8; 4096] = [0; 4096];
         let mut c2rust_current_block: u64;
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        let mut err: ::core::ffi::c_int = ENOMEM;
+        let mut ret: i32 = 0 as i32;
+        let mut err: i32 = ENOMEM;
         let mut dir: *mut DIR = ::core::ptr::null_mut::<DIR>();
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -745,7 +724,7 @@ unsafe extern "C" fn add_direct_subdirectories(
             __glibc_reserved: [0; 3],
         };
         err = stat(path, &raw mut stat_buf);
-        if err != 0 as ::core::ffi::c_int {
+        if err != 0 as i32 {
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
             err = ENOTDIR;
@@ -771,8 +750,8 @@ unsafe extern "C" fn add_direct_subdirectories(
                         break;
                     }
                     let mut name: *const i8 = &raw mut (*entry).d_name as *mut i8;
-                    if strcmp(name, b".\0".as_ptr() as *const i8) == 0 as ::core::ffi::c_int
-                        || strcmp(name, b"..\0".as_ptr() as *const i8) == 0 as ::core::ffi::c_int
+                    if strcmp(name, b".\0".as_ptr() as *const i8) == 0 as i32
+                        || strcmp(name, b"..\0".as_ptr() as *const i8) == 0 as i32
                     {
                         continue;
                     }
@@ -787,8 +766,7 @@ unsafe extern "C" fn add_direct_subdirectories(
                         c2rust_current_block = 9563249396912231495;
                         break;
                     } else {
-                        if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf)
-                            != 0 as ::core::ffi::c_int
+                        if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
                             || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t)
                         {
                             continue;
@@ -797,7 +775,7 @@ unsafe extern "C" fn add_direct_subdirectories(
                         while i < versioned_count {
                             let prev_name: *const i8 = (*(*extensions).item.offset(i as isize))
                                 .offset(versioned_path_length as isize);
-                            if strcmp(name, prev_name) == 0 as ::core::ffi::c_int {
+                            if strcmp(name, prev_name) == 0 as i32 {
                                 continue 's_62;
                             }
                             i = i.wrapping_add(1);
@@ -849,7 +827,7 @@ unsafe extern "C" fn add_direct_subdirectories(
                                             *const ::core::ffi::c_void,
                                             *const ::core::ffi::c_void,
                                         )
-                                            -> ::core::ffi::c_int,
+                                            -> i32,
                                 ),
                             );
                             let mut ext_path_0: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
@@ -873,7 +851,7 @@ unsafe extern "C" fn add_direct_subdirectories(
         xkb_log(
             ctx,
             XKB_LOG_LEVEL_DEBUG,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             b"Include extensions path failed: %s (%s)\n\0".as_ptr() as *const i8,
             path,
             strerror(err),
@@ -898,12 +876,10 @@ pub unsafe extern "C" fn xkb_context_include_path_get_system_path(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_append_default(
-    mut ctx: *mut xkb_context,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context) -> i32 {
     unsafe {
         let mut user_path: *mut i8 = ::core::ptr::null_mut::<i8>();
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut ret: i32 = 0 as i32;
         let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
         let xdg: *const i8 = xkb_context_getenv(ctx, b"XDG_CONFIG_HOME\0".as_ptr() as *const i8);
         if !xdg.is_null() {
@@ -958,7 +934,7 @@ pub unsafe extern "C" fn xkb_context_include_path_append_default(
         }
         let mut ext_path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         if !extensions.item.is_null() {
-            ext_path = extensions.item.offset(0 as ::core::ffi::c_int as isize) as *mut *mut i8;
+            ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
             while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
                 free(*ext_path as *mut ::core::ffi::c_void);
                 ext_path = ext_path.offset(1);
@@ -970,14 +946,12 @@ pub unsafe extern "C" fn xkb_context_include_path_append_default(
         extensions.alloc = 0 as darray_size_t;
         let root: *const i8 = xkb_context_include_path_get_system_path(ctx) as *const i8;
         let has_root: bool = context_include_path_append(ctx, root) != 0;
-        ret |= has_root as ::core::ffi::c_int;
-        if !has_root
-            && *root.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '\0' as i32
-        {
+        ret |= has_root as i32;
+        if !has_root && *root.offset(0 as i32 as isize) as i32 != '\0' as i32 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Root include path failed; fallback to \"%s\". The setup is probably misconfigured. Please ensure that \"%s\" is available in the environment.\n\0"
                     .as_ptr() as *const i8,
                 b"/usr/share/X11/xkb\0".as_ptr() as *const i8,
@@ -993,10 +967,7 @@ pub unsafe extern "C" fn xkb_context_include_path_clear(mut ctx: *mut xkb_contex
     unsafe {
         let mut path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         if !(*ctx).includes.item.is_null() {
-            path = (*ctx)
-                .includes
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut *mut i8;
+            path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
             {
                 free(*path as *mut ::core::ffi::c_void);
@@ -1008,10 +979,7 @@ pub unsafe extern "C" fn xkb_context_include_path_clear(mut ctx: *mut xkb_contex
         (*ctx).includes.size = 0 as darray_size_t;
         (*ctx).includes.alloc = 0 as darray_size_t;
         if !(*ctx).failed_includes.item.is_null() {
-            path = (*ctx)
-                .failed_includes
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut *mut i8;
+            path = (*ctx).failed_includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path
                 < (*ctx)
                     .failed_includes
@@ -1030,30 +998,26 @@ pub unsafe extern "C" fn xkb_context_include_path_clear(mut ctx: *mut xkb_contex
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_reset_defaults(
-    mut ctx: *mut xkb_context,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn xkb_context_include_path_reset_defaults(mut ctx: *mut xkb_context) -> i32 {
     unsafe {
         xkb_context_include_path_clear(ctx);
         return xkb_context_include_path_append_default(ctx);
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_context_num_include_paths(
-    mut ctx: *mut xkb_context,
-) -> ::core::ffi::c_uint {
+pub unsafe extern "C" fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
     unsafe {
-        return if xkb_context_init_includes(ctx) as ::core::ffi::c_int != 0 {
-            (*ctx).includes.size as ::core::ffi::c_uint
+        return if xkb_context_init_includes(ctx) as i32 != 0 {
+            (*ctx).includes.size as u32
         } else {
-            0 as ::core::ffi::c_uint
+            0 as u32
         };
     }
 }
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_include_path_get(
     mut ctx: *mut xkb_context,
-    mut idx: ::core::ffi::c_uint,
+    mut idx: u32,
 ) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
@@ -1074,7 +1038,7 @@ pub unsafe extern "C" fn xkb_context_unref(mut ctx: *mut xkb_context) {
     unsafe {
         if ctx.is_null() || {
             (*ctx).refcnt -= 1;
-            (*ctx).refcnt > 0 as ::core::ffi::c_int
+            (*ctx).refcnt > 0 as i32
         } {
             return;
         }
@@ -1086,7 +1050,7 @@ pub unsafe extern "C" fn xkb_context_unref(mut ctx: *mut xkb_context) {
 }
 unsafe extern "C" fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
     unsafe {
-        match level as ::core::ffi::c_uint {
+        match level as u32 {
             50 => return b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
             40 => return b"xkbcommon: INFO: \0".as_ptr() as *const i8,
             30 => return b"xkbcommon: WARNING: \0".as_ptr() as *const i8,
@@ -1116,13 +1080,11 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> xkb_log_level {
     unsafe {
         let mut endptr: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut lvl: xkb_log_level = 0 as xkb_log_level;
-        *__errno_location() = 0 as ::core::ffi::c_int;
-        lvl = strtol(level, &raw mut endptr, 10 as ::core::ffi::c_int) as xkb_log_level;
-        if *__errno_location() == 0 as ::core::ffi::c_int
-            && (*endptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '\0' as i32
-                || is_space(*endptr.offset(0 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int
-                    != 0)
+        *__errno_location() = 0 as i32;
+        lvl = strtol(level, &raw mut endptr, 10 as i32) as xkb_log_level;
+        if *__errno_location() == 0 as i32
+            && (*endptr.offset(0 as i32 as isize) as i32 == '\0' as i32
+                || is_space(*endptr.offset(0 as i32 as isize)) as i32 != 0)
         {
             return lvl;
         }
@@ -1158,13 +1120,13 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> xkb_log_level {
             b"debug\0".as_ptr() as *const i8,
             level,
             (::core::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
-        ) as ::core::ffi::c_int
+        ) as i32
             != 0
             || istrneq(
                 b"dbg\0".as_ptr() as *const i8,
                 level,
                 (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
-            ) as ::core::ffi::c_int
+            ) as i32
                 != 0
         {
             return XKB_LOG_LEVEL_DEBUG;
@@ -1172,18 +1134,14 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> xkb_log_level {
         return XKB_LOG_LEVEL_ERROR;
     }
 }
-unsafe extern "C" fn log_verbosity(mut verbosity: *const i8) -> ::core::ffi::c_int {
+unsafe extern "C" fn log_verbosity(mut verbosity: *const i8) -> i32 {
     unsafe {
-        *__errno_location() = 0 as ::core::ffi::c_int;
-        let v: ::core::ffi::c_long = strtol(
-            verbosity,
-            ::core::ptr::null_mut::<*mut i8>(),
-            10 as ::core::ffi::c_int,
-        ) as ::core::ffi::c_long;
-        if *__errno_location() == 0 as ::core::ffi::c_int {
-            return v as ::core::ffi::c_int;
+        *__errno_location() = 0 as i32;
+        let v: i64 = strtol(verbosity, ::core::ptr::null_mut::<*mut i8>(), 10 as i32) as i64;
+        if *__errno_location() == 0 as i32 {
+            return v as i32;
         }
-        return XKB_LOG_VERBOSITY_DEFAULT as ::core::ffi::c_int;
+        return XKB_LOG_VERBOSITY_DEFAULT as i32;
     }
 }
 #[no_mangle]
@@ -1195,7 +1153,7 @@ pub unsafe extern "C" fn xkb_context_new(mut flags: xkb_context_flags) -> *mut x
         if ctx.is_null() {
             return ::core::ptr::null_mut::<xkb_context>();
         }
-        (*ctx).refcnt = 1 as ::core::ffi::c_int;
+        (*ctx).refcnt = 1 as i32;
         (*ctx).log_fn = Some(
             default_log_fn
                 as unsafe extern "C" fn(
@@ -1214,37 +1172,30 @@ pub unsafe extern "C" fn xkb_context_new(mut flags: xkb_context_flags) -> *mut x
                 ) -> (),
             >;
         (*ctx).log_level = XKB_LOG_LEVEL_ERROR;
-        (*ctx).log_verbosity = XKB_LOG_VERBOSITY_DEFAULT as ::core::ffi::c_int;
-        static mut XKB_CONTEXT_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES
-            as ::core::ffi::c_int
-            | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as ::core::ffi::c_int
-            | XKB_CONTEXT_NO_SECURE_GETENV as ::core::ffi::c_int)
+        (*ctx).log_verbosity = XKB_LOG_VERBOSITY_DEFAULT as i32;
+        static mut XKB_CONTEXT_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
+            | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
+            | XKB_CONTEXT_NO_SECURE_GETENV as i32)
             as xkb_context_flags;
-        if flags as ::core::ffi::c_uint & !(XKB_CONTEXT_FLAGS as ::core::ffi::c_uint) != 0 {
+        if flags as u32 & !(XKB_CONTEXT_FLAGS as u32) != 0 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Invalid context flags: 0x%x\n\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint & !(XKB_CONTEXT_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_CONTEXT_FLAGS as u32),
             );
             free(ctx as *mut ::core::ffi::c_void);
             return ::core::ptr::null_mut::<xkb_context>();
         }
         (*ctx).set_use_environment_names(
-            (flags as ::core::ffi::c_uint
-                & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32 as u32 == 0) as bool,
         );
         (*ctx).set_use_secure_getenv(
-            (flags as ::core::ffi::c_uint
-                & XKB_CONTEXT_NO_SECURE_GETENV as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as i32 as u32 == 0) as bool,
         );
         (*ctx).set_pending_default_includes(
-            (flags as ::core::ffi::c_uint
-                & XKB_CONTEXT_NO_DEFAULT_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32 == 0) as bool,
         );
         (*ctx).includes.item = ::core::ptr::null_mut::<*mut i8>();
         (*ctx).includes.size = 0 as darray_size_t;
@@ -1324,9 +1275,7 @@ pub unsafe extern "C" fn xkb_context_set_log_level(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_context_get_log_verbosity(
-    mut ctx: *mut xkb_context,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn xkb_context_get_log_verbosity(mut ctx: *mut xkb_context) -> i32 {
     unsafe {
         return (*ctx).log_verbosity;
     }
@@ -1334,7 +1283,7 @@ pub unsafe extern "C" fn xkb_context_get_log_verbosity(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_set_log_verbosity(
     mut ctx: *mut xkb_context,
-    mut verbosity: ::core::ffi::c_int,
+    mut verbosity: i32,
 ) {
     unsafe {
         (*ctx).log_verbosity = verbosity;

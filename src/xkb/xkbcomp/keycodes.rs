@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -19,10 +19,10 @@ pub mod types_h {
     pub type __int64_t = i64;
 }
 pub mod stdint_intn_h {
-    pub type int8_t = __int8_t;
-    pub type int16_t = __int16_t;
-    pub type int32_t = __int32_t;
-    pub type int64_t = __int64_t;
+    pub type i8 = __int8_t;
+    pub type i16 = __int16_t;
+    pub type i32 = __int32_t;
+    pub type i64 = __int64_t;
     use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
 }
 pub mod stdint_uintn_h {
@@ -101,7 +101,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[inline]
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
@@ -129,7 +129,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -141,11 +141,11 @@ pub mod xkbcommon_h {
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
     pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
     pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
@@ -158,16 +158,15 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     pub type xkb_layout_mask_t = u32;
     pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
     pub type xkb_led_mask_t = u32;
-    pub const XKB_KEYCODE_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    pub const XKB_KEYCODE_MAX: ::core::ffi::c_uint =
-        (0xffffffff as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint);
+    pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
+    pub const XKB_KEYCODE_MAX: u32 = (0xffffffff as u32).wrapping_sub(1 as u32);
     use super::context_h::xkb_context;
     use super::stdint_uintn_h::u32;
     extern "C" {
@@ -219,7 +218,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -270,10 +269,10 @@ pub mod keymap_h {
     pub union C2Rust_Unnamed_2 {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
     pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
@@ -318,7 +317,7 @@ pub mod keymap_h {
         pub count: uint8_t,
         pub button: uint8_t,
     }
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
     pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
@@ -338,22 +337,22 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -362,7 +361,7 @@ pub mod keymap_h {
         pub flags: xkb_action_flags,
         pub ctrls: xkb_action_controls,
     }
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
     pub const CONTROL_ALL: xkb_action_controls = 2088959;
@@ -392,7 +391,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -408,7 +407,7 @@ pub mod keymap_h {
         pub mask: xkb_mod_mask_t,
     }
     pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     pub const MATCH_ALL: xkb_match_operation = 3;
     pub const MATCH_ANY: xkb_match_operation = 2;
@@ -568,7 +567,7 @@ pub mod keymap_h {
     }
     pub type xkb_keysym_count_t = uint16_t;
     pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
     pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
@@ -596,7 +595,7 @@ pub mod keymap_h {
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::limits_h::CHAR_BIT;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -616,7 +615,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -704,7 +703,7 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod ast_h {
-    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub type xkb_file_type = u32;
     pub const FILE_TYPE_INVALID: xkb_file_type = 7;
     pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
     pub const FILE_TYPE_RULES: xkb_file_type = 6;
@@ -716,7 +715,7 @@ pub mod ast_h {
     pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
     pub const FILE_TYPE_TYPES: xkb_file_type = 1;
     pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -755,7 +754,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -868,7 +867,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -902,7 +901,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub name: xkb_atom_t,
-        pub value: int64_t,
+        pub value: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -918,7 +917,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub virtual_0: bool,
-        pub ndx: int64_t,
+        pub ndx: i64,
         pub name: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -927,7 +926,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub name: *mut i8,
     }
-    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub type xkb_map_flags = u32;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
     pub const MAP_HAS_FN: xkb_map_flags = 64;
     pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
@@ -947,7 +946,7 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
         pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
@@ -968,7 +967,7 @@ pub mod text_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    pub type xkb_parser_strict_flags = ::core::ffi::c_uint;
+    pub type xkb_parser_strict_flags = u32;
     pub const PARSER_V2_LAX_FLAGS: xkb_parser_strict_flags = 0;
     pub const PARSER_V2_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
     pub const PARSER_V1_LAX_FLAGS: xkb_parser_strict_flags = 16379;
@@ -1066,7 +1065,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] The %s %s field must be a %s; Ignoring illegal assignment in %s\n\0"
                     .as_ptr() as *const i8,
-                code as ::core::ffi::c_uint,
+                code as u32,
                 type_0,
                 field,
                 wanted,
@@ -1171,7 +1170,7 @@ pub mod expr_h {
     use super::ast_h::ExprDef;
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     extern "C" {
         pub fn ExprResolveLhs(
             ctx: *mut xkb_context,
@@ -1183,7 +1182,7 @@ pub mod expr_h {
         pub fn ExprResolveInteger(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            val_rtrn: *mut int64_t,
+            val_rtrn: *mut i64,
         ) -> bool;
         pub fn ExprResolveString(
             ctx: *mut xkb_context,
@@ -1209,10 +1208,7 @@ pub mod include_h {
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
-        pub fn ExceedsIncludeMaxDepth(
-            ctx: *mut xkb_context,
-            include_depth: ::core::ffi::c_uint,
-        ) -> bool;
+        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
         pub fn ProcessIncludeFile(
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
@@ -1227,7 +1223,7 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdint_h {
-    pub const UINT32_MAX: ::core::ffi::c_uint = 4294967295 as ::core::ffi::c_uint;
+    pub const UINT32_MAX: u32 = 4294967295 as u32;
 }
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -1338,7 +1334,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_MAX;
-pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
@@ -1379,7 +1375,7 @@ pub use self::xkbcomp_priv_h::{
 pub struct KeyNamesInfo {
     pub name: *mut i8,
     pub errorCount: ::core::ffi::c_int,
-    pub include_depth: ::core::ffi::c_uint,
+    pub include_depth: u32,
     pub keycodes: KeycodeStore,
     pub led_names: [LedNameInfo; 32],
     pub num_led_names: xkb_led_index_t,
@@ -1468,7 +1464,7 @@ unsafe extern "C" fn keycode_store_update_key(
     unsafe {
         if (!match_0.c2rust_unnamed.found()
             || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0)
-            as ::core::ffi::c_int as ::core::ffi::c_long
+            as ::core::ffi::c_int as i64
             != 0
         {
             return;
@@ -1800,7 +1796,7 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
     unsafe {
         if (!match_0.c2rust_unnamed.found()
             || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0)
-            as ::core::ffi::c_int as ::core::ffi::c_long
+            as ::core::ffi::c_int as i64
             != 0
         {
             return;
@@ -1811,7 +1807,7 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
                 .offset(*(*store).low.item.offset(match_0.key.index() as isize) as isize))
             .c2rust_unnamed;
             (*c2rust_fresh1).set_found((false_0 != 0) as bool);
-            if match_0.key.index().wrapping_add(1 as ::core::ffi::c_uint) == (*store).low.size {
+            if match_0.key.index().wrapping_add(1 as u32) == (*store).low.size {
                 if (*store).min == match_0.key.index() as xkb_keycode_t {
                     (*store).low.size = 0 as darray_size_t;
                 } else {
@@ -2057,8 +2053,7 @@ unsafe extern "C" fn AddLedName(
     unsafe {
         let mut old_idx: xkb_led_index_t = 0;
         let mut old: *mut LedNameInfo = ::core::ptr::null_mut::<LedNameInfo>();
-        let replace: bool = (*new).merge as ::core::ffi::c_uint
-            != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+        let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
         old = FindLedByName(info, (*new).name, &raw mut old_idx);
         if !old.is_null() {
             if old_idx == new_idx {
@@ -2148,7 +2143,7 @@ unsafe extern "C" fn ClearKeyNamesInfo(mut info: *mut KeyNamesInfo) {
 unsafe extern "C" fn InitKeyNamesInfo(
     mut info: *mut KeyNamesInfo,
     mut keymap_info: *const xkb_keymap_info,
-    mut include_depth: ::core::ffi::c_uint,
+    mut include_depth: u32,
 ) {
     unsafe {
         memset(
@@ -2173,8 +2168,7 @@ unsafe extern "C" fn AddKeyName(
         let mut match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, name);
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = merge as ::core::ffi::c_uint
-                != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+            let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if report {
                     xkb_log(
@@ -2258,8 +2252,7 @@ unsafe extern "C" fn AddKeyName(
                 }
                 return true_0 != 0;
             }
-            let clobber_0: bool = merge as ::core::ffi::c_uint
-                != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+            let clobber_0: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
             if report {
                 let kname: *const i8 = KeyNameText((*info).ctx, name) as *const i8;
                 let old_kname: *const i8 = KeyNameText((*info).ctx, old_name) as *const i8;
@@ -2471,11 +2464,7 @@ unsafe extern "C" fn HandleIncludeKeycodes(
             (*info).errorCount += 10 as ::core::ffi::c_int;
             return false_0 != 0;
         }
-        InitKeyNamesInfo(
-            &raw mut included,
-            (*info).keymap_info,
-            0 as ::core::ffi::c_uint,
-        );
+        InitKeyNamesInfo(&raw mut included, (*info).keymap_info, 0 as u32);
         included.name =
             _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         let mut stmt: *mut IncludeStmt = include;
@@ -2527,7 +2516,7 @@ unsafe extern "C" fn HandleIncludeKeycodes(
             InitKeyNamesInfo(
                 &raw mut next_incl,
                 (*info).keymap_info,
-                (*info).include_depth.wrapping_add(1 as ::core::ffi::c_uint),
+                (*info).include_depth.wrapping_add(1 as u32),
             );
             HandleKeycodesFile(&raw mut next_incl, file);
             MergeIncludedKeycodes(&raw mut included, &raw mut next_incl, (*stmt).merge, report);
@@ -2546,7 +2535,7 @@ unsafe extern "C" fn HandleKeycodeDef(
     mut report: bool,
 ) -> bool {
     unsafe {
-        if (*stmt).value < 0 as int64_t || (*stmt).value > XKB_KEYCODE_MAX as int64_t {
+        if (*stmt).value < 0 as i64 || (*stmt).value > XKB_KEYCODE_MAX as i64 {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2554,7 +2543,7 @@ unsafe extern "C" fn HandleKeycodeDef(
                 b"Illegal keycode %ld: must be between 0..%u; Key ignored\n\0".as_ptr()
                     as *const i8,
                 (*stmt).value,
-                (0xffffffff as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint),
+                (0xffffffff as u32).wrapping_sub(1 as u32),
             );
             return false_0 != 0;
         }
@@ -2576,8 +2565,7 @@ unsafe extern "C" fn HandleAliasDef(
         let match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, (*def).alias) as KeycodeMatch;
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = (*def).merge as ::core::ffi::c_uint
-                != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
+            let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if (*def).real == match_name.alias.real() {
                     if report {
@@ -2677,9 +2665,8 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                 elem,
                 field,
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int
-                    as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
                 == 0;
         }
         if !istreq(field, b"minimum\0".as_ptr() as *const i8)
@@ -2694,9 +2681,8 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
                 field,
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int
-                    as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
                 == 0;
         }
         if !arrayNdx.is_null() {
@@ -2706,14 +2692,14 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                 field,
                 b"defaults\0".as_ptr() as *const i8,
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
                 == 0;
         }
-        let mut val: int64_t = 0 as int64_t;
+        let mut val: i64 = 0 as i64;
         if !ExprResolveInteger((*info).ctx, (*stmt).value, &raw mut val)
-            || val < 0 as int64_t
-            || val > UINT32_MAX as int64_t
+            || val < 0 as i64
+            || val > UINT32_MAX as i64
         {
             ReportBadType(
                 (*info).ctx,
@@ -2723,8 +2709,8 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                 b"defaults\0".as_ptr() as *const i8,
                 b"integer 0..0xfffffffe\0".as_ptr() as *const i8,
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
                 == 0;
         }
         return true_0 != 0;
@@ -2736,7 +2722,7 @@ unsafe extern "C" fn HandleLedNameDef(
     mut report: bool,
 ) -> bool {
     unsafe {
-        if (*def).ndx < 1 as int64_t || (*def).ndx > XKB_MAX_LEDS as int64_t {
+        if (*def).ndx < 1 as i64 || (*def).ndx > XKB_MAX_LEDS as i64 {
             (*info).errorCount += 1;
             xkb_log(
                 (*info).ctx,
@@ -2793,7 +2779,7 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
         (*info).name = strdup_safe((*file).name);
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
-            match (*stmt).type_0 as ::core::ffi::c_uint {
+            match (*stmt).type_0 as u32 {
                 1 => {
                     ok = HandleIncludeKeycodes(info, stmt as *mut IncludeStmt, report_include);
                 }
@@ -2817,8 +2803,8 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
                         b"[XKB-%03d] Unsupported keycodes %s statement \"%s\"; Ignoring\n\0"
                             .as_ptr() as *const i8,
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        if (*stmt).type_0 as ::core::ffi::c_uint
-                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as ::core::ffi::c_uint
+                        if (*stmt).type_0 as u32
+                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
                         {
                             b"compound\0".as_ptr() as *const i8
                         } else {
@@ -2826,8 +2812,8 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
                         },
                         (*(stmt as *mut UnknownStatement)).name,
                     );
-                    ok = (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                        & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    ok = (*(*info).keymap_info).strict as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
                         == 0;
                 }
                 _ => {
@@ -2973,8 +2959,7 @@ unsafe extern "C" fn CopyKeycodeNameLUT(
                         }
                     } else if !(*match_0).key.low() {
                         (*match_0).key.set_index(
-                            (*match_0).key.index()
-                                + (*keymap).num_keys_low as ::core::ffi::c_uint as darray_size_t,
+                            (*match_0).key.index() + (*keymap).num_keys_low as u32 as darray_size_t,
                         );
                     }
                 }
@@ -3097,7 +3082,7 @@ pub unsafe extern "C" fn CompileKeycodes(
             ctx: ::core::ptr::null_mut::<xkb_context>(),
             keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
         };
-        InitKeyNamesInfo(&raw mut info, keymap_info, 0 as ::core::ffi::c_uint);
+        InitKeyNamesInfo(&raw mut info, keymap_info, 0 as u32);
         if !file.is_null() {
             HandleKeycodesFile(&raw mut info, file);
         }

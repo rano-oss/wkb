@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -17,9 +17,9 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_intn_h {
-    pub type int8_t = __int8_t;
-    pub type int16_t = __int16_t;
-    pub type int32_t = __int32_t;
+    pub type i8 = __int8_t;
+    pub type i16 = __int16_t;
+    pub type i32 = __int32_t;
     use super::types_h::{__int16_t, __int32_t, __int8_t};
 }
 pub mod stdint_uintn_h {
@@ -33,7 +33,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -43,7 +43,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -83,7 +83,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -97,7 +97,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -109,7 +109,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -121,11 +121,11 @@ pub mod xkbcommon_h {
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
     pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
     pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
@@ -138,14 +138,14 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     pub type xkb_layout_mask_t = u32;
     pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff as u32;
+    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
     use super::context_h::xkb_context;
     use super::stdint_uintn_h::u32;
     extern "C" {
@@ -157,7 +157,7 @@ pub mod keymap_h {
     #[repr(C)]
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -197,7 +197,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -248,10 +248,10 @@ pub mod keymap_h {
     pub union C2Rust_Unnamed_2 {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
     pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
@@ -296,7 +296,7 @@ pub mod keymap_h {
         pub count: uint8_t,
         pub button: uint8_t,
     }
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
     pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
@@ -316,22 +316,22 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -340,7 +340,7 @@ pub mod keymap_h {
         pub flags: xkb_action_flags,
         pub ctrls: xkb_action_controls,
     }
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
     pub const CONTROL_ALL: xkb_action_controls = 2088959;
@@ -370,7 +370,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -386,7 +386,7 @@ pub mod keymap_h {
         pub mask: xkb_mod_mask_t,
     }
     pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     pub const MATCH_ALL: xkb_match_operation = 3;
     pub const MATCH_ANY: xkb_match_operation = 2;
@@ -546,7 +546,7 @@ pub mod keymap_h {
     }
     pub type xkb_keysym_count_t = uint16_t;
     pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
     pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
@@ -565,8 +565,8 @@ pub mod keymap_h {
         pub mods: xkb_mods,
         pub ctrls: xkb_action_controls,
     }
-    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
-    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as ::core::ffi::c_int as xkb_mod_mask_t;
+    pub const XKB_MAX_GROUPS: i32 = 32 as i32;
+    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
     #[inline]
     pub unsafe extern "C" fn XkbKeyNumLevels(
         mut key: *const xkb_key,
@@ -579,7 +579,7 @@ pub mod keymap_h {
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -588,7 +588,7 @@ pub mod keymap_h {
     };
 }
 pub mod enums_h {
-    pub type xkb_enumerations_values = ::core::ffi::c_uint;
+    pub type xkb_enumerations_values = u32;
     pub const XKB_COMPOSE_FEED_RESULT_VALUES: xkb_enumerations_values = 3;
     pub const XKB_COMPOSE_STATUS_VALUES: xkb_enumerations_values = 15;
     pub const XKB_COMPOSE_STATE_FLAGS_VALUES: xkb_enumerations_values = 0;
@@ -612,7 +612,7 @@ pub mod enums_h {
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: xkb_enumerations_values = 0;
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -628,7 +628,7 @@ pub mod string_h {
             __s1: *const ::core::ffi::c_void,
             __s2: *const ::core::ffi::c_void,
             __n: usize,
-        ) -> ::core::ffi::c_int;
+        ) -> i32;
         pub fn strlen(__s: *const i8) -> usize;
     }
 }
@@ -639,15 +639,15 @@ pub mod stdlib_h {
     }
 }
 pub mod stdint_h {
-    pub const INT32_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
+    pub const INT32_MAX: i32 = 2147483647 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
@@ -722,7 +722,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::calloc;
 use self::string_h::{memcmp, strlen};
@@ -767,8 +767,7 @@ unsafe extern "C" fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
                 strlen(builtin_mods[i as usize]),
             );
             (*keymap).mods.mods[i as usize].type_0 = MOD_REAL;
-            (*keymap).mods.mods[i as usize].mapping =
-                ((1 as ::core::ffi::c_uint) << i) as xkb_mod_mask_t;
+            (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as xkb_mod_mask_t;
             i = i.wrapping_add(1);
         }
         (*keymap).mods.num_mods = (::core::mem::size_of::<[*const i8; 8]>() as usize)
@@ -786,15 +785,15 @@ pub unsafe extern "C" fn xkb_keymap_new(
 ) -> *mut xkb_keymap {
     unsafe {
         static mut XKB_KEYMAP_COMPILE_FLAGS: xkb_keymap_compile_flags =
-            XKB_KEYMAP_COMPILE_FLAGS_VALUES as ::core::ffi::c_int as xkb_keymap_compile_flags;
-        if flags as ::core::ffi::c_uint & !(XKB_KEYMAP_COMPILE_FLAGS as ::core::ffi::c_uint) != 0 {
+            XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as xkb_keymap_compile_flags;
+        if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unrecognized keymap compilation flags: 0x%x\n\0".as_ptr() as *const i8,
                 func,
-                flags as ::core::ffi::c_uint & !(XKB_KEYMAP_COMPILE_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -803,7 +802,7 @@ pub unsafe extern "C" fn xkb_keymap_new(
         if keymap.is_null() {
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
-        (*keymap).refcnt = 1 as ::core::ffi::c_int;
+        (*keymap).refcnt = 1 as i32;
         (*keymap).ctx = xkb_context_ref(ctx);
         (*keymap).format = format;
         (*keymap).flags = flags;
@@ -815,48 +814,45 @@ pub unsafe extern "C" fn xkb_keymap_new(
 pub unsafe extern "C" fn XkbEscapeMapName(mut name: *mut i8) {
     unsafe {
         static mut legal: [::core::ffi::c_uchar; 32] = [
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xa7 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0x83 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xfe as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0x87 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xfe as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0x7 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0x7f as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0x7f as ::core::ffi::c_int as ::core::ffi::c_uchar,
-            0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0xa7 as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0x83 as i32 as ::core::ffi::c_uchar,
+            0xfe as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0x87 as i32 as ::core::ffi::c_uchar,
+            0xfe as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0x7 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0 as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0x7f as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
+            0x7f as i32 as ::core::ffi::c_uchar,
+            0xff as i32 as ::core::ffi::c_uchar,
         ];
         if name.is_null() {
             return;
         }
         while *name != 0 {
             let mut c: ::core::ffi::c_uchar = *name as ::core::ffi::c_uchar;
-            if legal[(c as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize]
-                as ::core::ffi::c_uint
-                & (1 as ::core::ffi::c_uint) << c as ::core::ffi::c_int % 8 as ::core::ffi::c_int
-                == 0
+            if legal[(c as i32 / 8 as i32) as usize] as u32 & (1 as u32) << c as i32 % 8 as i32 == 0
             {
                 *name = '_' as i32 as i8;
             }
@@ -876,9 +872,7 @@ pub unsafe extern "C" fn XkbModNameToIndex(
         i = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*mods).mods as *const xkb_mod;
         while i < (*mods).num_mods {
-            if (*mod_0).type_0 as ::core::ffi::c_uint & type_0 as ::core::ffi::c_uint != 0
-                && name == (*mod_0).name
-            {
+            if (*mod_0).type_0 as u32 & type_0 as u32 != 0 && name == (*mod_0).name {
                 return i;
             }
             i = i.wrapping_add(1);
@@ -893,70 +887,58 @@ pub unsafe extern "C" fn XkbLevelsSameSyms(
     mut b: *const xkb_level,
 ) -> bool {
     unsafe {
-        if (*a).num_syms as ::core::ffi::c_int != (*b).num_syms as ::core::ffi::c_int {
+        if (*a).num_syms as i32 != (*b).num_syms as i32 {
             return false_0 != 0;
         }
-        if (*a).num_syms as ::core::ffi::c_int <= 1 as ::core::ffi::c_int {
+        if (*a).num_syms as i32 <= 1 as i32 {
             return (*a).s.sym == (*b).s.sym;
         }
         return memcmp(
             (*a).s.syms as *const ::core::ffi::c_void,
             (*b).s.syms as *const ::core::ffi::c_void,
             (::core::mem::size_of::<xkb_keysym_t>() as usize).wrapping_mul((*a).num_syms as usize),
-        ) == 0 as ::core::ffi::c_int;
+        ) == 0 as i32;
     }
 }
 #[no_mangle]
 pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
     unsafe {
-        if (*a).type_0 as ::core::ffi::c_uint != (*b).type_0 as ::core::ffi::c_uint {
+        if (*a).type_0 as u32 != (*b).type_0 as u32 {
             return false_0 != 0;
         }
-        match (*a).type_0 as ::core::ffi::c_uint {
+        match (*a).type_0 as u32 {
             0 | 1 => return true_0 != 0,
             2 | 3 | 4 => {
-                return (*a).mods.flags as ::core::ffi::c_uint
-                    == (*b).mods.flags as ::core::ffi::c_uint
+                return (*a).mods.flags as u32 == (*b).mods.flags as u32
                     && (*a).mods.mods.mask == (*b).mods.mods.mask
                     && (*a).mods.mods.mods == (*b).mods.mods.mods;
             }
             5 | 6 | 7 => {
-                return (*a).group.flags as ::core::ffi::c_uint
-                    == (*b).group.flags as ::core::ffi::c_uint
+                return (*a).group.flags as u32 == (*b).group.flags as u32
                     && (*a).group.group == (*b).group.group;
             }
             8 => {
-                return (*a).ptr.flags as ::core::ffi::c_uint
-                    == (*b).ptr.flags as ::core::ffi::c_uint
-                    && (*a).ptr.x as ::core::ffi::c_int == (*b).ptr.x as ::core::ffi::c_int
-                    && (*a).ptr.y as ::core::ffi::c_int == (*b).ptr.y as ::core::ffi::c_int;
+                return (*a).ptr.flags as u32 == (*b).ptr.flags as u32
+                    && (*a).ptr.x as i32 == (*b).ptr.x as i32
+                    && (*a).ptr.y as i32 == (*b).ptr.y as i32;
             }
             9 | 10 => {
-                return (*a).btn.flags as ::core::ffi::c_uint
-                    == (*b).btn.flags as ::core::ffi::c_uint
-                    && (*a).btn.button as ::core::ffi::c_int
-                        == (*b).btn.button as ::core::ffi::c_int
-                    && (*a).btn.count as ::core::ffi::c_int
-                        == (*b).btn.count as ::core::ffi::c_int;
+                return (*a).btn.flags as u32 == (*b).btn.flags as u32
+                    && (*a).btn.button as i32 == (*b).btn.button as i32
+                    && (*a).btn.count as i32 == (*b).btn.count as i32;
             }
             11 => {
-                return (*a).dflt.flags as ::core::ffi::c_uint
-                    == (*b).dflt.flags as ::core::ffi::c_uint
-                    && (*a).dflt.value as ::core::ffi::c_int
-                        == (*b).dflt.value as ::core::ffi::c_int;
+                return (*a).dflt.flags as u32 == (*b).dflt.flags as u32
+                    && (*a).dflt.value as i32 == (*b).dflt.value as i32;
             }
             12 => return true_0 != 0,
             13 => {
-                return (*a).screen.flags as ::core::ffi::c_uint
-                    == (*b).screen.flags as ::core::ffi::c_uint
-                    && (*a).screen.screen as ::core::ffi::c_int
-                        == (*b).screen.screen as ::core::ffi::c_int;
+                return (*a).screen.flags as u32 == (*b).screen.flags as u32
+                    && (*a).screen.screen as i32 == (*b).screen.screen as i32;
             }
             14 | 15 => {
-                return (*a).ctrls.flags as ::core::ffi::c_uint
-                    == (*b).ctrls.flags as ::core::ffi::c_uint
-                    && (*a).ctrls.ctrls as ::core::ffi::c_uint
-                        == (*b).ctrls.ctrls as ::core::ffi::c_uint;
+                return (*a).ctrls.flags as u32 == (*b).ctrls.flags as u32
+                    && (*a).ctrls.ctrls as u32 == (*b).ctrls.ctrls as u32;
             }
             16 => {
                 return (*a).redirect.keycode == (*b).redirect.keycode
@@ -965,8 +947,7 @@ pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xk
             }
             17 | 18 => return true_0 != 0,
             20 => {
-                return (*a).internal.flags as ::core::ffi::c_uint
-                    == (*b).internal.flags as ::core::ffi::c_uint
+                return (*a).internal.flags as u32 == (*b).internal.flags as u32
                     && (*a).internal.c2rust_unnamed.clear_latched_mods
                         == (*b).internal.c2rust_unnamed.clear_latched_mods;
             }
@@ -975,7 +956,7 @@ pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xk
                     &raw const (*a).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
                     &raw const (*b).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
                     ::core::mem::size_of::<[uint8_t; 7]>() as usize,
-                ) == 0 as ::core::ffi::c_int;
+                ) == 0 as i32;
             }
         };
     }
@@ -986,14 +967,14 @@ pub unsafe extern "C" fn XkbLevelsSameActions(
     mut b: *const xkb_level,
 ) -> bool {
     unsafe {
-        if (*a).num_actions as ::core::ffi::c_int != (*b).num_actions as ::core::ffi::c_int {
+        if (*a).num_actions as i32 != (*b).num_actions as i32 {
             return false_0 != 0;
         }
-        if (*a).num_actions as ::core::ffi::c_int <= 1 as ::core::ffi::c_int {
+        if (*a).num_actions as i32 <= 1 as i32 {
             return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
         }
         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-        while (k as ::core::ffi::c_int) < (*a).num_actions as ::core::ffi::c_int {
+        while (k as i32) < (*a).num_actions as i32 {
             if !action_equal(
                 (*a).a.actions.offset(k as isize) as *mut xkb_action,
                 (*b).a.actions.offset(k as isize) as *mut xkb_action,
@@ -1007,7 +988,7 @@ pub unsafe extern "C" fn XkbLevelsSameActions(
 }
 #[no_mangle]
 pub unsafe extern "C" fn XkbWrapGroupIntoRange(
-    mut group: int32_t,
+    mut group: i32,
     mut num_groups: xkb_layout_index_t,
     mut out_of_range_group_policy: xkb_layout_out_of_range_policy,
     mut out_of_range_group_number: xkb_layout_index_t,
@@ -1016,10 +997,10 @@ pub unsafe extern "C" fn XkbWrapGroupIntoRange(
         if num_groups == 0 as xkb_layout_index_t {
             return XKB_LAYOUT_INVALID as xkb_layout_index_t;
         }
-        if group >= 0 as int32_t && (group as xkb_layout_index_t) < num_groups {
+        if group >= 0 as i32 && (group as xkb_layout_index_t) < num_groups {
             return group as xkb_layout_index_t;
         }
-        match out_of_range_group_policy as ::core::ffi::c_uint {
+        match out_of_range_group_policy as u32 {
             2 => {
                 if out_of_range_group_number >= num_groups {
                     return 0 as xkb_layout_index_t;
@@ -1027,18 +1008,18 @@ pub unsafe extern "C" fn XkbWrapGroupIntoRange(
                 return out_of_range_group_number;
             }
             1 => {
-                if group < 0 as int32_t {
+                if group < 0 as i32 {
                     return 0 as xkb_layout_index_t;
                 } else {
                     return num_groups.wrapping_sub(1 as xkb_layout_index_t);
                 }
             }
             0 | _ => {
-                let rem: int32_t = group % num_groups as int32_t;
-                return (if rem >= 0 as int32_t {
+                let rem: i32 = group % num_groups as i32;
+                return (if rem >= 0 as i32 {
                     rem
                 } else {
-                    rem + num_groups as int32_t
+                    rem + num_groups as i32
                 }) as xkb_layout_index_t;
             }
         };
@@ -1057,7 +1038,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_actions_by_level(
         let mut c2rust_current_block: u64;
         if !key.is_null() {
             layout = XkbWrapGroupIntoRange(
-                layout as int32_t,
+                layout as i32,
                 (*key).num_groups(),
                 (*key).out_of_range_group_policy(),
                 (*key).out_of_range_group_number(),
@@ -1068,7 +1049,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_actions_by_level(
                         .levels
                         .offset(level as isize))
                     .num_actions;
-                    match count as ::core::ffi::c_int {
+                    match count as i32 {
                         0 => {}
                         1 => {
                             c2rust_current_block = 945040705843674513;

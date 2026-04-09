@@ -7,283 +7,282 @@ pub mod stdint_uintn_h {
 }
 
 pub mod xkbcommon_h {
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
 }
 pub mod utils_numbers_h {
     pub static mut digits__: [::core::ffi::c_uchar; 256] = [
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        1 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        2 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        3 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        4 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        5 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        6 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        7 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        8 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        9 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        10 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        11 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        12 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        13 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        14 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        15 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        10 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        11 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        12 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        13 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        14 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        15 as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
-        0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0 as i32 as ::core::ffi::c_uchar,
+        1 as i32 as ::core::ffi::c_uchar,
+        2 as i32 as ::core::ffi::c_uchar,
+        3 as i32 as ::core::ffi::c_uchar,
+        4 as i32 as ::core::ffi::c_uchar,
+        5 as i32 as ::core::ffi::c_uchar,
+        6 as i32 as ::core::ffi::c_uchar,
+        7 as i32 as ::core::ffi::c_uchar,
+        8 as i32 as ::core::ffi::c_uchar,
+        9 as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        10 as i32 as ::core::ffi::c_uchar,
+        11 as i32 as ::core::ffi::c_uchar,
+        12 as i32 as ::core::ffi::c_uchar,
+        13 as i32 as ::core::ffi::c_uchar,
+        14 as i32 as ::core::ffi::c_uchar,
+        15 as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        10 as i32 as ::core::ffi::c_uchar,
+        11 as i32 as ::core::ffi::c_uchar,
+        12 as i32 as ::core::ffi::c_uchar,
+        13 as i32 as ::core::ffi::c_uchar,
+        14 as i32 as ::core::ffi::c_uchar,
+        15 as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
+        0xff as i32 as ::core::ffi::c_uchar,
     ];
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
-    ) -> ::core::ffi::c_int {
+    ) -> i32 {
         unsafe {
             let mut result: u32 = 0 as u32;
             let mut i: usize = 0 as usize;
             while i < len
-                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
-                    as ::core::ffi::c_uint)
-                    < 16 as ::core::ffi::c_uint
-                && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
+                && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32)
+                    < 16 as u32
+                && result <= 4294967295 as u32 >> 4 as i32
             {
                 result = result.wrapping_mul(16 as u32).wrapping_add(
                     digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
@@ -292,9 +291,9 @@ pub mod utils_numbers_h {
             }
             *out = result as u32;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
-                i as ::core::ffi::c_int
+                i as i32
             } else {
-                -1 as ::core::ffi::c_int
+                -1 as i32
             };
         }
     }
@@ -303,16 +302,16 @@ pub mod utils_numbers_h {
     use super::utils_h::is_xdigit;
 }
 pub mod stdint_h {
-    pub const SIZE_MAX: ::core::ffi::c_ulong = 18446744073709551615 as ::core::ffi::c_ulong;
+    pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
     }
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -322,12 +321,9 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
-            return ch as ::core::ffi::c_int >= '0' as i32
-                && ch as ::core::ffi::c_int <= '9' as i32
-                || ch as ::core::ffi::c_int >= 'a' as i32
-                    && ch as ::core::ffi::c_int <= 'f' as i32
-                || ch as ::core::ffi::c_int >= 'A' as i32
-                    && ch as ::core::ffi::c_int <= 'F' as i32;
+            return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
+                || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
+                || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
         }
     }
 }
@@ -382,9 +378,7 @@ pub unsafe extern "C" fn xkb_keymap_supported_formats(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {
-        if (format as ::core::ffi::c_uint)
-            < keymap_formats[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_uint
-        {
+        if (format as u32) < keymap_formats[0 as i32 as usize] as u32 {
             return false_0 != 0;
         }
         let mut k: usize = 0 as usize;
@@ -392,10 +386,10 @@ pub unsafe extern "C" fn xkb_keymap_is_supported_format(mut format: xkb_keymap_f
             < (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
                 .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize)
         {
-            if keymap_formats[k as usize] as ::core::ffi::c_uint == format as ::core::ffi::c_uint {
+            if keymap_formats[k as usize] as u32 == format as u32 {
                 return true_0 != 0;
             }
-            if keymap_formats[k as usize] as ::core::ffi::c_uint > format as ::core::ffi::c_uint {
+            if keymap_formats[k as usize] as u32 > format as u32 {
                 return false_0 != 0;
             }
             k = k.wrapping_add(1);
@@ -410,12 +404,8 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keym
             return 0 as xkb_keymap_format;
         }
         let mut format: u32 = 0 as u32;
-        if parse_hex_to_uint32_t(raw, SIZE_MAX as usize, &raw mut format) > 0 as ::core::ffi::c_int
-        {
-            return (if xkb_keymap_is_supported_format(format as xkb_keymap_format)
-                as ::core::ffi::c_int
-                != 0
-            {
+        if parse_hex_to_uint32_t(raw, SIZE_MAX as usize, &raw mut format) > 0 as i32 {
+            return (if xkb_keymap_is_supported_format(format as xkb_keymap_format) as i32 != 0 {
                 format
             } else {
                 0 as u32
@@ -426,7 +416,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keym
                 < (::core::mem::size_of::<[format_label; 4]>() as usize)
                     .wrapping_div(::core::mem::size_of::<format_label>() as usize)
             {
-                if strcmp(raw, keymap_formats_labels[k as usize].label) == 0 as ::core::ffi::c_int {
+                if strcmp(raw, keymap_formats_labels[k as usize].label) == 0 as i32 {
                     return keymap_formats_labels[k as usize].format;
                 }
                 k = k.wrapping_add(1);
@@ -438,9 +428,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keym
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
     unsafe {
-        if (format as ::core::ffi::c_uint)
-            < keymap_formats_labels[0 as ::core::ffi::c_int as usize].format as ::core::ffi::c_uint
-        {
+        if (format as u32) < keymap_formats_labels[0 as i32 as usize].format as u32 {
             return ::core::ptr::null::<i8>();
         }
         let mut k: usize = 0 as usize;
@@ -448,14 +436,10 @@ pub unsafe extern "C" fn xkb_keymap_get_format_label(mut format: xkb_keymap_form
             < (::core::mem::size_of::<[format_label; 4]>() as usize)
                 .wrapping_div(::core::mem::size_of::<format_label>() as usize)
         {
-            if keymap_formats_labels[k as usize].format as ::core::ffi::c_uint
-                == format as ::core::ffi::c_uint
-            {
+            if keymap_formats_labels[k as usize].format as u32 == format as u32 {
                 return keymap_formats_labels[k as usize].label;
             }
-            if keymap_formats_labels[k as usize].format as ::core::ffi::c_uint
-                > format as ::core::ffi::c_uint
-            {
+            if keymap_formats_labels[k as usize].format as u32 > format as u32 {
                 return ::core::ptr::null::<i8>();
             }
             k = k.wrapping_add(1);

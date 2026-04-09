@@ -137,7 +137,7 @@ pub struct stringpool_t {
 pub const MAX_HASH_VALUE: C2Rust_Unnamed = 72;
 pub const MIN_WORD_LENGTH: C2Rust_Unnamed = 3;
 pub const MAX_WORD_LENGTH: C2Rust_Unnamed = 21;
-pub type C2Rust_Unnamed = ::core::ffi::c_uint;
+pub type C2Rust_Unnamed = u32;
 pub const MIN_HASH_VALUE: C2Rust_Unnamed = 3;
 pub const TOTAL_KEYWORDS: C2Rust_Unnamed = 45;
 static mut wordlist: [keyword_tok; 73] = [keyword_tok { name: 0, tok: 0 }; 73];
@@ -424,7 +424,7 @@ unsafe extern "C" fn gperf_case_memcmp(
     }
 }
 #[inline]
-unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> ::core::ffi::c_uint {
+unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
     unsafe {
         static mut asso_values: [::core::ffi::c_uchar; 256] = [
             73 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -684,7 +684,7 @@ unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> :
             73 as ::core::ffi::c_int as ::core::ffi::c_uchar,
             73 as ::core::ffi::c_int as ::core::ffi::c_uchar,
         ];
-        let mut hval: ::core::ffi::c_uint = len as ::core::ffi::c_uint;
+        let mut hval: u32 = len as u32;
         let mut c2rust_current_block_2: u64;
         match hval {
             4 | 3 | 2 => {
@@ -696,8 +696,7 @@ unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> :
             _ => {
                 hval = hval.wrapping_add(
                     asso_values[*str.offset(4 as ::core::ffi::c_int as isize)
-                        as ::core::ffi::c_uchar as usize]
-                        as ::core::ffi::c_uint,
+                        as ::core::ffi::c_uchar as usize] as u32,
                 );
                 c2rust_current_block_2 = 14734602837567950927;
             }
@@ -706,8 +705,7 @@ unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> :
             14734602837567950927 => {
                 hval = hval.wrapping_add(
                     asso_values[*str.offset(1 as ::core::ffi::c_int as isize)
-                        as ::core::ffi::c_uchar as usize]
-                        as ::core::ffi::c_uint,
+                        as ::core::ffi::c_uchar as usize] as u32,
                 );
             }
             _ => {}
@@ -715,7 +713,7 @@ unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> :
         hval = hval.wrapping_add(
             asso_values
                 [*str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar as usize]
-                as ::core::ffi::c_uint,
+                as u32,
         );
         return hval;
     }
@@ -865,8 +863,8 @@ unsafe extern "C" fn keyword_gperf_lookup(
         if len <= MAX_WORD_LENGTH as ::core::ffi::c_int as usize
             && len >= MIN_WORD_LENGTH as ::core::ffi::c_int as usize
         {
-            let mut key: ::core::ffi::c_uint = keyword_gperf_hash(str, len);
-            if key <= MAX_HASH_VALUE as ::core::ffi::c_int as ::core::ffi::c_uint {
+            let mut key: u32 = keyword_gperf_hash(str, len);
+            if key <= MAX_HASH_VALUE as ::core::ffi::c_int as u32 {
                 if len == lengthtable[key as usize] as usize {
                     let mut s: *const i8 = (&raw const stringpool_contents as *const i8)
                         .offset(wordlist[key as usize].name as isize);

@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -13,7 +13,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -23,7 +23,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -65,7 +65,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -77,7 +77,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -114,7 +114,7 @@ pub mod string_h {
     extern "C" {
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
+            __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
     }
@@ -147,14 +147,14 @@ pub unsafe extern "C" fn scanner_token_location(mut s: *mut scanner) -> scanner_
             ptr = memchr(
                 ptr as *const ::core::ffi::c_void,
                 '\n' as i32,
-                last.offset_from(ptr) as ::core::ffi::c_long as usize,
+                last.offset_from(ptr) as i64 as usize,
             ) as *const i8;
             if ptr.is_null() {
                 break;
             }
             line = line.wrapping_add(1);
             ptr = ptr.offset(1);
-            line_pos = ptr.offset_from((*s).s) as ::core::ffi::c_long as usize;
+            line_pos = ptr.offset_from((*s).s) as i64 as usize;
         }
         if line == (*s).cached_loc.line {
             column = (*s)

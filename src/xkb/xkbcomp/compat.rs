@@ -2,12 +2,12 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
+    pub const __CHAR_BIT__: i32 = 8 as i32;
 }
 pub mod types_h {
     pub type __int8_t = i8;
@@ -19,10 +19,10 @@ pub mod types_h {
     pub type __int64_t = i64;
 }
 pub mod stdint_intn_h {
-    pub type int8_t = __int8_t;
-    pub type int16_t = __int16_t;
-    pub type int32_t = __int32_t;
-    pub type int64_t = __int64_t;
+    pub type i8 = __int8_t;
+    pub type i16 = __int16_t;
+    pub type i32 = __int32_t;
+    pub type i64 = __int64_t;
     use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
 }
 pub mod stdint_uintn_h {
@@ -36,7 +36,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -46,7 +46,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -87,7 +87,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -95,14 +95,14 @@ pub mod context_h {
 }
 pub mod atom_h {
     pub type xkb_atom_t = darray_size_t;
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
     extern "C" {
         pub type atom_table;
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[inline]
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
@@ -130,7 +130,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -142,11 +142,11 @@ pub mod xkbcommon_h {
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
     pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
     pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
@@ -159,18 +159,18 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     pub type xkb_layout_mask_t = u32;
     pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
     pub type xkb_led_mask_t = u32;
-    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
     use super::context_h::xkb_context;
     use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> ::core::ffi::c_int;
+        pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> i32;
     }
 }
 pub mod keymap_h {
@@ -178,7 +178,7 @@ pub mod keymap_h {
     #[repr(C)]
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -218,7 +218,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -269,10 +269,10 @@ pub mod keymap_h {
     pub union C2Rust_Unnamed_2 {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
     pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
@@ -317,7 +317,7 @@ pub mod keymap_h {
         pub count: uint8_t,
         pub button: uint8_t,
     }
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
     pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
@@ -337,22 +337,22 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -361,7 +361,7 @@ pub mod keymap_h {
         pub flags: xkb_action_flags,
         pub ctrls: xkb_action_controls,
     }
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
     pub const CONTROL_ALL: xkb_action_controls = 2088959;
@@ -391,7 +391,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -407,7 +407,7 @@ pub mod keymap_h {
         pub mask: xkb_mod_mask_t,
     }
     pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     pub const MATCH_ALL: xkb_match_operation = 3;
     pub const MATCH_ANY: xkb_match_operation = 2;
@@ -567,7 +567,7 @@ pub mod keymap_h {
     }
     pub type xkb_keysym_count_t = uint16_t;
     pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
     pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
@@ -587,11 +587,11 @@ pub mod keymap_h {
         pub ctrls: xkb_action_controls,
     }
     pub type xkb_overlay_index_t = uint8_t;
-    pub type C2Rust_Unnamed_13 = ::core::ffi::c_uint;
+    pub type C2Rust_Unnamed_13 = u32;
     pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 0;
     pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 1;
     pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_13 = 0;
-    pub type C2Rust_Unnamed_14 = ::core::ffi::c_uint;
+    pub type C2Rust_Unnamed_14 = u32;
     pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_14 = 0;
     pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_14 = 0;
     pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_14 = 4294967295;
@@ -599,14 +599,14 @@ pub mod keymap_h {
     pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
         .wrapping_mul(CHAR_BIT as usize)
         as xkb_led_index_t;
-    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as ::core::ffi::c_int as xkb_mod_mask_t;
-    pub const MAX_ACTIONS_PER_LEVEL: ::core::ffi::c_int = UINT16_MAX;
+    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
+    pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::limits_h::CHAR_BIT;
     use super::stdint_h::UINT16_MAX;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -618,7 +618,7 @@ pub mod keymap_h {
     }
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -626,7 +626,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -714,7 +714,7 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod ast_h {
-    pub type xkb_file_type = ::core::ffi::c_uint;
+    pub type xkb_file_type = u32;
     pub const FILE_TYPE_INVALID: xkb_file_type = 7;
     pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
     pub const FILE_TYPE_RULES: xkb_file_type = 6;
@@ -726,7 +726,7 @@ pub mod ast_h {
     pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
     pub const FILE_TYPE_TYPES: xkb_file_type = 1;
     pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -765,7 +765,7 @@ pub mod ast_h {
     pub const STMT_KEYCODE: stmt_type = 2;
     pub const STMT_INCLUDE: stmt_type = 1;
     pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = ::core::ffi::c_uint;
+    pub type merge_mode = u32;
     pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
     pub const MERGE_REPLACE: merge_mode = 3;
     pub const MERGE_OVERRIDE: merge_mode = 2;
@@ -878,7 +878,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -937,7 +937,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub name: *mut i8,
     }
-    pub type xkb_map_flags = ::core::ffi::c_uint;
+    pub type xkb_map_flags = u32;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
     pub const MAP_HAS_FN: xkb_map_flags = 64;
     pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
@@ -957,7 +957,7 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
         pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
@@ -978,7 +978,7 @@ pub mod text_h {
         pub fn LookupString(
             tab: *const LookupEntry,
             string: *const i8,
-            value_rtrn: *mut ::core::ffi::c_uint,
+            value_rtrn: *mut u32,
         ) -> bool;
         pub static ctrlMaskNames: [LookupEntry; 0];
         pub static modComponentMaskNames: [LookupEntry; 0];
@@ -996,11 +996,11 @@ pub mod text_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    pub type xkb_parser_error = ::core::ffi::c_uint;
+    pub type xkb_parser_error = u32;
     pub const PARSER_FATAL_ERROR: xkb_parser_error = 2;
     pub const PARSER_RECOVERABLE_ERROR: xkb_parser_error = 1;
     pub const PARSER_SUCCESS: xkb_parser_error = 0;
-    pub type xkb_parser_strict_flags = ::core::ffi::c_uint;
+    pub type xkb_parser_strict_flags = u32;
     pub const PARSER_V2_LAX_FLAGS: xkb_parser_strict_flags = 0;
     pub const PARSER_V2_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
     pub const PARSER_V1_LAX_FLAGS: xkb_parser_strict_flags = 16379;
@@ -1071,10 +1071,10 @@ pub mod xkbcomp_priv_h {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] The %s %s field is not an array; Ignoring illegal assignment in %s\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 type_0,
                 field,
                 name,
@@ -1095,10 +1095,10 @@ pub mod xkbcomp_priv_h {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] The %s %s field must be a %s; Ignoring illegal assignment in %s\n\0"
                     .as_ptr() as *const i8,
-                code as ::core::ffi::c_uint,
+                code as u32,
                 type_0,
                 field,
                 wanted,
@@ -1118,7 +1118,7 @@ pub mod xkbcomp_priv_h {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Unknown %s field \"%s\" in %s; Ignoring assignment to unknown field in %s\n\0"
                     .as_ptr() as *const i8,
                 type_0,
@@ -1190,12 +1190,7 @@ pub mod action_h {
 pub mod stdio_h {
 
     extern "C" {
-        pub fn snprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
+        pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
     }
 }
 pub mod stdlib_h {
@@ -1215,7 +1210,7 @@ pub mod string_h {
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
+            __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
@@ -1225,7 +1220,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
+            return istrcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
@@ -1241,11 +1236,11 @@ pub mod utils_h {
 
     use super::string_h::strdup;
     extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
     }
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
+    pub const CHAR_BIT: i32 = __CHAR_BIT__;
     use super::internal::__CHAR_BIT__;
 }
 pub mod vmod_h {
@@ -1341,10 +1336,7 @@ pub mod include_h {
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
-        pub fn ExceedsIncludeMaxDepth(
-            ctx: *mut xkb_context,
-            include_depth: ::core::ffi::c_uint,
-        ) -> bool;
+        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
         pub fn ProcessIncludeFile(
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
@@ -1355,7 +1347,7 @@ pub mod include_h {
     }
 }
 pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -1364,11 +1356,11 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdint_h {
-    pub const UINT16_MAX: ::core::ffi::c_int = 65535 as ::core::ffi::c_int;
+    pub const UINT16_MAX: i32 = 65535 as i32;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub use self::__stddef_null_h::{NULL, NULL_0};
 
@@ -1483,7 +1475,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT16_MAX;
-pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{free, realloc};
@@ -1529,8 +1521,8 @@ pub use self::xkbcomp_priv_h::{
 #[repr(C)]
 pub struct CompatInfo {
     pub name: *mut i8,
-    pub errorCount: ::core::ffi::c_int,
-    pub include_depth: ::core::ffi::c_uint,
+    pub errorCount: i32,
+    pub include_depth: u32,
     pub default_interp: SymInterpInfo,
     pub interps: C2Rust_Unnamed_18,
     pub default_led: LedInfo,
@@ -1548,7 +1540,7 @@ pub struct LedInfo {
     pub merge: merge_mode,
     pub led: xkb_led,
 }
-pub type led_field = ::core::ffi::c_uint;
+pub type led_field = u32;
 pub const LED_FIELD_CTRLS: led_field = 4;
 pub const LED_FIELD_GROUPS: led_field = 2;
 pub const LED_FIELD_MODS: led_field = 1;
@@ -1566,7 +1558,7 @@ pub struct SymInterpInfo {
     pub merge: merge_mode,
     pub interp: xkb_sym_interpret,
 }
-pub type si_field = ::core::ffi::c_uint;
+pub type si_field = u32;
 pub const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
 pub const SI_FIELD_AUTO_REPEAT: si_field = 4;
 pub const SI_FIELD_ACTION: si_field = 2;
@@ -1703,13 +1695,13 @@ unsafe extern "C" fn InitLED(mut info: *mut LedInfo) {
 unsafe extern "C" fn InitCompatInfo(
     mut info: *mut CompatInfo,
     mut keymap_info: *const xkb_keymap_info,
-    mut include_depth: ::core::ffi::c_uint,
+    mut include_depth: u32,
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
         memset(
             info as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
+            0 as i32,
             ::core::mem::size_of::<CompatInfo>() as usize,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
@@ -1719,11 +1711,7 @@ unsafe extern "C" fn InitCompatInfo(
             &raw const (*keymap_info).keymap,
             &raw mut (*info).default_actions,
         );
-        InitVMods(
-            &raw mut (*info).mods,
-            mods,
-            include_depth > 0 as ::core::ffi::c_uint,
-        );
+        InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
         InitInterp(&raw mut (*info).default_interp);
         InitLED(&raw mut (*info).default_led);
     }
@@ -1744,17 +1732,13 @@ unsafe extern "C" fn FindMatchingInterp(
     unsafe {
         let mut old: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
         if !(*info).interps.item.is_null() {
-            old = (*info)
-                .interps
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut SymInterpInfo;
+            old = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
             while old
                 < (*info).interps.item.offset((*info).interps.size as isize) as *mut SymInterpInfo
             {
                 if (*old).interp.sym == (*new).interp.sym
                     && (*old).interp.mods == (*new).interp.mods
-                    && (*old).interp.match_0 as ::core::ffi::c_uint
-                        == (*new).interp.match_0 as ::core::ffi::c_uint
+                    && (*old).interp.match_0 as u32 == (*new).interp.match_0 as u32
                 {
                     return old;
                 }
@@ -1773,13 +1757,12 @@ unsafe extern "C" fn UseNewInterpField(
     mut collide: *mut si_field,
 ) -> bool {
     unsafe {
-        if old as ::core::ffi::c_uint & field as ::core::ffi::c_uint == 0 {
-            return new as ::core::ffi::c_uint & field as ::core::ffi::c_uint != 0;
+        if old as u32 & field as u32 == 0 {
+            return new as u32 & field as u32 != 0;
         }
-        if new as ::core::ffi::c_uint & field as ::core::ffi::c_uint != 0 {
+        if new as u32 & field as u32 != 0 {
             if report {
-                *collide =
-                    (*collide as ::core::ffi::c_uint | field as ::core::ffi::c_uint) as si_field;
+                *collide = (*collide as u32 | field as u32) as si_field;
             }
             return clobber;
         }
@@ -1793,22 +1776,16 @@ unsafe extern "C" fn MergeInterp(
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        let clobber: bool = (*new).merge as ::core::ffi::c_uint
-            != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
-        let verbosity: ::core::ffi::c_int =
-            xkb_context_get_log_verbosity((*info).ctx) as ::core::ffi::c_int;
-        let report: bool = same_file as ::core::ffi::c_int != 0
-            && verbosity > 0 as ::core::ffi::c_int
-            || verbosity > 9 as ::core::ffi::c_int;
+        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
+        let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         let mut collide: si_field = 0 as si_field;
-        if (*new).merge as ::core::ffi::c_uint
-            == MERGE_REPLACE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
             if report {
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Multiple definitions for \"%s\"; Earlier interpretation ignored\n\0".as_ptr()
                         as *const i8,
                     siText(new, info),
@@ -1826,9 +1803,8 @@ unsafe extern "C" fn MergeInterp(
             &raw mut collide,
         ) {
             (*old).interp.virtual_mod = (*new).interp.virtual_mod;
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | SI_FIELD_VIRTUAL_MOD as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*old).defined =
+                ((*old).defined as u32 | SI_FIELD_VIRTUAL_MOD as i32 as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_ACTION,
@@ -1838,11 +1814,11 @@ unsafe extern "C" fn MergeInterp(
             report,
             &raw mut collide,
         ) {
-            if (*old).interp.num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+            if (*old).interp.num_actions as i32 > 1 as i32 {
                 free((*old).interp.a.actions as *mut ::core::ffi::c_void);
             }
             (*old).interp.num_actions = (*new).interp.num_actions;
-            if (*new).interp.num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+            if (*new).interp.num_actions as i32 > 1 as i32 {
                 (*old).interp.a.actions = (*new).interp.a.actions;
                 (*new).interp.a.action = xkb_action {
                     type_0: ACTION_TYPE_NONE,
@@ -1851,9 +1827,7 @@ unsafe extern "C" fn MergeInterp(
             } else {
                 (*old).interp.a.action = (*new).interp.a.action;
             }
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | SI_FIELD_ACTION as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*old).defined = ((*old).defined as u32 | SI_FIELD_ACTION as i32 as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_AUTO_REPEAT,
@@ -1864,9 +1838,8 @@ unsafe extern "C" fn MergeInterp(
             &raw mut collide,
         ) {
             (*old).interp.set_repeat((*new).interp.repeat() as bool);
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | SI_FIELD_AUTO_REPEAT as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*old).defined =
+                ((*old).defined as u32 | SI_FIELD_AUTO_REPEAT as i32 as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_LEVEL_ONE_ONLY,
@@ -1877,19 +1850,18 @@ unsafe extern "C" fn MergeInterp(
             &raw mut collide,
         ) {
             (*old).interp.level_one_only = (*new).interp.level_one_only;
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | SI_FIELD_LEVEL_ONE_ONLY as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*old).defined =
+                ((*old).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as i32 as u32) as si_field;
         }
         if collide as u64 != 0 {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Multiple interpretations of \"%s\"; Using %s definition for duplicate fields\n\0"
                     .as_ptr() as *const i8,
                 siText(old, info),
-                if clobber as ::core::ffi::c_int != 0 {
+                if clobber as i32 != 0 {
                     b"last\0".as_ptr() as *const i8
                 } else {
                     b"first\0".as_ptr() as *const i8
@@ -1943,11 +1915,9 @@ unsafe extern "C" fn ResolveStateAndPredicate(
             return true_0 != 0;
         }
         *pred_rtrn = MATCH_EXACTLY;
-        if (*expr).common.type_0 as ::core::ffi::c_uint
-            == STMT_EXPR_ACTION_DECL as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*expr).common.type_0 as u32 == STMT_EXPR_ACTION_DECL as i32 as u32 {
             let mut pred_txt: *const i8 = xkb_atom_text((*info).ctx, (*expr).action.name);
-            let mut pred: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+            let mut pred: u32 = 0 as u32;
             if !LookupString(
                 &raw const symInterpretMatchMaskNames as *const LookupEntry,
                 pred_txt,
@@ -1958,7 +1928,7 @@ unsafe extern "C" fn ResolveStateAndPredicate(
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Illegal modifier predicate \"%s\"; Ignored\n\0".as_ptr() as *const i8,
                     pred_txt,
                 );
@@ -1966,12 +1936,10 @@ unsafe extern "C" fn ResolveStateAndPredicate(
             }
             *pred_rtrn = pred as xkb_match_operation;
             expr = (*expr).action.args as *mut ExprDef;
-        } else if (*expr).common.type_0 as ::core::ffi::c_uint
-            == STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        } else if (*expr).common.type_0 as u32 == STMT_EXPR_IDENT as i32 as u32 {
             let mut pred_txt_0: *const i8 = xkb_atom_text((*info).ctx, (*expr).ident.ident);
             if !pred_txt_0.is_null()
-                && istreq(pred_txt_0, b"any\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                && istreq(pred_txt_0, b"any\0".as_ptr() as *const i8) as i32 != 0
             {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -1996,13 +1964,12 @@ unsafe extern "C" fn UseNewLEDField(
     mut collide: *mut led_field,
 ) -> bool {
     unsafe {
-        if old as ::core::ffi::c_uint & field as ::core::ffi::c_uint == 0 {
-            return new as ::core::ffi::c_uint & field as ::core::ffi::c_uint != 0;
+        if old as u32 & field as u32 == 0 {
+            return new as u32 & field as u32 != 0;
         }
-        if new as ::core::ffi::c_uint & field as ::core::ffi::c_uint != 0 {
+        if new as u32 & field as u32 != 0 {
             if report {
-                *collide =
-                    (*collide as ::core::ffi::c_uint | field as ::core::ffi::c_uint) as led_field;
+                *collide = (*collide as u32 | field as u32) as led_field;
             }
             return clobber;
         }
@@ -2017,35 +1984,25 @@ unsafe extern "C" fn MergeLedMap(
 ) -> bool {
     unsafe {
         let mut collide: led_field = 0 as led_field;
-        let clobber: bool = (*new).merge as ::core::ffi::c_uint
-            != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
-        let verbosity: ::core::ffi::c_int =
-            xkb_context_get_log_verbosity((*info).ctx) as ::core::ffi::c_int;
-        let report: bool = same_file as ::core::ffi::c_int != 0
-            && verbosity > 0 as ::core::ffi::c_int
-            || verbosity > 9 as ::core::ffi::c_int;
+        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
+        let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         if (*old).led.mods.mods == (*new).led.mods.mods
-            && (*old).led.pending_groups() as ::core::ffi::c_int
-                == (*new).led.pending_groups() as ::core::ffi::c_int
+            && (*old).led.pending_groups() as i32 == (*new).led.pending_groups() as i32
             && (*old).led.groups == (*new).led.groups
-            && (*old).led.ctrls as ::core::ffi::c_uint == (*new).led.ctrls as ::core::ffi::c_uint
-            && (*old).led.which_mods as ::core::ffi::c_uint
-                == (*new).led.which_mods as ::core::ffi::c_uint
-            && (*old).led.which_groups() as ::core::ffi::c_int
-                == (*new).led.which_groups() as ::core::ffi::c_int
+            && (*old).led.ctrls as u32 == (*new).led.ctrls as u32
+            && (*old).led.which_mods as u32 == (*new).led.which_mods as u32
+            && (*old).led.which_groups() as i32 == (*new).led.which_groups() as i32
         {
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | (*new).defined as ::core::ffi::c_uint) as led_field;
+            (*old).defined = ((*old).defined as u32 | (*new).defined as u32) as led_field;
             return true_0 != 0;
         }
-        if (*new).merge as ::core::ffi::c_uint
-            == MERGE_REPLACE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
             if report {
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Map for indicator %s redefined; Earlier definition ignored\n\0".as_ptr()
                         as *const i8,
                     LEDText(info, old),
@@ -2065,9 +2022,7 @@ unsafe extern "C" fn MergeLedMap(
         ) {
             (*old).led.which_mods = (*new).led.which_mods;
             (*old).led.mods = (*new).led.mods;
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | LED_FIELD_MODS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_MODS as i32 as u32) as led_field;
         }
         if UseNewLEDField(
             LED_FIELD_GROUPS,
@@ -2084,9 +2039,7 @@ unsafe extern "C" fn MergeLedMap(
             (*old)
                 .led
                 .set_pending_groups((*new).led.pending_groups() as bool);
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | LED_FIELD_GROUPS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_GROUPS as i32 as u32) as led_field;
         }
         if UseNewLEDField(
             LED_FIELD_CTRLS,
@@ -2097,19 +2050,17 @@ unsafe extern "C" fn MergeLedMap(
             &raw mut collide,
         ) {
             (*old).led.ctrls = (*new).led.ctrls;
-            (*old).defined = ((*old).defined as ::core::ffi::c_uint
-                | LED_FIELD_CTRLS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
         }
         if collide as u64 != 0 {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Map for indicator %s redefined; Using %s definition for duplicate fields\n\0"
                     .as_ptr() as *const i8,
                 LEDText(info, old),
-                if clobber as ::core::ffi::c_int != 0 {
+                if clobber as i32 != 0 {
                     b"last\0".as_ptr() as *const i8
                 } else {
                     b"first\0".as_ptr() as *const i8
@@ -2139,7 +2090,7 @@ unsafe extern "C" fn AddLedMap(
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Too many LEDs defined (maximum %u)\n\0".as_ptr() as *const i8,
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
@@ -2158,7 +2109,7 @@ unsafe extern "C" fn MergeIncludedCompatMaps(
     mut merge: merge_mode,
 ) {
     unsafe {
-        if (*from).errorCount > 0 as ::core::ffi::c_int {
+        if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
             return;
         }
@@ -2180,11 +2131,7 @@ unsafe extern "C" fn MergeIncludedCompatMaps(
         } else {
             let mut si: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
             if !(*from).interps.item.is_null() {
-                si = (*from)
-                    .interps
-                    .item
-                    .offset(0 as ::core::ffi::c_int as isize)
-                    as *mut SymInterpInfo;
+                si = (*from).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
                 while si
                     < (*from).interps.item.offset((*from).interps.size as isize)
                         as *mut SymInterpInfo
@@ -2295,13 +2242,13 @@ unsafe extern "C" fn HandleIncludeCompatMap(
             ctx: ::core::ptr::null_mut::<xkb_context>(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
-            (*info).errorCount += 10 as ::core::ffi::c_int;
+            (*info).errorCount += 10 as i32;
             return false_0 != 0;
         }
         InitCompatInfo(
             &raw mut included,
             (*info).keymap_info,
-            (*info).include_depth.wrapping_add(1 as ::core::ffi::c_uint),
+            (*info).include_depth.wrapping_add(1 as u32),
             &raw mut (*info).mods,
         );
         included.name =
@@ -2387,14 +2334,14 @@ unsafe extern "C" fn HandleIncludeCompatMap(
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
-                (*info).errorCount += 10 as ::core::ffi::c_int;
+                (*info).errorCount += 10 as i32;
                 ClearCompatInfo(&raw mut included);
                 return false_0 != 0;
             }
             InitCompatInfo(
                 &raw mut next_incl,
                 (*info).keymap_info,
-                (*info).include_depth.wrapping_add(1 as ::core::ffi::c_uint),
+                (*info).include_depth.wrapping_add(1 as u32),
                 &raw mut included.mods,
             );
             next_incl.default_interp = (*info).default_interp;
@@ -2407,7 +2354,7 @@ unsafe extern "C" fn HandleIncludeCompatMap(
         }
         MergeIncludedCompatMaps(info, &raw mut included, (*include).merge);
         ClearCompatInfo(&raw mut included);
-        return (*info).errorCount == 0 as ::core::ffi::c_int;
+        return (*info).errorCount == 0 as i32;
     }
 }
 unsafe extern "C" fn SetInterpField(
@@ -2422,24 +2369,22 @@ unsafe extern "C" fn SetInterpField(
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
-            if (*value).common.type_0 as ::core::ffi::c_uint
-                == STMT_EXPR_ACTION_LIST as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                let mut num_actions: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+            if (*value).common.type_0 as u32 == STMT_EXPR_ACTION_LIST as i32 as u32 {
+                let mut num_actions: u32 = 0 as u32;
                 let mut act: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
                 while !act.is_null() {
                     num_actions = num_actions.wrapping_add(1);
                     act = (*act).common.next as *mut ExprDef;
                 }
-                if num_actions > MAX_ACTIONS_PER_LEVEL as ::core::ffi::c_uint {
+                if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
                     xkb_log(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Interpret %s has too many actions; expected max %u, got: %u\n\0".as_ptr()
                             as *const i8,
                         siText(si, info),
-                        65535 as ::core::ffi::c_int,
+                        65535 as i32,
                         num_actions,
                     );
                     return false_0 != 0;
@@ -2462,7 +2407,7 @@ unsafe extern "C" fn SetInterpField(
                         &raw mut (*info).mods,
                         act_0,
                         &raw mut toAct,
-                    ) as ::core::ffi::c_uint
+                    ) as u32
                     {
                         1 => {
                             toAct.type_0 = ACTION_TYPE_NONE;
@@ -2476,13 +2421,8 @@ unsafe extern "C" fn SetInterpField(
                         }
                         _ => {}
                     }
-                    if !(toAct.type_0 as ::core::ffi::c_uint
-                        == ACTION_TYPE_NONE as ::core::ffi::c_int as ::core::ffi::c_uint)
-                    {
-                        if (num_actions == 1 as ::core::ffi::c_uint) as ::core::ffi::c_int
-                            as ::core::ffi::c_long
-                            != 0
-                        {
+                    if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as i32 as u32) {
+                        if (num_actions == 1 as u32) as i32 as i64 != 0 {
                             (*si).interp.num_actions = 1 as xkb_action_count_t;
                             (*si).interp.a.action = toAct;
                         } else {
@@ -2514,8 +2454,7 @@ unsafe extern "C" fn SetInterpField(
                     0 => {}
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;
-                        (*si).interp.a.action =
-                            *actions.item.offset(1 as ::core::ffi::c_int as isize);
+                        (*si).interp.a.action = *actions.item.offset(1 as i32 as isize);
                         free(actions.item as *mut ::core::ffi::c_void);
                         actions.item = ::core::ptr::null_mut::<xkb_action>();
                         actions.size = 0 as darray_size_t;
@@ -2551,7 +2490,7 @@ unsafe extern "C" fn SetInterpField(
                     &raw mut (*info).mods,
                     value,
                     &raw mut (*si).interp.a.action,
-                ) as ::core::ffi::c_uint
+                ) as u32
                 {
                     1 => {
                         (*si).interp.a.action.type_0 = ACTION_TYPE_NONE;
@@ -2559,20 +2498,15 @@ unsafe extern "C" fn SetInterpField(
                     }
                     2 => return false_0 != 0,
                     _ => {
-                        (*si).interp.num_actions = ((*si).interp.a.action.type_0
-                            as ::core::ffi::c_uint
-                            != ACTION_TYPE_NONE as ::core::ffi::c_int as ::core::ffi::c_uint)
-                            as ::core::ffi::c_int
-                            as xkb_action_count_t;
+                        (*si).interp.num_actions =
+                            ((*si).interp.a.action.type_0 as u32 != ACTION_TYPE_NONE as i32 as u32)
+                                as i32 as xkb_action_count_t;
                     }
                 }
             }
-            (*si).defined = ((*si).defined as ::core::ffi::c_uint
-                | SI_FIELD_ACTION as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
-        } else if istreq(field, b"virtualmodifier\0".as_ptr() as *const i8) as ::core::ffi::c_int
-            != 0
-            || istreq(field, b"virtualmod\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_ACTION as i32 as u32) as si_field;
+        } else if istreq(field, b"virtualmodifier\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"virtualmod\0".as_ptr() as *const i8) as i32 != 0
         {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -2593,9 +2527,7 @@ unsafe extern "C" fn SetInterpField(
                 );
             }
             (*si).interp.virtual_mod = ndx;
-            (*si).defined = ((*si).defined as ::core::ffi::c_uint
-                | SI_FIELD_VIRTUAL_MOD as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_VIRTUAL_MOD as i32 as u32) as si_field;
         } else if istreq(field, b"repeat\0".as_ptr() as *const i8) {
             let mut set: bool = false_0 != 0;
             if !arrayNdx.is_null() {
@@ -2605,19 +2537,17 @@ unsafe extern "C" fn SetInterpField(
                 return ReportSIBadType(info, si, field, b"boolean\0".as_ptr() as *const i8);
             }
             (*si).interp.set_repeat(set as bool);
-            (*si).defined = ((*si).defined as ::core::ffi::c_uint
-                | SI_FIELD_AUTO_REPEAT as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as i32 as u32) as si_field;
         } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"The \"locking\" field in symbol interpretation is unsupported; Ignored\n\0"
                     .as_ptr() as *const i8,
             );
-        } else if istreq(field, b"usemodmap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"usemodmapmods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+        } else if istreq(field, b"usemodmap\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"usemodmapmods\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut val: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -2637,9 +2567,8 @@ unsafe extern "C" fn SetInterpField(
                 );
             }
             (*si).interp.level_one_only = val != 0;
-            (*si).defined = ((*si).defined as ::core::ffi::c_uint
-                | SI_FIELD_LEVEL_ONE_ONLY as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as si_field;
+            (*si).defined =
+                ((*si).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as i32 as u32) as si_field;
         } else {
             ReportBadField(
                 (*info).ctx,
@@ -2647,8 +2576,8 @@ unsafe extern "C" fn SetInterpField(
                 field,
                 siText(si, info),
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as i32 as u32
                 == 0;
         }
         return true_0 != 0;
@@ -2663,8 +2592,8 @@ unsafe extern "C" fn SetLedMapField(
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"modifiers\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"mods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+        if istreq(field, b"modifiers\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"mods\0".as_ptr() as *const i8) as i32 != 0
         {
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -2683,9 +2612,7 @@ unsafe extern "C" fn SetLedMapField(
                     b"modifier mask\0".as_ptr() as *const i8,
                 );
             }
-            (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
-                | LED_FIELD_MODS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
+            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_MODS as i32 as u32) as led_field;
         } else if istreq(field, b"groups\0".as_ptr() as *const i8) {
             let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
             if !arrayNdx.is_null() {
@@ -2742,11 +2669,10 @@ unsafe extern "C" fn SetLedMapField(
                 (*ledi).led.set_pending_groups((false_0 != 0) as bool);
             }
             (*ledi).led.groups = mask;
-            (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
-                | LED_FIELD_GROUPS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
-        } else if istreq(field, b"controls\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"ctrls\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            (*ledi).defined =
+                ((*ledi).defined as u32 | LED_FIELD_GROUPS as i32 as u32) as led_field;
+        } else if istreq(field, b"controls\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"ctrls\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut mask_0: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -2757,8 +2683,7 @@ unsafe extern "C" fn SetLedMapField(
                 (*info).ctx,
                 value,
                 &raw mut mask_0,
-                (&raw const ctrlMaskNames as *const LookupEntry)
-                    .offset(offset as ::core::ffi::c_int as isize),
+                (&raw const ctrlMaskNames as *const LookupEntry).offset(offset as i32 as isize),
             ) {
                 return ReportLedBadType(
                     info,
@@ -2768,20 +2693,17 @@ unsafe extern "C" fn SetLedMapField(
                 );
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
-            (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
-                | LED_FIELD_CTRLS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as led_field;
+            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
         } else if istreq(field, b"allowexplicit\0".as_ptr() as *const i8) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n\0"
                     .as_ptr() as *const i8,
             );
-        } else if istreq(field, b"whichmodstate\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"whichmodifierstate\0".as_ptr() as *const i8) as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"whichmodstate\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"whichmodifierstate\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut mask_1: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -2822,21 +2744,17 @@ unsafe extern "C" fn SetLedMapField(
             (*ledi)
                 .led
                 .set_which_groups(mask_2 as xkb_state_component as xkb_state_component);
-        } else if istreq(field, b"driveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"driveskeyboard\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"leddriveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"leddriveskeyboard\0".as_ptr() as *const i8) as ::core::ffi::c_int
-                != 0
-            || istreq(field, b"indicatordriveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int
-                != 0
-            || istreq(field, b"indicatordriveskeyboard\0".as_ptr() as *const i8)
-                as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"driveskbd\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"driveskeyboard\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"leddriveskbd\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"leddriveskeyboard\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"indicatordriveskbd\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"indicatordriveskeyboard\0".as_ptr() as *const i8) as i32 != 0
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"The \"%s\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
                     as *const i8,
                 field,
@@ -2845,7 +2763,7 @@ unsafe extern "C" fn SetLedMapField(
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"The \"index\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
                     as *const i8,
             );
@@ -2853,14 +2771,14 @@ unsafe extern "C" fn SetLedMapField(
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Unknown field \"%s\" in map for %s indicator; Definition ignored\n\0".as_ptr()
                     as *const i8,
                 field,
                 LEDText(info, ledi),
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_UNKNOWN_LED_FIELDS as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_UNKNOWN_LED_FIELDS as i32 as u32
                 == 0;
         }
         return true_0 != 0;
@@ -2880,8 +2798,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
             &raw mut ndx,
         ) {
             ret = false_0 != 0;
-        } else if !elem.is_null()
-            && istreq(elem, b"interpret\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+        } else if !elem.is_null() && istreq(elem, b"interpret\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
@@ -2902,12 +2819,10 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                 },
             };
             InitInterp(&raw mut temp);
-            temp.merge = (if temp.merge as ::core::ffi::c_uint
-                == MERGE_REPLACE as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                MERGE_OVERRIDE as ::core::ffi::c_int as ::core::ffi::c_uint
+            temp.merge = (if temp.merge as u32 == MERGE_REPLACE as i32 as u32 {
+                MERGE_OVERRIDE as i32 as u32
             } else {
-                (*stmt).merge as ::core::ffi::c_uint
+                (*stmt).merge as u32
             }) as merge_mode;
             ret = SetInterpField(
                 info,
@@ -2924,8 +2839,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                     true_0 != 0,
                 );
             }
-        } else if !elem.is_null()
-            && istreq(elem, b"indicator\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+        } else if !elem.is_null() && istreq(elem, b"indicator\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
@@ -2940,12 +2854,10 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                 },
             };
             InitLED(&raw mut temp_0);
-            temp_0.merge = (if temp_0.merge as ::core::ffi::c_uint
-                == MERGE_REPLACE as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                MERGE_OVERRIDE as ::core::ffi::c_int as ::core::ffi::c_uint
+            temp_0.merge = (if temp_0.merge as u32 == MERGE_REPLACE as i32 as u32 {
+                MERGE_OVERRIDE as i32 as u32
             } else {
-                (*stmt).merge as ::core::ffi::c_uint
+                (*stmt).merge as u32
             }) as merge_mode;
             ret = SetLedMapField(info, &raw mut temp_0, field, ndx, &raw mut (*stmt).value);
             if ret {
@@ -2966,21 +2878,20 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                 ndx,
                 &raw mut (*stmt).value,
                 (*stmt).merge,
-            ) as ::core::ffi::c_uint
-                != PARSER_FATAL_ERROR as ::core::ffi::c_int as ::core::ffi::c_uint;
+            ) as u32
+                != PARSER_FATAL_ERROR as i32 as u32;
         } else {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
                     as *const i8,
-                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
+                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
                 field,
             );
-            return (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS as ::core::ffi::c_int
-                    as ::core::ffi::c_uint
+            return (*(*info).keymap_info).strict as u32
+                & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS as i32 as u32
                 == 0;
         }
         return ret;
@@ -3009,7 +2920,7 @@ unsafe extern "C" fn HandleInterpBody(
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Cannot set a global default value for \"%s\" element from within an interpret statement; Move assignment to \"%s.%s\" to the global file scope\n\0"
                         .as_ptr() as *const i8,
                     elem,
@@ -3056,7 +2967,7 @@ unsafe extern "C" fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut In
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Couldn't determine matching modifiers; Symbol interpretation ignored\n\0".as_ptr()
                     as *const i8,
             );
@@ -3101,10 +3012,10 @@ unsafe extern "C" fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut Le
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Cannot set defaults for \"%s\" element in indicator map; Assignment to %s.%s ignored\n\0"
                         .as_ptr() as *const i8,
-                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
+                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
                     elem,
                     elem,
                     field,
@@ -3115,8 +3026,7 @@ unsafe extern "C" fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut Le
             }
             var = (*var).common.next as *mut VarDef;
         }
-        return ok as ::core::ffi::c_int != 0
-            && AddLedMap(info, &raw mut ledi, true_0 != 0) as ::core::ffi::c_int != 0;
+        return ok as i32 != 0 && AddLedMap(info, &raw mut ledi, true_0 != 0) as i32 != 0;
     }
 }
 unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile) {
@@ -3126,7 +3036,7 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
         (*info).name = strdup_safe((*file).name);
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
-            match (*stmt).type_0 as ::core::ffi::c_uint {
+            match (*stmt).type_0 as u32 {
                 1 => {
                     ok = HandleIncludeCompatMap(info, stmt as *mut IncludeStmt);
                 }
@@ -3137,7 +3047,7 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                     xkb_log(
                         (*info).ctx,
                         XKB_LOG_LEVEL_DEBUG,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"The \"group\" statement in compat is unsupported; Ignored\n\0".as_ptr()
                             as *const i8,
                     );
@@ -3156,28 +3066,26 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                     xkb_log(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"[XKB-%03d] Unsupported compatibility %s statement \"%s\"; Ignoring\n\0"
                             .as_ptr() as *const i8,
-                        XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        if (*stmt).type_0 as ::core::ffi::c_uint
-                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as ::core::ffi::c_uint
-                        {
+                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
+                        if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
                             b"compound\0".as_ptr() as *const i8
                         } else {
                             b"declaration\0".as_ptr() as *const i8
                         },
                         (*(stmt as *mut UnknownStatement)).name,
                     );
-                    ok = (*(*info).keymap_info).strict as ::core::ffi::c_uint
-                        & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as ::core::ffi::c_uint
+                    ok = (*(*info).keymap_info).strict as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
                         == 0;
                 }
                 _ => {
                     xkb_log(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Compat files may not include other types; Ignoring %s\n\0".as_ptr()
                             as *const i8,
                         stmt_type_to_string((*stmt).type_0),
@@ -3188,11 +3096,11 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
             if !ok {
                 (*info).errorCount += 1;
             }
-            if (*info).errorCount > 10 as ::core::ffi::c_int {
+            if (*info).errorCount > 10 as i32 {
                 xkb_log(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Abandoning compatibility map \"%s\"\n\0".as_ptr() as *const i8,
                     safe_map_name(file),
                 );
@@ -3212,16 +3120,13 @@ unsafe extern "C" fn CopyInterps(
     unsafe {
         let mut si: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
         if !(*info).interps.item.is_null() {
-            si = (*info)
-                .interps
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut SymInterpInfo;
+            si = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
             while si
                 < (*info).interps.item.offset((*info).interps.size as isize) as *mut SymInterpInfo
             {
-                if (*si).interp.match_0 as ::core::ffi::c_uint == pred as ::core::ffi::c_uint
-                    && ((*si).interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as ::core::ffi::c_int
-                        == needSymbol as ::core::ffi::c_int
+                if (*si).interp.match_0 as u32 == pred as u32
+                    && ((*si).interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as i32
+                        == needSymbol as i32
                 {
                     (*collect).sym_interprets.size = (*collect)
                         .sym_interprets
@@ -3278,7 +3183,7 @@ unsafe extern "C" fn CopyLedMapDefsToKeymap(
                 xkb_log(
                     (*keymap).ctx,
                     XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Indicator name \"%s\" was not declared in the keycodes section; Adding new indicator\n\0"
                         .as_ptr() as *const i8,
                     LEDText(info, ledi),
@@ -3297,7 +3202,7 @@ unsafe extern "C" fn CopyLedMapDefsToKeymap(
                         xkb_log(
                             (*keymap).ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             b"Too many indicators (maximum is %u); Indicator name \"%s\" ignored\n\0"
                                 .as_ptr() as *const i8,
                             (::core::mem::size_of::<xkb_led_mask_t>() as usize)
@@ -3322,13 +3227,13 @@ unsafe extern "C" fn CopyLedMapDefsToKeymap(
             match c2rust_current_block_11 {
                 17860125682698302841 => {
                     *led = (*ledi).led;
-                    if (*led).which_groups() as ::core::ffi::c_int == 0 as ::core::ffi::c_int
+                    if (*led).which_groups() as i32 == 0 as i32
                         && ((*led).groups != 0 as xkb_layout_mask_t
-                            || (*led).pending_groups() as ::core::ffi::c_int != 0)
+                            || (*led).pending_groups() as i32 != 0)
                     {
                         (*led).set_which_groups(XKB_STATE_LAYOUT_EFFECTIVE as xkb_state_component);
                     }
-                    if (*led).which_mods as ::core::ffi::c_uint == 0 as ::core::ffi::c_uint
+                    if (*led).which_mods as u32 == 0 as u32
                         && (*led).mods.mods != 0 as xkb_mod_mask_t
                     {
                         (*led).which_mods = XKB_STATE_MODS_EFFECTIVE;
@@ -3459,13 +3364,13 @@ pub unsafe extern "C" fn CompileCompatMap(
         InitCompatInfo(
             &raw mut info,
             keymap_info,
-            0 as ::core::ffi::c_uint,
+            0 as u32,
             &raw mut (*keymap_info).keymap.mods,
         );
         if !file.is_null() {
             HandleCompatMapFile(&raw mut info, file);
         }
-        if !(info.errorCount != 0 as ::core::ffi::c_int) {
+        if !(info.errorCount != 0 as i32) {
             if CopyCompatToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearCompatInfo(&raw mut info);
                 return true_0 != 0;

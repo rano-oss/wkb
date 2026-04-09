@@ -1,13 +1,13 @@
 pub mod types_h {
     pub type __uint64_t = u64;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
 }
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -21,8 +21,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -36,8 +36,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -54,7 +54,7 @@ pub mod FILE_h {
     use super::struct_FILE_h::_IO_FILE;
 }
 pub mod messages_codes_h {
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -150,9 +150,7 @@ pub mod messages_h {
     }
     use super::messages_codes_h::xkb_message_code;
     extern "C" {
-        pub fn xkb_message_get_all(
-            xkb_messages: *mut *const xkb_message_entry,
-        ) -> ::core::ffi::c_int;
+        pub fn xkb_message_get_all(xkb_messages: *mut *const xkb_message_entry) -> i32;
         pub fn xkb_message_get(code: xkb_message_code) -> *const xkb_message_entry;
     }
 }
@@ -160,33 +158,26 @@ pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn printf(__format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
+        pub fn printf(__format: *const i8, ...) -> i32;
     }
 }
 pub mod include_locale_h {
-    pub const LC_ALL: ::core::ffi::c_int = __LC_ALL;
+    pub const LC_ALL: i32 = __LC_ALL;
     use super::locale_h::__LC_ALL;
     extern "C" {
-        pub fn setlocale(
-            __category: ::core::ffi::c_int,
-            __locale: *const i8,
-        ) -> *mut i8;
+        pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
     }
 }
 pub mod config_h {
-    pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
+    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
 }
 pub mod locale_h {
-    pub const __LC_ALL: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
+    pub const __LC_ALL: i32 = 6 as i32;
 }
 pub mod stdlib_h {
     extern "C" {
-        pub fn atoi(__nptr: *const i8) -> ::core::ffi::c_int;
+        pub fn atoi(__nptr: *const i8) -> i32;
     }
 }
 pub mod __stddef_null_h {
@@ -195,10 +186,7 @@ pub mod __stddef_null_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strstr(
-            __haystack: *const i8,
-            __needle: *const i8,
-        ) -> *mut i8;
+        pub fn strstr(__haystack: *const i8, __needle: *const i8) -> *mut i8;
     }
 }
 pub use self::__stddef_null_h::NULL;
@@ -255,17 +243,11 @@ use self::string_h::strstr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::FILE_h::FILE;
-unsafe extern "C" fn parse_message_code(
-    mut raw_code: *mut i8,
-) -> xkb_message_code {
+unsafe extern "C" fn parse_message_code(mut raw_code: *mut i8) -> xkb_message_code {
     unsafe {
         let code: xkb_message_code = atoi(raw_code) as xkb_message_code;
-        if code as u64 == 0
-            && !strstr(raw_code, b"XKB-\0".as_ptr() as *const i8).is_null()
-        {
-            return atoi(
-                raw_code.offset(4 as ::core::ffi::c_int as isize) as *mut i8
-            ) as xkb_message_code;
+        if code as u64 == 0 && !strstr(raw_code, b"XKB-\0".as_ptr() as *const i8).is_null() {
+            return atoi(raw_code.offset(4 as i32 as isize) as *mut i8) as xkb_message_code;
         } else {
             return code;
         };
@@ -276,7 +258,7 @@ unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
         printf(
             b"Usage: %s MESSAGE_CODES\n\nCheck whether the given message codes are supported.\n\0"
                 .as_ptr() as *const i8,
-            *argv.offset(0 as ::core::ffi::c_int as isize),
+            *argv.offset(0 as i32 as isize),
         );
         let mut xkb_messages: *const xkb_message_entry = ::core::ptr::null::<xkb_message_entry>();
         let mut count: usize = xkb_message_get_all(&raw mut xkb_messages) as usize;
@@ -285,31 +267,26 @@ unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
         while idx < count {
             printf(
                 b"- XKB-%03u: %s\n\0".as_ptr() as *const i8,
-                (*xkb_messages.offset(idx as isize)).code as ::core::ffi::c_uint,
+                (*xkb_messages.offset(idx as isize)).code as u32,
                 (*xkb_messages.offset(idx as isize)).label,
             );
             idx = idx.wrapping_add(1);
         }
     }
 }
-pub const MALFORMED_MESSAGE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
-pub const UNSUPPORTED_MESSAGE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
-unsafe fn main_0(
-    mut argc: ::core::ffi::c_int,
-    mut argv: *mut *mut i8,
-) -> ::core::ffi::c_int {
+pub const MALFORMED_MESSAGE: i32 = (1 as i32) << 2 as i32;
+pub const UNSUPPORTED_MESSAGE: i32 = (1 as i32) << 3 as i32;
+unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
     unsafe {
         setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
-        if argc <= 1 as ::core::ffi::c_int {
+        if argc <= 1 as i32 {
             usage(argv);
             return EXIT_INVALID_USAGE;
         }
-        let mut rc: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut rc: i32 = 0 as i32;
         let mut code: xkb_message_code = 0 as xkb_message_code;
         let mut entry: *const xkb_message_entry = ::core::ptr::null::<xkb_message_entry>();
-        let mut k: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+        let mut k: i32 = 1 as i32;
         while k < argc {
             code = parse_message_code(*argv.offset(k as isize));
             if code as u64 == 0 {
@@ -352,7 +329,7 @@ pub fn main() {
         .collect();
     unsafe {
         ::std::process::exit(main_0(
-            (args_ptrs.len() - 1) as ::core::ffi::c_int,
+            (args_ptrs.len() - 1) as i32,
             args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }

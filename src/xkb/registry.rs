@@ -3,8 +3,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -12,19 +12,19 @@ pub mod internal {
 pub mod types_h {
     pub type __uint32_t = u32;
     pub type __uint64_t = u64;
-    pub type __dev_t = ::core::ffi::c_ulong;
-    pub type __uid_t = ::core::ffi::c_uint;
-    pub type __gid_t = ::core::ffi::c_uint;
-    pub type __ino_t = ::core::ffi::c_ulong;
-    pub type __ino64_t = ::core::ffi::c_ulong;
-    pub type __mode_t = ::core::ffi::c_uint;
-    pub type __nlink_t = ::core::ffi::c_ulong;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
-    pub type __time_t = ::core::ffi::c_long;
-    pub type __blksize_t = ::core::ffi::c_long;
-    pub type __blkcnt_t = ::core::ffi::c_long;
-    pub type __syscall_slong_t = ::core::ffi::c_long;
+    pub type __dev_t = u64;
+    pub type __uid_t = u32;
+    pub type __gid_t = u32;
+    pub type __ino_t = u64;
+    pub type __ino64_t = u64;
+    pub type __mode_t = u32;
+    pub type __nlink_t = u64;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
+    pub type __time_t = i64;
+    pub type __blksize_t = i64;
+    pub type __blkcnt_t = i64;
+    pub type __syscall_slong_t = i64;
 }
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
@@ -45,7 +45,7 @@ pub mod struct_stat_h {
         pub st_mode: __mode_t,
         pub st_uid: __uid_t,
         pub st_gid: __gid_t,
-        pub __pad0: ::core::ffi::c_int,
+        pub __pad0: i32,
         pub st_rdev: __dev_t,
         pub st_size: __off_t,
         pub st_blksize: __blksize_t,
@@ -63,19 +63,11 @@ pub mod struct_stat_h {
 }
 
 pub mod stdlib_h {
-    pub type __compar_fn_t = Option<
-        unsafe extern "C" fn(
-            *const ::core::ffi::c_void,
-            *const ::core::ffi::c_void,
-        ) -> ::core::ffi::c_int,
-    >;
+    pub type __compar_fn_t =
+        Option<unsafe extern "C" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
 
     extern "C" {
-        pub fn strtol(
-            __nptr: *const i8,
-            __endptr: *mut *mut i8,
-            __base: ::core::ffi::c_int,
-        ) -> ::core::ffi::c_long;
+        pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
@@ -101,7 +93,7 @@ pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -115,8 +107,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -130,8 +122,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -155,29 +147,21 @@ pub mod stdio_h {
 
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn vfprintf(
-            __s: *mut FILE,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
+        pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
         pub fn vsnprintf(
             __s: *mut i8,
             __maxlen: usize,
             __format: *const i8,
             __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
+        ) -> i32;
     }
 }
 pub mod xmlstring_h {
     pub type xmlChar = ::core::ffi::c_uchar;
     extern "C" {
         pub fn xmlStrdup(cur: *const xmlChar) -> *mut xmlChar;
-        pub fn xmlStrEqual(str1: *const xmlChar, str2: *const xmlChar) -> ::core::ffi::c_int;
+        pub fn xmlStrEqual(str1: *const xmlChar, str2: *const xmlChar) -> i32;
     }
 }
 pub mod xmlmemory_h {
@@ -196,25 +180,19 @@ pub mod xmlIO_h {
         pub encoder: xmlCharEncodingHandlerPtr,
         pub buffer: xmlBufPtr,
         pub raw: xmlBufPtr,
-        pub compressed: ::core::ffi::c_int,
-        pub error: ::core::ffi::c_int,
-        pub rawconsumed: ::core::ffi::c_ulong,
+        pub compressed: i32,
+        pub error: i32,
+        pub rawconsumed: u64,
     }
-    pub type xmlInputCloseCallback =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>;
-    pub type xmlInputReadCallback = Option<
-        unsafe extern "C" fn(
-            *mut ::core::ffi::c_void,
-            *mut i8,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >;
+    pub type xmlInputCloseCallback = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
+    pub type xmlInputReadCallback =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
     use super::encoding_h::{xmlCharEncoding, xmlCharEncodingHandlerPtr};
     use super::tree_h::{xmlBufPtr, xmlParserInputBufferPtr};
     extern "C" {
         pub fn xmlParserInputBufferCreateMem(
             mem: *const i8,
-            size: ::core::ffi::c_int,
+            size: i32,
             enc: xmlCharEncoding,
         ) -> xmlParserInputBufferPtr;
     }
@@ -238,8 +216,8 @@ pub mod tree_h {
         pub next: *mut _xmlNode,
         pub prev: *mut _xmlNode,
         pub doc: *mut _xmlDoc,
-        pub compression: ::core::ffi::c_int,
-        pub standalone: ::core::ffi::c_int,
+        pub compression: i32,
+        pub standalone: i32,
         pub intSubset: *mut _xmlDtd,
         pub extSubset: *mut _xmlDtd,
         pub oldNs: *mut _xmlNs,
@@ -248,11 +226,11 @@ pub mod tree_h {
         pub ids: *mut ::core::ffi::c_void,
         pub refs: *mut ::core::ffi::c_void,
         pub URL: *const xmlChar,
-        pub charset: ::core::ffi::c_int,
+        pub charset: i32,
         pub dict: *mut _xmlDict,
         pub psvi: *mut ::core::ffi::c_void,
-        pub parseFlags: ::core::ffi::c_int,
-        pub properties: ::core::ffi::c_int,
+        pub parseFlags: i32,
+        pub properties: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -265,7 +243,7 @@ pub mod tree_h {
         pub context: *mut _xmlDoc,
     }
     pub type xmlElementType = xmlNsType;
-    pub type xmlNsType = ::core::ffi::c_uint;
+    pub type xmlNsType = u32;
     pub const XML_XINCLUDE_END: xmlNsType = 20;
     pub const XML_XINCLUDE_START: xmlNsType = 19;
     pub const XML_NAMESPACE_DECL: xmlNsType = 18;
@@ -343,7 +321,7 @@ pub mod tree_h {
         pub atype: xmlAttributeType,
         pub psvi: *mut ::core::ffi::c_void,
     }
-    pub type xmlAttributeType = ::core::ffi::c_uint;
+    pub type xmlAttributeType = u32;
     pub const XML_ATTRIBUTE_NOTATION: xmlAttributeType = 10;
     pub const XML_ATTRIBUTE_ENUMERATION: xmlAttributeType = 9;
     pub const XML_ATTRIBUTE_NMTOKENS: xmlAttributeType = 8;
@@ -377,12 +355,12 @@ pub mod tree_h {
         pub parent: *mut _xmlElementContent,
         pub prefix: *const xmlChar,
     }
-    pub type xmlElementContentOccur = ::core::ffi::c_uint;
+    pub type xmlElementContentOccur = u32;
     pub const XML_ELEMENT_CONTENT_PLUS: xmlElementContentOccur = 4;
     pub const XML_ELEMENT_CONTENT_MULT: xmlElementContentOccur = 3;
     pub const XML_ELEMENT_CONTENT_OPT: xmlElementContentOccur = 2;
     pub const XML_ELEMENT_CONTENT_ONCE: xmlElementContentOccur = 1;
-    pub type xmlElementContentType = ::core::ffi::c_uint;
+    pub type xmlElementContentType = u32;
     pub const XML_ELEMENT_CONTENT_OR: xmlElementContentType = 4;
     pub const XML_ELEMENT_CONTENT_SEQ: xmlElementContentType = 3;
     pub const XML_ELEMENT_CONTENT_ELEMENT: xmlElementContentType = 2;
@@ -429,20 +407,20 @@ pub mod encoding_h {
     pub type xmlCharEncodingOutputFunc = Option<
         unsafe extern "C" fn(
             *mut ::core::ffi::c_uchar,
-            *mut ::core::ffi::c_int,
+            *mut i32,
             *const ::core::ffi::c_uchar,
-            *mut ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
+            *mut i32,
+        ) -> i32,
     >;
     pub type xmlCharEncodingInputFunc = Option<
         unsafe extern "C" fn(
             *mut ::core::ffi::c_uchar,
-            *mut ::core::ffi::c_int,
+            *mut i32,
             *const ::core::ffi::c_uchar,
-            *mut ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
+            *mut i32,
+        ) -> i32,
     >;
-    pub type xmlCharEncoding = ::core::ffi::c_int;
+    pub type xmlCharEncoding = i32;
     pub const XML_CHAR_ENCODING_ASCII: xmlCharEncoding = 22;
     pub const XML_CHAR_ENCODING_EUC_JP: xmlCharEncoding = 21;
     pub const XML_CHAR_ENCODING_SHIFT_JIS: xmlCharEncoding = 20;
@@ -482,16 +460,16 @@ pub mod parser_h {
         pub base: *const xmlChar,
         pub cur: *const xmlChar,
         pub end: *const xmlChar,
-        pub length: ::core::ffi::c_int,
-        pub line: ::core::ffi::c_int,
-        pub col: ::core::ffi::c_int,
-        pub consumed: ::core::ffi::c_ulong,
+        pub length: i32,
+        pub line: i32,
+        pub col: i32,
+        pub consumed: u64,
         pub free: xmlParserInputDeallocate,
         pub encoding: *const xmlChar,
         pub version: *const xmlChar,
-        pub flags: ::core::ffi::c_int,
-        pub id: ::core::ffi::c_int,
-        pub parentConsumed: ::core::ffi::c_ulong,
+        pub flags: i32,
+        pub id: i32,
+        pub parentConsumed: u64,
         pub entity: xmlEntityPtr,
     }
     pub type xmlParserInputDeallocate = Option<unsafe extern "C" fn(*mut xmlChar) -> ()>;
@@ -501,98 +479,98 @@ pub mod parser_h {
         pub sax: *mut _xmlSAXHandler,
         pub userData: *mut ::core::ffi::c_void,
         pub myDoc: xmlDocPtr,
-        pub wellFormed: ::core::ffi::c_int,
-        pub replaceEntities: ::core::ffi::c_int,
+        pub wellFormed: i32,
+        pub replaceEntities: i32,
         pub version: *const xmlChar,
         pub encoding: *const xmlChar,
-        pub standalone: ::core::ffi::c_int,
-        pub html: ::core::ffi::c_int,
+        pub standalone: i32,
+        pub html: i32,
         pub input: xmlParserInputPtr,
-        pub inputNr: ::core::ffi::c_int,
-        pub inputMax: ::core::ffi::c_int,
+        pub inputNr: i32,
+        pub inputMax: i32,
         pub inputTab: *mut xmlParserInputPtr,
         pub node: xmlNodePtr,
-        pub nodeNr: ::core::ffi::c_int,
-        pub nodeMax: ::core::ffi::c_int,
+        pub nodeNr: i32,
+        pub nodeMax: i32,
         pub nodeTab: *mut xmlNodePtr,
-        pub record_info: ::core::ffi::c_int,
+        pub record_info: i32,
         pub node_seq: xmlParserNodeInfoSeq,
-        pub errNo: ::core::ffi::c_int,
-        pub hasExternalSubset: ::core::ffi::c_int,
-        pub hasPErefs: ::core::ffi::c_int,
-        pub external: ::core::ffi::c_int,
-        pub valid: ::core::ffi::c_int,
-        pub validate: ::core::ffi::c_int,
+        pub errNo: i32,
+        pub hasExternalSubset: i32,
+        pub hasPErefs: i32,
+        pub external: i32,
+        pub valid: i32,
+        pub validate: i32,
         pub vctxt: xmlValidCtxt,
         pub instate: xmlParserInputState,
-        pub token: ::core::ffi::c_int,
+        pub token: i32,
         pub directory: *mut i8,
         pub name: *const xmlChar,
-        pub nameNr: ::core::ffi::c_int,
-        pub nameMax: ::core::ffi::c_int,
+        pub nameNr: i32,
+        pub nameMax: i32,
         pub nameTab: *mut *const xmlChar,
-        pub nbChars: ::core::ffi::c_long,
-        pub checkIndex: ::core::ffi::c_long,
-        pub keepBlanks: ::core::ffi::c_int,
-        pub disableSAX: ::core::ffi::c_int,
-        pub inSubset: ::core::ffi::c_int,
+        pub nbChars: i64,
+        pub checkIndex: i64,
+        pub keepBlanks: i32,
+        pub disableSAX: i32,
+        pub inSubset: i32,
         pub intSubName: *const xmlChar,
         pub extSubURI: *mut xmlChar,
         pub extSubSystem: *mut xmlChar,
-        pub space: *mut ::core::ffi::c_int,
-        pub spaceNr: ::core::ffi::c_int,
-        pub spaceMax: ::core::ffi::c_int,
-        pub spaceTab: *mut ::core::ffi::c_int,
-        pub depth: ::core::ffi::c_int,
+        pub space: *mut i32,
+        pub spaceNr: i32,
+        pub spaceMax: i32,
+        pub spaceTab: *mut i32,
+        pub depth: i32,
         pub entity: xmlParserInputPtr,
-        pub charset: ::core::ffi::c_int,
-        pub nodelen: ::core::ffi::c_int,
-        pub nodemem: ::core::ffi::c_int,
-        pub pedantic: ::core::ffi::c_int,
+        pub charset: i32,
+        pub nodelen: i32,
+        pub nodemem: i32,
+        pub pedantic: i32,
         pub _private: *mut ::core::ffi::c_void,
-        pub loadsubset: ::core::ffi::c_int,
-        pub linenumbers: ::core::ffi::c_int,
+        pub loadsubset: i32,
+        pub linenumbers: i32,
         pub catalogs: *mut ::core::ffi::c_void,
-        pub recovery: ::core::ffi::c_int,
-        pub progressive: ::core::ffi::c_int,
+        pub recovery: i32,
+        pub progressive: i32,
         pub dict: xmlDictPtr,
         pub atts: *mut *const xmlChar,
-        pub maxatts: ::core::ffi::c_int,
-        pub docdict: ::core::ffi::c_int,
+        pub maxatts: i32,
+        pub docdict: i32,
         pub str_xml: *const xmlChar,
         pub str_xmlns: *const xmlChar,
         pub str_xml_ns: *const xmlChar,
-        pub sax2: ::core::ffi::c_int,
-        pub nsNr: ::core::ffi::c_int,
-        pub nsMax: ::core::ffi::c_int,
+        pub sax2: i32,
+        pub nsNr: i32,
+        pub nsMax: i32,
         pub nsTab: *mut *const xmlChar,
-        pub attallocs: *mut ::core::ffi::c_uint,
+        pub attallocs: *mut u32,
         pub pushTab: *mut xmlStartTag,
         pub attsDefault: xmlHashTablePtr,
         pub attsSpecial: xmlHashTablePtr,
-        pub nsWellFormed: ::core::ffi::c_int,
-        pub options: ::core::ffi::c_int,
-        pub dictNames: ::core::ffi::c_int,
-        pub freeElemsNr: ::core::ffi::c_int,
+        pub nsWellFormed: i32,
+        pub options: i32,
+        pub dictNames: i32,
+        pub freeElemsNr: i32,
         pub freeElems: xmlNodePtr,
-        pub freeAttrsNr: ::core::ffi::c_int,
+        pub freeAttrsNr: i32,
         pub freeAttrs: xmlAttrPtr,
         pub lastError: xmlError,
         pub parseMode: xmlParserMode,
-        pub nbentities: ::core::ffi::c_ulong,
-        pub sizeentities: ::core::ffi::c_ulong,
+        pub nbentities: u64,
+        pub sizeentities: u64,
         pub nodeInfo: *mut xmlParserNodeInfo,
-        pub nodeInfoNr: ::core::ffi::c_int,
-        pub nodeInfoMax: ::core::ffi::c_int,
+        pub nodeInfoNr: i32,
+        pub nodeInfoMax: i32,
         pub nodeInfoTab: *mut xmlParserNodeInfo,
-        pub input_id: ::core::ffi::c_int,
-        pub sizeentcopy: ::core::ffi::c_ulong,
-        pub endCheckState: ::core::ffi::c_int,
+        pub input_id: i32,
+        pub sizeentcopy: u64,
+        pub endCheckState: i32,
         pub nbErrors: ::core::ffi::c_ushort,
         pub nbWarnings: ::core::ffi::c_ushort,
-        pub maxAmpl: ::core::ffi::c_uint,
+        pub maxAmpl: u32,
         pub nsdb: *mut xmlParserNsData,
-        pub attrHashMax: ::core::ffi::c_uint,
+        pub attrHashMax: u32,
         pub attrHash: *mut xmlAttrHashBucket,
     }
     pub type xmlAttrHashBucket = _xmlAttrHashBucket;
@@ -602,12 +580,12 @@ pub mod parser_h {
     #[repr(C)]
     pub struct _xmlParserNodeInfo {
         pub node: *const _xmlNode,
-        pub begin_pos: ::core::ffi::c_ulong,
-        pub begin_line: ::core::ffi::c_ulong,
-        pub end_pos: ::core::ffi::c_ulong,
-        pub end_line: ::core::ffi::c_ulong,
+        pub begin_pos: u64,
+        pub begin_line: u64,
+        pub end_pos: u64,
+        pub end_line: u64,
     }
-    pub type xmlParserMode = ::core::ffi::c_uint;
+    pub type xmlParserMode = u32;
     pub const XML_PARSE_READER: xmlParserMode = 5;
     pub const XML_PARSE_PUSH_SAX: xmlParserMode = 4;
     pub const XML_PARSE_PUSH_DOM: xmlParserMode = 3;
@@ -615,7 +593,7 @@ pub mod parser_h {
     pub const XML_PARSE_DOM: xmlParserMode = 1;
     pub const XML_PARSE_UNKNOWN: xmlParserMode = 0;
     pub type xmlStartTag = _xmlStartTag;
-    pub type xmlParserInputState = ::core::ffi::c_int;
+    pub type xmlParserInputState = i32;
     pub const XML_PARSER_XML_DECL: xmlParserInputState = 17;
     pub const XML_PARSER_PUBLIC_LITERAL: xmlParserInputState = 16;
     pub const XML_PARSER_IGNORE: xmlParserInputState = 15;
@@ -639,8 +617,8 @@ pub mod parser_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct _xmlParserNodeInfoSeq {
-        pub maximum: ::core::ffi::c_ulong,
-        pub length: ::core::ffi::c_ulong,
+        pub maximum: u64,
+        pub length: u64,
         pub buffer: *mut xmlParserNodeInfo,
     }
     #[derive(Copy, Clone)]
@@ -673,7 +651,7 @@ pub mod parser_h {
         pub getParameterEntity: getParameterEntitySAXFunc,
         pub cdataBlock: cdataBlockSAXFunc,
         pub externalSubset: externalSubsetSAXFunc,
-        pub initialized: ::core::ffi::c_uint,
+        pub initialized: u32,
         pub _private: *mut ::core::ffi::c_void,
         pub startElementNs: startElementNsSAX2Func,
         pub endElementNs: endElementNsSAX2Func,
@@ -693,10 +671,10 @@ pub mod parser_h {
             *const xmlChar,
             *const xmlChar,
             *const xmlChar,
-            ::core::ffi::c_int,
+            i32,
             *mut *const xmlChar,
-            ::core::ffi::c_int,
-            ::core::ffi::c_int,
+            i32,
+            i32,
             *mut *const xmlChar,
         ) -> (),
     >;
@@ -708,31 +686,25 @@ pub mod parser_h {
             *const xmlChar,
         ) -> (),
     >;
-    pub type cdataBlockSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, ::core::ffi::c_int) -> (),
-    >;
+    pub type cdataBlockSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
     pub type getParameterEntitySAXFunc =
         Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> xmlEntityPtr>;
-    pub type fatalErrorSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
-    pub type errorSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
-    pub type warningSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
+    pub type fatalErrorSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+    pub type errorSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+    pub type warningSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
     pub type commentSAXFunc =
         Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
     pub type processingInstructionSAXFunc = Option<
         unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar) -> (),
     >;
-    pub type ignorableWhitespaceSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, ::core::ffi::c_int) -> (),
-    >;
-    pub type charactersSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, ::core::ffi::c_int) -> (),
-    >;
+    pub type ignorableWhitespaceSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
+    pub type charactersSAXFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
     pub type referenceSAXFunc =
         Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
     pub type endElementSAXFunc =
@@ -749,10 +721,8 @@ pub mod parser_h {
     pub struct _xmlSAXLocator {
         pub getPublicId: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> *const xmlChar>,
         pub getSystemId: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> *const xmlChar>,
-        pub getLineNumber:
-            Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-        pub getColumnNumber:
-            Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
+        pub getLineNumber: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>,
+        pub getColumnNumber: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>,
     }
     pub type unparsedEntityDeclSAXFunc = Option<
         unsafe extern "C" fn(
@@ -767,7 +737,7 @@ pub mod parser_h {
         unsafe extern "C" fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
-            ::core::ffi::c_int,
+            i32,
             xmlElementContentPtr,
         ) -> (),
     >;
@@ -776,8 +746,8 @@ pub mod parser_h {
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
-            ::core::ffi::c_int,
-            ::core::ffi::c_int,
+            i32,
+            i32,
             *const xmlChar,
             xmlEnumerationPtr,
         ) -> (),
@@ -794,7 +764,7 @@ pub mod parser_h {
         unsafe extern "C" fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
-            ::core::ffi::c_int,
+            i32,
             *const xmlChar,
             *const xmlChar,
             *mut xmlChar,
@@ -810,11 +780,10 @@ pub mod parser_h {
         ) -> xmlParserInputPtr,
     >;
     pub type hasExternalSubsetSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>;
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
     pub type hasInternalSubsetSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>;
-    pub type isStandaloneSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>;
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
+    pub type isStandaloneSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
     pub type internalSubsetSAXFunc = Option<
         unsafe extern "C" fn(
             *mut ::core::ffi::c_void,
@@ -823,7 +792,7 @@ pub mod parser_h {
             *const xmlChar,
         ) -> (),
     >;
-    pub type C2Rust_Unnamed = ::core::ffi::c_uint;
+    pub type C2Rust_Unnamed = u32;
     pub const XML_PARSE_BIG_LINES: C2Rust_Unnamed = 4194304;
     pub const XML_PARSE_IGNORE_ENC: C2Rust_Unnamed = 2097152;
     pub const XML_PARSE_OLDSAX: C2Rust_Unnamed = 1048576;
@@ -869,15 +838,12 @@ pub mod parser_h {
         ) -> xmlDtdPtr;
         pub fn xmlNewParserCtxt() -> xmlParserCtxtPtr;
         pub fn xmlFreeParserCtxt(ctxt: xmlParserCtxtPtr);
-        pub fn xmlCtxtUseOptions(
-            ctxt: xmlParserCtxtPtr,
-            options: ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int;
+        pub fn xmlCtxtUseOptions(ctxt: xmlParserCtxtPtr, options: i32) -> i32;
         pub fn xmlCtxtReadFile(
             ctxt: xmlParserCtxtPtr,
             filename: *const i8,
             encoding: *const i8,
-            options: ::core::ffi::c_int,
+            options: i32,
         ) -> xmlDocPtr;
     }
 }
@@ -896,17 +862,17 @@ pub mod entities_h {
         pub doc: *mut _xmlDoc,
         pub orig: *mut xmlChar,
         pub content: *mut xmlChar,
-        pub length: ::core::ffi::c_int,
+        pub length: i32,
         pub etype: xmlEntityType,
         pub ExternalID: *const xmlChar,
         pub SystemID: *const xmlChar,
         pub nexte: *mut _xmlEntity,
         pub URI: *const xmlChar,
-        pub owner: ::core::ffi::c_int,
-        pub flags: ::core::ffi::c_int,
-        pub expandedSize: ::core::ffi::c_ulong,
+        pub owner: i32,
+        pub flags: i32,
+        pub expandedSize: u64,
     }
-    pub type xmlEntityType = ::core::ffi::c_uint;
+    pub type xmlEntityType = u32;
     pub const XML_INTERNAL_PREDEFINED_ENTITY: xmlEntityType = 6;
     pub const XML_EXTERNAL_PARAMETER_ENTITY: xmlEntityType = 5;
     pub const XML_INTERNAL_PARAMETER_ENTITY: xmlEntityType = 4;
@@ -921,30 +887,29 @@ pub mod xmlerror_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct _xmlError {
-        pub domain: ::core::ffi::c_int,
-        pub code: ::core::ffi::c_int,
+        pub domain: i32,
+        pub code: i32,
         pub message: *mut i8,
         pub level: xmlErrorLevel,
         pub file: *mut i8,
-        pub line: ::core::ffi::c_int,
+        pub line: i32,
         pub str1: *mut i8,
         pub str2: *mut i8,
         pub str3: *mut i8,
-        pub int1: ::core::ffi::c_int,
-        pub int2: ::core::ffi::c_int,
+        pub int1: i32,
+        pub int2: i32,
         pub ctxt: *mut ::core::ffi::c_void,
         pub node: *mut ::core::ffi::c_void,
     }
-    pub type xmlErrorLevel = ::core::ffi::c_uint;
+    pub type xmlErrorLevel = u32;
     pub const XML_ERR_FATAL: xmlErrorLevel = 3;
     pub const XML_ERR_ERROR: xmlErrorLevel = 2;
     pub const XML_ERR_WARNING: xmlErrorLevel = 1;
     pub const XML_ERR_NONE: xmlErrorLevel = 0;
     pub type xmlStructuredErrorFunc =
         Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlError) -> ()>;
-    pub type xmlGenericErrorFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
+    pub type xmlGenericErrorFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
     extern "C" {
         pub fn xmlSetGenericErrorFunc(ctx: *mut ::core::ffi::c_void, handler: xmlGenericErrorFunc);
     }
@@ -970,26 +935,24 @@ pub mod valid_h {
         pub error: xmlValidityErrorFunc,
         pub warning: xmlValidityWarningFunc,
         pub node: xmlNodePtr,
-        pub nodeNr: ::core::ffi::c_int,
-        pub nodeMax: ::core::ffi::c_int,
+        pub nodeNr: i32,
+        pub nodeMax: i32,
         pub nodeTab: *mut xmlNodePtr,
-        pub flags: ::core::ffi::c_uint,
+        pub flags: u32,
         pub doc: xmlDocPtr,
-        pub valid: ::core::ffi::c_int,
+        pub valid: i32,
         pub vstate: *mut xmlValidState,
-        pub vstateNr: ::core::ffi::c_int,
-        pub vstateMax: ::core::ffi::c_int,
+        pub vstateNr: i32,
+        pub vstateMax: i32,
         pub vstateTab: *mut xmlValidState,
         pub am: xmlAutomataPtr,
         pub state: xmlAutomataStatePtr,
     }
     pub type xmlValidState = _xmlValidState;
-    pub type xmlValidityWarningFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
-    pub type xmlValidityErrorFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-    >;
+    pub type xmlValidityWarningFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+    pub type xmlValidityErrorFunc =
+        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
     pub type xmlValidCtxtPtr = *mut xmlValidCtxt;
     use super::tree_h::{xmlDocPtr, xmlDtdPtr, xmlNodePtr};
     use super::xmlautomata_h::{xmlAutomataPtr, xmlAutomataStatePtr};
@@ -997,11 +960,7 @@ pub mod valid_h {
         pub type _xmlValidState;
         pub fn xmlNewValidCtxt() -> xmlValidCtxtPtr;
         pub fn xmlFreeValidCtxt(_: xmlValidCtxtPtr);
-        pub fn xmlValidateDtd(
-            ctxt: xmlValidCtxtPtr,
-            doc: xmlDocPtr,
-            dtd: xmlDtdPtr,
-        ) -> ::core::ffi::c_int;
+        pub fn xmlValidateDtd(ctxt: xmlValidCtxtPtr, doc: xmlDocPtr, dtd: xmlDtdPtr) -> i32;
     }
 }
 pub mod xmlautomata_h {
@@ -1031,29 +990,29 @@ pub mod include_dirent_h {
     use super::dirent_h::dirent;
     extern "C" {
         pub type __dirstream;
-        pub fn closedir(__dirp: *mut DIR) -> ::core::ffi::c_int;
+        pub fn closedir(__dirp: *mut DIR) -> i32;
         pub fn opendir(__name: *const i8) -> *mut DIR;
         pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
     }
 }
 pub mod xkbregistry_h {
-    pub type rxkb_log_level = ::core::ffi::c_uint;
+    pub type rxkb_log_level = u32;
     pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
     pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
     pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
     pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
     pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
-    pub type rxkb_popularity = ::core::ffi::c_uint;
+    pub type rxkb_popularity = u32;
     pub const RXKB_POPULARITY_EXOTIC: rxkb_popularity = 2;
     pub const RXKB_POPULARITY_STANDARD: rxkb_popularity = 1;
-    pub type rxkb_context_flags = ::core::ffi::c_uint;
+    pub type rxkb_context_flags = u32;
     pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
     pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
     pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
     pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct darray_string {
@@ -1077,7 +1036,6 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod util_list_h {
     #[derive(Copy, Clone)]
@@ -1098,7 +1056,7 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
     pub const XKB_ERROR_INVALID_PATH: xkb_message_code = 161;
     pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: xkb_message_code = 134;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -1185,7 +1143,7 @@ pub mod messages_codes_h {
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
-        pub fn stat(__file: *const i8, __buf: *mut stat) -> ::core::ffi::c_int;
+        pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
 pub mod string_h {
@@ -1193,33 +1151,24 @@ pub mod string_h {
     extern "C" {
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
+            __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strcmp(
-            __s1: *const i8,
-            __s2: *const i8,
-        ) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strlen(__s: *const i8) -> usize;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
+        pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(
-        mut s1: *const i8,
-        mut s2: *const i8,
-    ) -> bool {
+    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
+            return strcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn streq_null(
-        mut s1: *const i8,
-        mut s2: *const i8,
-    ) -> bool {
+    pub unsafe extern "C" fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
                 return s1 == s2;
@@ -1228,19 +1177,13 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn istrneq(
-        mut s1: *const i8,
-        mut s2: *const i8,
-        mut len: usize,
-    ) -> bool {
+    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
-            return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
+            return istrncmp(s1, s2, len) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(
-        mut s: *const i8,
-    ) -> *mut i8 {
+    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -1252,18 +1195,13 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
         unsafe {
-            return ch as ::core::ffi::c_int == ' ' as i32
-                || ch as ::core::ffi::c_int >= '\t' as i32
-                    && ch as ::core::ffi::c_int <= '\r' as i32;
+            return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn check_eaccess(
-        mut path: *const i8,
-        mut mode: ::core::ffi::c_int,
-    ) -> bool {
+    pub unsafe extern "C" fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
         unsafe {
-            if eaccess(path, mode) != 0 as ::core::ffi::c_int {
+            if eaccess(path, mode) != 0 as i32 {
                 return false;
             }
             return true;
@@ -1278,10 +1216,10 @@ pub mod utils_h {
     ) -> bool {
         unsafe {
             let mut ap: ::core::ffi::VaList;
-            let mut rc: ::core::ffi::c_int = 0;
+            let mut rc: i32 = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
+            return rc >= 0 as i32 && (rc as usize) < sz;
         }
     }
 
@@ -1289,11 +1227,7 @@ pub mod utils_h {
     use super::string_h::{strcmp, strdup};
     use super::unistd_h::eaccess;
     extern "C" {
-        pub fn istrncmp(
-            a: *const i8,
-            b: *const i8,
-            n: usize,
-        ) -> ::core::ffi::c_int;
+        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
     }
 }
 pub mod util_mem_h {
@@ -1310,7 +1244,7 @@ pub mod util_mem_h {
 }
 pub mod xmlversion_h {
     extern "C" {
-        pub fn xmlCheckVersion(version: ::core::ffi::c_int);
+        pub fn xmlCheckVersion(version: i32);
     }
 }
 pub mod __stddef_null_h {
@@ -1318,52 +1252,41 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod errno_base_h {
-    pub const ENOMEM: ::core::ffi::c_int = 12 as ::core::ffi::c_int;
-    pub const EACCES: ::core::ffi::c_int = 13 as ::core::ffi::c_int;
-    pub const ENOTDIR: ::core::ffi::c_int = 20 as ::core::ffi::c_int;
+    pub const ENOMEM: i32 = 12 as i32;
+    pub const EACCES: i32 = 13 as i32;
+    pub const ENOTDIR: i32 = 20 as i32;
 }
 pub mod unistd_h {
-    pub const R_OK: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
-    pub const X_OK: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const R_OK: i32 = 4 as i32;
+    pub const X_OK: i32 = 1 as i32;
     extern "C" {
-        pub fn eaccess(
-            __name: *const i8,
-            __type: ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int;
+        pub fn eaccess(__name: *const i8, __type: i32) -> i32;
     }
 }
 pub mod errno_h {
     extern "C" {
-        pub fn __errno_location() -> *mut ::core::ffi::c_int;
+        pub fn __errno_location() -> *mut i32;
     }
 }
 pub mod config_h {
     pub const DEFAULT_XKB_RULES: [i8; 6] =
         unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] = unsafe {
-        ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0")
-    };
+    pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
+        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
     pub const DFLT_XKB_CONFIG_ROOT: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(
-            *b"/usr/share/xkeyboard-config-2\0",
-        )
+        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config-2\0")
     };
     pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(
-            *b"/usr/share/xkeyboard-config.d\0",
-        )
+        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config.d\0")
     };
     pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] = unsafe {
-        ::core::mem::transmute::<[u8; 32], [i8; 32]>(
-            *b"/usr/share/xkeyboard-config-2.d\0",
-        )
+        ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0")
     };
-    pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] = unsafe {
-        ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0")
-    };
+    pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
+        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
 }
 pub mod bits_stat_h {
-    pub const __S_IFMT: ::core::ffi::c_int = 0o170000 as ::core::ffi::c_int;
+    pub const __S_IFMT: i32 = 0o170000 as i32;
 }
 pub mod stdbool_h {}
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
@@ -1562,7 +1485,7 @@ pub struct C2Rust_Unnamed_0 {
     pub alloc: darray_size_t,
     pub item: *mut *mut i8,
 }
-pub type context_state = ::core::ffi::c_uint;
+pub type context_state = u32;
 pub const CONTEXT_FAILED: context_state = 2;
 pub const CONTEXT_PARSED: context_state = 1;
 pub const CONTEXT_NEW: context_state = 0;
@@ -1644,7 +1567,7 @@ unsafe extern "C" fn rxkb_log(
 ) {
     unsafe {
         let mut args: ::core::ffi::VaList;
-        if ((*ctx).log_level as ::core::ffi::c_uint) < level as ::core::ffi::c_uint {
+        if ((*ctx).log_level as u32) < level as u32 {
             return;
         }
         args = c2rust_args.clone();
@@ -1676,8 +1599,7 @@ pub unsafe extern "C" fn rxkb_layout_get_iso639_first(
     unsafe {
         let mut code: *mut rxkb_iso639_code = ::core::ptr::null_mut::<rxkb_iso639_code>();
         if !list_empty(&raw mut (*layout).iso639s) {
-            code = ((*layout).iso639s.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            code = ((*layout).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
         }
         return code;
@@ -1690,15 +1612,13 @@ pub unsafe extern "C" fn rxkb_iso639_code_next(
     unsafe {
         let mut next: *mut rxkb_iso639_code = ::core::ptr::null_mut::<rxkb_iso639_code>();
         let mut layout: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
-        layout = ((*code).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        layout = ((*code).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
         if list_is_last(&raw mut (*layout).iso639s, &raw mut (*code).base.link) {
             return ::core::ptr::null_mut::<rxkb_iso639_code>();
         }
-        next = ((*code).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_iso639_code
-            as *mut rxkb_iso639_code;
+        next = ((*code).base.link.next as *mut i8).offset(-(16 as u64 as isize))
+            as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
         return next;
     }
 }
@@ -1744,9 +1664,7 @@ unsafe extern "C" fn rxkb_iso639_code_create(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_iso639_code_get_code(
-    mut object: *mut rxkb_iso639_code,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_iso639_code_get_code(mut object: *mut rxkb_iso639_code) -> *const i8 {
     unsafe {
         return (*object).code;
     }
@@ -1763,8 +1681,7 @@ pub unsafe extern "C" fn rxkb_layout_get_iso3166_first(
     unsafe {
         let mut code: *mut rxkb_iso3166_code = ::core::ptr::null_mut::<rxkb_iso3166_code>();
         if !list_empty(&raw mut (*layout).iso3166s) {
-            code = ((*layout).iso3166s.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            code = ((*layout).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
         }
         return code;
@@ -1777,15 +1694,13 @@ pub unsafe extern "C" fn rxkb_iso3166_code_next(
     unsafe {
         let mut next: *mut rxkb_iso3166_code = ::core::ptr::null_mut::<rxkb_iso3166_code>();
         let mut layout: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
-        layout = ((*code).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        layout = ((*code).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
         if list_is_last(&raw mut (*layout).iso3166s, &raw mut (*code).base.link) {
             return ::core::ptr::null_mut::<rxkb_iso3166_code>();
         }
-        next = ((*code).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_iso3166_code
-            as *mut rxkb_iso3166_code;
+        next = ((*code).base.link.next as *mut i8).offset(-(16 as u64 as isize))
+            as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
         return next;
     }
 }
@@ -1879,25 +1794,19 @@ unsafe extern "C" fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rx
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_name(
-    mut object: *mut rxkb_option,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_option_get_name(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_brief(
-    mut object: *mut rxkb_option,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_option_get_brief(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).brief;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_description(
-    mut object: *mut rxkb_option,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_option_get_description(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).description;
     }
@@ -1921,11 +1830,9 @@ pub unsafe extern "C" fn rxkb_option_next(mut o: *mut rxkb_option) -> *mut rxkb_
     unsafe {
         let mut parent: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut next: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
-        parent = ((*o).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize))
+        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize))
             as *mut rxkb_option_group as *mut rxkb_option_group;
-        next = ((*o).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option
+        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
             as *mut rxkb_option;
         if list_is_last(&raw mut (*parent).options, &raw mut (*o).base.link) {
             return ::core::ptr::null_mut::<rxkb_option>();
@@ -1938,9 +1845,8 @@ pub unsafe extern "C" fn rxkb_option_first(mut parent: *mut rxkb_option_group) -
     unsafe {
         let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
         if !list_empty(&raw mut (*parent).options) {
-            o = ((*parent).options.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option
-                as *mut rxkb_option;
+            o = ((*parent).options.next as *mut i8).offset(-(16 as u64 as isize))
+                as *mut rxkb_option as *mut rxkb_option;
         }
         return o;
     }
@@ -1957,32 +1863,26 @@ unsafe extern "C" fn rxkb_layout_destroy(mut l: *mut rxkb_layout) {
         free((*l).variant as *mut ::core::ffi::c_void);
         iso639 = ::core::ptr::null_mut::<rxkb_iso639_code>();
         tmp_639 = ::core::ptr::null_mut::<rxkb_iso639_code>();
-        iso639 = ((*l).iso639s.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize))
+        iso639 = ((*l).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
             as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
-        tmp_639 = ((*iso639).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize))
+        tmp_639 = ((*iso639).base.link.next as *mut i8).offset(-(16 as u64 as isize))
             as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
         while &raw mut (*iso639).base.link != &raw mut (*l).iso639s {
             rxkb_iso639_code_unref(iso639);
             iso639 = tmp_639;
-            tmp_639 = ((*iso639).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            tmp_639 = ((*iso639).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
         }
         iso3166 = ::core::ptr::null_mut::<rxkb_iso3166_code>();
         tmp_3166 = ::core::ptr::null_mut::<rxkb_iso3166_code>();
-        iso3166 = ((*l).iso3166s.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize))
+        iso3166 = ((*l).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
             as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
-        tmp_3166 = ((*iso3166).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize))
+        tmp_3166 = ((*iso3166).base.link.next as *mut i8).offset(-(16 as u64 as isize))
             as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
         while &raw mut (*iso3166).base.link != &raw mut (*l).iso3166s {
             rxkb_iso3166_code_unref(iso3166);
             iso3166 = tmp_3166;
-            tmp_3166 = ((*iso3166).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            tmp_3166 = ((*iso3166).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
         }
     }
@@ -2021,33 +1921,25 @@ unsafe extern "C" fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rx
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_name(
-    mut object: *mut rxkb_layout,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_layout_get_name(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_brief(
-    mut object: *mut rxkb_layout,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_layout_get_brief(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).brief;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_description(
-    mut object: *mut rxkb_layout,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_layout_get_description(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).description;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_variant(
-    mut object: *mut rxkb_layout,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).variant;
     }
@@ -2065,9 +1957,8 @@ pub unsafe extern "C" fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mu
     unsafe {
         let mut o: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         if !list_empty(&raw mut (*parent).layouts) {
-            o = ((*parent).layouts.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
-                as *mut rxkb_layout;
+            o = ((*parent).layouts.next as *mut i8).offset(-(16 as u64 as isize))
+                as *mut rxkb_layout as *mut rxkb_layout;
         }
         return o;
     }
@@ -2077,11 +1968,9 @@ pub unsafe extern "C" fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_
     unsafe {
         let mut parent: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut next: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
-        parent = ((*o).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize)) as *mut rxkb_context
+        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
             as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
         if list_is_last(&raw mut (*parent).layouts, &raw mut (*o).base.link) {
             return ::core::ptr::null_mut::<rxkb_layout>();
@@ -2130,25 +2019,19 @@ unsafe extern "C" fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxk
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_name(
-    mut object: *mut rxkb_model,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_model_get_name(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_vendor(
-    mut object: *mut rxkb_model,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_model_get_vendor(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).vendor;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_description(
-    mut object: *mut rxkb_model,
-) -> *const i8 {
+pub unsafe extern "C" fn rxkb_model_get_description(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).description;
     }
@@ -2164,11 +2047,9 @@ pub unsafe extern "C" fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_mo
     unsafe {
         let mut parent: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut next: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
-        parent = ((*o).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize)) as *mut rxkb_context
+        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
             as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_model
+        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
             as *mut rxkb_model;
         if list_is_last(&raw mut (*parent).models, &raw mut (*o).base.link) {
             return ::core::ptr::null_mut::<rxkb_model>();
@@ -2181,8 +2062,7 @@ pub unsafe extern "C" fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut
     unsafe {
         let mut o: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
         if !list_empty(&raw mut (*parent).models) {
-            o = ((*parent).models.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_model
+            o = ((*parent).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
                 as *mut rxkb_model;
         }
         return o;
@@ -2196,17 +2076,14 @@ unsafe extern "C" fn rxkb_option_group_destroy(mut og: *mut rxkb_option_group) {
         free((*og).description as *mut ::core::ffi::c_void);
         o = ::core::ptr::null_mut::<rxkb_option>();
         otmp = ::core::ptr::null_mut::<rxkb_option>();
-        o = ((*og).options.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option
+        o = ((*og).options.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
             as *mut rxkb_option;
-        otmp = ((*o).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option
+        otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
             as *mut rxkb_option;
         while &raw mut (*o).base.link != &raw mut (*og).options {
             rxkb_option_unref(o);
             o = otmp;
-            otmp = ((*o).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_option as *mut rxkb_option;
         }
     }
@@ -2289,8 +2166,7 @@ pub unsafe extern "C" fn rxkb_option_group_first(
     unsafe {
         let mut o: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         if !list_empty(&raw mut (*parent).option_groups) {
-            o = ((*parent).option_groups.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            o = ((*parent).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_option_group as *mut rxkb_option_group;
         }
         return o;
@@ -2303,12 +2179,10 @@ pub unsafe extern "C" fn rxkb_option_group_next(
     unsafe {
         let mut parent: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut next: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
-        parent = ((*o).base.parent as *mut i8)
-            .offset(-(0 as ::core::ffi::c_ulong as isize)) as *mut rxkb_context
+        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
             as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option_group
-            as *mut rxkb_option_group;
+        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
+            as *mut rxkb_option_group as *mut rxkb_option_group;
         if list_is_last(&raw mut (*parent).option_groups, &raw mut (*o).base.link) {
             return ::core::ptr::null_mut::<rxkb_option_group>();
         }
@@ -2323,62 +2197,46 @@ unsafe extern "C" fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
         let mut ltmp: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         let mut og: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut ogtmp: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
-        let mut path: *mut *mut i8 =
-            ::core::ptr::null_mut::<*mut i8>();
+        let mut path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         m = ::core::ptr::null_mut::<rxkb_model>();
         mtmp = ::core::ptr::null_mut::<rxkb_model>();
-        m = ((*ctx).models.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_model
+        m = ((*ctx).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
             as *mut rxkb_model;
-        mtmp = ((*m).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_model
+        mtmp = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
             as *mut rxkb_model;
         while &raw mut (*m).base.link != &raw mut (*ctx).models {
             rxkb_model_unref(m);
             m = mtmp;
-            mtmp = ((*m).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
-                as *mut rxkb_model as *mut rxkb_model;
+            mtmp = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
+                as *mut rxkb_model;
         }
         l = ::core::ptr::null_mut::<rxkb_layout>();
         ltmp = ::core::ptr::null_mut::<rxkb_layout>();
-        l = ((*ctx).layouts.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        l = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
-        ltmp = ((*l).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        ltmp = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
         while &raw mut (*l).base.link != &raw mut (*ctx).layouts {
             rxkb_layout_unref(l);
             l = ltmp;
-            ltmp = ((*l).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            ltmp = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_layout as *mut rxkb_layout;
         }
         og = ::core::ptr::null_mut::<rxkb_option_group>();
         ogtmp = ::core::ptr::null_mut::<rxkb_option_group>();
-        og = ((*ctx).option_groups.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option_group
-            as *mut rxkb_option_group;
-        ogtmp = ((*og).base.link.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize))
+        og = ((*ctx).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
+            as *mut rxkb_option_group as *mut rxkb_option_group;
+        ogtmp = ((*og).base.link.next as *mut i8).offset(-(16 as u64 as isize))
             as *mut rxkb_option_group as *mut rxkb_option_group;
         while &raw mut (*og).base.link != &raw mut (*ctx).option_groups {
             rxkb_option_group_unref(og);
             og = ogtmp;
-            ogtmp = ((*og).base.link.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize))
+            ogtmp = ((*og).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_option_group as *mut rxkb_option_group;
         }
         if !(*ctx).includes.item.is_null() {
-            path = (*ctx)
-                .includes
-                .item
-                .offset(0 as ::core::ffi::c_int as isize)
-                as *mut *mut i8;
-            while path
-                < (*ctx).includes.item.offset((*ctx).includes.size as isize)
-                    as *mut *mut i8
+            path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
+            while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
             {
                 free(*path as *mut ::core::ffi::c_void);
                 path = path.offset(1);
@@ -2455,7 +2313,7 @@ pub unsafe extern "C" fn rxkb_context_set_log_level(
 }
 unsafe extern "C" fn log_level_to_prefix(mut level: rxkb_log_level) -> *const i8 {
     unsafe {
-        match level as ::core::ffi::c_uint {
+        match level as u32 {
             50 => return b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
             40 => return b"xkbregistry: INFO: \0".as_ptr() as *const i8,
             30 => {
@@ -2478,11 +2336,7 @@ unsafe extern "C" fn default_log_fn(
     unsafe {
         let mut prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
-            fprintf(
-                stderr,
-                b"%s\0".as_ptr() as *const i8,
-                prefix,
-            );
+            fprintf(stderr, b"%s\0".as_ptr() as *const i8, prefix);
         }
         vfprintf(stderr, fmt, args);
     }
@@ -2491,13 +2345,11 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> rxkb_log_level {
     unsafe {
         let mut endptr: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut lvl: rxkb_log_level = 0 as rxkb_log_level;
-        *__errno_location() = 0 as ::core::ffi::c_int;
-        lvl = strtol(level, &raw mut endptr, 10 as ::core::ffi::c_int) as rxkb_log_level;
-        if *__errno_location() == 0 as ::core::ffi::c_int
-            && (*endptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '\0' as i32
-                || is_space(*endptr.offset(0 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int
-                    != 0)
+        *__errno_location() = 0 as i32;
+        lvl = strtol(level, &raw mut endptr, 10 as i32) as rxkb_log_level;
+        if *__errno_location() == 0 as i32
+            && (*endptr.offset(0 as i32 as isize) as i32 == '\0' as i32
+                || is_space(*endptr.offset(0 as i32 as isize)) as i32 != 0)
         {
             return lvl;
         }
@@ -2533,14 +2385,13 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> rxkb_log_level {
             b"debug\0".as_ptr() as *const i8,
             level,
             (::core::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
-        ) as ::core::ffi::c_int
+        ) as i32
             != 0
             || istrneq(
                 b"dbg\0".as_ptr() as *const i8,
                 level,
-                (::core::mem::size_of::<[i8; 4]>() as usize)
-                    .wrapping_sub(1 as usize),
-            ) as ::core::ffi::c_int
+                (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+            ) as i32
                 != 0
         {
             return RXKB_LOG_LEVEL_DEBUG;
@@ -2558,12 +2409,9 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
             return ::core::ptr::null_mut::<rxkb_context>();
         }
         (*ctx).context_state = CONTEXT_NEW;
-        (*ctx).load_extra_rules_files = flags as ::core::ffi::c_uint
-            & RXKB_CONTEXT_LOAD_EXOTIC_RULES as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0;
-        (*ctx).use_secure_getenv = flags as ::core::ffi::c_uint
-            & RXKB_CONTEXT_NO_SECURE_GETENV as ::core::ffi::c_int as ::core::ffi::c_uint
-            == 0;
+        (*ctx).load_extra_rules_files =
+            flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32 != 0;
+        (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as i32 as u32 == 0;
         (*ctx).log_fn = Some(
             default_log_fn
                 as unsafe extern "C" fn(
@@ -2582,25 +2430,21 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
                 ) -> (),
             >;
         (*ctx).log_level = RXKB_LOG_LEVEL_ERROR;
-        env = rxkb_context_getenv(
-            ctx,
-            b"RXKB_LOG_LEVEL\0".as_ptr() as *const i8,
-        );
+        env = rxkb_context_getenv(ctx, b"RXKB_LOG_LEVEL\0".as_ptr() as *const i8);
         if !env.is_null() {
             rxkb_context_set_log_level(ctx, log_level(env));
         }
-        static mut RXKB_CONTEXT_FLAGS: rxkb_context_flags = (RXKB_CONTEXT_NO_DEFAULT_INCLUDES
-            as ::core::ffi::c_int
-            | RXKB_CONTEXT_LOAD_EXOTIC_RULES as ::core::ffi::c_int
-            | RXKB_CONTEXT_NO_SECURE_GETENV as ::core::ffi::c_int)
-            as rxkb_context_flags;
-        if flags as ::core::ffi::c_uint & !(RXKB_CONTEXT_FLAGS as ::core::ffi::c_uint) != 0 {
+        static mut RXKB_CONTEXT_FLAGS: rxkb_context_flags =
+            (RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
+                | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32
+                | RXKB_CONTEXT_NO_SECURE_GETENV as i32) as rxkb_context_flags;
+        if flags as u32 & !(RXKB_CONTEXT_FLAGS as u32) != 0 {
             rxkb_log(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
                 b"%s: Invalid context flags: 0x%x\n\0".as_ptr() as *const i8,
                 b"rxkb_context_new\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint & !(RXKB_CONTEXT_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(RXKB_CONTEXT_FLAGS as u32),
             );
             free(ctx as *mut ::core::ffi::c_void);
             return ::core::ptr::null_mut::<rxkb_context>();
@@ -2608,9 +2452,7 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
         list_init(&raw mut (*ctx).models);
         list_init(&raw mut (*ctx).layouts);
         list_init(&raw mut (*ctx).option_groups);
-        if flags as ::core::ffi::c_uint
-            & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint
-            == 0
+        if flags as u32 & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32 == 0
             && !rxkb_context_include_path_append_default(ctx)
         {
             rxkb_log(
@@ -2618,7 +2460,7 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
                 RXKB_LOG_LEVEL_ERROR,
                 b"[XKB-%03d] Failed to add any default include path (default system path: %s)\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as ::core::ffi::c_int,
+                XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
                 b"/usr/share/xkeyboard-config-2\0".as_ptr() as *const i8,
             );
             rxkb_context_unref(ctx);
@@ -2705,15 +2547,12 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
         };
         let mut rules: [i8; 4096] = [0; 4096];
         let mut tmp: *mut i8 = ::core::ptr::null_mut::<i8>();
-        let mut err: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        if (*ctx).context_state as ::core::ffi::c_uint
-            != CONTEXT_NEW as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        let mut err: i32 = 0 as i32;
+        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
             rxkb_log(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"include paths can only be appended to a new context\n\0".as_ptr()
-                    as *const i8,
+                b"include paths can only be appended to a new context\n\0".as_ptr() as *const i8,
             );
         } else {
             stat_buf = stat {
@@ -2743,7 +2582,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                 __glibc_reserved: [0; 3],
             };
             err = stat(path, &raw mut stat_buf);
-            if err != 0 as ::core::ffi::c_int {
+            if err != 0 as i32 {
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
                 err = ENOTDIR;
@@ -2763,7 +2602,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                         RXKB_LOG_LEVEL_ERROR,
                         b"[XKB-%03d] Path is too long: expected max length of %zu, got: %s/rules/%s.xml\n\0"
                             .as_ptr() as *const i8,
-                        XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
+                        XKB_ERROR_INVALID_PATH as i32,
                         ::core::mem::size_of::<[i8; 4096]>(),
                         path,
                         b"evdev\0".as_ptr() as *const i8,
@@ -2784,11 +2623,9 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                             );
                             (*ctx).includes.item = realloc(
                                 (*ctx).includes.item as *mut ::core::ffi::c_void,
-                                ((*ctx).includes.alloc as usize).wrapping_mul(
-                                    ::core::mem::size_of::<*mut i8>() as usize,
-                                ),
-                            )
-                                as *mut *mut i8;
+                                ((*ctx).includes.alloc as usize)
+                                    .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
+                            ) as *mut *mut i8;
                         }
                         let ref mut c2rust_fresh0 = *(*ctx)
                             .includes
@@ -2819,12 +2656,9 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
 unsafe extern "C" fn compare_str(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
-        return strcmp(
-            *(a as *mut *mut i8),
-            *(b as *mut *mut i8),
-        );
+        return strcmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
 }
 unsafe extern "C" fn add_direct_subdirectories(
@@ -2833,13 +2667,13 @@ unsafe extern "C" fn add_direct_subdirectories(
     mut extensions: *mut darray_string,
     mut versioned_count: darray_size_t,
     mut versioned_path_length: usize,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut entry: *mut dirent = ::core::ptr::null_mut::<dirent>();
         let mut path_buf: [i8; 4096] = [0; 4096];
         let mut c2rust_current_block: u64;
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        let mut err: ::core::ffi::c_int = ENOMEM;
+        let mut ret: i32 = 0 as i32;
+        let mut err: i32 = ENOMEM;
         let mut dir: *mut DIR = ::core::ptr::null_mut::<DIR>();
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -2868,7 +2702,7 @@ unsafe extern "C" fn add_direct_subdirectories(
             __glibc_reserved: [0; 3],
         };
         err = stat(path, &raw mut stat_buf);
-        if err != 0 as ::core::ffi::c_int {
+        if err != 0 as i32 {
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
             err = ENOTDIR;
@@ -2893,12 +2727,9 @@ unsafe extern "C" fn add_direct_subdirectories(
                         c2rust_current_block = 14434620278749266018;
                         break;
                     }
-                    let mut name: *const i8 =
-                        &raw mut (*entry).d_name as *mut i8;
-                    if strcmp(name, b".\0".as_ptr() as *const i8)
-                        == 0 as ::core::ffi::c_int
-                        || strcmp(name, b"..\0".as_ptr() as *const i8)
-                            == 0 as ::core::ffi::c_int
+                    let mut name: *const i8 = &raw mut (*entry).d_name as *mut i8;
+                    if strcmp(name, b".\0".as_ptr() as *const i8) == 0 as i32
+                        || strcmp(name, b"..\0".as_ptr() as *const i8) == 0 as i32
                     {
                         continue;
                     }
@@ -2913,26 +2744,21 @@ unsafe extern "C" fn add_direct_subdirectories(
                         c2rust_current_block = 17009998909239196508;
                         break;
                     } else {
-                        if stat(
-                            &raw mut path_buf as *mut i8,
-                            &raw mut stat_buf,
-                        ) != 0 as ::core::ffi::c_int
+                        if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
                             || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t)
                         {
                             continue;
                         }
                         let mut i: darray_size_t = 0 as darray_size_t;
                         while i < versioned_count {
-                            let prev_name: *const i8 =
-                                (*(*extensions).item.offset(i as isize))
-                                    .offset(versioned_path_length as isize);
-                            if strcmp(name, prev_name) == 0 as ::core::ffi::c_int {
+                            let prev_name: *const i8 = (*(*extensions).item.offset(i as isize))
+                                .offset(versioned_path_length as isize);
+                            if strcmp(name, prev_name) == 0 as i32 {
                                 continue 's_62;
                             }
                             i = i.wrapping_add(1);
                         }
-                        let mut ext_path: *mut i8 =
-                            strdup_safe(&raw mut path_buf as *mut i8);
+                        let mut ext_path: *mut i8 = strdup_safe(&raw mut path_buf as *mut i8);
                         if ext_path.is_null() {
                             err = ENOMEM;
                             c2rust_current_block = 17009998909239196508;
@@ -2949,9 +2775,8 @@ unsafe extern "C" fn add_direct_subdirectories(
                                 );
                                 (*extensions).item = realloc(
                                     (*extensions).item as *mut ::core::ffi::c_void,
-                                    ((*extensions).alloc as usize).wrapping_mul(
-                                        ::core::mem::size_of::<*mut i8>() as usize,
-                                    ),
+                                    ((*extensions).alloc as usize)
+                                        .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
                                 )
                                     as *mut *mut i8;
                             }
@@ -2980,11 +2805,10 @@ unsafe extern "C" fn add_direct_subdirectories(
                                             *const ::core::ffi::c_void,
                                             *const ::core::ffi::c_void,
                                         )
-                                            -> ::core::ffi::c_int,
+                                            -> i32,
                                 ),
                             );
-                            let mut ext_path_0: *mut *mut i8 =
-                                ::core::ptr::null_mut::<*mut i8>();
+                            let mut ext_path_0: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
                             if !(*extensions).item.is_null() {
                                 ext_path_0 = (*extensions).item.offset(versioned_count as isize)
                                     as *mut *mut i8;
@@ -2992,8 +2816,8 @@ unsafe extern "C" fn add_direct_subdirectories(
                                     < (*extensions).item.offset((*extensions).size as isize)
                                         as *mut *mut i8
                                 {
-                                    ret |= rxkb_context_include_path_append(ctx, *ext_path_0)
-                                        as ::core::ffi::c_int;
+                                    ret |=
+                                        rxkb_context_include_path_append(ctx, *ext_path_0) as i32;
                                     ext_path_0 = ext_path_0.offset(1);
                                 }
                             }
@@ -3022,24 +2846,17 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
 ) -> bool {
     unsafe {
         let mut user_path: [i8; 4096] = [0; 4096];
-        let mut ret: ::core::ffi::c_int = if false { 1 } else { 0 };
-        if (*ctx).context_state as ::core::ffi::c_uint
-            != CONTEXT_NEW as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        let mut ret: i32 = if false { 1 } else { 0 };
+        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
             rxkb_log(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"include paths can only be appended to a new context\n\0".as_ptr()
-                    as *const i8,
+                b"include paths can only be appended to a new context\n\0".as_ptr() as *const i8,
             );
             return false;
         }
-        let home: *const i8 =
-            rxkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
-        let xdg: *const i8 = rxkb_context_getenv(
-            ctx,
-            b"XDG_CONFIG_HOME\0".as_ptr() as *const i8,
-        );
+        let home: *const i8 = rxkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
+        let xdg: *const i8 = rxkb_context_getenv(ctx, b"XDG_CONFIG_HOME\0".as_ptr() as *const i8);
         if !xdg.is_null() {
             if snprintf_safe(
                 &raw mut user_path as *mut i8,
@@ -3047,11 +2864,8 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/xkb\0".as_ptr() as *const i8,
                 xdg,
             ) {
-                ret = ret as ::core::ffi::c_int
-                    | rxkb_context_include_path_append(
-                        ctx,
-                        &raw mut user_path as *mut i8,
-                    ) as ::core::ffi::c_int;
+                ret = ret as i32
+                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         } else if !home.is_null() {
             if snprintf_safe(
@@ -3060,11 +2874,8 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/.config/xkb\0".as_ptr() as *const i8,
                 home,
             ) {
-                ret = ret as ::core::ffi::c_int
-                    | rxkb_context_include_path_append(
-                        ctx,
-                        &raw mut user_path as *mut i8,
-                    ) as ::core::ffi::c_int;
+                ret = ret as i32
+                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         }
         if !home.is_null() {
@@ -3074,18 +2885,13 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 b"%s/.xkb\0".as_ptr() as *const i8,
                 home,
             ) {
-                ret = ret as ::core::ffi::c_int
-                    | rxkb_context_include_path_append(
-                        ctx,
-                        &raw mut user_path as *mut i8,
-                    ) as ::core::ffi::c_int;
+                ret = ret as i32
+                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         }
-        let extra: *const i8 = rxkb_context_getenv(
-            ctx,
-            b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const i8,
-        );
-        ret = ret as ::core::ffi::c_int
+        let extra: *const i8 =
+            rxkb_context_getenv(ctx, b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const i8);
+        ret = ret as i32
             | rxkb_context_include_path_append(
                 ctx,
                 if !extra.is_null() {
@@ -3093,7 +2899,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 } else {
                     DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
                 },
-            ) as ::core::ffi::c_int;
+            ) as i32;
         let mut extensions: darray_string = darray_string {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
@@ -3108,7 +2914,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         }
         let mut versioned_path_length: usize = 0 as usize;
         if !extensions_path.is_null() {
-            ret = ret as ::core::ffi::c_int
+            ret = ret as i32
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
@@ -3126,7 +2932,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
             extensions_path = DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.as_ptr();
         }
         if !extensions_path.is_null() {
-            ret = ret as ::core::ffi::c_int
+            ret = ret as i32
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
@@ -3135,14 +2941,10 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                     versioned_path_length,
                 );
         }
-        let mut ext_path: *mut *mut i8 =
-            ::core::ptr::null_mut::<*mut i8>();
+        let mut ext_path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         if !extensions.item.is_null() {
-            ext_path = extensions.item.offset(0 as ::core::ffi::c_int as isize)
-                as *mut *mut i8;
-            while ext_path
-                < extensions.item.offset(extensions.size as isize) as *mut *mut i8
-            {
+            ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
+            while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
                 free(*ext_path as *mut ::core::ffi::c_void);
                 ext_path = ext_path.offset(1);
             }
@@ -3151,10 +2953,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         extensions.item = ::core::ptr::null_mut::<*mut i8>();
         extensions.size = 0 as darray_size_t;
         extensions.alloc = 0 as darray_size_t;
-        let root: *const i8 = rxkb_context_getenv(
-            ctx,
-            b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8,
-        );
+        let root: *const i8 = rxkb_context_getenv(ctx, b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8);
         let has_root: bool = rxkb_context_include_path_append(
             ctx,
             if !root.is_null() {
@@ -3163,12 +2962,8 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                 DFLT_XKB_CONFIG_ROOT.as_ptr()
             },
         ) as bool;
-        ret = ret as ::core::ffi::c_int | has_root as ::core::ffi::c_int;
-        if !has_root
-            && (root.is_null()
-                || *root.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != '\0' as i32)
-        {
+        ret = ret as i32 | has_root as i32;
+        if !has_root && (root.is_null() || *root.offset(0 as i32 as isize) as i32 != '\0' as i32) {
             rxkb_log(
                 ctx,
                 RXKB_LOG_LEVEL_WARNING,
@@ -3182,9 +2977,8 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                     root
                 },
             );
-            ret = ret as ::core::ffi::c_int
-                | rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr())
-                    as ::core::ffi::c_int;
+            ret = ret as i32
+                | rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr()) as i32;
         }
         return ret != 0;
     }
@@ -3201,17 +2995,13 @@ pub unsafe extern "C" fn rxkb_context_parse(
     mut ruleset: *const i8,
 ) -> bool {
     unsafe {
-        let mut path: *mut *mut i8 =
-            ::core::ptr::null_mut::<*mut i8>();
+        let mut path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         let mut success: bool = false;
-        if (*ctx).context_state as ::core::ffi::c_uint
-            != CONTEXT_NEW as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
             rxkb_log(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"parse must only be called on a new context\n\0".as_ptr()
-                    as *const i8,
+                b"parse must only be called on a new context\n\0".as_ptr() as *const i8,
             );
             return false;
         }
@@ -3222,12 +3012,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                 .offset((*ctx).includes.size.wrapping_sub(1 as darray_size_t) as isize)
                 as *mut *mut i8;
             while (*ctx).includes.size > 0 as darray_size_t
-                && path
-                    >= (*ctx)
-                        .includes
-                        .item
-                        .offset(0 as ::core::ffi::c_int as isize)
-                        as *mut *mut i8
+                && path >= (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8
             {
                 let mut rules: [i8; 4096] = [0; 4096];
                 if snprintf_safe(
@@ -3243,22 +3028,18 @@ pub unsafe extern "C" fn rxkb_context_parse(
                         b"Parsing %s\n\0".as_ptr() as *const i8,
                         &raw mut rules as *mut i8,
                     );
-                    if parse(
-                        ctx,
-                        &raw mut rules as *mut i8,
-                        RXKB_POPULARITY_STANDARD,
-                    ) {
+                    if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_STANDARD) {
                         success = true;
                     }
                 }
-                if (*ctx).load_extra_rules_files as ::core::ffi::c_int != 0
+                if (*ctx).load_extra_rules_files as i32 != 0
                     && snprintf_safe(
                         &raw mut rules as *mut i8,
                         ::core::mem::size_of::<[i8; 4096]>() as usize,
                         b"%s/rules/%s.extras.xml\0".as_ptr() as *const i8,
                         *path,
                         ruleset,
-                    ) as ::core::ffi::c_int
+                    ) as i32
                         != 0
                 {
                     rxkb_log(
@@ -3267,21 +3048,17 @@ pub unsafe extern "C" fn rxkb_context_parse(
                         b"Parsing %s\n\0".as_ptr() as *const i8,
                         &raw mut rules as *mut i8,
                     );
-                    if parse(
-                        ctx,
-                        &raw mut rules as *mut i8,
-                        RXKB_POPULARITY_EXOTIC,
-                    ) {
+                    if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_EXOTIC) {
                         success = true;
                     }
                 }
                 path = path.offset(-1);
             }
         }
-        (*ctx).context_state = (if success as ::core::ffi::c_int != 0 {
-            CONTEXT_PARSED as ::core::ffi::c_int
+        (*ctx).context_state = (if success as i32 != 0 {
+            CONTEXT_PARSED as i32
         } else {
-            CONTEXT_FAILED as ::core::ffi::c_int
+            CONTEXT_FAILED as i32
         }) as context_state;
         return success;
     }
@@ -3306,8 +3083,7 @@ pub unsafe extern "C" fn rxkb_context_get_user_data(
 #[inline]
 unsafe extern "C" fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
     unsafe {
-        return (*node).type_0 as ::core::ffi::c_uint
-            == XML_ELEMENT_NODE as ::core::ffi::c_int as ::core::ffi::c_uint
+        return (*node).type_0 as u32 == XML_ELEMENT_NODE as i32 as u32
             && xmlStrEqual((*node).name, name as *const xmlChar) != 0;
     }
 }
@@ -3316,9 +3092,7 @@ unsafe extern "C" fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
         let mut n: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         n = (*node).children as *mut xmlNode;
         while !n.is_null() {
-            if (*n).type_0 as ::core::ffi::c_uint
-                == XML_TEXT_NODE as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            if (*n).type_0 as u32 == XML_TEXT_NODE as i32 as u32 {
                 return xmlStrdup((*n).content) as *mut i8;
             }
             n = (*n).next as *mut xmlNode;
@@ -3345,10 +3119,8 @@ unsafe extern "C" fn parse_config_item(
         ci = (*parent).children as *mut xmlNode;
         while !ci.is_null() {
             if is_node(ci, b"configItem\0".as_ptr() as *const i8) {
-                let mut raw_popularity: *mut xmlChar = xmlGetProp(
-                    ci,
-                    b"popularity\0".as_ptr() as *const i8 as *const xmlChar,
-                );
+                let mut raw_popularity: *mut xmlChar =
+                    xmlGetProp(ci, b"popularity\0".as_ptr() as *const i8 as *const xmlChar);
                 if !raw_popularity.is_null() {
                     if xmlStrEqual(
                         raw_popularity,
@@ -3368,7 +3140,7 @@ unsafe extern "C" fn parse_config_item(
                             RXKB_LOG_LEVEL_ERROR,
                             b"xml:%u: invalid popularity attribute: expected 'standard' or 'exotic', got: '%s'\n\0"
                                 .as_ptr() as *const i8,
-                            (*ci).line as ::core::ffi::c_int,
+                            (*ci).line as i32,
                             raw_popularity,
                         );
                     }
@@ -3395,15 +3167,9 @@ unsafe extern "C" fn parse_config_item(
                 while !node.is_null() {
                     if is_node(node, b"name\0".as_ptr() as *const i8) {
                         (*config).name = extract_text(node);
-                    } else if is_node(
-                        node,
-                        b"description\0".as_ptr() as *const i8,
-                    ) {
+                    } else if is_node(node, b"description\0".as_ptr() as *const i8) {
                         (*config).description = extract_text(node);
-                    } else if is_node(
-                        node,
-                        b"shortDescription\0".as_ptr() as *const i8,
-                    ) {
+                    } else if is_node(node, b"shortDescription\0".as_ptr() as *const i8) {
                         (*config).brief = extract_text(node);
                     } else if is_node(node, b"vendor\0".as_ptr() as *const i8) {
                         (*config).vendor = extract_text(node);
@@ -3414,9 +3180,8 @@ unsafe extern "C" fn parse_config_item(
                     rxkb_log(
                         ctx,
                         RXKB_LOG_LEVEL_ERROR,
-                        b"xml:%u: missing required element 'name'\n\0".as_ptr()
-                            as *const i8,
-                        (*ci).line as ::core::ffi::c_int,
+                        b"xml:%u: missing required element 'name'\n\0".as_ptr() as *const i8,
+                        (*ci).line as i32,
                     );
                     config_item_free(config);
                     return false;
@@ -3445,26 +3210,23 @@ unsafe extern "C" fn parse_model(
         if parse_config_item(ctx, model, &raw mut config) {
             let mut m: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
             m = ::core::ptr::null_mut::<rxkb_model>();
-            m = ((*ctx).models.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_model
+            m = ((*ctx).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
                 as *mut rxkb_model;
             while &raw mut (*m).base.link != &raw mut (*ctx).models {
                 if streq((*m).name, config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
-                m = ((*m).base.link.next as *mut i8)
-                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                m = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_model as *mut rxkb_model;
             }
             m = rxkb_model_create(&raw mut (*ctx).base);
-            (*m).name = _steal(&raw mut config.name as *mut ::core::ffi::c_void)
-                as *mut i8 as *mut i8;
+            (*m).name =
+                _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*m).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
-                as *mut i8
-                as *mut i8;
-            (*m).vendor = _steal(&raw mut config.vendor as *mut ::core::ffi::c_void)
                 as *mut i8 as *mut i8;
+            (*m).vendor =
+                _steal(&raw mut config.vendor as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*m).popularity = config.popularity;
             list_append(&raw mut (*ctx).models, &raw mut (*m).base.link);
         }
@@ -3556,18 +3318,16 @@ unsafe extern "C" fn parse_variant(
             let mut v: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
             let mut exists: bool = false;
             v = ::core::ptr::null_mut::<rxkb_layout>();
-            v = ((*ctx).layouts.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+            v = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
                 as *mut rxkb_layout;
             while &raw mut (*v).base.link != &raw mut (*ctx).layouts {
-                if streq_null((*v).variant, config.name) as ::core::ffi::c_int != 0
-                    && streq((*v).name, (*l).name) as ::core::ffi::c_int != 0
+                if streq_null((*v).variant, config.name) as i32 != 0
+                    && streq((*v).name, (*l).name) as i32 != 0
                 {
                     exists = true;
                     break;
                 } else {
-                    v = ((*v).base.link.next as *mut i8)
-                        .offset(-(16 as ::core::ffi::c_ulong as isize))
+                    v = ((*v).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                         as *mut rxkb_layout as *mut rxkb_layout;
                 }
             }
@@ -3576,17 +3336,14 @@ unsafe extern "C" fn parse_variant(
                 list_init(&raw mut (*v).iso639s);
                 list_init(&raw mut (*v).iso3166s);
                 (*v).name = strdup((*l).name);
-                (*v).variant = _steal(&raw mut config.name as *mut ::core::ffi::c_void)
-                    as *mut i8
-                    as *mut i8;
+                (*v).variant =
+                    _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
                 (*v).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
-                    as *mut i8
-                    as *mut i8;
+                    as *mut i8 as *mut i8;
                 (*v).brief = if config.brief.is_null() {
                     strdup_safe((*l).brief)
                 } else {
-                    _steal(&raw mut config.brief as *mut ::core::ffi::c_void)
-                        as *mut i8
+                    _steal(&raw mut config.brief as *mut ::core::ffi::c_void) as *mut i8
                 };
                 (*v).popularity = config.popularity;
                 list_append(&raw mut (*ctx).layouts, &raw mut (*v).base.link);
@@ -3598,17 +3355,11 @@ unsafe extern "C" fn parse_variant(
                         let mut found_country_list: bool = false;
                         node = (*ci).children as *mut xmlNode;
                         while !node.is_null() {
-                            if is_node(
-                                node,
-                                b"languageList\0".as_ptr() as *const i8,
-                            ) {
+                            if is_node(node, b"languageList\0".as_ptr() as *const i8) {
                                 parse_language_list(node, v);
                                 found_language_list = true;
                             }
-                            if is_node(
-                                node,
-                                b"countryList\0".as_ptr() as *const i8,
-                            ) {
+                            if is_node(node, b"countryList\0".as_ptr() as *const i8) {
                                 parse_country_list(node, v);
                                 found_country_list = true;
                             }
@@ -3618,8 +3369,7 @@ unsafe extern "C" fn parse_variant(
                             let mut x: *mut rxkb_iso639_code =
                                 ::core::ptr::null_mut::<rxkb_iso639_code>();
                             x = ::core::ptr::null_mut::<rxkb_iso639_code>();
-                            x = ((*l).iso639s.next as *mut i8)
-                                .offset(-(16 as ::core::ffi::c_ulong as isize))
+                            x = ((*l).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
                                 as *mut rxkb_iso639_code
                                 as *mut rxkb_iso639_code;
                             while &raw mut (*x).base.link != &raw mut (*l).iso639s {
@@ -3627,8 +3377,7 @@ unsafe extern "C" fn parse_variant(
                                     rxkb_iso639_code_create(&raw mut (*v).base);
                                 (*code).code = strdup((*x).code);
                                 list_append(&raw mut (*v).iso639s, &raw mut (*code).base.link);
-                                x = ((*x).base.link.next as *mut i8)
-                                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                                x = ((*x).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                                     as *mut rxkb_iso639_code
                                     as *mut rxkb_iso639_code;
                             }
@@ -3637,8 +3386,7 @@ unsafe extern "C" fn parse_variant(
                             let mut x_0: *mut rxkb_iso3166_code =
                                 ::core::ptr::null_mut::<rxkb_iso3166_code>();
                             x_0 = ::core::ptr::null_mut::<rxkb_iso3166_code>();
-                            x_0 = ((*l).iso3166s.next as *mut i8)
-                                .offset(-(16 as ::core::ffi::c_ulong as isize))
+                            x_0 = ((*l).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
                                 as *mut rxkb_iso3166_code
                                 as *mut rxkb_iso3166_code;
                             while &raw mut (*x_0).base.link != &raw mut (*l).iso3166s {
@@ -3647,7 +3395,7 @@ unsafe extern "C" fn parse_variant(
                                 (*code_0).code = strdup((*x_0).code);
                                 list_append(&raw mut (*v).iso3166s, &raw mut (*code_0).base.link);
                                 x_0 = ((*x_0).base.link.next as *mut i8)
-                                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                                    .offset(-(16 as u64 as isize))
                                     as *mut rxkb_iso3166_code
                                     as *mut rxkb_iso3166_code;
                             }
@@ -3699,16 +3447,14 @@ unsafe extern "C" fn parse_layout(
             return;
         }
         l = ::core::ptr::null_mut::<rxkb_layout>();
-        l = ((*ctx).layouts.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_layout
+        l = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
             as *mut rxkb_layout;
         while &raw mut (*l).base.link != &raw mut (*ctx).layouts {
-            if streq((*l).name, config.name) as ::core::ffi::c_int != 0 && (*l).variant.is_null() {
+            if streq((*l).name, config.name) as i32 != 0 && (*l).variant.is_null() {
                 exists = true;
                 break;
             } else {
-                l = ((*l).base.link.next as *mut i8)
-                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                l = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_layout as *mut rxkb_layout;
             }
         }
@@ -3716,14 +3462,13 @@ unsafe extern "C" fn parse_layout(
             l = rxkb_layout_create(&raw mut (*ctx).base);
             list_init(&raw mut (*l).iso639s);
             list_init(&raw mut (*l).iso3166s);
-            (*l).name = _steal(&raw mut config.name as *mut ::core::ffi::c_void)
-                as *mut i8 as *mut i8;
+            (*l).name =
+                _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*l).variant = ::core::ptr::null_mut::<i8>();
             (*l).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
-                as *mut i8
-                as *mut i8;
-            (*l).brief = _steal(&raw mut config.brief as *mut ::core::ffi::c_void)
                 as *mut i8 as *mut i8;
+            (*l).brief =
+                _steal(&raw mut config.brief as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*l).popularity = config.popularity;
             list_append(&raw mut (*ctx).layouts, &raw mut (*l).base.link);
         } else {
@@ -3731,17 +3476,10 @@ unsafe extern "C" fn parse_layout(
         }
         node = (*layout).children as *mut xmlNode;
         while !node.is_null() {
-            if is_node(
-                node,
-                b"variantList\0".as_ptr() as *const i8,
-            ) {
+            if is_node(node, b"variantList\0".as_ptr() as *const i8) {
                 parse_variant_list(ctx, l, node, popularity);
             }
-            if !exists
-                && is_node(node, b"configItem\0".as_ptr() as *const i8)
-                    as ::core::ffi::c_int
-                    != 0
-            {
+            if !exists && is_node(node, b"configItem\0".as_ptr() as *const i8) as i32 != 0 {
                 let mut ll: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
                 ll = (*node).children as *mut xmlNode;
                 while !ll.is_null() {
@@ -3792,24 +3530,21 @@ unsafe extern "C" fn parse_option(
         if parse_config_item(ctx, option, &raw mut config) {
             let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
             o = ::core::ptr::null_mut::<rxkb_option>();
-            o = ((*group).options.next as *mut i8)
-                .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option
+            o = ((*group).options.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
                 as *mut rxkb_option;
             while &raw mut (*o).base.link != &raw mut (*group).options {
                 if streq((*o).name, config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
-                o = ((*o).base.link.next as *mut i8)
-                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                o = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_option as *mut rxkb_option;
             }
             o = rxkb_option_create(&raw mut (*group).base);
-            (*o).name = _steal(&raw mut config.name as *mut ::core::ffi::c_void)
-                as *mut i8 as *mut i8;
+            (*o).name =
+                _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*o).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
-                as *mut i8
-                as *mut i8;
+                as *mut i8 as *mut i8;
             (*o).popularity = config.popularity;
             (*o).layout_specific = config.layout_specific;
             list_append(&raw mut (*group).options, &raw mut (*o).base.link);
@@ -3838,37 +3573,30 @@ unsafe extern "C" fn parse_group(
             return;
         }
         g = ::core::ptr::null_mut::<rxkb_option_group>();
-        g = ((*ctx).option_groups.next as *mut i8)
-            .offset(-(16 as ::core::ffi::c_ulong as isize)) as *mut rxkb_option_group
-            as *mut rxkb_option_group;
+        g = ((*ctx).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
+            as *mut rxkb_option_group as *mut rxkb_option_group;
         while &raw mut (*g).base.link != &raw mut (*ctx).option_groups {
             if streq((*g).name, config.name) {
                 exists = true;
                 break;
             } else {
-                g = ((*g).base.link.next as *mut i8)
-                    .offset(-(16 as ::core::ffi::c_ulong as isize))
+                g = ((*g).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_option_group as *mut rxkb_option_group;
             }
         }
         if !exists {
             g = rxkb_option_group_create(&raw mut (*ctx).base);
-            (*g).name = _steal(&raw mut config.name as *mut ::core::ffi::c_void)
-                as *mut i8 as *mut i8;
+            (*g).name =
+                _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*g).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
-                as *mut i8
-                as *mut i8;
+                as *mut i8 as *mut i8;
             (*g).popularity = config.popularity;
             multiple = xmlGetProp(
                 group,
-                b"allowMultipleSelection\0".as_ptr() as *const i8
-                    as *const xmlChar,
+                b"allowMultipleSelection\0".as_ptr() as *const i8 as *const xmlChar,
             );
             if !multiple.is_null()
-                && xmlStrEqual(
-                    multiple,
-                    b"true\0".as_ptr() as *const i8 as *const xmlChar,
-                ) != 0
+                && xmlStrEqual(multiple, b"true\0".as_ptr() as *const i8 as *const xmlChar) != 0
             {
                 (*g).allow_multiple = true;
             }
@@ -3930,41 +3658,39 @@ unsafe extern "C" fn xml_error_func(
 ) {
     unsafe {
         static mut buf: [i8; 4096] = [0; 4096];
-        static mut slen: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        static mut slen: i32 = 0 as i32;
         let mut args: ::core::ffi::VaList;
-        let mut rc: ::core::ffi::c_int = 0;
+        let mut rc: i32 = 0;
         args = c2rust_args.clone();
         rc = vsnprintf(
-            (&raw mut buf as *mut i8).offset(slen as isize)
-                as *mut i8,
-            (::core::mem::size_of::<[i8; 4096]>() as usize)
-                .wrapping_sub(slen as usize),
+            (&raw mut buf as *mut i8).offset(slen as isize) as *mut i8,
+            (::core::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(slen as usize),
             msg,
             args,
         );
-        if rc < 0 as ::core::ffi::c_int {
+        if rc < 0 as i32 {
             rxkb_log(
                 ctx as *mut rxkb_context,
                 RXKB_LOG_LEVEL_ERROR,
                 b"[XKB-%03d] +++ out of cheese error. redo from start +++\n\0".as_ptr()
                     as *const i8,
-                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
             );
-            slen = 0 as ::core::ffi::c_int;
+            slen = 0 as i32;
             memset(
                 &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                0 as ::core::ffi::c_int,
+                0 as i32,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             return;
         }
         slen += rc;
-        if slen >= ::core::mem::size_of::<[i8; 4096]>() as ::core::ffi::c_int {
-            buf[(::core::mem::size_of::<[i8; 4096]>() as usize)
-                .wrapping_sub(1 as usize) as usize] = '\n' as i32 as i8;
-            slen = ::core::mem::size_of::<[i8; 4096]>() as ::core::ffi::c_int;
+        if slen >= ::core::mem::size_of::<[i8; 4096]>() as i32 {
+            buf[(::core::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(1 as usize)
+                as usize] = '\n' as i32 as i8;
+            slen = ::core::mem::size_of::<[i8; 4096]>() as i32;
         }
-        if buf[(slen - 1 as ::core::ffi::c_int) as usize] as ::core::ffi::c_int == '\n' as i32 {
+        if buf[(slen - 1 as i32) as usize] as i32 == '\n' as i32 {
             rxkb_log(
                 ctx as *mut rxkb_context,
                 RXKB_LOG_LEVEL_ERROR,
@@ -3973,10 +3699,10 @@ unsafe extern "C" fn xml_error_func(
             );
             memset(
                 &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                0 as ::core::ffi::c_int,
+                0 as i32,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
-            slen = 0 as ::core::ffi::c_int;
+            slen = 0 as i32;
         }
     }
 }
@@ -3995,7 +3721,7 @@ unsafe extern "C" fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) 
             &raw const dtdstr as *const i8,
             (::core::mem::size_of::<[i8; 1061]>() as usize)
                 .wrapping_div(::core::mem::size_of::<i8>() as usize)
-                .wrapping_sub(1 as usize) as ::core::ffi::c_int,
+                .wrapping_sub(1 as usize) as i32,
             XML_CHAR_ENCODING_NONE,
         );
         if !buf.is_null() {
@@ -4038,36 +3764,26 @@ unsafe extern "C" fn parse(
         if !check_eaccess(path, R_OK) {
             return false;
         }
-        xmlCheckVersion(21210 as ::core::ffi::c_int);
+        xmlCheckVersion(21210 as i32);
         let mut xmlCtxt: xmlParserCtxtPtr = xmlNewParserCtxt();
         if xmlCtxt.is_null() {
             return false;
         }
-        xmlCtxtUseOptions(xmlCtxt, XML_PARSE_NONET as ::core::ffi::c_int);
+        xmlCtxtUseOptions(xmlCtxt, XML_PARSE_NONET as i32);
         xmlSetGenericErrorFunc(
             ctx as *mut ::core::ffi::c_void,
             Some(
                 xml_error_func
-                    as unsafe extern "C" fn(
-                        *mut ::core::ffi::c_void,
-                        *const i8,
-                        ...
-                    ) -> (),
+                    as unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
             ),
         );
-        doc = xmlCtxtReadFile(
-            xmlCtxt,
-            path,
-            ::core::ptr::null::<i8>(),
-            0 as ::core::ffi::c_int,
-        ) as *mut xmlDoc;
+        doc = xmlCtxtReadFile(xmlCtxt, path, ::core::ptr::null::<i8>(), 0 as i32) as *mut xmlDoc;
         if !doc.is_null() {
             if !validate(ctx, doc) {
                 rxkb_log(
                     ctx,
                     RXKB_LOG_LEVEL_ERROR,
-                    b"XML error: failed to validate document at %s\n\0".as_ptr()
-                        as *const i8,
+                    b"XML error: failed to validate document at %s\n\0".as_ptr() as *const i8,
                     path,
                 );
             } else {

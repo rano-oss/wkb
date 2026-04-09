@@ -1,17 +1,17 @@
 pub mod types_h {
     pub type __uint64_t = u64;
-    pub type __dev_t = ::core::ffi::c_ulong;
-    pub type __uid_t = ::core::ffi::c_uint;
-    pub type __gid_t = ::core::ffi::c_uint;
-    pub type __ino_t = ::core::ffi::c_ulong;
-    pub type __mode_t = ::core::ffi::c_uint;
-    pub type __nlink_t = ::core::ffi::c_ulong;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
-    pub type __time_t = ::core::ffi::c_long;
-    pub type __blksize_t = ::core::ffi::c_long;
-    pub type __blkcnt_t = ::core::ffi::c_long;
-    pub type __syscall_slong_t = ::core::ffi::c_long;
+    pub type __dev_t = u64;
+    pub type __uid_t = u32;
+    pub type __gid_t = u32;
+    pub type __ino_t = u64;
+    pub type __mode_t = u32;
+    pub type __nlink_t = u64;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
+    pub type __time_t = i64;
+    pub type __blksize_t = i64;
+    pub type __blkcnt_t = i64;
+    pub type __syscall_slong_t = i64;
 }
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
@@ -32,7 +32,7 @@ pub mod struct_stat_h {
         pub st_mode: __mode_t,
         pub st_uid: __uid_t,
         pub st_gid: __gid_t,
-        pub __pad0: ::core::ffi::c_int,
+        pub __pad0: i32,
         pub st_rdev: __dev_t,
         pub st_size: __off_t,
         pub st_blksize: __blksize_t,
@@ -53,7 +53,7 @@ pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -67,8 +67,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -82,8 +82,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -102,51 +102,46 @@ pub mod FILE_h {
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
-        pub fn fstat(__fd: ::core::ffi::c_int, __buf: *mut stat) -> ::core::ffi::c_int;
+        pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
     }
 }
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
-        pub fn fdopen(__fd: ::core::ffi::c_int, __modes: *const i8) -> *mut FILE;
-        pub fn fileno(__stream: *mut FILE) -> ::core::ffi::c_int;
+        pub fn fdopen(__fd: i32, __modes: *const i8) -> *mut FILE;
+        pub fn fileno(__stream: *mut FILE) -> i32;
     }
 }
 pub mod mman_h {
-    pub const MAP_FAILED: *mut ::core::ffi::c_void =
-        -1 as ::core::ffi::c_int as *mut ::core::ffi::c_void;
+    pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
 
     use super::types_h::__off64_t;
     extern "C" {
         pub fn mmap(
             __addr: *mut ::core::ffi::c_void,
             __len: usize,
-            __prot: ::core::ffi::c_int,
-            __flags: ::core::ffi::c_int,
-            __fd: ::core::ffi::c_int,
+            __prot: i32,
+            __flags: i32,
+            __fd: i32,
             __offset: __off64_t,
         ) -> *mut ::core::ffi::c_void;
-        pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> ::core::ffi::c_int;
+        pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
     }
 }
 pub mod bits_stat_h {
-    pub const __S_IFMT: ::core::ffi::c_int = 0o170000 as ::core::ffi::c_int;
+    pub const __S_IFMT: i32 = 0o170000 as i32;
 }
 pub mod fcntl_linux_h {
-    pub const O_RDONLY: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const O_RDONLY: i32 = 0 as i32;
 }
 pub mod fcntl_h {
     extern "C" {
-        pub fn open(
-            __file: *const i8,
-            __oflag: ::core::ffi::c_int,
-            ...
-        ) -> ::core::ffi::c_int;
+        pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
     }
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -154,12 +149,12 @@ pub mod __stddef_null_h {
 }
 pub mod unistd_h {
     extern "C" {
-        pub fn close(__fd: ::core::ffi::c_int) -> ::core::ffi::c_int;
+        pub fn close(__fd: i32) -> i32;
     }
 }
 pub mod mman_linux_h {
-    pub const PROT_READ: ::core::ffi::c_int = 0x1 as ::core::ffi::c_int;
-    pub const MAP_SHARED: ::core::ffi::c_int = 0x1 as ::core::ffi::c_int;
+    pub const PROT_READ: i32 = 0x1 as i32;
+    pub const MAP_SHARED: i32 = 0x1 as i32;
 }
 pub use self::__stddef_null_h::NULL;
 
@@ -186,8 +181,8 @@ pub unsafe extern "C" fn open_file(mut path: *const i8) -> *mut FILE {
         if path.is_null() {
             return ::core::ptr::null_mut::<FILE>();
         }
-        let mut fd: ::core::ffi::c_int = open(path, O_RDONLY);
-        if fd < 0 as ::core::ffi::c_int {
+        let mut fd: i32 = open(path, O_RDONLY);
+        if fd < 0 as i32 {
             return ::core::ptr::null_mut::<FILE>();
         }
         let mut stat_buf: stat = stat {
@@ -216,10 +211,8 @@ pub unsafe extern "C" fn open_file(mut path: *const i8) -> *mut FILE {
             },
             __glibc_reserved: [0; 3],
         };
-        let mut err: ::core::ffi::c_int = fstat(fd, &raw mut stat_buf);
-        if err != 0 as ::core::ffi::c_int
-            || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o100000 as __mode_t)
-        {
+        let mut err: i32 = fstat(fd, &raw mut stat_buf);
+        if err != 0 as i32 || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o100000 as __mode_t) {
             close(fd);
             return ::core::ptr::null_mut::<FILE>();
         }
@@ -252,48 +245,37 @@ pub unsafe extern "C" fn to_lower(mut c: i8) -> i8 {
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn istrcmp(
-    mut a: *const i8,
-    mut b: *const i8,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
     unsafe {
         let mut i: usize = 0 as usize;
         loop {
-            if to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
-                != to_lower(*b.offset(i as isize)) as ::core::ffi::c_int
-            {
-                return to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
-                    - to_lower(*b.offset(i as isize)) as ::core::ffi::c_int;
+            if to_lower(*a.offset(i as isize)) as i32 != to_lower(*b.offset(i as isize)) as i32 {
+                return to_lower(*a.offset(i as isize)) as i32
+                    - to_lower(*b.offset(i as isize)) as i32;
             }
             if *a.offset(i as isize) == 0 {
                 break;
             }
             i = i.wrapping_add(1);
         }
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn istrncmp(
-    mut a: *const i8,
-    mut b: *const i8,
-    mut n: usize,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 {
     unsafe {
         let mut i: usize = 0 as usize;
         while i < n {
-            if to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
-                != to_lower(*b.offset(i as isize)) as ::core::ffi::c_int
-            {
-                return to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
-                    - to_lower(*b.offset(i as isize)) as ::core::ffi::c_int;
+            if to_lower(*a.offset(i as isize)) as i32 != to_lower(*b.offset(i as isize)) as i32 {
+                return to_lower(*a.offset(i as isize)) as i32
+                    - to_lower(*b.offset(i as isize)) as i32;
             }
             if *a.offset(i as isize) == 0 {
                 break;
             }
             i = i.wrapping_add(1);
         }
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 

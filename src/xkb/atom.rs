@@ -12,25 +12,18 @@ pub mod stdint_uintn_h {
     use super::types_h::{__uint32_t, __uint8_t};
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod atom_h {
     pub type xkb_atom_t = darray_size_t;
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
 }
 pub mod string_h {
 
     extern "C" {
-        pub fn strncmp(
-            __s1: *const i8,
-            __s2: *const i8,
-            __n: usize,
-        ) -> ::core::ffi::c_int;
-        pub fn strndup(
-            __string: *const i8,
-            __n: usize,
-        ) -> *mut i8;
+        pub fn strncmp(__s1: *const i8, __s2: *const i8, __n: usize) -> i32;
+        pub fn strndup(__string: *const i8, __n: usize) -> *mut i8;
         pub fn strlen(__s: *const i8) -> usize;
     }
 }
@@ -138,10 +131,7 @@ pub unsafe extern "C" fn atom_table_size(table: *mut atom_table) -> darray_size_
 
 /// Get text for an atom (returns pointer to interned string)
 #[no_mangle]
-pub unsafe extern "C" fn atom_text(
-    table: *mut atom_table,
-    atom: xkb_atom_t,
-) -> *const i8 {
+pub unsafe extern "C" fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
     unsafe {
         let strings_ptr = (*table).strings.as_ptr();
         assert!(
@@ -230,7 +220,7 @@ pub unsafe extern "C" fn atom_intern(
             let strings_ptr = (*table).strings.as_ptr();
             let existing_value = *strings_ptr.add(existing_atom as usize);
             if strncmp(existing_value, string, len) == 0
-                && *existing_value.offset(len as isize) as ::core::ffi::c_int == '\0' as i32
+                && *existing_value.offset(len as isize) as i32 == '\0' as i32
             {
                 return existing_atom;
             }

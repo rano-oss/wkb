@@ -191,11 +191,7 @@ pub unsafe extern "C" fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
 /// - 0 if conversion fails
 /// - -1 if buffer too small
 #[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_utf8(
-    keysym: u32,
-    buffer: *mut i8,
-    size: usize,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C" fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i32 {
     const MAX_UTF8_SIZE: usize = 5;
 
     if size < MAX_UTF8_SIZE {
@@ -222,7 +218,7 @@ pub unsafe extern "C" fn xkb_keysym_to_utf8(
     }
 
     // Return length + 1 for null terminator (matches old C behavior)
-    (utf8_bytes.len() + 1) as ::core::ffi::c_int
+    (utf8_bytes.len() + 1) as i32
 }
 
 /// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)

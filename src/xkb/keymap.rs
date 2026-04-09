@@ -4,8 +4,8 @@ pub mod internal {
     #[repr(C)]
     #[c2rust::src_loc = "0:0"]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -27,18 +27,18 @@ pub mod types_h {
     #[c2rust::src_loc = "45:1"]
     pub type __uint64_t = u64;
     #[c2rust::src_loc = "152:1"]
-    pub type __off_t = ::core::ffi::c_long;
+    pub type __off_t = i64;
     #[c2rust::src_loc = "153:1"]
-    pub type __off64_t = ::core::ffi::c_long;
+    pub type __off64_t = i64;
 }
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 pub mod stdint_intn_h {
     #[c2rust::src_loc = "24:1"]
-    pub type int8_t = __int8_t;
+    pub type i8 = __int8_t;
     #[c2rust::src_loc = "25:1"]
-    pub type int16_t = __int16_t;
+    pub type i16 = __int16_t;
     #[c2rust::src_loc = "26:1"]
-    pub type int32_t = __int32_t;
+    pub type i32 = __int32_t;
     use super::types_h::{__int16_t, __int32_t, __int8_t};
 }
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
@@ -62,7 +62,7 @@ pub mod struct_FILE_h {
     #[repr(C)]
     #[c2rust::src_loc = "51:1"]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -76,8 +76,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -91,8 +91,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -120,7 +120,7 @@ pub mod context_h {
     #[repr(C)]
     #[c2rust::src_loc = "21:1"]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -130,7 +130,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -177,7 +177,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -193,7 +193,7 @@ pub mod atom_h {
     #[c2rust::src_loc = "17:1"]
     pub type xkb_atom_t = darray_size_t;
     #[c2rust::src_loc = "19:9"]
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
     extern "C" {
         #[c2rust::src_loc = "21:1"]
@@ -203,7 +203,7 @@ pub mod atom_h {
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/darray.h:20"]
 pub mod darray_h {
     #[c2rust::src_loc = "19:1"]
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/include/xkbcommon/xkbcommon.h:19"]
 pub mod xkbcommon_h {
@@ -218,7 +218,7 @@ pub mod xkbcommon_h {
         pub options: *const i8,
     }
     #[c2rust::src_loc = "1118:1"]
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     #[c2rust::src_loc = "1123:5"]
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     #[c2rust::src_loc = "1122:5"]
@@ -242,7 +242,7 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "269:1"]
     pub type xkb_level_index_t = u32;
     #[c2rust::src_loc = "3094:1"]
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     #[c2rust::src_loc = "3113:5"]
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     #[c2rust::src_loc = "3107:5"]
@@ -250,7 +250,7 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "3100:5"]
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
     #[c2rust::src_loc = "2260:1"]
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     #[c2rust::src_loc = "2344:5"]
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     #[c2rust::src_loc = "2336:5"]
@@ -276,19 +276,19 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "345:1"]
     pub type xkb_led_index_t = u32;
     #[c2rust::src_loc = "1321:1"]
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     #[c2rust::src_loc = "1355:5"]
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     #[c2rust::src_loc = "1334:5"]
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
     #[c2rust::src_loc = "1220:1"]
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     #[c2rust::src_loc = "1240:5"]
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     #[c2rust::src_loc = "1222:5"]
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
     #[c2rust::src_loc = "1523:1"]
-    pub type xkb_keymap_serialize_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_serialize_flags = u32;
     #[c2rust::src_loc = "1548:5"]
     pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
     #[c2rust::src_loc = "1541:5"]
@@ -298,7 +298,7 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "1529:5"]
     pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
     #[c2rust::src_loc = "1644:1"]
-    pub type xkb_keymap_key_iterator_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_key_iterator_flags = u32;
     #[c2rust::src_loc = "1664:5"]
     pub const XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND: xkb_keymap_key_iterator_flags = 2;
     #[c2rust::src_loc = "1656:5"]
@@ -310,13 +310,13 @@ pub mod xkbcommon_h {
         unsafe extern "C" fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> (),
     >;
     #[c2rust::src_loc = "350:9"]
-    pub const XKB_KEYCODE_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "352:9"]
-    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "356:9"]
-    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "358:9"]
-    pub const XKB_LED_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "1515:9"]
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
     use super::context_h::xkb_context;
@@ -334,7 +334,7 @@ pub mod keymap_h {
     #[c2rust::src_loc = "668:1"]
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -377,7 +377,7 @@ pub mod keymap_h {
         pub mapping: xkb_mod_mask_t,
     }
     #[c2rust::src_loc = "67:1"]
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     #[c2rust::src_loc = "73:5"]
     pub const MOD_BOTH: mod_type = 3;
     #[c2rust::src_loc = "71:5"]
@@ -437,13 +437,13 @@ pub mod keymap_h {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
     #[c2rust::src_loc = "351:1"]
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     #[c2rust::src_loc = "353:5"]
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     #[c2rust::src_loc = "352:5"]
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
     #[c2rust::src_loc = "91:1"]
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     #[c2rust::src_loc = "113:5"]
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     #[c2rust::src_loc = "112:5"]
@@ -514,7 +514,7 @@ pub mod keymap_h {
         pub button: uint8_t,
     }
     #[c2rust::src_loc = "116:1"]
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     #[c2rust::src_loc = "130:5"]
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     #[c2rust::src_loc = "129:5"]
@@ -549,8 +549,8 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -558,7 +558,7 @@ pub mod keymap_h {
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -566,7 +566,7 @@ pub mod keymap_h {
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -577,7 +577,7 @@ pub mod keymap_h {
         pub ctrls: xkb_action_controls,
     }
     #[c2rust::src_loc = "141:1"]
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     #[c2rust::src_loc = "187:5"]
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     #[c2rust::src_loc = "181:5"]
@@ -632,7 +632,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -652,7 +652,7 @@ pub mod keymap_h {
     #[c2rust::src_loc = "397:1"]
     pub type xkb_action_count_t = uint16_t;
     #[c2rust::src_loc = "230:1"]
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     #[c2rust::src_loc = "235:5"]
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     #[c2rust::src_loc = "234:5"]
@@ -837,7 +837,7 @@ pub mod keymap_h {
     #[c2rust::src_loc = "264:1"]
     pub type xkb_overlay_mask_t = uint8_t;
     #[c2rust::src_loc = "454:1"]
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     #[c2rust::src_loc = "460:5"]
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     #[c2rust::src_loc = "459:5"]
@@ -883,7 +883,7 @@ pub mod keymap_h {
         >,
     }
     #[c2rust::src_loc = "40:9"]
-    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
+    pub const XKB_MAX_GROUPS: i32 = 32 as i32;
     #[inline]
     #[c2rust::src_loc = "855:1"]
     pub unsafe extern "C" fn XkbKey(
@@ -941,7 +941,7 @@ pub mod keymap_h {
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::rmlvo_h::xkb_rmlvo_builder;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keymap_serialize_flags,
@@ -967,7 +967,7 @@ pub mod keymap_h {
         ) -> xkb_mod_index_t;
         #[c2rust::src_loc = "923:1"]
         pub fn XkbWrapGroupIntoRange(
-            group: int32_t,
+            group: i32,
             num_groups: xkb_layout_index_t,
             out_of_range_group_policy: xkb_layout_out_of_range_policy,
             out_of_range_group_number: xkb_layout_index_t,
@@ -986,7 +986,7 @@ pub mod rmlvo_h {
         pub model: *mut i8,
         pub layouts: xkb_rmlvo_builder_layouts,
         pub options: xkb_rmlvo_builder_options,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub ctx: *mut xkb_context,
     }
     #[derive(Copy, Clone)]
@@ -1020,7 +1020,7 @@ pub mod rmlvo_h {
         pub variant: *mut i8,
     }
     #[c2rust::src_loc = "14:1"]
-    pub type RMLVO = ::core::ffi::c_uint;
+    pub type RMLVO = u32;
     #[c2rust::src_loc = "19:5"]
     pub const RMLVO_OPTIONS: RMLVO = 16;
     #[c2rust::src_loc = "18:5"]
@@ -1042,7 +1042,7 @@ pub mod messages_codes_h {
     #[c2rust::src_loc = "154:5"]
     pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
     #[c2rust::src_loc = "41:1"]
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     #[c2rust::src_loc = "48:5"]
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     #[c2rust::src_loc = "47:5"]
@@ -1056,7 +1056,7 @@ pub mod messages_codes_h {
     #[c2rust::src_loc = "42:5"]
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
     #[c2rust::src_loc = "59:1"]
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     #[c2rust::src_loc = "227:5"]
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     #[c2rust::src_loc = "226:5"]
@@ -1231,7 +1231,7 @@ pub mod enums_h {
     #[c2rust::src_loc = "98:5"]
     pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: xkb_enumerations_values = 7;
     #[c2rust::src_loc = "76:1"]
-    pub type xkb_enumerations_values = ::core::ffi::c_uint;
+    pub type xkb_enumerations_values = u32;
     #[c2rust::src_loc = "181:5"]
     pub const XKB_COMPOSE_FEED_RESULT_VALUES: xkb_enumerations_values = 3;
     #[c2rust::src_loc = "175:5"]
@@ -1300,14 +1300,14 @@ pub mod __stddef_null_h {
 #[c2rust::header_src = "/usr/include/stdint.h:17"]
 pub mod stdint_h {
     #[c2rust::src_loc = "112:10"]
-    pub const INT32_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
+    pub const INT32_MAX: i32 = 2147483647 as i32;
 }
 #[c2rust::header_src = "/usr/lib/clang/21/include/stdbool.h:22"]
 pub mod stdbool_h {
     #[c2rust::src_loc = "25:9"]
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
     #[c2rust::src_loc = "26:9"]
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const false_0: i32 = 0 as i32;
 }
 pub use self::__stddef_null_h::NULL;
 
@@ -1410,7 +1410,7 @@ pub use self::rmlvo_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free};
 use self::string_h::strlen;
@@ -1442,7 +1442,7 @@ pub use self::FILE_h::FILE;
 #[repr(C)]
 #[c2rust::src_loc = "591:1"]
 pub struct xkb_keymap_key_iterator {
-    pub increment: int8_t,
+    pub increment: i8,
     pub skip_unbound: bool,
     pub min: *const xkb_key,
     pub max: *const xkb_key,
@@ -1461,10 +1461,10 @@ pub unsafe extern "C" fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb
 #[c2rust::src_loc = "34:1"]
 pub unsafe extern "C" fn clear_level(mut leveli: *mut xkb_level) {
     unsafe {
-        if (*leveli).num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+        if (*leveli).num_syms as i32 > 1 as i32 {
             free((*leveli).s.syms as *mut ::core::ffi::c_void);
         }
-        if (*leveli).num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+        if (*leveli).num_actions as i32 > 1 as i32 {
             free((*leveli).a.actions as *mut ::core::ffi::c_void);
         }
     }
@@ -1472,7 +1472,7 @@ pub unsafe extern "C" fn clear_level(mut leveli: *mut xkb_level) {
 #[c2rust::src_loc = "43:1"]
 unsafe extern "C" fn clear_interpret(mut interp: *mut xkb_sym_interpret) {
     unsafe {
-        if (*interp).num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+        if (*interp).num_actions as i32 > 1 as i32 {
             free((*interp).a.actions as *mut ::core::ffi::c_void);
         }
     }
@@ -1483,7 +1483,7 @@ pub unsafe extern "C" fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
     unsafe {
         if keymap.is_null() || {
             (*keymap).refcnt -= 1;
-            (*keymap).refcnt > 0 as ::core::ffi::c_int
+            (*keymap).refcnt > 0 as i32
         } {
             return;
         }
@@ -1566,15 +1566,15 @@ unsafe extern "C" fn get_keymap_format_ops(
                 &raw const text_v1_keymap_format_ops,
             ]
         };
-        if (format as ::core::ffi::c_int) < 0 as ::core::ffi::c_int
-            || format as ::core::ffi::c_int
+        if (format as i32) < 0 as i32
+            || format as i32
                 >= (::core::mem::size_of::<[*const xkb_keymap_format_ops; 3]>() as usize)
                     .wrapping_div(::core::mem::size_of::<*const xkb_keymap_format_ops>() as usize)
-                    as ::core::ffi::c_int
+                    as i32
         {
             return ::core::ptr::null::<xkb_keymap_format_ops>();
         }
-        return keymap_format_ops[format as ::core::ffi::c_int as usize];
+        return keymap_format_ops[format as i32 as usize];
     }
 }
 #[no_mangle]
@@ -1590,10 +1590,10 @@ pub unsafe extern "C" fn xkb_keymap_new_from_rmlvo(
             xkb_log(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8,
-                format as ::core::ffi::c_uint,
+                format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1630,10 +1630,10 @@ pub unsafe extern "C" fn xkb_keymap_new_from_names2(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8,
-                format as ::core::ffi::c_uint,
+                format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1705,10 +1705,10 @@ pub unsafe extern "C" fn xkb_keymap_new_from_buffer(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
-                format as ::core::ffi::c_uint,
+                format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1716,7 +1716,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_buffer(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: no buffer specified\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
             );
@@ -1732,8 +1732,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_buffer(
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         if length > 0 as usize
-            && *buffer.offset(length.wrapping_sub(1 as usize) as isize) as ::core::ffi::c_int
-                == '\0' as i32
+            && *buffer.offset(length.wrapping_sub(1 as usize) as isize) as i32 == '\0' as i32
         {
             length = length.wrapping_sub(1);
         }
@@ -1761,10 +1760,10 @@ pub unsafe extern "C" fn xkb_keymap_new_from_file(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
-                format as ::core::ffi::c_uint,
+                format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1772,7 +1771,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_file(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: no file specified\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
             );
@@ -1806,20 +1805,19 @@ pub unsafe extern "C" fn xkb_keymap_get_as_string2(
 ) -> *mut i8 {
     unsafe {
         static mut XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
-            XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as ::core::ffi::c_int as xkb_keymap_serialize_flags;
-        if flags as ::core::ffi::c_uint & !(XKB_KEYMAP_SERIALIZE_FLAGS as ::core::ffi::c_uint) != 0
-        {
+            XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
+        if flags as u32 & !(XKB_KEYMAP_SERIALIZE_FLAGS as u32) != 0 {
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unrecognized serialization flags: %#x\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint & !(XKB_KEYMAP_SERIALIZE_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_KEYMAP_SERIALIZE_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<i8>();
         }
-        if format as ::core::ffi::c_uint == XKB_KEYMAP_USE_ORIGINAL_FORMAT as ::core::ffi::c_uint {
+        if format as u32 == XKB_KEYMAP_USE_ORIGINAL_FORMAT as u32 {
             format = (*keymap).format;
         }
         let ops: *const xkb_keymap_format_ops =
@@ -1828,10 +1826,10 @@ pub unsafe extern "C" fn xkb_keymap_get_as_string2(
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
                 b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8,
-                format as ::core::ffi::c_uint,
+                format as u32,
             );
             return ::core::ptr::null_mut::<i8>();
         }
@@ -1983,7 +1981,7 @@ pub unsafe extern "C" fn xkb_keymap_num_levels_for_key(
             return 0 as xkb_level_index_t;
         }
         layout = XkbWrapGroupIntoRange(
-            layout as int32_t,
+            layout as i32,
             (*key).num_groups(),
             (*key).out_of_range_group_policy(),
             (*key).out_of_range_group_number(),
@@ -2055,7 +2053,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_mods_for_level(
             return 0 as usize;
         }
         layout = XkbWrapGroupIntoRange(
-            layout as int32_t,
+            layout as i32,
             (*key).num_groups(),
             (*key).out_of_range_group_policy(),
             (*key).out_of_range_group_number(),
@@ -2073,7 +2071,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_mods_for_level(
             let mut i: darray_size_t = 0 as darray_size_t;
             while i < (*type_0).num_entries && count < masks_size {
                 if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
-                    as ::core::ffi::c_int
+                    as i32
                     != 0
                     && (*(*type_0).entries.offset(i as isize)).mods.mask == 0 as xkb_mod_mask_t
                 {
@@ -2092,7 +2090,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_mods_for_level(
         let mut i_0: darray_size_t = 0 as darray_size_t;
         while i_0 < (*type_0).num_entries && count < masks_size {
             if entry_is_active((*type_0).entries.offset(i_0 as isize) as *mut xkb_key_type_entry)
-                as ::core::ffi::c_int
+                as i32
                 != 0
                 && (*(*type_0).entries.offset(i_0 as isize)).level == level
             {
@@ -2116,7 +2114,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_level(
 ) -> *mut xkb_level {
     unsafe {
         layout = XkbWrapGroupIntoRange(
-            layout as int32_t,
+            layout as i32,
             (*key).num_groups(),
             (*key).out_of_range_group_policy(),
             (*key).out_of_range_group_number(),
@@ -2140,7 +2138,7 @@ pub unsafe extern "C" fn xkb_keymap_key_get_syms_by_level(
     mut layout: xkb_layout_index_t,
     mut level: xkb_level_index_t,
     mut syms_out: *mut *const xkb_keysym_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut leveli: *const xkb_level = ::core::ptr::null::<xkb_level>();
         let mut num_syms: xkb_keysym_count_t = 0;
@@ -2149,18 +2147,18 @@ pub unsafe extern "C" fn xkb_keymap_key_get_syms_by_level(
             leveli = xkb_keymap_key_get_level(keymap, key, layout, level);
             if !leveli.is_null() {
                 num_syms = (*leveli).num_syms;
-                if !(num_syms as ::core::ffi::c_int == 0 as ::core::ffi::c_int) {
-                    if num_syms as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
+                if !(num_syms as i32 == 0 as i32) {
+                    if num_syms as i32 == 1 as i32 {
                         *syms_out = &raw const (*leveli).s.sym;
                     } else {
                         *syms_out = (*leveli).s.syms;
                     }
-                    return num_syms as ::core::ffi::c_int;
+                    return num_syms as i32;
                 }
             }
         }
         *syms_out = ::core::ptr::null::<xkb_keysym_t>();
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 #[no_mangle]
@@ -2185,19 +2183,16 @@ pub unsafe extern "C" fn xkb_keymap_key_iterator_new(
 ) -> *mut xkb_keymap_key_iterator {
     unsafe {
         static mut XKB_KEYMAP_KEY_ITERATOR_FLAGS: xkb_keymap_key_iterator_flags =
-            (XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as ::core::ffi::c_int
-                | XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as ::core::ffi::c_int)
+            (XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as i32
+                | XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as i32)
                 as xkb_keymap_key_iterator_flags;
-        if flags as ::core::ffi::c_uint & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as ::core::ffi::c_uint)
-            != 0
-        {
+        if flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32) != 0 {
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"unrecognized keymap iterator flags: %#x\n\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint
-                    & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();
         }
@@ -2209,9 +2204,9 @@ pub unsafe extern "C" fn xkb_keymap_key_iterator_new(
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Could not allocate a keymap key iterator.\n\0".as_ptr() as *const i8,
-                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                XKB_ERROR_ALLOCATION_ERROR as i32,
             );
             return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();
         }
@@ -2222,31 +2217,26 @@ pub unsafe extern "C" fn xkb_keymap_key_iterator_new(
             (*iter).max = ::core::ptr::null::<xkb_key>();
             return iter;
         }
-        (*iter).skip_unbound = flags as ::core::ffi::c_uint
-            & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0;
-        (*iter).increment = (if flags as ::core::ffi::c_uint
-            & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            -1 as ::core::ffi::c_int
-        } else {
-            1 as ::core::ffi::c_int
-        }) as int8_t;
+        (*iter).skip_unbound =
+            flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as i32 as u32 != 0;
+        (*iter).increment =
+            (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as i32 as u32 != 0 {
+                -1 as i32
+            } else {
+                1 as i32
+            }) as i8;
         (*iter).min = if (*keymap).num_keys_low != 0 {
             (*(*iter).keymap)
                 .keys
                 .offset((*keymap).min_key_code as isize) as *mut xkb_key
         } else {
-            (*(*iter).keymap)
-                .keys
-                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_key
+            (*(*iter).keymap).keys.offset(0 as i32 as isize) as *mut xkb_key
         };
         (*iter).max = (*(*iter).keymap)
             .keys
             .offset((*(*iter).keymap).num_keys.wrapping_sub(1 as xkb_keycode_t) as isize)
             as *mut xkb_key;
-        if ((*iter).increment as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
+        if ((*iter).increment as i32) < 0 as i32 {
             (*iter).next = (*iter).max;
         } else {
             (*iter).next = (*iter).min;
@@ -2276,17 +2266,16 @@ pub unsafe extern "C" fn xkb_keymap_key_iterator_next(
         }
         let mut next: *const xkb_key = (*iter).next;
         while (*next).name == XKB_ATOM_NONE as xkb_atom_t
-            || (*iter).skip_unbound as ::core::ffi::c_int != 0
-                && (*next).num_groups() as ::core::ffi::c_int == 0 as ::core::ffi::c_int
+            || (*iter).skip_unbound as i32 != 0 && (*next).num_groups() as i32 == 0 as i32
         {
-            next = next.offset((*iter).increment as ::core::ffi::c_int as isize);
+            next = next.offset((*iter).increment as i32 as isize);
             if next < (*iter).min || next > (*iter).max {
                 (*iter).next = ::core::ptr::null::<xkb_key>();
                 return XKB_KEYCODE_INVALID as xkb_keycode_t;
             }
         }
         let ret: xkb_keycode_t = (*next).keycode;
-        next = next.offset((*iter).increment as ::core::ffi::c_int as isize);
+        next = next.offset((*iter).increment as i32 as isize);
         (*iter).next = if next < (*iter).min || next > (*iter).max {
             ::core::ptr::null::<xkb_key>()
         } else {
@@ -2386,12 +2375,12 @@ pub unsafe extern "C" fn xkb_keymap_key_by_name(
 pub unsafe extern "C" fn xkb_keymap_key_repeats(
     mut keymap: *mut xkb_keymap,
     mut kc: xkb_keycode_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
-        return (*key).repeats() as ::core::ffi::c_int;
+        return (*key).repeats() as i32;
     }
 }

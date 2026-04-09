@@ -3,32 +3,32 @@ pub mod getopt_ext_h {
     #[repr(C)]
     pub struct option {
         pub name: *const i8,
-        pub has_arg: ::core::ffi::c_int,
-        pub flag: *mut ::core::ffi::c_int,
-        pub val: ::core::ffi::c_int,
+        pub has_arg: i32,
+        pub flag: *mut i32,
+        pub val: i32,
     }
-    pub const no_argument: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    pub const required_argument: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const no_argument: i32 = 0 as i32;
+    pub const required_argument: i32 = 1 as i32;
     extern "C" {
         pub fn getopt_long(
-            ___argc: ::core::ffi::c_int,
+            ___argc: i32,
             ___argv: *const *mut i8,
             __shortopts: *const i8,
             __longopts: *const option,
-            __longind: *mut ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int;
+            __longind: *mut i32,
+        ) -> i32;
     }
 }
 pub mod types_h {
     pub type __uint64_t = u64;
-    pub type __off_t = ::core::ffi::c_long;
-    pub type __off64_t = ::core::ffi::c_long;
+    pub type __off_t = i64;
+    pub type __off64_t = i64;
 }
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
+        pub _flags: i32,
         pub _IO_read_ptr: *mut i8,
         pub _IO_read_end: *mut i8,
         pub _IO_read_base: *mut i8,
@@ -42,8 +42,8 @@ pub mod struct_FILE_h {
         pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
+        pub _fileno: i32,
+        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
@@ -57,8 +57,8 @@ pub mod struct_FILE_h {
         pub _freeres_list: *mut _IO_FILE,
         pub _freeres_buf: *mut ::core::ffi::c_void,
         pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
+        pub _mode: i32,
+        pub _unused3: i32,
         pub _total_written: __uint64_t,
         pub _unused2: [i8; 8],
     }
@@ -75,12 +75,12 @@ pub mod FILE_h {
     use super::struct_FILE_h::_IO_FILE;
 }
 pub mod xkbregistry_h {
-    pub type rxkb_context_flags = ::core::ffi::c_uint;
+    pub type rxkb_context_flags = u32;
     pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
     pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
     pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
     pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
-    pub type rxkb_log_level = ::core::ffi::c_uint;
+    pub type rxkb_log_level = u32;
     pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
     pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
     pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
@@ -135,42 +135,42 @@ pub mod stdio_h {
     extern "C" {
         pub static mut stdout: *mut FILE;
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
-        pub fn printf(__format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
+        pub fn printf(__format: *const i8, ...) -> i32;
     }
 }
 pub mod include_locale_h {
-    pub const LC_ALL: ::core::ffi::c_int = __LC_ALL;
+    pub const LC_ALL: i32 = __LC_ALL;
     use super::locale_h::__LC_ALL;
     extern "C" {
-        pub fn setlocale(__category: ::core::ffi::c_int, __locale: *const i8) -> *mut i8;
+        pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
     }
 }
 pub mod config_h {
     pub const DEFAULT_XKB_RULES: [i8; 6] =
         unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
+    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
 }
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
-        pub static mut optind: ::core::ffi::c_int;
+        pub static mut optind: i32;
     }
 }
 pub mod locale_h {
-    pub const __LC_ALL: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
+    pub const __LC_ALL: i32 = 6 as i32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdlib_h {
-    pub const EXIT_FAILURE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const EXIT_FAILURE: i32 = 1 as i32;
+    pub const EXIT_SUCCESS: i32 = 0 as i32;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub use self::__stddef_null_h::NULL;
 pub use self::config_h::{DEFAULT_XKB_RULES, EXIT_INVALID_USAGE};
@@ -211,60 +211,60 @@ unsafe extern "C" fn usage(mut progname: *const i8, mut fp: *mut FILE) {
         );
     }
 }
-unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core::ffi::c_int {
+unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut rc: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+        let mut rc: i32 = 1 as i32;
         let mut ctx: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut m: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
         let mut l: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         let mut g: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut flags: rxkb_context_flags = RXKB_CONTEXT_NO_FLAGS;
         let mut load_defaults: bool = true_0 != 0;
-        let mut verbosity: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut verbosity: i32 = 0 as i32;
         let mut ruleset: *const i8 = DEFAULT_XKB_RULES.as_ptr();
         static mut opts: [option; 6] = [
             option {
                 name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
                 val: 'h' as i32,
             },
             option {
                 name: b"verbose\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
                 val: 'v' as i32,
             },
             option {
                 name: b"load-exotic\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
                 val: 'e' as i32,
             },
             option {
                 name: b"skip-default-paths\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
                 val: 'd' as i32,
             },
             option {
                 name: b"ruleset\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
                 val: 'r' as i32,
             },
             option {
                 name: ::core::ptr::null::<i8>(),
-                has_arg: 0 as ::core::ffi::c_int,
-                flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
-                val: 0 as ::core::ffi::c_int,
+                has_arg: 0 as i32,
+                flag: ::core::ptr::null::<i32>() as *mut i32,
+                val: 0 as i32,
             },
         ];
         setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
         loop {
-            let mut c: ::core::ffi::c_int = 0;
-            let mut option_index: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+            let mut c: i32 = 0;
+            let mut option_index: i32 = 0 as i32;
             c = getopt_long(
                 argc,
                 argv,
@@ -272,21 +272,19 @@ unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core
                 &raw const opts as *const option,
                 &raw mut option_index,
             );
-            if c == -1 as ::core::ffi::c_int {
+            if c == -1 as i32 {
                 break;
             }
             match c {
                 104 => {
-                    usage(*argv.offset(0 as ::core::ffi::c_int as isize), stdout);
-                    return 0 as ::core::ffi::c_int;
+                    usage(*argv.offset(0 as i32 as isize), stdout);
+                    return 0 as i32;
                 }
                 100 => {
                     load_defaults = false_0 != 0;
                 }
                 101 => {
-                    flags = (flags as ::core::ffi::c_uint
-                        | RXKB_CONTEXT_LOAD_EXOTIC_RULES as ::core::ffi::c_int
-                            as ::core::ffi::c_uint)
+                    flags = (flags as u32 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32)
                         as rxkb_context_flags;
                 }
                 114 => {
@@ -296,14 +294,13 @@ unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core
                     verbosity += 1;
                 }
                 _ => {
-                    usage(*argv.offset(0 as ::core::ffi::c_int as isize), stderr);
+                    usage(*argv.offset(0 as i32 as isize), stderr);
                     return EXIT_INVALID_USAGE;
                 }
             }
         }
         if optind < argc {
-            flags = (flags as ::core::ffi::c_uint
-                | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as ::core::ffi::c_int as ::core::ffi::c_uint)
+            flags = (flags as u32 | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32)
                 as rxkb_context_flags;
         }
         ctx = rxkb_context_new(flags);
@@ -326,7 +323,7 @@ unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core
                 }
             }
             if optind < argc {
-                let mut i: ::core::ffi::c_int = optind;
+                let mut i: i32 = optind;
                 loop {
                     if !(i < argc) {
                         c2rust_current_block = 1118134448028020070;
@@ -460,7 +457,7 @@ unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core
                                 rxkb_option_group_get_name(g),
                                 rxkb_option_group_get_description(g),
                                 if rxkb_option_group_allows_multiple(g)
-                                    as ::core::ffi::c_int != 0
+                                    as i32 != 0
                                 {
                                     b"true\0".as_ptr() as *const i8
                                 } else {
@@ -480,7 +477,7 @@ unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core
                                         b"\0".as_ptr() as *const i8
                                     },
                                     rxkb_option_get_description(o),
-                                    if rxkb_option_is_layout_specific(o) as ::core::ffi::c_int
+                                    if rxkb_option_is_layout_specific(o) as i32
                                         != 0
                                     {
                                         b"true\0".as_ptr() as *const i8
@@ -516,7 +513,7 @@ pub fn main() {
         .collect();
     unsafe {
         ::std::process::exit(main_0(
-            (args_ptrs.len() - 1) as ::core::ffi::c_int,
+            (args_ptrs.len() - 1) as i32,
             args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }

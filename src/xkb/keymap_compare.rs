@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -17,9 +17,9 @@ pub mod types_h {
     pub type __uint32_t = u32;
 }
 pub mod stdint_intn_h {
-    pub type int8_t = __int8_t;
-    pub type int16_t = __int16_t;
-    pub type int32_t = __int32_t;
+    pub type i8 = __int8_t;
+    pub type i16 = __int16_t;
+    pub type i32 = __int32_t;
     use super::types_h::{__int16_t, __int32_t, __int8_t};
 }
 pub mod stdint_uintn_h {
@@ -33,7 +33,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -43,7 +43,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -83,7 +83,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -97,7 +97,7 @@ pub mod atom_h {
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -109,7 +109,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -121,11 +121,11 @@ pub mod xkbcommon_h {
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
     pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
     pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
@@ -138,10 +138,10 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     pub type xkb_layout_mask_t = u32;
     pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
     use super::stdint_uintn_h::u32;
@@ -151,7 +151,7 @@ pub mod keymap_h {
     #[repr(C)]
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -191,7 +191,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -242,10 +242,10 @@ pub mod keymap_h {
     pub union C2Rust_Unnamed_2 {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
     pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
@@ -290,7 +290,7 @@ pub mod keymap_h {
         pub count: uint8_t,
         pub button: uint8_t,
     }
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
     pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
@@ -310,22 +310,22 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -334,7 +334,7 @@ pub mod keymap_h {
         pub flags: xkb_action_flags,
         pub ctrls: xkb_action_controls,
     }
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
     pub const CONTROL_ALL: xkb_action_controls = 2088959;
@@ -364,7 +364,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -380,7 +380,7 @@ pub mod keymap_h {
         pub mask: xkb_mod_mask_t,
     }
     pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     pub const MATCH_ALL: xkb_match_operation = 3;
     pub const MATCH_ANY: xkb_match_operation = 2;
@@ -540,7 +540,7 @@ pub mod keymap_h {
     }
     pub type xkb_keysym_count_t = uint16_t;
     pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
     pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
@@ -562,7 +562,7 @@ pub mod keymap_h {
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -574,7 +574,7 @@ pub mod keymap_h {
     }
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -584,7 +584,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
 pub mod keymap_compare_h {
-    pub type xkb_keymap_compare_property = ::core::ffi::c_uint;
+    pub type xkb_keymap_compare_property = u32;
     pub const XKB_KEYMAP_CMP_POSSIBLY_DROPPED: xkb_keymap_compare_property = 4;
     pub const XKB_KEYMAP_CMP_ALL: xkb_keymap_compare_property = 31;
     pub const XKB_KEYMAP_CMP_SYMBOLS: xkb_keymap_compare_property = 16;
@@ -597,7 +597,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
+            return strcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
@@ -617,7 +617,7 @@ pub mod __stddef_null_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
     }
 }
 pub mod stdbool_h {}
@@ -666,7 +666,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::utils_h::{streq, streq_null};
@@ -706,7 +706,7 @@ unsafe extern "C" fn keymap_compare_mods(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Modifier #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     mod_0,
                     name1,
@@ -714,15 +714,15 @@ unsafe extern "C" fn keymap_compare_mods(
                 );
                 identical = false;
             }
-            if (*mod1).type_0 as ::core::ffi::c_uint != (*mod2).type_0 as ::core::ffi::c_uint {
+            if (*mod1).type_0 as u32 != (*mod2).type_0 as u32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Modifier #%u types do not match: %d != %d\n\0".as_ptr() as *const i8,
                     mod_0,
-                    (*mod1).type_0 as ::core::ffi::c_uint,
-                    (*mod2).type_0 as ::core::ffi::c_uint,
+                    (*mod1).type_0 as u32,
+                    (*mod2).type_0 as u32,
                 );
                 identical = false;
             }
@@ -730,7 +730,7 @@ unsafe extern "C" fn keymap_compare_mods(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Modifier #%u mappings do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     mod_0,
                     (*mod1).mapping,
@@ -744,7 +744,7 @@ unsafe extern "C" fn keymap_compare_mods(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Modifiers counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).mods.num_mods,
                 (*keymap2).mods.num_mods,
@@ -765,7 +765,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_keys,
                 (*keymap2).num_keys,
@@ -776,7 +776,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Min keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
@@ -787,7 +787,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Low keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_keys_low,
                 (*keymap2).num_keys_low,
@@ -798,7 +798,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Max keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
@@ -818,7 +818,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
                     k,
                     (*key1).keycode,
@@ -833,7 +833,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                         kc,
                         name1,
@@ -871,7 +871,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Alias #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     a,
                     alias1,
@@ -885,7 +885,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Alias #%u \"%s\" target do not match: \"%s\" != \"%s\"\n\0".as_ptr()
                         as *const i8,
                     a,
@@ -903,7 +903,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Aliases count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
                 (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
@@ -937,7 +937,7 @@ unsafe extern "C" fn keymap_compare_leds(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     led,
                     name1,
@@ -945,19 +945,17 @@ unsafe extern "C" fn keymap_compare_leds(
                 );
                 identical = false;
             }
-            if (*led1).which_groups() as ::core::ffi::c_int
-                != (*led2).which_groups() as ::core::ffi::c_int
-            {
+            if (*led1).which_groups() as i32 != (*led2).which_groups() as i32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u \"%s\" `which_groups` do not match: 0x%x != 0x%x\n\0".as_ptr()
                         as *const i8,
                     led,
                     name1,
-                    (*led1).which_groups() as ::core::ffi::c_int,
-                    (*led2).which_groups() as ::core::ffi::c_int,
+                    (*led1).which_groups() as i32,
+                    (*led2).which_groups() as i32,
                 );
                 identical = false;
             }
@@ -965,7 +963,7 @@ unsafe extern "C" fn keymap_compare_leds(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u \"%s\" `groups` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
@@ -974,19 +972,17 @@ unsafe extern "C" fn keymap_compare_leds(
                 );
                 identical = false;
             }
-            if (*led1).which_mods as ::core::ffi::c_uint
-                != (*led2).which_mods as ::core::ffi::c_uint
-            {
+            if (*led1).which_mods as u32 != (*led2).which_mods as u32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u \"%s\" `which_mods` do not match: 0x%x != 0x%x\n\0".as_ptr()
                         as *const i8,
                     led,
                     name1,
-                    (*led1).which_mods as ::core::ffi::c_uint,
-                    (*led2).which_mods as ::core::ffi::c_uint,
+                    (*led1).which_mods as u32,
+                    (*led2).which_mods as u32,
                 );
                 identical = false;
             }
@@ -994,7 +990,7 @@ unsafe extern "C" fn keymap_compare_leds(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u \"%s\" `mods` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
@@ -1003,16 +999,16 @@ unsafe extern "C" fn keymap_compare_leds(
                 );
                 identical = false;
             }
-            if (*led1).ctrls as ::core::ffi::c_uint != (*led2).ctrls as ::core::ffi::c_uint {
+            if (*led1).ctrls as u32 != (*led2).ctrls as u32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"LED #%u \"%s\" `ctrls` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
-                    (*led1).ctrls as ::core::ffi::c_uint,
-                    (*led2).ctrls as ::core::ffi::c_uint,
+                    (*led1).ctrls as u32,
+                    (*led2).ctrls as u32,
                 );
                 identical = false;
             }
@@ -1022,7 +1018,7 @@ unsafe extern "C" fn keymap_compare_leds(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"LEDs count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_leds,
                 (*keymap2).num_leds,
@@ -1047,7 +1043,7 @@ unsafe extern "C" fn compare_types(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key type names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                 name1,
                 name2,
@@ -1058,7 +1054,7 @@ unsafe extern "C" fn compare_types(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key type \"%s\" mods do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).mods.mods,
@@ -1070,7 +1066,7 @@ unsafe extern "C" fn compare_types(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key type \"%s\" levels count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).num_levels,
@@ -1082,7 +1078,7 @@ unsafe extern "C" fn compare_types(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key type \"%s\" level names count do not match: %u != %u\n\0".as_ptr()
                     as *const i8,
                 name1,
@@ -1103,7 +1099,7 @@ unsafe extern "C" fn compare_types(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key type \"%s\" level #%u names do not match: \"%s\" != \"%s\"\n\0"
                             .as_ptr() as *const i8,
                         name1,
@@ -1120,7 +1116,7 @@ unsafe extern "C" fn compare_types(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key type \"%s\" entries count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).num_entries,
@@ -1138,7 +1134,7 @@ unsafe extern "C" fn compare_types(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key type \"%s\" entry #%u levels do not match: %u != %u\n\0".as_ptr()
                             as *const i8,
                         name1,
@@ -1152,7 +1148,7 @@ unsafe extern "C" fn compare_types(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key type \"%s\" entry #%u mods do not match: 0x%x != 0x%x\n\0".as_ptr()
                             as *const i8,
                         name1,
@@ -1166,7 +1162,7 @@ unsafe extern "C" fn compare_types(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key type \"%s\" entry #%u preserve do not match: 0x%x != 0x%x\n\0"
                             .as_ptr() as *const i8,
                         name1,
@@ -1202,16 +1198,16 @@ unsafe extern "C" fn keymap_compare_types(
                 keymap2,
                 (*keymap1).types.offset(t as isize) as *mut xkb_key_type,
                 (*keymap2).types.offset(t as isize) as *mut xkb_key_type,
-            ) as ::core::ffi::c_int
+            ) as i32
                 != 0
-                && identical as ::core::ffi::c_int != 0;
+                && identical as i32 != 0;
             t = t.wrapping_add(1);
         }
         if (*keymap1).num_types != (*keymap2).num_types {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key types counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_types,
                 (*keymap2).num_types,
@@ -1239,7 +1235,7 @@ unsafe extern "C" fn compare_groups(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Key 0x%x/group %u types do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                 kc,
                 g,
@@ -1253,37 +1249,36 @@ unsafe extern "C" fn compare_groups(
         while l < (*(*group1).type_0).num_levels {
             let level1: *const xkb_level = (*group1).levels.offset(l as isize) as *mut xkb_level;
             let level2: *const xkb_level = (*group2).levels.offset(l as isize) as *mut xkb_level;
-            if (*level1).num_syms as ::core::ffi::c_int != (*level2).num_syms as ::core::ffi::c_int
-            {
+            if (*level1).num_syms as i32 != (*level2).num_syms as i32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key 0x%x/group %u/level %u keysyms count do not match: %u != %u\n\0".as_ptr()
                         as *const i8,
                     kc,
                     g,
                     l,
-                    (*level1).num_syms as ::core::ffi::c_int,
-                    (*level2).num_syms as ::core::ffi::c_int,
+                    (*level1).num_syms as i32,
+                    (*level2).num_syms as i32,
                 );
                 identical = false;
-            } else if (*level1).num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+            } else if (*level1).num_syms as i32 > 1 as i32 {
                 let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
-                while (k as ::core::ffi::c_int) < (*level1).num_syms as ::core::ffi::c_int {
+                while (k as i32) < (*level1).num_syms as i32 {
                     if !(*(*level1).s.syms.offset(k as isize)
                         == *(*level2).s.syms.offset(k as isize))
                     {
                         xkb_log(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             b"Key 0x%x/group %u/level %u keysyms #%u do not match: 0x%x != 0x%x\n\0"
                                 .as_ptr() as *const i8,
                             kc,
                             g,
                             l,
-                            k as ::core::ffi::c_int,
+                            k as i32,
                             *(*level1).s.syms.offset(k as isize),
                             *(*level2).s.syms.offset(k as isize),
                         );
@@ -1295,7 +1290,7 @@ unsafe extern "C" fn compare_groups(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key 0x%x/group %u/level %u keysyms do not match: 0x%x != 0x%x\n\0".as_ptr()
                         as *const i8,
                     kc,
@@ -1306,25 +1301,23 @@ unsafe extern "C" fn compare_groups(
                 );
                 identical = false;
             }
-            if (*level1).num_actions as ::core::ffi::c_int
-                != (*level2).num_actions as ::core::ffi::c_int
-            {
+            if (*level1).num_actions as i32 != (*level2).num_actions as i32 {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key 0x%x/group %u/level %u actions count do not match: %u != %u\n\0".as_ptr()
                         as *const i8,
                     kc,
                     g,
                     l,
-                    (*level1).num_actions as ::core::ffi::c_int,
-                    (*level2).num_actions as ::core::ffi::c_int,
+                    (*level1).num_actions as i32,
+                    (*level2).num_actions as i32,
                 );
                 identical = false;
-            } else if (*level1).num_actions as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
+            } else if (*level1).num_actions as i32 > 1 as i32 {
                 let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
-                while (a as ::core::ffi::c_int) < (*level1).num_actions as ::core::ffi::c_int {
+                while (a as i32) < (*level1).num_actions as i32 {
                     if !action_equal(
                         (*level1).a.actions.offset(a as isize) as *mut xkb_action,
                         (*level2).a.actions.offset(a as isize) as *mut xkb_action,
@@ -1332,25 +1325,25 @@ unsafe extern "C" fn compare_groups(
                         xkb_log(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             b"Key 0x%x/group %u/level %u actions #%u do not match\n\0".as_ptr()
                                 as *const i8,
                             kc,
                             g,
                             l,
-                            a as ::core::ffi::c_int,
+                            a as i32,
                         );
                         identical = false;
                     }
                     a = a.wrapping_add(1);
                 }
-            } else if (*level1).num_actions as ::core::ffi::c_int == 1 as ::core::ffi::c_int
+            } else if (*level1).num_actions as i32 == 1 as i32
                 && !action_equal(&raw const (*level1).a.action, &raw const (*level2).a.action)
             {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key 0x%x/group %u/level %u actions do not match\n\0".as_ptr() as *const i8,
                     kc,
                     g,
@@ -1374,7 +1367,7 @@ unsafe extern "C" fn keymap_compare_symbols(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Group counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_groups,
                 (*keymap2).num_groups,
@@ -1385,7 +1378,7 @@ unsafe extern "C" fn keymap_compare_symbols(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"Group name counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_group_names,
                 (*keymap2).num_group_names,
@@ -1404,7 +1397,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Group #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                         g,
                         name1,
@@ -1428,7 +1421,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
                     k,
                     (*key1).keycode,
@@ -1441,7 +1434,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x modmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).modmap,
@@ -1453,7 +1446,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x vmodmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).vmodmap,
@@ -1461,60 +1454,55 @@ unsafe extern "C" fn keymap_compare_symbols(
                     );
                     identical = false;
                 }
-                if (*key1).repeats() as ::core::ffi::c_int
-                    != (*key2).repeats() as ::core::ffi::c_int
-                {
+                if (*key1).repeats() as i32 != (*key2).repeats() as i32 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x repeats do not match: %d != %d\n\0".as_ptr() as *const i8,
                         kc,
-                        (*key1).repeats() as ::core::ffi::c_int,
-                        (*key2).repeats() as ::core::ffi::c_int,
+                        (*key1).repeats() as i32,
+                        (*key2).repeats() as i32,
                     );
                     identical = false;
                 }
-                if (*key1).out_of_range_group_policy() as ::core::ffi::c_int
-                    != (*key2).out_of_range_group_policy() as ::core::ffi::c_int
-                    || (*key1).out_of_range_group_number() as ::core::ffi::c_int
-                        != (*key2).out_of_range_group_number() as ::core::ffi::c_int
+                if (*key1).out_of_range_group_policy() as i32
+                    != (*key2).out_of_range_group_policy() as i32
+                    || (*key1).out_of_range_group_number() as i32
+                        != (*key2).out_of_range_group_number() as i32
                 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x out-of-range do not match: %d != %d or %u != %u\n\0".as_ptr()
                             as *const i8,
                         kc,
-                        (*key1).out_of_range_group_policy() as ::core::ffi::c_int,
-                        (*key2).out_of_range_group_policy() as ::core::ffi::c_int,
-                        (*key1).out_of_range_group_number() as ::core::ffi::c_int,
-                        (*key2).out_of_range_group_number() as ::core::ffi::c_int,
+                        (*key1).out_of_range_group_policy() as i32,
+                        (*key2).out_of_range_group_policy() as i32,
+                        (*key1).out_of_range_group_number() as i32,
+                        (*key2).out_of_range_group_number() as i32,
                     );
                     identical = false;
                 }
-                if (*key1).num_groups() as ::core::ffi::c_int
-                    != (*key2).num_groups() as ::core::ffi::c_int
-                {
+                if (*key1).num_groups() as i32 != (*key2).num_groups() as i32 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Key 0x%x groups counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                         kc,
-                        (*key1).num_groups() as ::core::ffi::c_int,
-                        (*key2).num_groups() as ::core::ffi::c_int,
+                        (*key1).num_groups() as i32,
+                        (*key2).num_groups() as i32,
                     );
                     identical = false;
                 }
-                let g_max: xkb_layout_index_t = (if ((*key1).num_groups() as ::core::ffi::c_int)
-                    < (*key2).num_groups() as ::core::ffi::c_int
-                {
-                    (*key1).num_groups() as ::core::ffi::c_int
-                } else {
-                    (*key2).num_groups() as ::core::ffi::c_int
-                }) as xkb_layout_index_t;
+                let g_max: xkb_layout_index_t =
+                    (if ((*key1).num_groups() as i32) < (*key2).num_groups() as i32 {
+                        (*key1).num_groups() as i32
+                    } else {
+                        (*key2).num_groups() as i32
+                    }) as xkb_layout_index_t;
                 let mut g_0: xkb_layout_index_t = 0 as xkb_layout_index_t;
                 while g_0 < g_max {
                     identical = compare_groups(
@@ -1525,9 +1513,9 @@ unsafe extern "C" fn keymap_compare_symbols(
                         g_0,
                         (*key1).groups.offset(g_0 as isize) as *mut xkb_group,
                         (*key2).groups.offset(g_0 as isize) as *mut xkb_group,
-                    ) as ::core::ffi::c_int
+                    ) as i32
                         != 0
-                        && identical as ::core::ffi::c_int != 0;
+                        && identical as i32 != 0;
                     g_0 = g_0.wrapping_add(1);
                 }
             }
@@ -1545,40 +1533,25 @@ pub unsafe extern "C" fn xkb_keymap_compare(
 ) -> bool {
     unsafe {
         let mut identical: bool = true;
-        if properties as ::core::ffi::c_uint
-            & XKB_KEYMAP_CMP_MODS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            identical = keymap_compare_mods(ctx, keymap1, keymap2) as ::core::ffi::c_int != 0
-                && identical as ::core::ffi::c_int != 0;
+        if properties as u32 & XKB_KEYMAP_CMP_MODS as i32 as u32 != 0 {
+            identical =
+                keymap_compare_mods(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as ::core::ffi::c_uint
-            & XKB_KEYMAP_CMP_TYPES as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            identical = keymap_compare_types(ctx, keymap1, keymap2) as ::core::ffi::c_int != 0
-                && identical as ::core::ffi::c_int != 0;
+        if properties as u32 & XKB_KEYMAP_CMP_TYPES as i32 as u32 != 0 {
+            identical =
+                keymap_compare_types(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as ::core::ffi::c_uint
-            & XKB_KEYMAP_CMP_LEDS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            identical = keymap_compare_leds(ctx, keymap1, keymap2) as ::core::ffi::c_int != 0
-                && identical as ::core::ffi::c_int != 0;
+        if properties as u32 & XKB_KEYMAP_CMP_LEDS as i32 as u32 != 0 {
+            identical =
+                keymap_compare_leds(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as ::core::ffi::c_uint
-            & XKB_KEYMAP_CMP_KEYCODES as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            identical = keymap_compare_keycodes(ctx, keymap1, keymap2) as ::core::ffi::c_int != 0
-                && identical as ::core::ffi::c_int != 0;
+        if properties as u32 & XKB_KEYMAP_CMP_KEYCODES as i32 as u32 != 0 {
+            identical =
+                keymap_compare_keycodes(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as ::core::ffi::c_uint
-            & XKB_KEYMAP_CMP_SYMBOLS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            identical = keymap_compare_symbols(ctx, keymap1, keymap2) as ::core::ffi::c_int != 0
-                && identical as ::core::ffi::c_int != 0;
+        if properties as u32 & XKB_KEYMAP_CMP_SYMBOLS as i32 as u32 != 0 {
+            identical =
+                keymap_compare_symbols(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
         return identical;
     }

@@ -2,8 +2,8 @@ pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
@@ -18,10 +18,10 @@ pub mod types_h {
     pub type __int64_t = i64;
 }
 pub mod stdint_intn_h {
-    pub type int8_t = __int8_t;
-    pub type int16_t = __int16_t;
-    pub type int32_t = __int32_t;
-    pub type int64_t = __int64_t;
+    pub type i8 = __int8_t;
+    pub type i16 = __int16_t;
+    pub type i32 = __int32_t;
+    pub type i64 = __int64_t;
     use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
 }
 pub mod stdint_uintn_h {
@@ -32,12 +32,12 @@ pub mod stdint_uintn_h {
 }
 pub mod stdint_h {
     pub type intmax_t = ::libc::intmax_t;
-    pub const UINT32_MAX: ::core::ffi::c_uint = 4294967295 as ::core::ffi::c_uint;
-    pub const SIZE_MAX: ::core::ffi::c_ulong = 18446744073709551615 as ::core::ffi::c_ulong;
+    pub const UINT32_MAX: u32 = 4294967295 as u32;
+    pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
 }
 
 pub mod xkbcommon_errors_h {
-    pub type xkb_error_code = ::core::ffi::c_int;
+    pub type xkb_error_code = i32;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
     pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
     pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
@@ -52,7 +52,7 @@ pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -62,7 +62,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -102,7 +102,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -110,14 +110,14 @@ pub mod context_h {
 }
 pub mod atom_h {
     pub type xkb_atom_t = darray_size_t;
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
     extern "C" {
         pub type atom_table;
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -129,7 +129,7 @@ pub mod xkbcommon_h {
         pub variant: *const i8,
         pub options: *const i8,
     }
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
     pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
     pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
@@ -141,11 +141,11 @@ pub mod xkbcommon_h {
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
     pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
     pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
     pub const XKB_STATE_LEDS: xkb_state_component = 256;
     pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
@@ -158,13 +158,13 @@ pub mod xkbcommon_h {
     pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
     pub type xkb_layout_mask_t = u32;
     pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
     use super::stdint_uintn_h::u32;
 }
 pub mod keymap_h {
@@ -172,7 +172,7 @@ pub mod keymap_h {
     #[repr(C)]
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -212,7 +212,7 @@ pub mod keymap_h {
         pub type_0: mod_type,
         pub mapping: xkb_mod_mask_t,
     }
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
     pub const MOD_BOTH: mod_type = 3;
     pub const MOD_VIRT: mod_type = 2;
     pub const MOD_REAL: mod_type = 1;
@@ -263,10 +263,10 @@ pub mod keymap_h {
     pub union C2Rust_Unnamed_2 {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
     pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
     pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
@@ -311,7 +311,7 @@ pub mod keymap_h {
         pub count: uint8_t,
         pub button: uint8_t,
     }
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
     pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
     pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
@@ -331,22 +331,22 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -355,7 +355,7 @@ pub mod keymap_h {
         pub flags: xkb_action_flags,
         pub ctrls: xkb_action_controls,
     }
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
     pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
     pub const CONTROL_ALL: xkb_action_controls = 2088959;
@@ -385,7 +385,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -401,7 +401,7 @@ pub mod keymap_h {
         pub mask: xkb_mod_mask_t,
     }
     pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
     pub const MATCH_ALL: xkb_match_operation = 3;
     pub const MATCH_ANY: xkb_match_operation = 2;
@@ -561,7 +561,7 @@ pub mod keymap_h {
     }
     pub type xkb_keysym_count_t = uint16_t;
     pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
     pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
     pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
@@ -581,12 +581,12 @@ pub mod keymap_h {
         pub ctrls: xkb_action_controls,
     }
     pub type xkb_overlay_index_t = uint8_t;
-    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as ::core::ffi::c_int as xkb_mod_mask_t;
-    pub const XKB_LEVEL_MAX_IMPL: ::core::ffi::c_int = 2048 as ::core::ffi::c_int;
+    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
+    pub const XKB_LEVEL_MAX_IMPL: i32 = 2048 as i32;
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -602,7 +602,7 @@ pub mod keymap_h {
     }
 }
 pub mod ast_h {
-    pub type stmt_type = ::core::ffi::c_uint;
+    pub type stmt_type = u32;
     pub const _STMT_NUM_VALUES: stmt_type = 37;
     pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
     pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
@@ -736,7 +736,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -758,7 +758,7 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
+    use super::stdint_intn_h::i64;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
         pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
@@ -766,7 +766,7 @@ pub mod ast_h {
     }
 }
 pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
     pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
@@ -774,7 +774,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
     pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
     pub const XKB_ERROR_INVALID_RULES_SYNTAX: xkb_message_code = 967;
@@ -876,11 +876,11 @@ pub mod text_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    pub type xkb_parser_error = ::core::ffi::c_uint;
+    pub type xkb_parser_error = u32;
     pub const PARSER_FATAL_ERROR: xkb_parser_error = 2;
     pub const PARSER_RECOVERABLE_ERROR: xkb_parser_error = 1;
     pub const PARSER_SUCCESS: xkb_parser_error = 0;
-    pub type xkb_parser_strict_flags = ::core::ffi::c_uint;
+    pub type xkb_parser_strict_flags = u32;
     pub const PARSER_V2_LAX_FLAGS: xkb_parser_strict_flags = 0;
     pub const PARSER_V2_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
     pub const PARSER_V1_LAX_FLAGS: xkb_parser_strict_flags = 16379;
@@ -957,19 +957,19 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
+            return istrcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
     pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
-            return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
+            return istrncmp(s1, s2, len) == 0 as i32;
         }
     }
 
     extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
+        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
     }
 }
 pub mod utils_numbers_h {
@@ -978,36 +978,33 @@ pub mod utils_numbers_h {
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
-    ) -> ::core::ffi::c_int {
+    ) -> i32 {
         unsafe {
             let mut result: u32 = 0 as u32;
             let mut i: usize = 0;
             i = 0 as usize;
             while i < len
-                && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as ::core::ffi::c_uint)
-                    < 10 as ::core::ffi::c_uint
+                && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
+                    < 10 as u32
                 && result <= (4294967295 as u32).wrapping_div(10 as u32)
                 && result.wrapping_mul(10 as u32)
                     <= (4294967295 as u32).wrapping_sub(
-                        (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as u32,
+                        (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32,
                     )
             {
-                result = result.wrapping_mul(10 as u32).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u32,
-                );
+                result = result
+                    .wrapping_mul(10 as u32)
+                    .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as u32);
                 i = i.wrapping_add(1);
             }
             *out = result as u32;
             return if i >= len
-                || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as ::core::ffi::c_uint
-                    >= 10 as ::core::ffi::c_uint
+                || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
+                    >= 10 as u32
             {
-                i as ::core::ffi::c_int
+                i as i32
             } else {
-                -1 as ::core::ffi::c_int
+                -1 as i32
             };
         }
     }
@@ -1019,8 +1016,8 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
+    pub const false_0: i32 = 0 as i32;
 }
 pub use self::__stddef_null_h::NULL;
 
@@ -1119,7 +1116,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::{intmax_t, SIZE_MAX, UINT32_MAX};
-pub use self::stdint_intn_h::{int16_t, int32_t, int64_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
 pub use self::types_h::{
@@ -1203,7 +1200,7 @@ pub unsafe extern "C" fn ExprResolveLhs(
     mut index_rtrn: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
-        match (*expr).common.type_0 as ::core::ffi::c_uint {
+        match (*expr).common.type_0 as u32 {
             10 => {
                 *elem_rtrn = ::core::ptr::null::<i8>();
                 *field_rtrn = xkb_atom_text(ctx, (*expr).ident.ident);
@@ -1235,10 +1232,10 @@ pub unsafe extern "C" fn ExprResolveLhs(
         xkb_log(
             ctx,
             XKB_LOG_LEVEL_CRITICAL,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             b"[XKB-%03d] Unexpected operator %d in ResolveLhs\n\0".as_ptr() as *const i8,
-            XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
-            (*expr).common.type_0 as ::core::ffi::c_uint,
+            XKB_ERROR_INVALID_XKB_SYNTAX as i32,
+            (*expr).common.type_0 as u32,
         );
         return false_0 != 0;
     }
@@ -1279,30 +1276,28 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
         }
         let str: *const i8 = xkb_atom_text(ctx, field) as *const i8;
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
-        let count: ::core::ffi::c_int =
-            if istrneq(str, (*pattern).prefix, (*pattern).prefix_length) as ::core::ffi::c_int != 0
-            {
-                parse_dec_to_uint32_t(
-                    str.offset((*pattern).prefix_length as isize),
-                    SIZE_MAX as usize,
-                    val_rtrn as *mut u32,
-                ) as ::core::ffi::c_int
-            } else {
-                0 as ::core::ffi::c_int
-            };
-        if count > 0 as ::core::ffi::c_int
+        let count: i32 = if istrneq(str, (*pattern).prefix, (*pattern).prefix_length) as i32 != 0 {
+            parse_dec_to_uint32_t(
+                str.offset((*pattern).prefix_length as isize),
+                SIZE_MAX as usize,
+                val_rtrn as *mut u32,
+            ) as i32
+        } else {
+            0 as i32
+        };
+        if count > 0 as i32
             && *str
                 .offset((*pattern).prefix_length as isize)
-                .offset(count as isize) as ::core::ffi::c_int
+                .offset(count as isize) as i32
                 == '\0' as i32
         {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s index %u is out of range (%u..%u)\n\0".as_ptr() as *const i8,
-                    (*pattern).error_id as ::core::ffi::c_uint,
+                    (*pattern).error_id as u32,
                     (*pattern).prefix,
                     *val_rtrn,
                     (*pattern).min,
@@ -1311,8 +1306,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                 return false_0 != 0;
             }
             if (*pattern).is_mask {
-                *val_rtrn =
-                    ((1 as ::core::ffi::c_uint) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
+                *val_rtrn = ((1 as u32) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
             }
             return true_0 != 0;
         } else {
@@ -1323,7 +1317,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                     field,
                     val_rtrn,
                     ::core::ptr::null_mut::<bool>(),
-                ) as ::core::ffi::c_int
+                ) as i32
                     != 0
             {
                 return true_0 != 0;
@@ -1336,7 +1330,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
                     field,
                     val_rtrn,
                     ::core::ptr::null_mut::<bool>(),
-                ) as ::core::ffi::c_int
+                ) as i32
                     != 0
             {
                 *pending_rtrn = true_0 != 0;
@@ -1373,7 +1367,7 @@ unsafe extern "C" fn LookupModMask(
         if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
             return false_0 != 0;
         }
-        *val_rtrn = ((1 as ::core::ffi::c_uint) << ndx) as xkb_mod_mask_t;
+        *val_rtrn = ((1 as u32) << ndx) as xkb_mod_mask_t;
         return true_0 != 0;
     }
 }
@@ -1386,7 +1380,7 @@ pub unsafe extern "C" fn ExprResolveBoolean(
     unsafe {
         let mut ok: bool = false_0 != 0;
         let mut ident: *const i8 = ::core::ptr::null::<i8>();
-        match (*expr).common.type_0 as ::core::ffi::c_uint {
+        match (*expr).common.type_0 as u32 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
                 return true_0 != 0;
@@ -1395,9 +1389,9 @@ pub unsafe extern "C" fn ExprResolveBoolean(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Found %s where boolean was expected\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
                 return false_0 != 0;
@@ -1405,16 +1399,15 @@ pub unsafe extern "C" fn ExprResolveBoolean(
             10 => {
                 ident = xkb_atom_text(ctx, (*expr).ident.ident);
                 if !ident.is_null() {
-                    if istreq(ident, b"true\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-                        || istreq(ident, b"yes\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-                        || istreq(ident, b"on\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                    if istreq(ident, b"true\0".as_ptr() as *const i8) as i32 != 0
+                        || istreq(ident, b"yes\0".as_ptr() as *const i8) as i32 != 0
+                        || istreq(ident, b"on\0".as_ptr() as *const i8) as i32 != 0
                     {
                         *set_rtrn = true_0 != 0;
                         return true_0 != 0;
-                    } else if istreq(ident, b"false\0".as_ptr() as *const i8) as ::core::ffi::c_int
-                        != 0
-                        || istreq(ident, b"no\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-                        || istreq(ident, b"off\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                    } else if istreq(ident, b"false\0".as_ptr() as *const i8) as i32 != 0
+                        || istreq(ident, b"no\0".as_ptr() as *const i8) as i32 != 0
+                        || istreq(ident, b"off\0".as_ptr() as *const i8) as i32 != 0
                     {
                         *set_rtrn = false_0 != 0;
                         return true_0 != 0;
@@ -1423,10 +1416,10 @@ pub unsafe extern "C" fn ExprResolveBoolean(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Identifier \"%s\" of type boolean is unknown\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_IDENTIFIER as i32,
                     ident,
                 );
                 return false_0 != 0;
@@ -1435,10 +1428,10 @@ pub unsafe extern "C" fn ExprResolveBoolean(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Default \"%s.%s\" of type boolean is unknown\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_EXPRESSION_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(ctx, (*expr).field_ref.element),
                     xkb_atom_text(ctx, (*expr).field_ref.field),
                 );
@@ -1455,9 +1448,9 @@ pub unsafe extern "C" fn ExprResolveBoolean(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s of boolean values not permitted\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_OPERATION as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
             }
@@ -1465,10 +1458,10 @@ pub unsafe extern "C" fn ExprResolveBoolean(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Unknown operator %d in ResolveBoolean\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_UNKNOWN_OPERATOR as ::core::ffi::c_int,
-                    (*expr).common.type_0 as ::core::ffi::c_uint,
+                    XKB_ERROR_UNKNOWN_OPERATOR as i32,
+                    (*expr).common.type_0 as u32,
                 );
             }
         }
@@ -1478,19 +1471,19 @@ pub unsafe extern "C" fn ExprResolveBoolean(
 unsafe extern "C" fn ExprResolveIntegerLookup(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut val_rtrn: *mut int64_t,
+    mut val_rtrn: *mut i64,
     mut pending: *mut bool,
     mut lookup: IdentLookupFunc,
     mut lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
         let mut ok: bool = false_0 != 0;
-        let mut l: int64_t = 0 as int64_t;
-        let mut r: int64_t = 0 as int64_t;
+        let mut l: i64 = 0 as i64;
+        let mut r: i64 = 0 as i64;
         let mut u: u32 = 0 as u32;
         let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-        match (*expr).common.type_0 as ::core::ffi::c_uint {
+        match (*expr).common.type_0 as u32 {
             5 => {
                 *val_rtrn = (*expr).integer.ival;
                 return true_0 != 0;
@@ -1499,9 +1492,9 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Found %s where an int was expected\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
                 return false_0 != 0;
@@ -1520,16 +1513,16 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"[XKB-%03d] Identifier \"%s\" of type int is unknown\n\0".as_ptr()
                             as *const i8,
-                        XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                        XKB_ERROR_INVALID_IDENTIFIER as i32,
                         xkb_atom_text(ctx, (*expr).ident.ident),
                     );
                 } else {
-                    *val_rtrn = u as int64_t;
+                    *val_rtrn = u as i64;
                 }
-                if !pending.is_null() && *pending as ::core::ffi::c_int != 0 {
+                if !pending.is_null() && *pending as i32 != 0 {
                     return false_0 != 0;
                 }
                 return ok;
@@ -1538,10 +1531,10 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Default \"%s.%s\" of type int is unknown\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_EXPRESSION_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(ctx, (*expr).field_ref.element),
                     xkb_atom_text(ctx, (*expr).field_ref.field),
                 );
@@ -1557,7 +1550,7 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 {
                     return false_0 != 0;
                 }
-                match (*expr).common.type_0 as ::core::ffi::c_uint {
+                match (*expr).common.type_0 as u32 {
                     17 => {
                         let (c2rust_fresh0, c2rust_fresh1) = l.overflowing_add(r);
                         *val_rtrn = c2rust_fresh0;
@@ -1565,10 +1558,10 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                             xkb_log(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 b"[XKB-%03d] Addition %ld + %ld has an invalid mathematical result: %ld\n\0"
                                     .as_ptr() as *const i8,
-                                XKB_ERROR_INTEGER_OVERFLOW as ::core::ffi::c_int,
+                                XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
                                 *val_rtrn,
@@ -1583,10 +1576,10 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                             xkb_log(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 b"[XKB-%03d] Substraction %ld - %ld has an invalid mathematical result: %ld\n\0"
                                     .as_ptr() as *const i8,
-                                XKB_ERROR_INTEGER_OVERFLOW as ::core::ffi::c_int,
+                                XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
                                 *val_rtrn,
@@ -1601,10 +1594,10 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                             xkb_log(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 b"[XKB-%03d] Multiplication %ld * %ld has an invalid mathematical result: %ld\n\0"
                                     .as_ptr() as *const i8,
-                                XKB_ERROR_INTEGER_OVERFLOW as ::core::ffi::c_int,
+                                XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
                                 *val_rtrn,
@@ -1613,14 +1606,14 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                         }
                     }
                     20 => {
-                        if r == 0 as int64_t {
+                        if r == 0 as i64 {
                             xkb_log(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 b"[XKB-%03d] Cannot divide by zero: %ld / %ld\n\0".as_ptr()
                                     as *const i8,
-                                XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                                XKB_ERROR_INVALID_OPERATION as i32,
                                 l,
                                 r,
                             );
@@ -1632,9 +1625,9 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                         xkb_log(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             b"[XKB-%03d] %s of integers not permitted\n\0".as_ptr() as *const i8,
-                            XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                            XKB_ERROR_INVALID_OPERATION as i32,
                             stmt_type_to_string((*expr).common.type_0),
                         );
                         return false_0 != 0;
@@ -1646,19 +1639,19 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Assignment operator not implemented yet\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_OPERATION as i32,
                 );
             }
             22 => {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] The ! operator cannot be applied to an integer\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_OPERATION as i32,
                 );
                 return false_0 != 0;
             }
@@ -1667,9 +1660,7 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
                     return false_0 != 0;
                 }
-                *val_rtrn = if (*expr).common.type_0 as ::core::ffi::c_uint
-                    == STMT_EXPR_NEGATE as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                *val_rtrn = if (*expr).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
                     -l
                 } else {
                     !l
@@ -1684,10 +1675,10 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Unknown operator %d in ResolveInteger\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_UNKNOWN_OPERATOR as ::core::ffi::c_int,
-                    (*expr).common.type_0 as ::core::ffi::c_uint,
+                    XKB_ERROR_UNKNOWN_OPERATOR as i32,
+                    (*expr).common.type_0 as u32,
                 );
             }
         }
@@ -1698,7 +1689,7 @@ unsafe extern "C" fn ExprResolveIntegerLookup(
 pub unsafe extern "C" fn ExprResolveInteger(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut val_rtrn: *mut int64_t,
+    mut val_rtrn: *mut i64,
 ) -> bool {
     unsafe {
         return ExprResolveIntegerLookup(
@@ -1740,7 +1731,7 @@ pub unsafe extern "C" fn ExprResolveGroup(
             is_mask: false_0 != 0,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
-        let mut result: int64_t = 0 as int64_t;
+        let mut result: i64 = 0 as i64;
         if !ExprResolveIntegerLookup(
             (*keymap_info).keymap.ctx,
             expr,
@@ -1758,35 +1749,31 @@ pub unsafe extern "C" fn ExprResolveGroup(
             ),
             &raw const group_name_pattern as *const ::core::ffi::c_void,
         ) {
-            return (if (*keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
                 != 0
             {
-                PARSER_FATAL_ERROR as ::core::ffi::c_int
+                PARSER_FATAL_ERROR as i32
             } else {
-                PARSER_RECOVERABLE_ERROR as ::core::ffi::c_int
+                PARSER_RECOVERABLE_ERROR as i32
             }) as xkb_parser_error;
         }
-        if result < absolute as ::core::ffi::c_int as int64_t
-            || result > (*keymap_info).features.max_groups as int64_t
-        {
+        if result < absolute as i32 as i64 || result > (*keymap_info).features.max_groups as i64 {
             xkb_log(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Group index %ld is out of range (%u..%u)\n\0".as_ptr() as *const i8,
-                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                 result,
-                absolute as ::core::ffi::c_int,
+                absolute as i32,
                 (*keymap_info).features.max_groups,
             );
-            return (if (*keymap_info).strict as ::core::ffi::c_uint
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
                 != 0
             {
-                PARSER_FATAL_ERROR as ::core::ffi::c_int
+                PARSER_FATAL_ERROR as i32
             } else {
-                PARSER_RECOVERABLE_ERROR as ::core::ffi::c_int
+                PARSER_RECOVERABLE_ERROR as i32
             }) as xkb_parser_error;
         }
         *group_rtrn = result as xkb_layout_index_t;
@@ -1800,7 +1787,7 @@ pub unsafe extern "C" fn ExprResolveLevel(
     mut level_rtrn: *mut xkb_level_index_t,
 ) -> bool {
     unsafe {
-        let mut result: int64_t = 0 as int64_t;
+        let mut result: i64 = 0 as i64;
         if !ExprResolveIntegerLookup(
             ctx,
             expr,
@@ -1820,19 +1807,19 @@ pub unsafe extern "C" fn ExprResolveLevel(
         ) {
             return false_0 != 0;
         }
-        if result < 1 as int64_t || result > XKB_LEVEL_MAX_IMPL as int64_t {
+        if result < 1 as i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Shift level %ld is out of range (1..%u)\n\0".as_ptr() as *const i8,
-                XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as ::core::ffi::c_int,
+                XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
                 result,
-                2048 as ::core::ffi::c_int,
+                2048 as i32,
             );
             return false_0 != 0;
         }
-        *level_rtrn = (result - 1 as int64_t) as xkb_level_index_t;
+        *level_rtrn = (result - 1 as i64) as xkb_level_index_t;
         return true_0 != 0;
     }
 }
@@ -1840,7 +1827,7 @@ pub unsafe extern "C" fn ExprResolveLevel(
 pub unsafe extern "C" fn ExprResolveButton(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut btn_rtrn: *mut int64_t,
+    mut btn_rtrn: *mut i64,
 ) -> bool {
     unsafe {
         return ExprResolveIntegerLookup(
@@ -1869,7 +1856,7 @@ pub unsafe extern "C" fn ExprResolveString(
     mut val_rtrn: *mut xkb_atom_t,
 ) -> bool {
     unsafe {
-        match (*expr).common.type_0 as ::core::ffi::c_uint {
+        match (*expr).common.type_0 as u32 {
             4 => {
                 *val_rtrn = (*expr).string.str;
                 return true_0 != 0;
@@ -1878,9 +1865,9 @@ pub unsafe extern "C" fn ExprResolveString(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Found %s, expected a string\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
                 return false_0 != 0;
@@ -1889,10 +1876,10 @@ pub unsafe extern "C" fn ExprResolveString(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Identifier \"%s\" of type string not found\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_IDENTIFIER as i32,
                     xkb_atom_text(ctx, (*expr).ident.ident),
                 );
                 return false_0 != 0;
@@ -1901,10 +1888,10 @@ pub unsafe extern "C" fn ExprResolveString(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Default \"%s.%s\" of type string not found\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_EXPRESSION_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(ctx, (*expr).field_ref.element),
                     xkb_atom_text(ctx, (*expr).field_ref.field),
                 );
@@ -1914,9 +1901,9 @@ pub unsafe extern "C" fn ExprResolveString(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s of strings not permitted\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_XKB_SYNTAX as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
                 return false_0 != 0;
@@ -1925,10 +1912,10 @@ pub unsafe extern "C" fn ExprResolveString(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Unknown operator %d in ResolveString\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_UNKNOWN_OPERATOR as ::core::ffi::c_int,
-                    (*expr).common.type_0 as ::core::ffi::c_uint,
+                    XKB_ERROR_UNKNOWN_OPERATOR as i32,
+                    (*expr).common.type_0 as u32,
                 );
             }
         }
@@ -1943,16 +1930,14 @@ pub unsafe extern "C" fn ExprResolveEnum(
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
-        if (*expr).common.type_0 as ::core::ffi::c_uint
-            != STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*expr).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Found a %s where an enumerated value was expected\n\0".as_ptr()
                     as *const i8,
-                XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 stmt_type_to_string((*expr).common.type_0),
             );
             return false_0 != 0;
@@ -1967,18 +1952,18 @@ pub unsafe extern "C" fn ExprResolveEnum(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Illegal identifier %s; expected one of:\n\0".as_ptr() as *const i8,
-                XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_IDENTIFIER as i32,
                 xkb_atom_text(ctx, (*expr).ident.ident),
             );
             while !values.is_null() && !(*values).name.is_null() {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_IDENTIFIER as i32,
                     (*values).name,
                 );
                 values = values.offset(1);
@@ -2000,28 +1985,26 @@ unsafe extern "C" fn ExprResolveMaskLookup(
         let mut ok: bool = false_0 != 0;
         let mut l: u32 = 0 as u32;
         let mut r: u32 = 0 as u32;
-        let mut v: int64_t = 0 as int64_t;
+        let mut v: i64 = 0 as i64;
         let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut bogus: *const i8 = ::core::ptr::null::<i8>();
         let mut c2rust_current_block_47: u64;
-        match (*expr).common.type_0 as ::core::ffi::c_uint {
+        match (*expr).common.type_0 as u32 {
             5 => {
-                if (*expr).integer.ival < 0 as int64_t
-                    || (*expr).integer.ival > UINT32_MAX as int64_t
-                {
+                if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > UINT32_MAX as i64 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Mask %s%#lx is out of range (0..%#x)\n\0".as_ptr() as *const i8,
-                        if (*expr).integer.ival < 0 as int64_t {
+                        if (*expr).integer.ival < 0 as i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
                         },
                         imaxabs((*expr).integer.ival as intmax_t),
-                        4294967295 as ::core::ffi::c_uint,
+                        4294967295 as u32,
                     );
                     return false_0 != 0;
                 }
@@ -2032,9 +2015,9 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Found %s where a mask was expected\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     stmt_type_to_string((*expr).common.type_0),
                 );
                 return false_0 != 0;
@@ -2051,14 +2034,14 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"[XKB-%03d] Identifier \"%s\" of type int is unknown\n\0".as_ptr()
                             as *const i8,
-                        XKB_ERROR_INVALID_IDENTIFIER as ::core::ffi::c_int,
+                        XKB_ERROR_INVALID_IDENTIFIER as i32,
                         xkb_atom_text(ctx, (*expr).ident.ident),
                     );
                 }
-                if !pending.is_null() && *pending as ::core::ffi::c_int != 0 {
+                if !pending.is_null() && *pending as i32 != 0 {
                     return false_0 != 0;
                 }
                 return ok;
@@ -2067,10 +2050,10 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Default \"%s.%s\" of type int is unknown\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_EXPRESSION_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(ctx, (*expr).field_ref.element),
                     xkb_atom_text(ctx, (*expr).field_ref.field),
                 );
@@ -2091,7 +2074,7 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 {
                     return false_0 != 0;
                 }
-                match (*expr).common.type_0 as ::core::ffi::c_uint {
+                match (*expr).common.type_0 as u32 {
                     17 => {
                         *val_rtrn = l | r;
                     }
@@ -2102,13 +2085,11 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                         xkb_log(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             b"[XKB-%03d] Cannot %s masks; Illegal operation ignored\n\0".as_ptr()
                                 as *const i8,
-                            XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
-                            if (*expr).common.type_0 as ::core::ffi::c_uint
-                                == STMT_EXPR_DIVIDE as ::core::ffi::c_int as ::core::ffi::c_uint
-                            {
+                            XKB_ERROR_INVALID_OPERATION as i32,
+                            if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
                                 b"divide\0".as_ptr() as *const i8
                             } else {
                                 b"multiply\0".as_ptr() as *const i8
@@ -2124,9 +2105,9 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Assignment operator not implemented yet\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_OPERATION as i32,
                 );
                 c2rust_current_block_47 = 11626999923138678822;
             }
@@ -2135,19 +2116,19 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false_0 != 0;
                 }
-                if v < 0 as int64_t || v > UINT32_MAX as int64_t {
+                if v < 0 as i64 || v > UINT32_MAX as i64 {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"Mask %s%#lx is out of range (0..%#x)\n\0".as_ptr() as *const i8,
-                        if v < 0 as int64_t {
+                        if v < 0 as i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
                         },
                         imaxabs(v as intmax_t),
-                        4294967295 as ::core::ffi::c_uint,
+                        4294967295 as u32,
                     );
                     return false_0 != 0;
                 }
@@ -2162,11 +2143,11 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] The '%c' unary operator cannot be used with a mask\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_INVALID_OPERATION as ::core::ffi::c_int,
-                    stmt_type_to_operator_char((*expr).common.type_0) as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_OPERATION as i32,
+                    stmt_type_to_operator_char((*expr).common.type_0) as i32,
                 );
                 return false_0 != 0;
             }
@@ -2174,10 +2155,10 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Unknown operator type %d in ResolveMask\n\0".as_ptr() as *const i8,
-                    XKB_ERROR_UNKNOWN_OPERATOR as ::core::ffi::c_int,
-                    (*expr).common.type_0 as ::core::ffi::c_uint,
+                    XKB_ERROR_UNKNOWN_OPERATOR as i32,
+                    (*expr).common.type_0 as u32,
                 );
                 c2rust_current_block_47 = 11626999923138678822;
             }
@@ -2191,10 +2172,10 @@ unsafe extern "C" fn ExprResolveMaskLookup(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] Unexpected %s in mask expression; Expression Ignored\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                    XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     bogus,
                 );
                 return false_0 != 0;
@@ -2271,16 +2252,14 @@ pub unsafe extern "C" fn ExprResolveMod(
     mut ndx_rtrn: *mut xkb_mod_index_t,
 ) -> bool {
     unsafe {
-        if (*def).common.type_0 as ::core::ffi::c_uint
-            != STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Cannot resolve virtual modifier: found %s where a virtual modifier name was expected\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 stmt_type_to_string((*def).common.type_0),
             );
             return false_0 != 0;
@@ -2291,10 +2270,10 @@ pub unsafe extern "C" fn ExprResolveMod(
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"[XKB-%03d] Cannot resolve virtual modifier: \"%s\" was not previously declared\n\0"
                     .as_ptr() as *const i8,
-                XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as ::core::ffi::c_int,
+                XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
                 xkb_atom_text(ctx, name),
             );
             return false_0 != 0;

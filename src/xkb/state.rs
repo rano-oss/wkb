@@ -7,13 +7,13 @@ pub mod internal {
     #[repr(C)]
 
     pub struct __va_list_tag {
-        pub gp_offset: ::core::ffi::c_uint,
-        pub fp_offset: ::core::ffi::c_uint,
+        pub gp_offset: u32,
+        pub fp_offset: u32,
         pub overflow_arg_area: *mut ::core::ffi::c_void,
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
+    pub const __CHAR_BIT__: i32 = 8 as i32;
 }
 
 pub mod types_h {
@@ -33,11 +33,11 @@ pub mod types_h {
 
 pub mod stdint_intn_h {
 
-    pub type int8_t = __int8_t;
+    pub type i8 = __int8_t;
 
-    pub type int16_t = __int16_t;
+    pub type i16 = __int16_t;
 
-    pub type int32_t = __int32_t;
+    pub type i32 = __int32_t;
     use super::types_h::{__int16_t, __int32_t, __int8_t};
 }
 
@@ -58,12 +58,8 @@ pub mod sys_types_h {
 
 pub mod stdlib_h {
 
-    pub type __compar_fn_t = Option<
-        unsafe extern "C" fn(
-            *const ::core::ffi::c_void,
-            *const ::core::ffi::c_void,
-        ) -> ::core::ffi::c_int,
-    >;
+    pub type __compar_fn_t =
+        Option<unsafe extern "C" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
 
     extern "C" {
 
@@ -96,7 +92,7 @@ pub mod stdio_h {
 
 pub mod xkbcommon_errors_h {
 
-    pub type xkb_error_code = ::core::ffi::c_int;
+    pub type xkb_error_code = i32;
 
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
 
@@ -122,7 +118,7 @@ pub mod context_h {
     #[repr(C)]
 
     pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub log_fn: Option<
             unsafe extern "C" fn(
                 *mut xkb_context,
@@ -132,7 +128,7 @@ pub mod context_h {
             ) -> (),
         >,
         pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
+        pub log_verbosity: i32,
         pub user_data: *mut ::core::ffi::c_void,
         pub names_dflt: xkb_rule_names,
         pub includes: C2Rust_Unnamed_0,
@@ -174,7 +170,7 @@ pub mod context_h {
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
@@ -185,7 +181,7 @@ pub mod atom_h {
 
     pub type xkb_atom_t = darray_size_t;
 
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
     extern "C" {
 
@@ -195,7 +191,7 @@ pub mod atom_h {
 
 pub mod darray_h {
 
-    pub type darray_size_t = ::core::ffi::c_uint;
+    pub type darray_size_t = u32;
     #[inline]
 
     pub unsafe extern "C" fn darray_next_alloc(
@@ -213,7 +209,6 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 
 pub mod xkbcommon_h {
@@ -228,7 +223,7 @@ pub mod xkbcommon_h {
         pub options: *const i8,
     }
 
-    pub type xkb_log_level = ::core::ffi::c_uint;
+    pub type xkb_log_level = u32;
 
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
 
@@ -252,7 +247,7 @@ pub mod xkbcommon_h {
 
     pub type xkb_level_index_t = u32;
 
-    pub type xkb_layout_out_of_range_policy = ::core::ffi::c_uint;
+    pub type xkb_layout_out_of_range_policy = u32;
 
     pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
 
@@ -260,7 +255,7 @@ pub mod xkbcommon_h {
 
     pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
 
-    pub type xkb_state_component = ::core::ffi::c_uint;
+    pub type xkb_state_component = u32;
 
     pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
 
@@ -286,19 +281,19 @@ pub mod xkbcommon_h {
 
     pub type xkb_led_index_t = u32;
 
-    pub type xkb_keymap_format = ::core::ffi::c_uint;
+    pub type xkb_keymap_format = u32;
 
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
 
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
 
-    pub type xkb_keymap_compile_flags = ::core::ffi::c_uint;
+    pub type xkb_keymap_compile_flags = u32;
 
     pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
 
     pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
 
-    pub type xkb_key_direction = ::core::ffi::c_uint;
+    pub type xkb_key_direction = u32;
 
     pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
 
@@ -308,7 +303,7 @@ pub mod xkbcommon_h {
 
     pub type xkb_led_mask_t = u32;
 
-    pub type xkb_event_type = ::core::ffi::c_uint;
+    pub type xkb_event_type = u32;
 
     pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
 
@@ -318,7 +313,7 @@ pub mod xkbcommon_h {
 
     pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
 
-    pub type xkb_a11y_flags = ::core::ffi::c_uint;
+    pub type xkb_a11y_flags = u32;
 
     pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
 
@@ -326,7 +321,7 @@ pub mod xkbcommon_h {
 
     pub const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
 
-    pub type xkb_keyboard_control_flags = ::core::ffi::c_uint;
+    pub type xkb_keyboard_control_flags = u32;
 
     pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
 
@@ -348,7 +343,7 @@ pub mod xkbcommon_h {
 
     pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
 
-    pub type xkb_events_flags = ::core::ffi::c_uint;
+    pub type xkb_events_flags = u32;
 
     pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
     #[derive(Copy, Clone)]
@@ -361,8 +356,8 @@ pub mod xkbcommon_h {
         pub latched_mods: xkb_mod_mask_t,
         pub affect_locked_mods: xkb_mod_mask_t,
         pub locked_mods: xkb_mod_mask_t,
-        pub latched_layout: int32_t,
-        pub locked_layout: int32_t,
+        pub latched_layout: i32,
+        pub locked_layout: i32,
         pub affect_controls: xkb_keyboard_control_flags,
         pub controls: xkb_keyboard_control_flags,
     }
@@ -383,13 +378,13 @@ pub mod xkbcommon_h {
         pub layout_policy: *const xkb_layout_policy_update,
     }
 
-    pub type xkb_consumed_mode = ::core::ffi::c_uint;
+    pub type xkb_consumed_mode = u32;
 
     pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
 
     pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
 
-    pub type xkb_state_match = ::core::ffi::c_uint;
+    pub type xkb_state_match = u32;
 
     pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
 
@@ -397,27 +392,23 @@ pub mod xkbcommon_h {
 
     pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
 
-    pub const XKB_KEYCODE_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
 
-    pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff as u32;
 
-    pub const XKB_LEVEL_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LEVEL_INVALID: u32 = 0xffffffff as u32;
 
-    pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
 
-    pub const XKB_LED_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
+    pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
 
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::stdint_intn_h::int32_t;
+    use super::stdint_intn_h::i32;
     use super::stdint_uintn_h::u32;
     extern "C" {
 
-        pub fn xkb_keysym_to_utf8(
-            keysym: xkb_keysym_t,
-            buffer: *mut i8,
-            size: usize,
-        ) -> ::core::ffi::c_int;
+        pub fn xkb_keysym_to_utf8(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
 
         pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
 
@@ -459,7 +450,7 @@ pub mod xkbcommon_h {
             layout: xkb_layout_index_t,
             level: xkb_level_index_t,
             syms_out: *mut *const xkb_keysym_t,
-        ) -> ::core::ffi::c_int;
+        ) -> i32;
     }
 }
 
@@ -469,7 +460,7 @@ pub mod keymap_h {
 
     pub struct xkb_keymap {
         pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
+        pub refcnt: i32,
         pub flags: xkb_keymap_compile_flags,
         pub format: xkb_keymap_format,
         pub num_leds: xkb_led_index_t,
@@ -512,7 +503,7 @@ pub mod keymap_h {
         pub mapping: xkb_mod_mask_t,
     }
 
-    pub type mod_type = ::core::ffi::c_uint;
+    pub type mod_type = u32;
 
     pub const MOD_BOTH: mod_type = 3;
 
@@ -572,13 +563,13 @@ pub mod keymap_h {
         pub clear_latched_mods: xkb_mod_mask_t,
     }
 
-    pub type xkb_internal_action_flags = ::core::ffi::c_uint;
+    pub type xkb_internal_action_flags = u32;
 
     pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
 
     pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
 
-    pub type xkb_action_type = ::core::ffi::c_uint;
+    pub type xkb_action_type = u32;
 
     pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
 
@@ -649,7 +640,7 @@ pub mod keymap_h {
         pub button: uint8_t,
     }
 
-    pub type xkb_action_flags = ::core::ffi::c_uint;
+    pub type xkb_action_flags = u32;
 
     pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
 
@@ -684,8 +675,8 @@ pub mod keymap_h {
     pub struct xkb_pointer_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub x: int16_t,
-        pub y: int16_t,
+        pub x: i16,
+        pub y: i16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -693,7 +684,7 @@ pub mod keymap_h {
     pub struct xkb_switch_screen_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub screen: int8_t,
+        pub screen: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -701,7 +692,7 @@ pub mod keymap_h {
     pub struct xkb_pointer_default_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub value: int8_t,
+        pub value: i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -712,7 +703,7 @@ pub mod keymap_h {
         pub ctrls: xkb_action_controls,
     }
 
-    pub type xkb_action_controls = ::core::ffi::c_uint;
+    pub type xkb_action_controls = u32;
 
     pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
 
@@ -767,7 +758,7 @@ pub mod keymap_h {
     pub struct xkb_group_action {
         pub type_0: xkb_action_type,
         pub flags: xkb_action_flags,
-        pub group: int32_t,
+        pub group: i32,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -787,7 +778,7 @@ pub mod keymap_h {
 
     pub type xkb_action_count_t = uint16_t;
 
-    pub type xkb_match_operation = ::core::ffi::c_uint;
+    pub type xkb_match_operation = u32;
 
     pub const MATCH_EXACTLY: xkb_match_operation = 4;
 
@@ -972,7 +963,7 @@ pub mod keymap_h {
 
     pub type xkb_overlay_mask_t = uint8_t;
 
-    pub type xkb_explicit_components = ::core::ffi::c_uint;
+    pub type xkb_explicit_components = u32;
 
     pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
 
@@ -1009,9 +1000,9 @@ pub mod keymap_h {
 
     pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
 
-    pub type C2Rust_Unnamed_23 = ::core::ffi::c_uint;
+    pub type C2Rust_Unnamed_23 = u32;
 
-    pub type real_mod_index = ::core::ffi::c_uint;
+    pub type real_mod_index = u32;
 
     pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
 
@@ -1025,26 +1016,23 @@ pub mod keymap_h {
 
     pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
 
-    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
+    pub const XKB_MAX_GROUPS: i32 = 32 as i32;
 
-    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as ::core::ffi::c_int as xkb_mod_mask_t;
+    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
 
-    pub const XKB_OVERLAY_MAX_X11: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
+    pub const XKB_OVERLAY_MAX_X11: i32 = 2 as i32;
 
-    pub const XKB_OVERLAY_MAX: ::core::ffi::c_ulong = (::core::mem::size_of::<xkb_overlay_mask_t>()
-        as ::core::ffi::c_ulong)
-        .wrapping_mul(CHAR_BIT as ::core::ffi::c_ulong);
+    pub const XKB_OVERLAY_MAX: u64 =
+        (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
 
-    pub const XKB_OVERLAY1_CONTROLS_OFFSET: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1 as i32;
     #[inline]
 
     pub unsafe extern "C" fn format_max_overlays(
         mut format: xkb_keymap_format,
     ) -> xkb_overlay_index_t {
         unsafe {
-            return (if format as ::core::ffi::c_uint
-                == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
                 XKB_OVERLAY_MAX_X11 as usize
             } else {
                 XKB_OVERLAY_MAX as usize
@@ -1098,7 +1086,7 @@ pub mod keymap_h {
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::limits_h::CHAR_BIT;
-    use super::stdint_intn_h::{int16_t, int32_t, int8_t};
+    use super::stdint_intn_h::{i16, i32, i8};
     use super::stdint_uintn_h::{uint16_t, uint8_t};
     use super::xkbcommon_h::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -1111,7 +1099,7 @@ pub mod keymap_h {
         pub fn XkbLevelsSameSyms(a: *const xkb_level, b: *const xkb_level) -> bool;
 
         pub fn XkbWrapGroupIntoRange(
-            group: int32_t,
+            group: i32,
             num_groups: xkb_layout_index_t,
             out_of_range_group_policy: xkb_layout_out_of_range_policy,
             out_of_range_group_number: xkb_layout_index_t,
@@ -1160,9 +1148,9 @@ pub mod state_priv_h {
     #[repr(C)]
 
     pub struct state_components {
-        pub base_group: int32_t,
-        pub latched_group: int32_t,
-        pub locked_group: int32_t,
+        pub base_group: i32,
+        pub latched_group: i32,
+        pub locked_group: i32,
         pub group: xkb_layout_index_t,
         pub base_mods: xkb_mod_mask_t,
         pub latched_mods: xkb_mod_mask_t,
@@ -1197,14 +1185,14 @@ pub mod state_priv_h {
         pub latched_mods: xkb_mod_mask_t,
         pub affect_locked_mods: xkb_mod_mask_t,
         pub locked_mods: xkb_mod_mask_t,
-        pub latched_layout: int32_t,
-        pub locked_layout: int32_t,
+        pub latched_layout: i32,
+        pub locked_layout: i32,
         pub affect_controls: xkb_keyboard_control_flags,
         pub controls: xkb_keyboard_control_flags,
     }
 
     use super::keymap_h::xkb_action_controls;
-    use super::stdint_intn_h::int32_t;
+    use super::stdint_intn_h::i32;
     use super::xkbcommon_h::{
         xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t, xkb_layout_index_t,
         xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t, xkb_state_component,
@@ -1217,7 +1205,7 @@ pub mod messages_codes_h {
 
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
 
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
+    pub type xkb_log_verbosity = i32;
 
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
 
@@ -1231,7 +1219,7 @@ pub mod messages_codes_h {
 
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 
-    pub type xkb_message_code = ::core::ffi::c_uint;
+    pub type xkb_message_code = u32;
 
     pub const _XKB_LOG_MESSAGE_MAX_CODE: xkb_message_code = 971;
 
@@ -1404,7 +1392,7 @@ pub mod messages_codes_h {
 
 pub mod xkbcommon_features_h {
 
-    pub type xkb_feature = ::core::ffi::c_uint;
+    pub type xkb_feature = u32;
 
     pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
 
@@ -1478,7 +1466,7 @@ pub mod string_h {
 
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
+            __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
     }
@@ -1487,9 +1475,9 @@ pub mod string_h {
 pub mod utils_numbers_h {
     #[inline]
 
-    pub unsafe extern "C" fn popcount32(mut x: u32) -> ::core::ffi::c_uint {
+    pub unsafe extern "C" fn popcount32(mut x: u32) -> u32 {
         unsafe {
-            return (x as ::core::ffi::c_ulong).count_ones() as i32 as ::core::ffi::c_uint;
+            return (x as u64).count_ones() as i32 as u32;
         }
     }
     use super::stdint_uintn_h::u32;
@@ -1497,7 +1485,7 @@ pub mod utils_numbers_h {
 
 pub mod limits_h {
 
-    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
+    pub const CHAR_BIT: i32 = __CHAR_BIT__;
     use super::internal::__CHAR_BIT__;
 }
 
@@ -1528,7 +1516,7 @@ pub mod util_mem_h {
             while p < end {
                 let c2rust_fresh1 = p;
                 p = p.offset(1);
-                if *c2rust_fresh1 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                if *c2rust_fresh1 as i32 != 0 as i32 {
                     return XKB_ERROR_ABI_FORWARD_COMPAT;
                 }
             }
@@ -1545,9 +1533,9 @@ pub mod util_mem_h {
 pub mod utils_h {
     #[inline]
 
-    pub unsafe extern "C" fn one_bit_set(mut x: u32) -> ::core::ffi::c_int {
+    pub unsafe extern "C" fn one_bit_set(mut x: u32) -> i32 {
         unsafe {
-            return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as ::core::ffi::c_int;
+            return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
         }
     }
     use super::stdint_uintn_h::u32;
@@ -1568,10 +1556,9 @@ pub mod utf8_h {
     }
 }
 
-
 pub mod stdint_h {
 
-    pub const INT32_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
+    pub const INT32_MAX: i32 = 2147483647 as i32;
 }
 
 pub mod __stddef_null_h {
@@ -1582,14 +1569,14 @@ pub mod __stddef_null_h {
 
 pub mod stdbool_h {
 
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+    pub const true_0: i32 = 1 as i32;
 
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const false_0: i32 = 0 as i32;
 }
 
 pub mod xkbcommon_keysyms_h {
 
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
@@ -1684,7 +1671,7 @@ pub use self::state_priv_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{int16_t, int32_t, int8_t};
+pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::va_list;
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc};
@@ -1802,7 +1789,7 @@ pub struct C2Rust_Unnamed_14 {
 pub struct xkb_overlaid_key {
     pub old: *const xkb_key,
     pub new: *const xkb_key,
-    pub refcnt: ::core::ffi::c_int,
+    pub refcnt: i32,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1812,9 +1799,9 @@ pub struct xkb_state {
     pub controls: machine_controls,
     pub set_mods: xkb_mod_mask_t,
     pub clear_mods: xkb_mod_mask_t,
-    pub mod_key_count: [int16_t; 32],
+    pub mod_key_count: [i16; 32],
     pub flags: xkb_a11y_flags,
-    pub refcnt: ::core::ffi::c_int,
+    pub refcnt: i32,
     pub filters: C2Rust_Unnamed_15,
     pub keymap: *mut xkb_keymap,
 }
@@ -1842,7 +1829,7 @@ pub struct xkb_filter {
         ) -> bool,
     >,
     pub priv_0: u32,
-    pub refcnt: ::core::ffi::c_int,
+    pub refcnt: i32,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1935,12 +1922,12 @@ pub union group_latch_priv {
 #[derive(Copy, Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_22 {
-    #[bitfield(name = "latch", ty = "::core::ffi::c_uint", bits = "0..=1")]
-    #[bitfield(name = "group_delta", ty = "int32_t", bits = "2..=31")]
+    #[bitfield(name = "latch", ty = "u32", bits = "0..=1")]
+    #[bitfield(name = "group_delta", ty = "i32", bits = "2..=31")]
     pub latch_group_delta: [u8; 4],
 }
 
-pub type xkb_key_latch_state = ::core::ffi::c_uint;
+pub type xkb_key_latch_state = u32;
 
 pub const _KEY_LATCH_STATE_NUM_ENTRIES: xkb_key_latch_state = 3;
 
@@ -1952,9 +1939,9 @@ pub const NO_LATCH: xkb_key_latch_state = 0;
 
 pub const XKB_STATE_MATCH_FLAGS: C2Rust_Unnamed_24 = 65539;
 
-pub type xkb_filter_result = ::core::ffi::c_uint;
+pub type xkb_filter_result = u32;
 
-pub type C2Rust_Unnamed_24 = ::core::ffi::c_uint;
+pub type C2Rust_Unnamed_24 = u32;
 static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
     explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
     c2rust_padding: [0; 7],
@@ -1989,7 +1976,7 @@ static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
                 type_0: ACTION_TYPE_INTERNAL,
                 flags: INTERNAL_BREAKS_GROUP_LATCH,
                 c2rust_unnamed: C2Rust_Unnamed_2 {
-                    clear_latched_mods: 0 as ::core::ffi::c_int as xkb_mod_mask_t,
+                    clear_latched_mods: 0 as i32 as xkb_mod_mask_t,
                 },
             },
         },
@@ -2004,7 +1991,7 @@ unsafe extern "C" fn get_entry_for_mods(
         let mut i: darray_size_t = 0 as darray_size_t;
         while i < (*type_0).num_entries {
             if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
-                as ::core::ffi::c_int
+                as i32
                 != 0
                 && (*(*type_0).entries.offset(i as isize)).mods.mask == mods
             {
@@ -2071,7 +2058,7 @@ unsafe extern "C" fn state_key_get_layout(
 ) -> xkb_layout_index_t {
     unsafe {
         return XkbWrapGroupIntoRange(
-            (*state).components.group as int32_t,
+            (*state).components.group as i32,
             (*key).num_groups(),
             (*key).out_of_range_group_policy(),
             (*key).out_of_range_group_number(),
@@ -2124,10 +2111,7 @@ unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filte
         let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
         let mut iter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
         if !(*state).filters.item.is_null() {
-            iter = (*state)
-                .filters
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_filter;
+            iter = (*state).filters.item.offset(0 as i32 as isize) as *mut xkb_filter;
             while iter
                 < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
             {
@@ -2161,7 +2145,7 @@ unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filte
                 memset(
                     (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter
                         as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                    0 as i32,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
                 );
@@ -2172,7 +2156,7 @@ unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filte
                 .offset((*state).filters.size.wrapping_sub(1 as darray_size_t) as isize)
                 as *mut xkb_filter;
         }
-        (*filter).refcnt = 1 as ::core::ffi::c_int;
+        (*filter).refcnt = 1 as i32;
         return filter;
     }
 }
@@ -2184,10 +2168,7 @@ unsafe extern "C" fn xkb_filter_group_set_new(
 ) {
     unsafe {
         (*filter).priv_0 = (*state).components.base_group as u32;
-        if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -2204,36 +2185,33 @@ unsafe extern "C" fn xkb_filter_group_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.group.flags = ((*filter).action.group.flags as ::core::ffi::c_uint
-                & !(ACTION_LOCK_CLEAR as ::core::ffi::c_int) as ::core::ffi::c_uint)
+            (*filter).action.group.flags = ((*filter).action.group.flags as u32
+                & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_38: {
-            match direction as ::core::ffi::c_uint {
+            match direction as u32 {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    if (*filter).refcnt > 0 as i32 {
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_38;
                 }
             }
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONSUME as i32 != 0;
         }
-        (*state).components.base_group = (*filter).priv_0 as int32_t;
-        if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            (*state).components.locked_group = 0 as ::core::ffi::c_int as int32_t;
+        (*state).components.base_group = (*filter).priv_0 as i32;
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0 {
+            (*state).components.locked_group = 0 as i32 as i32;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2244,54 +2222,34 @@ unsafe extern "C" fn get_state_component_changes(
     unsafe {
         let mut mask: xkb_state_component = 0 as xkb_state_component;
         if (*a).group != (*b).group {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32) as xkb_state_component;
         }
         if (*a).base_group != (*b).base_group {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_DEPRESSED as i32 as u32) as xkb_state_component;
         }
         if (*a).latched_group != (*b).latched_group {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_LATCHED as i32 as u32) as xkb_state_component;
         }
         if (*a).locked_group != (*b).locked_group {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_LOCKED as i32 as u32) as xkb_state_component;
         }
         if (*a).mods != (*b).mods {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_EFFECTIVE as i32 as u32) as xkb_state_component;
         }
         if (*a).base_mods != (*b).base_mods {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_DEPRESSED as i32 as u32) as xkb_state_component;
         }
         if (*a).latched_mods != (*b).latched_mods {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_LATCHED as i32 as u32) as xkb_state_component;
         }
         if (*a).locked_mods != (*b).locked_mods {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_LOCKED as i32 as u32) as xkb_state_component;
         }
         if (*a).leds != (*b).leds {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_LEDS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LEDS as i32 as u32) as xkb_state_component;
         }
-        if (*a).controls as ::core::ffi::c_uint != (*b).controls as ::core::ffi::c_uint {
-            mask = (mask as ::core::ffi::c_uint
-                | XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_state_component;
+        if (*a).controls as u32 != (*b).controls as u32 {
+            mask = (mask as u32 | XKB_STATE_CONTROLS as i32 as u32) as xkb_state_component;
         }
         return mask;
     }
@@ -2303,15 +2261,9 @@ unsafe extern "C" fn xkb_filter_group_lock_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0 {
             return;
-        } else if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        } else if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
             (*state).components.locked_group = (*filter).action.group.group;
         } else {
             (*state).components.locked_group += (*filter).action.group.group;
@@ -2328,49 +2280,40 @@ unsafe extern "C" fn xkb_filter_group_lock_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            if (*filter).action.group.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
-                && direction as ::core::ffi::c_uint
-                    == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
+            if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0
+                && direction as u32 == XKB_KEY_DOWN as i32 as u32
             {
-                (*filter).action.group.flags = ((*filter).action.group.flags as ::core::ffi::c_uint
-                    & !(ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                (*filter).action.group.flags = ((*filter).action.group.flags as u32
+                    & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
                     as xkb_action_flags;
             }
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_47: {
-            match direction as ::core::ffi::c_uint {
+            match direction as u32 {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    if (*filter).refcnt > 0 as i32 {
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_47;
                 }
             }
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_LOCK_ON_RELEASE as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            if (*filter).action.group.flags as ::core::ffi::c_uint
-                & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
-            {
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0 {
+            if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
                 (*state).components.locked_group = (*filter).action.group.group;
             } else {
                 (*state).components.locked_group += (*filter).action.group.group;
             }
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2380,12 +2323,10 @@ unsafe extern "C" fn xkb_action_breaks_latch(
     mut mask: xkb_mod_mask_t,
 ) -> bool {
     unsafe {
-        match (*action).type_0 as ::core::ffi::c_uint {
+        match (*action).type_0 as u32 {
             0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return true_0 != 0,
             20 => {
-                return (*action).internal.flags as ::core::ffi::c_uint
-                    & flag as ::core::ffi::c_uint
-                    != 0
+                return (*action).internal.flags as u32 & flag as u32 != 0
                     && (*action).internal.c2rust_unnamed.clear_latched_mods & mask == mask;
             }
             _ => return false_0 != 0,
@@ -2404,10 +2345,9 @@ unsafe extern "C" fn xkb_filter_group_latch_new(
                 let mut init = C2Rust_Unnamed_22 {
                     latch_group_delta: [0; 4],
                 };
-                init.set_latch(LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint);
+                init.set_latch(LATCH_KEY_DOWN as i32 as u32);
                 init.set_group_delta(
-                    if (*filter).action.group.flags as ::core::ffi::c_uint
-                        & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32
                         != 0
                     {
                         (*filter).action.group.group - (*state).components.base_group
@@ -2419,10 +2359,7 @@ unsafe extern "C" fn xkb_filter_group_latch_new(
             },
         };
         (*filter).priv_0 = priv_0.priv_0;
-        if (*filter).action.group.flags as ::core::ffi::c_uint
-            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -2442,21 +2379,14 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
             priv_0: (*filter).priv_0,
         };
         let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch() as xkb_key_latch_state;
-        if direction as ::core::ffi::c_uint
-            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
             let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
-            if latch as ::core::ffi::c_uint
-                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                if (*state).flags as ::core::ffi::c_uint
-                    & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+            if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
+                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 != 0 {
                     let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-                    while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                    while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
                             actions.offset(k as isize) as *const xkb_action,
                             INTERNAL_BREAKS_GROUP_LATCH,
@@ -2471,33 +2401,28 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as ::core::ffi::c_uint
-                == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                let sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
-                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0;
-                let flags: xkb_action_flags = ((*filter).action.group.flags as ::core::ffi::c_uint
-                    & !(ACTION_LATCH_TO_LOCK as ::core::ffi::c_int) as ::core::ffi::c_uint)
+            } else if latch as u32 == LATCH_PENDING as i32 as u32 {
+                let sticky_keys: bool =
+                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
+                let flags: xkb_action_flags = ((*filter).action.group.flags as u32
+                    & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
-                while (k_0 as ::core::ffi::c_int) < count as ::core::ffi::c_int {
-                    if (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
-                        == ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
+                while (k_0 as i32) < count as i32 {
+                    if (*actions.offset(k_0 as isize)).type_0 as u32
+                        == ACTION_TYPE_GROUP_LATCH as i32 as u32
                         && (*actions.offset(k_0 as isize)).group.group
                             == (*filter).action.group.group
-                        && (*actions.offset(k_0 as isize)).group.flags as ::core::ffi::c_uint
-                            == (*filter).action.group.flags as ::core::ffi::c_uint
-                        || (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
-                            == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-                            && sticky_keys as ::core::ffi::c_int != 0
-                            && (*actions.offset(k_0 as isize)).group.flags as ::core::ffi::c_uint
-                                == flags as ::core::ffi::c_uint
+                        && (*actions.offset(k_0 as isize)).group.flags as u32
+                            == (*filter).action.group.flags as u32
+                        || (*actions.offset(k_0 as isize)).type_0 as u32
+                            == ACTION_TYPE_GROUP_SET as i32 as u32
+                            && sticky_keys as i32 != 0
+                            && (*actions.offset(k_0 as isize)).group.flags as u32 == flags as u32
                     {
-                        if (*filter).action.group.flags as ::core::ffi::c_uint
-                            & ACTION_LATCH_TO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as i32 as u32
                             != 0
-                            && (*filter).action.group.group != 0 as int32_t
+                            && (*filter).action.group.group != 0 as i32
                         {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
                             (*filter).func = Some(
@@ -2525,7 +2450,7 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
                             (*state).components.latched_group -=
                                 priv_0.c2rust_unnamed.group_delta();
                             (*filter).key = key;
-                            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                            return XKB_FILTER_CONSUME as i32 != 0;
                         }
                     } else if xkb_action_breaks_latch(
                         actions.offset(k_0 as isize) as *const xkb_action,
@@ -2534,49 +2459,37 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
                     ) {
                         (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
                         (*filter).func = None;
-                        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                        return XKB_FILTER_CONTINUE as i32 != 0;
                     }
                     k_0 = k_0.wrapping_add(1);
                 }
             } else {
             }
         } else if !(key != (*filter).key) {
-            if direction as ::core::ffi::c_uint
-                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
-            } else if (*filter).action.group.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
+            if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                return XKB_FILTER_CONSUME as i32 != 0;
+            } else if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
                 && (*state).components.locked_group != 0
             {
-                if latch as ::core::ffi::c_uint
-                    == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                if latch as u32 == LATCH_PENDING as i32 as u32 {
                     (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
                 } else {
                     (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 }
-                (*state).components.locked_group = 0 as ::core::ffi::c_int as int32_t;
+                (*state).components.locked_group = 0 as i32 as i32;
                 (*filter).func = None;
-            } else if latch as ::core::ffi::c_uint
-                == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            } else if latch as u32 == NO_LATCH as i32 as u32 {
                 (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 (*filter).func = None;
-            } else if latch as ::core::ffi::c_uint
-                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            } else if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
                 latch = LATCH_PENDING;
                 (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta();
             }
         }
-        priv_0
-            .c2rust_unnamed
-            .set_latch(latch as ::core::ffi::c_uint as ::core::ffi::c_uint);
+        priv_0.c2rust_unnamed.set_latch(latch as u32 as u32);
         (*filter).priv_0 = priv_0.priv_0;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2586,12 +2499,9 @@ unsafe extern "C" fn xkb_filter_mod_set_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        let unlock: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
-            | ACTION_LOCK_CLEAR as ::core::ffi::c_int)
-            as xkb_action_flags;
-        if (*filter).action.mods.flags as ::core::ffi::c_uint & unlock as ::core::ffi::c_uint
-            == unlock as ::core::ffi::c_uint
-        {
+        let unlock: xkb_action_flags =
+            (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
+        if (*filter).action.mods.flags as u32 & unlock as u32 == unlock as u32 {
             (*filter).priv_0 =
                 ((*filter).action.mods.mods.mask & !(*state).components.locked_mods) as u32;
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
@@ -2611,38 +2521,35 @@ unsafe extern "C" fn xkb_filter_mod_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.mods.flags = ((*filter).action.mods.flags as ::core::ffi::c_uint
-                & !(ACTION_LOCK_CLEAR as ::core::ffi::c_int) as ::core::ffi::c_uint)
+            (*filter).action.mods.flags = ((*filter).action.mods.flags as u32
+                & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_38: {
-            match direction as ::core::ffi::c_uint {
+            match direction as u32 {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    if (*filter).refcnt > 0 as i32 {
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_38;
                 }
             }
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).clear_mods |= (*filter).priv_0;
-        let unlock: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
-            | ACTION_LOCK_CLEAR as ::core::ffi::c_int)
-            as xkb_action_flags;
-        if (*filter).action.mods.flags as ::core::ffi::c_uint & unlock as ::core::ffi::c_uint
-            == ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        let unlock: xkb_action_flags =
+            (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
+        if (*filter).action.mods.flags as u32 & unlock as u32 == ACTION_LOCK_CLEAR as i32 as u32 {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2655,23 +2562,15 @@ unsafe extern "C" fn xkb_filter_mod_lock_new(
         (*filter).priv_0 =
             ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as u32;
         if (*filter).priv_0 != 0
-            && (*filter).action.mods.flags as ::core::ffi::c_uint
-                & ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
+            && (*filter).action.mods.flags as u32 & ACTION_UNLOCK_ON_PRESS as i32 as u32 != 0
         {
-            if (*filter).action.mods.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
-            {
+            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0 {
                 (*state).components.locked_mods &= !(*filter).priv_0;
             }
             (*filter).func = None;
         } else {
             (*state).set_mods |= (*filter).action.mods.mods.mask;
-            if (*filter).action.mods.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
-            {
+            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_LOCK as i32 as u32 == 0 {
                 (*state).components.locked_mods |= (*filter).action.mods.mods.mask;
             }
         };
@@ -2687,33 +2586,30 @@ unsafe extern "C" fn xkb_filter_mod_lock_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_32: {
-            match direction as ::core::ffi::c_uint {
+            match direction as u32 {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    if (*filter).refcnt > 0 as i32 {
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_32;
                 }
             }
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).clear_mods |= (*filter).action.mods.mods.mask;
-        if (*filter).action.mods.flags as ::core::ffi::c_uint
-            & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-            == 0
-        {
+        if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0 {
             (*state).components.locked_mods &= !(*filter).priv_0;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2723,28 +2619,20 @@ unsafe extern "C" fn xkb_filter_mod_latch_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
-            | ACTION_LATCH_ON_PRESS as ::core::ffi::c_int)
-            as xkb_action_flags;
-        if (*filter).action.mods.flags as ::core::ffi::c_uint
-            & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-            && (*filter).action.mods.flags as ::core::ffi::c_uint
-                & unlockOnPress as ::core::ffi::c_uint
-                != 0
+        let unlockOnPress: xkb_action_flags =
+            (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
+        if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
+            && (*filter).action.mods.flags as u32 & unlockOnPress as u32 != 0
             && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                 == (*filter).action.mods.mods.mask
         {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
             (*filter).func = None;
-        } else if (*filter).action.mods.flags as ::core::ffi::c_uint
-            & ACTION_LATCH_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            (*filter).priv_0 = LATCH_PENDING as ::core::ffi::c_int as u32;
+        } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as i32 as u32 != 0 {
+            (*filter).priv_0 = LATCH_PENDING as i32 as u32;
             (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = LATCH_KEY_DOWN as ::core::ffi::c_int as u32;
+            (*filter).priv_0 = LATCH_KEY_DOWN as i32 as u32;
             (*state).set_mods |= (*filter).action.mods.mods.mask;
         };
     }
@@ -2759,21 +2647,14 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
 ) -> bool {
     unsafe {
         let mut latch: xkb_key_latch_state = (*filter).priv_0 as xkb_key_latch_state;
-        if direction as ::core::ffi::c_uint
-            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
             let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
-            if latch as ::core::ffi::c_uint
-                == LATCH_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                if (*state).flags as ::core::ffi::c_uint
-                    & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+            if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
+                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 != 0 {
                     let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-                    while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
+                    while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
                             actions.offset(k as isize) as *const xkb_action,
                             INTERNAL_BREAKS_MOD_LATCH,
@@ -2788,31 +2669,26 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as ::core::ffi::c_uint
-                == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                let sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
-                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0;
-                let flags: xkb_action_flags = ((*filter).action.mods.flags as ::core::ffi::c_uint
-                    & !(ACTION_LATCH_TO_LOCK as ::core::ffi::c_int) as ::core::ffi::c_uint)
+            } else if latch as u32 == LATCH_PENDING as i32 as u32 {
+                let sticky_keys: bool =
+                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
+                let flags: xkb_action_flags = ((*filter).action.mods.flags as u32
+                    & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
-                while (k_0 as ::core::ffi::c_int) < count as ::core::ffi::c_int {
-                    if ((*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
-                        == ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                        && (*actions.offset(k_0 as isize)).mods.flags as ::core::ffi::c_uint
-                            == (*filter).action.mods.flags as ::core::ffi::c_uint
-                        || (*actions.offset(k_0 as isize)).type_0 as ::core::ffi::c_uint
-                            == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-                            && sticky_keys as ::core::ffi::c_int != 0
-                            && (*actions.offset(k_0 as isize)).mods.flags as ::core::ffi::c_uint
-                                == flags as ::core::ffi::c_uint)
+                while (k_0 as i32) < count as i32 {
+                    if ((*actions.offset(k_0 as isize)).type_0 as u32
+                        == ACTION_TYPE_MOD_LATCH as i32 as u32
+                        && (*actions.offset(k_0 as isize)).mods.flags as u32
+                            == (*filter).action.mods.flags as u32
+                        || (*actions.offset(k_0 as isize)).type_0 as u32
+                            == ACTION_TYPE_MOD_SET as i32 as u32
+                            && sticky_keys as i32 != 0
+                            && (*actions.offset(k_0 as isize)).mods.flags as u32 == flags as u32)
                         && (*actions.offset(k_0 as isize)).mods.mods.mask
                             == (*filter).action.mods.mods.mask
                     {
-                        if (*filter).action.mods.flags as ::core::ffi::c_uint
-                            & ACTION_LATCH_TO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
+                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as i32 as u32
                             != 0
                         {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
@@ -2865,7 +2741,7 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                         }
                         (*filter).key = key;
                         (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     } else if xkb_action_breaks_latch(
                         actions.offset(k_0 as isize) as *const xkb_action,
                         INTERNAL_BREAKS_MOD_LATCH,
@@ -2873,46 +2749,35 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                     ) {
                         (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
                         (*filter).func = None;
-                        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                        return XKB_FILTER_CONTINUE as i32 != 0;
                     }
                     k_0 = k_0.wrapping_add(1);
                 }
             } else {
             }
         } else if !(key != (*filter).key) {
-            if direction as ::core::ffi::c_uint
-                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                return XKB_FILTER_CONSUME as i32 != 0;
             } else {
-                let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as ::core::ffi::c_int
-                    | ACTION_LATCH_ON_PRESS as ::core::ffi::c_int)
+                let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as i32
+                    | ACTION_LATCH_ON_PRESS as i32)
                     as xkb_action_flags;
-                if (*filter).action.mods.flags as ::core::ffi::c_uint
-                    & ACTION_LOCK_CLEAR as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                    && (*filter).action.mods.flags as ::core::ffi::c_uint
-                        & unlockOnPress as ::core::ffi::c_uint
-                        == 0
+                if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
+                    && (*filter).action.mods.flags as u32 & unlockOnPress as u32 == 0
                     && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                         == (*filter).action.mods.mods.mask
                 {
-                    if latch as ::core::ffi::c_uint
-                        == LATCH_PENDING as ::core::ffi::c_int as ::core::ffi::c_uint
-                    {
+                    if latch as u32 == LATCH_PENDING as i32 as u32 {
                         (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
                     } else {
                         (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     }
                     (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if latch as ::core::ffi::c_uint
-                    == NO_LATCH as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                } else if latch as u32 == NO_LATCH as i32 as u32 {
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if (*filter).action.mods.flags as ::core::ffi::c_uint
-                    & ACTION_LATCH_ON_PRESS as ::core::ffi::c_int as ::core::ffi::c_uint
+                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as i32 as u32
                     == 0
                 {
                     latch = LATCH_PENDING;
@@ -2922,7 +2787,7 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
             }
         }
         (*filter).priv_0 = latch as u32;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -2932,25 +2797,18 @@ unsafe extern "C" fn xkb_filter_ctrls_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.type_0 as ::core::ffi::c_uint
-            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-            (*filter).priv_0 = (!((*state).components.controls as ::core::ffi::c_uint)
-                & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
-                as u32;
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32 {
+            (*filter).priv_0 = (!((*state).components.controls as u32)
+                & (*filter).action.ctrls.ctrls as u32) as u32;
         } else {
-            (*filter).priv_0 = ((*state).components.controls as ::core::ffi::c_uint
-                & (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
-                as u32;
+            (*filter).priv_0 =
+                ((*state).components.controls as u32 & (*filter).action.ctrls.ctrls as u32) as u32;
         }
-        if (*filter).action.type_0 as ::core::ffi::c_uint
-            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-            || (*filter).action.ctrls.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32
+            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_LOCK as i32 as u32 == 0
         {
-            (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
-                | (*filter).action.ctrls.ctrls as ::core::ffi::c_uint)
+            (*state).components.controls = ((*state).components.controls as u32
+                | (*filter).action.ctrls.ctrls as u32)
                 as xkb_action_controls;
         }
     }
@@ -2965,46 +2823,39 @@ unsafe extern "C" fn xkb_filter_ctrls_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_32: {
-            match direction as ::core::ffi::c_uint {
+            match direction as u32 {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as ::core::ffi::c_int {
-                        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+                    if (*filter).refcnt > 0 as i32 {
+                        return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_32;
                 }
             }
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.type_0 as ::core::ffi::c_uint
-            == ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-            || (*filter).action.ctrls.flags as ::core::ffi::c_uint
-                & ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32
+            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0
         {
             let old: xkb_action_controls = (*state).components.controls;
-            (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
-                & !((*filter).priv_0 as xkb_action_controls as ::core::ffi::c_uint))
+            (*state).components.controls = ((*state).components.controls as u32
+                & !((*filter).priv_0 as xkb_action_controls as u32))
                 as xkb_action_controls;
-            if old as ::core::ffi::c_uint
-                & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
-                && (*state).components.controls as ::core::ffi::c_uint
-                    & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                    == 0
+            if old as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0
+                && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 == 0
             {
                 clear_all_latches_and_locks(state, events);
             }
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONTINUE as i32 != 0;
     }
 }
 
@@ -3026,16 +2877,9 @@ unsafe extern "C" fn append_redirect_key_events(
                 .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize)
                 as *mut xkb_event;
             while (*events).queue.size > 0 as darray_size_t
-                && event
-                    >= (*events)
-                        .queue
-                        .item
-                        .offset(0 as ::core::ffi::c_int as isize)
-                        as *mut xkb_event
+                && event >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
             {
-                if (*event).type_0 as ::core::ffi::c_uint
-                    == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
                     last_components = (*event).c2rust_unnamed.components.components;
                     break;
                 } else {
@@ -3098,22 +2942,18 @@ unsafe extern "C" fn append_redirect_key_events(
             .queue
             .item
             .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) = xkb_event {
-            type_0: (if direction as ::core::ffi::c_uint
-                == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                XKB_EVENT_TYPE_KEY_UP as ::core::ffi::c_int
-            } else if direction as ::core::ffi::c_uint
-                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
-                XKB_EVENT_TYPE_KEY_REPEATED as ::core::ffi::c_int
+            type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
+                XKB_EVENT_TYPE_KEY_UP as i32
+            } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                XKB_EVENT_TYPE_KEY_REPEATED as i32
             } else {
-                XKB_EVENT_TYPE_KEY_DOWN as ::core::ffi::c_int
+                XKB_EVENT_TYPE_KEY_DOWN as i32
             }) as xkb_event_type,
             c2rust_unnamed: C2Rust_Unnamed_17 {
                 keycode: (*redirect).keycode,
             },
         };
-        if mask != 0 && changed as ::core::ffi::c_uint != 0 {
+        if mask != 0 && changed as u32 != 0 {
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
             let mut __need_1: darray_size_t = (*events).queue.size;
             if __need_1 > (*events).queue.alloc {
@@ -3176,11 +3016,9 @@ unsafe extern "C" fn xkb_filter_redirect_key_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+            return XKB_FILTER_CONTINUE as i32 != 0;
         }
-        if direction as ::core::ffi::c_uint
-            == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if direction as u32 == XKB_KEY_UP as i32 as u32 {
             append_redirect_key_events(
                 state,
                 events,
@@ -3188,17 +3026,15 @@ unsafe extern "C" fn xkb_filter_redirect_key_func(
                 XKB_KEY_UP,
             );
             (*filter).func = None;
-            return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
-        } else if direction as ::core::ffi::c_uint
-            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+            return XKB_FILTER_CONSUME as i32 != 0;
+        } else if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
             let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
             let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
-            while (a as ::core::ffi::c_int) < count as ::core::ffi::c_int {
-                if (*actions.offset(a as isize)).type_0 as ::core::ffi::c_uint
-                    == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as ::core::ffi::c_uint
+            while (a as i32) < count as i32 {
+                if (*actions.offset(a as isize)).type_0 as u32
+                    == ACTION_TYPE_REDIRECT_KEY as i32 as u32
                     && (*actions.offset(a as isize)).redirect.keycode
                         != (*filter).action.redirect.keycode
                 {
@@ -3209,13 +3045,13 @@ unsafe extern "C" fn xkb_filter_redirect_key_func(
                         XKB_KEY_UP,
                     );
                     (*filter).func = None;
-                    return XKB_FILTER_CONTINUE as ::core::ffi::c_int != 0;
+                    return XKB_FILTER_CONTINUE as i32 != 0;
                 }
                 a = a.wrapping_add(1);
             }
         }
         append_redirect_key_events(state, events, &raw mut (*filter).action.redirect, direction);
-        return XKB_FILTER_CONSUME as ::core::ffi::c_int != 0;
+        return XKB_FILTER_CONSUME as i32 != 0;
     }
 }
 
@@ -3426,18 +3262,15 @@ unsafe extern "C" fn xkb_filter_apply_all(
         let mut consumed: bool = false_0 != 0;
         let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
         if !(*state).filters.item.is_null() {
-            filter = (*state)
-                .filters
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_filter;
+            filter = (*state).filters.item.offset(0 as i32 as isize) as *mut xkb_filter;
             while filter
                 < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
             {
                 if !(*filter).func.is_none() {
                     if (*filter).func.expect("non-null function pointer")(
                         state, events, filter, key, direction,
-                    ) as ::core::ffi::c_int
-                        == XKB_FILTER_CONSUME as ::core::ffi::c_int
+                    ) as i32
+                        == XKB_FILTER_CONSUME as i32
                     {
                         consumed = true_0 != 0;
                     }
@@ -3445,19 +3278,16 @@ unsafe extern "C" fn xkb_filter_apply_all(
                 filter = filter.offset(1);
             }
         }
-        if consumed as ::core::ffi::c_int != 0
-            || direction as ::core::ffi::c_uint
-                == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if consumed as i32 != 0 || direction as u32 == XKB_KEY_UP as i32 as u32 {
             return;
         }
         let mut actions: *const xkb_action = ::core::ptr::null::<xkb_action>();
         let count: xkb_action_count_t =
             xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-        while (k as ::core::ffi::c_int) < count as ::core::ffi::c_int {
-            if !((*actions.offset(k as isize)).type_0 as ::core::ffi::c_uint
-                >= _ACTION_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint)
+        while (k as i32) < count as i32 {
+            if !((*actions.offset(k as isize)).type_0 as u32
+                >= _ACTION_TYPE_NUM_ENTRIES as i32 as u32)
             {
                 if !filter_action_funcs[(*actions.offset(k as isize)).type_0 as usize]
                     .new
@@ -3466,45 +3296,27 @@ unsafe extern "C" fn xkb_filter_apply_all(
                     filter = xkb_filter_new(state);
                     (*filter).key = key;
                     (*filter).action = *actions.offset(k as isize);
-                    if (*state).components.controls as ::core::ffi::c_uint
-                        & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                        != 0
+                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0
                     {
-                        if (*filter).action.type_0 as ::core::ffi::c_uint
-                            == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as ::core::ffi::c_uint
-                        {
+                        if (*filter).action.type_0 as u32 == ACTION_TYPE_MOD_SET as i32 as u32 {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
-                            if (*state).flags as ::core::ffi::c_uint
-                                & XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
-                                    as ::core::ffi::c_uint
-                                != 0
-                            {
-                                (*filter).action.mods.flags = ((*filter).action.mods.flags
-                                    as ::core::ffi::c_uint
-                                    | ACTION_LATCH_TO_LOCK as ::core::ffi::c_int
-                                        as ::core::ffi::c_uint)
+                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as i32 as u32 != 0 {
+                                (*filter).action.mods.flags = ((*filter).action.mods.flags as u32
+                                    | ACTION_LATCH_TO_LOCK as i32 as u32)
                                     as xkb_action_flags;
                             }
-                        } else if (*filter).action.type_0 as ::core::ffi::c_uint
-                            == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as ::core::ffi::c_uint
+                        } else if (*filter).action.type_0 as u32
+                            == ACTION_TYPE_GROUP_SET as i32 as u32
                         {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
-                            if (*state).flags as ::core::ffi::c_uint
-                                & XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
-                                    as ::core::ffi::c_uint
-                                != 0
-                            {
-                                (*filter).action.group.flags = ((*filter).action.group.flags
-                                    as ::core::ffi::c_uint
-                                    | ACTION_LATCH_TO_LOCK as ::core::ffi::c_int
-                                        as ::core::ffi::c_uint)
+                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as i32 as u32 != 0 {
+                                (*filter).action.group.flags = ((*filter).action.group.flags as u32
+                                    | ACTION_LATCH_TO_LOCK as i32 as u32)
                                     as xkb_action_flags;
                             }
                         }
                     }
-                    if (*filter).action.type_0 as ::core::ffi::c_uint
-                        == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as ::core::ffi::c_uint
-                    {
+                    if (*filter).action.type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as i32 as u32 {
                         (*filter).action.redirect.affect = mod_mask_get_effective(
                             (*state).keymap,
                             (*filter).action.redirect.affect,
@@ -3534,18 +3346,15 @@ unsafe extern "C" fn xkb_state_init(
 ) {
     unsafe {
         (*state).flags = a11y_flags;
-        if (*keymap).format as ::core::ffi::c_uint
-            != XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as ::core::ffi::c_uint
-            && a11y_affect as ::core::ffi::c_uint
-                & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
+        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32
+            && a11y_affect as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 == 0
         {
-            (*state).flags = ((*state).flags as ::core::ffi::c_uint
-                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint)
+            (*state).flags = ((*state).flags as u32
+                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32)
                 as xkb_a11y_flags;
         }
         (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-        (*state).refcnt = 1 as ::core::ffi::c_int;
+        (*state).refcnt = 1 as i32;
         (*state).keymap = xkb_keymap_ref(keymap);
         xkb_state_update_derived(state);
     }
@@ -3588,7 +3397,7 @@ pub unsafe extern "C" fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
             (*state).refcnt -= 1;
-            (*state).refcnt > 0 as ::core::ffi::c_int
+            (*state).refcnt > 0 as i32
         } {
             return;
         }
@@ -3613,38 +3422,23 @@ unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
         idx = 0 as xkb_led_index_t;
         led = &raw mut (*(*state).keymap).leds as *mut xkb_led;
         while idx < (*(*state).keymap).num_leds {
-            if (*led).which_mods as ::core::ffi::c_uint != 0 as ::core::ffi::c_uint
-                && (*led).mods.mask != 0 as xkb_mod_mask_t
-            {
+            if (*led).which_mods as u32 != 0 as u32 && (*led).mods.mask != 0 as xkb_mod_mask_t {
                 let mut mod_mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-                if (*led).which_mods as ::core::ffi::c_uint
-                    & XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_EFFECTIVE as i32 as u32 != 0 {
                     mod_mask |= (*state).components.mods;
                 }
-                if (*led).which_mods as ::core::ffi::c_uint
-                    & XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_DEPRESSED as i32 as u32 != 0 {
                     mod_mask |= (*state).components.base_mods;
                 }
-                if (*led).which_mods as ::core::ffi::c_uint
-                    & XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_LATCHED as i32 as u32 != 0 {
                     mod_mask |= (*state).components.latched_mods;
                 }
-                if (*led).which_mods as ::core::ffi::c_uint
-                    & XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
-                    != 0
-                {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_LOCKED as i32 as u32 != 0 {
                     mod_mask |= (*state).components.locked_mods;
                 }
                 if (*led).mods.mask & mod_mask != 0 {
-                    (*state).components.leds = ((*state).components.leds as ::core::ffi::c_uint
-                        | (1 as ::core::ffi::c_uint) << idx)
-                        as xkb_led_mask_t;
+                    (*state).components.leds =
+                        ((*state).components.leds as u32 | (1 as u32) << idx) as xkb_led_mask_t;
                     c2rust_current_block_23 = 16559507199688588974;
                 } else {
                     c2rust_current_block_23 = 13586036798005543211;
@@ -3654,63 +3448,46 @@ unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
             }
             match c2rust_current_block_23 {
                 13586036798005543211 => {
-                    if (*led).which_groups() as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                        if ((*led).groups != 0) as ::core::ffi::c_int as ::core::ffi::c_long
-                            != 0 as ::core::ffi::c_long
-                        {
+                    if (*led).which_groups() as i32 != 0 as i32 {
+                        if ((*led).groups != 0) as i32 as i64 != 0 as i64 {
                             let mut group_mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
-                            if (*led).which_groups() as ::core::ffi::c_int
-                                & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int
-                                != 0
+                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0
                             {
-                                group_mask = (group_mask as ::core::ffi::c_uint
-                                    | (1 as ::core::ffi::c_uint) << (*state).components.group)
+                                group_mask = (group_mask as u32
+                                    | (1 as u32) << (*state).components.group)
                                     as xkb_layout_mask_t;
                             }
-                            if (*led).which_groups() as ::core::ffi::c_int
-                                & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int
-                                != 0
-                            {
-                                group_mask = (group_mask as ::core::ffi::c_uint
-                                    | (1 as ::core::ffi::c_uint)
-                                        << (*state).components.locked_group)
+                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LOCKED as i32 != 0 {
+                                group_mask = (group_mask as u32
+                                    | (1 as u32) << (*state).components.locked_group)
                                     as xkb_layout_mask_t;
                             }
-                            if (*led).which_groups() as ::core::ffi::c_int
-                                & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int
-                                != 0
-                                && (*state).components.base_group != 0 as int32_t
+                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
+                                && (*state).components.base_group != 0 as i32
                             {
                                 group_mask |= (*led).groups;
                             }
-                            if (*led).which_groups() as ::core::ffi::c_int
-                                & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
-                                != 0
-                                && (*state).components.latched_group != 0 as int32_t
+                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                                && (*state).components.latched_group != 0 as i32
                             {
                                 group_mask |= (*led).groups;
                             }
                             if (*led).groups & group_mask != 0 {
-                                (*state).components.leds = ((*state).components.leds
-                                    as ::core::ffi::c_uint
-                                    | (1 as ::core::ffi::c_uint) << idx)
+                                (*state).components.leds = ((*state).components.leds as u32
+                                    | (1 as u32) << idx)
                                     as xkb_led_mask_t;
                                 c2rust_current_block_23 = 16559507199688588974;
                             } else {
                                 c2rust_current_block_23 = 14359455889292382949;
                             }
-                        } else if (*led).which_groups() as ::core::ffi::c_int
-                            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int
+                        } else if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32
                             != 0
-                            && (*state).components.base_group == 0 as int32_t
-                            || (*led).which_groups() as ::core::ffi::c_int
-                                & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
-                                != 0
-                                && (*state).components.latched_group == 0 as int32_t
+                            && (*state).components.base_group == 0 as i32
+                            || (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                                && (*state).components.latched_group == 0 as i32
                         {
-                            (*state).components.leds = ((*state).components.leds
-                                as ::core::ffi::c_uint
-                                | (1 as ::core::ffi::c_uint) << idx)
+                            (*state).components.leds = ((*state).components.leds as u32
+                                | (1 as u32) << idx)
                                 as xkb_led_mask_t;
                             c2rust_current_block_23 = 16559507199688588974;
                         } else {
@@ -3722,13 +3499,9 @@ unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
                     match c2rust_current_block_23 {
                         16559507199688588974 => {}
                         _ => {
-                            if (*led).ctrls as ::core::ffi::c_uint
-                                & (*state).components.controls as ::core::ffi::c_uint
-                                != 0
-                            {
-                                (*state).components.leds = ((*state).components.leds
-                                    as ::core::ffi::c_uint
-                                    | (1 as ::core::ffi::c_uint) << idx)
+                            if (*led).ctrls as u32 & (*state).components.controls as u32 != 0 {
+                                (*state).components.leds = ((*state).components.leds as u32
+                                    | (1 as u32) << idx)
                                     as xkb_led_mask_t;
                             }
                         }
@@ -3758,7 +3531,7 @@ unsafe extern "C" fn xkb_state_update_derived(mut state: *mut xkb_state) {
             0 as xkb_layout_index_t
         } else {
             wrapped
-        }) as int32_t;
+        }) as i32;
         wrapped = XkbWrapGroupIntoRange(
             (*state).components.base_group
                 + (*state).components.latched_group
@@ -3784,10 +3557,7 @@ pub unsafe extern "C" fn xkb_state_update_key(
 ) -> xkb_state_component {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if key.is_null()
-            || direction as ::core::ffi::c_uint
-                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-                && !(*key).repeats()
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as i32 as u32 && !(*key).repeats()
         {
             return 0 as xkb_state_component;
         }
@@ -3806,23 +3576,21 @@ pub unsafe extern "C" fn xkb_state_update_key(
                 (*state).set_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as ::core::ffi::c_int;
+            bit <<= 1 as i32;
         }
         i = 0 as xkb_mod_index_t;
         bit = 1 as xkb_mod_mask_t;
         while (*state).clear_mods != 0 {
             if (*state).clear_mods & bit != 0 {
                 (*state).mod_key_count[i as usize] -= 1;
-                if (*state).mod_key_count[i as usize] as ::core::ffi::c_int
-                    <= 0 as ::core::ffi::c_int
-                {
+                if (*state).mod_key_count[i as usize] as i32 <= 0 as i32 {
                     (*state).components.base_mods &= !bit;
-                    (*state).mod_key_count[i as usize] = 0 as int16_t;
+                    (*state).mod_key_count[i as usize] = 0 as i16;
                 }
                 (*state).clear_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as ::core::ffi::c_int;
+            bit <<= 1 as i32;
         }
         xkb_state_update_derived(state);
         return get_state_component_changes(
@@ -3978,7 +3746,7 @@ unsafe extern "C" fn update_latch_modifiers(
 unsafe extern "C" fn update_latch_group(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
-    mut group: int32_t,
+    mut group: i32,
 ) {
     unsafe {
         xkb_filter_apply_all(
@@ -4048,10 +3816,7 @@ unsafe extern "C" fn state_update_latched_locked(
             (*state).components.locked_mods &= !affect_locked_mods;
             (*state).components.locked_mods |= locked_mods & affect_locked_mods;
         }
-        if (*update).components as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if (*update).components as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
             (*state).components.locked_group = (*update).locked_layout;
         }
         let affect_latched_mods: xkb_mod_mask_t =
@@ -4063,10 +3828,7 @@ unsafe extern "C" fn state_update_latched_locked(
                     as xkb_mod_mask_t;
             update_latch_modifiers(state, events, affect_latched_mods, latched_mods);
         }
-        if (*update).components as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if (*update).components as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
             update_latch_group(state, events, (*update).latched_layout);
         }
     }
@@ -4078,32 +3840,32 @@ pub unsafe extern "C" fn xkb_state_update_latched_locked(
     mut affect_latched_mods: xkb_mod_mask_t,
     mut latched_mods: xkb_mod_mask_t,
     mut affect_latched_layout: bool,
-    mut latched_layout: int32_t,
+    mut latched_layout: i32,
     mut affect_locked_mods: xkb_mod_mask_t,
     mut locked_mods: xkb_mod_mask_t,
     mut affect_locked_layout: bool,
-    mut locked_layout: int32_t,
+    mut locked_layout: i32,
 ) -> xkb_state_component {
     unsafe {
         let previous_components: state_components = (*state).components;
-        let components: xkb_state_component =
-            ((if affect_latched_mods != 0 || latched_mods != 0 {
-                XKB_STATE_MODS_LATCHED as ::core::ffi::c_int
-            } else {
-                0 as ::core::ffi::c_int
-            }) | (if affect_locked_mods != 0 || locked_mods != 0 {
-                XKB_STATE_MODS_LOCKED as ::core::ffi::c_int
-            } else {
-                0 as ::core::ffi::c_int
-            }) | (if affect_latched_layout as ::core::ffi::c_int != 0 {
-                XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
-            } else {
-                0 as ::core::ffi::c_int
-            }) | (if affect_locked_layout as ::core::ffi::c_int != 0 {
-                XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int
-            } else {
-                0 as ::core::ffi::c_int
-            })) as xkb_state_component;
+        let components: xkb_state_component = ((if affect_latched_mods != 0 || latched_mods != 0 {
+            XKB_STATE_MODS_LATCHED as i32
+        } else {
+            0 as i32
+        }) | (if affect_locked_mods != 0 || locked_mods != 0
+        {
+            XKB_STATE_MODS_LOCKED as i32
+        } else {
+            0 as i32
+        }) | (if affect_latched_layout as i32 != 0 {
+            XKB_STATE_LAYOUT_LATCHED as i32
+        } else {
+            0 as i32
+        }) | (if affect_locked_layout as i32 != 0 {
+            XKB_STATE_LAYOUT_LOCKED as i32
+        } else {
+            0 as i32
+        })) as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
             size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
@@ -4135,20 +3897,20 @@ unsafe extern "C" fn clear_all_latches_and_locks(
     mut events: *mut xkb_events,
 ) {
     unsafe {
-        static mut components: xkb_state_component = (XKB_STATE_MODS_LATCHED as ::core::ffi::c_int
-            | XKB_STATE_MODS_LOCKED as ::core::ffi::c_int
-            | XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int
-            | XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int)
+        static mut components: xkb_state_component = (XKB_STATE_MODS_LATCHED as i32
+            | XKB_STATE_MODS_LOCKED as i32
+            | XKB_STATE_LAYOUT_LATCHED as i32
+            | XKB_STATE_LAYOUT_LOCKED as i32)
             as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
             size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
-            affect_latched_mods: XKB_MOD_ALL as ::core::ffi::c_uint as xkb_mod_mask_t,
+            affect_latched_mods: XKB_MOD_ALL as u32 as xkb_mod_mask_t,
             latched_mods: 0 as xkb_mod_mask_t,
-            affect_locked_mods: XKB_MOD_ALL as ::core::ffi::c_uint as xkb_mod_mask_t,
+            affect_locked_mods: XKB_MOD_ALL as u32 as xkb_mod_mask_t,
             locked_mods: 0 as xkb_mod_mask_t,
-            latched_layout: 0 as int32_t,
-            locked_layout: 0 as int32_t,
+            latched_layout: 0 as i32,
+            locked_layout: 0 as i32,
             affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
             controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
         };
@@ -4163,23 +3925,17 @@ unsafe extern "C" fn state_update_enabled_controls(
     mut events: *mut xkb_events,
 ) {
     unsafe {
-        let had_sticky_keys: bool = (*state).components.controls as ::core::ffi::c_uint
-            & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0;
-        affect = (affect as xkb_action_controls as ::core::ffi::c_uint
-            & CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as ::core::ffi::c_uint)
+        let had_sticky_keys: bool =
+            (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
+        affect = (affect as xkb_action_controls as u32 & CONTROL_ALL_BOOLEAN as i32 as u32)
             as xkb_keyboard_control_flags;
-        (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
-            & !(affect as ::core::ffi::c_uint))
+        (*state).components.controls =
+            ((*state).components.controls as u32 & !(affect as u32)) as xkb_action_controls;
+        (*state).components.controls = ((*state).components.controls as u32
+            | controls as xkb_action_controls as u32 & affect as u32)
             as xkb_action_controls;
-        (*state).components.controls = ((*state).components.controls as ::core::ffi::c_uint
-            | controls as xkb_action_controls as ::core::ffi::c_uint
-                & affect as ::core::ffi::c_uint)
-            as xkb_action_controls;
-        if had_sticky_keys as ::core::ffi::c_int != 0
-            && (*state).components.controls as ::core::ffi::c_uint
-                & CONTROL_STICKY_KEYS as ::core::ffi::c_int as ::core::ffi::c_uint
-                == 0
+        if had_sticky_keys as i32 != 0
+            && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 == 0
         {
             clear_all_latches_and_locks(state, events);
         }
@@ -4194,21 +3950,19 @@ unsafe extern "C" fn state_update_layout_policy(
     unsafe {
         if xkb_feature_supported(
             XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
-            (*update).policy as ::core::ffi::c_int as u32,
+            (*update).policy as i32 as u32,
         ) {
-            if (*update).policy as ::core::ffi::c_uint
-                == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as ::core::ffi::c_int as ::core::ffi::c_uint
-            {
+            if (*update).policy as u32 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as i32 as u32 {
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_group.redirect_group = (*update).redirect;
                 } else {
                     xkb_log(
                         (*(*state).keymap).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         b"[XKB-%03d] Layout policy: unsupported layout index %u > %u\n\0".as_ptr()
                             as *const i8,
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                         (*update).redirect.wrapping_add(1 as xkb_layout_index_t),
                         (*(*state).keymap).num_groups,
                     );
@@ -4221,11 +3975,10 @@ unsafe extern "C" fn state_update_layout_policy(
             xkb_log(
                 (*(*state).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unsupported layout policy: %d\n\0".as_ptr()
-                    as *const i8,
-                XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int,
-                (*update).policy as ::core::ffi::c_uint,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                b"[XKB-%03d] Unsupported layout policy: %d\n\0".as_ptr() as *const i8,
+                XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as i32,
+                (*update).policy as u32,
             );
             return XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY;
         };
@@ -4238,15 +3991,15 @@ unsafe extern "C" fn log_abi_error(
     mut error: xkb_error_code,
 ) {
     unsafe {
-        match error as ::core::ffi::c_int {
+        match error as i32 {
             450 => {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s: ABI error: unsupported versioned struct\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_ABI_INVALID_STRUCT_SIZE as ::core::ffi::c_int,
+                    XKB_ERROR_ABI_INVALID_STRUCT_SIZE as i32,
                     func,
                 );
             }
@@ -4254,10 +4007,10 @@ unsafe extern "C" fn log_abi_error(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s: ABI version mismatch: missing newer required fields\n\0"
                         .as_ptr() as *const i8,
-                    XKB_ERROR_ABI_BACKWARD_COMPAT as ::core::ffi::c_int,
+                    XKB_ERROR_ABI_BACKWARD_COMPAT as i32,
                     func,
                 );
             }
@@ -4265,15 +4018,14 @@ unsafe extern "C" fn log_abi_error(
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     b"[XKB-%03d] %s: ABI version mismatch: cannot use newer fields\n\0".as_ptr()
                         as *const i8,
-                    XKB_ERROR_ABI_FORWARD_COMPAT as ::core::ffi::c_int,
+                    XKB_ERROR_ABI_FORWARD_COMPAT as i32,
                     func,
                 );
             }
-            _ => {
-            }
+            _ => {}
         };
     }
 }
@@ -4292,7 +4044,7 @@ unsafe extern "C" fn check_state_update_abi_(
             (*update).size,
             update as *const ::core::ffi::c_void,
         );
-        if error as ::core::ffi::c_int != 0
+        if error as i32 != 0
             || !(*update).components.is_null() && {
                 error = xkb_check_versioned_struct_size_(
                     ::core::mem::size_of::<xkb_state_update_v1>() as usize,
@@ -4301,7 +4053,7 @@ unsafe extern "C" fn check_state_update_abi_(
                     (*(*update).components).size,
                     (*update).components as *const ::core::ffi::c_void,
                 );
-                error as ::core::ffi::c_int != 0
+                error as i32 != 0
             }
             || !(*update).layout_policy.is_null() && {
                 error = xkb_check_versioned_struct_size_(
@@ -4311,7 +4063,7 @@ unsafe extern "C" fn check_state_update_abi_(
                     (*(*update).layout_policy).size,
                     (*update).layout_policy as *const ::core::ffi::c_void,
                 );
-                error as ::core::ffi::c_int != 0
+                error as i32 != 0
             }
         {
             log_abi_error(ctx, func, error);
@@ -4378,9 +4130,9 @@ pub unsafe extern "C" fn xkb_state_update_mask(
         (*state).components.base_mods = resolve_to_canonical_mods((*state).keymap, base_mods);
         (*state).components.latched_mods = resolve_to_canonical_mods((*state).keymap, latched_mods);
         (*state).components.locked_mods = resolve_to_canonical_mods((*state).keymap, locked_mods);
-        (*state).components.base_group = base_group as int32_t;
-        (*state).components.latched_group = latched_group as int32_t;
-        (*state).components.locked_group = locked_group as int32_t;
+        (*state).components.base_group = base_group as i32;
+        (*state).components.latched_group = latched_group as i32;
+        (*state).components.locked_group = locked_group as i32;
         xkb_state_update_derived(state);
         return get_state_component_changes(
             &raw const prev_components,
@@ -4396,14 +4148,14 @@ unsafe extern "C" fn should_do_caps_transformation(
     unsafe {
         return xkb_state_mod_index_is_active(
             state,
-            XKB_MOD_INDEX_CAPS as ::core::ffi::c_int as xkb_mod_index_t,
+            XKB_MOD_INDEX_CAPS as i32 as xkb_mod_index_t,
             XKB_STATE_MODS_EFFECTIVE,
-        ) > 0 as ::core::ffi::c_int
+        ) > 0 as i32
             && xkb_state_mod_index_is_consumed(
                 state,
                 kc,
-                XKB_MOD_INDEX_CAPS as ::core::ffi::c_int as xkb_mod_index_t,
-            ) == 0 as ::core::ffi::c_int;
+                XKB_MOD_INDEX_CAPS as i32 as xkb_mod_index_t,
+            ) == 0 as i32;
     }
 }
 
@@ -4414,14 +4166,14 @@ unsafe extern "C" fn should_do_ctrl_transformation(
     unsafe {
         return xkb_state_mod_index_is_active(
             state,
-            XKB_MOD_INDEX_CTRL as ::core::ffi::c_int as xkb_mod_index_t,
+            XKB_MOD_INDEX_CTRL as i32 as xkb_mod_index_t,
             XKB_STATE_MODS_EFFECTIVE,
-        ) > 0 as ::core::ffi::c_int
+        ) > 0 as i32
             && xkb_state_mod_index_is_consumed(
                 state,
                 kc,
-                XKB_MOD_INDEX_CTRL as ::core::ffi::c_int as xkb_mod_index_t,
-            ) == 0 as ::core::ffi::c_int;
+                XKB_MOD_INDEX_CTRL as i32 as xkb_mod_index_t,
+            ) == 0 as i32;
     }
 }
 #[no_mangle]
@@ -4430,7 +4182,7 @@ pub unsafe extern "C" fn xkb_state_key_get_syms(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut syms_out: *mut *const xkb_keysym_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut level: xkb_level_index_t = 0;
         let mut key: *const xkb_key = ::core::ptr::null::<xkb_key>();
@@ -4445,17 +4197,11 @@ pub unsafe extern "C" fn xkb_state_key_get_syms(
                     leveli = xkb_keymap_key_get_level((*state).keymap, key, layout, level);
                     if !leveli.is_null() {
                         num_syms = (*leveli).num_syms;
-                        if !(num_syms as ::core::ffi::c_int == 0 as ::core::ffi::c_int) {
+                        if !(num_syms as i32 == 0 as i32) {
                             if should_do_caps_transformation(state, kc) {
-                                if num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
-                                    *syms_out = if (*leveli).c2rust_unnamed.has_upper
-                                        as ::core::ffi::c_int
-                                        != 0
-                                    {
-                                        (*leveli)
-                                            .s
-                                            .syms
-                                            .offset(num_syms as ::core::ffi::c_int as isize)
+                                if num_syms as i32 > 1 as i32 {
+                                    *syms_out = if (*leveli).c2rust_unnamed.has_upper as i32 != 0 {
+                                        (*leveli).s.syms.offset(num_syms as i32 as isize)
                                     } else {
                                         (*leveli).s.syms
                                     };
@@ -4463,39 +4209,36 @@ pub unsafe extern "C" fn xkb_state_key_get_syms(
                                     *syms_out = &raw const (*leveli).c2rust_unnamed.upper;
                                 }
                             } else {
-                                *syms_out =
-                                    if num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
-                                        (*leveli).s.syms as *const xkb_keysym_t
-                                    } else {
-                                        &raw const (*leveli).s.sym
-                                    };
+                                *syms_out = if num_syms as i32 > 1 as i32 {
+                                    (*leveli).s.syms as *const xkb_keysym_t
+                                } else {
+                                    &raw const (*leveli).s.sym
+                                };
                             }
-                            return num_syms as ::core::ffi::c_int;
+                            return num_syms as i32;
                         }
                     }
                 }
             }
         }
         *syms_out = ::core::ptr::null::<xkb_keysym_t>();
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 
 unsafe extern "C" fn XkbToControl(mut ch: i8) -> i8 {
     unsafe {
         let mut c: i8 = ch;
-        if c as ::core::ffi::c_int >= '@' as i32 && (c as ::core::ffi::c_int) < '\u{7f}' as i32
-            || c as ::core::ffi::c_int == ' ' as i32
-        {
-            c = (c as ::core::ffi::c_int & 0x1f as ::core::ffi::c_int) as i8;
-        } else if c as ::core::ffi::c_int == '2' as i32 {
+        if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32 || c as i32 == ' ' as i32 {
+            c = (c as i32 & 0x1f as i32) as i8;
+        } else if c as i32 == '2' as i32 {
             c = '\0' as i32 as i8;
-        } else if c as ::core::ffi::c_int >= '3' as i32 && c as ::core::ffi::c_int <= '7' as i32 {
-            c = (c as ::core::ffi::c_int - ('3' as i32 - '\u{1b}' as i32)) as i8;
-        } else if c as ::core::ffi::c_int == '8' as i32 {
+        } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
+            c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
+        } else if c as i32 == '8' as i32 {
             c = '\u{7f}' as i32 as i8;
-        } else if c as ::core::ffi::c_int == '/' as i32 {
-            c = ('_' as i32 & 0x1f as ::core::ffi::c_int) as i8;
+        } else if c as i32 == '/' as i32 {
+            c = ('_' as i32 & 0x1f as i32) as i8;
         }
         return c;
     }
@@ -4508,12 +4251,11 @@ pub unsafe extern "C" fn xkb_state_key_get_one_sym(
 ) -> xkb_keysym_t {
     unsafe {
         let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
-        let num_syms: ::core::ffi::c_int =
-            xkb_state_key_get_syms(state, kc, &raw mut syms) as ::core::ffi::c_int;
-        if num_syms != 1 as ::core::ffi::c_int {
+        let num_syms: i32 = xkb_state_key_get_syms(state, kc, &raw mut syms) as i32;
+        if num_syms != 1 as i32 {
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         } else {
-            return *syms.offset(0 as ::core::ffi::c_int as isize);
+            return *syms.offset(0 as i32 as isize);
         };
     }
 }
@@ -4534,15 +4276,13 @@ unsafe extern "C" fn get_one_sym_for_string(
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         }
         let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
-        let mut nsyms: ::core::ffi::c_int =
+        let mut nsyms: i32 =
             xkb_keymap_key_get_syms_by_level((*state).keymap, kc, layout, level, &raw mut syms);
-        if nsyms != 1 as ::core::ffi::c_int {
+        if nsyms != 1 as i32 {
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         }
-        let mut sym: xkb_keysym_t = *syms.offset(0 as ::core::ffi::c_int as isize);
-        if should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
-            && sym > 127 as xkb_keysym_t
-        {
+        let mut sym: xkb_keysym_t = *syms.offset(0 as i32 as isize);
+        if should_do_ctrl_transformation(state, kc) as i32 != 0 && sym > 127 as xkb_keysym_t {
             let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
             while i < num_layouts {
                 level = xkb_state_key_get_level(state, kc, i);
@@ -4554,10 +4294,8 @@ unsafe extern "C" fn get_one_sym_for_string(
                         level,
                         &raw mut syms,
                     );
-                    if nsyms == 1 as ::core::ffi::c_int
-                        && *syms.offset(0 as ::core::ffi::c_int as isize) <= 127 as xkb_keysym_t
-                    {
-                        sym = *syms.offset(0 as ::core::ffi::c_int as isize);
+                    if nsyms == 1 as i32 && *syms.offset(0 as i32 as isize) <= 127 as xkb_keysym_t {
+                        sym = *syms.offset(0 as i32 as isize);
                         break;
                     }
                 }
@@ -4577,32 +4315,32 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
     mut kc: xkb_keycode_t,
     mut buffer: *mut i8,
     mut size: usize,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut nsyms: ::core::ffi::c_int = 0;
+        let mut nsyms: i32 = 0;
         let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
         let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
         if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
-            nsyms = 1 as ::core::ffi::c_int;
+            nsyms = 1 as i32;
             syms = &raw const sym;
         } else {
             nsyms = xkb_state_key_get_syms(state, kc, &raw mut syms);
         }
-        let mut offset: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut offset: i32 = 0 as i32;
         let mut tmp: [i8; 5] = [0; 5];
-        let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut i: i32 = 0 as i32;
         loop {
             if !(i < nsyms) {
                 c2rust_current_block = 11050875288958768710;
                 break;
             }
-            let mut ret: ::core::ffi::c_int = xkb_keysym_to_utf8(
+            let mut ret: i32 = xkb_keysym_to_utf8(
                 *syms.offset(i as isize),
                 &raw mut tmp as *mut i8,
                 ::core::mem::size_of::<[i8; 5]>() as usize,
             );
-            if ret <= 0 as ::core::ffi::c_int {
+            if ret <= 0 as i32 {
                 c2rust_current_block = 17545813786824981435;
                 break;
             }
@@ -4621,21 +4359,18 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             11050875288958768710 => {
                 if offset as usize >= size {
                     if size > 0 as usize {
-                        *buffer.offset(size.wrapping_sub(1 as usize) as isize) =
-                            '\0' as i32 as i8;
+                        *buffer.offset(size.wrapping_sub(1 as usize) as isize) = '\0' as i32 as i8;
                     }
                     return offset;
                 } else {
                     *buffer.offset(offset as isize) = '\0' as i32 as i8;
                     if is_valid_utf8(buffer, offset as usize) {
-                        if offset == 1 as ::core::ffi::c_int
-                            && *buffer.offset(0 as ::core::ffi::c_int as isize)
-                                as ::core::ffi::c_uint
-                                <= 127 as ::core::ffi::c_uint
-                            && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0
+                        if offset == 1 as i32
+                            && *buffer.offset(0 as i32 as isize) as u32 <= 127 as u32
+                            && should_do_ctrl_transformation(state, kc) as i32 != 0
                         {
-                            *buffer.offset(0 as ::core::ffi::c_int as isize) =
-                                XkbToControl(*buffer.offset(0 as ::core::ffi::c_int as isize));
+                            *buffer.offset(0 as i32 as isize) =
+                                XkbToControl(*buffer.offset(0 as i32 as isize));
                         }
                         return offset;
                     }
@@ -4644,9 +4379,9 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             _ => {}
         }
         if size > 0 as usize {
-            *buffer.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as i8;
+            *buffer.offset(0 as i32 as isize) = '\0' as i32 as i8;
         }
-        return 0 as ::core::ffi::c_int;
+        return 0 as i32;
     }
 }
 #[no_mangle]
@@ -4658,7 +4393,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf32(
     unsafe {
         let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
         let mut cp: u32 = xkb_keysym_to_utf32(sym);
-        if cp <= 127 as u32 && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0 {
+        if cp <= 127 as u32 && should_do_ctrl_transformation(state, kc) as i32 != 0 {
             cp = XkbToControl(cp as i8) as u32;
         }
         return cp;
@@ -4672,28 +4407,16 @@ unsafe extern "C" fn serialize_mods(
 ) -> xkb_mod_mask_t {
     unsafe {
         let mut ret: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_MODS_EFFECTIVE as i32 as u32 != 0 {
             return (*components).mods;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_MODS_DEPRESSED as i32 as u32 != 0 {
             ret |= (*components).base_mods;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_MODS_LATCHED as i32 as u32 != 0 {
             ret |= (*components).latched_mods;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_MODS_LOCKED as i32 as u32 != 0 {
             ret |= (*components).locked_mods;
         }
         return ret;
@@ -4717,28 +4440,16 @@ unsafe extern "C" fn serialize_layout(
 ) -> xkb_layout_index_t {
     unsafe {
         let mut ret: xkb_layout_index_t = 0 as xkb_layout_index_t;
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32 != 0 {
             return (*components).group;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as i32 as u32 != 0 {
             ret = ret.wrapping_add((*components).base_group as xkb_layout_index_t);
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
             ret = ret.wrapping_add((*components).latched_group as xkb_layout_index_t);
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
             ret = ret.wrapping_add((*components).locked_group as xkb_layout_index_t);
         }
         return ret;
@@ -4761,15 +4472,11 @@ unsafe extern "C" fn serialize_controls(
     mut type_0: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
     unsafe {
-        return (if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            ((*components).controls as ::core::ffi::c_uint
-                & CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as xkb_keyboard_control_flags as ::core::ffi::c_uint
+        return (if type_0 as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
+            ((*components).controls as u32 & CONTROL_ALL_BOOLEAN as i32 as u32)
+                as xkb_keyboard_control_flags as u32
         } else {
-            0 as ::core::ffi::c_uint
+            0 as u32
         }) as xkb_keyboard_control_flags;
     }
 }
@@ -4793,10 +4500,9 @@ pub unsafe extern "C" fn mod_mask_get_effective(
         let mut mask: xkb_mod_mask_t = mods & MOD_REAL_MASK_ALL;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
         let mut i: xkb_mod_index_t = 0;
-        i = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+        i = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
-            as *mut xkb_mod;
+            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize) as *mut xkb_mod;
         while i < (*keymap).mods.num_mods {
             if mods & (1 as xkb_mod_mask_t) << i != 0 {
                 mask |= (*mod_0).mapping;
@@ -4813,20 +4519,16 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_mod_index_t,
     mut type_0: xkb_state_component,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
-        if (idx >= xkb_keymap_num_mods((*state).keymap)) as ::core::ffi::c_int
-            as ::core::ffi::c_long
-            != 0
-        {
-            return -1 as ::core::ffi::c_int;
+        if (idx >= xkb_keymap_num_mods((*state).keymap)) as i32 as i64 != 0 {
+            return -1 as i32;
         }
         let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
         if mapping == 0 {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
-        return (xkb_state_serialize_mods(state, type_0) & mapping == mapping)
-            as ::core::ffi::c_int;
+        return (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32;
     }
 }
 
@@ -4838,17 +4540,12 @@ unsafe extern "C" fn match_mod_masks(
 ) -> bool {
     unsafe {
         let active: xkb_mod_mask_t = xkb_state_serialize_mods(state, type_0) as xkb_mod_mask_t;
-        if match_0 as ::core::ffi::c_uint
-            & XKB_STATE_MATCH_NON_EXCLUSIVE as ::core::ffi::c_int as ::core::ffi::c_uint
-            == 0
+        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as i32 as u32 == 0
             && active & !wanted != 0
         {
             return false_0 != 0;
         }
-        if match_0 as ::core::ffi::c_uint
-            & XKB_STATE_MATCH_ANY as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
+        if match_0 as u32 & XKB_STATE_MATCH_ANY as i32 as u32 != 0 {
             return active & wanted != 0;
         }
         return active & wanted == wanted;
@@ -4861,18 +4558,14 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
     mut type_0: xkb_state_component,
     mut match_0: xkb_state_match,
     mut c2rust_args: ...
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
-        if match_0 as ::core::ffi::c_uint
-            & !(XKB_STATE_MATCH_FLAGS as ::core::ffi::c_int as xkb_state_match
-                as ::core::ffi::c_uint)
-            != 0
-        {
-            return -2 as ::core::ffi::c_int;
+        if match_0 as u32 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match as u32) != 0 {
+            return -2 as i32;
         }
         let mut ap: ::core::ffi::VaList;
         let mut wanted: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut ret: i32 = 0 as i32;
         let num_mods: xkb_mod_index_t = xkb_keymap_num_mods((*state).keymap) as xkb_mod_index_t;
         ap = c2rust_args.clone();
         loop {
@@ -4880,20 +4573,20 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
             if idx == XKB_MOD_INVALID as xkb_mod_index_t {
                 break;
             }
-            if (idx >= num_mods) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                ret = -1 as ::core::ffi::c_int;
+            if (idx >= num_mods) as i32 as i64 != 0 {
+                ret = -1 as i32;
                 break;
             } else {
                 wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
             }
         }
-        if ret == -1 as ::core::ffi::c_int {
+        if ret == -1 as i32 {
             return ret;
         }
         if wanted == 0 {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
-        return match_mod_masks(state, type_0, match_0, wanted) as ::core::ffi::c_int;
+        return match_mod_masks(state, type_0, match_0, wanted) as i32;
     }
 }
 #[no_mangle]
@@ -4902,12 +4595,12 @@ pub unsafe extern "C" fn xkb_state_mod_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
     mut type_0: xkb_state_component,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let idx: xkb_mod_index_t =
             xkb_keymap_mod_get_index((*state).keymap, name) as xkb_mod_index_t;
         if idx == XKB_MOD_INVALID as xkb_mod_index_t {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         return xkb_state_mod_index_is_active(state, idx, type_0);
     }
@@ -4919,18 +4612,14 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
     mut type_0: xkb_state_component,
     mut match_0: xkb_state_match,
     mut c2rust_args: ...
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
-        if match_0 as ::core::ffi::c_uint
-            & !(XKB_STATE_MATCH_FLAGS as ::core::ffi::c_int as xkb_state_match
-                as ::core::ffi::c_uint)
-            != 0
-        {
-            return -2 as ::core::ffi::c_int;
+        if match_0 as u32 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match as u32) != 0 {
+            return -2 as i32;
         }
         let mut ap: ::core::ffi::VaList;
         let mut wanted: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut ret: i32 = 0 as i32;
         ap = c2rust_args.clone();
         loop {
             let mut str: *const i8 = ap.arg::<*const i8>();
@@ -4940,19 +4629,19 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
             let idx: xkb_mod_index_t =
                 xkb_keymap_mod_get_index((*state).keymap, str) as xkb_mod_index_t;
             if idx == XKB_MOD_INVALID as xkb_mod_index_t {
-                ret = -1 as ::core::ffi::c_int;
+                ret = -1 as i32;
                 break;
             } else {
                 wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
             }
         }
-        if ret == -1 as ::core::ffi::c_int {
+        if ret == -1 as i32 {
             return ret;
         }
         if wanted == 0 {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
-        return match_mod_masks(state, type_0, match_0, wanted) as ::core::ffi::c_int;
+        return match_mod_masks(state, type_0, match_0, wanted) as i32;
     }
 }
 #[no_mangle]
@@ -4961,35 +4650,23 @@ pub unsafe extern "C" fn xkb_state_layout_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_layout_index_t,
     mut type_0: xkb_state_component,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         if idx >= (*(*state).keymap).num_groups {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
-        let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            ret |= ((*state).components.group == idx) as ::core::ffi::c_int;
+        let mut ret: i32 = 0 as i32;
+        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32 != 0 {
+            ret |= ((*state).components.group == idx) as i32;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            ret |= ((*state).components.base_group == idx as int32_t) as ::core::ffi::c_int;
+        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as i32 as u32 != 0 {
+            ret |= ((*state).components.base_group == idx as i32) as i32;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            ret |= ((*state).components.latched_group == idx as int32_t) as ::core::ffi::c_int;
+        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
+            ret |= ((*state).components.latched_group == idx as i32) as i32;
         }
-        if type_0 as ::core::ffi::c_uint
-            & XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as ::core::ffi::c_uint
-            != 0
-        {
-            ret |= ((*state).components.locked_group == idx as int32_t) as ::core::ffi::c_int;
+        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
+            ret |= ((*state).components.locked_group == idx as i32) as i32;
         }
         return ret;
     }
@@ -5000,12 +4677,12 @@ pub unsafe extern "C" fn xkb_state_layout_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
     mut type_0: xkb_state_component,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let idx: xkb_layout_index_t =
             xkb_keymap_layout_get_index((*state).keymap, name) as xkb_layout_index_t;
         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         return xkb_state_layout_index_is_active(state, idx, type_0);
     }
@@ -5015,15 +4692,14 @@ pub unsafe extern "C" fn xkb_state_layout_name_is_active(
 pub unsafe extern "C" fn xkb_state_led_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_led_index_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         if idx >= (*(*state).keymap).num_leds
             || (*(*state).keymap).leds[idx as usize].name == XKB_ATOM_NONE as xkb_atom_t
         {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
-        return ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0)
-            as ::core::ffi::c_int;
+        return ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32;
     }
 }
 #[no_mangle]
@@ -5031,12 +4707,12 @@ pub unsafe extern "C" fn xkb_state_led_index_is_active(
 pub unsafe extern "C" fn xkb_state_led_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let idx: xkb_led_index_t =
             xkb_keymap_led_get_index((*state).keymap, name) as xkb_led_index_t;
         if idx == XKB_LED_INVALID as xkb_led_index_t {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         return xkb_state_led_index_is_active(state, idx);
     }
@@ -5061,7 +4737,7 @@ unsafe extern "C" fn key_get_consumed(
             preserve = (*matching_entry).preserve.mask;
         }
         let type_0: *const xkb_key_type = (*(*key).groups.offset(group as isize)).type_0;
-        match mode as ::core::ffi::c_uint {
+        match mode as u32 {
             0 => {
                 consumed = (*type_0).mods.mask;
             }
@@ -5109,20 +4785,17 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_consumed2(
     mut kc: xkb_keycode_t,
     mut idx: xkb_mod_index_t,
     mut mode: xkb_consumed_mode,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as ::core::ffi::c_int
-            as ::core::ffi::c_long
-            != 0
-        {
-            return -1 as ::core::ffi::c_int;
+        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as i32 as i64 != 0 {
+            return -1 as i32;
         }
         let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
         if mapping == 0 {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
-        return (mapping & key_get_consumed(state, key, mode) == mapping) as ::core::ffi::c_int;
+        return (mapping & key_get_consumed(state, key, mode) == mapping) as i32;
     }
 }
 #[no_mangle]
@@ -5131,7 +4804,7 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_consumed(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut idx: xkb_mod_index_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         return xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB);
     }
@@ -5160,17 +4833,16 @@ pub unsafe extern "C" fn xkb_state_key_get_consumed_mods2(
     mut mode: xkb_consumed_mode,
 ) -> xkb_mod_mask_t {
     unsafe {
-        match mode as ::core::ffi::c_uint {
+        match mode as u32 {
             0 | 1 => {}
             _ => {
                 xkb_log(
                     (*(*state).keymap).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"%s: unrecognized consumed modifiers mode: %d\n\0".as_ptr()
-                        as *const i8,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    b"%s: unrecognized consumed modifiers mode: %d\n\0".as_ptr() as *const i8,
                     b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const i8,
-                    mode as ::core::ffi::c_uint,
+                    mode as u32,
                 );
                 return 0 as xkb_mod_mask_t;
             }
@@ -5272,27 +4944,24 @@ pub unsafe extern "C" fn xkb_machine_options_update_a11y_flags(
     mut flags: xkb_a11y_flags,
 ) -> xkb_error_code {
     unsafe {
-        static mut XKB_A11Y_FLAGS: xkb_a11y_flags = (XKB_A11Y_LATCH_TO_LOCK as ::core::ffi::c_int
-            | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as ::core::ffi::c_int)
+        static mut XKB_A11Y_FLAGS: xkb_a11y_flags = (XKB_A11Y_LATCH_TO_LOCK as i32
+            | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32)
             as xkb_a11y_flags;
-        if affect as ::core::ffi::c_uint & !(XKB_A11Y_FLAGS as ::core::ffi::c_uint) != 0 {
+        if affect as u32 & !(XKB_A11Y_FLAGS as u32) != 0 {
             xkb_log(
                 (*options).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 b"%s: unrecognized state flags: %#x\n\0".as_ptr() as *const i8,
                 b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint & !(XKB_A11Y_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_A11Y_FLAGS as u32),
             );
             return XKB_ERROR_UNSUPPORTED_A11Y_FLAGS;
         }
-        (*options).a11y_affect = ((*options).a11y_affect as ::core::ffi::c_uint
-            | affect as ::core::ffi::c_uint) as xkb_a11y_flags;
-        (*options).a11y_flags = ((*options).a11y_flags as ::core::ffi::c_uint
-            & !(affect as ::core::ffi::c_uint)) as xkb_a11y_flags;
-        (*options).a11y_flags = ((*options).a11y_flags as ::core::ffi::c_uint
-            | flags as ::core::ffi::c_uint & affect as ::core::ffi::c_uint)
-            as xkb_a11y_flags;
+        (*options).a11y_affect = ((*options).a11y_affect as u32 | affect as u32) as xkb_a11y_flags;
+        (*options).a11y_flags = ((*options).a11y_flags as u32 & !(affect as u32)) as xkb_a11y_flags;
+        (*options).a11y_flags =
+            ((*options).a11y_flags as u32 | flags as u32 & affect as u32) as xkb_a11y_flags;
         return XKB_SUCCESS;
     }
 }
@@ -5330,11 +4999,7 @@ pub unsafe extern "C" fn xkb_machine_options_remap_mods(
         let mut m: darray_size_t = 0 as darray_size_t;
         if !(*options).mods.item.is_null() {
             m = 0 as darray_size_t;
-            mapping = (*options)
-                .mods
-                .item
-                .offset(0 as ::core::ffi::c_int as isize)
-                as *mut machine_mods_mapping;
+            mapping = (*options).mods.item.offset(0 as i32 as isize) as *mut machine_mods_mapping;
             while m < (*options).mods.size {
                 if (*mapping).source == source {
                     if target == 0 {
@@ -5462,39 +5127,35 @@ pub unsafe extern "C" fn xkb_machine_options_remap_shortcut_layout(
 unsafe extern "C" fn cmp_mod_masks(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let m1: xkb_mod_mask_t = *(a as *mut xkb_mod_mask_t);
         let m2: xkb_mod_mask_t = *(b as *mut xkb_mod_mask_t);
         if m1 == m2 {
-            return 0 as ::core::ffi::c_int;
+            return 0 as i32;
         }
         if m1 == 0 {
-            return 1 as ::core::ffi::c_int;
+            return 1 as i32;
         }
         if m2 == 0 {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         let overlap: xkb_mod_mask_t = m1 & m2;
         if overlap == m1 {
-            return 1 as ::core::ffi::c_int;
+            return 1 as i32;
         }
         if overlap == m2 {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
-        let count1: ::core::ffi::c_uint = popcount32(m1 as u32) as ::core::ffi::c_uint;
-        let count2: ::core::ffi::c_uint = popcount32(m2 as u32) as ::core::ffi::c_uint;
+        let count1: u32 = popcount32(m1 as u32) as u32;
+        let count2: u32 = popcount32(m2 as u32) as u32;
         if count1 > count2 {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         if count1 < count2 {
-            return 1 as ::core::ffi::c_int;
+            return 1 as i32;
         }
-        return if m1 < m2 {
-            -1 as ::core::ffi::c_int
-        } else {
-            1 as ::core::ffi::c_int
-        };
+        return if m1 < m2 { -1 as i32 } else { 1 as i32 };
     }
 }
 
@@ -5514,10 +5175,8 @@ unsafe extern "C" fn machine_set_mods(
                 ::core::ptr::null::<machine_mods_mapping>();
             let invalid: xkb_mod_mask_t = !(*(*sm).state.keymap).canonical_state_mask;
             if !(*raw_mappings).item.is_null() {
-                mapping = (*raw_mappings)
-                    .item
-                    .offset(0 as ::core::ffi::c_int as isize)
-                    as *mut machine_mods_mapping;
+                mapping =
+                    (*raw_mappings).item.offset(0 as i32 as isize) as *mut machine_mods_mapping;
                 while mapping
                     < (*raw_mappings).item.offset((*raw_mappings).size as isize)
                         as *mut machine_mods_mapping
@@ -5564,7 +5223,7 @@ unsafe extern "C" fn machine_set_mods(
                         as unsafe extern "C" fn(
                             *const ::core::ffi::c_void,
                             *const ::core::ffi::c_void,
-                        ) -> ::core::ffi::c_int,
+                        ) -> i32,
                 ),
             );
             (*sm).config.modifiers.mappings = mappings.item as *mut machine_mods_mapping;
@@ -5621,8 +5280,8 @@ unsafe extern "C" fn machine_set_shortcuts(
         }
         let mut mask: xkb_mod_mask_t = (*options).mask;
         if mask != 0 {
-            mask &= ((1 as ::core::ffi::c_ulong) << xkb_keymap_num_mods(keymap))
-                .wrapping_sub(1 as ::core::ffi::c_ulong) as xkb_mod_mask_t;
+            mask &= ((1 as u64) << xkb_keymap_num_mods(keymap)).wrapping_sub(1 as u64)
+                as xkb_mod_mask_t;
         }
         if mask == 0 {
             return true_0 != 0;
@@ -5704,7 +5363,7 @@ pub unsafe extern "C" fn xkb_machine_unref(mut sm: *mut xkb_machine) {
     unsafe {
         if sm.is_null() || {
             (*sm).state.refcnt -= 1;
-            (*sm).state.refcnt > 0 as ::core::ffi::c_int
+            (*sm).state.refcnt > 0 as i32
         } {
             return;
         }
@@ -5735,47 +5394,40 @@ pub unsafe extern "C" fn xkb_machine_get_state(mut sm: *mut xkb_machine) -> *mut
 
 unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
     unsafe {
-        let mask: xkb_overlay_mask_t =
-            ((*sm).state.components.controls as ::core::ffi::c_uint >> XKB_OVERLAY1_CONTROLS_OFFSET
-                & ((1 as ::core::ffi::c_uint) << XKB_OVERLAY_MAX as usize)
-                    .wrapping_sub(1 as ::core::ffi::c_uint)) as xkb_overlay_mask_t;
-        let mut added: xkb_overlay_mask_t = (mask as ::core::ffi::c_int
-            & !((*sm).overlays.enabled as ::core::ffi::c_int))
+        let mask: xkb_overlay_mask_t = ((*sm).state.components.controls as u32
+            >> XKB_OVERLAY1_CONTROLS_OFFSET
+            & ((1 as u32) << XKB_OVERLAY_MAX as usize).wrapping_sub(1 as u32))
             as xkb_overlay_mask_t;
+        let mut added: xkb_overlay_mask_t =
+            (mask as i32 & !((*sm).overlays.enabled as i32)) as xkb_overlay_mask_t;
         let mut order: u32 = (*sm).overlays.order;
         let overlay_max: xkb_overlay_index_t =
             format_max_overlays((*(*sm).state.keymap).format) as xkb_overlay_index_t;
         let mut n: uint8_t = 0 as uint8_t;
-        while (n as ::core::ffi::c_int) < overlay_max as ::core::ffi::c_int {
+        while (n as i32) < overlay_max as i32 {
             let mut overlay_idx: xkb_overlay_index_t =
-                (order >> n as ::core::ffi::c_int * 4 as ::core::ffi::c_int & 0xf as u32)
-                    as xkb_overlay_index_t;
+                (order >> n as i32 * 4 as i32 & 0xf as u32) as xkb_overlay_index_t;
             if overlay_idx == 0 {
                 break;
             }
-            let overlay_mask: xkb_overlay_mask_t = ((1 as ::core::ffi::c_uint)
-                << (overlay_idx as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint))
-                as xkb_overlay_mask_t;
-            if overlay_mask as ::core::ffi::c_int & mask as ::core::ffi::c_int != 0 {
-                added = (added as ::core::ffi::c_int & !(overlay_mask as ::core::ffi::c_int))
-                    as xkb_overlay_mask_t;
+            let overlay_mask: xkb_overlay_mask_t =
+                ((1 as u32) << (overlay_idx as u32).wrapping_sub(1 as u32)) as xkb_overlay_mask_t;
+            if overlay_mask as i32 & mask as i32 != 0 {
+                added = (added as i32 & !(overlay_mask as i32)) as xkb_overlay_mask_t;
                 n = n.wrapping_add(1);
             } else {
-                let head: u32 = ((1 as u32) << n as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
-                    .wrapping_sub(1 as u32);
-                order = order & head | order >> 4 as ::core::ffi::c_int & !head;
+                let head: u32 = ((1 as u32) << n as i32 * 4 as i32).wrapping_sub(1 as u32);
+                order = order & head | order >> 4 as i32 & !head;
             }
         }
         let mut k: xkb_overlay_index_t = 0 as xkb_overlay_index_t;
         while added != 0 {
-            if added as ::core::ffi::c_int & 0x1 as ::core::ffi::c_int != 0 {
-                order <<= 4 as ::core::ffi::c_int;
-                order = (order as ::core::ffi::c_uint
-                    | (k as ::core::ffi::c_uint).wrapping_add(1 as ::core::ffi::c_uint))
-                    as u32;
+            if added as i32 & 0x1 as i32 != 0 {
+                order <<= 4 as i32;
+                order = (order as u32 | (k as u32).wrapping_add(1 as u32)) as u32;
             }
             k = k.wrapping_add(1);
-            added = (added as ::core::ffi::c_int >> 1 as ::core::ffi::c_int) as xkb_overlay_mask_t;
+            added = (added as i32 >> 1 as i32) as xkb_overlay_mask_t;
         }
         (*sm).overlays.order = order;
         (*sm).overlays.enabled = mask;
@@ -5821,10 +5473,7 @@ pub unsafe extern "C" fn xkb_machine_process_synthetic(
             &raw mut (*state).components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            if changed as ::core::ffi::c_uint
-                & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
-            {
+            if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
                 machine_update_overlays(sm);
             }
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
@@ -5867,11 +5516,11 @@ unsafe extern "C" fn do_remap_modifiers(
 ) -> ssize_t {
     unsafe {
         if (*mappings).mask & (*state).components.mods == 0 {
-            return -1 as ::core::ffi::c_int as ssize_t;
+            return -1 as i32 as ssize_t;
         }
         let layout: xkb_layout_index_t = state_key_get_layout(state, key) as xkb_layout_index_t;
         if layout >= (*key).num_groups() {
-            return -1 as ::core::ffi::c_int as ssize_t;
+            return -1 as i32 as ssize_t;
         }
         let type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
         let mut affect: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
@@ -5890,14 +5539,14 @@ unsafe extern "C" fn do_remap_modifiers(
             m = m.wrapping_add(1);
         }
         if affect == 0 {
-            return -1 as ::core::ffi::c_int as ssize_t;
+            return -1 as i32 as ssize_t;
         }
         let mut new: xkb_state = *state;
         new.components.base_mods = new.components.base_mods & !affect | mods;
         new.components.latched_mods = new.components.latched_mods & !affect;
         new.components.locked_mods = new.components.locked_mods & !affect;
         xkb_state_update_derived(&raw mut new);
-        let mut event_idx: ssize_t = -1 as ::core::ffi::c_int as ssize_t;
+        let mut event_idx: ssize_t = -1 as i32 as ssize_t;
         let changed: xkb_state_component =
             get_state_component_changes(&raw mut (*state).components, &raw mut new.components)
                 as xkb_state_component;
@@ -5975,7 +5624,7 @@ unsafe extern "C" fn do_shortcuts_tweak(
                         c2rust_unnamed: C2Rust_Unnamed_17 {
                             components: C2Rust_Unnamed_18 {
                                 components: state_components {
-                                    base_group: 0 as int32_t,
+                                    base_group: 0 as i32,
                                     latched_group: 0,
                                     locked_group: 0,
                                     group: 0,
@@ -5997,7 +5646,7 @@ unsafe extern "C" fn do_shortcuts_tweak(
                     .components;
             }
             new.components.base_group =
-                *(*config).targets.offset((*state).components.group as isize) as int32_t
+                *(*config).targets.offset((*state).components.group as isize) as i32
                     - (*state).components.latched_group
                     - (*state).components.locked_group;
             xkb_state_update_derived(&raw mut new);
@@ -6033,15 +5682,10 @@ unsafe extern "C" fn undo_tweaks(
                 as *mut xkb_event;
             while (*events).queue.size > 0 as darray_size_t
                 && event
-                    >= (*events)
-                        .queue
-                        .item
-                        .offset(0 as ::core::ffi::c_int as isize)
-                        as *mut xkb_event as *const xkb_event
+                    >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
+                        as *const xkb_event
             {
-                if (*event).type_0 as ::core::ffi::c_uint
-                    == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-                {
+                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
                     break;
                 }
                 event = event.offset(-1);
@@ -6096,12 +5740,7 @@ unsafe extern "C" fn process_overlayable_key(
         let mut available_entry: *mut xkb_overlaid_key =
             ::core::ptr::null_mut::<xkb_overlaid_key>();
         if !(*sm).overlays.keys.item.is_null() {
-            entry = (*sm)
-                .overlays
-                .keys
-                .item
-                .offset(0 as ::core::ffi::c_int as isize)
-                as *mut xkb_overlaid_key;
+            entry = (*sm).overlays.keys.item.offset(0 as i32 as isize) as *mut xkb_overlaid_key;
             while entry
                 < (*sm)
                     .overlays
@@ -6111,7 +5750,7 @@ unsafe extern "C" fn process_overlayable_key(
                     as *mut xkb_overlaid_key
             {
                 if (*entry).old == key {
-                    match direction as ::core::ffi::c_uint {
+                    match direction as u32 {
                         1 => {
                             (*entry).refcnt += 1;
                         }
@@ -6120,7 +5759,7 @@ unsafe extern "C" fn process_overlayable_key(
                             (*entry).refcnt -= 1;
                         }
                     }
-                    if (*entry).refcnt <= 0 as ::core::ffi::c_int {
+                    if (*entry).refcnt <= 0 as i32 {
                         (*entry).old = ::core::ptr::null::<xkb_key>();
                     }
                     return (*entry).new;
@@ -6130,29 +5769,21 @@ unsafe extern "C" fn process_overlayable_key(
                 entry = entry.offset(1);
             }
         }
-        if direction as ::core::ffi::c_uint
-            == XKB_KEY_DOWN as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
             let mut new: *const xkb_key = key;
-            if (*key).overlays as ::core::ffi::c_int & (*sm).overlays.enabled as ::core::ffi::c_int
-                != 0
-            {
+            if (*key).overlays as i32 & (*sm).overlays.enabled as i32 != 0 {
                 let mut stack: u32 = (*sm).overlays.order;
                 while stack != 0 {
                     let overlay: xkb_overlay_index_t =
                         (stack & 0xf as u32).wrapping_sub(1 as u32) as xkb_overlay_index_t;
-                    let mask: xkb_overlay_mask_t = ((1 as ::core::ffi::c_uint)
-                        << overlay as ::core::ffi::c_int)
-                        as xkb_overlay_mask_t;
-                    if (*key).overlays as ::core::ffi::c_int & mask as ::core::ffi::c_int != 0 {
+                    let mask: xkb_overlay_mask_t =
+                        ((1 as u32) << overlay as i32) as xkb_overlay_mask_t;
+                    if (*key).overlays as i32 & mask as i32 != 0 {
                         if (*key).overlays_inline() {
                             new = (*key).c2rust_unnamed.overlay_key;
                         } else {
-                            let low: xkb_overlay_mask_t = ((*key).overlays as ::core::ffi::c_int
-                                & (mask as ::core::ffi::c_uint)
-                                    .wrapping_sub(1 as ::core::ffi::c_uint)
-                                    as xkb_overlay_mask_t
-                                    as ::core::ffi::c_int)
+                            let low: xkb_overlay_mask_t = ((*key).overlays as i32
+                                & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
                                 as xkb_overlay_mask_t;
                             let index: xkb_overlay_index_t =
                                 popcount32(low as u32) as xkb_overlay_index_t;
@@ -6160,7 +5791,7 @@ unsafe extern "C" fn process_overlayable_key(
                         }
                         break;
                     } else {
-                        stack >>= 4 as ::core::ffi::c_int;
+                        stack >>= 4 as i32;
                     }
                 }
             }
@@ -6187,7 +5818,7 @@ unsafe extern "C" fn process_overlayable_key(
             }
             (*entry).old = key;
             (*entry).new = new;
-            (*entry).refcnt = 1 as ::core::ffi::c_int;
+            (*entry).refcnt = 1 as i32;
             return new;
         }
         return key;
@@ -6206,10 +5837,7 @@ pub unsafe extern "C" fn xkb_machine_process_key(
         (*events).next = 0 as darray_size_t;
         let state: *mut xkb_state = &raw mut (*sm).state;
         let mut key: *const xkb_key = XkbKey((*state).keymap, kc);
-        if key.is_null()
-            || direction as ::core::ffi::c_uint
-                == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-                && !(*key).repeats()
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as i32 as u32 && !(*key).repeats()
         {
             return XKB_SUCCESS;
         }
@@ -6240,37 +5868,32 @@ pub unsafe extern "C" fn xkb_machine_process_key(
                 (*state).set_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as ::core::ffi::c_int;
+            bit <<= 1 as i32;
         }
         i = 0 as xkb_mod_index_t;
         bit = 1 as xkb_mod_mask_t;
         while (*state).clear_mods != 0 {
             if (*state).clear_mods & bit != 0 {
                 (*state).mod_key_count[i as usize] -= 1;
-                if (*state).mod_key_count[i as usize] as ::core::ffi::c_int
-                    <= 0 as ::core::ffi::c_int
-                {
+                if (*state).mod_key_count[i as usize] as i32 <= 0 as i32 {
                     (*state).components.base_mods &= !bit;
-                    (*state).mod_key_count[i as usize] = 0 as int16_t;
+                    (*state).mod_key_count[i as usize] = 0 as i16;
                 }
                 (*state).clear_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as ::core::ffi::c_int;
+            bit <<= 1 as i32;
         }
         xkb_state_update_derived(state);
         let mut has_key_event: bool = false_0 != 0;
         let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
         if !(*events).queue.item.is_null() {
-            event = (*events)
-                .queue
-                .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut xkb_event;
+            event = (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event;
             while event
                 < (*events).queue.item.offset((*events).queue.size as isize) as *mut xkb_event
                     as *const xkb_event
             {
-                match (*event).type_0 as ::core::ffi::c_uint {
+                match (*event).type_0 as u32 {
                     1 | 2 | 3 => {
                         has_key_event = true_0 != 0;
                     }
@@ -6299,16 +5922,12 @@ pub unsafe extern "C" fn xkb_machine_process_key(
                 .item
                 .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize) =
                 xkb_event {
-                    type_0: (if direction as ::core::ffi::c_uint
-                        == XKB_KEY_UP as ::core::ffi::c_int as ::core::ffi::c_uint
-                    {
-                        XKB_EVENT_TYPE_KEY_UP as ::core::ffi::c_int
-                    } else if direction as ::core::ffi::c_uint
-                        == XKB_KEY_REPEATED as ::core::ffi::c_int as ::core::ffi::c_uint
-                    {
-                        XKB_EVENT_TYPE_KEY_REPEATED as ::core::ffi::c_int
+                    type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
+                        XKB_EVENT_TYPE_KEY_UP as i32
+                    } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                        XKB_EVENT_TYPE_KEY_REPEATED as i32
                     } else {
-                        XKB_EVENT_TYPE_KEY_DOWN as ::core::ffi::c_int
+                        XKB_EVENT_TYPE_KEY_DOWN as i32
                     }) as xkb_event_type,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         keycode: (*key).keycode,
@@ -6323,10 +5942,7 @@ pub unsafe extern "C" fn xkb_machine_process_key(
             &raw mut (*state).components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            if changed as ::core::ffi::c_uint
-                & XKB_STATE_CONTROLS as ::core::ffi::c_int as ::core::ffi::c_uint
-                != 0
-            {
+            if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
                 machine_update_overlays(sm);
             }
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
@@ -6368,15 +5984,14 @@ pub unsafe extern "C" fn xkb_events_new_batch(
 ) -> *mut xkb_events {
     unsafe {
         static mut XKB_EVENTS_FLAGS: xkb_events_flags = XKB_EVENTS_NO_FLAGS;
-        if flags as ::core::ffi::c_uint & !(XKB_EVENTS_FLAGS as ::core::ffi::c_uint) != 0 {
+        if flags as u32 & !(XKB_EVENTS_FLAGS as u32) != 0 {
             xkb_log(
                 context,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"%s: unrecognized events batch flags: %#x\n\0".as_ptr()
-                    as *const i8,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                b"%s: unrecognized events batch flags: %#x\n\0".as_ptr() as *const i8,
                 b"xkb_events_new_batch\0".as_ptr() as *const i8,
-                flags as ::core::ffi::c_uint & !(XKB_EVENTS_FLAGS as ::core::ffi::c_uint),
+                flags as u32 & !(XKB_EVENTS_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_events>();
         }
@@ -6386,10 +6001,9 @@ pub unsafe extern "C" fn xkb_events_new_batch(
             xkb_log(
                 context,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s: cannot allocate state events collection\n\0".as_ptr()
-                    as *const i8,
-                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                b"[XKB-%03d] %s: cannot allocate state events collection\n\0".as_ptr() as *const i8,
+                XKB_ERROR_ALLOCATION_ERROR as i32,
                 b"xkb_events_new_batch\0".as_ptr() as *const i8,
             );
             return events;
@@ -6442,7 +6056,7 @@ pub unsafe extern "C" fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_
 
 pub unsafe extern "C" fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
     unsafe {
-        match (*event).type_0 as ::core::ffi::c_uint {
+        match (*event).type_0 as u32 {
             1 | 2 | 3 => return (*event).c2rust_unnamed.keycode,
             _ => return XKB_KEYCODE_INVALID as xkb_keycode_t,
         };
@@ -6454,12 +6068,10 @@ pub unsafe extern "C" fn xkb_event_get_changed_components(
     mut event: *const xkb_event,
 ) -> xkb_state_component {
     unsafe {
-        return (if (*event).type_0 as ::core::ffi::c_uint
-            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-            (*event).c2rust_unnamed.components.changed as ::core::ffi::c_uint
+        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+            (*event).c2rust_unnamed.components.changed as u32
         } else {
-            0 as ::core::ffi::c_uint
+            0 as u32
         }) as xkb_state_component;
     }
 }
@@ -6470,15 +6082,13 @@ pub unsafe extern "C" fn xkb_event_serialize_enabled_controls(
     mut components: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
     unsafe {
-        return (if (*event).type_0 as ::core::ffi::c_uint
-            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
             serialize_controls(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
-            ) as ::core::ffi::c_uint
+            ) as u32
         } else {
-            0 as ::core::ffi::c_uint
+            0 as u32
         }) as xkb_keyboard_control_flags;
     }
 }
@@ -6489,9 +6099,7 @@ pub unsafe extern "C" fn xkb_event_serialize_mods(
     mut components: xkb_state_component,
 ) -> xkb_mod_mask_t {
     unsafe {
-        return if (*event).type_0 as ::core::ffi::c_uint
-            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
             serialize_mods(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
@@ -6508,9 +6116,7 @@ pub unsafe extern "C" fn xkb_event_serialize_layout(
     mut components: xkb_state_component,
 ) -> xkb_layout_index_t {
     unsafe {
-        return if (*event).type_0 as ::core::ffi::c_uint
-            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
             serialize_layout(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
@@ -6527,9 +6133,7 @@ pub unsafe extern "C" fn xkb_state_update_event(
     mut event: *const xkb_event,
 ) -> xkb_state_component {
     unsafe {
-        if (*event).type_0 as ::core::ffi::c_uint
-            == XKB_EVENT_TYPE_COMPONENTS_CHANGE as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
             let prev_components: state_components = (*state).components;
             (*state).components = (*event).c2rust_unnamed.components.components;
             return get_state_component_changes(
