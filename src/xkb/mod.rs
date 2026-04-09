@@ -106,74 +106,55 @@ pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";
 
 /// Get all available layouts/variants for a given locale
 fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use std::ffi::CStr;
+    use rust_types::RxkbContext;
 
-    unsafe {
-        // Create registry context
-        let rxkb_ctx = registry_list::xkbregistry_h::rxkb_context_new(
-            registry_list::xkbregistry_h::RXKB_CONTEXT_NO_FLAGS,
-        );
+    // Create registry context
+    let ctx = match RxkbContext::new() {
+        Some(ctx) => ctx,
+        None => return vec![String::new()], // Failed to create context, return default
+    };
 
-        if rxkb_ctx.is_null() {
-            // Failed to create registry context, return empty string as default (base layout)
-            return vec![String::new()];
-        }
+    // Load default paths
+    ctx.include_path_append_default();
 
-        // Load default paths
-        registry_list::xkbregistry_h::rxkb_context_include_path_append_default(rxkb_ctx);
+    // Parse the registry for evdev ruleset
+    if !ctx.parse("evdev") {
+        return vec![String::new()]; // Parse failed, return default
+    }
 
-        // Parse the registry
-        if !registry_list::xkbregistry_h::rxkb_context_parse(
-            rxkb_ctx,
-            b"evdev\0".as_ptr() as *const i8,
-        ) {
-            registry_list::xkbregistry_h::rxkb_context_unref(rxkb_ctx);
-            return vec![String::new()];
-        }
+    let mut layouts = Vec::new();
 
-        let mut layouts = Vec::new();
+    // Iterate through all layouts
+    let mut layout_opt = ctx.layout_first();
 
-        // Iterate through all layouts
-        let mut layout_ptr = registry_list::xkbregistry_h::rxkb_layout_first(rxkb_ctx);
-
-        while !layout_ptr.is_null() {
-            let layout_name_ptr = registry_list::xkbregistry_h::rxkb_layout_get_name(layout_ptr);
-
-            if !layout_name_ptr.is_null() {
-                let layout_name = CStr::from_ptr(layout_name_ptr).to_string_lossy();
-
-                // Check if this layout matches our locale
-                if layout_name == locale {
-                    // Get the variant (can be null for base layout)
-                    let variant_ptr =
-                        registry_list::xkbregistry_h::rxkb_layout_get_variant(layout_ptr);
-
-                    if variant_ptr.is_null() {
+    while let Some(layout) = layout_opt {
+        if let Some(layout_name) = layout.get_name() {
+            // Check if this layout matches our locale
+            if layout_name == locale {
+                match layout.get_variant() {
+                    None => {
                         // Base layout (no variant) - store empty string
                         layouts.push(String::new());
-                    } else {
-                        let variant_name = CStr::from_ptr(variant_ptr).to_string_lossy();
-                        if !variant_name.is_empty() {
-                            // Variant layout - store as "locale:variant"
-                            layouts.push(variant_name.to_string());
-                        }
+                    }
+                    Some(variant) => {
+                        // Variant layout - store the variant name
+                        layouts.push(variant);
                     }
                 }
             }
-
-            layout_ptr = registry_list::xkbregistry_h::rxkb_layout_next(layout_ptr);
         }
 
-        // Clean up registry context
-        registry_list::xkbregistry_h::rxkb_context_unref(rxkb_ctx);
-
-        // If we didn't find any layouts, return empty string as default (base layout)
-        if layouts.is_empty() {
-            layouts.push(String::new());
-        }
-
-        layouts
+        layout_opt = layout.next();
     }
+
+    // Context is automatically cleaned up via Drop
+
+    // If we didn't find any layouts, return empty string as default (base layout)
+    if layouts.is_empty() {
+        layouts.push(String::new());
+    }
+
+    layouts
 }
 
 /// Build WKB instance from an XKB keymap pointer
@@ -592,11 +573,9 @@ fn build_wkb_from_keymap(
     // Populate repeat_keys: determine which keys are repeatable
     let mut repeat_keys = HashSet::new();
     for keycode in min_keycode..=max_keycode {
-        unsafe {
-            if keymap::xkb_keymap_key_repeats(keymap.as_ptr(), keycode) != 0 {
-                let evdev_code = keycode - evdev_offset;
-                repeat_keys.insert(evdev_code);
-            }
+        if keymap.key_repeats(keycode) {
+            let evdev_code = keycode - evdev_offset;
+            repeat_keys.insert(evdev_code);
         }
     }
 
