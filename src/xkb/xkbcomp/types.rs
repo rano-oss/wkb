@@ -30,9 +30,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -67,7 +65,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -89,7 +87,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -98,7 +96,7 @@ pub mod context_h {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
             -> *const ::core::ffi::c_char;
@@ -125,15 +123,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -141,7 +139,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -154,7 +152,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -1127,21 +1125,20 @@ pub mod xkbcomp_priv_h {
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     }
@@ -1244,7 +1241,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
@@ -1257,7 +1254,7 @@ pub mod include_h {
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
             path: *mut ::core::ffi::c_char,
-            path_size: size_t,
+            path_size: usize,
         ) -> *mut XkbFile;
     }
 }
@@ -1280,7 +1277,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
@@ -1549,7 +1546,7 @@ unsafe extern "C" fn InitKeyTypesInfo(
         memset(
             info as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyTypesInfo>() as size_t,
+            ::core::mem::size_of::<KeyTypesInfo>() as usize,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -1669,12 +1666,12 @@ unsafe extern "C" fn AddKeyType(
             (*info).types.alloc = darray_next_alloc(
                 (*info).types.alloc,
                 __need,
-                ::core::mem::size_of::<KeyTypeInfo>() as size_t,
+                ::core::mem::size_of::<KeyTypeInfo>() as usize,
             );
             (*info).types.item = realloc(
                 (*info).types.item as *mut ::core::ffi::c_void,
-                ((*info).types.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<KeyTypeInfo>() as size_t),
+                ((*info).types.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<KeyTypeInfo>() as usize),
             ) as *mut KeyTypeInfo;
         }
         *(*info)
@@ -1799,7 +1796,7 @@ unsafe extern "C" fn HandleIncludeKeyTypes(
                 stmt,
                 FILE_TYPE_TYPES,
                 &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -1971,12 +1968,12 @@ unsafe extern "C" fn AddMapEntry(
             (*type_0).entries.alloc = darray_next_alloc(
                 (*type_0).entries.alloc,
                 __need,
-                ::core::mem::size_of::<xkb_key_type_entry>() as size_t,
+                ::core::mem::size_of::<xkb_key_type_entry>() as usize,
             );
             (*type_0).entries.item = realloc(
                 (*type_0).entries.item as *mut ::core::ffi::c_void,
-                ((*type_0).entries.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as size_t),
+                ((*type_0).entries.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as usize),
             ) as *mut xkb_key_type_entry;
         }
         *(*type_0)
@@ -2137,12 +2134,12 @@ unsafe extern "C" fn AddPreserve(
             (*type_0).entries.alloc = darray_next_alloc(
                 (*type_0).entries.alloc,
                 __need,
-                ::core::mem::size_of::<xkb_key_type_entry>() as size_t,
+                ::core::mem::size_of::<xkb_key_type_entry>() as usize,
             );
             (*type_0).entries.item = realloc(
                 (*type_0).entries.item as *mut ::core::ffi::c_void,
-                ((*type_0).entries.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as size_t),
+                ((*type_0).entries.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as usize),
             ) as *mut xkb_key_type_entry;
         }
         *(*type_0)
@@ -2263,20 +2260,20 @@ unsafe extern "C" fn AddLevelName(
                     (*type_0).level_names.alloc = darray_next_alloc(
                         (*type_0).level_names.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as size_t,
+                        ::core::mem::size_of::<xkb_atom_t>() as usize,
                     );
                     (*type_0).level_names.item = realloc(
                         (*type_0).level_names.item as *mut ::core::ffi::c_void,
-                        ((*type_0).level_names.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                        ((*type_0).level_names.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                     ) as *mut xkb_atom_t;
                 }
                 memset(
                     (*type_0).level_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                 );
             }
         } else {
@@ -2645,8 +2642,8 @@ unsafe extern "C" fn CopyKeyTypesToKeymap(
             (*info).types.size
         };
         let mut types: *mut xkb_key_type = calloc(
-            num_types as size_t,
-            ::core::mem::size_of::<xkb_key_type>() as size_t,
+            num_types as usize,
+            ::core::mem::size_of::<xkb_key_type>() as usize,
         ) as *mut xkb_key_type;
         if types.is_null() {
             return false_0 != 0;
@@ -2661,8 +2658,8 @@ unsafe extern "C" fn CopyKeyTypesToKeymap(
             (*type_0).name = xkb_atom_intern(
                 (*keymap).ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                    .wrapping_sub(1 as usize),
             );
             (*type_0).level_names = ::core::ptr::null_mut::<xkb_atom_t>();
             (*type_0).num_level_names = 0 as xkb_level_index_t;
@@ -2672,26 +2669,26 @@ unsafe extern "C" fn CopyKeyTypesToKeymap(
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"ONE_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                        .wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"TWO_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                        .wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"ALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
+                        .wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"KEYPAD\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                        .wrapping_sub(1 as usize),
                 ),
             ];
             let mut i: darray_size_t = 0 as darray_size_t;

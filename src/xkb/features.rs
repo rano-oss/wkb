@@ -5,9 +5,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -148,12 +146,11 @@ pub mod enums_h {
         XKB_LOG_LEVEL_WARNING,
     };
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub mod stdint_h {
     pub const UINT32_WIDTH: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
 }
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::enums_h::{
     xkb_enumerations_values, xkb_error_code_values, xkb_feature_values, xkb_log_level_values,
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
@@ -202,11 +199,11 @@ unsafe extern "C" fn is_supported_enum_value_mask(
 }
 unsafe extern "C" fn is_supported_enum_value_array(
     mut values: *const u32,
-    mut size: size_t,
+    mut size: usize,
     mut value: u32,
 ) -> bool {
     unsafe {
-        let mut v: size_t = 0 as size_t;
+        let mut v: usize = 0 as usize;
         while v < size {
             if *values.offset(v as isize) == value {
                 return true;
@@ -232,16 +229,16 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
             1 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_feature_values as *const u32,
-                    (::core::mem::size_of::<[u32; 24]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
+                    (::core::mem::size_of::<[u32; 24]>() as usize)
+                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
                     value,
                 );
             }
             1000 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_error_code_values as *const u32,
-                    (::core::mem::size_of::<[u32; 9]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
+                    (::core::mem::size_of::<[u32; 9]>() as usize)
+                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
                     value,
                 );
             }
@@ -251,8 +248,8 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
             5100 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_log_level_values as *const u32,
-                    (::core::mem::size_of::<[u32; 5]>() as size_t)
-                        .wrapping_div(::core::mem::size_of::<u32>() as size_t),
+                    (::core::mem::size_of::<[u32; 5]>() as usize)
+                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
                     value,
                 );
             }
@@ -264,25 +261,13 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
             }
             21000 => return is_supported_enum_value_mask(XKB_KEYMAP_FORMAT_VALUES, value),
             21200 => {
-                return is_supported_flag_value(
-                    XKB_KEYMAP_COMPILE_FLAGS_VALUES,
-                    true,
-                    value,
-                );
+                return is_supported_flag_value(XKB_KEYMAP_COMPILE_FLAGS_VALUES, true, value);
             }
             21400 => {
-                return is_supported_flag_value(
-                    XKB_KEYMAP_SERIALIZE_FLAGS_VALUES,
-                    true,
-                    value,
-                );
+                return is_supported_flag_value(XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, true, value);
             }
             21600 => {
-                return is_supported_flag_value(
-                    XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
-                    true,
-                    value,
-                );
+                return is_supported_flag_value(XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, true, value);
             }
             24000 => {
                 return is_supported_flag_value(XKB_STATE_COMPONENT_VALUES, false, value);
@@ -294,11 +279,7 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
                 return is_supported_flag_value(XKB_A11Y_FLAGS_VALUES, true, value);
             }
             24060 => {
-                return is_supported_flag_value(
-                    XKB_KEYBOARD_CONTROL_FLAGS_VALUES,
-                    true,
-                    value,
-                );
+                return is_supported_flag_value(XKB_KEYBOARD_CONTROL_FLAGS_VALUES, true, value);
             }
             24820 => {
                 return is_supported_flag_value(XKB_STATE_MATCH_VALUES, false, value);
@@ -313,11 +294,7 @@ pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut val
                 return is_supported_enum_value_mask(XKB_COMPOSE_FORMAT_VALUES, value);
             }
             30200 => {
-                return is_supported_flag_value(
-                    XKB_COMPOSE_COMPILE_FLAGS_VALUES,
-                    true,
-                    value,
-                );
+                return is_supported_flag_value(XKB_COMPOSE_COMPILE_FLAGS_VALUES, true, value);
             }
             31000 => {
                 return is_supported_enum_value_mask(XKB_COMPOSE_STATUS_VALUES, value);

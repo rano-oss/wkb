@@ -61,9 +61,7 @@ pub mod struct_stat_h {
         __syscall_slong_t, __uid_t,
     };
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod stdlib_h {
     pub type __compar_fn_t = Option<
         unsafe extern "C" fn(
@@ -71,23 +69,22 @@ pub mod stdlib_h {
             *const ::core::ffi::c_void,
         ) -> ::core::ffi::c_int,
     >;
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strtol(
             __nptr: *const ::core::ffi::c_char,
             __endptr: *mut *mut ::core::ffi::c_char,
             __base: ::core::ffi::c_int,
         ) -> ::core::ffi::c_long;
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn secure_getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn qsort(
             __base: *mut ::core::ffi::c_void,
-            __nmemb: size_t,
-            __size: size_t,
+            __nmemb: usize,
+            __size: usize,
             __compar: __compar_fn_t,
         );
     }
@@ -153,7 +150,7 @@ pub mod FILE_h {
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
 
     extern "C" {
@@ -170,7 +167,7 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn vsnprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
@@ -1068,15 +1065,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -1084,7 +1081,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -1097,7 +1094,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod util_list_h {
@@ -1210,19 +1207,19 @@ pub mod stat_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     }
 }
@@ -1262,7 +1259,7 @@ pub mod utils_h {
     pub unsafe extern "C" fn istrneq(
         mut s1: *const ::core::ffi::c_char,
         mut s2: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
     ) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
@@ -1303,7 +1300,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn snprintf_safe(
         mut buf: *mut ::core::ffi::c_char,
-        mut sz: size_t,
+        mut sz: usize,
         mut format: *const ::core::ffi::c_char,
         mut c2rust_args: ...
     ) -> bool {
@@ -1312,11 +1309,10 @@ pub mod utils_h {
             let mut rc: ::core::ffi::c_int = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
+            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
         }
     }
 
-    use super::__stddef_size_t_h::size_t;
     use super::assert_h::__assert_fail;
     use super::stdio_h::vsnprintf;
     use super::string_h::{strcmp, strdup};
@@ -1325,7 +1321,7 @@ pub mod utils_h {
         pub fn istrncmp(
             a: *const ::core::ffi::c_char,
             b: *const ::core::ffi::c_char,
-            n: size_t,
+            n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -1408,11 +1404,10 @@ pub mod config_h {
 pub mod bits_stat_h {
     pub const __S_IFMT: ::core::ffi::c_int = 0o170000 as ::core::ffi::c_int;
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::bits_stat_h::__S_IFMT;
 pub use self::config_h::{
@@ -1799,8 +1794,8 @@ unsafe extern "C" fn rxkb_iso639_code_create(
 ) -> *mut rxkb_iso639_code {
     unsafe {
         let mut t: *mut rxkb_iso639_code = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<rxkb_iso639_code>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<rxkb_iso639_code>() as usize,
         ) as *mut rxkb_iso639_code;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
@@ -1896,8 +1891,8 @@ unsafe extern "C" fn rxkb_iso3166_code_create(
 ) -> *mut rxkb_iso3166_code {
     unsafe {
         let mut t: *mut rxkb_iso3166_code = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<rxkb_iso3166_code>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<rxkb_iso3166_code>() as usize,
         ) as *mut rxkb_iso3166_code;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
@@ -1956,8 +1951,7 @@ pub unsafe extern "C" fn rxkb_option_ref(mut object: *mut rxkb_option) -> *mut r
 unsafe extern "C" fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
     unsafe {
         let mut t: *mut rxkb_option =
-            calloc(1 as size_t, ::core::mem::size_of::<rxkb_option>() as size_t)
-                as *mut rxkb_option;
+            calloc(1 as usize, ::core::mem::size_of::<rxkb_option>() as usize) as *mut rxkb_option;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
         }
@@ -2109,8 +2103,7 @@ pub unsafe extern "C" fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut
 unsafe extern "C" fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
     unsafe {
         let mut t: *mut rxkb_layout =
-            calloc(1 as size_t, ::core::mem::size_of::<rxkb_layout>() as size_t)
-                as *mut rxkb_layout;
+            calloc(1 as usize, ::core::mem::size_of::<rxkb_layout>() as usize) as *mut rxkb_layout;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
         }
@@ -2229,7 +2222,7 @@ pub unsafe extern "C" fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut r
 unsafe extern "C" fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
     unsafe {
         let mut t: *mut rxkb_model =
-            calloc(1 as size_t, ::core::mem::size_of::<rxkb_model>() as size_t) as *mut rxkb_model;
+            calloc(1 as usize, ::core::mem::size_of::<rxkb_model>() as usize) as *mut rxkb_model;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
         }
@@ -2366,8 +2359,8 @@ unsafe extern "C" fn rxkb_option_group_create(
 ) -> *mut rxkb_option_group {
     unsafe {
         let mut t: *mut rxkb_option_group = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<rxkb_option_group>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<rxkb_option_group>() as usize,
         ) as *mut rxkb_option_group;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
@@ -2582,10 +2575,9 @@ pub unsafe extern "C" fn rxkb_context_unref(mut object: *mut rxkb_context) -> *m
 #[inline]
 unsafe extern "C" fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
     unsafe {
-        let mut t: *mut rxkb_context = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<rxkb_context>() as size_t,
-        ) as *mut rxkb_context;
+        let mut t: *mut rxkb_context =
+            calloc(1 as usize, ::core::mem::size_of::<rxkb_context>() as usize)
+                as *mut rxkb_context;
         if !t.is_null() {
             rxkb_object_init(&raw mut (*t).base, parent);
         }
@@ -2672,47 +2664,42 @@ unsafe extern "C" fn log_level(mut level: *const ::core::ffi::c_char) -> rxkb_lo
         if istrneq(
             b"crit\0".as_ptr() as *const ::core::ffi::c_char,
             level,
-            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_CRITICAL;
         }
         if istrneq(
             b"err\0".as_ptr() as *const ::core::ffi::c_char,
             level,
-            (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_ERROR;
         }
         if istrneq(
             b"warn\0".as_ptr() as *const ::core::ffi::c_char,
             level,
-            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_WARNING;
         }
         if istrneq(
             b"info\0".as_ptr() as *const ::core::ffi::c_char,
             level,
-            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_INFO;
         }
         if istrneq(
             b"debug\0".as_ptr() as *const ::core::ffi::c_char,
             level,
-            (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize).wrapping_sub(1 as usize),
         ) as ::core::ffi::c_int
             != 0
             || istrneq(
                 b"dbg\0".as_ptr() as *const ::core::ffi::c_char,
                 level,
-                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                    .wrapping_sub(1 as usize),
             ) as ::core::ffi::c_int
                 != 0
         {
@@ -2926,7 +2913,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                 rules = [0; 4096];
                 if !snprintf_safe(
                     &raw mut rules as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                     b"%s/rules/%s.xml\0".as_ptr() as *const ::core::ffi::c_char,
                     path,
                     DEFAULT_XKB_RULES.as_ptr(),
@@ -2953,12 +2940,12 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
                             (*ctx).includes.alloc = darray_next_alloc(
                                 (*ctx).includes.alloc,
                                 __need,
-                                ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                                ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                             );
                             (*ctx).includes.item = realloc(
                                 (*ctx).includes.item as *mut ::core::ffi::c_void,
-                                ((*ctx).includes.alloc as size_t).wrapping_mul(
-                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                                ((*ctx).includes.alloc as usize).wrapping_mul(
+                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                                 ),
                             )
                                 as *mut *mut ::core::ffi::c_char;
@@ -3005,7 +2992,7 @@ unsafe extern "C" fn add_direct_subdirectories(
     mut path: *const ::core::ffi::c_char,
     mut extensions: *mut darray_string,
     mut versioned_count: darray_size_t,
-    mut versioned_path_length: size_t,
+    mut versioned_path_length: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         let mut entry: *mut dirent = ::core::ptr::null_mut::<dirent>();
@@ -3077,7 +3064,7 @@ unsafe extern "C" fn add_direct_subdirectories(
                     }
                     if !snprintf_safe(
                         &raw mut path_buf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                         b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
                         path,
                         name,
@@ -3118,13 +3105,12 @@ unsafe extern "C" fn add_direct_subdirectories(
                                 (*extensions).alloc = darray_next_alloc(
                                     (*extensions).alloc,
                                     __need,
-                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                                 );
                                 (*extensions).item = realloc(
                                     (*extensions).item as *mut ::core::ffi::c_void,
-                                    ((*extensions).alloc as size_t).wrapping_mul(
-                                        ::core::mem::size_of::<*mut ::core::ffi::c_char>()
-                                            as size_t,
+                                    ((*extensions).alloc as usize).wrapping_mul(
+                                        ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                                     ),
                                 )
                                     as *mut *mut ::core::ffi::c_char;
@@ -3146,8 +3132,8 @@ unsafe extern "C" fn add_direct_subdirectories(
                             qsort(
                                 (*extensions).item.offset(versioned_count as isize)
                                     as *mut ::core::ffi::c_void,
-                                (*extensions).size.wrapping_sub(versioned_count) as size_t,
-                                ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                                (*extensions).size.wrapping_sub(versioned_count) as usize,
+                                ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                                 Some(
                                     compare_str
                                         as unsafe extern "C" fn(
@@ -3217,7 +3203,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         if !xdg.is_null() {
             if snprintf_safe(
                 &raw mut user_path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 b"%s/xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 xdg,
             ) {
@@ -3230,7 +3216,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         } else if !home.is_null() {
             if snprintf_safe(
                 &raw mut user_path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 b"%s/.config/xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 home,
             ) {
@@ -3244,7 +3230,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         if !home.is_null() {
             if snprintf_safe(
                 &raw mut user_path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 b"%s/.xkb\0".as_ptr() as *const ::core::ffi::c_char,
                 home,
             ) {
@@ -3280,7 +3266,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
         if extensions_path.is_null() {
             extensions_path = DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.as_ptr();
         }
-        let mut versioned_path_length: size_t = 0 as size_t;
+        let mut versioned_path_length: usize = 0 as usize;
         if !extensions_path.is_null() {
             ret = ret as ::core::ffi::c_int
                 | add_direct_subdirectories(
@@ -3288,7 +3274,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append_default(
                     extensions_path,
                     &raw mut extensions,
                     0 as darray_size_t,
-                    0 as size_t,
+                    0 as usize,
                 );
             versioned_path_length = strlen(extensions_path);
         }
@@ -3406,7 +3392,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                 let mut rules: [::core::ffi::c_char; 4096] = [0; 4096];
                 if snprintf_safe(
                     &raw mut rules as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                     b"%s/rules/%s.xml\0".as_ptr() as *const ::core::ffi::c_char,
                     *path,
                     ruleset,
@@ -3428,7 +3414,7 @@ pub unsafe extern "C" fn rxkb_context_parse(
                 if (*ctx).load_extra_rules_files as ::core::ffi::c_int != 0
                     && snprintf_safe(
                         &raw mut rules as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                         b"%s/rules/%s.extras.xml\0".as_ptr() as *const ::core::ffi::c_char,
                         *path,
                         ruleset,
@@ -3672,7 +3658,7 @@ unsafe extern "C" fn parse_language_list(
             if is_node(node, b"iso639Id\0".as_ptr() as *const ::core::ffi::c_char) {
                 let mut str: *mut ::core::ffi::c_char = extract_text(node);
                 let mut parent: *mut rxkb_object = ::core::ptr::null_mut::<rxkb_object>();
-                if str.is_null() || strlen(str) != 3 as size_t {
+                if str.is_null() || strlen(str) != 3 as usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
                     parent = &raw mut (*layout).base;
@@ -3697,7 +3683,7 @@ unsafe extern "C" fn parse_country_list(
             if is_node(node, b"iso3166Id\0".as_ptr() as *const ::core::ffi::c_char) {
                 let mut str: *mut ::core::ffi::c_char = extract_text(node);
                 let mut parent: *mut rxkb_object = ::core::ptr::null_mut::<rxkb_object>();
-                if str.is_null() || strlen(str) != 2 as size_t {
+                if str.is_null() || strlen(str) != 2 as usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
                     parent = &raw mut (*layout).base;
@@ -4111,8 +4097,8 @@ unsafe extern "C" fn xml_error_func(
         rc = vsnprintf(
             (&raw mut buf as *mut ::core::ffi::c_char).offset(slen as isize)
                 as *mut ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t)
-                .wrapping_sub(slen as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize)
+                .wrapping_sub(slen as usize),
             msg,
             args,
         );
@@ -4128,7 +4114,7 @@ unsafe extern "C" fn xml_error_func(
             memset(
                 &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
                 0 as ::core::ffi::c_int,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             return;
         }
@@ -4148,7 +4134,7 @@ unsafe extern "C" fn xml_error_func(
             memset(
                 &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
                 0 as ::core::ffi::c_int,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             slen = 0 as ::core::ffi::c_int;
         }

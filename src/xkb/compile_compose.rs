@@ -39,9 +39,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -114,7 +112,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -136,7 +134,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -370,7 +368,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::config_h::EXIT_INVALID_USAGE;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_size_t};

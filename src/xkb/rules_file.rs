@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __uint32_t = u32;
     pub type __uint64_t = u64;
@@ -93,7 +91,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -115,7 +113,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -183,12 +181,12 @@ pub mod test_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
@@ -197,12 +195,12 @@ pub mod string_h {
         pub fn strncmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
@@ -213,7 +211,7 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
@@ -307,7 +305,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
@@ -1276,7 +1274,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1299,7 +1297,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1322,7 +1320,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1345,7 +1343,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1368,7 +1366,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1391,7 +1389,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1414,7 +1412,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1437,7 +1435,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1460,7 +1458,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1485,7 +1483,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1510,7 +1508,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1535,7 +1533,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1561,7 +1559,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1584,7 +1582,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"special_indices-limit\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1608,7 +1606,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1633,7 +1631,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1658,7 +1656,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1683,7 +1681,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1708,7 +1706,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1732,7 +1730,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1756,7 +1754,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1781,7 +1779,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1805,7 +1803,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1830,7 +1828,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1856,7 +1854,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1881,7 +1879,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1906,7 +1904,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1931,7 +1929,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1956,7 +1954,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -1981,7 +1979,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2006,7 +2004,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2031,7 +2029,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2056,7 +2054,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2081,7 +2079,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2106,7 +2104,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2131,7 +2129,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2156,7 +2154,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2181,7 +2179,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2206,7 +2204,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2232,7 +2230,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2257,7 +2255,7 @@ unsafe extern "C" fn test_layout_index_ranges(
                 geometry: if strncmp(
                     b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
                     b"evdev\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
                 {
                     b"pc(pc104)\0".as_ptr() as *const ::core::ffi::c_char
@@ -2719,17 +2717,16 @@ unsafe extern "C" fn test_extended_layout_indices(mut ctx: *mut xkb_context) {
             0,
             0,
         ];
-        let mut count: size_t = 0 as size_t;
+        let mut count: usize = 0 as usize;
         let mut l: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while l < XKB_MAX_GROUPS as xkb_layout_index_t {
             count = count.wrapping_add(snprintf(
                 (&raw mut layouts as *mut ::core::ffi::c_char).offset(count as isize)
                     as *mut ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 416]>() as size_t)
-                    .wrapping_sub(count),
+                (::core::mem::size_of::<[::core::ffi::c_char; 416]>() as usize).wrapping_sub(count),
                 b"x%u,\0".as_ptr() as *const ::core::ffi::c_char,
                 l.wrapping_add(1 as xkb_layout_index_t),
-            ) as size_t);
+            ) as usize);
             l = l.wrapping_add(1);
         }
         count = count.wrapping_sub(1);
@@ -3564,21 +3561,20 @@ unsafe extern "C" fn test_extended_layout_indices(mut ctx: *mut xkb_context) {
         memcpy(
             &raw mut symbols as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
             &raw const symbols_prefix as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            ::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize,
         );
         count = (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
-            .wrapping_sub(1 as usize) as size_t;
+            .wrapping_sub(1 as usize) as usize;
         let mut l_0: xkb_layout_index_t = 1 as xkb_layout_index_t;
         while l_0 < XKB_MAX_GROUPS as xkb_layout_index_t {
             count = count.wrapping_add(snprintf(
                 (&raw mut symbols as *mut ::core::ffi::c_char).offset(count as isize)
                     as *mut ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 820]>() as size_t)
-                    .wrapping_sub(count),
+                (::core::mem::size_of::<[::core::ffi::c_char; 820]>() as usize).wrapping_sub(count),
                 b"x%u:%u+\0".as_ptr() as *const ::core::ffi::c_char,
                 l_0.wrapping_add(1 as xkb_layout_index_t),
                 l_0.wrapping_add(1 as xkb_layout_index_t),
-            ) as size_t);
+            ) as usize);
             l_0 = l_0.wrapping_add(1);
         }
         memcpy(
@@ -3587,7 +3583,7 @@ unsafe extern "C" fn test_extended_layout_indices(mut ctx: *mut xkb_context) {
                 .offset(-(1 as ::core::ffi::c_int as isize))
                 as *mut ::core::ffi::c_void,
             &raw const symbols_suffix as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            ::core::mem::size_of::<[::core::ffi::c_char; 13]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 13]>() as usize,
         );
         let test: test_data = test_data {
             rules: b"evdev-modern\0".as_ptr() as *const ::core::ffi::c_char,
@@ -5074,30 +5070,30 @@ unsafe fn main_0(
             0,
             0,
         ];
-        let mut i: size_t = 0 as size_t;
+        let mut i: usize = 0 as usize;
         let mut l: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while l <= XKB_MAX_GROUPS as xkb_layout_index_t {
             i = i.wrapping_add(snprintf(
                 (&raw mut too_much_layouts as *mut ::core::ffi::c_char).offset(i as isize)
                     as *mut ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 429]>() as size_t).wrapping_sub(i),
+                (::core::mem::size_of::<[::core::ffi::c_char; 429]>() as usize).wrapping_sub(i),
                 b"x%u,\0".as_ptr() as *const ::core::ffi::c_char,
                 l.wrapping_add(1 as xkb_layout_index_t),
-            ) as size_t);
+            ) as usize);
             l = l.wrapping_add(1);
         }
         i = i.wrapping_sub(1);
         too_much_layouts[i as usize] = '\0' as i32 as ::core::ffi::c_char;
-        i = 0 as size_t;
+        i = 0 as usize;
         let mut l_0: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while l_0 < XKB_MAX_GROUPS as xkb_layout_index_t {
             i = i.wrapping_add(snprintf(
                 (&raw mut too_much_symbols as *mut ::core::ffi::c_char).offset(i as isize)
                     as *mut ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 448]>() as size_t).wrapping_sub(i),
+                (::core::mem::size_of::<[::core::ffi::c_char; 448]>() as usize).wrapping_sub(i),
                 b"x:%u+\0".as_ptr() as *const ::core::ffi::c_char,
                 l_0.wrapping_add(1 as xkb_layout_index_t),
-            ) as size_t);
+            ) as usize);
             l_0 = l_0.wrapping_add(1);
         }
         i = i.wrapping_sub(1);

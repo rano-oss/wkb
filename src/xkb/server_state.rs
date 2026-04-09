@@ -32,9 +32,7 @@ pub mod stdint_uintn_h {
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint64_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -119,7 +117,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -141,7 +139,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -232,7 +230,7 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_state_components_update {
-        pub size: size_t,
+        pub size: usize,
         pub components: xkb_state_component,
         pub affect_latched_mods: xkb_mod_mask_t,
         pub latched_mods: xkb_mod_mask_t,
@@ -246,18 +244,18 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_layout_policy_update {
-        pub size: size_t,
+        pub size: usize,
         pub policy: xkb_layout_out_of_range_policy,
         pub redirect: xkb_layout_index_t,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_state_update {
-        pub size: size_t,
+        pub size: usize,
         pub components: *const xkb_state_components_update,
         pub layout_policy: *const xkb_layout_policy_update,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::state_priv_h::xkb_event;
@@ -863,7 +861,7 @@ pub mod test_h {
     pub type test_context_flags = ::core::ffi::c_uint;
     pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
     pub const CONTEXT_NO_FLAG: test_context_flags = 0;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::{xkb_events, xkb_keymap_format, xkb_machine};
@@ -885,7 +883,7 @@ pub mod test_h {
             context: *mut xkb_context,
             format: xkb_keymap_format,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_rmlvo(
             context: *mut xkb_context,
@@ -919,17 +917,17 @@ pub mod stdio_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memcmp(
             __s1: *const ::core::ffi::c_void,
             __s2: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -984,7 +982,7 @@ pub mod state_h {
                             as *const ::core::ffi::c_void,
                         &raw const (*event2).c2rust_unnamed.components
                             as *const ::core::ffi::c_void,
-                        ::core::mem::size_of::<C2Rust_Unnamed_14>() as size_t,
+                        ::core::mem::size_of::<C2Rust_Unnamed_14>() as usize,
                     ) == 0 as ::core::ffi::c_int;
                 }
                 _ => return false,
@@ -1050,17 +1048,17 @@ pub mod state_h {
     pub unsafe extern "C" fn check_events(
         mut iter: *mut xkb_events,
         mut events: *const xkb_event,
-        mut count: size_t,
+        mut count: usize,
     ) -> bool {
         unsafe {
             let mut got: *const xkb_event = ::core::ptr::null::<xkb_event>();
-            let mut got_count: size_t = 0 as size_t;
+            let mut got_count: usize = 0 as usize;
             let mut ok: bool = true;
-            if count == 1 as size_t
+            if count == 1 as usize
                 && (*events.offset(0 as ::core::ffi::c_int as isize)).type_0 as ::core::ffi::c_uint
                     == XKB_EVENT_TYPE_NONE as ::core::ffi::c_uint
             {
-                count = 0 as size_t;
+                count = 0 as usize;
             }
             loop {
                 got = xkb_events_next(iter);
@@ -1082,7 +1080,7 @@ pub mod state_h {
                     break;
                 } else {
                     let mut expected: *const xkb_event = events
-                        .offset(got_count.wrapping_sub(1 as size_t) as isize)
+                        .offset(got_count.wrapping_sub(1 as usize) as isize)
                         as *const xkb_event;
                     if xkb_event_eq(got, expected) {
                         continue;
@@ -1117,7 +1115,6 @@ pub mod state_h {
         }
     }
 
-    use super::__stddef_size_t_h::size_t;
     use super::assert_h::__assert_fail;
     use super::keymap_h::xkb_keymap;
     use super::state_priv_h::{xkb_event, C2Rust_Unnamed_14};
@@ -1162,8 +1159,7 @@ pub mod evdev_scancodes_h {
     pub const KEY_LEFTMETA: ::core::ffi::c_int = 125 as ::core::ffi::c_int;
     pub const KEY_COMPOSE: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [::core::ffi::c_char; 6] =
         unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"Shift\0") };
@@ -1187,7 +1183,7 @@ pub mod xkbcommon_names_h {
         unsafe { ::core::mem::transmute::<[u8; 12], [::core::ffi::c_char; 12]>(*b"Scroll Lock\0") };
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -1304,13 +1300,13 @@ pub struct xkb_state_update_newer {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_16 {
-    pub size: size_t,
+    pub size: usize,
     pub current: xkb_state_update,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct params {
-    pub size: size_t,
+    pub size: usize,
     pub extra: uint64_t,
     pub enabled: bool,
 }
@@ -1331,7 +1327,7 @@ pub struct xkb_layout_policy_update_newer {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_18 {
-    pub size: size_t,
+    pub size: usize,
     pub current: xkb_layout_policy_update,
 }
 #[derive(Copy, Clone)]
@@ -1343,7 +1339,7 @@ pub struct xkb_state_components_update_newer {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_19 {
-    pub size: size_t,
+    pub size: usize,
     pub current: xkb_state_components_update,
 }
 #[derive(Copy, Clone)]
@@ -1393,7 +1389,7 @@ unsafe extern "C" fn xkb_state_update_enabled_controls(
 ) -> xkb_state_component {
     unsafe {
         let components: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: XKB_STATE_CONTROLS,
             affect_latched_mods: 0,
             latched_mods: 0,
@@ -1405,7 +1401,7 @@ unsafe extern "C" fn xkb_state_update_enabled_controls(
             controls: controls,
         };
         let update: xkb_state_update = xkb_state_update {
-            size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_update>() as usize,
             components: &raw const components,
             layout_policy: ::core::ptr::null::<xkb_layout_policy_update>(),
         };
@@ -1428,7 +1424,7 @@ unsafe extern "C" fn xkb_machine_update_enabled_controls(
                 0 as ::core::ffi::c_int
             }) as xkb_state_component;
         let components_update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: 0,
             latched_mods: 0,
@@ -1440,7 +1436,7 @@ unsafe extern "C" fn xkb_machine_update_enabled_controls(
             controls: controls,
         };
         let update: xkb_state_update = xkb_state_update {
-            size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_update>() as usize,
             components: &raw const components_update,
             layout_policy: ::core::ptr::null::<xkb_layout_policy_update>(),
         };
@@ -1480,7 +1476,7 @@ unsafe extern "C" fn xkb_machine_update_latched_locked(
                 0 as ::core::ffi::c_int
             })) as xkb_state_component;
         let components_update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: affect_latched_mods,
             latched_mods: latched_mods,
@@ -1492,7 +1488,7 @@ unsafe extern "C" fn xkb_machine_update_latched_locked(
             controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
         };
         let update: xkb_state_update = xkb_state_update {
-            size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_update>() as usize,
             components: &raw const components_update,
             layout_policy: ::core::ptr::null::<xkb_layout_policy_update>(),
         };
@@ -1701,7 +1697,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
         static mut tests: [C2Rust_Unnamed_17; 16] = [
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: 0 as size_t,
+                    size: 0 as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1719,7 +1715,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: 1 as size_t,
+                    size: 1 as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1737,12 +1733,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
                 components: params {
-                    size: 0 as size_t,
+                    size: 0 as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1755,12 +1751,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
                 components: params {
-                    size: 1 as size_t,
+                    size: 1 as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1773,7 +1769,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1783,7 +1779,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                     enabled: false,
                 },
                 layout_policy: params {
-                    size: 0 as size_t,
+                    size: 0 as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1791,7 +1787,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1801,7 +1797,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                     enabled: false,
                 },
                 layout_policy: params {
-                    size: 1 as size_t,
+                    size: 1 as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1809,7 +1805,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1827,12 +1823,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
                 components: params {
-                    size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1845,7 +1841,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1855,7 +1851,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                     enabled: false,
                 },
                 layout_policy: params {
-                    size: ::core::mem::size_of::<xkb_layout_policy_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_layout_policy_update>() as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1863,7 +1859,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update_newer>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1881,12 +1877,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
                 components: params {
-                    size: ::core::mem::size_of::<xkb_state_components_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_components_update_newer>() as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1899,7 +1895,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1909,7 +1905,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                     enabled: false,
                 },
                 layout_policy: params {
-                    size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as usize,
                     extra: 0,
                     enabled: true,
                 },
@@ -1917,7 +1913,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update_newer>() as usize,
                     extra: (1 as uint64_t) << 0 as ::core::ffi::c_int,
                     enabled: false,
                 },
@@ -1935,7 +1931,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update_newer>() as usize,
                     extra: (1 as uint64_t) << 63 as ::core::ffi::c_int,
                     enabled: false,
                 },
@@ -1953,12 +1949,12 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
                 components: params {
-                    size: ::core::mem::size_of::<xkb_state_components_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_components_update_newer>() as usize,
                     extra: (1 as uint64_t) << 63 as ::core::ffi::c_int,
                     enabled: true,
                 },
@@ -1971,7 +1967,7 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
             },
             C2Rust_Unnamed_17 {
                 root: params {
-                    size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                    size: ::core::mem::size_of::<xkb_state_update>() as usize,
                     extra: 0 as uint64_t,
                     enabled: false,
                 },
@@ -1981,14 +1977,14 @@ unsafe extern "C" fn test_state_update(mut ctx: *mut xkb_context) {
                     enabled: false,
                 },
                 layout_policy: params {
-                    size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as size_t,
+                    size: ::core::mem::size_of::<xkb_layout_policy_update_newer>() as usize,
                     extra: (1 as uint64_t) << 63 as ::core::ffi::c_int,
                     enabled: true,
                 },
                 error: XKB_ERROR_ABI_FORWARD_COMPAT,
             },
         ];
-        let mut s: size_t = 0 as size_t;
+        let mut s: usize = 0 as usize;
         while s
             < (::core::mem::size_of::<[C2Rust_Unnamed_17; 16]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_17>() as usize)
@@ -2209,7 +2205,7 @@ unsafe extern "C" fn test_group_wrap(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const keymap_str as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 174]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 174]>() as usize,
         ) as *mut xkb_keymap;
         if !keymap.is_null() {
         } else {
@@ -2319,12 +2315,12 @@ unsafe extern "C" fn test_group_wrap(mut ctx: *mut xkb_context) {
                 t as ::core::ffi::c_int,
             );
             let mut layout_policy: xkb_layout_policy_update = xkb_layout_policy_update {
-                size: ::core::mem::size_of::<xkb_layout_policy_update>() as size_t,
+                size: ::core::mem::size_of::<xkb_layout_policy_update>() as usize,
                 policy: tests[t as usize].policy,
                 redirect: tests[t as usize].redirect_group,
             };
             let components: xkb_state_components_update = xkb_state_components_update {
-                size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+                size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
                 components: XKB_STATE_LAYOUT_LOCKED,
                 affect_latched_mods: 0,
                 latched_mods: 0,
@@ -2336,7 +2332,7 @@ unsafe extern "C" fn test_group_wrap(mut ctx: *mut xkb_context) {
                 controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
             };
             let req: xkb_state_update = xkb_state_update {
-                size: ::core::mem::size_of::<xkb_state_update>() as size_t,
+                size: ::core::mem::size_of::<xkb_state_update>() as usize,
                 components: &raw const components,
                 layout_policy: &raw mut layout_policy,
             };
@@ -4123,7 +4119,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
                 &raw const (*(&raw const tests as *const C2Rust_Unnamed_21).offset(t as isize))
                     .down
                     .events as *const xkb_event,
-                tests[t as usize].down.events_count as size_t,
+                tests[t as usize].down.events_count as usize,
             ) as ::core::ffi::c_int
                 != 0
             {
@@ -4172,7 +4168,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
                         .down
                         .events as *const xkb_event
                         as *const ::core::ffi::c_void,
-                    ::core::mem::size_of::<[xkb_event; 3]>() as size_t,
+                    ::core::mem::size_of::<[xkb_event; 3]>() as usize,
                 );
                 ref_0[(tests[t as usize].down.events_count == 3 as ::core::ffi::c_uint)
                     as ::core::ffi::c_int as usize]
@@ -4180,7 +4176,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
                 if check_events(
                     events,
                     &raw mut ref_0 as *mut xkb_event,
-                    tests[t as usize].down.events_count as size_t,
+                    tests[t as usize].down.events_count as usize,
                 ) as ::core::ffi::c_int
                     != 0
                 {
@@ -4195,7 +4191,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
                     );
                 };
             } else {
-                if check_events(events, ::core::ptr::null::<xkb_event>(), 0 as size_t)
+                if check_events(events, ::core::ptr::null::<xkb_event>(), 0 as usize)
                     as ::core::ffi::c_int
                     != 0
                 {
@@ -4227,7 +4223,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context) {
                 &raw const (*(&raw const tests as *const C2Rust_Unnamed_21).offset(t as isize))
                     .up
                     .events as *const xkb_event,
-                tests[t as usize].up.events_count as size_t,
+                tests[t as usize].up.events_count as usize,
             ) as ::core::ffi::c_int
                 != 0
             {
@@ -4924,8 +4920,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -4966,8 +4962,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_0 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5008,8 +5004,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_1 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5074,8 +5070,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_2 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 2]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 2]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5114,8 +5110,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_3 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5224,8 +5220,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_4 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5334,8 +5330,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_5 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5444,8 +5440,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_6 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5486,8 +5482,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_7 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5552,8 +5548,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_8 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 2]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 2]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5615,8 +5611,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_9 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5678,8 +5674,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_10 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5766,8 +5762,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_11 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5854,8 +5850,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_12 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -5942,8 +5938,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_13 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6006,8 +6002,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_14 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6069,8 +6065,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_15 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6132,8 +6128,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_16 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6168,8 +6164,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_17 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6219,8 +6215,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_18 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6254,8 +6250,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_19 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6312,8 +6308,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_20 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6391,8 +6387,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_21 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6525,8 +6521,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_22 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 5]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 5]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6661,8 +6657,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_23 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6795,8 +6791,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_24 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 5]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 5]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6858,8 +6854,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_25 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -6948,8 +6944,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_26 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -7061,8 +7057,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_27 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -7149,8 +7145,8 @@ unsafe extern "C" fn test_shortcuts_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_28 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -7218,7 +7214,7 @@ unsafe extern "C" fn test_overlays(mut context: *mut xkb_context) {
                 overlays: 0x3 as xkb_overlay_mask_t,
             },
         ];
-        let mut t: size_t = 0 as size_t;
+        let mut t: usize = 0 as usize;
         while t
             < (::core::mem::size_of::<[C2Rust_Unnamed_23; 10]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_23>() as usize)
@@ -7577,7 +7573,7 @@ unsafe extern "C" fn test_overlays(mut context: *mut xkb_context) {
                 direction: XKB_KEY_UP,
             },
         ];
-        let mut t_0: size_t = 0 as size_t;
+        let mut t_0: usize = 0 as usize;
         while t_0
             < (::core::mem::size_of::<[C2Rust_Unnamed_22; 44]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_22>() as usize)
@@ -8104,8 +8100,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 2]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 2]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8192,8 +8188,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_0 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8280,8 +8276,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_1 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8368,8 +8364,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_2 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8432,8 +8428,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_3 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8522,8 +8518,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_4 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8612,8 +8608,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_5 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 3]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 3]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8654,8 +8650,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_6 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8766,8 +8762,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_7 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8830,8 +8826,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_8 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 1]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 1]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -8945,8 +8941,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_9 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 4]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 4]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -9102,8 +9098,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_10 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 5]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 5]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -9236,8 +9232,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_11 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 5]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 5]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {
@@ -9370,8 +9366,8 @@ unsafe extern "C" fn test_modifiers_tweak(mut context: *mut xkb_context) {
         if check_events(
             events,
             &raw const expected_12 as *const xkb_event,
-            (::core::mem::size_of::<[xkb_event; 5]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<xkb_event>() as size_t),
+            (::core::mem::size_of::<[xkb_event; 5]>() as usize)
+                .wrapping_div(::core::mem::size_of::<xkb_event>() as usize),
         ) as ::core::ffi::c_int
             != 0
         {

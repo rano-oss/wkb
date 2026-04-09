@@ -138,7 +138,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -162,7 +162,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -876,7 +876,7 @@ pub mod keymap_h {
         pub keymap_new_from_names:
             Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
         pub keymap_new_from_string: Option<
-            unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, size_t) -> bool,
+            unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, usize) -> bool,
         >,
         pub keymap_new_from_file: Option<unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool>,
         pub keymap_get_as_string: Option<
@@ -941,7 +941,7 @@ pub mod keymap_h {
                 || (*entry).mods.mask != 0 as xkb_mod_mask_t;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -1280,18 +1280,18 @@ pub mod enums_h {
 }
 #[c2rust::header_src = "/usr/include/string.h:20"]
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         #[c2rust::src_loc = "407:1"]
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 #[c2rust::header_src = "/usr/include/stdlib.h:20"]
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         #[c2rust::src_loc = "675:1"]
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
         #[c2rust::src_loc = "687:1"]
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
@@ -1327,7 +1327,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
@@ -1733,7 +1733,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_string(
 pub unsafe extern "C" fn xkb_keymap_new_from_buffer(
     mut ctx: *mut xkb_context,
     mut buffer: *const ::core::ffi::c_char,
-    mut length: size_t,
+    mut length: usize,
     mut format: xkb_keymap_format,
     mut flags: xkb_keymap_compile_flags,
 ) -> *mut xkb_keymap {
@@ -1769,8 +1769,8 @@ pub unsafe extern "C" fn xkb_keymap_new_from_buffer(
         if keymap.is_null() {
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
-        if length > 0 as size_t
-            && *buffer.offset(length.wrapping_sub(1 as size_t) as isize) as ::core::ffi::c_int
+        if length > 0 as usize
+            && *buffer.offset(length.wrapping_sub(1 as usize) as isize) as ::core::ffi::c_int
                 == '\0' as i32
         {
             length = length.wrapping_sub(1);
@@ -2086,12 +2086,12 @@ pub unsafe extern "C" fn xkb_keymap_key_get_mods_for_level(
     mut layout: xkb_layout_index_t,
     mut level: xkb_level_index_t,
     mut masks_out: *mut xkb_mod_mask_t,
-    mut masks_size: size_t,
-) -> size_t {
+    mut masks_size: usize,
+) -> usize {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
-            return 0 as size_t;
+            return 0 as usize;
         }
         layout = XkbWrapGroupIntoRange(
             layout as int32_t,
@@ -2100,13 +2100,13 @@ pub unsafe extern "C" fn xkb_keymap_key_get_mods_for_level(
             (*key).out_of_range_group_number(),
         );
         if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return 0 as size_t;
+            return 0 as usize;
         }
         if level >= XkbKeyNumLevels(key, layout) {
-            return 0 as size_t;
+            return 0 as usize;
         }
         let mut type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
-        let mut count: size_t = 0 as size_t;
+        let mut count: usize = 0 as usize;
         if level == 0 as xkb_level_index_t {
             let mut empty_mapped: bool = false_0 != 0;
             let mut i: darray_size_t = 0 as darray_size_t;
@@ -2242,8 +2242,8 @@ pub unsafe extern "C" fn xkb_keymap_key_iterator_new(
             return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();
         }
         let iter: *mut xkb_keymap_key_iterator = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<xkb_keymap_key_iterator>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<xkb_keymap_key_iterator>() as usize,
         ) as *mut xkb_keymap_key_iterator;
         if iter.is_null() {
             xkb_log(

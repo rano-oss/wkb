@@ -9,9 +9,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __int8_t = i8;
     pub type __uint8_t = u8;
@@ -133,7 +131,7 @@ pub mod stdio_h {
     pub const _IONBF: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
     pub const BUFSIZ: ::core::ffi::c_int = 8192 as ::core::ffi::c_int;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
 
     extern "C" {
@@ -148,7 +146,7 @@ pub mod stdio_h {
             __stream: *mut FILE,
             __buf: *mut ::core::ffi::c_char,
             __modes: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn fprintf(
             __stream: *mut FILE,
@@ -163,14 +161,14 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn fread(
             __ptr: *mut ::core::ffi::c_void,
-            __size: size_t,
-            __n: size_t,
+            __size: usize,
+            __n: usize,
             __stream: *mut FILE,
         ) -> ::core::ffi::c_ulong;
         pub fn fwrite(
             __ptr: *const ::core::ffi::c_void,
-            __size: size_t,
-            __n: size_t,
+            __size: usize,
+            __n: usize,
             __s: *mut FILE,
         ) -> ::core::ffi::c_ulong;
         pub fn feof(__stream: *mut FILE) -> ::core::ffi::c_int;
@@ -218,7 +216,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -240,7 +238,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -266,15 +264,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -282,7 +280,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -295,7 +293,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -370,7 +368,7 @@ pub mod xkbcommon_h {
     pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
     pub const XKB_LAYOUT_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::rmlvo_h::xkb_rmlvo_builder;
@@ -393,7 +391,7 @@ pub mod xkbcommon_h {
             layout: *const ::core::ffi::c_char,
             variant: *const ::core::ffi::c_char,
             options: *const *const ::core::ffi::c_char,
-            options_len: size_t,
+            options_len: usize,
         ) -> bool;
         pub fn xkb_rmlvo_builder_append_option(
             rmlvo: *mut xkb_rmlvo_builder,
@@ -403,7 +401,7 @@ pub mod xkbcommon_h {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
             buffer: *mut ::core::ffi::c_char,
-            size: size_t,
+            size: usize,
         ) -> ::core::ffi::c_int;
         pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
         pub fn xkb_context_unref(context: *mut xkb_context);
@@ -437,7 +435,7 @@ pub mod xkbcommon_h {
         pub fn xkb_keymap_new_from_buffer(
             context: *mut xkb_context,
             buffer: *const ::core::ffi::c_char,
-            length: size_t,
+            length: usize,
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
         ) -> *mut xkb_keymap;
@@ -977,21 +975,21 @@ pub mod test_h {
             *mut xkb_context,
             xkb_keymap_format,
             *const ::core::ffi::c_char,
-            size_t,
+            usize,
             *mut ::core::ffi::c_void,
         ) -> *mut xkb_keymap,
     >;
     pub type test_third_party_compile_buffer_t = Option<
         unsafe extern "C" fn(
             *const ::core::ffi::c_char,
-            size_t,
+            usize,
             *mut ::core::ffi::c_void,
             *mut *mut ::core::ffi::c_char,
-            *mut size_t,
+            *mut usize,
         ) -> ::core::ffi::c_int,
     >;
     pub const EVDEV_OFFSET: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::xkb_keymap_format;
@@ -1021,11 +1019,10 @@ pub mod tools_common_h {
 }
 pub mod stdlib_h {
     pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn unsetenv(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
@@ -1033,24 +1030,24 @@ pub mod stdlib_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     }
 }
@@ -1137,13 +1134,13 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -1172,7 +1169,7 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
 }
 pub mod xkbcommon_keysyms_h {
@@ -1219,7 +1216,7 @@ pub mod stdbool_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -1350,7 +1347,7 @@ pub unsafe extern "C" fn test_init() {
             stdout,
             ::core::ptr::null_mut::<::core::ffi::c_char>(),
             _IONBF,
-            BUFSIZ as size_t,
+            BUFSIZ as usize,
         );
         setlocale(LC_ALL, b"\0".as_ptr() as *const ::core::ffi::c_char);
     }
@@ -1663,7 +1660,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                 xkb_keysym_get_name(
                     *syms.offset(i as isize),
                     &raw mut ksbuf as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                 );
                 fprintf(
                     stderr,
@@ -1681,7 +1678,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
                         &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
@@ -1695,7 +1692,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                     xkb_keysym_get_name(
                         keysym,
                         &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
@@ -1705,7 +1702,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
                         &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
@@ -1724,7 +1721,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                     xkb_keysym_get_name(
                         keysym,
                         &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
@@ -1748,7 +1745,7 @@ pub unsafe extern "C" fn test_key_seq_va(
             xkb_keysym_get_name(
                 keysym,
                 &raw mut ksbuf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
             );
             fprintf(
                 stderr,
@@ -1969,8 +1966,8 @@ pub unsafe extern "C" fn read_file(
             );
             return ::core::ptr::null_mut::<::core::ffi::c_char>();
         }
-        let size: size_t = info.st_size as size_t;
-        if size > MAX_FILE_SIZE as ::core::ffi::c_int as size_t {
+        let size: usize = info.st_size as usize;
+        if size > MAX_FILE_SIZE as ::core::ffi::c_int as usize {
             fprintf(
                 stderr,
                 b"Error: file %s exceeds maximum size\n\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1979,18 +1976,18 @@ pub unsafe extern "C" fn read_file(
             return ::core::ptr::null_mut::<::core::ffi::c_char>();
         }
         let mut ret: *mut ::core::ffi::c_char =
-            malloc(size.wrapping_add(1 as size_t)) as *mut ::core::ffi::c_char;
+            malloc(size.wrapping_add(1 as usize)) as *mut ::core::ffi::c_char;
         if ret.is_null() {
             return ::core::ptr::null_mut::<::core::ffi::c_char>();
         }
         *ret.offset(size as isize) = '\0' as i32 as ::core::ffi::c_char;
         *__errno_location() = 0 as ::core::ffi::c_int;
-        let count: size_t = fread(
+        let count: usize = fread(
             ret as *mut ::core::ffi::c_void,
-            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
             size,
             file,
-        ) as size_t;
+        ) as usize;
         if count != size {
             if feof(file) == 0 {
                 printf(
@@ -2146,7 +2143,7 @@ pub unsafe extern "C" fn test_compile_buffer(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut buf: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
 ) -> *mut xkb_keymap {
     unsafe {
         return test_compile_buffer2(context, format, XKB_KEYMAP_COMPILE_STRICT_MODE, buf, len);
@@ -2158,7 +2155,7 @@ pub unsafe extern "C" fn test_compile_buffer2(
     mut format: xkb_keymap_format,
     mut flags: xkb_keymap_compile_flags,
     mut buf: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
@@ -3313,7 +3310,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                 {
                     o = o.offset(1);
                 }
-                let len: size_t = o.offset_from(option) as ::core::ffi::c_long as size_t;
+                let len: usize = o.offset_from(option) as ::core::ffi::c_long as usize;
                 if len >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize {
                     c2rust_current_block = 4427821232739340156;
                     break;
@@ -3328,7 +3325,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                 if *o as ::core::ffi::c_int == OPTIONS_GROUP_SPECIFIER_PREFIX {
                     o = o.offset(1);
                     let mut count: ::core::ffi::c_int =
-                        parse_dec_to_uint32_t(o, SIZE_MAX as size_t, &raw mut layout);
+                        parse_dec_to_uint32_t(o, SIZE_MAX as usize, &raw mut layout);
                     if count > 0 as ::core::ffi::c_int
                         && layout > 0 as xkb_layout_index_t
                         && layout <= XKB_MAX_GROUPS as xkb_layout_index_t
@@ -3365,22 +3362,23 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                             loptions.alloc = darray_next_alloc(
                                 loptions.alloc,
                                 __need,
-                                ::core::mem::size_of::<darray_string>() as size_t,
+                                ::core::mem::size_of::<darray_string>() as usize,
                             );
-                            loptions.item =
-                                realloc(
-                                    loptions.item as *mut ::core::ffi::c_void,
-                                    (loptions.alloc as size_t).wrapping_mul(
-                                        ::core::mem::size_of::<darray_string>() as size_t,
-                                    ),
-                                ) as *mut darray_string;
+                            loptions.item = realloc(
+                                loptions.item as *mut ::core::ffi::c_void,
+                                (loptions.alloc as usize).wrapping_mul(::core::mem::size_of::<
+                                    darray_string,
+                                >(
+                                )
+                                    as usize),
+                            ) as *mut darray_string;
                         }
                         memset(
                             loptions.item.offset(__oldSize as isize) as *mut darray_string
                                 as *mut ::core::ffi::c_void,
                             0 as ::core::ffi::c_int,
-                            (__newSize.wrapping_sub(__oldSize) as size_t)
-                                .wrapping_mul(::core::mem::size_of::<darray_string>() as size_t),
+                            (__newSize.wrapping_sub(__oldSize) as usize)
+                                .wrapping_mul(::core::mem::size_of::<darray_string>() as usize),
                         );
                     }
                     let ref mut c2rust_fresh0 = (*loptions.item.offset(layout as isize)).size;
@@ -3393,15 +3391,15 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         *c2rust_fresh1 = darray_next_alloc(
                             (*loptions.item.offset(layout as isize)).alloc,
                             __need_0,
-                            ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
                         );
                         let ref mut c2rust_fresh2 = (*loptions.item.offset(layout as isize)).item;
                         *c2rust_fresh2 = realloc(
                             (*loptions.item.offset(layout as isize)).item
                                 as *mut ::core::ffi::c_void,
-                            (*c2rust_fresh1 as size_t)
+                            (*c2rust_fresh1 as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t
+                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize
                                 ),
                         ) as *mut *mut ::core::ffi::c_char;
                     }
@@ -3445,8 +3443,8 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         let mut variant: *const ::core::ffi::c_char = v;
                         let mut start: *mut ::core::ffi::c_char =
                             &raw mut buf as *mut ::core::ffi::c_char;
-                        let mut buf_size: size_t =
-                            ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t;
+                        let mut buf_size: usize =
+                            ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize;
                         while *l as ::core::ffi::c_int != '\0' as i32
                             && *l as ::core::ffi::c_int != ',' as i32
                         {
@@ -3457,8 +3455,8 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         {
                             v = v.offset(1);
                         }
-                        let mut len_0: size_t =
-                            l.offset_from(layout_0) as ::core::ffi::c_long as size_t;
+                        let mut len_0: usize =
+                            l.offset_from(layout_0) as ::core::ffi::c_long as usize;
                         if len_0 >= buf_size {
                             c2rust_current_block = 4427821232739340156;
                             break;
@@ -3470,8 +3468,8 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         );
                         *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
                         start = start.offset(len_0 as isize);
-                        buf_size = buf_size.wrapping_sub(len_0.wrapping_add(1 as size_t));
-                        len_0 = v.offset_from(variant) as ::core::ffi::c_long as size_t;
+                        buf_size = buf_size.wrapping_sub(len_0.wrapping_add(1 as usize));
+                        len_0 = v.offset_from(variant) as ::core::ffi::c_long as usize;
                         if len_0 >= buf_size {
                             c2rust_current_block = 4427821232739340156;
                             break;
@@ -3485,11 +3483,11 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
                         let mut opts: *mut *mut ::core::ffi::c_char =
                             ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
-                        let mut opts_count: size_t = 0 as size_t;
+                        let mut opts_count: usize = 0 as usize;
                         if layout_count < loptions.size as xkb_layout_index_t {
                             opts = (*loptions.item.offset(layout_count as isize)).item;
                             opts_count =
-                                (*loptions.item.offset(layout_count as isize)).size as size_t;
+                                (*loptions.item.offset(layout_count as isize)).size as usize;
                         }
                         if !xkb_rmlvo_builder_append_layout(
                             rmlvo,
@@ -3642,7 +3640,7 @@ pub unsafe extern "C" fn test_compile_output(
     mut compile_buffer_private: *mut ::core::ffi::c_void,
     mut test_title: *const ::core::ffi::c_char,
     mut keymap_str: *const ::core::ffi::c_char,
-    mut keymap_len: size_t,
+    mut keymap_len: usize,
     mut rel_path: *const ::core::ffi::c_char,
     mut update_output_files: bool,
 ) -> bool {
@@ -3674,7 +3672,7 @@ pub unsafe extern "C" fn test_compile_output2(
     mut compile_buffer_private: *mut ::core::ffi::c_void,
     mut test_title: *const ::core::ffi::c_char,
     mut keymap_str: *const ::core::ffi::c_char,
-    mut keymap_len: size_t,
+    mut keymap_len: usize,
     mut rel_path: *const ::core::ffi::c_char,
     mut update_output_files: bool,
 ) -> bool {
@@ -3705,7 +3703,7 @@ pub unsafe extern "C" fn test_compile_output2(
                         b"got\0".as_ptr() as *const ::core::ffi::c_char,
                         b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                         810 as ::core::ffi::c_uint,
-                        b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                        b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                             .as_ptr() as *const ::core::ffi::c_char,
                     );
                 };
@@ -3744,7 +3742,7 @@ pub unsafe extern "C" fn test_compile_output2(
                 b"path\0".as_ptr() as *const ::core::ffi::c_char,
                 b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                 833 as ::core::ffi::c_uint,
-                b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                     .as_ptr() as *const ::core::ffi::c_char,
             );
         };
@@ -3762,13 +3760,13 @@ pub unsafe extern "C" fn test_compile_output2(
                     b"file\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                     838 as ::core::ffi::c_uint,
-                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
             fwrite(
                 got_0 as *const ::core::ffi::c_void,
-                1 as size_t,
+                1 as usize,
                 strlen(got_0),
                 file,
             );
@@ -3787,7 +3785,7 @@ pub unsafe extern "C" fn test_compile_output2(
                     b"expected\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                     844 as ::core::ffi::c_uint,
-                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -3888,7 +3886,7 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
     mut compile_buffer_private: *mut ::core::ffi::c_void,
     mut test_title: *const ::core::ffi::c_char,
     mut keymap_in: *const ::core::ffi::c_char,
-    mut keymap_in_size: size_t,
+    mut keymap_in_size: usize,
     mut rel_path: *const ::core::ffi::c_char,
     mut update_output_files: bool,
 ) -> bool {
@@ -3900,7 +3898,7 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
             test_title,
         );
         let mut got: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut got_size: size_t = 0 as size_t;
+        let mut got_size: usize = 0 as usize;
         let mut ret: ::core::ffi::c_int = compile_buffer.expect("non-null function pointer")(
             keymap_in,
             keymap_in_size,
@@ -3937,7 +3935,7 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
                 b"path\0".as_ptr() as *const ::core::ffi::c_char,
                 b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                 927 as ::core::ffi::c_uint,
-                b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                     .as_ptr() as *const ::core::ffi::c_char,
             );
         };
@@ -3955,13 +3953,13 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
                     b"file\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                     932 as ::core::ffi::c_uint,
-                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
             fwrite(
                 got as *const ::core::ffi::c_void,
-                1 as size_t,
+                1 as usize,
                 got_size,
                 file,
             );
@@ -3979,7 +3977,7 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
                     b"expected\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
                     938 as ::core::ffi::c_uint,
-                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, size_t, const char *, _Bool)\0"
+                    b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };

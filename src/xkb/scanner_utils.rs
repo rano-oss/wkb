@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -33,7 +31,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -55,7 +53,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -90,38 +88,38 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
     }
 }
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
@@ -134,12 +132,12 @@ pub use self::xkbcommon_h::{
 #[no_mangle]
 pub unsafe extern "C" fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
     unsafe {
-        let mut line: size_t = 0;
-        let mut column: size_t = 0;
-        let mut line_pos: size_t = 0 as size_t;
+        let mut line: usize = 0;
+        let mut column: usize = 0;
+        let mut line_pos: usize = 0 as usize;
         if (*s).cached_pos > (*s).token_pos {
-            (*s).cached_pos = 0 as size_t;
-            (*s).cached_loc.column = 1 as size_t;
+            (*s).cached_pos = 0 as usize;
+            (*s).cached_loc.column = 1 as usize;
             (*s).cached_loc.line = (*s).cached_loc.column;
         }
         line = (*s).cached_loc.line;
@@ -149,14 +147,14 @@ pub unsafe extern "C" fn scanner_token_location(mut s: *mut scanner) -> scanner_
             ptr = memchr(
                 ptr as *const ::core::ffi::c_void,
                 '\n' as i32,
-                last.offset_from(ptr) as ::core::ffi::c_long as size_t,
+                last.offset_from(ptr) as ::core::ffi::c_long as usize,
             ) as *const ::core::ffi::c_char;
             if ptr.is_null() {
                 break;
             }
             line = line.wrapping_add(1);
             ptr = ptr.offset(1);
-            line_pos = ptr.offset_from((*s).s) as ::core::ffi::c_long as size_t;
+            line_pos = ptr.offset_from((*s).s) as ::core::ffi::c_long as usize;
         }
         if line == (*s).cached_loc.line {
             column = (*s)
@@ -167,7 +165,7 @@ pub unsafe extern "C" fn scanner_token_location(mut s: *mut scanner) -> scanner_
             column = (*s)
                 .token_pos
                 .wrapping_sub(line_pos)
-                .wrapping_add(1 as size_t);
+                .wrapping_add(1 as usize);
         }
         let mut loc: scanner_loc = scanner_loc {
             line: line,

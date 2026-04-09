@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __int8_t = i8;
     pub type __uint8_t = u8;
@@ -123,7 +121,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -145,7 +143,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -799,7 +797,7 @@ pub mod __stddef_null_h {
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::bench_h::{
@@ -914,8 +912,8 @@ unsafe extern "C" fn bench_legacy_api(mut state: *mut xkb_state) {
         ];
         let mut acc_changed: ::core::ffi::c_ulong = 0 as ::core::ffi::c_ulong;
         let mut acc_keysym: ::core::ffi::c_ulong = 0 as ::core::ffi::c_ulong;
-        let mut i: size_t = 0 as size_t;
-        while i < BENCHMARK_ITERATIONS as size_t {
+        let mut i: usize = 0 as usize;
+        while i < BENCHMARK_ITERATIONS as usize {
             let keycode: xkb_keycode_t =
                 (rand() % (255 as ::core::ffi::c_int - 9 as ::core::ffi::c_int)
                     + 9 as ::core::ffi::c_int) as xkb_keycode_t;
@@ -985,8 +983,8 @@ unsafe extern "C" fn bench_modern_api(
         let mut acc_changed: ::core::ffi::c_ulong = 0 as ::core::ffi::c_ulong;
         let mut acc_keysym: ::core::ffi::c_ulong = 0 as ::core::ffi::c_ulong;
         let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
-        let mut i: size_t = 0 as size_t;
-        while i < BENCHMARK_ITERATIONS as size_t {
+        let mut i: usize = 0 as usize;
+        while i < BENCHMARK_ITERATIONS as usize {
             let keycode: xkb_keycode_t =
                 (rand() % (255 as ::core::ffi::c_int - 9 as ::core::ffi::c_int)
                     + 9 as ::core::ffi::c_int) as xkb_keycode_t;

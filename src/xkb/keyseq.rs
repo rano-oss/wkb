@@ -31,9 +31,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -106,7 +104,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -128,7 +126,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -652,7 +650,7 @@ pub mod test_h {
     pub type test_context_flags = ::core::ffi::c_uint;
     pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
     pub const CONTEXT_NO_FLAG: test_context_flags = 0;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::xkb_keymap_format;
@@ -674,7 +672,7 @@ pub mod test_h {
             context: *mut xkb_context,
             format: xkb_keymap_format,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_rules(
             context: *mut xkb_context,
@@ -727,7 +725,7 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -6008,7 +6006,7 @@ unsafe extern "C" fn test_mod_latch(mut context: *mut xkb_context) {
             context,
             XKB_KEYMAP_FORMAT_TEXT_V2,
             &raw const lock_breaks_latch as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 426]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 426]>() as usize,
         );
         if !keymap.is_null() {
         } else {
@@ -6089,7 +6087,7 @@ unsafe extern "C" fn test_mod_latch(mut context: *mut xkb_context) {
             context,
             XKB_KEYMAP_FORMAT_TEXT_V2,
             &raw const lv5_latch_breaks_lv3_latch as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 613]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 613]>() as usize,
         );
         if !keymap.is_null() {
         } else {

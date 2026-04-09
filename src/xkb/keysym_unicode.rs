@@ -9,9 +9,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -67,13 +65,13 @@ pub mod xkbcommon_h {
     pub type xkb_keysym_flags = ::core::ffi::c_uint;
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
             buffer: *mut ::core::ffi::c_char,
-            size: size_t,
+            size: usize,
         ) -> ::core::ffi::c_int;
         pub fn xkb_keysym_from_name(
             name: *const ::core::ffi::c_char,
@@ -82,7 +80,7 @@ pub mod xkbcommon_h {
         pub fn xkb_keysym_to_utf8(
             keysym: xkb_keysym_t,
             buffer: *mut ::core::ffi::c_char,
-            size: size_t,
+            size: usize,
         ) -> ::core::ffi::c_int;
         pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
         pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
@@ -93,7 +91,7 @@ pub mod sys_types_h {
     use super::types_h::__pid_t;
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
@@ -104,7 +102,7 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
@@ -199,7 +197,7 @@ pub mod keysym_h {
     pub const XKB_KEYSYM_UTF8_MAX_SIZE: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::keysym_h::{
     XKB_KEYSYM_NAME_MAX_SIZE, XKB_KEYSYM_UNICODE_OFFSET, XKB_KEYSYM_UTF8_MAX_SIZE,
@@ -265,7 +263,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
             let mut count: ::core::ffi::c_int = xkb_keysym_get_name(
                 unicode,
                 &raw mut buffer as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
             );
             if count > 0 as ::core::ffi::c_int {
             } else {
@@ -369,7 +367,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                 };
                 snprintf(
                     &raw mut buffer as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     b"U%X\0".as_ptr() as *const ::core::ffi::c_char,
                     cp,
                 );
@@ -395,7 +393,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                 count = xkb_keysym_to_utf8(
                     unicode,
                     &raw mut buffer as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                 );
                 if count == 0 as ::core::ffi::c_int {
                 } else {
@@ -480,7 +478,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                 {
                     snprintf(
                         &raw mut buffer as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                         b"U%X\0".as_ptr() as *const ::core::ffi::c_char,
                         cp,
                     );
@@ -504,7 +502,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                 }
                 if snprintf(
                     &raw mut buffer as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     b"%#x\0".as_ptr() as *const ::core::ffi::c_char,
                     unicode,
                 ) == 9 as ::core::ffi::c_int
@@ -534,7 +532,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                 count = xkb_keysym_to_utf8(
                     unicode,
                     &raw mut buffer as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                 );
                 if count > 0 as ::core::ffi::c_int {
                 } else {
@@ -549,7 +547,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                     let count2: ::core::ffi::c_int = xkb_keysym_to_utf8(
                         canonical,
                         &raw mut utf8 as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize,
                     ) as ::core::ffi::c_int;
                     if count2 == count {
                     } else {
@@ -576,7 +574,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                     count = xkb_keysym_get_name(
                         canonical,
                         &raw mut buffer as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                     );
                     if count > 0 as ::core::ffi::c_int {
                     } else {
@@ -603,7 +601,7 @@ unsafe extern "C" fn test_unicode_keysyms_consistency(mut start: u32, mut end: u
                     };
                     if snprintf(
                         &raw mut buffer as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
                         b"%#x\0".as_ptr() as *const ::core::ffi::c_char,
                         canonical,
                     ) > 2 as ::core::ffi::c_int

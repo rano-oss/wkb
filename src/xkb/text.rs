@@ -17,9 +17,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -42,7 +40,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -64,7 +62,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -74,7 +72,7 @@ pub mod context_h {
             -> *const ::core::ffi::c_char;
         pub fn xkb_context_get_buffer(
             ctx: *mut xkb_context,
-            size: size_t,
+            size: usize,
         ) -> *mut ::core::ffi::c_char;
     }
 }
@@ -122,13 +120,13 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
     pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
     pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
             buffer: *mut ::core::ffi::c_char,
-            size: size_t,
+            size: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -255,25 +253,25 @@ pub mod text_h {
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
@@ -287,9 +285,9 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strlen_safe(mut s: *const ::core::ffi::c_char) -> size_t {
+    pub unsafe extern "C" fn strlen_safe(mut s: *const ::core::ffi::c_char) -> usize {
         unsafe {
-            return if !s.is_null() { strlen(s) } else { 0 as size_t };
+            return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
@@ -304,7 +302,7 @@ pub mod utils_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::string_h::strlen;
     extern "C" {
         pub fn istrcmp(
@@ -335,7 +333,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
@@ -886,8 +884,8 @@ pub unsafe extern "C" fn KeysymText(
 ) -> *const ::core::ffi::c_char {
     unsafe {
         let mut buffer: *mut ::core::ffi::c_char =
-            xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as size_t);
-        xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as size_t);
+            xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
+        xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return buffer;
     }
 }
@@ -898,7 +896,7 @@ pub unsafe extern "C" fn KeyNameText(
 ) -> *const ::core::ffi::c_char {
     unsafe {
         let mut sname: *const ::core::ffi::c_char = xkb_atom_text(ctx, name);
-        let mut len: size_t = strlen_safe(sname).wrapping_add(3 as size_t);
+        let mut len: usize = strlen_safe(sname).wrapping_add(3 as usize);
         let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer(ctx, len);
         snprintf(
             buf,
@@ -1954,7 +1952,7 @@ pub unsafe extern "C" fn ModMaskText(
             0,
             0,
         ];
-        let mut pos: size_t = 0 as size_t;
+        let mut pos: usize = 0 as usize;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
         if type_0 as ::core::ffi::c_uint == MOD_REAL as ::core::ffi::c_int as ::core::ffi::c_uint
             || type_0 as ::core::ffi::c_uint
@@ -1986,16 +1984,16 @@ pub unsafe extern "C" fn ModMaskText(
         {
             let ret: ::core::ffi::c_int = snprintf(
                 &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize,
                 b"0x%x\0".as_ptr() as *const ::core::ffi::c_char,
                 mask,
             ) as ::core::ffi::c_int;
             if ret >= 0 as ::core::ffi::c_int
-                && (ret as size_t) < ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                && (ret as usize) < ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
             {
             } else {
                 __assert_fail(
-                    b"ret >= 0 && (size_t) ret < sizeof(buf)\0".as_ptr()
+                    b"ret >= 0 && (usize) ret < sizeof(buf)\0".as_ptr()
                         as *const ::core::ffi::c_char,
                     b"../src/text.c\0".as_ptr() as *const ::core::ffi::c_char,
                     245 as ::core::ffi::c_uint,
@@ -2003,7 +2001,7 @@ pub unsafe extern "C" fn ModMaskText(
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
-            pos = ret as size_t;
+            pos = ret as usize;
         } else {
             mod_0 = &raw const (*mods).mods as *const xkb_mod;
             while mask != 0
@@ -2013,10 +2011,10 @@ pub unsafe extern "C" fn ModMaskText(
                 if mask & 0x1 as xkb_mod_mask_t != 0 {
                     let mut ret_0: ::core::ffi::c_int = snprintf(
                         (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                        (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t)
+                        (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
                             .wrapping_sub(pos),
                         b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
-                        if pos == 0 as size_t {
+                        if pos == 0 as usize {
                             b"\0".as_ptr() as *const ::core::ffi::c_char
                         } else {
                             b"+\0".as_ptr() as *const ::core::ffi::c_char
@@ -2024,12 +2022,12 @@ pub unsafe extern "C" fn ModMaskText(
                         xkb_atom_text(ctx, (*mod_0).name),
                     );
                     if ret_0 <= 0 as ::core::ffi::c_int
-                        || pos.wrapping_add(ret_0 as size_t)
+                        || pos.wrapping_add(ret_0 as usize)
                             >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
                     {
                         break;
                     }
-                    pos = pos.wrapping_add(ret_0 as size_t);
+                    pos = pos.wrapping_add(ret_0 as usize);
                 }
                 mod_0 = mod_0.offset(1);
                 mask >>= 1 as ::core::ffi::c_int;
@@ -2051,7 +2049,7 @@ pub unsafe extern "C" fn LedStateMaskText(
 ) -> *const ::core::ffi::c_char {
     unsafe {
         let mut buf: [::core::ffi::c_char; 1024] = [0; 1024];
-        let mut pos: size_t = 0 as size_t;
+        let mut pos: usize = 0 as usize;
         if mask as ::core::ffi::c_uint == 0 as ::core::ffi::c_uint {
             return b"0\0".as_ptr() as *const ::core::ffi::c_char;
         }
@@ -2078,10 +2076,10 @@ pub unsafe extern "C" fn LedStateMaskText(
                 };
                 ret = snprintf(
                     (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t)
+                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
                         .wrapping_sub(pos),
                     b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
-                    if pos == 0 as size_t {
+                    if pos == 0 as usize {
                         b"\0".as_ptr() as *const ::core::ffi::c_char
                     } else {
                         b"+\0".as_ptr() as *const ::core::ffi::c_char
@@ -2089,12 +2087,12 @@ pub unsafe extern "C" fn LedStateMaskText(
                     maskText,
                 );
                 if ret <= 0 as ::core::ffi::c_int
-                    || pos.wrapping_add(ret as size_t)
+                    || pos.wrapping_add(ret as usize)
                         >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
                 {
                     break;
                 }
-                pos = pos.wrapping_add(ret as size_t);
+                pos = pos.wrapping_add(ret as usize);
             }
             i = i.wrapping_add(1);
         }
@@ -2114,7 +2112,7 @@ pub unsafe extern "C" fn ControlMaskText(
 ) -> *const ::core::ffi::c_char {
     unsafe {
         let mut buf: [::core::ffi::c_char; 1024] = [0; 1024];
-        let mut pos: size_t = 0 as size_t;
+        let mut pos: usize = 0 as usize;
         let all_ctrls: xkb_action_controls = format_boolean_controls(format) as xkb_action_controls;
         mask =
             (mask as ::core::ffi::c_uint & all_ctrls as ::core::ffi::c_uint) as xkb_action_controls;
@@ -2149,10 +2147,10 @@ pub unsafe extern "C" fn ControlMaskText(
                 };
                 ret = snprintf(
                     (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t)
+                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
                         .wrapping_sub(pos),
                     b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
-                    if pos == 0 as size_t {
+                    if pos == 0 as usize {
                         b"\0".as_ptr() as *const ::core::ffi::c_char
                     } else {
                         b"+\0".as_ptr() as *const ::core::ffi::c_char
@@ -2160,12 +2158,12 @@ pub unsafe extern "C" fn ControlMaskText(
                     maskText,
                 );
                 if ret <= 0 as ::core::ffi::c_int
-                    || pos.wrapping_add(ret as size_t)
+                    || pos.wrapping_add(ret as usize)
                         >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
                 {
                     break;
                 }
-                pos = pos.wrapping_add(ret as size_t);
+                pos = pos.wrapping_add(ret as usize);
             }
             i = i.wrapping_add(1);
         }

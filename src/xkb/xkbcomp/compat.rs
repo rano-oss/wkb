@@ -31,9 +31,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -56,7 +54,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -78,7 +76,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -88,7 +86,7 @@ pub mod context_h {
             -> *const ::core::ffi::c_char;
         pub fn xkb_context_get_buffer(
             ctx: *mut xkb_context,
-            size: size_t,
+            size: usize,
         ) -> *mut ::core::ffi::c_char;
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -113,15 +111,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -129,7 +127,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -142,7 +140,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -1213,36 +1211,35 @@ pub mod action_h {
     }
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     }
@@ -1371,7 +1368,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL_0;
 }
 pub mod include_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
@@ -1384,7 +1381,7 @@ pub mod include_h {
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
             path: *mut ::core::ffi::c_char,
-            path_size: size_t,
+            path_size: usize,
         ) -> *mut XkbFile;
     }
 }
@@ -1415,7 +1412,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
@@ -1640,13 +1637,13 @@ unsafe extern "C" fn siText(
     mut info: *mut CompatInfo,
 ) -> *const ::core::ffi::c_char {
     unsafe {
-        let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer((*info).ctx, 128 as size_t);
+        let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer((*info).ctx, 128 as usize);
         if si == &raw mut (*info).default_interp {
             return b"default\0".as_ptr() as *const ::core::ffi::c_char;
         }
         snprintf(
             buf,
-            128 as size_t,
+            128 as usize,
             b"%s+%s(%s)\0".as_ptr() as *const ::core::ffi::c_char,
             KeysymText((*info).ctx, (*si).interp.sym),
             SIMatchText((*si).interp.match_0),
@@ -1783,7 +1780,7 @@ unsafe extern "C" fn InitCompatInfo(
         memset(
             info as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<CompatInfo>() as size_t,
+            ::core::mem::size_of::<CompatInfo>() as usize,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -1988,12 +1985,12 @@ unsafe extern "C" fn AddInterp(
             (*info).interps.alloc = darray_next_alloc(
                 (*info).interps.alloc,
                 __need,
-                ::core::mem::size_of::<SymInterpInfo>() as size_t,
+                ::core::mem::size_of::<SymInterpInfo>() as usize,
             );
             (*info).interps.item = realloc(
                 (*info).interps.item as *mut ::core::ffi::c_void,
-                ((*info).interps.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<SymInterpInfo>() as size_t),
+                ((*info).interps.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<SymInterpInfo>() as usize),
             ) as *mut SymInterpInfo;
         }
         *(*info)
@@ -2279,8 +2276,8 @@ unsafe extern "C" fn MergeIncludedCompatMaps(
             memcpy(
                 &raw mut (*into).leds as *mut LedInfo as *mut ::core::ffi::c_void,
                 &raw mut (*from).leds as *mut LedInfo as *const ::core::ffi::c_void,
-                (::core::mem::size_of::<LedInfo>() as size_t)
-                    .wrapping_mul((*from).num_leds as size_t),
+                (::core::mem::size_of::<LedInfo>() as usize)
+                    .wrapping_mul((*from).num_leds as usize),
             );
             (*into).num_leds = (*from).num_leds;
             (*from).num_leds = 0 as xkb_led_index_t;
@@ -2462,7 +2459,7 @@ unsafe extern "C" fn HandleIncludeCompatMap(
                 stmt,
                 FILE_TYPE_COMPAT,
                 &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -2570,13 +2567,13 @@ unsafe extern "C" fn SetInterpField(
                                 actions.alloc = darray_next_alloc(
                                     actions.alloc,
                                     __need,
-                                    ::core::mem::size_of::<xkb_action>() as size_t,
+                                    ::core::mem::size_of::<xkb_action>() as usize,
                                 );
                                 actions.item =
                                     realloc(
                                         actions.item as *mut ::core::ffi::c_void,
-                                        (actions.alloc as size_t).wrapping_mul(
-                                            ::core::mem::size_of::<xkb_action>() as size_t,
+                                        (actions.alloc as usize).wrapping_mul(
+                                            ::core::mem::size_of::<xkb_action>() as usize,
                                         ),
                                     ) as *mut xkb_action;
                             }
@@ -2618,11 +2615,11 @@ unsafe extern "C" fn SetInterpField(
                             actions.alloc = actions.size;
                             actions.item = realloc(
                                 actions.item as *mut ::core::ffi::c_void,
-                                (actions.alloc as size_t).wrapping_mul(::core::mem::size_of::<
+                                (actions.alloc as usize).wrapping_mul(::core::mem::size_of::<
                                     xkb_action,
                                 >(
                                 )
-                                    as size_t),
+                                    as usize),
                             ) as *mut xkb_action;
                         }
                         (*si).interp.num_actions = actions.size as xkb_action_count_t;
@@ -2820,14 +2817,14 @@ unsafe extern "C" fn SetLedMapField(
                         (*(*(*info).keymap_info).pending_computations).alloc = darray_next_alloc(
                             (*(*(*info).keymap_info).pending_computations).alloc,
                             __need,
-                            ::core::mem::size_of::<pending_computation>() as size_t,
+                            ::core::mem::size_of::<pending_computation>() as usize,
                         );
                         (*(*(*info).keymap_info).pending_computations).item = realloc(
                             (*(*(*info).keymap_info).pending_computations).item
                                 as *mut ::core::ffi::c_void,
-                            ((*(*(*info).keymap_info).pending_computations).alloc as size_t)
+                            ((*(*(*info).keymap_info).pending_computations).alloc as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<pending_computation>() as size_t
+                                    ::core::mem::size_of::<pending_computation>() as usize
                                 ),
                         )
                             as *mut pending_computation;
@@ -3385,15 +3382,14 @@ unsafe extern "C" fn CopyInterps(
                         (*collect).sym_interprets.alloc = darray_next_alloc(
                             (*collect).sym_interprets.alloc,
                             __need,
-                            ::core::mem::size_of::<xkb_sym_interpret>() as size_t,
+                            ::core::mem::size_of::<xkb_sym_interpret>() as usize,
                         );
-                        (*collect).sym_interprets.item =
-                            realloc(
-                                (*collect).sym_interprets.item as *mut ::core::ffi::c_void,
-                                ((*collect).sym_interprets.alloc as size_t).wrapping_mul(
-                                    ::core::mem::size_of::<xkb_sym_interpret>() as size_t,
-                                ),
-                            ) as *mut xkb_sym_interpret;
+                        (*collect).sym_interprets.item = realloc(
+                            (*collect).sym_interprets.item as *mut ::core::ffi::c_void,
+                            ((*collect).sym_interprets.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_sym_interpret>() as usize),
+                        )
+                            as *mut xkb_sym_interpret;
                     }
                     *(*collect).sym_interprets.item.offset(
                         (*collect)

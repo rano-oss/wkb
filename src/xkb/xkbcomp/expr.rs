@@ -35,9 +35,7 @@ pub mod stdint_h {
     pub const UINT32_MAX: ::core::ffi::c_uint = 4294967295 as ::core::ffi::c_uint;
     pub const SIZE_MAX: ::core::ffi::c_ulong = 18446744073709551615 as ::core::ffi::c_ulong;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -72,7 +70,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -94,7 +92,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -970,13 +968,13 @@ pub mod utils_h {
     pub unsafe extern "C" fn istrneq(
         mut s1: *const ::core::ffi::c_char,
         mut s2: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
     ) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn istrcmp(
             a: *const ::core::ffi::c_char,
@@ -985,7 +983,7 @@ pub mod utils_h {
         pub fn istrncmp(
             a: *const ::core::ffi::c_char,
             b: *const ::core::ffi::c_char,
-            n: size_t,
+            n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -993,13 +991,13 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -1028,7 +1026,7 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
 }
 pub mod __stddef_null_h {
@@ -1050,7 +1048,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _ParseCommon, stmt_type, stmt_type_to_operator_char, stmt_type_to_string, C2Rust_Unnamed_13,
@@ -1204,7 +1202,7 @@ pub type IdentLookupFunc = Option<
 #[repr(C)]
 pub struct named_integer_pattern {
     pub prefix: *const ::core::ffi::c_char,
-    pub prefix_length: size_t,
+    pub prefix_length: usize,
     pub min: u32,
     pub max: u32,
     pub entries: *const LookupEntry,
@@ -1314,7 +1312,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
             {
                 parse_dec_to_uint32_t(
                     str.offset((*pattern).prefix_length as isize),
-                    SIZE_MAX as size_t,
+                    SIZE_MAX as usize,
                     val_rtrn as *mut u32,
                 ) as ::core::ffi::c_int
             } else {
@@ -1793,8 +1791,8 @@ pub unsafe extern "C" fn ExprResolveGroup(
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const ::core::ffi::c_char,
-            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                .wrapping_sub(1 as usize),
             min: 1 as u32,
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
@@ -2396,8 +2394,8 @@ pub unsafe extern "C" fn ExprResolveGroupMask(
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const ::core::ffi::c_char,
-            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                .wrapping_sub(1 as usize),
             min: 1 as u32,
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
@@ -2428,8 +2426,8 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
     unsafe {
         level_name_pattern = named_integer_pattern {
             prefix: b"Level\0".as_ptr() as *const ::core::ffi::c_char,
-            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            prefix_length: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                .wrapping_sub(1 as usize),
             min: 1 as u32,
             max: XKB_LEVEL_MAX_IMPL as u32,
             entries: ::core::ptr::null::<LookupEntry>(),

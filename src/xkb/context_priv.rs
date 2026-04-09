@@ -9,9 +9,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
@@ -42,7 +40,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -64,7 +62,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -77,7 +75,7 @@ pub mod context_h {
 }
 pub mod atom_h {
     pub type xkb_atom_t = darray_size_t;
-    use super::__stddef_size_t_h::size_t;
+
     use super::darray_h::darray_size_t;
     extern "C" {
         pub type atom_table;
@@ -85,7 +83,7 @@ pub mod atom_h {
         pub fn atom_intern(
             table: *mut atom_table,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
             add: bool,
         ) -> xkb_atom_t;
         pub fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const ::core::ffi::c_char;
@@ -222,9 +220,9 @@ pub mod rmlvo_h {
     pub const RMLVO_RULES: RMLVO = 1;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod config_h {
@@ -264,7 +262,7 @@ pub mod utils_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::atom_h::{atom_intern, atom_table, atom_table_size, atom_text, xkb_atom_t};
 pub use self::config_h::{
     DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
@@ -412,7 +410,7 @@ pub unsafe extern "C" fn xkb_atom_lookup(
 pub unsafe extern "C" fn xkb_atom_intern(
     mut ctx: *mut xkb_context,
     mut string: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
 ) -> xkb_atom_t {
     unsafe {
         return atom_intern((*ctx).atom_table, string, len, true_0 != 0);
@@ -449,7 +447,7 @@ pub unsafe extern "C" fn xkb_log(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_get_buffer(
     mut ctx: *mut xkb_context,
-    mut size: size_t,
+    mut size: usize,
 ) -> *mut ::core::ffi::c_char {
     unsafe {
         let mut rtrn: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -460,7 +458,7 @@ pub unsafe extern "C" fn xkb_context_get_buffer(
             .wrapping_sub((*ctx).text_next as usize)
             <= size
         {
-            (*ctx).text_next = 0 as size_t;
+            (*ctx).text_next = 0 as usize;
         }
         rtrn = (&raw mut (*ctx).text_buffer as *mut ::core::ffi::c_char)
             .offset((*ctx).text_next as isize) as *mut ::core::ffi::c_char;

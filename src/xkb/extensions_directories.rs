@@ -9,9 +9,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
@@ -80,7 +78,7 @@ pub mod FILE_h {
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
 
     extern "C" {
@@ -92,7 +90,7 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn vsnprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
@@ -132,7 +130,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -154,7 +152,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -739,7 +737,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn snprintf_safe(
         mut buf: *mut ::core::ffi::c_char,
-        mut sz: size_t,
+        mut sz: usize,
         mut format: *const ::core::ffi::c_char,
         mut c2rust_args: ...
     ) -> bool {
@@ -748,10 +746,10 @@ pub mod utils_h {
             let mut rc: ::core::ffi::c_int = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
+            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::{__assert_fail, __ASSERT_FUNCTION};
     use super::stdio_h::vsnprintf;
     use super::string_h::strcmp;
@@ -823,7 +821,7 @@ pub mod __stddef_null_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -1004,7 +1002,7 @@ unsafe extern "C" fn test_layouts(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             versioned_extensions_path,
             b"p1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1036,7 +1034,7 @@ unsafe extern "C" fn test_layouts(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             versioned_extensions_path,
             b"p2\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1068,7 +1066,7 @@ unsafe extern "C" fn test_layouts(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             unversioned_extensions_path,
             b"p3\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1413,7 +1411,7 @@ unsafe extern "C" fn test_options(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             versioned_extensions_path,
             b"p1\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1445,7 +1443,7 @@ unsafe extern "C" fn test_options(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             versioned_extensions_path,
             b"p2\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1477,7 +1475,7 @@ unsafe extern "C" fn test_options(
         };
         if snprintf_safe(
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
             unversioned_extensions_path,
             b"p3\0".as_ptr() as *const ::core::ffi::c_char,

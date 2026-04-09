@@ -13,9 +13,7 @@ pub mod types_h {
     pub type __off_t = ::core::ffi::c_long;
     pub type __off64_t = ::core::ffi::c_long;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -88,7 +86,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -110,7 +108,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -143,15 +141,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -159,7 +157,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -172,7 +170,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -228,14 +226,14 @@ pub mod xkbcommon_compose_h {
     pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
     pub type xkb_compose_format = ::core::ffi::c_uint;
     pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     extern "C" {
         pub type xkb_compose_table;
         pub fn xkb_compose_table_new_from_buffer(
             context: *mut xkb_context,
             buffer: *const ::core::ffi::c_char,
-            length: size_t,
+            length: usize,
             locale: *const ::core::ffi::c_char,
             format: xkb_compose_format,
             flags: xkb_compose_compile_flags,
@@ -343,7 +341,7 @@ pub mod test_h {
     pub type test_context_flags = ::core::ffi::c_uint;
     pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
     pub const CONTEXT_NO_FLAG: test_context_flags = 0;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::xkbcommon_h::{xkb_keymap, xkb_keymap_format};
     extern "C" {
@@ -353,7 +351,7 @@ pub mod test_h {
             context: *mut xkb_context,
             format: xkb_keymap_format,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
     }
 }
@@ -377,10 +375,9 @@ pub mod stdio_h {
 }
 pub mod stdlib_h {
     pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn setenv(
             __name: *const ::core::ffi::c_char,
@@ -390,18 +387,18 @@ pub mod stdlib_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
@@ -484,10 +481,9 @@ pub mod __stddef_null_h {
 pub mod locale_h {
     pub const __LC_ALL: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub use self::__stddef_null_h::{NULL, NULL_0};
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
@@ -622,19 +618,18 @@ unsafe extern "C" fn log_fn(
             (*ls).alloc = darray_next_alloc(
                 (*ls).alloc,
                 __need,
-                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
             );
             (*ls).item = realloc(
                 (*ls).item as *mut ::core::ffi::c_void,
-                ((*ls).alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                ((*ls).alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             ) as *mut ::core::ffi::c_char;
         }
         memcpy(
             (*ls).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
             __str as *const ::core::ffi::c_void,
-            (__count as size_t)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            (__count as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
         );
         (*ls).size = (*ls).size.wrapping_sub(1);
         let mut __count_0: darray_size_t =
@@ -646,19 +641,19 @@ unsafe extern "C" fn log_fn(
             (*ls).alloc = darray_next_alloc(
                 (*ls).alloc,
                 __need_0,
-                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
             );
             (*ls).item = realloc(
                 (*ls).item as *mut ::core::ffi::c_void,
-                ((*ls).alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                ((*ls).alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             ) as *mut ::core::ffi::c_char;
         }
         memcpy(
             (*ls).item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
             b": \0".as_ptr() as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            (__count_0 as size_t)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            (__count_0 as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
         );
         (*ls).size = (*ls).size.wrapping_sub(1);
         let mut __str_0: *const ::core::ffi::c_char = s;
@@ -671,19 +666,19 @@ unsafe extern "C" fn log_fn(
             (*ls).alloc = darray_next_alloc(
                 (*ls).alloc,
                 __need_1,
-                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
             );
             (*ls).item = realloc(
                 (*ls).item as *mut ::core::ffi::c_void,
-                ((*ls).alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                ((*ls).alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             ) as *mut ::core::ffi::c_char;
         }
         memcpy(
             (*ls).item.offset(__oldSize_1 as isize) as *mut ::core::ffi::c_void,
             __str_0 as *const ::core::ffi::c_void,
-            (__count_1 as size_t)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            (__count_1 as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
         );
         (*ls).size = (*ls).size.wrapping_sub(1);
         free(s as *mut ::core::ffi::c_void);

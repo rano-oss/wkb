@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -88,7 +86,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -110,7 +108,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -143,15 +141,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -159,7 +157,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -172,7 +170,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -298,25 +296,25 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
 }
 pub mod ast_h {
@@ -488,14 +486,14 @@ pub mod keymap_file_iterator_h {
     use super::scanner_utils_h::scanner;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod stdio_h {
@@ -509,11 +507,10 @@ pub mod stdio_h {
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -521,7 +518,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn strcpy_safe(
         mut dest: *mut ::core::ffi::c_char,
-        mut size: size_t,
+        mut size: usize,
         mut src: *const ::core::ffi::c_char,
     ) -> *mut ::core::ffi::c_char {
         unsafe {
@@ -546,11 +543,9 @@ pub mod utils_h {
             };
         }
     }
-
-    use super::__stddef_size_t_h::size_t;
 }
 pub mod include_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     use super::FILE_h::FILE;
@@ -559,10 +554,10 @@ pub mod include_h {
             ctx: *mut xkb_context,
             parent_file_name: *const ::core::ffi::c_char,
             name: *const ::core::ffi::c_char,
-            name_len: size_t,
+            name_len: usize,
             type_0: xkb_file_type,
             buf: *mut ::core::ffi::c_char,
-            buf_size: size_t,
+            buf_size: usize,
             offset: *mut ::core::ffi::c_uint,
             required: bool,
         ) -> *mut FILE;
@@ -575,12 +570,12 @@ pub mod include_h {
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
             path: *mut ::core::ffi::c_char,
-            path_size: size_t,
+            path_size: usize,
         ) -> *mut XkbFile;
     }
 }
 pub mod xkbcomp_priv_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::scanner_utils_h::scanner;
@@ -596,7 +591,7 @@ pub mod xkbcomp_priv_h {
             ctx: *mut xkb_context,
             scanner: *mut scanner,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
             file_name: *const ::core::ffi::c_char,
             map: *const ::core::ffi::c_char,
         ) -> bool;
@@ -633,7 +628,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
     xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
@@ -832,16 +827,16 @@ pub unsafe extern "C" fn xkb_resolve_file(
     mut path: *const ::core::ffi::c_char,
     mut map: *const ::core::ffi::c_char,
     mut resolved_path: *mut ::core::ffi::c_char,
-    mut resolved_path_size: size_t,
+    mut resolved_path_size: usize,
     mut resolved_map: *mut ::core::ffi::c_char,
-    mut resolved_map_size: size_t,
+    mut resolved_map_size: usize,
 ) -> *mut FILE {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut candidate: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let path_len: size_t = strlen(path) as size_t;
+        let path_len: usize = strlen(path) as usize;
         let absolute_path: bool = is_absolute_path(path) as bool;
         if absolute_path {
             file = fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
@@ -1002,12 +997,12 @@ pub unsafe extern "C" fn xkb_file_section_init(mut section: *mut xkb_file_sectio
             (*section).buffer.alloc = darray_next_alloc(
                 (*section).buffer.alloc,
                 __need,
-                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
             );
             (*section).buffer.item = realloc(
                 (*section).buffer.item as *mut ::core::ffi::c_void,
-                ((*section).buffer.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                ((*section).buffer.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             ) as *mut ::core::ffi::c_char;
         }
         *(*section)
@@ -1055,7 +1050,7 @@ unsafe extern "C" fn xkb_file_section_set_meta_data(
         if !(*xkb_file).name.is_null() {
             let mut idx: darray_size_t = (*section).buffer.size;
             let mut __count: darray_size_t =
-                strlen((*xkb_file).name).wrapping_add(1 as size_t) as darray_size_t;
+                strlen((*xkb_file).name).wrapping_add(1 as usize) as darray_size_t;
             let mut __oldSize: darray_size_t = (*section).buffer.size;
             (*section).buffer.size = __oldSize.wrapping_add(__count);
             let mut __need: darray_size_t = (*section).buffer.size;
@@ -1063,19 +1058,19 @@ unsafe extern "C" fn xkb_file_section_set_meta_data(
                 (*section).buffer.alloc = darray_next_alloc(
                     (*section).buffer.alloc,
                     __need,
-                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                    ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                 );
                 (*section).buffer.item = realloc(
                     (*section).buffer.item as *mut ::core::ffi::c_void,
-                    ((*section).buffer.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    ((*section).buffer.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 ) as *mut ::core::ffi::c_char;
             }
             memcpy(
                 (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                 (*xkb_file).name as *const ::core::ffi::c_void,
-                (__count as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                (__count as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             );
             (*section).name = idx;
         } else {
@@ -1103,7 +1098,7 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                 stmt,
                 file_type,
                 &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             let valid: bool = !xkb_file.is_null();
             if valid as ::core::ffi::c_int != 0
@@ -1114,7 +1109,7 @@ unsafe extern "C" fn xkb_file_section_append_includes(
             {
                 let path: darray_size_t = (*section).buffer.size;
                 let mut __count: darray_size_t = strlen(&raw mut buf as *mut ::core::ffi::c_char)
-                    .wrapping_add(1 as size_t)
+                    .wrapping_add(1 as usize)
                     as darray_size_t;
                 let mut __oldSize: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize.wrapping_add(__count);
@@ -1123,23 +1118,23 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     (*section).buffer.alloc = darray_next_alloc(
                         (*section).buffer.alloc,
                         __need,
-                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                     );
                     (*section).buffer.item = realloc(
                         (*section).buffer.item as *mut ::core::ffi::c_void,
-                        ((*section).buffer.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        ((*section).buffer.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     ) as *mut ::core::ffi::c_char;
                 }
                 memcpy(
                     (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                     &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-                    (__count as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    (__count as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 );
                 let file: darray_size_t = (*section).buffer.size;
                 let mut __count_0: darray_size_t =
-                    strlen((*stmt).file).wrapping_add(1 as size_t) as darray_size_t;
+                    strlen((*stmt).file).wrapping_add(1 as usize) as darray_size_t;
                 let mut __oldSize_0: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize_0.wrapping_add(__count_0);
                 let mut __need_0: darray_size_t = (*section).buffer.size;
@@ -1147,19 +1142,19 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     (*section).buffer.alloc = darray_next_alloc(
                         (*section).buffer.alloc,
                         __need_0,
-                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                     );
                     (*section).buffer.item = realloc(
                         (*section).buffer.item as *mut ::core::ffi::c_void,
-                        ((*section).buffer.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        ((*section).buffer.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     ) as *mut ::core::ffi::c_char;
                 }
                 memcpy(
                     (*section).buffer.item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
                     (*stmt).file as *const ::core::ffi::c_void,
-                    (__count_0 as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    (__count_0 as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 );
                 let section_name: darray_size_t = if !(*stmt).map.is_null()
                     || valid as ::core::ffi::c_int != 0 && !(*xkb_file).name.is_null()
@@ -1174,7 +1169,7 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     } else {
                         (*xkb_file).name
                     })
-                    .wrapping_add(1 as size_t)
+                    .wrapping_add(1 as usize)
                         as darray_size_t;
                     let mut __oldSize_1: darray_size_t = (*section).buffer.size;
                     (*section).buffer.size = __oldSize_1.wrapping_add(__count_1);
@@ -1183,12 +1178,12 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                         (*section).buffer.alloc = darray_next_alloc(
                             (*section).buffer.alloc,
                             __need_1,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         (*section).buffer.item = realloc(
                             (*section).buffer.item as *mut ::core::ffi::c_void,
-                            ((*section).buffer.alloc as size_t).wrapping_mul(
-                                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ((*section).buffer.alloc as usize).wrapping_mul(
+                                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                             ),
                         )
                             as *mut ::core::ffi::c_char;
@@ -1201,8 +1196,8 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                         } else {
                             (*xkb_file).name
                         }) as *const ::core::ffi::c_void,
-                        (__count_1 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_1 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                 }
                 let modifier: darray_size_t = if !(*stmt).modifier.is_null() {
@@ -1212,7 +1207,7 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                 };
                 if modifier != 0 {
                     let mut __count_2: darray_size_t =
-                        strlen((*stmt).modifier).wrapping_add(1 as size_t) as darray_size_t;
+                        strlen((*stmt).modifier).wrapping_add(1 as usize) as darray_size_t;
                     let mut __oldSize_2: darray_size_t = (*section).buffer.size;
                     (*section).buffer.size = __oldSize_2.wrapping_add(__count_2);
                     let mut __need_2: darray_size_t = (*section).buffer.size;
@@ -1220,12 +1215,12 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                         (*section).buffer.alloc = darray_next_alloc(
                             (*section).buffer.alloc,
                             __need_2,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         (*section).buffer.item = realloc(
                             (*section).buffer.item as *mut ::core::ffi::c_void,
-                            ((*section).buffer.alloc as size_t).wrapping_mul(
-                                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ((*section).buffer.alloc as usize).wrapping_mul(
+                                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                             ),
                         )
                             as *mut ::core::ffi::c_char;
@@ -1234,8 +1229,8 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                         (*section).buffer.item.offset(__oldSize_2 as isize)
                             as *mut ::core::ffi::c_void,
                         (*stmt).modifier as *const ::core::ffi::c_void,
-                        (__count_2 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_2 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                 }
                 let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {
@@ -1266,13 +1261,13 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                     (*section).includes.alloc = darray_next_alloc(
                         (*section).includes.alloc,
                         __need_3,
-                        ::core::mem::size_of::<xkb_file_include>() as size_t,
+                        ::core::mem::size_of::<xkb_file_include>() as usize,
                     );
                     (*section).includes.item =
                         realloc(
                             (*section).includes.item as *mut ::core::ffi::c_void,
-                            ((*section).includes.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_file_include>() as size_t),
+                            ((*section).includes.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_file_include>() as usize),
                         ) as *mut xkb_file_include;
                 }
                 *(*section)
@@ -1291,12 +1286,12 @@ unsafe extern "C" fn xkb_file_section_append_includes(
                         (*section).include_groups.alloc = darray_next_alloc(
                             (*section).include_groups.alloc,
                             __need_4,
-                            ::core::mem::size_of::<xkb_file_include_group>() as size_t,
+                            ::core::mem::size_of::<xkb_file_include_group>() as usize,
                         );
                         (*section).include_groups.item = realloc(
                             (*section).include_groups.item as *mut ::core::ffi::c_void,
-                            ((*section).include_groups.alloc as size_t).wrapping_mul(
-                                ::core::mem::size_of::<xkb_file_include_group>() as size_t,
+                            ((*section).include_groups.alloc as usize).wrapping_mul(
+                                ::core::mem::size_of::<xkb_file_include_group>() as usize,
                             ),
                         )
                             as *mut xkb_file_include_group;
@@ -1448,12 +1443,12 @@ pub unsafe extern "C" fn xkb_file_iterator_new_from_buffer(
     mut map: *const ::core::ffi::c_char,
     mut file_type: xkb_file_type,
     mut string: *const ::core::ffi::c_char,
-    mut length: size_t,
+    mut length: usize,
 ) -> *mut xkb_file_iterator {
     unsafe {
         let iter: *mut xkb_file_iterator = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<xkb_file_iterator>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<xkb_file_iterator>() as usize,
         ) as *mut xkb_file_iterator;
         if iter.is_null() {
             xkb_log(

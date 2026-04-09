@@ -30,9 +30,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -55,7 +53,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -77,7 +75,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -108,15 +106,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -124,7 +122,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -137,7 +135,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -1055,26 +1053,25 @@ pub mod action_h {
     use super::keymap_h::xkb_action;
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod expr_h {
@@ -1186,7 +1183,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::action_h::ActionsInfo;
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
@@ -2109,12 +2106,12 @@ unsafe extern "C" fn CheckGroupField(
                 (*(*keymap_info).pending_computations).alloc = darray_next_alloc(
                     (*(*keymap_info).pending_computations).alloc,
                     __need,
-                    ::core::mem::size_of::<pending_computation>() as size_t,
+                    ::core::mem::size_of::<pending_computation>() as usize,
                 );
                 (*(*keymap_info).pending_computations).item = realloc(
                     (*(*keymap_info).pending_computations).item as *mut ::core::ffi::c_void,
-                    ((*(*keymap_info).pending_computations).alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<pending_computation>() as size_t),
+                    ((*(*keymap_info).pending_computations).alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<pending_computation>() as usize),
                 )
                     as *mut pending_computation;
             }
@@ -2920,8 +2917,8 @@ unsafe extern "C" fn HandlePrivate(
                     );
                 }
                 let mut str: *const ::core::ffi::c_char = xkb_atom_text(ctx, val);
-                let mut len: size_t = strlen(str);
-                if len < 1 as size_t || len > ::core::mem::size_of::<[uint8_t; 7]>() as usize {
+                let mut len: usize = strlen(str);
+                if len < 1 as usize || len > ::core::mem::size_of::<[uint8_t; 7]>() as usize {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
@@ -2943,7 +2940,7 @@ unsafe extern "C" fn HandlePrivate(
                 memset(
                     &raw mut (*act).data as *mut uint8_t as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    ::core::mem::size_of::<[uint8_t; 7]>() as size_t,
+                    ::core::mem::size_of::<[uint8_t; 7]>() as usize,
                 );
                 memcpy(
                     &raw mut (*act).data as *mut uint8_t as *mut ::core::ffi::c_void,
@@ -2972,7 +2969,7 @@ unsafe extern "C" fn HandlePrivate(
                     }) as xkb_parser_error;
                 }
                 if ndx < 0 as int64_t
-                    || ndx as size_t >= ::core::mem::size_of::<[uint8_t; 7]>() as usize
+                    || ndx as usize >= ::core::mem::size_of::<[uint8_t; 7]>() as usize
                 {
                     xkb_log(
                         ctx,

@@ -3,9 +3,7 @@ pub mod types_h {
     pub type __off_t = ::core::ffi::c_long;
     pub type __off64_t = ::core::ffi::c_long;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -96,11 +94,11 @@ pub mod test_h {
             *mut xkb_context,
             xkb_keymap_format,
             *const ::core::ffi::c_char,
-            size_t,
+            usize,
             *mut ::core::ffi::c_void,
         ) -> *mut xkb_keymap,
     >;
-    use super::__stddef_size_t_h::size_t;
+
     use super::xkbcommon_h::{
         xkb_context, xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags,
     };
@@ -122,7 +120,7 @@ pub mod test_h {
             compile_buffer_private: *mut ::core::ffi::c_void,
             test_title: *const ::core::ffi::c_char,
             keymap_str: *const ::core::ffi::c_char,
-            keymap_len: size_t,
+            keymap_len: usize,
             rel_path: *const ::core::ffi::c_char,
             update_output_files: bool,
         ) -> bool;
@@ -168,13 +166,13 @@ pub mod stdio_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
@@ -214,16 +212,16 @@ pub mod utils_h {
     use super::string_h::strcmp;
 }
 pub mod utils_text_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strip_lines(
             input: *const ::core::ffi::c_char,
-            input_length: size_t,
+            input_length: usize,
             prefix: *const ::core::ffi::c_char,
         ) -> *mut ::core::ffi::c_char;
         pub fn uncomment(
             input: *const ::core::ffi::c_char,
-            input_length: size_t,
+            input_length: usize,
             prefix: *const ::core::ffi::c_char,
         ) -> *mut ::core::ffi::c_char;
     }
@@ -255,7 +253,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::keymap_compare_h::{
     xkb_keymap_compare, xkb_keymap_compare_property, XKB_KEYMAP_CMP_ALL, XKB_KEYMAP_CMP_KEYCODES,
@@ -326,7 +324,7 @@ unsafe extern "C" fn test_keymap_comparison(mut ctx: *mut xkb_context) {
                 same: true_0 != 0,
             },
         ];
-        let mut t: size_t = 0 as size_t;
+        let mut t: usize = 0 as usize;
         while t
             < (::core::mem::size_of::<[C2Rust_Unnamed; 3]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -519,7 +517,7 @@ unsafe extern "C" fn compile_string(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut buf: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut private: *mut ::core::ffi::c_void,
 ) -> *mut xkb_keymap {
     unsafe {
@@ -691,14 +689,14 @@ unsafe fn main_0(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
                 ::core::ptr::null_mut::<::core::ffi::c_void>(),
                 b"Round-trip with same serialize flags\0".as_ptr() as *const ::core::ffi::c_char,
                 original,
-                0 as size_t,
+                0 as usize,
                 data[k as usize].path,
                 update_output_files,
             ) as ::core::ffi::c_int
@@ -737,7 +735,7 @@ unsafe fn main_0(
                     | XKB_KEYMAP_SERIALIZE_KEEP_UNUSED as ::core::ffi::c_int as ::core::ffi::c_uint)
                     as xkb_keymap_serialize_flags,
             ];
-            let mut f: size_t = 0 as size_t;
+            let mut f: usize = 0 as usize;
             while f
                 < (::core::mem::size_of::<[xkb_keymap_serialize_flags; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<xkb_keymap_serialize_flags>() as usize)
@@ -856,7 +854,7 @@ unsafe fn main_0(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -864,7 +862,7 @@ unsafe fn main_0(
                 b"Round-trip with different serialize flags\0".as_ptr()
                     as *const ::core::ffi::c_char,
                 original,
-                0 as size_t,
+                0 as usize,
                 data[k as usize].path,
                 update_output_files,
             ) as ::core::ffi::c_int

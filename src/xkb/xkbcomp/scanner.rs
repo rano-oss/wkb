@@ -26,9 +26,7 @@ pub mod stdint_uintn_h {
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint32_t, __uint64_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -101,7 +99,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -123,7 +121,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -132,7 +130,7 @@ pub mod context_h {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -272,25 +270,25 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct sval {
-        pub len: size_t,
+        pub len: usize,
         pub start: *const ::core::ffi::c_char,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
@@ -301,17 +299,17 @@ pub mod scanner_utils_h {
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut file_name: *const ::core::ffi::c_char,
         mut priv_0: *mut ::core::ffi::c_void,
     ) {
         unsafe {
             (*s).s = string;
             (*s).len = len;
-            (*s).pos = 0 as size_t;
-            (*s).token_pos = 0 as size_t;
-            (*s).cached_pos = 0 as size_t;
-            (*s).cached_loc.column = 1 as size_t;
+            (*s).pos = 0 as usize;
+            (*s).token_pos = 0 as usize;
+            (*s).cached_pos = 0 as usize;
+            (*s).cached_loc.column = 1 as usize;
             (*s).cached_loc.line = (*s).cached_loc.column;
             (*s).file_name = file_name;
             (*s).ctx = ctx;
@@ -347,8 +345,8 @@ pub mod scanner_utils_h {
                 '\n' as i32,
                 (*s).len.wrapping_sub((*s).pos),
             ) as *const ::core::ffi::c_char;
-            let new_pos: size_t = if !nl.is_null() {
-                nl.offset_from((*s).s) as ::core::ffi::c_long as size_t
+            let new_pos: usize = if !nl.is_null() {
+                nl.offset_from((*s).s) as ::core::ffi::c_long as usize
             } else {
                 (*s).len
             };
@@ -383,7 +381,7 @@ pub mod scanner_utils_h {
     pub unsafe extern "C" fn scanner_str(
         mut s: *mut scanner,
         mut string: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
     ) -> bool {
         unsafe {
             if (*s).len.wrapping_sub((*s).pos) < len {
@@ -407,7 +405,7 @@ pub mod scanner_utils_h {
         mut ch: ::core::ffi::c_char,
     ) -> bool {
         unsafe {
-            if (*s).buf_pos.wrapping_add(1 as size_t)
+            if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
             {
                 return false_0 != 0;
@@ -424,7 +422,7 @@ pub mod scanner_utils_h {
         mut c: u32,
     ) -> bool {
         unsafe {
-            if (*s).buf_pos.wrapping_add(5 as size_t)
+            if (*s).buf_pos.wrapping_add(5 as usize)
                 <= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
             {
                 let mut count: ::core::ffi::c_int = utf32_to_utf8(
@@ -443,7 +441,7 @@ pub mod scanner_utils_h {
                 }
                 (*s).buf_pos = (*s)
                     .buf_pos
-                    .wrapping_add((count - 1 as ::core::ffi::c_int) as size_t);
+                    .wrapping_add((count - 1 as ::core::ffi::c_int) as usize);
                 return true_0 != 0;
             } else {
                 return false_0 != 0;
@@ -490,7 +488,7 @@ pub mod scanner_utils_h {
                 if val > INT64_MAX as uint64_t {
                     return -1 as ::core::ffi::c_int;
                 }
-                (*s).pos = (*s).pos.wrapping_add(count as size_t);
+                (*s).pos = (*s).pos.wrapping_add(count as usize);
                 *out = val as int64_t;
             }
             return count;
@@ -512,7 +510,7 @@ pub mod scanner_utils_h {
                 if val > INT64_MAX as uint64_t {
                     return -1 as ::core::ffi::c_int;
                 }
-                (*s).pos = (*s).pos.wrapping_add(count as size_t);
+                (*s).pos = (*s).pos.wrapping_add(count as usize);
                 *out = val as int64_t;
             }
             return count;
@@ -534,9 +532,9 @@ pub mod scanner_utils_h {
                 &raw mut cp,
             ) as ::core::ffi::c_int;
             if count > 0 as ::core::ffi::c_int {
-                (*s).pos = (*s).pos.wrapping_add(count as size_t);
+                (*s).pos = (*s).pos.wrapping_add(count as usize);
             }
-            let last_valid: size_t = (*s).pos;
+            let last_valid: usize = (*s).pos;
             while !scanner_eof(s)
                 && !scanner_eol(s)
                 && scanner_peek(s) as ::core::ffi::c_int != '"' as i32
@@ -547,7 +545,7 @@ pub mod scanner_utils_h {
             if scanner_chr(s, '}' as i32 as ::core::ffi::c_char) {
                 *out = cp;
                 return count > 0 as ::core::ffi::c_int
-                    && (*s).pos == last_valid.wrapping_add(1 as size_t)
+                    && (*s).pos == last_valid.wrapping_add(1 as usize)
                     && cp <= 0x10ffff as u32;
             }
             (*s).pos = last_valid;
@@ -562,10 +560,10 @@ pub mod scanner_utils_h {
             if scanner_str(
                 scanner,
                 b"\xEF\xBB\xBF\0".as_ptr() as *const ::core::ffi::c_char,
-                3 as size_t,
+                3 as usize,
             ) as ::core::ffi::c_int
                 != 0
-                || (*scanner).len < 2 as size_t
+                || (*scanner).len < 2 as usize
             {
                 return true_0 != 0;
             }
@@ -606,7 +604,7 @@ pub mod scanner_utils_h {
             return true_0 != 0;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::{xkb_context, xkb_log};
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
@@ -1061,17 +1059,17 @@ pub mod parser_h {
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcmp(
             __s1: *const ::core::ffi::c_void,
             __s2: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
@@ -1140,7 +1138,7 @@ pub mod utils_h {
                 && ch as ::core::ffi::c_int <= '~' as i32;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
     use super::FILE_h::FILE;
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
@@ -1149,13 +1147,13 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: uint64_t = 0 as uint64_t;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -1445,12 +1443,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -1473,12 +1471,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: uint64_t = 0 as uint64_t;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -1498,7 +1496,7 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::{u32, uint64_t};
     use super::utils_h::is_xdigit;
 }
@@ -1534,7 +1532,6 @@ pub mod utf8_h {
     }
 }
 pub mod parser_priv_h {
-    use super::__stddef_size_t_h::size_t;
 
     // Re-export parse functions from parser module
     pub use super::super::parser::{parse, parse_next};
@@ -1542,7 +1539,7 @@ pub mod parser_priv_h {
     extern "C" {
         pub fn keyword_to_token(
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -1563,7 +1560,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::ast_h::{
     _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
     ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
@@ -1684,8 +1681,7 @@ unsafe extern "C" fn number(
         if scanner_str(
             s,
             b"0x\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize).wrapping_sub(1 as usize),
         ) {
             match scanner_hex_int64(s, out) {
                 -1 => {
@@ -1740,15 +1736,15 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             if scanner_str(
                 s,
                 b"\xE2\x80\x8E\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                    .wrapping_sub(1 as usize),
             ) as ::core::ffi::c_int
                 != 0
                 || scanner_str(
                     s,
                     b"\xE2\x80\x8F\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                        .wrapping_sub(1 as usize),
                 ) as ::core::ffi::c_int
                     != 0
             {
@@ -1757,8 +1753,8 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             if !(scanner_str(
                 s,
                 b"//\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize)
+                    .wrapping_sub(1 as usize),
             ) as ::core::ffi::c_int
                 != 0
                 || scanner_chr(s, '#' as i32 as ::core::ffi::c_char) as ::core::ffi::c_int != 0)
@@ -1771,7 +1767,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             return END_OF_FILE as ::core::ffi::c_int;
         }
         (*s).token_pos = (*s).pos;
-        (*s).buf_pos = 0 as size_t;
+        (*s).buf_pos = 0 as usize;
         if scanner_chr(s, '"' as i32 as ::core::ffi::c_char) {
             while !scanner_eof(s)
                 && !scanner_eol(s)
@@ -1779,7 +1775,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             {
                 if scanner_chr(s, '\\' as i32 as ::core::ffi::c_char) {
                     let mut o: uint8_t = 0;
-                    let start_pos: size_t = (*s).pos;
+                    let start_pos: usize = (*s).pos;
                     if scanner_chr(s, '\\' as i32 as ::core::ffi::c_char) {
                         scanner_buf_append(s, '\\' as i32 as ::core::ffi::c_char);
                     } else if scanner_chr(s, '"' as i32 as ::core::ffi::c_char) {
@@ -1817,9 +1813,9 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                                 (*s).file_name,
                                 loc.line,
                                 loc.column,
-                                (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as size_t)
+                                (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
                                     as ::core::ffi::c_int,
-                                (*s).s.offset(start_pos.wrapping_sub(1 as size_t) as isize)
+                                (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
                                     as *const ::core::ffi::c_char,
                             );
                         }
@@ -1839,9 +1835,9 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                             (*s).file_name,
                             loc_0.line,
                             loc_0.column,
-                            (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as size_t)
+                            (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
                                 as ::core::ffi::c_int,
-                            (*s).s.offset(start_pos.wrapping_sub(1 as size_t) as isize)
+                            (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
                                 as *const ::core::ffi::c_char,
                         );
                     } else {
@@ -1910,10 +1906,10 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                 .s
                 .offset((*s).token_pos as isize)
                 .offset(1 as ::core::ffi::c_int as isize);
-            let len: size_t = (*s)
+            let len: usize = (*s)
                 .pos
                 .wrapping_sub((*s).token_pos)
-                .wrapping_sub(2 as size_t);
+                .wrapping_sub(2 as usize);
             (*yylval).atom = xkb_atom_intern((*s).ctx, start, len);
             return KEYNAME as ::core::ffi::c_int;
         }
@@ -1975,7 +1971,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                 scanner_next(s);
             }
             let mut start_0: *const ::core::ffi::c_char = (*s).s.offset((*s).token_pos as isize);
-            let len_0: size_t = (*s).pos.wrapping_sub((*s).token_pos);
+            let len_0: usize = (*s).pos.wrapping_sub((*s).token_pos);
             tok = keyword_to_token(start_0, len_0);
             if tok >= 0 as ::core::ffi::c_int {
                 return tok;
@@ -2022,7 +2018,7 @@ pub unsafe extern "C" fn XkbParseStringInit(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
     mut string: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut file_name: *const ::core::ffi::c_char,
     mut map: *const ::core::ffi::c_char,
 ) -> bool {
@@ -2062,7 +2058,7 @@ pub unsafe extern "C" fn XkbParseStringInit(
 pub unsafe extern "C" fn XkbParseString(
     mut ctx: *mut xkb_context,
     mut string: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut file_name: *const ::core::ffi::c_char,
     mut map: *const ::core::ffi::c_char,
 ) -> *mut XkbFile {

@@ -9,9 +9,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
@@ -76,7 +74,7 @@ pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
     pub type ssize_t = __ssize_t;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-    use super::__stddef_size_t_h::size_t;
+
     use super::types_h::__ssize_t;
     use super::FILE_h::FILE;
 
@@ -88,13 +86,13 @@ pub mod stdio_h {
         ) -> *mut FILE;
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
         pub fn vsnprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
@@ -218,7 +216,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -240,7 +238,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -406,19 +404,19 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
@@ -429,17 +427,17 @@ pub mod scanner_utils_h {
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut file_name: *const ::core::ffi::c_char,
         mut priv_0: *mut ::core::ffi::c_void,
     ) {
         unsafe {
             (*s).s = string;
             (*s).len = len;
-            (*s).pos = 0 as size_t;
-            (*s).token_pos = 0 as size_t;
-            (*s).cached_pos = 0 as size_t;
-            (*s).cached_loc.column = 1 as size_t;
+            (*s).pos = 0 as usize;
+            (*s).token_pos = 0 as usize;
+            (*s).cached_pos = 0 as usize;
+            (*s).cached_loc.column = 1 as usize;
             (*s).cached_loc.line = (*s).cached_loc.column;
             (*s).file_name = file_name;
             (*s).ctx = ctx;
@@ -497,7 +495,7 @@ pub mod scanner_utils_h {
         mut ch: ::core::ffi::c_char,
     ) -> bool {
         unsafe {
-            if (*s).buf_pos.wrapping_add(1 as size_t)
+            if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
             {
                 return false_0 != 0;
@@ -517,23 +515,23 @@ pub mod scanner_utils_h {
             let mut ret: ::core::ffi::c_int = 0;
             ret = snprintf(
                 (&raw mut (*s).buf as *mut ::core::ffi::c_char).offset((*s).buf_pos as isize),
-                (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as size_t)
+                (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
                     .wrapping_sub((*s).buf_pos),
                 b"%s\0".as_ptr() as *const ::core::ffi::c_char,
                 str,
             );
             if ret < 0 as ::core::ffi::c_int
-                || ret as size_t
+                || ret as usize
                     >= (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
                         .wrapping_sub((*s).buf_pos as usize)
             {
                 return false_0 != 0;
             }
-            (*s).buf_pos = (*s).buf_pos.wrapping_add(ret as size_t);
+            (*s).buf_pos = (*s).buf_pos.wrapping_add(ret as usize);
             return true_0 != 0;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::snprintf;
@@ -542,12 +540,12 @@ pub mod scanner_utils_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn strchr(
@@ -558,14 +556,14 @@ pub mod string_h {
             __s: *const ::core::ffi::c_char,
             __accept: *const ::core::ffi::c_char,
         ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn snprintf_safe(
         mut buf: *mut ::core::ffi::c_char,
-        mut sz: size_t,
+        mut sz: usize,
         mut format: *const ::core::ffi::c_char,
         mut c2rust_args: ...
     ) -> bool {
@@ -574,10 +572,10 @@ pub mod utils_h {
             let mut rc: ::core::ffi::c_int = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
+            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdio_h::vsnprintf;
 }
 pub mod xkbcomp_priv_h {
@@ -636,7 +634,7 @@ pub mod utils_paths_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
@@ -887,10 +885,10 @@ unsafe extern "C" fn expand_percent(
     mut parent_file_name: *const ::core::ffi::c_char,
     mut typeDir: *const ::core::ffi::c_char,
     mut buf: *mut ::core::ffi::c_char,
-    mut buf_size: size_t,
+    mut buf_size: usize,
     mut name: *const ::core::ffi::c_char,
-    mut name_len: size_t,
-) -> size_t {
+    mut name_len: usize,
+) -> usize {
     unsafe {
         let mut s: scanner = scanner {
             pos: 0,
@@ -906,7 +904,7 @@ unsafe extern "C" fn expand_percent(
             priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
         };
         scanner_init(&raw mut s, ctx, name, name_len, parent_file_name, NULL);
-        s.buf_pos = 0 as size_t;
+        s.buf_pos = 0 as usize;
         while !scanner_eof(&raw mut s) && !scanner_eol(&raw mut s) {
             if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
                 if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
@@ -926,7 +924,7 @@ unsafe extern "C" fn expand_percent(
                             loc.line,
                             loc.column,
                         );
-                        return 0 as size_t;
+                        return 0 as usize;
                     }
                     if !scanner_buf_appends(&raw mut s, home) {
                         let mut loc_0: scanner_loc = scanner_token_location(&raw mut s);
@@ -941,7 +939,7 @@ unsafe extern "C" fn expand_percent(
                             loc_0.line,
                             loc_0.column,
                         );
-                        return 0 as size_t;
+                        return 0 as usize;
                     }
                 } else if scanner_chr(&raw mut s, 'S' as i32 as ::core::ffi::c_char) {
                     let mut default_root: *const ::core::ffi::c_char =
@@ -962,7 +960,7 @@ unsafe extern "C" fn expand_percent(
                             loc_1.line,
                             loc_1.column,
                         );
-                        return 0 as size_t;
+                        return 0 as usize;
                     }
                 } else if scanner_chr(&raw mut s, 'E' as i32 as ::core::ffi::c_char) {
                     let mut default_root_0: *const ::core::ffi::c_char =
@@ -983,7 +981,7 @@ unsafe extern "C" fn expand_percent(
                             loc_2.line,
                             loc_2.column,
                         );
-                        return 0 as size_t;
+                        return 0 as usize;
                     }
                 } else {
                     let mut loc_3: scanner_loc = scanner_token_location(&raw mut s);
@@ -999,7 +997,7 @@ unsafe extern "C" fn expand_percent(
                         loc_3.column,
                         scanner_peek(&raw mut s) as ::core::ffi::c_int,
                     );
-                    return 0 as size_t;
+                    return 0 as usize;
                 }
             } else {
                 scanner_buf_append(&raw mut s, scanner_next(&raw mut s));
@@ -1019,7 +1017,7 @@ unsafe extern "C" fn expand_percent(
                 loc_4.column,
                 ::core::mem::size_of::<[::core::ffi::c_char; 1024]>(),
             );
-            return 0 as size_t;
+            return 0 as usize;
         }
         if (s.buf_pos > buf_size) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
             let mut loc_5: scanner_loc = scanner_token_location(&raw mut s);
@@ -1036,7 +1034,7 @@ unsafe extern "C" fn expand_percent(
                 s.buf_pos,
                 buf_size,
             );
-            return 0 as size_t;
+            return 0 as usize;
         }
         memcpy(
             buf as *mut ::core::ffi::c_void,
@@ -1051,15 +1049,15 @@ pub unsafe extern "C" fn expand_path(
     mut ctx: *mut xkb_context,
     mut parent_file_name: *const ::core::ffi::c_char,
     mut name: *const ::core::ffi::c_char,
-    mut name_len: size_t,
+    mut name_len: usize,
     mut type_0: xkb_file_type,
     mut buf: *mut ::core::ffi::c_char,
-    mut buf_size: size_t,
+    mut buf_size: usize,
 ) -> ssize_t {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut k: size_t = 0;
-        k = 0 as size_t;
+        let mut k: usize = 0;
+        k = 0 as usize;
         loop {
             if !(k < name_len) {
                 c2rust_current_block = 17179679302217393232;
@@ -1095,7 +1093,7 @@ pub unsafe extern "C" fn expand_path(
                     k,
                 );
                 let mut typeDir: *const ::core::ffi::c_char = DirectoryForInclude(type_0);
-                let mut count: size_t = expand_percent(
+                let mut count: usize = expand_percent(
                     ctx,
                     parent_file_name,
                     typeDir,
@@ -1108,7 +1106,7 @@ pub unsafe extern "C" fn expand_path(
                     return -1 as ::core::ffi::c_int as ssize_t;
                 }
                 count = count.wrapping_add(k);
-                if *buf.offset(count.wrapping_sub(1 as size_t) as isize) as ::core::ffi::c_int
+                if *buf.offset(count.wrapping_sub(1 as usize) as isize) as ::core::ffi::c_int
                     == '\0' as i32
                 {
                 } else {
@@ -1118,7 +1116,7 @@ pub unsafe extern "C" fn expand_path(
                         b"../src/xkbcomp/include.c\0".as_ptr()
                             as *const ::core::ffi::c_char,
                         306 as ::core::ffi::c_uint,
-                        b"ssize_t expand_path(struct xkb_context *, const char *, const char *, size_t, enum xkb_file_type, char *, size_t)\0"
+                        b"ssize_t expand_path(struct xkb_context *, const char *, const char *, usize, enum xkb_file_type, char *, usize)\0"
                             .as_ptr() as *const ::core::ffi::c_char,
                     );
                 };
@@ -1132,10 +1130,10 @@ pub unsafe extern "C" fn FindFileInXkbPath(
     mut ctx: *mut xkb_context,
     mut parent_file_name: *const ::core::ffi::c_char,
     mut name: *const ::core::ffi::c_char,
-    mut name_len: size_t,
+    mut name_len: usize,
     mut type_0: xkb_file_type,
     mut buf: *mut ::core::ffi::c_char,
-    mut buf_size: size_t,
+    mut buf_size: usize,
     mut offset: *mut ::core::ffi::c_uint,
     mut required: bool,
 ) -> *mut FILE {
@@ -1147,7 +1145,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
                 b"!is_absolute_path(name)\0".as_ptr() as *const ::core::ffi::c_char,
                 b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
                 327 as ::core::ffi::c_uint,
-                b"FILE *FindFileInXkbPath(struct xkb_context *, const char *, const char *, size_t, enum xkb_file_type, char *, size_t, unsigned int *, _Bool)\0"
+                b"FILE *FindFileInXkbPath(struct xkb_context *, const char *, const char *, usize, enum xkb_file_type, char *, usize, unsigned int *, _Bool)\0"
                     .as_ptr() as *const ::core::ffi::c_char,
             );
         };
@@ -1244,13 +1242,13 @@ pub unsafe extern "C" fn ProcessIncludeFile(
     mut stmt: *const IncludeStmt,
     mut file_type: xkb_file_type,
     mut path: *mut ::core::ffi::c_char,
-    mut path_size: size_t,
+    mut path_size: usize,
 ) -> *mut XkbFile {
     unsafe {
         let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut stmt_file: *const ::core::ffi::c_char = (*stmt).file;
-        let mut stmt_file_len: size_t = strlen(stmt_file);
+        let mut stmt_file_len: usize = strlen(stmt_file);
         let expanded: ssize_t = expand_path(
             ctx,
             b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
@@ -1264,7 +1262,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
             return ::core::ptr::null_mut::<XkbFile>();
         } else if expanded > 0 as ssize_t {
             stmt_file = path;
-            stmt_file_len = expanded as size_t;
+            stmt_file_len = expanded as usize;
             if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
             } else {
                 __assert_fail(
@@ -1272,7 +1270,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
                         as *const ::core::ffi::c_char,
                     b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
                     407 as ::core::ffi::c_uint,
-                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, size_t)\0"
+                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -1288,7 +1286,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
                         as *const ::core::ffi::c_char,
                     b"../src/xkbcomp/include.c\0".as_ptr() as *const ::core::ffi::c_char,
                     416 as ::core::ffi::c_uint,
-                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, size_t)\0"
+                    b"XkbFile *ProcessIncludeFile(struct xkb_context *, const IncludeStmt *, enum xkb_file_type, char *, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };

@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __int8_t = i8;
     pub type __uint8_t = u8;
@@ -109,7 +107,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -131,7 +129,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -140,7 +138,7 @@ pub mod context_h {
     extern "C" {
         pub fn xkb_context_get_buffer(
             ctx: *mut xkb_context,
-            size: size_t,
+            size: usize,
         ) -> *mut ::core::ffi::c_char;
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -644,7 +642,7 @@ pub mod keymap_h {
         pub keymap_new_from_names:
             Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
         pub keymap_new_from_string: Option<
-            unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, size_t) -> bool,
+            unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, usize) -> bool,
         >,
         pub keymap_new_from_file: Option<unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool>,
         pub keymap_get_as_string: Option<
@@ -671,7 +669,7 @@ pub mod keymap_h {
             }) as xkb_layout_index_t;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -729,7 +727,7 @@ pub mod rmlvo_h {
     pub const RMLVO_LAYOUT: RMLVO = 4;
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_rule_names};
@@ -738,7 +736,7 @@ pub mod rmlvo_h {
             builder: *const xkb_rmlvo_builder,
             rmlvo: *mut xkb_rule_names,
             buf: *mut ::core::ffi::c_char,
-            buf_size: size_t,
+            buf_size: usize,
         ) -> bool;
     }
 }
@@ -938,7 +936,7 @@ pub mod rules_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
@@ -965,7 +963,7 @@ pub mod xkbcomp_priv_h {
         pub fn XkbParseString(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
             file_name: *const ::core::ffi::c_char,
             map: *const ::core::ffi::c_char,
         ) -> *mut XkbFile;
@@ -991,7 +989,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::ast_h::{
     _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon,
     XkbFile, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
@@ -1210,9 +1208,8 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
                 variant: ::core::ptr::null::<::core::ffi::c_char>(),
                 options: ::core::ptr::null::<::core::ffi::c_char>(),
             };
-            let buf_size: size_t = (::core::mem::size_of::<[::core::ffi::c_char; 2048]>()
-                as size_t)
-                .wrapping_sub(1 as size_t);
+            let buf_size: usize = (::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize)
+                .wrapping_sub(1 as usize);
             let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
             if buf.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                 return false_0 != 0;
@@ -1247,8 +1244,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
                 variant: ::core::ptr::null::<::core::ffi::c_char>(),
                 options: ::core::ptr::null::<::core::ffi::c_char>(),
             };
-            let buf_size_0: size_t =
-                ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as size_t;
+            let buf_size_0: usize = ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize;
             let mut buf_0: *mut ::core::ffi::c_char =
                 xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
             if buf_0.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -1400,7 +1396,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
 unsafe extern "C" fn text_v1_keymap_new_from_string(
     mut keymap: *mut xkb_keymap,
     mut string: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -1470,11 +1466,7 @@ pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = unsafe {
         ),
         keymap_new_from_string: Some(
             text_v1_keymap_new_from_string
-                as unsafe extern "C" fn(
-                    *mut xkb_keymap,
-                    *const ::core::ffi::c_char,
-                    size_t,
-                ) -> bool,
+                as unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, usize) -> bool,
         ),
         keymap_new_from_file: Some(
             text_v1_keymap_new_from_file

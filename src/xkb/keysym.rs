@@ -14,9 +14,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod sys_types_h {
     pub type ssize_t = isize;
 }
@@ -4781,31 +4779,31 @@ pub mod keysym_names_h {
     #[inline]
     pub unsafe extern "C" fn keysym_name_perfect_hash(
         mut key: *const ::core::ffi::c_char,
-    ) -> size_t {
+    ) -> usize {
         unsafe {
             let mut T1: *const ::core::ffi::c_char =
                 b"gQEXVgBVbDK59TnjkSMO7UnyrqsrcaA4\0".as_ptr() as *const ::core::ffi::c_char;
             let mut T2: *const ::core::ffi::c_char =
                 b"AB6xkcvEK5OHbYOD14cPYBxnVAoDGTPL\0".as_ptr() as *const ::core::ffi::c_char;
-            let mut h1: size_t = 0 as size_t;
-            let mut h2: size_t = 0 as size_t;
-            let mut i: size_t = 0 as size_t;
+            let mut h1: usize = 0 as usize;
+            let mut h2: usize = 0 as usize;
+            let mut i: usize = 0 as usize;
             while *key.offset(i as isize) as ::core::ffi::c_int != '\0' as i32 {
                 h1 = h1.wrapping_add(
-                    (*T1.offset(i.wrapping_rem(32 as size_t) as isize) as ::core::ffi::c_int
+                    (*T1.offset(i.wrapping_rem(32 as usize) as isize) as ::core::ffi::c_int
                         * *key.offset(i as isize) as ::core::ffi::c_int)
-                        as size_t,
+                        as usize,
                 );
                 h2 = h2.wrapping_add(
-                    (*T2.offset(i.wrapping_rem(32 as size_t) as isize) as ::core::ffi::c_int
+                    (*T2.offset(i.wrapping_rem(32 as usize) as isize) as ::core::ffi::c_int
                         * *key.offset(i as isize) as ::core::ffi::c_int)
-                        as size_t,
+                        as usize,
                 );
                 i = i.wrapping_add(1);
             }
-            return ((keysym_name_G[h1.wrapping_rem(4728 as size_t) as usize] as ::core::ffi::c_int
-                + keysym_name_G[h2.wrapping_rem(4728 as size_t) as usize] as ::core::ffi::c_int)
-                % 4728 as ::core::ffi::c_int) as size_t;
+            return ((keysym_name_G[h1.wrapping_rem(4728 as usize) as usize] as ::core::ffi::c_int
+                + keysym_name_G[h2.wrapping_rem(4728 as usize) as usize] as ::core::ffi::c_int)
+                % 4728 as ::core::ffi::c_int) as usize;
         }
     }
     pub static mut name_to_keysym: [name_keysym; 2635] = [
@@ -26307,35 +26305,35 @@ pub mod keysym_names_h {
         },
     ];
     pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as ::core::ffi::c_int as u32];
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::{u32, uint16_t, uint8_t};
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memmove(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
@@ -26344,10 +26342,10 @@ pub mod string_h {
         pub fn strncmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
@@ -26357,7 +26355,7 @@ pub mod utils_h {
             || ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'f' as i32
             || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'F' as i32;
     }
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn istrcmp(
             a: *const ::core::ffi::c_char,
@@ -26366,7 +26364,7 @@ pub mod utils_h {
         pub fn istrncmp(
             a: *const ::core::ffi::c_char,
             b: *const ::core::ffi::c_char,
-            n: size_t,
+            n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -26632,12 +26630,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -26657,20 +26655,20 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
     use super::utils_h::is_xdigit;
 }
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_h::UINT32_MAX;
     use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn utf8_next_code_point(
             s: *const ::core::ffi::c_char,
-            max_size: size_t,
-            size_out: *mut size_t,
+            max_size: usize,
+            size_out: *mut usize,
         ) -> u32;
     }
 }
@@ -26713,7 +26711,7 @@ pub mod keysym_h {
     pub const XKB_KEYSYM_UNICODE_MAX: ::core::ffi::c_int = 0x110ffff as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::keysym_h::{
     XKB_KEYSYM_MAX_EXPLICIT, XKB_KEYSYM_UNICODE_MAX, XKB_KEYSYM_UNICODE_MIN,
@@ -26783,7 +26781,7 @@ unsafe extern "C" fn get_name(mut entry: *const name_keysym) -> *const ::core::f
 unsafe extern "C" fn get_unicode_name(
     mut ks: xkb_keysym_t,
     mut buffer: *mut ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         return snprintf(
@@ -26798,7 +26796,7 @@ unsafe extern "C" fn get_unicode_name(
 pub unsafe extern "C" fn xkb_keysym_get_name(
     mut ks: xkb_keysym_t,
     mut buffer: *mut ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         if ks > XKB_KEYSYM_MAX as xkb_keysym_t {
@@ -26846,7 +26844,7 @@ pub unsafe extern "C" fn xkb_keysym_is_assigned(mut ks: xkb_keysym_t) -> bool {
 pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
     mut ks: xkb_keysym_t,
     mut buffer: *mut *const ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         if ks > XKB_KEYSYM_MAX as xkb_keysym_t {
@@ -26857,7 +26855,7 @@ pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
             return 0 as ::core::ffi::c_int;
         }
         let canonical: uint16_t = keysym_to_name[index as usize].offset;
-        if size > 0 as size_t {
+        if size > 0 as usize {
             let ref mut c2rust_fresh0 = *buffer.offset(0 as ::core::ffi::c_int as isize);
             *c2rust_fresh0 = get_name(
                 (&raw const keysym_to_name as *const name_keysym).offset(index as isize)
@@ -26865,7 +26863,7 @@ pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
             );
         }
         let mut count: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-        let mut pos: size_t = 0 as size_t;
+        let mut pos: usize = 0 as usize;
         while pos
             < (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
                 .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
@@ -26874,7 +26872,7 @@ pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
                 && name_to_keysym[pos as usize].offset as ::core::ffi::c_int
                     != canonical as ::core::ffi::c_int
             {
-                if (count as size_t) < size {
+                if (count as usize) < size {
                     let ref mut c2rust_fresh1 = *buffer.offset(count as isize);
                     *c2rust_fresh1 = get_name(
                         (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
@@ -26894,8 +26892,8 @@ pub unsafe extern "C" fn xkb_keysym_iterator_new(
 ) -> *mut xkb_keysym_iterator {
     unsafe {
         let mut iter: *mut xkb_keysym_iterator = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<xkb_keysym_iterator>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<xkb_keysym_iterator>() as usize,
         ) as *mut xkb_keysym_iterator;
         (*iter).explicit = iterate_only_explicit_keysyms;
         (*iter).index = -1 as ::core::ffi::c_int as int32_t;
@@ -26940,7 +26938,7 @@ pub unsafe extern "C" fn xkb_keysym_iterator_is_explicitly_named(
 pub unsafe extern "C" fn xkb_keysym_iterator_get_name(
     mut iter: *mut xkb_keysym_iterator,
     mut buffer: *mut ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         if (*iter).index < 0 as int32_t
@@ -27018,7 +27016,7 @@ unsafe extern "C" fn parse_keysym_hex(
 ) -> bool {
     unsafe {
         let count: ::core::ffi::c_int =
-            parse_hex_to_uint32_t(s, 8 as size_t, out as *mut u32) as ::core::ffi::c_int;
+            parse_hex_to_uint32_t(s, 8 as usize, out as *mut u32) as ::core::ffi::c_int;
         return count > 0 as ::core::ffi::c_int
             && *s.offset(count as isize) as ::core::ffi::c_int == '\0' as i32;
     }
@@ -27040,7 +27038,7 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
             & XKB_KEYSYM_CASE_INSENSITIVE as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0;
         if !icase {
-            let mut pos: size_t = keysym_name_perfect_hash(name);
+            let mut pos: usize = keysym_name_perfect_hash(name);
             if pos
                 < (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
                     .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
@@ -27129,13 +27127,13 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
         if strncmp(
             name,
             b"XF86_\0".as_ptr() as *const ::core::ffi::c_char,
-            5 as size_t,
+            5 as usize,
         ) == 0 as ::core::ffi::c_int
             || icase as ::core::ffi::c_int != 0
                 && istrncmp(
                     name,
                     b"XF86_\0".as_ptr() as *const ::core::ffi::c_char,
-                    5 as size_t,
+                    5 as usize,
                 ) == 0 as ::core::ffi::c_int
         {
             let mut ret: xkb_keysym_t = 0;
@@ -27149,8 +27147,8 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
                 tmp.offset(5 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_char
                     as *const ::core::ffi::c_void,
                 strlen(name)
-                    .wrapping_sub(5 as size_t)
-                    .wrapping_add(1 as size_t),
+                    .wrapping_sub(5 as usize)
+                    .wrapping_add(1 as usize),
             );
             ret = xkb_keysym_from_name(tmp, flags);
             free(tmp as *mut ::core::ffi::c_void);
@@ -27162,15 +27160,15 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_utf8_to_keysym(
     mut buffer: *const ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> xkb_keysym_t {
     unsafe {
         if buffer.is_null() || size == 0 {
             return 0 as xkb_keysym_t;
         }
-        let mut length: size_t = 0 as size_t;
+        let mut length: usize = 0 as usize;
         let codepoint: u32 = utf8_next_code_point(buffer, size, &raw mut length) as u32;
-        return if codepoint == INVALID_UTF8_CODE_POINT as u32 || length == 0 as size_t {
+        return if codepoint == INVALID_UTF8_CODE_POINT as u32 || length == 0 as usize {
             XKB_KEY_NoSymbol as xkb_keysym_t
         } else {
             xkb_utf32_to_keysym(codepoint)

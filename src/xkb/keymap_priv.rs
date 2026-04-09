@@ -28,9 +28,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -53,7 +51,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -75,7 +73,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -84,7 +82,7 @@ pub mod context_h {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -628,20 +626,20 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcmp(
             __s1: *const ::core::ffi::c_void,
             __s2: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
     }
 }
 pub mod stdint_h {
@@ -674,7 +672,7 @@ pub mod xkbcommon_names_h {
         unsafe { ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"Mod5\0") };
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
     xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
@@ -807,7 +805,7 @@ pub unsafe extern "C" fn xkb_keymap_new(
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         let keymap: *mut xkb_keymap =
-            calloc(1 as size_t, ::core::mem::size_of::<xkb_keymap>() as size_t) as *mut xkb_keymap;
+            calloc(1 as usize, ::core::mem::size_of::<xkb_keymap>() as usize) as *mut xkb_keymap;
         if keymap.is_null() {
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -910,8 +908,7 @@ pub unsafe extern "C" fn XkbLevelsSameSyms(
         return memcmp(
             (*a).s.syms as *const ::core::ffi::c_void,
             (*b).s.syms as *const ::core::ffi::c_void,
-            (::core::mem::size_of::<xkb_keysym_t>() as size_t)
-                .wrapping_mul((*a).num_syms as size_t),
+            (::core::mem::size_of::<xkb_keysym_t>() as usize).wrapping_mul((*a).num_syms as usize),
         ) == 0 as ::core::ffi::c_int;
     }
 }
@@ -983,7 +980,7 @@ pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xk
                 return memcmp(
                     &raw const (*a).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
                     &raw const (*b).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
-                    ::core::mem::size_of::<[uint8_t; 7]>() as size_t,
+                    ::core::mem::size_of::<[uint8_t; 7]>() as usize,
                 ) == 0 as ::core::ffi::c_int;
             }
         };

@@ -48,9 +48,7 @@ pub mod struct_stat_h {
         __syscall_slong_t, __uid_t,
     };
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -117,18 +115,18 @@ pub mod stdio_h {
 pub mod mman_h {
     pub const MAP_FAILED: *mut ::core::ffi::c_void =
         -1 as ::core::ffi::c_int as *mut ::core::ffi::c_void;
-    use super::__stddef_size_t_h::size_t;
+
     use super::types_h::__off64_t;
     extern "C" {
         pub fn mmap(
             __addr: *mut ::core::ffi::c_void,
-            __len: size_t,
+            __len: usize,
             __prot: ::core::ffi::c_int,
             __flags: ::core::ffi::c_int,
             __fd: ::core::ffi::c_int,
             __offset: __off64_t,
         ) -> *mut ::core::ffi::c_void;
-        pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: size_t) -> ::core::ffi::c_int;
+        pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> ::core::ffi::c_int;
     }
 }
 pub mod bits_stat_h {
@@ -164,7 +162,7 @@ pub mod mman_linux_h {
     pub const MAP_SHARED: ::core::ffi::c_int = 0x1 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_RDONLY;
@@ -502,7 +500,7 @@ pub unsafe extern "C" fn istrcmp(
     mut b: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     unsafe {
-        let mut i: size_t = 0 as size_t;
+        let mut i: usize = 0 as usize;
         loop {
             if to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
                 != to_lower(*b.offset(i as isize)) as ::core::ffi::c_int
@@ -522,10 +520,10 @@ pub unsafe extern "C" fn istrcmp(
 pub unsafe extern "C" fn istrncmp(
     mut a: *const ::core::ffi::c_char,
     mut b: *const ::core::ffi::c_char,
-    mut n: size_t,
+    mut n: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
-        let mut i: size_t = 0 as size_t;
+        let mut i: usize = 0 as usize;
         while i < n {
             if to_lower(*a.offset(i as isize)) as ::core::ffi::c_int
                 != to_lower(*b.offset(i as isize)) as ::core::ffi::c_int

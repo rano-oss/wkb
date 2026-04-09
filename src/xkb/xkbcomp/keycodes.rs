@@ -31,9 +31,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -56,7 +54,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -78,7 +76,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -109,15 +107,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -125,7 +123,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -138,7 +136,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -1123,41 +1121,40 @@ pub mod xkbcomp_priv_h {
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memmove(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     }
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
@@ -1236,7 +1233,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
@@ -1249,7 +1246,7 @@ pub mod include_h {
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
             path: *mut ::core::ffi::c_char,
-            path_size: size_t,
+            path_size: usize,
         ) -> *mut XkbFile;
     }
 }
@@ -1275,7 +1272,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
@@ -1552,20 +1549,20 @@ unsafe extern "C" fn keycode_store_update_key(
                     (*store).names.alloc = darray_next_alloc(
                         (*store).names.alloc,
                         __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as size_t,
+                        ::core::mem::size_of::<KeycodeMatch>() as usize,
                     );
                     (*store).names.item = realloc(
                         (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                        ((*store).names.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
                 memset(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
             }
         }
@@ -1589,20 +1586,20 @@ unsafe extern "C" fn keycode_store_insert_key(
                     (*store).names.alloc = darray_next_alloc(
                         (*store).names.alloc,
                         __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as size_t,
+                        ::core::mem::size_of::<KeycodeMatch>() as usize,
                     );
                     (*store).names.item = realloc(
                         (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                        ((*store).names.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
                 memset(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
             }
         }
@@ -1618,21 +1615,23 @@ unsafe extern "C" fn keycode_store_insert_key(
                         (*store).low.alloc = darray_next_alloc(
                             (*store).low.alloc,
                             __need_0,
-                            ::core::mem::size_of::<xkb_atom_t>() as size_t,
+                            ::core::mem::size_of::<xkb_atom_t>() as usize,
                         );
-                        (*store).low.item =
-                            realloc(
-                                (*store).low.item as *mut ::core::ffi::c_void,
-                                ((*store).low.alloc as size_t)
-                                    .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
-                            ) as *mut xkb_atom_t;
+                        (*store).low.item = realloc(
+                            (*store).low.item as *mut ::core::ffi::c_void,
+                            ((*store).low.alloc as usize).wrapping_mul(::core::mem::size_of::<
+                                xkb_atom_t,
+                            >(
+                            )
+                                as usize),
+                        ) as *mut xkb_atom_t;
                     }
                     memset(
                         (*store).low.item.offset(__oldSize_0 as isize) as *mut xkb_atom_t
                             as *mut ::core::ffi::c_void,
                         0 as ::core::ffi::c_int,
-                        (__newSize_0.wrapping_sub(__oldSize_0) as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                        (__newSize_0.wrapping_sub(__oldSize_0) as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                     );
                 }
             }
@@ -1736,12 +1735,12 @@ unsafe extern "C" fn keycode_store_insert_key(
                     (*store).high.alloc = darray_next_alloc(
                         (*store).high.alloc,
                         __need_1,
-                        ::core::mem::size_of::<HighKeycodeEntry>() as size_t,
+                        ::core::mem::size_of::<HighKeycodeEntry>() as usize,
                     );
                     (*store).high.item = realloc(
                         (*store).high.item as *mut ::core::ffi::c_void,
-                        ((*store).high.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as size_t),
+                        ((*store).high.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
                     ) as *mut HighKeycodeEntry;
                 }
                 memmove(
@@ -1756,8 +1755,8 @@ unsafe extern "C" fn keycode_store_insert_key(
                         .high
                         .size
                         .wrapping_sub(__index)
-                        .wrapping_sub(1 as darray_size_t) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as size_t),
+                        .wrapping_sub(1 as darray_size_t) as usize)
+                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
                 );
                 *(*store).high.item.offset(__index as isize) = HighKeycodeEntry {
                     keycode: kc,
@@ -1782,12 +1781,12 @@ unsafe extern "C" fn keycode_store_insert_key(
                     (*store).high.alloc = darray_next_alloc(
                         (*store).high.alloc,
                         __need_2,
-                        ::core::mem::size_of::<HighKeycodeEntry>() as size_t,
+                        ::core::mem::size_of::<HighKeycodeEntry>() as usize,
                     );
                     (*store).high.item = realloc(
                         (*store).high.item as *mut ::core::ffi::c_void,
-                        ((*store).high.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as size_t),
+                        ((*store).high.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
                     ) as *mut HighKeycodeEntry;
                 }
                 *(*store)
@@ -1837,20 +1836,20 @@ unsafe extern "C" fn keycode_store_insert_alias(
                     (*store).names.alloc = darray_next_alloc(
                         (*store).names.alloc,
                         __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as size_t,
+                        ::core::mem::size_of::<KeycodeMatch>() as usize,
                     );
                     (*store).names.item = realloc(
                         (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                        ((*store).names.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
                 memset(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
             }
         }
@@ -1974,8 +1973,8 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
                         .high
                         .size
                         .wrapping_sub(1 as darray_size_t)
-                        .wrapping_sub(__index) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as size_t),
+                        .wrapping_sub(__index) as usize)
+                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
                 );
             }
             (*store).high.size = (*store).high.size.wrapping_sub(1);
@@ -2317,7 +2316,7 @@ unsafe extern "C" fn InitKeyNamesInfo(
         memset(
             info as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyNamesInfo>() as size_t,
+            ::core::mem::size_of::<KeyNamesInfo>() as usize,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -2610,8 +2609,8 @@ unsafe extern "C" fn MergeIncludedKeycodes(
             memcpy(
                 &raw mut (*into).led_names as *mut LedNameInfo as *mut ::core::ffi::c_void,
                 &raw mut (*from).led_names as *mut LedNameInfo as *const ::core::ffi::c_void,
-                (::core::mem::size_of::<LedNameInfo>() as size_t)
-                    .wrapping_mul((*from).num_led_names as size_t),
+                (::core::mem::size_of::<LedNameInfo>() as usize)
+                    .wrapping_mul((*from).num_led_names as usize),
             );
             (*into).num_led_names = (*from).num_led_names;
             (*from).num_led_names = 0 as xkb_led_index_t;
@@ -2718,7 +2717,7 @@ unsafe extern "C" fn HandleIncludeKeycodes(
                 stmt,
                 FILE_TYPE_KEYCODES,
                 &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -2956,7 +2955,7 @@ unsafe extern "C" fn HandleLedNameDef(
             let mut buf: [::core::ffi::c_char; 20] = [0; 20];
             snprintf(
                 &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 20]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 20]>() as usize,
                 b"%ld\0".as_ptr() as *const ::core::ffi::c_char,
                 (*def).ndx,
             );
@@ -3114,8 +3113,8 @@ unsafe extern "C" fn CopyKeyNamesToKeymap(
                 .wrapping_add((*info).keycodes.high.size as xkb_keycode_t);
         }
         let keys: *mut xkb_key = calloc(
-            (*keymap).num_keys as size_t,
-            ::core::mem::size_of::<xkb_key>() as size_t,
+            (*keymap).num_keys as usize,
+            ::core::mem::size_of::<xkb_key>() as usize,
         ) as *mut xkb_key;
         if keys.is_null() {
             (*keymap).num_keys = 0 as xkb_keycode_t;
@@ -3233,8 +3232,8 @@ unsafe extern "C" fn CopyKeycodeNameLUT(
             (*info).keycodes.names.alloc = (*info).keycodes.names.size;
             (*info).keycodes.names.item = realloc(
                 (*info).keycodes.names.item as *mut ::core::ffi::c_void,
-                ((*info).keycodes.names.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as size_t),
+                ((*info).keycodes.names.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
             ) as *mut KeycodeMatch;
         }
         (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = (*info).keycodes.names.size;

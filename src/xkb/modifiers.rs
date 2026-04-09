@@ -32,9 +32,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod sys_types_h {
     pub type ssize_t = isize;
 }
@@ -110,7 +108,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -132,7 +130,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
     use super::internal::__va_list_tag;
@@ -736,7 +734,7 @@ pub mod test_h {
     pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
     pub const CONTEXT_NO_FLAG: test_context_flags = 0;
     pub const EVDEV_OFFSET: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::xkb_keymap_format;
@@ -758,7 +756,7 @@ pub mod test_h {
             context: *mut xkb_context,
             format: xkb_keymap_format,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_rules(
             context: *mut xkb_context,
@@ -783,9 +781,9 @@ pub mod stdio_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod assert_h {
@@ -849,7 +847,7 @@ pub mod xkbcommon_names_h {
         unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"Super\0") };
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -2904,7 +2902,7 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
     mut keymap: *mut xkb_keymap,
     mut mod_0: xkb_mod_index_t,
     mut codes_out: *mut xkb_keycode_t,
-    mut codes_size: size_t,
+    mut codes_size: usize,
 ) -> ssize_t {
     unsafe {
         if mod_0 >= xkb_keymap_num_mods(keymap) {
@@ -2920,12 +2918,12 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
                     b"state\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../test/modifiers.c\0".as_ptr() as *const ::core::ffi::c_char,
                     711 as ::core::ffi::c_uint,
-                    b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, size_t)\0"
+                    b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
             static mut directions: [xkb_key_direction; 2] = [XKB_KEY_DOWN, XKB_KEY_UP];
-            let mut d: size_t = 0 as size_t;
+            let mut d: usize = 0 as usize;
             while d
                 < (::core::mem::size_of::<[xkb_key_direction; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<xkb_key_direction>() as usize)
@@ -2934,7 +2932,7 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
                     != 0
                     && xkb_state_mod_index_is_active(state, mod_0, XKB_STATE_MODS_EFFECTIVE) != 0
                 {
-                    if (idx as size_t) < codes_size {
+                    if (idx as usize) < codes_size {
                         if idx
                             < (18446744073709551615 as ::core::ffi::c_ulong)
                                 .wrapping_div(2 as ::core::ffi::c_ulong)
@@ -2947,7 +2945,7 @@ unsafe extern "C" fn xkb_keymap_mod_get_codes(
                                 b"../test/modifiers.c\0".as_ptr()
                                     as *const ::core::ffi::c_char,
                                 723 as ::core::ffi::c_uint,
-                                b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, size_t)\0"
+                                b"ssize_t xkb_keymap_mod_get_codes(struct xkb_keymap *, xkb_mod_index_t, xkb_keycode_t *, usize)\0"
                                     .as_ptr() as *const ::core::ffi::c_char,
                             );
                         };
@@ -3228,7 +3226,7 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
             0,
             0,
         ];
-        let mut m: size_t = 0 as size_t;
+        let mut m: usize = 0 as usize;
         while m
             < (::core::mem::size_of::<[C2Rust_Unnamed_16; 15]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_16>() as usize)
@@ -3249,8 +3247,8 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                 keymap,
                 mod_0,
                 &raw mut got as *mut xkb_keycode_t,
-                (::core::mem::size_of::<[xkb_keycode_t; 10]>() as size_t)
-                    .wrapping_div(::core::mem::size_of::<xkb_keycode_t>() as size_t),
+                (::core::mem::size_of::<[xkb_keycode_t; 10]>() as usize)
+                    .wrapping_div(::core::mem::size_of::<xkb_keycode_t>() as usize),
             ) as ssize_t;
             if count >= 0 as ssize_t {
             } else {
@@ -3265,13 +3263,13 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
             let expected: *const xkb_keycode_t =
                 &raw const (*(&raw const mods as *const C2Rust_Unnamed_16).offset(m as isize))
                     .keycodes as *const xkb_keycode_t;
-            let mut k: size_t = 0 as size_t;
+            let mut k: usize = 0 as usize;
             while k
                 < (::core::mem::size_of::<[xkb_keycode_t; 10]>() as usize)
                     .wrapping_div(::core::mem::size_of::<xkb_keycode_t>() as usize)
             {
                 if *expected.offset(k as isize) == 0 as xkb_keycode_t {
-                    let __cond: bool = k == count as size_t;
+                    let __cond: bool = k == count as usize;
                     if !__cond {
                         fprintf(
                             stderr,
@@ -3294,7 +3292,7 @@ unsafe extern "C" fn test_get_modifier_keycodes(mut context: *mut xkb_context) {
                     }
                     break;
                 } else {
-                    let __cond_0: bool = k < count as size_t;
+                    let __cond_0: bool = k < count as usize;
                     if !__cond_0 {
                         fprintf(
                             stderr,

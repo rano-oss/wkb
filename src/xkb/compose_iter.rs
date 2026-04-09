@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __uint32_t = u32;
 }
@@ -50,7 +48,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -72,7 +70,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -162,12 +160,12 @@ pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_compose_table_entry {
-        pub sequence_length: size_t,
+        pub sequence_length: usize,
         pub sequence: *mut xkb_keysym_t,
         pub keysym: xkb_keysym_t,
         pub utf8: *const ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::darray_h::{darray_char, darray_size_t};
     use super::stdint_uintn_h::u32;
@@ -185,7 +183,7 @@ pub mod compose_iter_h {
         Option<unsafe extern "C" fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
     use super::table_h::xkb_compose_table_entry;
 }
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_size_t};
@@ -209,7 +207,7 @@ unsafe extern "C" fn for_each_helper(
     mut iter: xkb_compose_table_iter_t,
     mut data: *mut ::core::ffi::c_void,
     mut syms: *mut xkb_keysym_t,
-    mut nsyms: size_t,
+    mut nsyms: usize,
     mut p: u32,
 ) {
     unsafe {
@@ -264,7 +262,7 @@ pub unsafe extern "C" fn xkb_compose_table_for_each(
             iter,
             data,
             &raw mut syms as *mut xkb_keysym_t,
-            0 as size_t,
+            0 as usize,
             1 as u32,
         );
     }

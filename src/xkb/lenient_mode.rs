@@ -3,9 +3,7 @@ pub mod types_h {
     pub type __off_t = ::core::ffi::c_long;
     pub type __off64_t = ::core::ffi::c_long;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -78,11 +76,11 @@ pub mod test_h {
             *mut xkb_context,
             xkb_keymap_format,
             *const ::core::ffi::c_char,
-            size_t,
+            usize,
             *mut ::core::ffi::c_void,
         ) -> *mut xkb_keymap,
     >;
-    use super::__stddef_size_t_h::size_t;
+
     use super::xkbcommon_h::{
         xkb_context, xkb_keymap, xkb_keymap_compile_flags, xkb_keymap_format,
     };
@@ -94,7 +92,7 @@ pub mod test_h {
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_output(
             ctx: *mut xkb_context,
@@ -104,7 +102,7 @@ pub mod test_h {
             compile_buffer_private: *mut ::core::ffi::c_void,
             test_title: *const ::core::ffi::c_char,
             keymap_str: *const ::core::ffi::c_char,
-            keymap_len: size_t,
+            keymap_len: usize,
             rel_path: *const ::core::ffi::c_char,
             update_output_files: bool,
         ) -> bool;
@@ -122,13 +120,13 @@ pub mod stdio_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod utils_h {
@@ -175,7 +173,7 @@ pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, stderr};
@@ -228,7 +226,7 @@ unsafe extern "C" fn compile_buffer(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut buf: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut private: *mut ::core::ffi::c_void,
 ) -> *mut xkb_keymap {
     unsafe {
@@ -371,7 +369,7 @@ unsafe extern "C" fn test_unknown_declaration_statements(
                 b"test_unknown_declaration_statements\0".as_ptr() as *const ::core::ffi::c_char,
                 k,
             );
-            let mut m: size_t = 0 as size_t;
+            let mut m: usize = 0 as usize;
             while m
                 < (::core::mem::size_of::<[C2Rust_Unnamed; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -386,7 +384,7 @@ unsafe extern "C" fn test_unknown_declaration_statements(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -509,7 +507,7 @@ unsafe extern "C" fn test_unknown_compound_statements(
                 b"test_unknown_compound_statements\0".as_ptr() as *const ::core::ffi::c_char,
                 k,
             );
-            let mut m: size_t = 0 as size_t;
+            let mut m: usize = 0 as usize;
             while m
                 < (::core::mem::size_of::<[C2Rust_Unnamed; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -524,7 +522,7 @@ unsafe extern "C" fn test_unknown_compound_statements(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -630,7 +628,7 @@ unsafe extern "C" fn test_unknown_fields(mut ctx: *mut xkb_context, mut update_f
                 b"test_unknown_fields\0".as_ptr() as *const ::core::ffi::c_char,
                 k,
             );
-            let mut m: size_t = 0 as size_t;
+            let mut m: usize = 0 as usize;
             while m
                 < (::core::mem::size_of::<[C2Rust_Unnamed; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -645,7 +643,7 @@ unsafe extern "C" fn test_unknown_fields(mut ctx: *mut xkb_context, mut update_f
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -702,7 +700,7 @@ unsafe extern "C" fn test_unknown_values(mut ctx: *mut xkb_context, mut update_f
                 b"test_unknown_values\0".as_ptr() as *const ::core::ffi::c_char,
                 k,
             );
-            let mut m: size_t = 0 as size_t;
+            let mut m: usize = 0 as usize;
             while m
                 < (::core::mem::size_of::<[C2Rust_Unnamed; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -717,7 +715,7 @@ unsafe extern "C" fn test_unknown_values(mut ctx: *mut xkb_context, mut update_f
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -921,7 +919,7 @@ unsafe extern "C" fn test_actions(mut ctx: *mut xkb_context, mut update_files: b
                 b"test_actions\0".as_ptr() as *const ::core::ffi::c_char,
                 k,
             );
-            let mut m: size_t = 0 as size_t;
+            let mut m: usize = 0 as usize;
             while m
                 < (::core::mem::size_of::<[C2Rust_Unnamed; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed>() as usize)
@@ -936,7 +934,7 @@ unsafe extern "C" fn test_actions(mut ctx: *mut xkb_context, mut update_files: b
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),

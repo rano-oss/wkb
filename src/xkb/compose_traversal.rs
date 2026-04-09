@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __uint32_t = u32;
     pub type __uint64_t = u64;
@@ -93,7 +91,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -115,7 +113,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -224,12 +222,12 @@ pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_compose_table_entry {
-        pub sequence_length: size_t,
+        pub sequence_length: usize,
         pub sequence: *mut xkb_keysym_t,
         pub keysym: xkb_keysym_t,
         pub utf8: *const ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::darray_h::{darray_char, darray_size_t};
     use super::stdint_uintn_h::u32;
@@ -370,7 +368,7 @@ pub mod stdlib_h {
     }
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::bench_h::{bench, bench_elapsed_str, bench_start, bench_stop, bench_time};
 pub use self::compose_iter_h::{xkb_compose_table_for_each, xkb_compose_table_iter_t};

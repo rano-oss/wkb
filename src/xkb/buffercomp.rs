@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __int8_t = i8;
     pub type __uint8_t = u8;
@@ -113,7 +111,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -135,7 +133,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -209,7 +207,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYCODE_MAX: ::core::ffi::c_uint =
         (0xffffffff as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint);
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::stdint_uintn_h::u32;
@@ -229,7 +227,7 @@ pub mod xkbcommon_h {
         pub fn xkb_keymap_new_from_buffer(
             context: *mut xkb_context,
             buffer: *const ::core::ffi::c_char,
-            length: size_t,
+            length: usize,
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
         ) -> *mut xkb_keymap;
@@ -681,11 +679,11 @@ pub mod test_h {
             *mut xkb_context,
             xkb_keymap_format,
             *const ::core::ffi::c_char,
-            size_t,
+            usize,
             *mut ::core::ffi::c_void,
         ) -> *mut xkb_keymap,
     >;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::{
@@ -700,14 +698,14 @@ pub mod test_h {
             context: *mut xkb_context,
             format: xkb_keymap_format,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_buffer2(
             context: *mut xkb_context,
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
             buf: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> *mut xkb_keymap;
         pub fn test_compile_output(
             ctx: *mut xkb_context,
@@ -717,7 +715,7 @@ pub mod test_h {
             compile_buffer_private: *mut ::core::ffi::c_void,
             test_title: *const ::core::ffi::c_char,
             keymap_str: *const ::core::ffi::c_char,
-            keymap_len: size_t,
+            keymap_len: usize,
             rel_path: *const ::core::ffi::c_char,
             update_output_files: bool,
         ) -> bool;
@@ -730,7 +728,7 @@ pub mod test_h {
             compile_buffer_private: *mut ::core::ffi::c_void,
             test_title: *const ::core::ffi::c_char,
             keymap_str: *const ::core::ffi::c_char,
-            keymap_len: size_t,
+            keymap_len: usize,
             rel_path: *const ::core::ffi::c_char,
             update_output_files: bool,
         ) -> bool;
@@ -746,7 +744,7 @@ pub mod test_h {
     }
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
@@ -757,20 +755,20 @@ pub mod stdio_h {
         ) -> ::core::ffi::c_int;
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod time_h {
@@ -814,8 +812,7 @@ pub mod utils_h {
     use super::assert_h::__assert_fail;
     use super::string_h::strcmp;
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub mod assert_h {
     extern "C" {
         pub fn __assert_fail(
@@ -856,7 +853,7 @@ pub mod test_config_h {
     };
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::config_h::EXIT_INVALID_USAGE;
@@ -1027,7 +1024,7 @@ unsafe extern "C" fn compile_buffer(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut buf: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut private: *mut ::core::ffi::c_void,
 ) -> *mut xkb_keymap {
     unsafe {
@@ -1050,7 +1047,7 @@ unsafe extern "C" fn test_encodings(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const utf8_with_bom as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 18]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 18]>() as usize,
         );
         if !keymap.is_null() {
         } else {
@@ -1071,7 +1068,7 @@ unsafe extern "C" fn test_encodings(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const utf16_le as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 29]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 29]>() as usize,
         );
         if keymap.is_null() {
         } else {
@@ -1091,7 +1088,7 @@ unsafe extern "C" fn test_encodings(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const utf16_le_with_bom as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
         );
         if keymap.is_null() {
         } else {
@@ -1111,7 +1108,7 @@ unsafe extern "C" fn test_encodings(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const utf16_be as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 29]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 29]>() as usize,
         );
         if keymap.is_null() {
         } else {
@@ -1315,7 +1312,7 @@ unsafe extern "C" fn test_optional_components(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -1385,7 +1382,7 @@ unsafe extern "C" fn test_bidi_chars(mut ctx: *mut xkb_context, mut update_outpu
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -1487,7 +1484,7 @@ unsafe extern "C" fn test_include_paths(mut ctx: *mut xkb_context) {
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const simple_str as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 162]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 162]>() as usize,
         );
         let mut expected: *mut ::core::ffi::c_char =
             xkb_keymap_get_as_string(keymap, XKB_KEYMAP_USE_ORIGINAL_FORMAT);
@@ -1686,7 +1683,7 @@ unsafe extern "C" fn test_include_default_maps(mut update_output_files: bool) {
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -1800,7 +1797,7 @@ unsafe extern "C" fn test_alloc_limits(mut ctx: *mut xkb_context, mut update_out
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -1834,7 +1831,7 @@ unsafe extern "C" fn test_integers(mut ctx: *mut xkb_context, mut update_output_
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const not_null_terminated as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 1]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 1]>() as usize,
         )
         .is_null()
         {
@@ -1940,7 +1937,7 @@ unsafe extern "C" fn test_integers(mut ctx: *mut xkb_context, mut update_output_
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -2151,7 +2148,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2186,18 +2183,18 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
         );
         let mut i: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         while i < max_iterations {
-            let mut available: size_t =
-                ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as size_t;
+            let mut available: usize =
+                ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize;
             let mut buf: *mut ::core::ffi::c_char = &raw mut buffer as *mut ::core::ffi::c_char;
             let mut count: ::core::ffi::c_int = snprintf(
                 buf,
                 available,
                 b"default xkb_keymap { xkb_keycodes {\n\0".as_ptr() as *const ::core::ffi::c_char,
             );
-            if count > 0 as ::core::ffi::c_int && (count as size_t) < available {
+            if count > 0 as ::core::ffi::c_int && (count as usize) < available {
             } else {
                 __assert_fail(
-                    b"count > 0 && (size_t) count < available\0".as_ptr()
+                    b"count > 0 && (usize) count < available\0".as_ptr()
                         as *const ::core::ffi::c_char,
                     b"../test/buffercomp.c\0".as_ptr() as *const ::core::ffi::c_char,
                     1148 as ::core::ffi::c_uint,
@@ -2205,7 +2202,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                         as *const ::core::ffi::c_char,
                 );
             };
-            available = available.wrapping_sub(count as size_t);
+            available = available.wrapping_sub(count as usize);
             buf = buf.offset(count as isize);
             let mut keycodes: [xkb_keycode_t; 13] = [
                 0 as ::core::ffi::c_int as xkb_keycode_t,
@@ -2223,7 +2220,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                 0,
             ];
             let mut keycode_index: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-            let mut b: size_t = 0 as size_t;
+            let mut b: usize = 0 as usize;
             while b
                 < (::core::mem::size_of::<[C2Rust_Unnamed_14; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_14>() as usize)
@@ -2278,10 +2275,10 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                         kc,
                         kc,
                     );
-                    if count > 0 as ::core::ffi::c_int && (count as size_t) < available {
+                    if count > 0 as ::core::ffi::c_int && (count as usize) < available {
                     } else {
                         __assert_fail(
-                            b"count > 0 && (size_t) count < available\0".as_ptr()
+                            b"count > 0 && (usize) count < available\0".as_ptr()
                                 as *const ::core::ffi::c_char,
                             b"../test/buffercomp.c\0".as_ptr() as *const ::core::ffi::c_char,
                             1183 as ::core::ffi::c_uint,
@@ -2289,7 +2286,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                                 as *const ::core::ffi::c_char,
                         );
                     };
-                    available = available.wrapping_sub(count as size_t);
+                    available = available.wrapping_sub(count as usize);
                     buf = buf.offset(count as isize);
                     k_0 = k_0.wrapping_add(1);
                 }
@@ -2300,10 +2297,10 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                 available,
                 b"}; xkb_symbols {\n\0".as_ptr() as *const ::core::ffi::c_char,
             );
-            if count > 0 as ::core::ffi::c_int && (count as size_t) < available {
+            if count > 0 as ::core::ffi::c_int && (count as usize) < available {
             } else {
                 __assert_fail(
-                    b"count > 0 && (size_t) count < available\0".as_ptr()
+                    b"count > 0 && (usize) count < available\0".as_ptr()
                         as *const ::core::ffi::c_char,
                     b"../test/buffercomp.c\0".as_ptr() as *const ::core::ffi::c_char,
                     1190 as ::core::ffi::c_uint,
@@ -2311,7 +2308,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                         as *const ::core::ffi::c_char,
                 );
             };
-            available = available.wrapping_sub(count as size_t);
+            available = available.wrapping_sub(count as usize);
             buf = buf.offset(count as isize);
             let mut k_1: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_1 < keycode_index {
@@ -2323,10 +2320,10 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                     kc_0,
                     kc_0 >> 3 as ::core::ffi::c_int,
                 );
-                if count > 0 as ::core::ffi::c_int && (count as size_t) < available {
+                if count > 0 as ::core::ffi::c_int && (count as usize) < available {
                 } else {
                     __assert_fail(
-                        b"count > 0 && (size_t) count < available\0".as_ptr()
+                        b"count > 0 && (usize) count < available\0".as_ptr()
                             as *const ::core::ffi::c_char,
                         b"../test/buffercomp.c\0".as_ptr() as *const ::core::ffi::c_char,
                         1199 as ::core::ffi::c_uint,
@@ -2334,7 +2331,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                             as *const ::core::ffi::c_char,
                     );
                 };
-                available = available.wrapping_sub(count as size_t);
+                available = available.wrapping_sub(count as usize);
                 buf = buf.offset(count as isize);
                 k_1 = k_1.wrapping_add(1);
             }
@@ -2343,10 +2340,10 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                 available,
                 b"}; };\0".as_ptr() as *const ::core::ffi::c_char,
             );
-            if count > 0 as ::core::ffi::c_int && (count as size_t) < available {
+            if count > 0 as ::core::ffi::c_int && (count as usize) < available {
             } else {
                 __assert_fail(
-                    b"count > 0 && (size_t) count < available\0".as_ptr()
+                    b"count > 0 && (usize) count < available\0".as_ptr()
                         as *const ::core::ffi::c_char,
                     b"../test/buffercomp.c\0".as_ptr() as *const ::core::ffi::c_char,
                     1205 as ::core::ffi::c_uint,
@@ -2492,7 +2489,7 @@ unsafe extern "C" fn test_keycodes(mut ctx: *mut xkb_context, mut update_output_
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2581,7 +2578,7 @@ unsafe extern "C" fn test_masks(mut ctx: *mut xkb_context, mut update_output_fil
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2664,7 +2661,7 @@ unsafe extern "C" fn test_interpret(mut ctx: *mut xkb_context, mut update_output
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2786,7 +2783,7 @@ unsafe extern "C" fn test_group_indices_names(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2819,7 +2816,7 @@ unsafe extern "C" fn test_group_indices_names(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -2890,7 +2887,7 @@ unsafe extern "C" fn test_level_indices_names(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3125,7 +3122,7 @@ unsafe extern "C" fn test_multi_keysyms_actions(
                 skip: false,
             },
         ];
-        let mut k: size_t = 0 as size_t;
+        let mut k: usize = 0 as usize;
         while k
             < (::core::mem::size_of::<[keymap_test_data; 33]>() as usize)
                 .wrapping_div(::core::mem::size_of::<keymap_test_data>() as usize)
@@ -3146,7 +3143,7 @@ unsafe extern "C" fn test_multi_keysyms_actions(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3187,15 +3184,15 @@ unsafe extern "C" fn test_multi_keysyms_actions(
                         *mut xkb_context,
                         xkb_keymap_format,
                         *const ::core::ffi::c_char,
-                        size_t,
+                        usize,
                         *mut ::core::ffi::c_void,
                     ) -> *mut xkb_keymap,
             ),
             ::core::ptr::null_mut::<::core::ffi::c_void>(),
             b"test_multi_keysyms_actions\0".as_ptr() as *const ::core::ffi::c_char,
             &raw const keymap_str as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 171]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 171]>() as usize)
+                .wrapping_div(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             b"keymaps/symbols-multi-actions-v1.xkb\0".as_ptr() as *const ::core::ffi::c_char,
             update_output_files,
         ) as ::core::ffi::c_int
@@ -3254,7 +3251,7 @@ unsafe extern "C" fn test_key_keysyms_as_strings(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3398,7 +3395,7 @@ unsafe extern "C" fn test_modifier_maps(mut ctx: *mut xkb_context, mut update_ou
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3460,7 +3457,7 @@ unsafe extern "C" fn test_empty_compound_statements(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3501,7 +3498,7 @@ unsafe extern "C" fn test_escape_sequences(
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const bad_octal as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 3]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize,
         )
         .is_null()
         {
@@ -3526,7 +3523,7 @@ unsafe extern "C" fn test_escape_sequences(
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             &raw const bad_unicode as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize,
         )
         .is_null()
         {
@@ -3560,15 +3557,15 @@ unsafe extern "C" fn test_escape_sequences(
                         *mut xkb_context,
                         xkb_keymap_format,
                         *const ::core::ffi::c_char,
-                        size_t,
+                        usize,
                         *mut ::core::ffi::c_void,
                     ) -> *mut xkb_keymap,
             ),
             ::core::ptr::null_mut::<::core::ffi::c_void>(),
             b"test_escape_sequences\0".as_ptr() as *const ::core::ffi::c_char,
             &raw const keymap as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 1567]>() as size_t)
-                .wrapping_div(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 1567]>() as usize)
+                .wrapping_div(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             &raw const expected as *const ::core::ffi::c_char,
             update_output_files,
         ) as ::core::ffi::c_int
@@ -3621,7 +3618,7 @@ unsafe extern "C" fn test_unicode_keysyms(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3713,14 +3710,14 @@ unsafe extern "C" fn test_no_action_void_action(
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
                 &raw const flags as *mut ::core::ffi::c_void,
                 ::core::ptr::null::<::core::ffi::c_char>(),
                 &raw const keymap_str as *const ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 255]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 255]>() as usize,
                 tests[t as usize].output,
                 update_output_files,
             ) as ::core::ffi::c_int
@@ -3805,14 +3802,14 @@ unsafe extern "C" fn test_prebuilt_keymap_roundtrip(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
                     ::core::ptr::null_mut::<::core::ffi::c_void>(),
                     b"Round-trip\0".as_ptr() as *const ::core::ffi::c_char,
                     original,
-                    strlen(original).wrapping_add(i as size_t),
+                    strlen(original).wrapping_add(i as usize),
                     data[k as usize].path,
                     update_output_files,
                 ) as ::core::ffi::c_int
@@ -3924,7 +3921,7 @@ unsafe extern "C" fn test_redirect_key(mut ctx: *mut xkb_context, mut update_out
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -3972,14 +3969,14 @@ unsafe extern "C" fn test_unsupported_legacy_x11_actions(
                         *mut xkb_context,
                         xkb_keymap_format,
                         *const ::core::ffi::c_char,
-                        size_t,
+                        usize,
                         *mut ::core::ffi::c_void,
                     ) -> *mut xkb_keymap,
             ),
             ::core::ptr::null_mut::<::core::ffi::c_void>(),
             b"test_unsupported_legacy_x11_actions\0".as_ptr() as *const ::core::ffi::c_char,
             &raw const keymap_str as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 857]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 857]>() as usize,
             b"keymaps/unsupported-x11-actions\0".as_ptr() as *const ::core::ffi::c_char,
             update_output_files,
         ) as ::core::ffi::c_int
@@ -4131,7 +4128,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                 },
             },
         ];
-        let mut t: size_t = 0 as size_t;
+        let mut t: usize = 0 as usize;
         while t
             < (::core::mem::size_of::<[keymap_multi_versions_test_data; 9]>() as usize)
                 .wrapping_div(::core::mem::size_of::<keymap_multi_versions_test_data>() as usize)
@@ -4205,7 +4202,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4241,7 +4238,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4277,7 +4274,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4313,7 +4310,7 @@ unsafe extern "C" fn test_overlays(mut ctx: *mut xkb_context, mut update_output_
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4480,7 +4477,7 @@ unsafe extern "C" fn test_extended_layout_indices(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4516,7 +4513,7 @@ unsafe extern "C" fn test_extended_layout_indices(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4552,7 +4549,7 @@ unsafe extern "C" fn test_extended_layout_indices(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4588,7 +4585,7 @@ unsafe extern "C" fn test_extended_layout_indices(
                                 *mut xkb_context,
                                 xkb_keymap_format,
                                 *const ::core::ffi::c_char,
-                                size_t,
+                                usize,
                                 *mut ::core::ffi::c_void,
                             ) -> *mut xkb_keymap,
                     ),
@@ -4668,7 +4665,7 @@ unsafe extern "C" fn test_compound_statement_errors(mut ctx: *mut xkb_context) {
                             *mut xkb_context,
                             xkb_keymap_format,
                             *const ::core::ffi::c_char,
-                            size_t,
+                            usize,
                             *mut ::core::ffi::c_void,
                         ) -> *mut xkb_keymap,
                 ),
@@ -4756,7 +4753,7 @@ unsafe fn main_0(
         if xkb_keymap_new_from_buffer(
             ctx,
             &raw const buf as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 15]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 15]>() as usize,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             4294967295 as xkb_keymap_compile_flags,
         )
@@ -4774,7 +4771,7 @@ unsafe fn main_0(
         if xkb_keymap_new_from_buffer(
             ctx,
             &raw const buf as *const ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 15]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 15]>() as usize,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             65535 as xkb_keymap_compile_flags,
         )
@@ -4793,7 +4790,7 @@ unsafe fn main_0(
             ctx,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             b"\0".as_ptr() as *const ::core::ffi::c_char,
-            0 as size_t,
+            0 as usize,
         );
         if keymap.is_null() {
         } else {

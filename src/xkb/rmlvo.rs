@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod types_h {
     pub type __uint32_t = u32;
 }
@@ -52,7 +50,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -74,7 +72,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -100,15 +98,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -116,7 +114,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -129,7 +127,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -297,22 +295,21 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod stdio_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -361,10 +358,9 @@ pub mod keymap_h {
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
-pub mod stdbool_h {
-}
+pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
@@ -456,8 +452,8 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_new(
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
         }
         let builder: *mut xkb_rmlvo_builder = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<xkb_rmlvo_builder>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<xkb_rmlvo_builder>() as usize,
         ) as *mut xkb_rmlvo_builder;
         if !builder.is_null() {
             (*builder).refcnt = 1 as ::core::ffi::c_int;
@@ -494,7 +490,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
     mut layout: *const ::core::ffi::c_char,
     mut variant: *const ::core::ffi::c_char,
     mut options: *const *const ::core::ffi::c_char,
-    mut options_len: size_t,
+    mut options_len: usize,
 ) -> bool {
     unsafe {
         let idx: xkb_layout_index_t = (*rmlvo).layouts.size as xkb_layout_index_t;
@@ -545,12 +541,12 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
             (*rmlvo).layouts.alloc = darray_next_alloc(
                 (*rmlvo).layouts.alloc,
                 __need,
-                ::core::mem::size_of::<xkb_rmlvo_builder_layout>() as size_t,
+                ::core::mem::size_of::<xkb_rmlvo_builder_layout>() as usize,
             );
             (*rmlvo).layouts.item = realloc(
                 (*rmlvo).layouts.item as *mut ::core::ffi::c_void,
-                ((*rmlvo).layouts.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_layout>() as size_t),
+                ((*rmlvo).layouts.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_layout>() as usize),
             ) as *mut xkb_rmlvo_builder_layout;
         }
         *(*rmlvo)
@@ -558,9 +554,9 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
             .item
             .offset((*rmlvo).layouts.size.wrapping_sub(1 as darray_size_t) as isize) = new;
         if options.is_null() {
-            options_len = 0 as size_t;
+            options_len = 0 as usize;
         }
-        let mut k: size_t = 0 as size_t;
+        let mut k: usize = 0 as usize;
         while k < options_len {
             let option: xkb_rmlvo_builder_option = xkb_rmlvo_builder_option {
                 option: strdup_safe(*options.offset(k as isize)),
@@ -590,12 +586,12 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                 (*rmlvo).options.alloc = darray_next_alloc(
                     (*rmlvo).options.alloc,
                     __need_0,
-                    ::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t,
+                    ::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize,
                 );
                 (*rmlvo).options.item = realloc(
                     (*rmlvo).options.item as *mut ::core::ffi::c_void,
-                    ((*rmlvo).options.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t),
+                    ((*rmlvo).options.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize),
                 ) as *mut xkb_rmlvo_builder_option;
             }
             *(*rmlvo)
@@ -659,12 +655,12 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
             (*rmlvo).options.alloc = darray_next_alloc(
                 (*rmlvo).options.alloc,
                 __need,
-                ::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t,
+                ::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize,
             );
             (*rmlvo).options.item = realloc(
                 (*rmlvo).options.item as *mut ::core::ffi::c_void,
-                ((*rmlvo).options.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as size_t),
+                ((*rmlvo).options.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize),
             ) as *mut xkb_rmlvo_builder_option;
         }
         *(*rmlvo)
@@ -766,7 +762,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
     mut builder: *const xkb_rmlvo_builder,
     mut rmlvo: *mut xkb_rule_names,
     mut buf: *mut ::core::ffi::c_char,
-    mut buf_size: size_t,
+    mut buf_size: usize,
 ) -> bool {
     unsafe {
         (*rmlvo).rules = (*builder).rules;
@@ -795,16 +791,16 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     },
                     (*layout).layout,
                 );
-                if count < 0 as ::core::ffi::c_int || count as size_t >= buf_size {
+                if count < 0 as ::core::ffi::c_int || count as usize >= buf_size {
                     return false;
                 }
-                buf_size = buf_size.wrapping_sub(count as size_t);
+                buf_size = buf_size.wrapping_sub(count as usize);
                 start = start.offset(count as isize);
                 k = k.wrapping_add(1);
                 layout = layout.offset(1);
             }
         }
-        if buf_size <= 1 as size_t {
+        if buf_size <= 1 as usize {
             return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;
@@ -834,16 +830,16 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                         b"\0".as_ptr() as *const ::core::ffi::c_char
                     },
                 );
-                if count_0 < 0 as ::core::ffi::c_int || count_0 as size_t >= buf_size {
+                if count_0 < 0 as ::core::ffi::c_int || count_0 as usize >= buf_size {
                     return false;
                 }
-                buf_size = buf_size.wrapping_sub(count_0 as size_t);
+                buf_size = buf_size.wrapping_sub(count_0 as usize);
                 start = start.offset(count_0 as isize);
                 k = k.wrapping_add(1);
                 layout = layout.offset(1);
             }
         }
-        if buf_size <= 1 as size_t {
+        if buf_size <= 1 as usize {
             return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;
@@ -871,10 +867,10 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     },
                     (*option).option,
                 );
-                if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
+                if count_1 < 0 as ::core::ffi::c_int || count_1 as usize >= buf_size {
                     return false;
                 }
-                buf_size = buf_size.wrapping_sub(count_1 as size_t);
+                buf_size = buf_size.wrapping_sub(count_1 as usize);
                 start = start.offset(count_1 as isize);
                 if (*option).layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
                     count_1 = snprintf(
@@ -884,17 +880,17 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                         OPTIONS_GROUP_SPECIFIER_PREFIX,
                         (*option).layout,
                     );
-                    if count_1 < 0 as ::core::ffi::c_int || count_1 as size_t >= buf_size {
+                    if count_1 < 0 as ::core::ffi::c_int || count_1 as usize >= buf_size {
                         return false;
                     }
-                    buf_size = buf_size.wrapping_sub(count_1 as size_t);
+                    buf_size = buf_size.wrapping_sub(count_1 as usize);
                     start = start.offset(count_1 as isize);
                 }
                 k = k.wrapping_add(1);
                 option = option.offset(1);
             }
         }
-        if buf_size == 0 as size_t {
+        if buf_size == 0 as usize {
             return false;
         }
         *start = '\0' as i32 as ::core::ffi::c_char;

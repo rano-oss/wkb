@@ -23,9 +23,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::{__uint32_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
@@ -84,7 +82,7 @@ pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
     pub type ssize_t = __ssize_t;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-    use super::__stddef_size_t_h::size_t;
+
     use super::types_h::__ssize_t;
     use super::FILE_h::FILE;
 
@@ -96,13 +94,13 @@ pub mod stdio_h {
         ) -> *mut FILE;
         pub fn snprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             ...
         ) -> ::core::ffi::c_int;
         pub fn vsnprintf(
             __s: *mut ::core::ffi::c_char,
-            __maxlen: size_t,
+            __maxlen: usize,
             __format: *const ::core::ffi::c_char,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
@@ -142,7 +140,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -164,7 +162,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -202,15 +200,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -218,7 +216,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -231,7 +229,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -425,7 +423,7 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct sval {
-        pub len: size_t,
+        pub len: usize,
         pub start: *const ::core::ffi::c_char,
     }
     #[derive(Copy, Clone)]
@@ -438,19 +436,19 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
@@ -483,17 +481,17 @@ pub mod scanner_utils_h {
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut file_name: *const ::core::ffi::c_char,
         mut priv_0: *mut ::core::ffi::c_void,
     ) {
         unsafe {
             (*s).s = string;
             (*s).len = len;
-            (*s).pos = 0 as size_t;
-            (*s).token_pos = 0 as size_t;
-            (*s).cached_pos = 0 as size_t;
-            (*s).cached_loc.column = 1 as size_t;
+            (*s).pos = 0 as usize;
+            (*s).token_pos = 0 as usize;
+            (*s).cached_pos = 0 as usize;
+            (*s).cached_loc.column = 1 as usize;
             (*s).cached_loc.line = (*s).cached_loc.column;
             (*s).file_name = file_name;
             (*s).ctx = ctx;
@@ -529,8 +527,8 @@ pub mod scanner_utils_h {
                 '\n' as i32,
                 (*s).len.wrapping_sub((*s).pos),
             ) as *const ::core::ffi::c_char;
-            let new_pos: size_t = if !nl.is_null() {
-                nl.offset_from((*s).s) as ::core::ffi::c_long as size_t
+            let new_pos: usize = if !nl.is_null() {
+                nl.offset_from((*s).s) as ::core::ffi::c_long as usize
             } else {
                 (*s).len
             };
@@ -565,7 +563,7 @@ pub mod scanner_utils_h {
     pub unsafe extern "C" fn scanner_str(
         mut s: *mut scanner,
         mut string: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
     ) -> bool {
         unsafe {
             if (*s).len.wrapping_sub((*s).pos) < len {
@@ -591,10 +589,10 @@ pub mod scanner_utils_h {
             if scanner_str(
                 scanner,
                 b"\xEF\xBB\xBF\0".as_ptr() as *const ::core::ffi::c_char,
-                3 as size_t,
+                3 as usize,
             ) as ::core::ffi::c_int
                 != 0
-                || (*scanner).len < 2 as size_t
+                || (*scanner).len < 2 as usize
             {
                 return true_0 != 0;
             }
@@ -635,7 +633,7 @@ pub mod scanner_utils_h {
             return true_0 != 0;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::{xkb_context, xkb_log};
     use super::darray_h::darray_size_t;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
@@ -648,60 +646,59 @@ pub mod scanner_utils_h {
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memmove(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memcmp(
             __s1: *const ::core::ffi::c_void,
             __s2: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strncmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn strchr(
             __s: *const ::core::ffi::c_char,
             __c: ::core::ffi::c_int,
         ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn strlen_safe(mut s: *const ::core::ffi::c_char) -> size_t {
+    pub unsafe extern "C" fn strlen_safe(mut s: *const ::core::ffi::c_char) -> usize {
         unsafe {
-            return if !s.is_null() { strlen(s) } else { 0 as size_t };
+            return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
@@ -737,7 +734,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn snprintf_safe(
         mut buf: *mut ::core::ffi::c_char,
-        mut sz: size_t,
+        mut sz: usize,
         mut format: *const ::core::ffi::c_char,
         mut c2rust_args: ...
     ) -> bool {
@@ -746,10 +743,10 @@ pub mod utils_h {
             let mut rc: ::core::ffi::c_int = 0;
             ap = c2rust_args.clone();
             rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as size_t) < sz;
+            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdio_h::vsnprintf;
     use super::string_h::strlen;
     use super::FILE_h::FILE;
@@ -759,13 +756,13 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -794,14 +791,14 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
 }
 pub mod include_h {
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
     pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::xkb_file_type;
     use super::context_h::xkb_context;
     use super::stdio_h::ssize_t;
@@ -811,19 +808,19 @@ pub mod include_h {
             ctx: *mut xkb_context,
             parent_file_name: *const ::core::ffi::c_char,
             name: *const ::core::ffi::c_char,
-            name_len: size_t,
+            name_len: usize,
             type_0: xkb_file_type,
             buf: *mut ::core::ffi::c_char,
-            buf_size: size_t,
+            buf_size: usize,
         ) -> ssize_t;
         pub fn FindFileInXkbPath(
             ctx: *mut xkb_context,
             parent_file_name: *const ::core::ffi::c_char,
             name: *const ::core::ffi::c_char,
-            name_len: size_t,
+            name_len: usize,
             type_0: xkb_file_type,
             buf: *mut ::core::ffi::c_char,
-            buf_size: size_t,
+            buf_size: usize,
             offset: *mut ::core::ffi::c_uint,
             required: bool,
         ) -> *mut FILE;
@@ -868,7 +865,7 @@ pub mod stdbool_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
@@ -1157,8 +1154,8 @@ unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_tok
             if scanner_str(
                 s,
                 b"//\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize)
+                    .wrapping_sub(1 as usize),
             ) {
                 scanner_skip_to_eol(s);
             }
@@ -1205,35 +1202,32 @@ unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_tok
         if scanner_str(
             s,
             b"<none>\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_NONE;
         }
         if scanner_str(
             s,
             b"<some>\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_SOME;
         }
         if scanner_str(
             s,
             b"<any>\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_ANY;
         }
         if scanner_chr(s, '$' as i32 as ::core::ffi::c_char) {
             (*val).string.start = (*s).s.offset((*s).pos as isize);
-            (*val).string.len = 0 as size_t;
+            (*val).string.len = 0 as usize;
             while is_ident(scanner_peek(s)) {
                 scanner_next(s);
                 (*val).string.len = (*val).string.len.wrapping_add(1);
             }
-            if (*val).string.len == 0 as size_t {
+            if (*val).string.len == 0 as usize {
                 let mut loc_0: scanner_loc = scanner_token_location(s);
                 xkb_log(
                     (*s).ctx,
@@ -1253,8 +1247,7 @@ unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_tok
         if scanner_str(
             s,
             b"include\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize).wrapping_sub(1 as usize),
         ) {
             return TOK_INCLUDE;
         }
@@ -1290,7 +1283,7 @@ unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_tok
         };
         if is_ident(scanner_peek(s)) {
             (*val).string.start = (*s).s.offset((*s).pos as isize);
-            (*val).string.len = 0 as size_t;
+            (*val).string.len = 0 as usize;
             while is_ident(scanner_peek(s)) {
                 scanner_next(s);
                 (*val).string.len = (*val).string.len.wrapping_add(1);
@@ -1322,15 +1315,15 @@ static mut rules_kccgst_svals: [sval; 5] = [sval {
 pub const OPTIONS_MATCH_ALL_GROUPS: ::core::ffi::c_int = XKB_MAX_GROUPS;
 unsafe extern "C" fn strip_spaces(mut v: sval) -> sval {
     unsafe {
-        while v.len > 0 as size_t
+        while v.len > 0 as usize
             && is_space(*v.start.offset(0 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int
                 != 0
         {
             v.len = v.len.wrapping_sub(1);
             v.start = v.start.offset(1);
         }
-        while v.len > 0 as size_t
-            && is_space(*v.start.offset(v.len.wrapping_sub(1 as size_t) as isize))
+        while v.len > 0 as usize
+            && is_space(*v.start.offset(v.len.wrapping_sub(1 as usize) as isize))
                 as ::core::ffi::c_int
                 != 0
         {
@@ -1356,7 +1349,7 @@ unsafe extern "C" fn split_comma_separated_mlvo(
                     matched_layout: [0; 4],
                     c2rust_padding: [0; 4],
                     sval: sval {
-                        len: 0 as size_t,
+                        len: 0 as usize,
                         start: ::core::ptr::null::<::core::ffi::c_char>(),
                     },
                 };
@@ -1370,12 +1363,12 @@ unsafe extern "C" fn split_comma_separated_mlvo(
                 arr.alloc = darray_next_alloc(
                     arr.alloc,
                     __need,
-                    ::core::mem::size_of::<matched_sval>() as size_t,
+                    ::core::mem::size_of::<matched_sval>() as usize,
                 );
                 arr.item = realloc(
                     arr.item as *mut ::core::ffi::c_void,
-                    (arr.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                    (arr.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 ) as *mut matched_sval;
             }
             *arr.item
@@ -1388,7 +1381,7 @@ unsafe extern "C" fn split_comma_separated_mlvo(
                     matched_layout: [0; 4],
                     c2rust_padding: [0; 4],
                     sval: sval {
-                        len: 0 as size_t,
+                        len: 0 as usize,
                         start: s,
                     },
                 };
@@ -1409,7 +1402,7 @@ unsafe extern "C" fn split_comma_separated_mlvo(
                 let layout_start: *const ::core::ffi::c_char = s;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                 let mut count: ::core::ffi::c_int =
-                    parse_dec_to_uint32_t(s, SIZE_MAX as size_t, &raw mut layout);
+                    parse_dec_to_uint32_t(s, SIZE_MAX as usize, &raw mut layout);
                 if count > 0 as ::core::ffi::c_int {
                     s = s.offset(count as isize);
                     if layout == 0 as xkb_layout_index_t
@@ -1476,12 +1469,12 @@ unsafe extern "C" fn split_comma_separated_mlvo(
                 arr.alloc = darray_next_alloc(
                     arr.alloc,
                     __need_0,
-                    ::core::mem::size_of::<matched_sval>() as size_t,
+                    ::core::mem::size_of::<matched_sval>() as usize,
                 );
                 arr.item = realloc(
                     arr.item as *mut ::core::ffi::c_void,
-                    (arr.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                    (arr.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 ) as *mut matched_sval;
             }
             *arr.item
@@ -1502,7 +1495,7 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
 ) -> *mut matcher {
     unsafe {
         let mut m: *mut matcher =
-            calloc(1 as size_t, ::core::mem::size_of::<matcher>() as size_t) as *mut matcher;
+            calloc(1 as usize, ::core::mem::size_of::<matcher>() as usize) as *mut matcher;
         if m.is_null() {
             return ::core::ptr::null_mut::<matcher>();
         }
@@ -1599,20 +1592,20 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                         (*m).rmlvo.variants.alloc = darray_next_alloc(
                             (*m).rmlvo.variants.alloc,
                             __need,
-                            ::core::mem::size_of::<matched_sval>() as size_t,
+                            ::core::mem::size_of::<matched_sval>() as usize,
                         );
                         (*m).rmlvo.variants.item = realloc(
                             (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.variants.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                     }
                     memset(
                         (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
                             as *mut ::core::ffi::c_void,
                         0 as ::core::ffi::c_int,
-                        (__newSize.wrapping_sub(__oldSize) as size_t)
-                            .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                        (__newSize.wrapping_sub(__oldSize) as usize)
+                            .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                     );
                 }
             } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
@@ -1639,13 +1632,13 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                     (*m).rmlvo.variants.alloc = darray_next_alloc(
                         (*m).rmlvo.variants.alloc,
                         __need_0,
-                        ::core::mem::size_of::<matched_sval>() as size_t,
+                        ::core::mem::size_of::<matched_sval>() as usize,
                     );
                     (*m).rmlvo.variants.item =
                         realloc(
                             (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.variants.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                 }
                 if (*m).rmlvo.variants.size > 0 as darray_size_t {
@@ -1653,8 +1646,8 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                     (*m).rmlvo.variants.item =
                         realloc(
                             (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.variants.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                 }
             }
@@ -1691,12 +1684,12 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                         (*m).rmlvo.layouts.alloc = darray_next_alloc(
                             (*m).rmlvo.layouts.alloc,
                             __need_1,
-                            ::core::mem::size_of::<matched_sval>() as size_t,
+                            ::core::mem::size_of::<matched_sval>() as usize,
                         );
                         (*m).rmlvo.layouts.item = realloc(
                             (*m).rmlvo.layouts.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.layouts.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.layouts.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                     }
                     *(*m)
@@ -1716,12 +1709,12 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                         (*m).rmlvo.variants.alloc = darray_next_alloc(
                             (*m).rmlvo.variants.alloc,
                             __need_2,
-                            ::core::mem::size_of::<matched_sval>() as size_t,
+                            ::core::mem::size_of::<matched_sval>() as usize,
                         );
                         (*m).rmlvo.variants.item = realloc(
                             (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.variants.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                     }
                     *(*m).rmlvo.variants.item.offset(
@@ -1776,12 +1769,12 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
                         (*m).rmlvo.options.alloc = darray_next_alloc(
                             (*m).rmlvo.options.alloc,
                             __need_3,
-                            ::core::mem::size_of::<matched_sval>() as size_t,
+                            ::core::mem::size_of::<matched_sval>() as usize,
                         );
                         (*m).rmlvo.options.item = realloc(
                             (*m).rmlvo.options.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.options.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.options.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                     }
                     *(*m)
@@ -1805,7 +1798,7 @@ unsafe extern "C" fn matcher_new_from_names(
 ) -> *mut matcher {
     unsafe {
         let mut m: *mut matcher =
-            calloc(1 as size_t, ::core::mem::size_of::<matcher>() as size_t) as *mut matcher;
+            calloc(1 as usize, ::core::mem::size_of::<matcher>() as usize) as *mut matcher;
         if m.is_null() {
             return ::core::ptr::null_mut::<matcher>();
         }
@@ -1847,21 +1840,21 @@ unsafe extern "C" fn matcher_new_from_names(
                     (*m).rmlvo.variants.alloc = darray_next_alloc(
                         (*m).rmlvo.variants.alloc,
                         __need,
-                        ::core::mem::size_of::<matched_sval>() as size_t,
+                        ::core::mem::size_of::<matched_sval>() as usize,
                     );
                     (*m).rmlvo.variants.item =
                         realloc(
                             (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                            ((*m).rmlvo.variants.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                 }
                 memset(
                     (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 );
             }
         } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
@@ -1888,20 +1881,20 @@ unsafe extern "C" fn matcher_new_from_names(
                 (*m).rmlvo.variants.alloc = darray_next_alloc(
                     (*m).rmlvo.variants.alloc,
                     __need_0,
-                    ::core::mem::size_of::<matched_sval>() as size_t,
+                    ::core::mem::size_of::<matched_sval>() as usize,
                 );
                 (*m).rmlvo.variants.item = realloc(
                     (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                    ((*m).rmlvo.variants.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                    ((*m).rmlvo.variants.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 ) as *mut matched_sval;
             }
             if (*m).rmlvo.variants.size > 0 as darray_size_t {
                 (*m).rmlvo.variants.alloc = (*m).rmlvo.variants.size;
                 (*m).rmlvo.variants.item = realloc(
                     (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                    ((*m).rmlvo.variants.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as size_t),
+                    ((*m).rmlvo.variants.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 ) as *mut matched_sval;
             }
         }
@@ -1977,12 +1970,11 @@ unsafe extern "C" fn matcher_group_start_new(mut m: *mut matcher, mut name: sval
             (*m).groups.alloc = darray_next_alloc(
                 (*m).groups.alloc,
                 __need,
-                ::core::mem::size_of::<group>() as size_t,
+                ::core::mem::size_of::<group>() as usize,
             );
             (*m).groups.item = realloc(
                 (*m).groups.item as *mut ::core::ffi::c_void,
-                ((*m).groups.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<group>() as size_t),
+                ((*m).groups.alloc as usize).wrapping_mul(::core::mem::size_of::<group>() as usize),
             ) as *mut group;
         }
         *(*m)
@@ -2033,7 +2025,7 @@ unsafe extern "C" fn matcher_group_add_element(
                 .elements
                 .alloc,
                 __need,
-                ::core::mem::size_of::<sval>() as size_t,
+                ::core::mem::size_of::<sval>() as usize,
             );
             let ref mut c2rust_fresh3 = (*(*m)
                 .groups
@@ -2048,7 +2040,7 @@ unsafe extern "C" fn matcher_group_add_element(
                     .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
                 .elements
                 .item as *mut ::core::ffi::c_void,
-                (*c2rust_fresh2 as size_t).wrapping_mul(::core::mem::size_of::<sval>() as size_t),
+                (*c2rust_fresh2 as usize).wrapping_mul(::core::mem::size_of::<sval>() as usize),
             ) as *mut sval;
         }
         *(*(*m)
@@ -2091,7 +2083,7 @@ unsafe extern "C" fn matcher_include(
             return;
         }
         let mut stmt_file: *const ::core::ffi::c_char = inc.start;
-        let mut stmt_file_len: size_t = inc.len;
+        let mut stmt_file_len: usize = inc.len;
         let mut buf: [::core::ffi::c_char; 4096] = [
             0 as ::core::ffi::c_int as ::core::ffi::c_char,
             0,
@@ -6197,13 +6189,13 @@ unsafe extern "C" fn matcher_include(
             stmt_file_len,
             FILE_TYPE_RULES,
             &raw mut buf as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
         ) as ssize_t;
         if expanded < 0 as ssize_t {
             return;
         } else if expanded > 0 as ssize_t {
             stmt_file = &raw mut buf as *mut ::core::ffi::c_char;
-            stmt_file_len = expanded as size_t;
+            stmt_file_len = expanded as usize;
             if *stmt_file.offset(stmt_file_len as isize) as ::core::ffi::c_int == '\0' as i32 {
             } else {
                 __assert_fail(
@@ -6269,7 +6261,7 @@ unsafe extern "C" fn matcher_include(
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 &raw mut offset,
                 true_0 != 0,
             );
@@ -6318,7 +6310,7 @@ unsafe extern "C" fn matcher_include(
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 &raw mut offset,
                 true_0 != 0,
             );
@@ -6364,24 +6356,24 @@ unsafe extern "C" fn matcher_mapping_start_new(mut m: *mut matcher) {
 }
 unsafe extern "C" fn parse_layout_int_index(
     mut s: *const ::core::ffi::c_char,
-    mut max_len: size_t,
+    mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
 ) -> ::core::ffi::c_int {
     unsafe {
-        if max_len >= 3 as size_t {
+        if max_len >= 3 as usize {
         } else {
             __assert_fail(
                 b"max_len >= 3\0".as_ptr() as *const ::core::ffi::c_char,
                 b"../src/xkbcomp/rules.c\0".as_ptr() as *const ::core::ffi::c_char,
                 701 as ::core::ffi::c_uint,
-                b"int parse_layout_int_index(const char *, size_t, xkb_layout_index_t *)\0".as_ptr()
+                b"int parse_layout_int_index(const char *, usize, xkb_layout_index_t *)\0".as_ptr()
                     as *const ::core::ffi::c_char,
             );
         };
         let mut val: u32 = 0 as u32;
         let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
             s.offset(1 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_char,
-            max_len.wrapping_sub(2 as size_t),
+            max_len.wrapping_sub(2 as usize),
             &raw mut val,
         ) as ::core::ffi::c_int;
         if count <= 0 as ::core::ffi::c_int
@@ -6398,17 +6390,17 @@ unsafe extern "C" fn parse_layout_int_index(
 }
 unsafe extern "C" fn extract_layout_index(
     mut s: *const ::core::ffi::c_char,
-    mut max_len: size_t,
+    mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
 ) -> ::core::ffi::c_int {
     unsafe {
         *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-        if max_len < 3 as size_t
+        if max_len < 3 as usize
             || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '[' as i32
         {
             return -1 as ::core::ffi::c_int;
         }
-        if max_len > 3 as size_t
+        if max_len > 3 as usize
             && *s.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '%' as i32
             && *s.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'i' as i32
             && *s.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ']' as i32
@@ -6420,7 +6412,7 @@ unsafe extern "C" fn extract_layout_index(
 }
 unsafe extern "C" fn extract_mapping_layout_index(
     mut s: *const ::core::ffi::c_char,
-    mut max_len: size_t,
+    mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -6446,7 +6438,7 @@ unsafe extern "C" fn extract_mapping_layout_index(
                 range: LAYOUT_INDEX_ANY,
             },
         ];
-        if max_len < 3 as size_t
+        if max_len < 3 as usize
             || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '[' as i32
         {
             *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
@@ -6460,7 +6452,7 @@ unsafe extern "C" fn extract_mapping_layout_index(
             if strncmp(
                 s.offset(1 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_char,
                 names[k as usize].name,
-                names[k as usize].length as size_t,
+                names[k as usize].length as usize,
             ) == 0 as ::core::ffi::c_int
             {
                 *out = names[k as usize].range as xkb_layout_index_t;
@@ -6981,7 +6973,7 @@ unsafe extern "C" fn matcher_rule_start_new(mut m: *mut matcher) {
         memset(
             &raw mut (*m).rule as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<rule>() as size_t,
+            ::core::mem::size_of::<rule>() as usize,
         );
         (*m).rule.skip = (*m).mapping.c2rust_unnamed_0.active == 0;
     }
@@ -7023,7 +7015,7 @@ unsafe extern "C" fn matcher_rule_set_mlvo_wildcard(
 ) {
     unsafe {
         let mut dummy: sval = sval {
-            len: 0 as size_t,
+            len: 0 as usize,
             start: ::core::ptr::null::<::core::ffi::c_char>(),
         };
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
@@ -7173,7 +7165,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
     mut value: sval,
     mut layout_idx: xkb_layout_index_t,
     mut expanded: *mut darray_char,
-    mut i: *mut size_t,
+    mut i: *mut usize,
 ) -> bool {
     unsafe {
         let mut expanded_index: bool = false;
@@ -7185,12 +7177,12 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
         let mut sfx: ::core::ffi::c_char = 0;
         let mut expanded_value: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
         if *str.offset(*i as isize) as ::core::ffi::c_int == 'i' as i32
-            && ((*i).wrapping_add(1 as size_t) == value.len
-                || (*str.offset((*i).wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int
+            && ((*i).wrapping_add(1 as usize) == value.len
+                || (*str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
                     == MERGE_OVERRIDE_PREFIX
-                    || *str.offset((*i).wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int
+                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
                         == MERGE_AUGMENT_PREFIX
-                    || *str.offset((*i).wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int
+                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
                         == MERGE_REPLACE_PREFIX))
         {
             if layout_idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -7212,7 +7204,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                 let mut index_str: [::core::ffi::c_char; 12] = [0; 12];
                 let mut count: ::core::ffi::c_int = snprintf(
                     &raw mut index_str as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 12]>() as size_t,
+                    ::core::mem::size_of::<[::core::ffi::c_char; 12]>() as usize,
                     b"%u\0".as_ptr() as *const ::core::ffi::c_char,
                     layout_idx.wrapping_add(1 as xkb_layout_index_t),
                 );
@@ -7226,19 +7218,19 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                     (*expanded).alloc = darray_next_alloc(
                         (*expanded).alloc,
                         __need,
-                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                     );
                     (*expanded).item = realloc(
                         (*expanded).item as *mut ::core::ffi::c_void,
-                        ((*expanded).alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        ((*expanded).alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     ) as *mut ::core::ffi::c_char;
                 }
                 memcpy(
                     (*expanded).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                     &raw mut index_str as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-                    (__count as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    (__count as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 );
                 *(*expanded)
                     .item
@@ -7330,14 +7322,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     b"../src/xkbcomp/rules.c\0".as_ptr()
                                                         as *const ::core::ffi::c_char,
                                                     1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, size_t *)\0"
+                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
                                                         .as_ptr() as *const ::core::ffi::c_char,
                                                 );
                                             };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
-                                        *i = (*i).wrapping_add(consumed as size_t);
+                                        *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
                                     }
                                 }
@@ -7430,7 +7422,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
-                                                || (*expanded_value).sval.len == 0 as size_t
+                                                || (*expanded_value).sval.len == 0 as usize
                                             {
                                                 return true_0 != 0;
                                             }
@@ -7450,17 +7442,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_0,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -7469,10 +7461,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_0 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as size_t).wrapping_mul(
+                                                    (__count_0 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -7495,14 +7487,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).alloc,
                                                     __need_1,
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 );
                                                 (*expanded).item = realloc(
                                                     (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as size_t).wrapping_mul(
+                                                    ((*expanded).alloc as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 )
                                                     as *mut ::core::ffi::c_char;
@@ -7512,9 +7504,9 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     as *mut ::core::ffi::c_void,
                                                 (*expanded_value).sval.start
                                                     as *const ::core::ffi::c_void,
-                                                (__count_1 as size_t).wrapping_mul(
+                                                (__count_1 as usize).wrapping_mul(
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 ),
                                             );
                                             *(*expanded).item.offset(
@@ -7538,17 +7530,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_2,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -7557,10 +7549,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_2 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as size_t).wrapping_mul(
+                                                    (__count_2 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -7632,14 +7624,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     b"../src/xkbcomp/rules.c\0".as_ptr()
                                                         as *const ::core::ffi::c_char,
                                                     1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, size_t *)\0"
+                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
                                                         .as_ptr() as *const ::core::ffi::c_char,
                                                 );
                                             };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
-                                        *i = (*i).wrapping_add(consumed as size_t);
+                                        *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
                                     }
                                 }
@@ -7732,7 +7724,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
-                                                || (*expanded_value).sval.len == 0 as size_t
+                                                || (*expanded_value).sval.len == 0 as usize
                                             {
                                                 return true_0 != 0;
                                             }
@@ -7752,17 +7744,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_0,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -7771,10 +7763,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_0 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as size_t).wrapping_mul(
+                                                    (__count_0 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -7797,14 +7789,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).alloc,
                                                     __need_1,
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 );
                                                 (*expanded).item = realloc(
                                                     (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as size_t).wrapping_mul(
+                                                    ((*expanded).alloc as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 )
                                                     as *mut ::core::ffi::c_char;
@@ -7814,9 +7806,9 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     as *mut ::core::ffi::c_void,
                                                 (*expanded_value).sval.start
                                                     as *const ::core::ffi::c_void,
-                                                (__count_1 as size_t).wrapping_mul(
+                                                (__count_1 as usize).wrapping_mul(
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 ),
                                             );
                                             *(*expanded).item.offset(
@@ -7840,17 +7832,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_2,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -7859,10 +7851,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_2 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as size_t).wrapping_mul(
+                                                    (__count_2 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -7934,14 +7926,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     b"../src/xkbcomp/rules.c\0".as_ptr()
                                                         as *const ::core::ffi::c_char,
                                                     1235 as ::core::ffi::c_uint,
-                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, size_t *)\0"
+                                                    b"_Bool expand_rmlvo_in_kccgst_value(struct matcher *, struct scanner *, struct sval, xkb_layout_index_t, darray_char *, usize *)\0"
                                                         .as_ptr() as *const ::core::ffi::c_char,
                                                 );
                                             };
                                             idx = layout_idx;
                                             expanded_index = true_0 != 0;
                                         }
-                                        *i = (*i).wrapping_add(consumed as size_t);
+                                        *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
                                     }
                                 }
@@ -8034,7 +8026,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
-                                                || (*expanded_value).sval.len == 0 as size_t
+                                                || (*expanded_value).sval.len == 0 as usize
                                             {
                                                 return true_0 != 0;
                                             }
@@ -8054,17 +8046,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_0,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -8073,10 +8065,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_0 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as size_t).wrapping_mul(
+                                                    (__count_0 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -8099,14 +8091,14 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).alloc,
                                                     __need_1,
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 );
                                                 (*expanded).item = realloc(
                                                     (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as size_t).wrapping_mul(
+                                                    ((*expanded).alloc as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 )
                                                     as *mut ::core::ffi::c_char;
@@ -8116,9 +8108,9 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     as *mut ::core::ffi::c_void,
                                                 (*expanded_value).sval.start
                                                     as *const ::core::ffi::c_void,
-                                                (__count_1 as size_t).wrapping_mul(
+                                                (__count_1 as usize).wrapping_mul(
                                                     ::core::mem::size_of::<::core::ffi::c_char>()
-                                                        as size_t,
+                                                        as usize,
                                                 ),
                                             );
                                             *(*expanded).item.offset(
@@ -8142,17 +8134,17 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                         __need_2,
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     );
                                                     (*expanded).item = realloc(
                                                         (*expanded).item
                                                             as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as size_t).wrapping_mul(
+                                                        ((*expanded).alloc as usize).wrapping_mul(
                                                             ::core::mem::size_of::<
                                                                 ::core::ffi::c_char,
                                                             >(
                                                             )
-                                                                as size_t,
+                                                                as usize,
                                                         ),
                                                     )
                                                         as *mut ::core::ffi::c_char;
@@ -8161,10 +8153,10 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
                                                     (*expanded).item.offset(__oldSize_2 as isize)
                                                         as *mut ::core::ffi::c_void,
                                                     &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as size_t).wrapping_mul(
+                                                    (__count_2 as usize).wrapping_mul(
                                                         ::core::mem::size_of::<::core::ffi::c_char>(
                                                         )
-                                                            as size_t,
+                                                            as usize,
                                                     ),
                                                 );
                                                 *(*expanded).item.offset(
@@ -8210,21 +8202,21 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
     mut has_layout_idx_range: bool,
     mut has_separator: bool,
     mut prefix_idx: darray_size_t,
-    mut i: *mut size_t,
+    mut i: *mut usize,
 ) {
     unsafe {
         let mut str: *const ::core::ffi::c_char = value.start;
-        if ((*i).wrapping_add(3 as size_t) <= value.len
-            || (*str.offset((*i).wrapping_add(3 as size_t) as isize) as ::core::ffi::c_int
+        if ((*i).wrapping_add(3 as usize) <= value.len
+            || (*str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
                 == MERGE_OVERRIDE_PREFIX
-                || *str.offset((*i).wrapping_add(3 as size_t) as isize) as ::core::ffi::c_int
+                || *str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
                     == MERGE_AUGMENT_PREFIX
-                || *str.offset((*i).wrapping_add(3 as size_t) as isize) as ::core::ffi::c_int
+                || *str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
                     == MERGE_REPLACE_PREFIX))
             && *str.offset(*i as isize) as ::core::ffi::c_int == 'a' as i32
-            && *str.offset((*i).wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int
+            && *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
                 == 'l' as i32
-            && *str.offset((*i).wrapping_add(2 as size_t) as isize) as ::core::ffi::c_int
+            && *str.offset((*i).wrapping_add(2 as usize) as isize) as ::core::ffi::c_int
                 == 'l' as i32
         {
             if has_layout_idx_range {
@@ -8250,19 +8242,19 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                 (*expanded).alloc = darray_next_alloc(
                     (*expanded).alloc,
                     __need,
-                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                    ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                 );
                 (*expanded).item = realloc(
                     (*expanded).item as *mut ::core::ffi::c_void,
-                    ((*expanded).alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    ((*expanded).alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 ) as *mut ::core::ffi::c_char;
             }
             memcpy(
                 (*expanded).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                 b"1\0".as_ptr() as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-                (__count as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                (__count as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             );
             *(*expanded)
                 .item
@@ -8290,13 +8282,13 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                             (*expanded).alloc = darray_next_alloc(
                                 (*expanded).alloc,
                                 __need_0,
-                                ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                                ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                             );
                             (*expanded).item =
                                 realloc(
                                     (*expanded).item as *mut ::core::ffi::c_void,
-                                    ((*expanded).alloc as size_t).wrapping_mul(
-                                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                                    ((*expanded).alloc as usize).wrapping_mul(
+                                        ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                                     ),
                                 ) as *mut ::core::ffi::c_char;
                         }
@@ -8315,23 +8307,23 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                         (*expanded).alloc = darray_next_alloc(
                             (*expanded).alloc,
                             __need_1,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         (*expanded).item = realloc(
                             (*expanded).item as *mut ::core::ffi::c_void,
-                            ((*expanded).alloc as size_t).wrapping_mul(::core::mem::size_of::<
+                            ((*expanded).alloc as usize).wrapping_mul(::core::mem::size_of::<
                                 ::core::ffi::c_char,
                             >(
                             )
-                                as size_t),
+                                as usize),
                         ) as *mut ::core::ffi::c_char;
                     }
                     memcpy(
                         (*expanded).item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
                         (*expanded).item.offset(prefix_idx as isize) as *mut ::core::ffi::c_char
                             as *const ::core::ffi::c_void,
-                        (__count_0 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_0 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                     *(*expanded)
                         .item
@@ -8340,7 +8332,7 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                     (*expanded).size = (*expanded).size.wrapping_sub(1);
                     let mut count: ::core::ffi::c_int = snprintf(
                         &raw mut layout_index as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 12]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 12]>() as usize,
                         b"%u\0".as_ptr() as *const ::core::ffi::c_char,
                         l.wrapping_add(1 as xkb_layout_index_t),
                     );
@@ -8354,23 +8346,23 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                         (*expanded).alloc = darray_next_alloc(
                             (*expanded).alloc,
                             __need_2,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         (*expanded).item = realloc(
                             (*expanded).item as *mut ::core::ffi::c_void,
-                            ((*expanded).alloc as size_t).wrapping_mul(::core::mem::size_of::<
+                            ((*expanded).alloc as usize).wrapping_mul(::core::mem::size_of::<
                                 ::core::ffi::c_char,
                             >(
                             )
-                                as size_t),
+                                as usize),
                         ) as *mut ::core::ffi::c_char;
                     }
                     memcpy(
                         (*expanded).item.offset(__oldSize_1 as isize) as *mut ::core::ffi::c_void,
                         &raw mut layout_index as *mut ::core::ffi::c_char
                             as *const ::core::ffi::c_void,
-                        (__count_1 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_1 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                     *(*expanded)
                         .item
@@ -8380,7 +8372,7 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
                     l = l.wrapping_add(1);
                 }
             }
-            *i = (*i).wrapping_add(3 as size_t);
+            *i = (*i).wrapping_add(3 as usize);
         }
     }
 }
@@ -8408,19 +8400,19 @@ unsafe extern "C" fn concat_kccgst(
                 (*into).alloc = darray_next_alloc(
                     (*into).alloc,
                     __need,
-                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                    ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                 );
                 (*into).item = realloc(
                     (*into).item as *mut ::core::ffi::c_void,
-                    ((*into).alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    ((*into).alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 ) as *mut ::core::ffi::c_char;
             }
             memcpy(
                 (*into).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                 from as *const ::core::ffi::c_void,
-                (__count as size_t)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                (__count as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
             );
             *(*into)
                 .item
@@ -8447,25 +8439,25 @@ unsafe extern "C" fn concat_kccgst(
                     (*into).alloc = darray_next_alloc(
                         (*into).alloc,
                         __need_0,
-                        ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                        ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                     );
                     (*into).item = realloc(
                         (*into).item as *mut ::core::ffi::c_void,
-                        ((*into).alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        ((*into).alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     ) as *mut ::core::ffi::c_char;
                 }
                 memmove(
                     (*into).item.offset(__count_0 as isize) as *mut ::core::ffi::c_void,
                     (*into).item as *const ::core::ffi::c_void,
-                    (__oldSize_0 as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    (__oldSize_0 as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 );
                 memcpy(
                     (*into).item as *mut ::core::ffi::c_void,
                     from as *const ::core::ffi::c_void,
-                    (__count_0 as size_t)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                    (__count_0 as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                 );
                 *(*into)
                     .item
@@ -8494,7 +8486,7 @@ unsafe extern "C" fn append_expanded_kccgst_value(
         };
         let mut last_item_idx: darray_size_t = 0 as darray_size_t;
         let mut has_separator: bool = false_0 != 0;
-        let mut i: size_t = 0 as size_t;
+        let mut i: usize = 0 as usize;
         loop {
             if !(i < value.len) {
                 c2rust_current_block = 10758786907990354186;
@@ -8512,13 +8504,13 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.alloc = darray_next_alloc(
                             expanded.alloc,
                             __need,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         expanded.item = realloc(
                             expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as size_t)
+                            (expanded.alloc as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t
+                                    ::core::mem::size_of::<::core::ffi::c_char>() as usize
                                 ),
                         ) as *mut ::core::ffi::c_char;
                     }
@@ -8528,8 +8520,8 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
                         str.offset(c2rust_fresh4 as isize) as *const ::core::ffi::c_char
                             as *const ::core::ffi::c_void,
-                        (__count as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                     *expanded
                         .item
@@ -8574,13 +8566,13 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.alloc = darray_next_alloc(
                             expanded.alloc,
                             __need_0,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         expanded.item = realloc(
                             expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as size_t)
+                            (expanded.alloc as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t
+                                    ::core::mem::size_of::<::core::ffi::c_char>() as usize
                                 ),
                         ) as *mut ::core::ffi::c_char;
                     }
@@ -8590,8 +8582,8 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
                         str.offset(c2rust_fresh5 as isize) as *const ::core::ffi::c_char
                             as *const ::core::ffi::c_void,
-                        (__count_0 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_0 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                     *expanded
                         .item
@@ -8612,13 +8604,13 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.alloc = darray_next_alloc(
                             expanded.alloc,
                             __need_1,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         expanded.item = realloc(
                             expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as size_t)
+                            (expanded.alloc as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t
+                                    ::core::mem::size_of::<::core::ffi::c_char>() as usize
                                 ),
                         ) as *mut ::core::ffi::c_char;
                     }
@@ -8628,8 +8620,8 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         expanded.item.offset(__oldSize_1 as isize) as *mut ::core::ffi::c_void,
                         str.offset(c2rust_fresh6 as isize) as *const ::core::ffi::c_char
                             as *const ::core::ffi::c_void,
-                        (__count_1 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_1 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                     *expanded
                         .item
@@ -8661,21 +8653,21 @@ unsafe extern "C" fn append_expanded_kccgst_value(
                         (*to).alloc = darray_next_alloc(
                             (*to).alloc,
                             __need_2,
-                            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
+                            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
                         );
                         (*to).item = realloc(
                             (*to).item as *mut ::core::ffi::c_void,
-                            ((*to).alloc as size_t)
+                            ((*to).alloc as usize)
                                 .wrapping_mul(
-                                    ::core::mem::size_of::<::core::ffi::c_char>() as size_t
+                                    ::core::mem::size_of::<::core::ffi::c_char>() as usize
                                 ),
                         ) as *mut ::core::ffi::c_char;
                     }
                     memcpy(
                         (*to).item.offset(__oldSize_2 as isize) as *mut ::core::ffi::c_void,
                         expanded.item as *const ::core::ffi::c_void,
-                        (__count_2 as size_t)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as size_t),
+                        (__count_2 as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize),
                     );
                 }
                 free(expanded.item as *mut ::core::ffi::c_void);
@@ -8699,7 +8691,7 @@ unsafe extern "C" fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool 
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min;
             while layout < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
                 let buf: *const kccgst_buffer = &raw mut (*m).pending_kccgst;
-                let mut offset: size_t = 0 as size_t;
+                let mut offset: usize = 0 as usize;
                 let mut k: darray_size_t = 0 as darray_size_t;
                 while k < (*buf).slices.size {
                     let slice: *const kccgst_buffer_slice =
@@ -8715,7 +8707,7 @@ unsafe extern "C" fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool 
                             (*buf).buffer.item.offset(offset as isize),
                         );
                     }
-                    offset = offset.wrapping_add((*slice).length() as size_t);
+                    offset = offset.wrapping_add((*slice).length() as usize);
                     k = k.wrapping_add(1);
                 }
                 layout = layout.wrapping_add(1);
@@ -8976,12 +8968,12 @@ unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *
                             (*buf).slices.alloc = darray_next_alloc(
                                 (*buf).slices.alloc,
                                 __need,
-                                ::core::mem::size_of::<kccgst_buffer_slice>() as size_t,
+                                ::core::mem::size_of::<kccgst_buffer_slice>() as usize,
                             );
                             (*buf).slices.item = realloc(
                                 (*buf).slices.item as *mut ::core::ffi::c_void,
-                                ((*buf).slices.alloc as size_t).wrapping_mul(
-                                    ::core::mem::size_of::<kccgst_buffer_slice>() as size_t,
+                                ((*buf).slices.alloc as usize).wrapping_mul(
+                                    ::core::mem::size_of::<kccgst_buffer_slice>() as usize,
                                 ),
                             )
                                 as *mut kccgst_buffer_slice;
@@ -9028,7 +9020,7 @@ unsafe extern "C" fn matcher_match(
     mut s: *mut scanner,
     mut include_depth: ::core::ffi::c_uint,
     mut string: *const ::core::ffi::c_char,
-    mut len: size_t,
+    mut len: usize,
     mut file_name: *const ::core::ffi::c_char,
 ) -> bool {
     unsafe {
@@ -9153,7 +9145,7 @@ unsafe extern "C" fn matcher_match(
                                         match tok as ::core::ffi::c_uint {
                                             2 => {
                                                 if !(*m).rule.skip {
-                                                    if (*m).val.string.len == 1 as size_t
+                                                    if (*m).val.string.len == 1 as usize
                                                         && *(*m).val.string.start.offset(
                                                             0 as ::core::ffi::c_int as isize,
                                                         )
@@ -9411,7 +9403,7 @@ unsafe extern "C" fn read_rules_file(
 unsafe extern "C" fn xkb_resolve_partial_rules(
     mut ctx: *mut xkb_context,
     mut path: *mut ::core::ffi::c_char,
-    mut path_size: size_t,
+    mut path_size: usize,
     mut rules: *const ::core::ffi::c_char,
     mut suffix: *const ::core::ffi::c_char,
     mut matcher: *mut matcher,
@@ -9420,7 +9412,7 @@ unsafe extern "C" fn xkb_resolve_partial_rules(
         let mut partial_rules: [::core::ffi::c_char; 60] = [0; 60];
         if !snprintf_safe(
             &raw mut partial_rules as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 60]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 60]>() as usize,
             b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
             rules,
             suffix,
@@ -9441,7 +9433,7 @@ unsafe extern "C" fn xkb_resolve_partial_rules(
         }
         let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let len: size_t = strlen(&raw mut partial_rules as *mut ::core::ffi::c_char) as size_t;
+        let len: usize = strlen(&raw mut partial_rules as *mut ::core::ffi::c_char) as usize;
         loop {
             file = FindFileInXkbPath(
                 ctx,
@@ -9496,7 +9488,7 @@ unsafe extern "C" fn xkb_resolve_rules(
             strlen(rules),
             FILE_TYPE_RULES,
             &raw mut path as *mut ::core::ffi::c_char,
-            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+            ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             &raw mut offset,
             true_0 != 0,
         ) as *mut FILE;
@@ -9514,7 +9506,7 @@ unsafe extern "C" fn xkb_resolve_rules(
             ret = xkb_resolve_partial_rules(
                 ctx,
                 &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                 rules,
                 b".pre\0".as_ptr() as *const ::core::ffi::c_char,
                 matcher,
@@ -9541,7 +9533,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                     ret = xkb_resolve_partial_rules(
                         ctx,
                         &raw mut path as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                        ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
                         rules,
                         b".post\0".as_ptr() as *const ::core::ffi::c_char,
                         matcher,
@@ -9643,7 +9635,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                             (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
                                 .alloc = 0 as darray_size_t;
                             mval = &raw mut (*matcher).rmlvo.model;
-                            if !(*mval).matched() && (*mval).sval.len > 0 as size_t {
+                            if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                 xkb_log(
                                     (*matcher).ctx,
                                     XKB_LOG_LEVEL_ERROR,
@@ -9671,7 +9663,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                                         .offset((*matcher).rmlvo.layouts.size as isize)
                                         as *mut matched_sval
                                 {
-                                    if !(*mval).matched() && (*mval).sval.len > 0 as size_t {
+                                    if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                         xkb_log(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
@@ -9701,7 +9693,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                                         .offset((*matcher).rmlvo.variants.size as isize)
                                         as *mut matched_sval
                                 {
-                                    if !(*mval).matched() && (*mval).sval.len > 0 as size_t {
+                                    if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                         xkb_log(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
@@ -9731,7 +9723,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                                         .offset((*matcher).rmlvo.options.size as isize)
                                         as *mut matched_sval
                                 {
-                                    if !(*mval).matched() && (*mval).sval.len > 0 as size_t {
+                                    if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                         xkb_log(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
@@ -9762,7 +9754,7 @@ unsafe extern "C" fn xkb_resolve_rules(
                                     symbols = symbols.offset(1);
                                     let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
                                         symbols,
-                                        SIZE_MAX as size_t,
+                                        SIZE_MAX as usize,
                                         &raw mut group,
                                     )
                                         as ::core::ffi::c_int;
@@ -9841,50 +9833,50 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
     unsafe {
         rules_kccgst_svals = [
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"types\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"compat\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"symbols\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"geometry\0".as_ptr() as *const ::core::ffi::c_char,
             },
         ];
         rules_mlvo_svals = [
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"model\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"layout\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"variant\0".as_ptr() as *const ::core::ffi::c_char,
             },
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"option\0".as_ptr() as *const ::core::ffi::c_char,
             },
         ];

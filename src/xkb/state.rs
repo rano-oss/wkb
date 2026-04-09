@@ -51,11 +51,6 @@ pub mod stdint_uintn_h {
     use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 
-pub mod __stddef_size_t_h {
-
-    pub type size_t = usize;
-}
-
 pub mod sys_types_h {
 
     pub type ssize_t = isize;
@@ -69,20 +64,19 @@ pub mod stdlib_h {
             *const ::core::ffi::c_void,
         ) -> ::core::ffi::c_int,
     >;
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
 
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
 
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
 
         pub fn free(__ptr: *mut ::core::ffi::c_void);
 
         pub fn qsort(
             __base: *mut ::core::ffi::c_void,
-            __nmemb: size_t,
-            __size: size_t,
+            __nmemb: usize,
+            __size: usize,
             __compar: __compar_fn_t,
         );
     }
@@ -146,7 +140,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -170,7 +164,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -207,15 +201,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -223,7 +217,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -236,7 +230,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 
@@ -379,7 +373,7 @@ pub mod xkbcommon_h {
     #[repr(C)]
 
     pub struct xkb_state_components_update {
-        pub size: size_t,
+        pub size: usize,
         pub components: xkb_state_component,
         pub affect_latched_mods: xkb_mod_mask_t,
         pub latched_mods: xkb_mod_mask_t,
@@ -394,7 +388,7 @@ pub mod xkbcommon_h {
     #[repr(C)]
 
     pub struct xkb_layout_policy_update {
-        pub size: size_t,
+        pub size: usize,
         pub policy: xkb_layout_out_of_range_policy,
         pub redirect: xkb_layout_index_t,
     }
@@ -402,7 +396,7 @@ pub mod xkbcommon_h {
     #[repr(C)]
 
     pub struct xkb_state_update {
-        pub size: size_t,
+        pub size: usize,
         pub components: *const xkb_state_components_update,
         pub layout_policy: *const xkb_layout_policy_update,
     }
@@ -430,7 +424,7 @@ pub mod xkbcommon_h {
     pub const XKB_MOD_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
 
     pub const XKB_LED_INVALID: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::stdint_intn_h::int32_t;
@@ -440,7 +434,7 @@ pub mod xkbcommon_h {
         pub fn xkb_keysym_to_utf8(
             keysym: xkb_keysym_t,
             buffer: *mut ::core::ffi::c_char,
-            size: size_t,
+            size: usize,
         ) -> ::core::ffi::c_int;
 
         pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
@@ -1199,7 +1193,7 @@ pub mod state_priv_h {
     #[repr(C)]
 
     pub struct xkb_state_update_v1 {
-        pub size: size_t,
+        pub size: usize,
         pub components: *const xkb_state_components_update_v1,
         pub layout_policy: *const xkb_layout_policy_update_v1,
     }
@@ -1207,7 +1201,7 @@ pub mod state_priv_h {
     #[repr(C)]
 
     pub struct xkb_layout_policy_update_v1 {
-        pub size: size_t,
+        pub size: usize,
         pub policy: xkb_layout_out_of_range_policy,
         pub redirect: xkb_layout_index_t,
     }
@@ -1215,7 +1209,7 @@ pub mod state_priv_h {
     #[repr(C)]
 
     pub struct xkb_state_components_update_v1 {
-        pub size: size_t,
+        pub size: usize,
         pub components: xkb_state_component,
         pub affect_latched_mods: xkb_mod_mask_t,
         pub latched_mods: xkb_mod_mask_t,
@@ -1226,7 +1220,7 @@ pub mod state_priv_h {
         pub affect_controls: xkb_keyboard_control_flags,
         pub controls: xkb_keyboard_control_flags,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::keymap_h::xkb_action_controls;
     use super::stdint_intn_h::int32_t;
     use super::xkbcommon_h::{
@@ -1485,25 +1479,25 @@ pub mod xkbcommon_features_h {
 }
 
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
 
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
 
         pub fn memmove(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
 
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
     }
 }
@@ -1529,10 +1523,10 @@ pub mod util_mem_h {
     #[inline]
 
     pub unsafe extern "C" fn xkb_check_versioned_struct_size_(
-        mut v1_size: size_t,
-        mut min_size: size_t,
-        mut lib_size: size_t,
-        mut caller_size: size_t,
+        mut v1_size: usize,
+        mut min_size: usize,
+        mut lib_size: usize,
+        mut caller_size: usize,
         mut caller_data: *const ::core::ffi::c_void,
     ) -> xkb_error_code {
         unsafe {
@@ -1542,7 +1536,7 @@ pub mod util_mem_h {
                     b"v1_size <= min_size\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
                     54 as ::core::ffi::c_uint,
-                    b"enum xkb_error_code xkb_check_versioned_struct_size_(size_t, size_t, size_t, size_t, const void *)\0"
+                    b"enum xkb_error_code xkb_check_versioned_struct_size_(usize, usize, usize, usize, const void *)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -1552,7 +1546,7 @@ pub mod util_mem_h {
                     b"min_size <= lib_size\0".as_ptr() as *const ::core::ffi::c_char,
                     b"../src/util-mem.h\0".as_ptr() as *const ::core::ffi::c_char,
                     55 as ::core::ffi::c_uint,
-                    b"enum xkb_error_code xkb_check_versioned_struct_size_(size_t, size_t, size_t, size_t, const void *)\0"
+                    b"enum xkb_error_code xkb_check_versioned_struct_size_(usize, usize, usize, usize, const void *)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -1579,7 +1573,7 @@ pub mod util_mem_h {
             return XKB_SUCCESS;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
     use super::xkbcommon_errors_h::{
         xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -1599,11 +1593,10 @@ pub mod utils_h {
 }
 
 pub mod utf8_h {
-    use super::__stddef_size_t_h::size_t;
 
     /// Native Rust UTF-8 validation (replaces C FFI)
     #[inline]
-    pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: size_t) -> bool {
+    pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: usize) -> bool {
         if ss.is_null() {
             return false;
         }
@@ -1650,7 +1643,7 @@ pub mod xkbcommon_keysyms_h {
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
@@ -2208,20 +2201,20 @@ unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filte
                     (*state).filters.alloc = darray_next_alloc(
                         (*state).filters.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_filter>() as size_t,
+                        ::core::mem::size_of::<xkb_filter>() as usize,
                     );
                     (*state).filters.item = realloc(
                         (*state).filters.item as *mut ::core::ffi::c_void,
-                        ((*state).filters.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_filter>() as size_t),
+                        ((*state).filters.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
                     ) as *mut xkb_filter;
                 }
                 memset(
                     (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_filter>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
                 );
             }
             filter = (*state)
@@ -3139,12 +3132,12 @@ unsafe extern "C" fn append_redirect_key_events(
                     (*events).queue.alloc = darray_next_alloc(
                         (*events).queue.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_event>() as size_t,
+                        ::core::mem::size_of::<xkb_event>() as usize,
                     );
                     (*events).queue.item = realloc(
                         (*events).queue.item as *mut ::core::ffi::c_void,
-                        ((*events).queue.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                        ((*events).queue.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                     ) as *mut xkb_event;
                 }
                 *(*events)
@@ -3168,12 +3161,12 @@ unsafe extern "C" fn append_redirect_key_events(
             (*events).queue.alloc = darray_next_alloc(
                 (*events).queue.alloc,
                 __need_0,
-                ::core::mem::size_of::<xkb_event>() as size_t,
+                ::core::mem::size_of::<xkb_event>() as usize,
             );
             (*events).queue.item = realloc(
                 (*events).queue.item as *mut ::core::ffi::c_void,
-                ((*events).queue.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                ((*events).queue.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
             ) as *mut xkb_event;
         }
         *(*events)
@@ -3202,12 +3195,12 @@ unsafe extern "C" fn append_redirect_key_events(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need_1,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -3637,7 +3630,7 @@ unsafe extern "C" fn xkb_state_init(
 pub unsafe extern "C" fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
         let state: *mut xkb_state =
-            calloc(1 as size_t, ::core::mem::size_of::<xkb_state>() as size_t) as *mut xkb_state;
+            calloc(1 as usize, ::core::mem::size_of::<xkb_state>() as usize) as *mut xkb_state;
         if state.is_null() {
             return ::core::ptr::null_mut::<xkb_state>();
         }
@@ -4231,7 +4224,7 @@ pub unsafe extern "C" fn xkb_state_update_latched_locked(
                 0 as ::core::ffi::c_int
             })) as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: affect_latched_mods,
             latched_mods: latched_mods,
@@ -4267,7 +4260,7 @@ unsafe extern "C" fn clear_all_latches_and_locks(
             | XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int)
             as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: XKB_MOD_ALL as ::core::ffi::c_uint as xkb_mod_mask_t,
             latched_mods: 0 as xkb_mod_mask_t,
@@ -4422,18 +4415,18 @@ unsafe extern "C" fn check_state_update_abi_(
     unsafe {
         let mut error: xkb_error_code = XKB_SUCCESS;
         error = xkb_check_versioned_struct_size_(
-            ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-            ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-            ::core::mem::size_of::<xkb_state_update>() as size_t,
+            ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+            ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+            ::core::mem::size_of::<xkb_state_update>() as usize,
             (*update).size,
             update as *const ::core::ffi::c_void,
         );
         if error as ::core::ffi::c_int != 0
             || !(*update).components.is_null() && {
                 error = xkb_check_versioned_struct_size_(
-                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-                    ::core::mem::size_of::<xkb_state_components_update>() as size_t,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+                    ::core::mem::size_of::<xkb_state_components_update>() as usize,
                     (*(*update).components).size,
                     (*update).components as *const ::core::ffi::c_void,
                 );
@@ -4441,9 +4434,9 @@ unsafe extern "C" fn check_state_update_abi_(
             }
             || !(*update).layout_policy.is_null() && {
                 error = xkb_check_versioned_struct_size_(
-                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-                    ::core::mem::size_of::<xkb_state_update_v1>() as size_t,
-                    ::core::mem::size_of::<xkb_layout_policy_update>() as size_t,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
+                    ::core::mem::size_of::<xkb_layout_policy_update>() as usize,
                     (*(*update).layout_policy).size,
                     (*update).layout_policy as *const ::core::ffi::c_void,
                 );
@@ -4712,7 +4705,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut buffer: *mut ::core::ffi::c_char,
-    mut size: size_t,
+    mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
         let mut c2rust_current_block: u64;
@@ -4736,18 +4729,18 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             let mut ret: ::core::ffi::c_int = xkb_keysym_to_utf8(
                 *syms.offset(i as isize),
                 &raw mut tmp as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize,
             );
             if ret <= 0 as ::core::ffi::c_int {
                 c2rust_current_block = 17545813786824981435;
                 break;
             }
             ret -= 1;
-            if (offset as size_t).wrapping_add(ret as size_t) <= size {
+            if (offset as usize).wrapping_add(ret as usize) <= size {
                 memcpy(
                     buffer.offset(offset as isize) as *mut ::core::ffi::c_void,
                     &raw mut tmp as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-                    ret as size_t,
+                    ret as usize,
                 );
             }
             offset += ret;
@@ -4755,15 +4748,15 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
         }
         match c2rust_current_block {
             11050875288958768710 => {
-                if offset as size_t >= size {
-                    if size > 0 as size_t {
-                        *buffer.offset(size.wrapping_sub(1 as size_t) as isize) =
+                if offset as usize >= size {
+                    if size > 0 as usize {
+                        *buffer.offset(size.wrapping_sub(1 as usize) as isize) =
                             '\0' as i32 as ::core::ffi::c_char;
                     }
                     return offset;
                 } else {
                     *buffer.offset(offset as isize) = '\0' as i32 as ::core::ffi::c_char;
-                    if is_valid_utf8(buffer, offset as size_t) {
+                    if is_valid_utf8(buffer, offset as usize) {
                         if offset == 1 as ::core::ffi::c_int
                             && *buffer.offset(0 as ::core::ffi::c_int as isize)
                                 as ::core::ffi::c_uint
@@ -4779,7 +4772,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             }
             _ => {}
         }
-        if size > 0 as size_t {
+        if size > 0 as usize {
             *buffer.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as ::core::ffi::c_char;
         }
         return 0 as ::core::ffi::c_int;
@@ -5354,8 +5347,8 @@ pub unsafe extern "C" fn xkb_machine_options_new(
 ) -> *mut xkb_machine_options {
     unsafe {
         let opt: *mut xkb_machine_options = calloc(
-            1 as size_t,
-            ::core::mem::size_of::<xkb_machine_options>() as size_t,
+            1 as usize,
+            ::core::mem::size_of::<xkb_machine_options>() as usize,
         ) as *mut xkb_machine_options;
         if opt.is_null() {
             return ::core::ptr::null_mut::<xkb_machine_options>();
@@ -5448,12 +5441,12 @@ pub unsafe extern "C" fn xkb_machine_options_remap_mods(
                     (*options).mods.alloc = darray_next_alloc(
                         (*options).mods.alloc,
                         __need,
-                        ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                        ::core::mem::size_of::<machine_mods_mapping>() as usize,
                     );
                     (*options).mods.item = realloc(
                         (*options).mods.item as *mut ::core::ffi::c_void,
-                        ((*options).mods.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as size_t),
+                        ((*options).mods.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as usize),
                     ) as *mut machine_mods_mapping;
                 }
                 return XKB_SUCCESS;
@@ -5491,9 +5484,9 @@ pub unsafe extern "C" fn xkb_machine_options_remap_mods(
                                     .size
                                     .wrapping_sub(1 as darray_size_t)
                                     .wrapping_sub(__index)
-                                    as size_t)
+                                    as usize)
                                     .wrapping_mul(
-                                        ::core::mem::size_of::<machine_mods_mapping>() as size_t
+                                        ::core::mem::size_of::<machine_mods_mapping>() as usize
                                     ),
                             );
                         }
@@ -5514,12 +5507,12 @@ pub unsafe extern "C" fn xkb_machine_options_remap_mods(
                 (*options).mods.alloc = darray_next_alloc(
                     (*options).mods.alloc,
                     __need_0,
-                    ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                    ::core::mem::size_of::<machine_mods_mapping>() as usize,
                 );
                 (*options).mods.item = realloc(
                     (*options).mods.item as *mut ::core::ffi::c_void,
-                    ((*options).mods.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as size_t),
+                    ((*options).mods.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as usize),
                 ) as *mut machine_mods_mapping;
             }
             *(*options)
@@ -5572,12 +5565,12 @@ pub unsafe extern "C" fn xkb_machine_options_remap_shortcut_layout(
                 (*config).targets.alloc = darray_next_alloc(
                     (*config).targets.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_layout_index_t>() as size_t,
+                    ::core::mem::size_of::<xkb_layout_index_t>() as usize,
                 );
                 (*config).targets.item = realloc(
                     (*config).targets.item as *mut ::core::ffi::c_void,
-                    ((*config).targets.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_layout_index_t>() as size_t),
+                    ((*config).targets.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_layout_index_t>() as usize),
                 ) as *mut xkb_layout_index_t;
             }
             while new < source {
@@ -5670,15 +5663,17 @@ unsafe extern "C" fn machine_set_mods(
                             mappings.alloc = darray_next_alloc(
                                 mappings.alloc,
                                 __need,
-                                ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                                ::core::mem::size_of::<machine_mods_mapping>() as usize,
                             );
-                            mappings.item =
-                                realloc(
-                                    mappings.item as *mut ::core::ffi::c_void,
-                                    (mappings.alloc as size_t).wrapping_mul(
-                                        ::core::mem::size_of::<machine_mods_mapping>() as size_t,
-                                    ),
-                                ) as *mut machine_mods_mapping;
+                            mappings.item = realloc(
+                                mappings.item as *mut ::core::ffi::c_void,
+                                (mappings.alloc as usize).wrapping_mul(::core::mem::size_of::<
+                                    machine_mods_mapping,
+                                >(
+                                )
+                                    as usize),
+                            )
+                                as *mut machine_mods_mapping;
                         }
                         *mappings
                             .item
@@ -5691,8 +5686,8 @@ unsafe extern "C" fn machine_set_mods(
             }
             qsort(
                 mappings.item as *mut ::core::ffi::c_void,
-                mappings.size as size_t,
-                ::core::mem::size_of::<machine_mods_mapping>() as size_t,
+                mappings.size as usize,
+                ::core::mem::size_of::<machine_mods_mapping>() as usize,
                 Some(
                     cmp_mod_masks
                         as unsafe extern "C" fn(
@@ -5762,8 +5757,8 @@ unsafe extern "C" fn machine_set_shortcuts(
             return true_0 != 0;
         }
         let targets: *mut xkb_layout_index_t = calloc(
-            (*keymap).num_groups as size_t,
-            ::core::mem::size_of::<xkb_layout_index_t>() as size_t,
+            (*keymap).num_groups as usize,
+            ::core::mem::size_of::<xkb_layout_index_t>() as usize,
         ) as *mut xkb_layout_index_t;
         if targets.is_null() {
             return false_0 != 0;
@@ -5798,8 +5793,7 @@ pub unsafe extern "C" fn xkb_machine_new(
 ) -> *mut xkb_machine {
     unsafe {
         let machine: *mut xkb_machine =
-            calloc(1 as size_t, ::core::mem::size_of::<xkb_machine>() as size_t)
-                as *mut xkb_machine;
+            calloc(1 as usize, ::core::mem::size_of::<xkb_machine>() as usize) as *mut xkb_machine;
         if machine.is_null() {
             return ::core::ptr::null_mut::<xkb_machine>();
         }
@@ -5988,12 +5982,12 @@ pub unsafe extern "C" fn xkb_machine_process_synthetic(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -6064,12 +6058,12 @@ unsafe extern "C" fn do_remap_modifiers(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -6113,12 +6107,12 @@ unsafe extern "C" fn do_shortcuts_tweak(
                     (*events).queue.alloc = darray_next_alloc(
                         (*events).queue.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_event>() as size_t,
+                        ::core::mem::size_of::<xkb_event>() as usize,
                     );
                     (*events).queue.item = realloc(
                         (*events).queue.item as *mut ::core::ffi::c_void,
-                        ((*events).queue.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                        ((*events).queue.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                     ) as *mut xkb_event;
                 }
                 *(*events)
@@ -6216,12 +6210,12 @@ unsafe extern "C" fn undo_tweaks(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -6329,13 +6323,13 @@ unsafe extern "C" fn process_overlayable_key(
                     (*sm).overlays.keys.alloc = darray_next_alloc(
                         (*sm).overlays.keys.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_overlaid_key>() as size_t,
+                        ::core::mem::size_of::<xkb_overlaid_key>() as usize,
                     );
                     (*sm).overlays.keys.item =
                         realloc(
                             (*sm).overlays.keys.item as *mut ::core::ffi::c_void,
-                            ((*sm).overlays.keys.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_overlaid_key>() as size_t),
+                            ((*sm).overlays.keys.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_overlaid_key>() as usize),
                         ) as *mut xkb_overlaid_key;
                 }
                 entry = (*sm).overlays.keys.item.offset(idx as isize) as *mut xkb_overlaid_key;
@@ -6441,12 +6435,12 @@ pub unsafe extern "C" fn xkb_machine_process_key(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -6490,12 +6484,12 @@ pub unsafe extern "C" fn xkb_machine_process_key(
                 (*events).queue.alloc = darray_next_alloc(
                     (*events).queue.alloc,
                     __need_0,
-                    ::core::mem::size_of::<xkb_event>() as size_t,
+                    ::core::mem::size_of::<xkb_event>() as usize,
                 );
                 (*events).queue.item = realloc(
                     (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as size_t),
+                    ((*events).queue.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
                 ) as *mut xkb_event;
             }
             *(*events)
@@ -6536,7 +6530,7 @@ pub unsafe extern "C" fn xkb_events_new_batch(
             return ::core::ptr::null_mut::<xkb_events>();
         }
         let mut events: *mut xkb_events =
-            calloc(1 as size_t, ::core::mem::size_of::<xkb_events>() as size_t) as *mut xkb_events;
+            calloc(1 as usize, ::core::mem::size_of::<xkb_events>() as usize) as *mut xkb_events;
         if events.is_null() {
             xkb_log(
                 context,

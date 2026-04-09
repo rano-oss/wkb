@@ -5,9 +5,7 @@ pub mod types_h {
     pub type __off_t = ::core::ffi::c_long;
     pub type __off64_t = ::core::ffi::c_long;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -139,24 +137,24 @@ pub mod utils_h {
                     && ch as ::core::ffi::c_int <= 'F' as i32;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::FILE_h::FILE;
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::uint64_t;
     use super::utils_h::is_xdigit;
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: uint64_t = 0 as uint64_t;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -446,12 +444,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -474,12 +472,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: uint64_t = 0 as uint64_t;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -538,7 +536,7 @@ pub mod config_h {
     pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
@@ -795,10 +793,10 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench);
-        let mut n: size_t = 0 as size_t;
+        let mut n: usize = 0 as usize;
         while n < size {
             let mut val: u32 = 0 as u32;
-            parse_hex_to_uint32_t(content.offset(n as isize), 8 as size_t, &raw mut val);
+            parse_hex_to_uint32_t(content.offset(n as isize), 8 as usize, &raw mut val);
             ::core::ptr::write_volatile(
                 &mut dummy32 as *mut u32,
                 ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32).wrapping_add(val),
@@ -811,14 +809,10 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench);
             let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_0: size_t = 0 as size_t;
+                let mut n_0: usize = 0 as usize;
                 while n_0 < size {
                     let mut val_0: u32 = 0 as u32;
-                    parse_hex_to_uint32_t(
-                        content.offset(n_0 as isize),
-                        8 as size_t,
-                        &raw mut val_0,
-                    );
+                    parse_hex_to_uint32_t(content.offset(n_0 as isize), 8 as usize, &raw mut val_0);
                     ::core::ptr::write_volatile(
                         &mut dummy32 as *mut u32,
                         ::core::ptr::read_volatile::<u32>(&dummy32 as *const u32)
@@ -880,7 +874,7 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench_0);
-        let mut n_1: size_t = 0 as size_t;
+        let mut n_1: usize = 0 as usize;
         while n_1 < size {
             let mut val_1: u32 = 0 as u32;
             parse_keysym_hex(content.offset(n_1 as isize), &raw mut val_1);
@@ -896,7 +890,7 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench_0);
             let mut k_0: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_0 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_2: size_t = 0 as size_t;
+                let mut n_2: usize = 0 as usize;
                 while n_2 < size {
                     let mut val_2: u32 = 0 as u32;
                     parse_keysym_hex(content.offset(n_2 as isize), &raw mut val_2);
@@ -961,7 +955,7 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench_1);
-        let mut n_3: size_t = 0 as size_t;
+        let mut n_3: usize = 0 as usize;
         while n_3 < size {
             let mut val_3: uint64_t = 0 as uint64_t;
             parse_dec_to_uint64_t(
@@ -982,7 +976,7 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench_1);
             let mut k_1: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_1 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_4: size_t = 0 as size_t;
+                let mut n_4: usize = 0 as usize;
                 while n_4 < size {
                     let mut val_4: uint64_t = 0 as uint64_t;
                     parse_dec_to_uint64_t(
@@ -1051,7 +1045,7 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench_2);
-        let mut n_5: size_t = 0 as size_t;
+        let mut n_5: usize = 0 as usize;
         while n_5 < size {
             ::core::ptr::write_volatile(
                 &mut dummy64 as *mut uint64_t,
@@ -1071,7 +1065,7 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench_2);
             let mut k_2: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_2 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_6: size_t = 0 as size_t;
+                let mut n_6: usize = 0 as usize;
                 while n_6 < size {
                     ::core::ptr::write_volatile(
                         &mut dummy64 as *mut uint64_t,
@@ -1138,7 +1132,7 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench_3);
-        let mut n_7: size_t = 0 as size_t;
+        let mut n_7: usize = 0 as usize;
         while n_7 < size {
             let mut val_5: uint64_t = 0 as uint64_t;
             parse_hex_to_uint64_t(
@@ -1159,7 +1153,7 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench_3);
             let mut k_3: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_3 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_8: size_t = 0 as size_t;
+                let mut n_8: usize = 0 as usize;
                 while n_8 < size {
                     let mut val_6: uint64_t = 0 as uint64_t;
                     parse_hex_to_uint64_t(
@@ -1228,7 +1222,7 @@ unsafe fn main_0(
         };
         max_iterations = 1 as ::core::ffi::c_uint;
         bench_start2(&raw mut _bench_4);
-        let mut n_9: size_t = 0 as size_t;
+        let mut n_9: usize = 0 as usize;
         while n_9 < size {
             ::core::ptr::write_volatile(
                 &mut dummy64 as *mut uint64_t,
@@ -1248,7 +1242,7 @@ unsafe fn main_0(
             bench_start2(&raw mut _bench_4);
             let mut k_4: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while k_4 < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                let mut n_10: size_t = 0 as size_t;
+                let mut n_10: usize = 0 as usize;
                 while n_10 < size {
                     ::core::ptr::write_volatile(
                         &mut dummy64 as *mut uint64_t,

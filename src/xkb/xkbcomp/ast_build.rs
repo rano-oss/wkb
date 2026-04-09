@@ -8,9 +8,6 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -129,7 +126,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -151,7 +148,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::atom_table;
     use super::darray_h::darray_size_t;
 
@@ -179,15 +176,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -195,7 +192,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -208,7 +205,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -548,54 +545,53 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct sval {
-        pub len: size_t,
+        pub len: usize,
         pub start: *const ::core::ffi::c_char,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     extern "C" {
         pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
         pub fn strndup(
             __string: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -625,13 +621,13 @@ pub mod utils_h {
 }
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_h::UINT32_MAX;
     extern "C" {
         pub fn utf8_next_code_point(
             s: *const ::core::ffi::c_char,
-            max_size: size_t,
-            size_out: *mut size_t,
+            max_size: usize,
+            size_out: *mut usize,
         ) -> u32;
     }
 }
@@ -674,7 +670,7 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 use self::assert_h::__assert_fail;
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
@@ -762,7 +758,7 @@ pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 unsafe extern "C" fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
-            malloc(::core::mem::size_of::<ExprDef>() as size_t) as *mut ExprDef;
+            malloc(::core::mem::size_of::<ExprDef>() as usize) as *mut ExprDef;
         if expr.is_null() {
             return ::core::ptr::null_mut::<ExprDef>();
         }
@@ -962,12 +958,12 @@ pub unsafe extern "C" fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut Exp
                 (*expr).keysym_list.syms.alloc = darray_next_alloc(
                     (*expr).keysym_list.syms.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_keysym_t>() as size_t,
+                    ::core::mem::size_of::<xkb_keysym_t>() as usize,
                 );
                 (*expr).keysym_list.syms.item = realloc(
                     (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                    ((*expr).keysym_list.syms.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as size_t),
+                    ((*expr).keysym_list.syms.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
                 ) as *mut xkb_keysym_t;
             }
             *(*expr).keysym_list.syms.item.offset(
@@ -998,12 +994,12 @@ pub unsafe extern "C" fn ExprAppendKeySymList(
                 (*expr).keysym_list.syms.alloc = darray_next_alloc(
                     (*expr).keysym_list.syms.alloc,
                     __need,
-                    ::core::mem::size_of::<xkb_keysym_t>() as size_t,
+                    ::core::mem::size_of::<xkb_keysym_t>() as usize,
                 );
                 (*expr).keysym_list.syms.item = realloc(
                     (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                    ((*expr).keysym_list.syms.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as size_t),
+                    ((*expr).keysym_list.syms.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
                 ) as *mut xkb_keysym_t;
             }
             *(*expr).keysym_list.syms.item.offset(
@@ -1025,15 +1021,15 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
 ) -> *mut ExprDef {
     unsafe {
         let mut c2rust_current_block: u64;
-        let len: size_t = strlen(string) as size_t;
-        let mut idx: size_t = 0 as size_t;
-        let mut idx_cp: size_t = 1 as size_t;
+        let len: usize = strlen(string) as usize;
+        let mut idx: usize = 0 as usize;
+        let mut idx_cp: usize = 1 as usize;
         loop {
             if !(idx < len) {
                 c2rust_current_block = 18317007320854588510;
                 break;
             }
-            let mut count: size_t = 0 as size_t;
+            let mut count: usize = 0 as usize;
             let mut cp: u32 = utf8_next_code_point(
                 string.offset(idx as isize),
                 len.wrapping_sub(idx),
@@ -1051,7 +1047,7 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                     (*scanner).file_name,
                     loc.line,
                     loc.column,
-                    idx.wrapping_add(1 as size_t),
+                    idx.wrapping_add(1 as usize),
                     idx_cp,
                 );
                 c2rust_current_block = 5140853804782746302;
@@ -1070,7 +1066,7 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                         loc_0.line,
                         loc_0.column,
                         cp,
-                        idx.wrapping_add(1 as size_t),
+                        idx.wrapping_add(1 as usize),
                         idx_cp,
                     );
                     c2rust_current_block = 5140853804782746302;
@@ -1086,12 +1082,12 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
                         (*expr).keysym_list.syms.alloc = darray_next_alloc(
                             (*expr).keysym_list.syms.alloc,
                             __need,
-                            ::core::mem::size_of::<xkb_keysym_t>() as size_t,
+                            ::core::mem::size_of::<xkb_keysym_t>() as usize,
                         );
                         (*expr).keysym_list.syms.item = realloc(
                             (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                            ((*expr).keysym_list.syms.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as size_t),
+                            ((*expr).keysym_list.syms.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
                         )
                             as *mut xkb_keysym_t;
                     }
@@ -1135,8 +1131,8 @@ pub unsafe extern "C" fn KeysymParseString(
     mut string: *const ::core::ffi::c_char,
 ) -> xkb_keysym_t {
     unsafe {
-        let len: size_t = strlen(string) as size_t;
-        if len == 0 as size_t {
+        let len: usize = strlen(string) as usize;
+        if len == 0 as usize {
             let mut loc: scanner_loc = scanner_token_location(scanner);
             xkb_log(
                 (*scanner).ctx,
@@ -1150,7 +1146,7 @@ pub unsafe extern "C" fn KeysymParseString(
             );
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         }
-        let mut count: size_t = 0 as size_t;
+        let mut count: usize = 0 as usize;
         let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
         if cp == INVALID_UTF8_CODE_POINT as u32 {
             let mut loc_0: scanner_loc = scanner_token_location(scanner);
@@ -1204,7 +1200,7 @@ pub unsafe extern "C" fn KeysymParseString(
 pub unsafe extern "C" fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut KeycodeDef {
     unsafe {
         let mut def: *mut KeycodeDef =
-            malloc(::core::mem::size_of::<KeycodeDef>() as size_t) as *mut KeycodeDef;
+            malloc(::core::mem::size_of::<KeycodeDef>() as usize) as *mut KeycodeDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<KeycodeDef>();
         }
@@ -1222,7 +1218,7 @@ pub unsafe extern "C" fn KeyAliasCreate(
 ) -> *mut KeyAliasDef {
     unsafe {
         let mut def: *mut KeyAliasDef =
-            malloc(::core::mem::size_of::<KeyAliasDef>() as size_t) as *mut KeyAliasDef;
+            malloc(::core::mem::size_of::<KeyAliasDef>() as usize) as *mut KeyAliasDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<KeyAliasDef>();
         }
@@ -1237,7 +1233,7 @@ pub unsafe extern "C" fn KeyAliasCreate(
 pub unsafe extern "C" fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDef) -> *mut VModDef {
     unsafe {
         let mut def: *mut VModDef =
-            malloc(::core::mem::size_of::<VModDef>() as size_t) as *mut VModDef;
+            malloc(::core::mem::size_of::<VModDef>() as usize) as *mut VModDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<VModDef>();
         }
@@ -1251,8 +1247,7 @@ pub unsafe extern "C" fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDe
 #[no_mangle]
 pub unsafe extern "C" fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut VarDef {
     unsafe {
-        let mut def: *mut VarDef =
-            malloc(::core::mem::size_of::<VarDef>() as size_t) as *mut VarDef;
+        let mut def: *mut VarDef = malloc(::core::mem::size_of::<VarDef>() as usize) as *mut VarDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<VarDef>();
         }
@@ -1294,7 +1289,7 @@ pub unsafe extern "C" fn InterpCreate(
 ) -> *mut InterpDef {
     unsafe {
         let mut def: *mut InterpDef =
-            malloc(::core::mem::size_of::<InterpDef>() as size_t) as *mut InterpDef;
+            malloc(::core::mem::size_of::<InterpDef>() as usize) as *mut InterpDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<InterpDef>();
         }
@@ -1313,7 +1308,7 @@ pub unsafe extern "C" fn KeyTypeCreate(
 ) -> *mut KeyTypeDef {
     unsafe {
         let mut def: *mut KeyTypeDef =
-            malloc(::core::mem::size_of::<KeyTypeDef>() as size_t) as *mut KeyTypeDef;
+            malloc(::core::mem::size_of::<KeyTypeDef>() as usize) as *mut KeyTypeDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<KeyTypeDef>();
         }
@@ -1332,7 +1327,7 @@ pub unsafe extern "C" fn SymbolsCreate(
 ) -> *mut SymbolsDef {
     unsafe {
         let mut def: *mut SymbolsDef =
-            malloc(::core::mem::size_of::<SymbolsDef>() as size_t) as *mut SymbolsDef;
+            malloc(::core::mem::size_of::<SymbolsDef>() as usize) as *mut SymbolsDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<SymbolsDef>();
         }
@@ -1351,7 +1346,7 @@ pub unsafe extern "C" fn GroupCompatCreate(
 ) -> *mut GroupCompatDef {
     unsafe {
         let mut def: *mut GroupCompatDef =
-            malloc(::core::mem::size_of::<GroupCompatDef>() as size_t) as *mut GroupCompatDef;
+            malloc(::core::mem::size_of::<GroupCompatDef>() as usize) as *mut GroupCompatDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<GroupCompatDef>();
         }
@@ -1370,7 +1365,7 @@ pub unsafe extern "C" fn ModMapCreate(
 ) -> *mut ModMapDef {
     unsafe {
         let mut def: *mut ModMapDef =
-            malloc(::core::mem::size_of::<ModMapDef>() as size_t) as *mut ModMapDef;
+            malloc(::core::mem::size_of::<ModMapDef>() as usize) as *mut ModMapDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<ModMapDef>();
         }
@@ -1389,7 +1384,7 @@ pub unsafe extern "C" fn LedMapCreate(
 ) -> *mut LedMapDef {
     unsafe {
         let mut def: *mut LedMapDef =
-            malloc(::core::mem::size_of::<LedMapDef>() as size_t) as *mut LedMapDef;
+            malloc(::core::mem::size_of::<LedMapDef>() as usize) as *mut LedMapDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<LedMapDef>();
         }
@@ -1409,7 +1404,7 @@ pub unsafe extern "C" fn LedNameCreate(
 ) -> *mut LedNameDef {
     unsafe {
         let mut def: *mut LedNameDef =
-            malloc(::core::mem::size_of::<LedNameDef>() as size_t) as *mut LedNameDef;
+            malloc(::core::mem::size_of::<LedNameDef>() as usize) as *mut LedNameDef;
         if def.is_null() {
             return ::core::ptr::null_mut::<LedNameDef>();
         }
@@ -1429,7 +1424,7 @@ pub unsafe extern "C" fn UnknownStatementCreate(
 ) -> *mut UnknownStatement {
     unsafe {
         let mut def: *mut UnknownStatement =
-            malloc(::core::mem::size_of::<UnknownStatement>() as size_t) as *mut UnknownStatement;
+            malloc(::core::mem::size_of::<UnknownStatement>() as usize) as *mut UnknownStatement;
         if def.is_null() {
             return ::core::ptr::null_mut::<UnknownStatement>();
         }
@@ -1486,11 +1481,11 @@ pub unsafe extern "C" fn IncludeCreate(
             } else {
                 if first.is_null() {
                     incl =
-                        malloc(::core::mem::size_of::<IncludeStmt>() as size_t) as *mut IncludeStmt;
+                        malloc(::core::mem::size_of::<IncludeStmt>() as usize) as *mut IncludeStmt;
                     first = incl;
                 } else {
-                    (*incl).next_incl = malloc(::core::mem::size_of::<IncludeStmt>() as size_t)
-                        as *mut _IncludeStmt;
+                    (*incl).next_incl =
+                        malloc(::core::mem::size_of::<IncludeStmt>() as usize) as *mut _IncludeStmt;
                     incl = (*incl).next_incl as *mut IncludeStmt;
                 }
                 if incl.is_null() {
@@ -1557,7 +1552,7 @@ pub unsafe extern "C" fn XkbFileCreate(
 ) -> *mut XkbFile {
     unsafe {
         let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        file = calloc(1 as size_t, ::core::mem::size_of::<XkbFile>() as size_t) as *mut XkbFile;
+        file = calloc(1 as usize, ::core::mem::size_of::<XkbFile>() as usize) as *mut XkbFile;
         if file.is_null() {
             return ::core::ptr::null_mut::<XkbFile>();
         }

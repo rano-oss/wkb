@@ -5,9 +5,7 @@ pub mod stdint_uintn_h {
     pub type u32 = __uint32_t;
     use super::types_h::__uint32_t;
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod xkbcommon_h {
     pub type xkb_keymap_format = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
@@ -275,12 +273,12 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: u32 = 0 as u32;
-            let mut i: size_t = 0 as size_t;
+            let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize]
                     as ::core::ffi::c_uint)
@@ -300,7 +298,7 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::stdint_uintn_h::u32;
     use super::utils_h::is_xdigit;
 }
@@ -337,7 +335,7 @@ pub mod utils_h {
     }
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::u32;
@@ -377,11 +375,11 @@ static mut keymap_formats_labels: [format_label; 4] = [
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keymap_supported_formats(
     mut formats: *mut *const xkb_keymap_format,
-) -> size_t {
+) -> usize {
     unsafe {
         *formats = &raw const keymap_formats as *const xkb_keymap_format;
-        return (::core::mem::size_of::<[xkb_keymap_format; 2]>() as size_t)
-            .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as size_t);
+        return (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
+            .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize);
     }
 }
 #[no_mangle]
@@ -392,7 +390,7 @@ pub unsafe extern "C" fn xkb_keymap_is_supported_format(mut format: xkb_keymap_f
         {
             return false_0 != 0;
         }
-        let mut k: size_t = 0 as size_t;
+        let mut k: usize = 0 as usize;
         while k
             < (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
                 .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize)
@@ -417,7 +415,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(
             return 0 as xkb_keymap_format;
         }
         let mut format: u32 = 0 as u32;
-        if parse_hex_to_uint32_t(raw, SIZE_MAX as size_t, &raw mut format) > 0 as ::core::ffi::c_int
+        if parse_hex_to_uint32_t(raw, SIZE_MAX as usize, &raw mut format) > 0 as ::core::ffi::c_int
         {
             return (if xkb_keymap_is_supported_format(format as xkb_keymap_format)
                 as ::core::ffi::c_int
@@ -428,7 +426,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(
                 0 as u32
             }) as xkb_keymap_format;
         } else {
-            let mut k: size_t = 0 as size_t;
+            let mut k: usize = 0 as usize;
             while k
                 < (::core::mem::size_of::<[format_label; 4]>() as usize)
                     .wrapping_div(::core::mem::size_of::<format_label>() as usize)
@@ -452,7 +450,7 @@ pub unsafe extern "C" fn xkb_keymap_get_format_label(
         {
             return ::core::ptr::null::<::core::ffi::c_char>();
         }
-        let mut k: size_t = 0 as size_t;
+        let mut k: usize = 0 as usize;
         while k
             < (::core::mem::size_of::<[format_label; 4]>() as usize)
                 .wrapping_div(::core::mem::size_of::<format_label>() as usize)

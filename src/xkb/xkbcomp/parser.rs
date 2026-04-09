@@ -8,9 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod context_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -33,7 +31,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -55,7 +53,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -64,7 +62,7 @@ pub mod context_h {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -517,25 +515,25 @@ pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct sval {
-        pub len: size_t,
+        pub len: usize,
         pub start: *const ::core::ffi::c_char,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner_loc {
-        pub line: size_t,
-        pub column: size_t,
+        pub line: usize,
+        pub column: usize,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct scanner {
-        pub pos: size_t,
-        pub len: size_t,
+        pub pos: usize,
+        pub len: usize,
         pub s: *const ::core::ffi::c_char,
         pub buf: [::core::ffi::c_char; 1024],
-        pub buf_pos: size_t,
-        pub token_pos: size_t,
-        pub cached_pos: size_t,
+        pub buf_pos: usize,
+        pub token_pos: usize,
+        pub cached_pos: usize,
         pub cached_loc: scanner_loc,
         pub file_name: *const ::core::ffi::c_char,
         pub ctx: *mut xkb_context,
@@ -548,7 +546,7 @@ pub mod scanner_utils_h {
                 && istrncmp(s1.start, s2.start, s1.len) == 0 as ::core::ffi::c_int;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::context_h::xkb_context;
     use super::utils_h::istrncmp;
     extern "C" {
@@ -698,25 +696,25 @@ pub mod parser_h {
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
+        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
         pub fn stpcpy(
             __dest: *mut ::core::ffi::c_char,
             __src: *const ::core::ffi::c_char,
@@ -754,7 +752,7 @@ pub mod utils_h {
             return streq(s1, s2);
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::{__assert_fail, __ASSERT_FUNCTION};
     use super::stdbool_h::false_0;
     use super::string_h::strcmp;
@@ -762,7 +760,7 @@ pub mod utils_h {
         pub fn istrncmp(
             a: *const ::core::ffi::c_char,
             b: *const ::core::ffi::c_char,
-            n: size_t,
+            n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -901,7 +899,7 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_section: ::core::ffi::c_int = 0xa7 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION};
 use self::ast_build_h::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
@@ -1231,8 +1229,8 @@ unsafe extern "C" fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"any\0".as_ptr() as *const ::core::ffi::c_char,
             },
         ) as ::core::ffi::c_int
@@ -1240,8 +1238,8 @@ unsafe extern "C" fn resolve_keysym(
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as usize)
+                        .wrapping_sub(1 as usize),
                     start: b"nosymbol\0".as_ptr() as *const ::core::ffi::c_char,
                 },
             ) as ::core::ffi::c_int
@@ -1253,8 +1251,8 @@ unsafe extern "C" fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                len: (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                    .wrapping_sub(1 as usize),
                 start: b"none\0".as_ptr() as *const ::core::ffi::c_char,
             },
         ) as ::core::ffi::c_int
@@ -1262,8 +1260,8 @@ unsafe extern "C" fn resolve_keysym(
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    len: (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
+                        .wrapping_sub(1 as usize),
                     start: b"voidsymbol\0".as_ptr() as *const ::core::ffi::c_char,
                 },
             ) as ::core::ffi::c_int
@@ -5889,7 +5887,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         * (::core::mem::size_of::<yy_state_t>() as ::core::ffi::c_long
                             + ::core::mem::size_of::<YYSTYPE>() as ::core::ffi::c_long)
                         + (::core::mem::size_of::<yyalloc>() as ::core::ffi::c_long
-                            - 1 as ::core::ffi::c_long)) as size_t,
+                            - 1 as ::core::ffi::c_long)) as usize,
                 ) as *mut yyalloc;
                 if yyptr.is_null() {
                     c2rust_current_block = 9310790481625056212;
@@ -5900,7 +5898,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                     &raw mut (*yyptr).yyss_alloc as *mut ::core::ffi::c_void,
                     yyss as *const ::core::ffi::c_void,
                     (yysize as usize).wrapping_mul(::core::mem::size_of::<yy_state_t>() as usize)
-                        as ::libc::size_t,
+                        as usize,
                 );
                 yyss = &raw mut (*yyptr).yyss_alloc;
                 yynewbytes = yystacksize
@@ -5915,7 +5913,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                     &raw mut (*yyptr).yyvs_alloc as *mut ::core::ffi::c_void,
                     yyvs as *const ::core::ffi::c_void,
                     (yysize as usize).wrapping_mul(::core::mem::size_of::<YYSTYPE>() as usize)
-                        as ::libc::size_t,
+                        as usize,
                 );
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
                 yynewbytes_0 = yystacksize
@@ -6030,7 +6028,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                 if yymsg != &raw mut yymsgbuf as *mut ::core::ffi::c_char {
                                     free(yymsg as *mut ::core::ffi::c_void);
                                 }
-                                yymsg = malloc(yymsg_alloc as size_t) as *mut ::core::ffi::c_char;
+                                yymsg = malloc(yymsg_alloc as usize) as *mut ::core::ffi::c_char;
                                 if !yymsg.is_null() {
                                     yysyntax_error_status = yysyntax_error(
                                         &raw mut yymsg_alloc,
@@ -7012,8 +7010,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"action\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7021,8 +7019,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"interpret\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7030,8 +7028,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"type\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7039,8 +7037,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"key\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7048,8 +7046,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"group\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7057,8 +7055,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"modifier_map\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 13]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 13]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7066,8 +7064,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7075,8 +7073,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"shape\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7084,8 +7082,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"row\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7093,8 +7091,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"section\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7102,8 +7100,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"text\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -7757,8 +7755,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"default\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                                    .wrapping_sub(1 as size_t),
+                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                                    .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }

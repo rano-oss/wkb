@@ -1,6 +1,3 @@
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
 pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = ::core::ffi::c_long;
@@ -205,7 +202,7 @@ pub mod string_h {
     }
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::config_h::EXIT_INVALID_USAGE;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
@@ -282,9 +279,9 @@ unsafe extern "C" fn usage(mut argv: *mut *mut ::core::ffi::c_char) {
             *argv.offset(0 as ::core::ffi::c_int as isize),
         );
         let mut xkb_messages: *const xkb_message_entry = ::core::ptr::null::<xkb_message_entry>();
-        let mut count: size_t = xkb_message_get_all(&raw mut xkb_messages) as size_t;
+        let mut count: usize = xkb_message_get_all(&raw mut xkb_messages) as usize;
         printf(b"\nCurrent supported messages:\n\0".as_ptr() as *const ::core::ffi::c_char);
-        let mut idx: size_t = 0 as size_t;
+        let mut idx: usize = 0 as usize;
         while idx < count {
             printf(
                 b"- XKB-%03u: %s\n\0".as_ptr() as *const ::core::ffi::c_char,

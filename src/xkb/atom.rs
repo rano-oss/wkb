@@ -2,9 +2,6 @@
 //!
 //! Converted from C darray to Vec<T> for safety and simplicity.
 
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
 pub mod types_h {
     pub type __uint8_t = u8;
     pub type __uint32_t = u32;
@@ -23,31 +20,29 @@ pub mod atom_h {
     use super::darray_h::darray_size_t;
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn strncmp(
             __s1: *const ::core::ffi::c_char,
             __s2: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn strndup(
             __string: *const ::core::ffi::c_char,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 
-pub use self::__stddef_size_t_h::size_t;
 pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};
 pub use self::darray_h::darray_size_t;
 pub use self::stdint_uintn_h::{u32, uint8_t};
@@ -62,7 +57,7 @@ pub use self::types_h::{__uint32_t, __uint8_t};
 #[repr(C)]
 pub struct atom_table {
     pub index: *mut xkb_atom_t,
-    pub index_size: size_t,
+    pub index_size: usize,
     /// Vector of interned strings (raw C char pointers for FFI compat)
     /// Index 0 is always NULL (XKB_ATOM_NONE)
     pub strings: Vec<*mut ::core::ffi::c_char>,
@@ -70,7 +65,7 @@ pub struct atom_table {
 
 /// FNV-1a hash function for strings
 #[inline]
-fn hash_buf(string: *const ::core::ffi::c_char, len: size_t) -> u32 {
+fn hash_buf(string: *const ::core::ffi::c_char, len: usize) -> u32 {
     unsafe {
         let mut hash: u32 = 2166136261;
         for i in 0..(len + 1) / 2 {
@@ -165,7 +160,7 @@ pub unsafe extern "C" fn atom_text(
 pub unsafe extern "C" fn atom_intern(
     table: *mut atom_table,
     string: *const ::core::ffi::c_char,
-    len: size_t,
+    len: usize,
     add: bool,
 ) -> xkb_atom_t {
     unsafe {

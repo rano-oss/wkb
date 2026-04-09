@@ -36,9 +36,7 @@ pub mod stdint_uintn_h {
     pub type uint64_t = __uint64_t;
     use super::types_h::{__uint16_t, __uint32_t, __uint64_t, __uint8_t};
 }
-pub mod __stddef_size_t_h {
-    pub type size_t = usize;
-}
+
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -123,7 +121,7 @@ pub mod context_h {
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
         pub text_buffer: [::core::ffi::c_char; 2048],
-        pub text_next: size_t,
+        pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
         #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
@@ -145,7 +143,7 @@ pub mod context_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut ::core::ffi::c_char,
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::atom_h::{atom_table, xkb_atom_t};
     use super::darray_h::darray_size_t;
 
@@ -154,7 +152,7 @@ pub mod context_h {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
             string: *const ::core::ffi::c_char,
-            len: size_t,
+            len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
             -> *const ::core::ffi::c_char;
@@ -181,15 +179,15 @@ pub mod darray_h {
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
-        mut itemSize: size_t,
+        mut itemSize: usize,
     ) -> darray_size_t {
         unsafe {
-            if (need as size_t)
+            if (need as usize)
                 < ((2147483647 as ::core::ffi::c_int as ::core::ffi::c_uint)
                     .wrapping_mul(2 as ::core::ffi::c_uint)
-                    .wrapping_add(1 as ::core::ffi::c_uint) as size_t)
+                    .wrapping_add(1 as ::core::ffi::c_uint) as usize)
                     .wrapping_div(itemSize)
-                    .wrapping_div(2 as size_t)
+                    .wrapping_div(2 as usize)
             {
             } else {
                 __assert_fail(
@@ -197,7 +195,7 @@ pub mod darray_h {
                         as *const ::core::ffi::c_char,
                     b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
                     220 as ::core::ffi::c_uint,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, size_t)\0"
+                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
                         .as_ptr() as *const ::core::ffi::c_char,
                 );
             };
@@ -210,7 +208,7 @@ pub mod darray_h {
             return alloc;
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
@@ -1276,25 +1274,25 @@ pub mod action_h {
     }
 }
 pub mod string_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn memcpy(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memmove(
             __dest: *mut ::core::ffi::c_void,
             __src: *const ::core::ffi::c_void,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn memset(
             __s: *mut ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
-            __n: size_t,
+            __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
+        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
     }
 }
 pub mod stdio_h {
@@ -1309,12 +1307,11 @@ pub mod stdio_h {
     }
 }
 pub mod stdlib_h {
-    use super::__stddef_size_t_h::size_t;
+
     extern "C" {
         pub fn atoi(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-        pub fn calloc(__nmemb: size_t, __size: size_t) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t)
-            -> *mut ::core::ffi::c_void;
+        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
+        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn abort() -> !;
     }
@@ -1333,7 +1330,7 @@ pub mod utils_h {
     pub unsafe extern "C" fn istrneq(
         mut s1: *const ::core::ffi::c_char,
         mut s2: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
     ) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
@@ -1354,8 +1351,8 @@ pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn memdup(
         mut mem: *const ::core::ffi::c_void,
-        mut nmemb: size_t,
-        mut size: size_t,
+        mut nmemb: usize,
+        mut size: usize,
     ) -> *mut ::core::ffi::c_void {
         unsafe {
             let mut p: *mut ::core::ffi::c_void = calloc(nmemb, size);
@@ -1366,7 +1363,6 @@ pub mod utils_h {
         }
     }
 
-    use super::__stddef_size_t_h::size_t;
     use super::stdlib_h::calloc;
     use super::string_h::{memcpy, strdup};
     extern "C" {
@@ -1377,7 +1373,7 @@ pub mod utils_h {
         pub fn istrncmp(
             a: *const ::core::ffi::c_char,
             b: *const ::core::ffi::c_char,
-            n: size_t,
+            n: usize,
         ) -> ::core::ffi::c_int;
     }
 }
@@ -1389,13 +1385,13 @@ pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
-        mut len: size_t,
+        mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
         unsafe {
             let mut result: uint64_t = 0 as uint64_t;
-            let mut i: size_t = 0;
-            i = 0 as size_t;
+            let mut i: usize = 0;
+            i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as ::core::ffi::c_uint)
@@ -1444,7 +1440,7 @@ pub mod utils_numbers_h {
                     );
         }
     }
-    use super::__stddef_size_t_h::size_t;
+
     use super::limits_h::CHAR_BIT;
     use super::stdint_uintn_h::{u32, uint64_t};
 }
@@ -1538,7 +1534,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
-    use super::__stddef_size_t_h::size_t;
+
     use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
     use super::context_h::xkb_context;
     extern "C" {
@@ -1551,7 +1547,7 @@ pub mod include_h {
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
             path: *mut ::core::ffi::c_char,
-            path_size: size_t,
+            path_size: usize,
         ) -> *mut XkbFile;
     }
 }
@@ -1585,7 +1581,7 @@ pub mod stdbool_h {
     pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 pub use self::__stddef_null_h::NULL;
-pub use self::__stddef_size_t_h::size_t;
+
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::assert_h::{__assert_fail, __ASSERT_FUNCTION_0};
 pub use self::ast_h::{
@@ -1900,7 +1896,7 @@ unsafe extern "C" fn InitGroupInfo(mut groupi: *mut GroupInfo) {
         memset(
             groupi as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<GroupInfo>() as size_t,
+            ::core::mem::size_of::<GroupInfo>() as usize,
         );
     }
 }
@@ -1939,19 +1935,19 @@ unsafe extern "C" fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const Grou
             (*to).levels.alloc = darray_next_alloc(
                 (*to).levels.alloc,
                 __need,
-                ::core::mem::size_of::<xkb_level>() as size_t,
+                ::core::mem::size_of::<xkb_level>() as usize,
             );
             (*to).levels.item = realloc(
                 (*to).levels.item as *mut ::core::ffi::c_void,
-                ((*to).levels.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                ((*to).levels.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
             ) as *mut xkb_level;
         }
         if __count != 0 as darray_size_t {
             memcpy(
                 (*to).levels.item as *mut ::core::ffi::c_void,
                 (*from).levels.item as *const ::core::ffi::c_void,
-                (__count as size_t).wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                (__count as usize).wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
             );
         }
         let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -1962,8 +1958,8 @@ unsafe extern "C" fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const Grou
                 let ref mut c2rust_fresh0 = (*(*to).levels.item.offset(j as isize)).s.syms;
                 *c2rust_fresh0 = memdup(
                     (*(*from).levels.item.offset(j as isize)).s.syms as *const ::core::ffi::c_void,
-                    (*(*from).levels.item.offset(j as isize)).num_syms as size_t,
-                    ::core::mem::size_of::<xkb_keysym_t>() as size_t,
+                    (*(*from).levels.item.offset(j as isize)).num_syms as usize,
+                    ::core::mem::size_of::<xkb_keysym_t>() as usize,
                 ) as *mut xkb_keysym_t;
             }
             if (*(*from).levels.item.offset(j as isize)).num_actions as ::core::ffi::c_int
@@ -1973,8 +1969,8 @@ unsafe extern "C" fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const Grou
                 *c2rust_fresh1 = memdup(
                     (*(*from).levels.item.offset(j as isize)).a.actions
                         as *const ::core::ffi::c_void,
-                    (*(*from).levels.item.offset(j as isize)).num_actions as size_t,
-                    ::core::mem::size_of::<xkb_action>() as size_t,
+                    (*(*from).levels.item.offset(j as isize)).num_actions as usize,
+                    ::core::mem::size_of::<xkb_action>() as usize,
                 ) as *mut xkb_action;
             }
             j = j.wrapping_add(1);
@@ -1986,13 +1982,12 @@ unsafe extern "C" fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyIn
         memset(
             keyi as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyInfo>() as size_t,
+            ::core::mem::size_of::<KeyInfo>() as usize,
         );
         (*keyi).name = xkb_atom_intern(
             ctx,
             b"*\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 2]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 2]>() as usize).wrapping_sub(1 as usize),
         );
         (*keyi).set_out_of_range_group_policy(
             XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy,
@@ -2034,7 +2029,7 @@ unsafe extern "C" fn InitSymbolsInfo(
         memset(
             info as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<SymbolsInfo>() as size_t,
+            ::core::mem::size_of::<SymbolsInfo>() as usize,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).include_depth = include_depth;
@@ -2425,12 +2420,12 @@ unsafe extern "C" fn MergeGroups(
                     (*into).levels.alloc = darray_next_alloc(
                         (*into).levels.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_level>() as size_t,
+                        ::core::mem::size_of::<xkb_level>() as usize,
                     );
                     (*into).levels.item = realloc(
                         (*into).levels.item as *mut ::core::ffi::c_void,
-                        ((*into).levels.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                        ((*into).levels.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
                 *(*into)
@@ -2571,8 +2566,8 @@ unsafe extern "C" fn overlays_insert(
                 as xkb_overlay_mask_t;
             let alloc: xkb_overlay_index_t = popcount32(overlays as u32) as xkb_overlay_index_t;
             let tmp: *mut *const xkb_key = calloc(
-                alloc as size_t,
-                ::core::mem::size_of::<*const xkb_key>() as size_t,
+                alloc as usize,
+                ::core::mem::size_of::<*const xkb_key>() as usize,
             ) as *mut *const xkb_key;
             if tmp.is_null() {
                 return false_0 != 0;
@@ -2619,8 +2614,8 @@ unsafe extern "C" fn overlays_insert(
                 };
                 let tmp_0: *mut *const xkb_key = realloc(
                     (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
-                    (alloc_0 as size_t)
-                        .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as size_t),
+                    (alloc_0 as usize)
+                        .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as usize),
                 ) as *mut *const xkb_key;
                 if tmp_0.is_null() {
                     return false_0 != 0;
@@ -2675,8 +2670,8 @@ unsafe extern "C" fn overlays_insert(
                     ((count as ::core::ffi::c_uint)
                         .wrapping_sub(1 as ::core::ffi::c_uint)
                         .wrapping_sub(index_0 as ::core::ffi::c_uint)
-                        as size_t)
-                        .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as size_t),
+                        as usize)
+                        .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as usize),
                 );
             }
             let ref mut c2rust_fresh7 = *(*keyi)
@@ -2753,8 +2748,8 @@ unsafe extern "C" fn merge_overlays(
                         }
                         if (*dest).overlays_alloc == 0 {
                             let mut tmp: *mut *const xkb_key = calloc(
-                                count as size_t,
-                                ::core::mem::size_of::<*const xkb_key>() as size_t,
+                                count as usize,
+                                ::core::mem::size_of::<*const xkb_key>() as usize,
                             )
                                 as *mut *const xkb_key;
                             if tmp.is_null() {
@@ -2768,13 +2763,16 @@ unsafe extern "C" fn merge_overlays(
                             (*dest).c2rust_unnamed.overlays_keys = tmp;
                             (*dest).overlays_alloc = count;
                         } else {
-                            let mut tmp_0: *mut *const xkb_key = realloc(
-                                (*dest).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
-                                (count as size_t).wrapping_mul(
-                                    ::core::mem::size_of::<*const xkb_key>() as size_t,
-                                ),
-                            )
-                                as *mut *const xkb_key;
+                            let mut tmp_0: *mut *const xkb_key =
+                                realloc(
+                                    (*dest).c2rust_unnamed.overlays_keys
+                                        as *mut ::core::ffi::c_void,
+                                    (count as usize).wrapping_mul(::core::mem::size_of::<
+                                        *const xkb_key,
+                                    >(
+                                    )
+                                        as usize),
+                                ) as *mut *const xkb_key;
                             if tmp_0.is_null() {
                                 return false_0 != 0;
                             }
@@ -2942,12 +2940,12 @@ unsafe extern "C" fn MergeKeys(
                 (*into).groups.alloc = darray_next_alloc(
                     (*into).groups.alloc,
                     __need,
-                    ::core::mem::size_of::<GroupInfo>() as size_t,
+                    ::core::mem::size_of::<GroupInfo>() as usize,
                 );
                 (*into).groups.item = realloc(
                     (*into).groups.item as *mut ::core::ffi::c_void,
-                    ((*into).groups.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                    ((*into).groups.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 ) as *mut GroupInfo;
             }
             *(*into)
@@ -3081,12 +3079,12 @@ unsafe extern "C" fn AddKeySymbols(
             (*info).keys.alloc = darray_next_alloc(
                 (*info).keys.alloc,
                 __need,
-                ::core::mem::size_of::<KeyInfo>() as size_t,
+                ::core::mem::size_of::<KeyInfo>() as usize,
             );
             (*info).keys.item = realloc(
                 (*info).keys.item as *mut ::core::ffi::c_void,
-                ((*info).keys.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<KeyInfo>() as size_t),
+                ((*info).keys.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<KeyInfo>() as usize),
             ) as *mut KeyInfo;
         }
         *(*info)
@@ -3169,12 +3167,12 @@ unsafe extern "C" fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut Mo
             (*info).modmaps.alloc = darray_next_alloc(
                 (*info).modmaps.alloc,
                 __need,
-                ::core::mem::size_of::<ModMapEntry>() as size_t,
+                ::core::mem::size_of::<ModMapEntry>() as usize,
             );
             (*info).modmaps.item = realloc(
                 (*info).modmaps.item as *mut ::core::ffi::c_void,
-                ((*info).modmaps.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<ModMapEntry>() as size_t),
+                ((*info).modmaps.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<ModMapEntry>() as usize),
             ) as *mut ModMapEntry;
         }
         *(*info)
@@ -3242,13 +3240,13 @@ unsafe extern "C" fn MergeIncludedSymbols(
                     (*into).group_names.alloc = darray_next_alloc(
                         (*into).group_names.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as size_t,
+                        ::core::mem::size_of::<xkb_atom_t>() as usize,
                     );
                     (*into).group_names.item =
                         realloc(
                             (*into).group_names.item as *mut ::core::ffi::c_void,
-                            ((*into).group_names.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                            ((*into).group_names.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                         ) as *mut xkb_atom_t;
                 }
                 *(*into)
@@ -3439,7 +3437,7 @@ unsafe extern "C" fn HandleIncludeSymbols(
                 stmt,
                 FILE_TYPE_SYMBOLS,
                 &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as size_t,
+                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -3557,20 +3555,20 @@ unsafe extern "C" fn GetGroupIndex(
                     (*keyi).groups.alloc = darray_next_alloc(
                         (*keyi).groups.alloc,
                         __need,
-                        ::core::mem::size_of::<GroupInfo>() as size_t,
+                        ::core::mem::size_of::<GroupInfo>() as usize,
                     );
                     (*keyi).groups.item = realloc(
                         (*keyi).groups.item as *mut ::core::ffi::c_void,
-                        ((*keyi).groups.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                        ((*keyi).groups.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                     ) as *mut GroupInfo;
                 }
                 memset(
                     (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 );
             }
             *ndx_rtrn = (*keyi).groups.size.wrapping_sub(1 as darray_size_t) as xkb_layout_index_t;
@@ -3608,20 +3606,20 @@ unsafe extern "C" fn GetGroupIndex(
                     (*keyi).groups.alloc = darray_next_alloc(
                         (*keyi).groups.alloc,
                         __need_0,
-                        ::core::mem::size_of::<GroupInfo>() as size_t,
+                        ::core::mem::size_of::<GroupInfo>() as usize,
                     );
                     (*keyi).groups.item = realloc(
                         (*keyi).groups.item as *mut ::core::ffi::c_void,
-                        ((*keyi).groups.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                        ((*keyi).groups.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                     ) as *mut GroupInfo;
                 }
                 memset(
                     (*keyi).groups.item.offset(__oldSize_0 as isize) as *mut GroupInfo
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize_0.wrapping_sub(__oldSize_0) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                    (__newSize_0.wrapping_sub(__oldSize_0) as usize)
+                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 );
             }
         }
@@ -3703,20 +3701,20 @@ unsafe extern "C" fn AddSymbolsToKey(
                     (*groupi).levels.alloc = darray_next_alloc(
                         (*groupi).levels.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_level>() as size_t,
+                        ::core::mem::size_of::<xkb_level>() as usize,
                     );
                     (*groupi).levels.item = realloc(
                         (*groupi).levels.item as *mut ::core::ffi::c_void,
-                        ((*groupi).levels.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                        ((*groupi).levels.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
                 memset(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                 );
             }
         }
@@ -3784,8 +3782,8 @@ unsafe extern "C" fn AddSymbolsToKey(
                         (*keysymList_0).syms.alloc = (*keysymList_0).syms.size;
                         (*keysymList_0).syms.item = realloc(
                             (*keysymList_0).syms.item as *mut ::core::ffi::c_void,
-                            ((*keysymList_0).syms.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as size_t),
+                            ((*keysymList_0).syms.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
                         ) as *mut xkb_keysym_t;
                     }
                     (*leveli).s.syms = (*keysymList_0).syms.item;
@@ -3888,20 +3886,20 @@ unsafe extern "C" fn AddActionsToKey(
                     (*groupi).levels.alloc = darray_next_alloc(
                         (*groupi).levels.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_level>() as size_t,
+                        ::core::mem::size_of::<xkb_level>() as usize,
                     );
                     (*groupi).levels.item = realloc(
                         (*groupi).levels.item as *mut ::core::ffi::c_void,
-                        ((*groupi).levels.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                        ((*groupi).levels.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
                 memset(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                 );
             }
         }
@@ -4014,15 +4012,15 @@ unsafe extern "C" fn AddActionsToKey(
                             actions.alloc = darray_next_alloc(
                                 actions.alloc,
                                 __need_0,
-                                ::core::mem::size_of::<xkb_action>() as size_t,
+                                ::core::mem::size_of::<xkb_action>() as usize,
                             );
                             actions.item = realloc(
                                 actions.item as *mut ::core::ffi::c_void,
-                                (actions.alloc as size_t).wrapping_mul(::core::mem::size_of::<
+                                (actions.alloc as usize).wrapping_mul(::core::mem::size_of::<
                                     xkb_action,
                                 >(
                                 )
-                                    as size_t),
+                                    as usize),
                             ) as *mut xkb_action;
                         }
                         *actions
@@ -4045,11 +4043,11 @@ unsafe extern "C" fn AddActionsToKey(
                             actions.alloc = actions.size;
                             actions.item = realloc(
                                 actions.item as *mut ::core::ffi::c_void,
-                                (actions.alloc as size_t).wrapping_mul(::core::mem::size_of::<
+                                (actions.alloc as usize).wrapping_mul(::core::mem::size_of::<
                                     xkb_action,
                                 >(
                                 )
-                                    as size_t),
+                                    as usize),
                             ) as *mut xkb_action;
                         }
                         (*leveli).a.actions = actions.item;
@@ -4133,8 +4131,8 @@ unsafe extern "C" fn AddActionsToKey(
                     (*groupi).levels.alloc = (*groupi).levels.size;
                     (*groupi).levels.item = realloc(
                         (*groupi).levels.item as *mut ::core::ffi::c_void,
-                        ((*groupi).levels.alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
+                        ((*groupi).levels.alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
             } else {
@@ -4204,9 +4202,9 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
             );
             return false_0 != 0;
         }
-        let prefix: size_t = (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-            .wrapping_sub(1 as size_t);
-        let len: size_t = strlen(field.offset(prefix as isize)) as size_t;
+        let prefix: usize =
+            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize).wrapping_sub(1 as usize);
+        let len: usize = strlen(field.offset(prefix as isize)) as usize;
         let mut raw_overlay: int64_t = XKB_OVERLAY_INVALID as int64_t;
         if parse_dec_to_uint64_t(
             field.offset(prefix as isize),
@@ -4380,20 +4378,20 @@ unsafe extern "C" fn SetSymbolsField(
                             (*keyi).groups.alloc = darray_next_alloc(
                                 (*keyi).groups.alloc,
                                 __need,
-                                ::core::mem::size_of::<GroupInfo>() as size_t,
+                                ::core::mem::size_of::<GroupInfo>() as usize,
                             );
                             (*keyi).groups.item = realloc(
                                 (*keyi).groups.item as *mut ::core::ffi::c_void,
-                                ((*keyi).groups.alloc as size_t)
-                                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                                ((*keyi).groups.alloc as usize)
+                                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                             ) as *mut GroupInfo;
                         }
                         memset(
                             (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
                                 as *mut ::core::ffi::c_void,
                             0 as ::core::ffi::c_int,
-                            (__newSize.wrapping_sub(__oldSize) as size_t)
-                                .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                            (__newSize.wrapping_sub(__oldSize) as usize)
+                                .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                         );
                     }
                 }
@@ -4489,8 +4487,7 @@ unsafe extern "C" fn SetSymbolsField(
         } else if istrneq(
             b"permanentoverlay\0".as_ptr() as *const ::core::ffi::c_char,
             field,
-            (::core::mem::size_of::<[::core::ffi::c_char; 17]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 17]>() as usize).wrapping_sub(1 as usize),
         ) {
             xkb_log(
                 (*info).ctx,
@@ -4504,8 +4501,7 @@ unsafe extern "C" fn SetSymbolsField(
         } else if istrneq(
             b"overlay\0".as_ptr() as *const ::core::ffi::c_char,
             field,
-            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as size_t)
-                .wrapping_sub(1 as size_t),
+            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
             let mut key: *const xkb_key = ::core::ptr::null::<xkb_key>();
@@ -4761,13 +4757,13 @@ unsafe extern "C" fn SetSymbolsField(
                     (*(*(*info).keymap_info).pending_computations).alloc = darray_next_alloc(
                         (*(*(*info).keymap_info).pending_computations).alloc,
                         __need_0,
-                        ::core::mem::size_of::<pending_computation>() as size_t,
+                        ::core::mem::size_of::<pending_computation>() as usize,
                     );
                     (*(*(*info).keymap_info).pending_computations).item = realloc(
                         (*(*(*info).keymap_info).pending_computations).item
                             as *mut ::core::ffi::c_void,
-                        ((*(*(*info).keymap_info).pending_computations).alloc as size_t)
-                            .wrapping_mul(::core::mem::size_of::<pending_computation>() as size_t),
+                        ((*(*(*info).keymap_info).pending_computations).alloc as usize)
+                            .wrapping_mul(::core::mem::size_of::<pending_computation>() as usize),
                     )
                         as *mut pending_computation;
                 }
@@ -4903,21 +4899,21 @@ unsafe extern "C" fn SetGroupName(
                     (*info).group_names.alloc = darray_next_alloc(
                         (*info).group_names.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as size_t,
+                        ::core::mem::size_of::<xkb_atom_t>() as usize,
                     );
                     (*info).group_names.item =
                         realloc(
                             (*info).group_names.item as *mut ::core::ffi::c_void,
-                            ((*info).group_names.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                            ((*info).group_names.alloc as usize)
+                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                         ) as *mut xkb_atom_t;
                 }
                 memset(
                     (*info).group_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
                         as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (__newSize.wrapping_sub(__oldSize) as size_t)
-                        .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as size_t),
+                    (__newSize.wrapping_sub(__oldSize) as usize)
+                        .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                 );
             }
         } else {
@@ -5239,20 +5235,20 @@ unsafe extern "C" fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut
                 (*keyi).groups.alloc = darray_next_alloc(
                     (*keyi).groups.alloc,
                     __need,
-                    ::core::mem::size_of::<GroupInfo>() as size_t,
+                    ::core::mem::size_of::<GroupInfo>() as usize,
                 );
                 (*keyi).groups.item = realloc(
                     (*keyi).groups.item as *mut ::core::ffi::c_void,
-                    ((*keyi).groups.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                    ((*keyi).groups.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 ) as *mut GroupInfo;
             }
             memset(
                 (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
                     as *mut ::core::ffi::c_void,
                 0 as ::core::ffi::c_int,
-                (__newSize.wrapping_sub(__oldSize) as size_t)
-                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                (__newSize.wrapping_sub(__oldSize) as usize)
+                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
             );
         }
         if (*info).explicit_group > 0 as xkb_layout_index_t {
@@ -5298,19 +5294,19 @@ unsafe extern "C" fn HandleSymbolsDef(
             keyi.groups.alloc = darray_next_alloc(
                 keyi.groups.alloc,
                 __need,
-                ::core::mem::size_of::<GroupInfo>() as size_t,
+                ::core::mem::size_of::<GroupInfo>() as usize,
             );
             keyi.groups.item = realloc(
                 keyi.groups.item as *mut ::core::ffi::c_void,
-                (keyi.groups.alloc as size_t)
-                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                (keyi.groups.alloc as usize)
+                    .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
             ) as *mut GroupInfo;
         }
         if __count != 0 as darray_size_t {
             memcpy(
                 keyi.groups.item as *mut ::core::ffi::c_void,
                 (*info).default_key.groups.item as *const ::core::ffi::c_void,
-                (__count as size_t).wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                (__count as usize).wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
             );
         }
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
@@ -5571,8 +5567,8 @@ unsafe extern "C" fn FindAutomaticType(
             return xkb_atom_intern(
                 ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                    .wrapping_sub(1 as usize),
             );
         }
         sym0 = if (*(*groupi)
@@ -5642,8 +5638,8 @@ unsafe extern "C" fn FindAutomaticType(
                 return xkb_atom_intern(
                     ctx,
                     b"ALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
+                        .wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as ::core::ffi::c_int != 0
@@ -5652,15 +5648,15 @@ unsafe extern "C" fn FindAutomaticType(
                 return xkb_atom_intern(
                     ctx,
                     b"KEYPAD\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                        .wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
                 b"TWO_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                    .wrapping_sub(1 as usize),
             );
         }
         if width <= 4 as xkb_level_index_t {
@@ -5739,15 +5735,15 @@ unsafe extern "C" fn FindAutomaticType(
                     return xkb_atom_intern(
                         ctx,
                         b"FOUR_LEVEL_ALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                        (::core::mem::size_of::<[::core::ffi::c_char; 22]>() as size_t)
-                            .wrapping_sub(1 as size_t),
+                        (::core::mem::size_of::<[::core::ffi::c_char; 22]>() as usize)
+                            .wrapping_sub(1 as usize),
                     );
                 }
                 return xkb_atom_intern(
                     ctx,
                     b"FOUR_LEVEL_SEMIALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 26]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 26]>() as usize)
+                        .wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as ::core::ffi::c_int != 0
@@ -5756,15 +5752,15 @@ unsafe extern "C" fn FindAutomaticType(
                 return xkb_atom_intern(
                     ctx,
                     b"FOUR_LEVEL_KEYPAD\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 18]>() as size_t)
-                        .wrapping_sub(1 as size_t),
+                    (::core::mem::size_of::<[::core::ffi::c_char; 18]>() as usize)
+                        .wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
                 b"FOUR_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as size_t)
-                    .wrapping_sub(1 as size_t),
+                (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
+                    .wrapping_sub(1 as usize),
             );
         }
         return XKB_ATOM_NONE as xkb_atom_t;
@@ -5900,12 +5896,12 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
                 (*keyi).groups.alloc = darray_next_alloc(
                     (*keyi).groups.alloc,
                     __need,
-                    ::core::mem::size_of::<GroupInfo>() as size_t,
+                    ::core::mem::size_of::<GroupInfo>() as usize,
                 );
                 (*keyi).groups.item = realloc(
                     (*keyi).groups.item as *mut ::core::ffi::c_void,
-                    ((*keyi).groups.alloc as size_t)
-                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as size_t),
+                    ((*keyi).groups.alloc as usize)
+                        .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 ) as *mut GroupInfo;
             }
             if __need < (*keyi).groups.size {
@@ -5931,8 +5927,8 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
             }
 
             (*key).groups = calloc(
-                (*key).num_groups() as size_t,
-                ::core::mem::size_of::<xkb_group>() as size_t,
+                (*key).num_groups() as usize,
+                ::core::mem::size_of::<xkb_group>() as usize,
             ) as *mut xkb_group;
 
             // Find and assign the groups' types in the keymap
@@ -5979,13 +5975,14 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
                         (*groupi).levels.alloc = darray_next_alloc(
                             (*groupi).levels.alloc,
                             __need_levels,
-                            ::core::mem::size_of::<xkb_level>() as size_t,
+                            ::core::mem::size_of::<xkb_level>() as usize,
                         );
-                        (*groupi).levels.item = realloc(
-                            (*groupi).levels.item as *mut ::core::ffi::c_void,
-                            ((*groupi).levels.alloc as size_t)
-                                .wrapping_mul(::core::mem::size_of::<xkb_level>() as size_t),
-                        ) as *mut xkb_level;
+                        (*groupi).levels.item =
+                            realloc(
+                                (*groupi).levels.item as *mut ::core::ffi::c_void,
+                                ((*groupi).levels.alloc as usize)
+                                    .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
+                            ) as *mut xkb_level;
                     }
                     if __need_levels > (*groupi).levels.size {
                         // Zero out new elements
@@ -6044,8 +6041,8 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
                                         // Some cased keysyms: store the transformation result
                                         (*leveli).s.syms = realloc(
                                             (*leveli).s.syms as *mut ::core::ffi::c_void,
-                                            (2 * (*leveli).num_syms as size_t).wrapping_mul(
-                                                ::core::mem::size_of::<xkb_keysym_t>() as size_t,
+                                            (2 * (*leveli).num_syms as usize).wrapping_mul(
+                                                ::core::mem::size_of::<xkb_keysym_t>() as usize,
                                             ),
                                         )
                                             as *mut xkb_keysym_t;
