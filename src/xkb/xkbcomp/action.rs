@@ -40,7 +40,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -52,7 +52,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -66,14 +66,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -81,13 +81,12 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -118,17 +117,16 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -193,10 +191,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -890,14 +888,14 @@ pub mod ast_h {
     use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const ::core::ffi::c_char;
+        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
     }
 }
 pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct LookupEntry {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub value: u32,
     }
     use super::atom_h::xkb_atom_t;
@@ -907,17 +905,14 @@ pub mod text_h {
     extern "C" {
         pub fn LookupString(
             tab: *const LookupEntry,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             value_rtrn: *mut ::core::ffi::c_uint,
         ) -> bool;
-        pub fn LookupValue(
-            tab: *const LookupEntry,
-            value: ::core::ffi::c_uint,
-        ) -> *const ::core::ffi::c_char;
+        pub fn LookupValue(tab: *const LookupEntry, value: ::core::ffi::c_uint) -> *const i8;
         pub static ctrlMaskNames: [LookupEntry; 0];
         pub static actionTypeNames: [LookupEntry; 0];
-        pub fn ActionTypeText(type_0: xkb_action_type) -> *const ::core::ffi::c_char;
-        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const ::core::ffi::c_char;
+        pub fn ActionTypeText(type_0: xkb_action_type) -> *const i8;
+        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const i8;
     }
 }
 pub mod xkbcomp_priv_h {
@@ -1019,7 +1014,7 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod expr_h {
@@ -1036,8 +1031,8 @@ pub mod expr_h {
         pub fn ExprResolveLhs(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            elem_rtrn: *mut *const ::core::ffi::c_char,
-            field_rtrn: *mut *const ::core::ffi::c_char,
+            elem_rtrn: *mut *const i8,
+            field_rtrn: *mut *const i8,
             index_rtrn: *mut *mut ExprDef,
         ) -> bool;
         pub fn ExprResolveModMask(
@@ -1101,19 +1096,13 @@ pub mod stdint_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     extern "C" {
-        pub fn istrcmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod stdbool_h {
@@ -1341,156 +1330,156 @@ pub unsafe extern "C" fn InitActionsInfo(
 }
 static mut fieldStrings: [LookupEntry; 37] = [
     LookupEntry {
-        name: b"clearLocks\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"clearLocks\0".as_ptr() as *const i8,
         value: ACTION_FIELD_CLEAR_LOCKS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"latchToLock\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"latchToLock\0".as_ptr() as *const i8,
         value: ACTION_FIELD_LATCH_TO_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"genKeyEvent\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"genKeyEvent\0".as_ptr() as *const i8,
         value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"generateKeyEvent\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"generateKeyEvent\0".as_ptr() as *const i8,
         value: ACTION_FIELD_GEN_KEY_EVENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"report\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"report\0".as_ptr() as *const i8,
         value: ACTION_FIELD_REPORT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"default\0".as_ptr() as *const i8,
         value: ACTION_FIELD_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"affect\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"affect\0".as_ptr() as *const i8,
         value: ACTION_FIELD_AFFECT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"increment\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"increment\0".as_ptr() as *const i8,
         value: ACTION_FIELD_INCREMENT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"modifiers\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"modifiers\0".as_ptr() as *const i8,
         value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"mods\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"mods\0".as_ptr() as *const i8,
         value: ACTION_FIELD_MODIFIERS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"group\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"group\0".as_ptr() as *const i8,
         value: ACTION_FIELD_GROUP as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"x\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"x\0".as_ptr() as *const i8,
         value: ACTION_FIELD_X as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"y\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"y\0".as_ptr() as *const i8,
         value: ACTION_FIELD_Y as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"accel\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"accel\0".as_ptr() as *const i8,
         value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"accelerate\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"accelerate\0".as_ptr() as *const i8,
         value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"repeat\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"repeat\0".as_ptr() as *const i8,
         value: ACTION_FIELD_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"button\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"button\0".as_ptr() as *const i8,
         value: ACTION_FIELD_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"value\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"value\0".as_ptr() as *const i8,
         value: ACTION_FIELD_VALUE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"controls\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"controls\0".as_ptr() as *const i8,
         value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"ctrls\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"ctrls\0".as_ptr() as *const i8,
         value: ACTION_FIELD_CONTROLS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"type\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"type\0".as_ptr() as *const i8,
         value: ACTION_FIELD_TYPE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"count\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"count\0".as_ptr() as *const i8,
         value: ACTION_FIELD_COUNT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"screen\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"screen\0".as_ptr() as *const i8,
         value: ACTION_FIELD_SCREEN as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"same\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"same\0".as_ptr() as *const i8,
         value: ACTION_FIELD_SAME as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"sameServer\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"sameServer\0".as_ptr() as *const i8,
         value: ACTION_FIELD_SAME as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"data\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"data\0".as_ptr() as *const i8,
         value: ACTION_FIELD_DATA as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"device\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"device\0".as_ptr() as *const i8,
         value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"dev\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"dev\0".as_ptr() as *const i8,
         value: ACTION_FIELD_DEVICE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"key\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"key\0".as_ptr() as *const i8,
         value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"keycode\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"keycode\0".as_ptr() as *const i8,
         value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"kc\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"kc\0".as_ptr() as *const i8,
         value: ACTION_FIELD_KEYCODE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"clearmods\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"clearmods\0".as_ptr() as *const i8,
         value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"clearmodifiers\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"clearmodifiers\0".as_ptr() as *const i8,
         value: ACTION_FIELD_MODS_TO_CLEAR as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"lockOnRelease\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"lockOnRelease\0".as_ptr() as *const i8,
         value: ACTION_FIELD_LOCK_ON_RELEASE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"unlockOnPress\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"unlockOnPress\0".as_ptr() as *const i8,
         value: ACTION_FIELD_UNLOCK_ON_PRESS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"latchOnPress\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"latchOnPress\0".as_ptr() as *const i8,
         value: ACTION_FIELD_LATCH_ON_PRESS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 unsafe extern "C" fn stringToActionType(
-    mut str: *const ::core::ffi::c_char,
+    mut str: *const i8,
     mut type_rtrn: *mut xkb_action_type,
 ) -> bool {
     unsafe {
@@ -1504,10 +1493,7 @@ unsafe extern "C" fn stringToActionType(
         return ret;
     }
 }
-unsafe extern "C" fn stringToField(
-    mut str: *const ::core::ffi::c_char,
-    mut field_rtrn: *mut action_field,
-) -> bool {
+unsafe extern "C" fn stringToField(mut str: *const i8, mut field_rtrn: *mut action_field) -> bool {
     unsafe {
         let mut field: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         let ret: bool = LookupString(
@@ -1519,7 +1505,7 @@ unsafe extern "C" fn stringToField(
         return ret;
     }
 }
-unsafe extern "C" fn fieldText(mut field: action_field) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn fieldText(mut field: action_field) -> *const i8 {
     unsafe {
         return LookupValue(
             &raw const fieldStrings as *const LookupEntry,
@@ -1533,7 +1519,7 @@ unsafe extern "C" fn ReportMismatch(
     mut code: xkb_message_code,
     mut action: xkb_action_type,
     mut field: action_field,
-    mut type_0: *const ::core::ffi::c_char,
+    mut type_0: *const i8,
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
@@ -1542,7 +1528,7 @@ unsafe extern "C" fn ReportMismatch(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"[XKB-%03d] Value of %s field must be of type %s; Action %s definition ignored\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             code as ::core::ffi::c_uint,
             fieldText(field),
             type_0,
@@ -1564,7 +1550,7 @@ unsafe extern "C" fn ReportFormatVersionMismatch(
     mut action: xkb_action_type,
     mut field: action_field,
     mut format: xkb_keymap_format,
-    mut versions: *const ::core::ffi::c_char,
+    mut versions: *const i8,
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
@@ -1573,7 +1559,7 @@ unsafe extern "C" fn ReportFormatVersionMismatch(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"[XKB-%03d] Field %s for an action of type %s requires keymap text format %s,  but got: %d; Action definition ignored\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as ::core::ffi::c_int,
             fieldText(field),
             ActionTypeText(action),
@@ -1603,7 +1589,7 @@ unsafe extern "C" fn ReportIllegal(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"[XKB-%03d] Field %s is not defined for an action of type %s; Action definition ignored\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             XKB_ERROR_INVALID_ACTION_FIELD as ::core::ffi::c_int,
             fieldText(field),
             ActionTypeText(action),
@@ -1631,7 +1617,7 @@ unsafe extern "C" fn ReportActionNotArray(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"[XKB-%03d] The %s field in the %s action is not an array; Action definition ignored\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
             fieldText(field),
             ActionTypeText(action),
@@ -1661,7 +1647,7 @@ unsafe extern "C" fn HandleNoAction(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"[XKB-%03d] The \"%s\" action takes no argument, but got \"%s\" field; Action definition ignored\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             XKB_ERROR_INVALID_ACTION_FIELD as ::core::ffi::c_int,
             ActionTypeText((*action).type_0),
             fieldText(field),
@@ -1697,7 +1683,7 @@ unsafe extern "C" fn CheckBooleanFlag(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 field,
-                b"boolean\0".as_ptr() as *const ::core::ffi::c_char,
+                b"boolean\0".as_ptr() as *const i8,
                 strict,
             );
         }
@@ -1728,18 +1714,12 @@ unsafe extern "C" fn CheckModifierField(
         if (*value).common.type_0 as ::core::ffi::c_uint
             == STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            let mut valStr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            let mut valStr: *const i8 = ::core::ptr::null::<i8>();
             valStr = xkb_atom_text(ctx, (*value).ident.ident);
             if !valStr.is_null()
-                && (istreq(
-                    valStr,
-                    b"usemodmapmods\0".as_ptr() as *const ::core::ffi::c_char,
-                ) as ::core::ffi::c_int
+                && (istreq(valStr, b"usemodmapmods\0".as_ptr() as *const i8) as ::core::ffi::c_int
                     != 0
-                    || istreq(
-                        valStr,
-                        b"modmapmods\0".as_ptr() as *const ::core::ffi::c_char,
-                    ) as ::core::ffi::c_int
+                    || istreq(valStr, b"modmapmods\0".as_ptr() as *const i8) as ::core::ffi::c_int
                         != 0)
             {
                 *mods_rtrn = 0 as xkb_mod_mask_t;
@@ -1755,7 +1735,7 @@ unsafe extern "C" fn CheckModifierField(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 ACTION_FIELD_MODIFIERS,
-                b"modifier mask\0".as_ptr() as *const ::core::ffi::c_char,
+                b"modifier mask\0".as_ptr() as *const i8,
                 strict,
             );
         }
@@ -1767,24 +1747,24 @@ unsafe extern "C" fn CheckModifierField(
 }
 static mut lockWhich: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"both\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"both\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: b"lock\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"lock\0".as_ptr() as *const i8,
         value: ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"neither\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"neither\0".as_ptr() as *const i8,
         value: (ACTION_LOCK_NO_LOCK as ::core::ffi::c_int
             | ACTION_LOCK_NO_UNLOCK as ::core::ffi::c_int) as u32,
     },
     LookupEntry {
-        name: b"unlock\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"unlock\0".as_ptr() as *const i8,
         value: ACTION_LOCK_NO_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
@@ -1812,7 +1792,7 @@ unsafe extern "C" fn CheckAffectField(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 ACTION_FIELD_AFFECT,
-                b"lock, unlock, both, neither\0".as_ptr() as *const ::core::ffi::c_char,
+                b"lock, unlock, both, neither\0".as_ptr() as *const i8,
                 strict,
             );
         }
@@ -1873,7 +1853,7 @@ unsafe extern "C" fn HandleSetLatchLockMods(
                     (*action).type_0,
                     field,
                     (*keymap_info).keymap.format,
-                    b">= 2\0".as_ptr() as *const ::core::ffi::c_char,
+                    b">= 2\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -1933,7 +1913,7 @@ unsafe extern "C" fn HandleSetLatchLockMods(
                         (*action).type_0,
                         field,
                         (*keymap_info).keymap.format,
-                        b">= 2\0".as_ptr() as *const ::core::ffi::c_char,
+                        b">= 2\0".as_ptr() as *const i8,
                         (*keymap_info).strict,
                     );
                 }
@@ -2008,7 +1988,7 @@ unsafe extern "C" fn CheckGroupField(
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
                 action,
                 ACTION_FIELD_GROUP,
-                b"integer\0".as_ptr() as *const ::core::ffi::c_char,
+                b"integer\0".as_ptr() as *const i8,
                 (*keymap_info).strict,
             );
             return ret;
@@ -2150,7 +2130,7 @@ unsafe extern "C" fn HandleSetLatchLockGroup(
                     (*action).type_0,
                     field,
                     (*keymap_info).keymap.format,
-                    b">= v2\0".as_ptr() as *const ::core::ffi::c_char,
+                    b">= v2\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2189,7 +2169,7 @@ unsafe extern "C" fn HandleMovePtr(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2199,7 +2179,7 @@ unsafe extern "C" fn HandleMovePtr(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"The %s field in the %s action must be in range %d..%d, but got %ld. Action definition ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     fieldText(field),
                     ActionTypeText((*action).type_0),
                     -32767 as ::core::ffi::c_int - 1 as ::core::ffi::c_int,
@@ -2275,7 +2255,7 @@ unsafe extern "C" fn HandlePtrBtn(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (range 1..5)\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer (range 1..5)\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2285,7 +2265,7 @@ unsafe extern "C" fn HandlePtrBtn(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Button must specify default or be in the range 1..5; Illegal button value %ld ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     btn,
                 );
                 return (if (*keymap_info).strict as ::core::ffi::c_uint
@@ -2325,7 +2305,7 @@ unsafe extern "C" fn HandlePtrBtn(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2335,7 +2315,7 @@ unsafe extern "C" fn HandlePtrBtn(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"The count field must have a value in the range 0..255; Illegal count %ld ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     val,
                 );
                 return (if (*keymap_info).strict as ::core::ffi::c_uint
@@ -2355,19 +2335,19 @@ unsafe extern "C" fn HandlePtrBtn(
 }
 static mut ptrDflts: [LookupEntry; 4] = [
     LookupEntry {
-        name: b"dfltbtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"dfltbtn\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"defaultbutton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"defaultbutton\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"button\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"button\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
@@ -2401,7 +2381,7 @@ unsafe extern "C" fn HandleSetPtrDflt(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"pointer component\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"pointer component\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2437,7 +2417,7 @@ unsafe extern "C" fn HandleSetPtrDflt(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (range 1..5)\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer (range 1..5)\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2447,7 +2427,7 @@ unsafe extern "C" fn HandleSetPtrDflt(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"New default button value must be in the range 1..5; Illegal default button value %ld ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     btn,
                 );
                 return (if (*keymap_info).strict as ::core::ffi::c_uint
@@ -2465,7 +2445,7 @@ unsafe extern "C" fn HandleSetPtrDflt(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Cannot set default pointer button to \"default\"; Illegal default button setting ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
                 return (if (*keymap_info).strict as ::core::ffi::c_uint
                     & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -2529,7 +2509,7 @@ unsafe extern "C" fn HandleSwitchScreen(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (-128..127)\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer (-128..127)\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2546,7 +2526,7 @@ unsafe extern "C" fn HandleSwitchScreen(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Screen index must be in the range %d..%d; Illegal screen value %ld ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     -128 as ::core::ffi::c_int,
                     127 as ::core::ffi::c_int,
                     val,
@@ -2611,7 +2591,7 @@ unsafe extern "C" fn HandleSetLockControls(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"controls mask\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"controls mask\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2656,12 +2636,9 @@ unsafe extern "C" fn HandleRedirectKey(
             if (*value).common.type_0 as ::core::ffi::c_uint
                 == STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
             {
-                let mut valStr: *const ::core::ffi::c_char =
-                    xkb_atom_text(ctx, (*value).ident.ident);
+                let mut valStr: *const i8 = xkb_atom_text(ctx, (*value).ident.ident);
                 if !valStr.is_null()
-                    && istreq(valStr, b"auto\0".as_ptr() as *const ::core::ffi::c_char)
-                        as ::core::ffi::c_int
-                        != 0
+                    && istreq(valStr, b"auto\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
                     (*act).keycode = (*keymap_info).keymap.redirect_key_auto;
                     return PARSER_SUCCESS;
@@ -2675,7 +2652,7 @@ unsafe extern "C" fn HandleRedirectKey(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"key name\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"key name\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2686,7 +2663,7 @@ unsafe extern "C" fn HandleRedirectKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"RedirectKey field %s cannot resolve %s to a valid key\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     fieldText(field),
                     KeyNameText(ctx, (*value).key_name.key_name),
                 );
@@ -2730,7 +2707,7 @@ unsafe extern "C" fn HandleRedirectKey(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"modifier mask\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"modifier mask\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2785,7 +2762,7 @@ unsafe extern "C" fn HandlePrivate(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     ACTION_TYPE_PRIVATE,
                     field,
-                    b"integer\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"integer\0".as_ptr() as *const i8,
                     (*keymap_info).strict,
                 );
             }
@@ -2795,7 +2772,7 @@ unsafe extern "C" fn HandlePrivate(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Private action type must be in the range 0..255; Illegal type %ld ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     type_0,
                 );
                 return (if (*keymap_info).strict as ::core::ffi::c_uint
@@ -2813,7 +2790,7 @@ unsafe extern "C" fn HandlePrivate(
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Private actions of type %s are not supported; Ignored\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     ActionTypeText(type_0 as xkb_action_type),
                 );
                 (*act).type_0 = ACTION_TYPE_NONE;
@@ -2832,11 +2809,11 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_ERROR_WRONG_FIELD_TYPE,
                         (*action).type_0,
                         field,
-                        b"string\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"string\0".as_ptr() as *const i8,
                         (*keymap_info).strict,
                     );
                 }
-                let mut str: *const ::core::ffi::c_char = xkb_atom_text(ctx, val);
+                let mut str: *const i8 = xkb_atom_text(ctx, val);
                 let mut len: usize = strlen(str);
                 if len < 1 as usize || len > ::core::mem::size_of::<[uint8_t; 7]>() as usize {
                     xkb_log(
@@ -2844,7 +2821,7 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"A private action has %zu data bytes, but got: %zu; Illegal data ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         ::core::mem::size_of::<[uint8_t; 7]>(),
                         len,
                     );
@@ -2877,7 +2854,7 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Array subscript must be integer; Illegal subscript ignored\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                     );
                     return (if (*keymap_info).strict as ::core::ffi::c_uint
                         & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -2896,7 +2873,7 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"The data for a private action is %zu bytes long; Attempt to use data[%ld] ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         ::core::mem::size_of::<[uint8_t; 7]>(),
                         ndx,
                     );
@@ -2915,7 +2892,7 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_ERROR_WRONG_FIELD_TYPE,
                         (*act).type_0,
                         field,
-                        b"integer\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"integer\0".as_ptr() as *const i8,
                         (*keymap_info).strict,
                     );
                 }
@@ -2925,7 +2902,7 @@ unsafe extern "C" fn HandlePrivate(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"All data for a private action must be 0..255; Illegal datum %ld ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         datum,
                     );
                     return (if (*keymap_info).strict as ::core::ffi::c_uint
@@ -3206,21 +3183,20 @@ pub unsafe extern "C" fn HandleActionDef(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Expected an action definition, found %s\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Expected an action definition, found %s\n\0".as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 stmt_type_to_string((*def).common.type_0),
             );
             return PARSER_FATAL_ERROR;
         }
-        let mut action_name: *const ::core::ffi::c_char = xkb_atom_text(ctx, (*def).action.name);
+        let mut action_name: *const i8 = xkb_atom_text(ctx, (*def).action.name);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const i8,
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as ::core::ffi::c_int,
                 action_name,
             );
@@ -3240,8 +3216,7 @@ pub unsafe extern "C" fn HandleActionDef(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unsupported legacy action type \"%s\".\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Unsupported legacy action type \"%s\".\n\0".as_ptr() as *const i8,
                 XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as ::core::ffi::c_int,
                 action_name,
             );
@@ -3254,10 +3229,8 @@ pub unsafe extern "C" fn HandleActionDef(
             let mut value_ptr: *mut *mut ExprDef = ::core::ptr::null_mut::<*mut ExprDef>();
             let mut field: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
             let mut arrayRtrn: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-            let mut elemRtrn: *const ::core::ffi::c_char =
-                ::core::ptr::null::<::core::ffi::c_char>();
-            let mut fieldRtrn: *const ::core::ffi::c_char =
-                ::core::ptr::null::<::core::ffi::c_char>();
+            let mut elemRtrn: *const i8 = ::core::ptr::null::<i8>();
+            let mut fieldRtrn: *const i8 = ::core::ptr::null::<i8>();
             if (*arg).common.type_0 as ::core::ffi::c_uint
                 == STMT_EXPR_ASSIGN as ::core::ffi::c_int as ::core::ffi::c_uint
             {
@@ -3290,7 +3263,7 @@ pub unsafe extern "C" fn HandleActionDef(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Cannot change defaults in an action definition; Ignoring attempt to change \"%s.%s\".\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
                     elemRtrn,
                     fieldRtrn,
@@ -3304,7 +3277,7 @@ pub unsafe extern "C" fn HandleActionDef(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Unknown field name %s for action %s discarded\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_ACTION_FIELD as ::core::ffi::c_int,
                     fieldRtrn,
                     ActionTypeText((*action).type_0),
@@ -3349,8 +3322,8 @@ pub unsafe extern "C" fn SetDefaultActionField(
     mut keymap_info: *const xkb_keymap_info,
     mut info: *mut ActionsInfo,
     mut mods: *mut xkb_mod_set,
-    mut elem: *const ::core::ffi::c_char,
-    mut field: *const ::core::ffi::c_char,
+    mut elem: *const i8,
+    mut field: *const i8,
     mut array_ndx: *mut ExprDef,
     mut value_ptr: *mut *mut ExprDef,
     mut merge: merge_mode,
@@ -3363,7 +3336,7 @@ pub unsafe extern "C" fn SetDefaultActionField(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const i8,
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as ::core::ffi::c_int,
                 elem,
             );
@@ -3382,8 +3355,7 @@ pub unsafe extern "C" fn SetDefaultActionField(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unknown action field \"%s\"\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Unknown action field \"%s\"\n\0".as_ptr() as *const i8,
                 XKB_ERROR_INVALID_ACTION_FIELD as ::core::ffi::c_int,
                 field,
             );
@@ -3421,18 +3393,18 @@ pub unsafe extern "C" fn SetDefaultActionField(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
                 b"Conflicting field \"%s\" for default action \"%s\"; Using %s, ignore %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 fieldText(action_field),
                 ActionTypeText(action),
                 if replace as ::core::ffi::c_int != 0 {
-                    b"from\0".as_ptr() as *const ::core::ffi::c_char
+                    b"from\0".as_ptr() as *const i8
                 } else {
-                    b"into\0".as_ptr() as *const ::core::ffi::c_char
+                    b"into\0".as_ptr() as *const i8
                 },
                 if replace as ::core::ffi::c_int != 0 {
-                    b"into\0".as_ptr() as *const ::core::ffi::c_char
+                    b"into\0".as_ptr() as *const i8
                 } else {
-                    b"from\0".as_ptr() as *const ::core::ffi::c_char
+                    b"from\0".as_ptr() as *const i8
                 },
             );
             if replace {

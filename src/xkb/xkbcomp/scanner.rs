@@ -32,27 +32,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -63,7 +63,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -86,7 +86,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -98,7 +98,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -112,14 +112,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -127,16 +127,12 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_intern(
-            ctx: *mut xkb_context,
-            string: *const ::core::ffi::c_char,
-            len: usize,
-        ) -> xkb_atom_t;
+        pub fn xkb_atom_intern(ctx: *mut xkb_context, string: *const i8, len: usize) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -155,11 +151,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -271,7 +267,7 @@ pub mod scanner_utils_h {
     #[repr(C)]
     pub struct sval {
         pub len: usize,
-        pub start: *const ::core::ffi::c_char,
+        pub start: *const i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -284,13 +280,13 @@ pub mod scanner_utils_h {
     pub struct scanner {
         pub pos: usize,
         pub len: usize,
-        pub s: *const ::core::ffi::c_char,
-        pub buf: [::core::ffi::c_char; 1024],
+        pub s: *const i8,
+        pub buf: [i8; 1024],
         pub buf_pos: usize,
         pub token_pos: usize,
         pub cached_pos: usize,
         pub cached_loc: scanner_loc,
-        pub file_name: *const ::core::ffi::c_char,
+        pub file_name: *const i8,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
@@ -298,9 +294,9 @@ pub mod scanner_utils_h {
     pub unsafe extern "C" fn scanner_init(
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
-        mut string: *const ::core::ffi::c_char,
+        mut string: *const i8,
         mut len: usize,
-        mut file_name: *const ::core::ffi::c_char,
+        mut file_name: *const i8,
         mut priv_0: *mut ::core::ffi::c_void,
     ) {
         unsafe {
@@ -317,10 +313,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> ::core::ffi::c_char {
+    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
             if ((*s).pos >= (*s).len) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                return '\0' as i32 as ::core::ffi::c_char;
+                return '\0' as i32 as i8;
             }
             return *(*s).s.offset((*s).pos as isize);
         }
@@ -340,11 +336,11 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_skip_to_eol(mut s: *mut scanner) {
         unsafe {
-            let mut nl: *const ::core::ffi::c_char = memchr(
+            let mut nl: *const i8 = memchr(
                 (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
                 '\n' as i32,
                 (*s).len.wrapping_sub((*s).pos),
-            ) as *const ::core::ffi::c_char;
+            ) as *const i8;
             let new_pos: usize = if !nl.is_null() {
                 nl.offset_from((*s).s) as ::core::ffi::c_long as usize
             } else {
@@ -354,10 +350,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> ::core::ffi::c_char {
+    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
             if scanner_eof(s) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                return '\0' as i32 as ::core::ffi::c_char;
+                return '\0' as i32 as i8;
             }
             let c2rust_fresh0 = (*s).pos;
             (*s).pos = (*s).pos.wrapping_add(1);
@@ -365,7 +361,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
                 as ::core::ffi::c_int as ::core::ffi::c_long
@@ -380,7 +376,7 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe extern "C" fn scanner_str(
         mut s: *mut scanner,
-        mut string: *const ::core::ffi::c_char,
+        mut string: *const i8,
         mut len: usize,
     ) -> bool {
         unsafe {
@@ -400,13 +396,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_append(
-        mut s: *mut scanner,
-        mut ch: ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(1 as usize)
-                >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                >= ::core::mem::size_of::<[i8; 1024]>() as usize
             {
                 return false_0 != 0;
             }
@@ -423,17 +416,16 @@ pub mod scanner_utils_h {
     ) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(5 as usize)
-                <= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                <= ::core::mem::size_of::<[i8; 1024]>() as usize
             {
                 let mut count: ::core::ffi::c_int = utf32_to_utf8(
                     c,
-                    (&raw mut (*s).buf as *mut ::core::ffi::c_char).offset((*s).buf_pos as isize),
+                    (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
                 );
                 if count == 0 as ::core::ffi::c_int {
                     count = utf32_to_utf8(
                         0xfffd as u32,
-                        (&raw mut (*s).buf as *mut ::core::ffi::c_char)
-                            .offset((*s).buf_pos as isize),
+                        (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
                     );
                 }
                 if count == 0 as ::core::ffi::c_int {
@@ -522,7 +514,7 @@ pub mod scanner_utils_h {
         mut out: *mut u32,
     ) -> bool {
         unsafe {
-            if !scanner_chr(s, '{' as i32 as ::core::ffi::c_char) {
+            if !scanner_chr(s, '{' as i32 as i8) {
                 return false_0 != 0;
             }
             let mut cp: u32 = 0 as u32;
@@ -542,7 +534,7 @@ pub mod scanner_utils_h {
             {
                 scanner_next(s);
             }
-            if scanner_chr(s, '}' as i32 as ::core::ffi::c_char) {
+            if scanner_chr(s, '}' as i32 as i8) {
                 *out = cp;
                 return count > 0 as ::core::ffi::c_int
                     && (*s).pos == last_valid.wrapping_add(1 as usize)
@@ -557,11 +549,8 @@ pub mod scanner_utils_h {
         mut scanner: *mut scanner,
     ) -> bool {
         unsafe {
-            if scanner_str(
-                scanner,
-                b"\xEF\xBB\xBF\0".as_ptr() as *const ::core::ffi::c_char,
-                3 as usize,
-            ) as ::core::ffi::c_int
+            if scanner_str(scanner, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize)
+                as ::core::ffi::c_int
                 != 0
                 || (*scanner).len < 2 as usize
             {
@@ -577,8 +566,7 @@ pub mod scanner_utils_h {
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected NULL character.\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"[XKB-%03d] %s:%zu:%zu: unexpected NULL character.\n\0".as_ptr() as *const i8,
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
                     (*scanner).file_name,
                     loc.line,
@@ -593,7 +581,7 @@ pub mod scanner_utils_h {
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] %s:%zu:%zu: unexpected non-ASCII character.\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
                     (*scanner).file_name,
                     loc_0.line,
@@ -889,7 +877,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct UnknownStatement {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
     }
     pub type xkb_map_flags = ::core::ffi::c_uint;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
@@ -904,7 +892,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
@@ -988,7 +976,7 @@ pub mod parser_h {
     pub union YYSTYPE {
         pub num: int64_t,
         pub file_type: xkb_file_type,
-        pub str: *mut ::core::ffi::c_char,
+        pub str: *mut i8,
         pub sval: sval,
         pub atom: xkb_atom_t,
         pub merge: merge_mode,
@@ -1071,8 +1059,8 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+        pub fn strdup(__s: *const i8) -> *mut i8;
+        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
 pub mod utils_h {
@@ -1083,14 +1071,14 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_ascii(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_ascii(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int)
                 == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_space(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int == ' ' as i32
                 || ch as ::core::ffi::c_int >= '\t' as i32
@@ -1098,7 +1086,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_alpha(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_alpha(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= 'a' as i32
                 && ch as ::core::ffi::c_int <= 'z' as i32
@@ -1107,21 +1095,21 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_digit(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_digit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_alnum(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_alnum(mut ch: i8) -> bool {
         unsafe {
             return is_alpha(ch) as ::core::ffi::c_int != 0
                 || is_digit(ch) as ::core::ffi::c_int != 0;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32
@@ -1132,7 +1120,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_graph(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_graph(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '!' as i32
                 && ch as ::core::ffi::c_int <= '~' as i32;
@@ -1140,13 +1128,13 @@ pub mod utils_h {
     }
 
     use super::stdint_uintn_h::u32;
-    use super::FILE_h::FILE;
+
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
@@ -1442,7 +1430,7 @@ pub mod utils_numbers_h {
     ];
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
@@ -1470,7 +1458,7 @@ pub mod utils_numbers_h {
     }
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint64_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
@@ -1508,7 +1496,7 @@ pub mod utf8_h {
     /// Writes UTF-8 bytes to buffer (including null terminator).
     /// Returns total bytes written (including null), or 0 on failure.
     #[inline]
-    pub fn utf32_to_utf8(unichar: u32, buffer: *mut ::core::ffi::c_char) -> ::core::ffi::c_int {
+    pub fn utf32_to_utf8(unichar: u32, buffer: *mut i8) -> ::core::ffi::c_int {
         if buffer.is_null() {
             return 0;
         }
@@ -1537,10 +1525,7 @@ pub mod parser_priv_h {
     pub use super::super::parser::{parse, parse_next};
 
     extern "C" {
-        pub fn keyword_to_token(
-            string: *const ::core::ffi::c_char,
-            len: usize,
-        ) -> ::core::ffi::c_int;
+        pub fn keyword_to_token(string: *const i8, len: usize) -> ::core::ffi::c_int;
     }
 }
 pub mod __stddef_null_h {
@@ -1587,7 +1572,6 @@ pub use self::context_h::{
     xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::darray_size_t;
-use self::errno_h::__errno_location;
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -1656,7 +1640,7 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT64_MAX;
 pub use self::stdint_intn_h::int64_t;
 pub use self::stdint_uintn_h::{u32, uint64_t, uint8_t};
-use self::string_h::{strdup, strerror};
+use self::string_h::strdup;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{
@@ -1671,7 +1655,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 #[no_mangle]
-pub static mut DECIMAL_SEPARATOR: ::core::ffi::c_char = '.' as i32 as ::core::ffi::c_char;
+pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe extern "C" fn number(
     mut s: *mut scanner,
     mut out: *mut int64_t,
@@ -1680,8 +1664,8 @@ unsafe extern "C" fn number(
     unsafe {
         if scanner_str(
             s,
-            b"0x\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize).wrapping_sub(1 as usize),
+            b"0x\0".as_ptr() as *const i8,
+            (::core::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
         ) {
             match scanner_hex_int64(s, out) {
                 -1 => {
@@ -1735,16 +1719,14 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             }
             if scanner_str(
                 s,
-                b"\xE2\x80\x8E\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
-                    .wrapping_sub(1 as usize),
+                b"\xE2\x80\x8E\0".as_ptr() as *const i8,
+                (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
             ) as ::core::ffi::c_int
                 != 0
                 || scanner_str(
                     s,
-                    b"\xE2\x80\x8F\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
-                        .wrapping_sub(1 as usize),
+                    b"\xE2\x80\x8F\0".as_ptr() as *const i8,
+                    (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
                 ) as ::core::ffi::c_int
                     != 0
             {
@@ -1752,12 +1734,11 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             }
             if !(scanner_str(
                 s,
-                b"//\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 3]>() as usize)
-                    .wrapping_sub(1 as usize),
+                b"//\0".as_ptr() as *const i8,
+                (::core::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
             ) as ::core::ffi::c_int
                 != 0
-                || scanner_chr(s, '#' as i32 as ::core::ffi::c_char) as ::core::ffi::c_int != 0)
+                || scanner_chr(s, '#' as i32 as i8) as ::core::ffi::c_int != 0)
             {
                 break;
             }
@@ -1768,33 +1749,33 @@ pub unsafe extern "C" fn _xkbcommon_lex(
         }
         (*s).token_pos = (*s).pos;
         (*s).buf_pos = 0 as usize;
-        if scanner_chr(s, '"' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '"' as i32 as i8) {
             while !scanner_eof(s)
                 && !scanner_eol(s)
                 && scanner_peek(s) as ::core::ffi::c_int != '"' as i32
             {
-                if scanner_chr(s, '\\' as i32 as ::core::ffi::c_char) {
+                if scanner_chr(s, '\\' as i32 as i8) {
                     let mut o: uint8_t = 0;
                     let start_pos: usize = (*s).pos;
-                    if scanner_chr(s, '\\' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\\' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, '"' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '"' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'n' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\n' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 't' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\t' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'r' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\r' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'b' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\u{8}' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'f' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\u{c}' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'v' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\u{b}' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'e' as i32 as ::core::ffi::c_char) {
-                        scanner_buf_append(s, '\u{1b}' as i32 as ::core::ffi::c_char);
-                    } else if scanner_chr(s, 'u' as i32 as ::core::ffi::c_char) {
+                    if scanner_chr(s, '\\' as i32 as i8) {
+                        scanner_buf_append(s, '\\' as i32 as i8);
+                    } else if scanner_chr(s, '"' as i32 as i8) {
+                        scanner_buf_append(s, '"' as i32 as i8);
+                    } else if scanner_chr(s, 'n' as i32 as i8) {
+                        scanner_buf_append(s, '\n' as i32 as i8);
+                    } else if scanner_chr(s, 't' as i32 as i8) {
+                        scanner_buf_append(s, '\t' as i32 as i8);
+                    } else if scanner_chr(s, 'r' as i32 as i8) {
+                        scanner_buf_append(s, '\r' as i32 as i8);
+                    } else if scanner_chr(s, 'b' as i32 as i8) {
+                        scanner_buf_append(s, '\u{8}' as i32 as i8);
+                    } else if scanner_chr(s, 'f' as i32 as i8) {
+                        scanner_buf_append(s, '\u{c}' as i32 as i8);
+                    } else if scanner_chr(s, 'v' as i32 as i8) {
+                        scanner_buf_append(s, '\u{b}' as i32 as i8);
+                    } else if scanner_chr(s, 'e' as i32 as i8) {
+                        scanner_buf_append(s, '\u{1b}' as i32 as i8);
+                    } else if scanner_chr(s, 'u' as i32 as i8) {
                         let mut cp: u32 = 0 as u32;
                         if scanner_unicode_code_point(s, &raw mut cp) as ::core::ffi::c_int != 0
                             && is_valid_char(cp) as ::core::ffi::c_int != 0
@@ -1807,7 +1788,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                 b"[XKB-%03d] %s:%zu:%zu: invalid Unicode escape sequence \"%.*s\" in string literal\n\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
                                     as ::core::ffi::c_int,
                                 (*s).file_name,
@@ -1816,13 +1797,13 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                                 (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
                                     as ::core::ffi::c_int,
                                 (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
-                                    as *const ::core::ffi::c_char,
+                                    as *const i8,
                             );
                         }
                     } else if scanner_oct(s, &raw mut o) as ::core::ffi::c_int != 0
                         && is_valid_char(o as u32) as ::core::ffi::c_int != 0
                     {
-                        scanner_buf_append(s, o as ::core::ffi::c_char);
+                        scanner_buf_append(s, o as i8);
                     } else if (*s).pos > start_pos {
                         let mut loc_0: scanner_loc = scanner_token_location(s);
                         xkb_log(
@@ -1830,7 +1811,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: invalid octal escape sequence \"%.*s\" in string literal\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_INVALID_ESCAPE_SEQUENCE as ::core::ffi::c_int,
                             (*s).file_name,
                             loc_0.line,
@@ -1838,7 +1819,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                             (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
                                 as ::core::ffi::c_int,
                             (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
-                                as *const ::core::ffi::c_char,
+                                as *const i8,
                         );
                     } else {
                         let mut loc_1: scanner_loc = scanner_token_location(s);
@@ -1847,7 +1828,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: unknown escape sequence \"\\%c\" in string literal\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
                                 as ::core::ffi::c_int,
                             (*s).file_name,
@@ -1860,49 +1841,45 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                     scanner_buf_append(s, scanner_next(s));
                 }
             }
-            if !scanner_buf_append(s, '\0' as i32 as ::core::ffi::c_char)
-                || !scanner_chr(s, '"' as i32 as ::core::ffi::c_char)
-            {
+            if !scanner_buf_append(s, '\0' as i32 as i8) || !scanner_chr(s, '"' as i32 as i8) {
                 let mut loc_2: scanner_loc = scanner_token_location(s);
                 xkb_log(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"%s:%zu:%zu: unterminated string literal\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"%s:%zu:%zu: unterminated string literal\n\0".as_ptr() as *const i8,
                     (*s).file_name,
                     loc_2.line,
                     loc_2.column,
                 );
                 return ERROR_TOK as ::core::ffi::c_int;
             }
-            (*yylval).str = strdup(&raw mut (*s).buf as *mut ::core::ffi::c_char);
+            (*yylval).str = strdup(&raw mut (*s).buf as *mut i8);
             if (*yylval).str.is_null() {
                 return ERROR_TOK as ::core::ffi::c_int;
             }
             return STRING as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '<' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '<' as i32 as i8) {
             while is_graph(scanner_peek(s)) as ::core::ffi::c_int != 0
                 && scanner_peek(s) as ::core::ffi::c_int != '>' as i32
             {
                 scanner_next(s);
             }
-            if !scanner_chr(s, '>' as i32 as ::core::ffi::c_char) {
+            if !scanner_chr(s, '>' as i32 as i8) {
                 let mut loc_3: scanner_loc = scanner_token_location(s);
                 xkb_log(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"%s:%zu:%zu: unterminated key name literal\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"%s:%zu:%zu: unterminated key name literal\n\0".as_ptr() as *const i8,
                     (*s).file_name,
                     loc_3.line,
                     loc_3.column,
                 );
                 return ERROR_TOK as ::core::ffi::c_int;
             }
-            let mut start: *const ::core::ffi::c_char = (*s)
+            let mut start: *const i8 = (*s)
                 .s
                 .offset((*s).token_pos as isize)
                 .offset(1 as ::core::ffi::c_int as isize);
@@ -1913,52 +1890,52 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             (*yylval).atom = xkb_atom_intern((*s).ctx, start, len);
             return KEYNAME as ::core::ffi::c_int;
         }
-        if scanner_chr(s, ';' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, ';' as i32 as i8) {
             return SEMI as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '{' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '{' as i32 as i8) {
             return OBRACE as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '}' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '}' as i32 as i8) {
             return CBRACE as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '=' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '=' as i32 as i8) {
             return EQUALS as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '[' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '[' as i32 as i8) {
             return OBRACKET as ::core::ffi::c_int;
         }
-        if scanner_chr(s, ']' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, ']' as i32 as i8) {
             return CBRACKET as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '(' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '(' as i32 as i8) {
             return OPAREN as ::core::ffi::c_int;
         }
-        if scanner_chr(s, ')' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, ')' as i32 as i8) {
             return CPAREN as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '.' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '.' as i32 as i8) {
             return DOT as ::core::ffi::c_int;
         }
-        if scanner_chr(s, ',' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, ',' as i32 as i8) {
             return COMMA as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '+' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '+' as i32 as i8) {
             return PLUS as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '-' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '-' as i32 as i8) {
             return MINUS as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '*' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '*' as i32 as i8) {
             return TIMES as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '/' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '/' as i32 as i8) {
             return DIVIDE as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '!' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '!' as i32 as i8) {
             return EXCLAM as ::core::ffi::c_int;
         }
-        if scanner_chr(s, '~' as i32 as ::core::ffi::c_char) {
+        if scanner_chr(s, '~' as i32 as i8) {
             return INVERT as ::core::ffi::c_int;
         }
         let mut tok: ::core::ffi::c_int = ERROR_TOK as ::core::ffi::c_int;
@@ -1970,7 +1947,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             {
                 scanner_next(s);
             }
-            let mut start_0: *const ::core::ffi::c_char = (*s).s.offset((*s).token_pos as isize);
+            let mut start_0: *const i8 = (*s).s.offset((*s).token_pos as isize);
             let len_0: usize = (*s).pos.wrapping_sub((*s).token_pos);
             tok = keyword_to_token(start_0, len_0);
             if tok >= 0 as ::core::ffi::c_int {
@@ -1989,8 +1966,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: malformed number literal\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"[XKB-%03d] %s:%zu:%zu: malformed number literal\n\0".as_ptr() as *const i8,
                     XKB_ERROR_MALFORMED_NUMBER_LITERAL as ::core::ffi::c_int,
                     (*s).file_name,
                     loc_4.line,
@@ -2005,7 +1981,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"%s:%zu:%zu: unrecognized token\n\0".as_ptr() as *const ::core::ffi::c_char,
+            b"%s:%zu:%zu: unrecognized token\n\0".as_ptr() as *const i8,
             (*s).file_name,
             loc_5.line,
             loc_5.column,
@@ -2017,10 +1993,10 @@ pub unsafe extern "C" fn _xkbcommon_lex(
 pub unsafe extern "C" fn XkbParseStringInit(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut len: usize,
-    mut file_name: *const ::core::ffi::c_char,
-    mut map: *const ::core::ffi::c_char,
+    mut file_name: *const i8,
+    mut map: *const i8,
 ) -> bool {
     unsafe {
         scanner_init(scanner, ctx, string, len, file_name, NULL);
@@ -2031,7 +2007,7 @@ pub unsafe extern "C" fn XkbParseStringInit(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] %s:%zu:%zu: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
                 (*scanner).file_name,
                 loc.line,
@@ -2043,7 +2019,7 @@ pub unsafe extern "C" fn XkbParseStringInit(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] %s:%zu:%zu: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
                 (*scanner).file_name,
                 loc_0.line,
@@ -2057,22 +2033,22 @@ pub unsafe extern "C" fn XkbParseStringInit(
 #[no_mangle]
 pub unsafe extern "C" fn XkbParseString(
     mut ctx: *mut xkb_context,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut len: usize,
-    mut file_name: *const ::core::ffi::c_char,
-    mut map: *const ::core::ffi::c_char,
+    mut file_name: *const i8,
+    mut map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
         let mut scanner: scanner = scanner {
             pos: 0,
             len: 0,
-            s: ::core::ptr::null::<::core::ffi::c_char>(),
+            s: ::core::ptr::null::<i8>(),
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: ::core::ptr::null::<::core::ffi::c_char>(),
+            file_name: ::core::ptr::null::<i8>(),
             ctx: ::core::ptr::null_mut::<xkb_context>(),
             priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
         };
@@ -2087,7 +2063,7 @@ pub unsafe extern "C" fn XkbParseString(
 pub unsafe extern "C" fn XkbParseStringNext(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
-    mut map: *const ::core::ffi::c_char,
+    mut map: *const i8,
     mut out: *mut *mut XkbFile,
 ) -> bool {
     unsafe {
@@ -2105,8 +2081,8 @@ pub unsafe extern "C" fn XkbParseStringNext(
 pub unsafe extern "C" fn XkbParseFile(
     mut ctx: *mut xkb_context,
     mut file: *mut FILE,
-    mut file_name: *const ::core::ffi::c_char,
-    mut map: *const ::core::ffi::c_char,
+    mut file_name: *const i8,
+    mut map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
         // Get file descriptor from FILE*
@@ -2116,7 +2092,7 @@ pub unsafe extern "C" fn XkbParseFile(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Invalid file descriptor\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Invalid file descriptor\n\0".as_ptr() as *const i8,
             );
             return ::core::ptr::null_mut::<XkbFile>();
         }
@@ -2138,7 +2114,7 @@ pub unsafe extern "C" fn XkbParseFile(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Couldn't read XKB file %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"Couldn't read XKB file %s: %s\n\0".as_ptr() as *const i8,
                     file_name,
                     err_msg.as_ptr(),
                 );

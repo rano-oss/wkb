@@ -8,27 +8,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -39,7 +39,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -146,7 +146,7 @@ pub mod messages_h {
     #[repr(C)]
     pub struct xkb_message_entry {
         pub code: xkb_message_code,
-        pub label: *const ::core::ffi::c_char,
+        pub label: *const i8,
     }
     use super::messages_codes_h::xkb_message_code;
     extern "C" {
@@ -162,10 +162,10 @@ pub mod stdio_h {
         pub static mut stderr: *mut FILE;
         pub fn fprintf(
             __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
-        pub fn printf(__format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+        pub fn printf(__format: *const i8, ...) -> ::core::ffi::c_int;
     }
 }
 pub mod include_locale_h {
@@ -174,8 +174,8 @@ pub mod include_locale_h {
     extern "C" {
         pub fn setlocale(
             __category: ::core::ffi::c_int,
-            __locale: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+            __locale: *const i8,
+        ) -> *mut i8;
     }
 }
 pub mod config_h {
@@ -186,7 +186,7 @@ pub mod locale_h {
 }
 pub mod stdlib_h {
     extern "C" {
-        pub fn atoi(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+        pub fn atoi(__nptr: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod __stddef_null_h {
@@ -196,9 +196,9 @@ pub mod __stddef_null_h {
 pub mod string_h {
     extern "C" {
         pub fn strstr(
-            __haystack: *const ::core::ffi::c_char,
-            __needle: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+            __haystack: *const i8,
+            __needle: *const i8,
+        ) -> *mut i8;
     }
 }
 pub use self::__stddef_null_h::NULL;
@@ -256,35 +256,35 @@ pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::FILE_h::FILE;
 unsafe extern "C" fn parse_message_code(
-    mut raw_code: *mut ::core::ffi::c_char,
+    mut raw_code: *mut i8,
 ) -> xkb_message_code {
     unsafe {
         let code: xkb_message_code = atoi(raw_code) as xkb_message_code;
         if code as u64 == 0
-            && !strstr(raw_code, b"XKB-\0".as_ptr() as *const ::core::ffi::c_char).is_null()
+            && !strstr(raw_code, b"XKB-\0".as_ptr() as *const i8).is_null()
         {
             return atoi(
-                raw_code.offset(4 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_char
+                raw_code.offset(4 as ::core::ffi::c_int as isize) as *mut i8
             ) as xkb_message_code;
         } else {
             return code;
         };
     }
 }
-unsafe extern "C" fn usage(mut argv: *mut *mut ::core::ffi::c_char) {
+unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
     unsafe {
         printf(
             b"Usage: %s MESSAGE_CODES\n\nCheck whether the given message codes are supported.\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             *argv.offset(0 as ::core::ffi::c_int as isize),
         );
         let mut xkb_messages: *const xkb_message_entry = ::core::ptr::null::<xkb_message_entry>();
         let mut count: usize = xkb_message_get_all(&raw mut xkb_messages) as usize;
-        printf(b"\nCurrent supported messages:\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"\nCurrent supported messages:\n\0".as_ptr() as *const i8);
         let mut idx: usize = 0 as usize;
         while idx < count {
             printf(
-                b"- XKB-%03u: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"- XKB-%03u: %s\n\0".as_ptr() as *const i8,
                 (*xkb_messages.offset(idx as isize)).code as ::core::ffi::c_uint,
                 (*xkb_messages.offset(idx as isize)).label,
             );
@@ -298,10 +298,10 @@ pub const UNSUPPORTED_MESSAGE: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
 unsafe fn main_0(
     mut argc: ::core::ffi::c_int,
-    mut argv: *mut *mut ::core::ffi::c_char,
+    mut argv: *mut *mut i8,
 ) -> ::core::ffi::c_int {
     unsafe {
-        setlocale(LC_ALL, b"\0".as_ptr() as *const ::core::ffi::c_char);
+        setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
         if argc <= 1 as ::core::ffi::c_int {
             usage(argv);
             return EXIT_INVALID_USAGE;
@@ -316,7 +316,7 @@ unsafe fn main_0(
                 fprintf(
                     stderr,
                     b"xkb-check-messages: ERROR: Malformed message code: %s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     *argv.offset(k as isize),
                 );
                 rc |= MALFORMED_MESSAGE;
@@ -326,7 +326,7 @@ unsafe fn main_0(
                     fprintf(
                         stderr,
                         b"xkb-check-messages: ERROR: Unsupported message code: %s\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         *argv.offset(k as isize),
                     );
                     rc |= UNSUPPORTED_MESSAGE;
@@ -345,15 +345,15 @@ pub fn main() {
                 .into_bytes_with_nul()
         })
         .collect();
-    let mut args_ptrs: Vec<*mut ::core::ffi::c_char> = args_strings
+    let mut args_ptrs: Vec<*mut i8> = args_strings
         .iter_mut()
-        .map(|arg| arg.as_mut_ptr() as *mut ::core::ffi::c_char)
+        .map(|arg| arg.as_mut_ptr() as *mut i8)
         .chain(::core::iter::once(::core::ptr::null_mut()))
         .collect();
     unsafe {
         ::std::process::exit(main_0(
             (args_ptrs.len() - 1) as ::core::ffi::c_int,
-            args_ptrs.as_mut_ptr() as *mut *mut ::core::ffi::c_char,
+            args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }
 }

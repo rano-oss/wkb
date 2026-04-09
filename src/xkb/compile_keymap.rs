@@ -8,7 +8,7 @@ pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct option {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub has_arg: ::core::ffi::c_int,
         pub flag: *mut ::core::ffi::c_int,
         pub val: ::core::ffi::c_int,
@@ -18,8 +18,8 @@ pub mod getopt_ext_h {
     extern "C" {
         pub fn getopt_long(
             ___argc: ::core::ffi::c_int,
-            ___argv: *const *mut ::core::ffi::c_char,
-            __shortopts: *const ::core::ffi::c_char,
+            ___argv: *const *mut i8,
+            __shortopts: *const i8,
             __longopts: *const option,
             __longind: *mut ::core::ffi::c_int,
         ) -> ::core::ffi::c_int;
@@ -30,27 +30,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -61,7 +61,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -79,11 +79,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_context_flags = ::core::ffi::c_uint;
     pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
@@ -125,7 +125,7 @@ pub mod xkbcommon_h {
             keymap: *mut xkb_keymap,
             format: xkb_keymap_format,
             flags: xkb_keymap_serialize_flags,
-        ) -> *mut ::core::ffi::c_char;
+        ) -> *mut i8;
     }
 }
 pub mod bench_h {
@@ -161,35 +161,27 @@ pub mod stdio_h {
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
         pub fn fflush(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(
-            __filename: *const ::core::ffi::c_char,
-            __modes: *const ::core::ffi::c_char,
-        ) -> *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn perror(__s: *const ::core::ffi::c_char);
+        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn perror(__s: *const i8);
     }
 }
 pub mod keymap_formats_h {
     pub const DEFAULT_OUTPUT_KEYMAP_FORMAT: xkb_keymap_format = XKB_KEYMAP_USE_ORIGINAL_FORMAT;
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_USE_ORIGINAL_FORMAT};
     extern "C" {
-        pub fn xkb_keymap_parse_format(raw: *const ::core::ffi::c_char) -> xkb_keymap_format;
-        pub fn xkb_keymap_get_format_label(format: xkb_keymap_format)
-            -> *const ::core::ffi::c_char;
+        pub fn xkb_keymap_parse_format(raw: *const i8) -> xkb_keymap_format;
+        pub fn xkb_keymap_get_format_label(format: xkb_keymap_format) -> *const i8;
     }
 }
 pub mod config_h {
-    pub const DEFAULT_XKB_LAYOUT: [::core::ffi::c_char; 3] =
-        unsafe { ::core::mem::transmute::<[u8; 3], [::core::ffi::c_char; 3]>(*b"us\0") };
-    pub const DEFAULT_XKB_MODEL: [::core::ffi::c_char; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"pc105\0") };
+    pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
+        unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
+    pub const DEFAULT_XKB_MODEL: [i8; 6] =
+        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
     pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = NULL;
-    pub const DEFAULT_XKB_RULES: [::core::ffi::c_char; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"evdev\0") };
+    pub const DEFAULT_XKB_RULES: [i8; 6] =
+        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
     pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = NULL;
     pub const EXIT_INVALID_USAGE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
     use super::__stddef_null_h::NULL;
@@ -199,16 +191,12 @@ pub mod fcntl_linux_h {
 }
 pub mod fcntl_h {
     extern "C" {
-        pub fn open(
-            __file: *const ::core::ffi::c_char,
-            __oflag: ::core::ffi::c_int,
-            ...
-        ) -> ::core::ffi::c_int;
+        pub fn open(__file: *const i8, __oflag: ::core::ffi::c_int, ...) -> ::core::ffi::c_int;
     }
 }
 pub mod getopt_core_h {
     extern "C" {
-        pub static mut optarg: *mut ::core::ffi::c_char;
+        pub static mut optarg: *mut i8;
     }
 }
 pub mod stdbool_h {
@@ -219,8 +207,8 @@ pub mod stdlib_h {
     pub const EXIT_FAILURE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     extern "C" {
-        pub fn atof(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_double;
-        pub fn atoi(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+        pub fn atof(__nptr: *const i8) -> ::core::ffi::c_double;
+        pub fn atoi(__nptr: *const i8) -> ::core::ffi::c_int;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn exit(__status: ::core::ffi::c_int) -> !;
     }
@@ -286,12 +274,12 @@ pub const OPT_KEYMAP_INPUT_FORMAT: options = 0;
 pub type options = ::core::ffi::c_uint;
 pub const DEFAULT_ITERATIONS: ::core::ffi::c_int = 3000 as ::core::ffi::c_int;
 pub const DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
-unsafe extern "C" fn usage(mut fp: *mut FILE, mut argv: *mut *mut ::core::ffi::c_char) {
+unsafe extern "C" fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
     unsafe {
         fprintf(
             fp,
             b"Usage: %s [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --iter\n    Exact number of iterations to run\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: %f)\nNote: --iter and --stdev are mutually exclusive.\n\nXKB-specific options:\n --input-format <format>\n    The keymap format to use for parsing (default: '%s')\n --output-format <format>\n    The keymap format to use for serializing (default: same as input)\n --pretty\n    Enable pretty-printing in keymap serialization\n --keep-unused\n    Keep unused bits in keymap serialization\n --explicit-values\n    Force serializing explicit values\n --keymap\n    Load the corresponding XKB file, ignore RMLVO options.\n --rules <rules>\n    The XKB ruleset (default: '%s')\n --model <model>\n    The XKB model (default: '%s')\n --layout <layout>\n    The XKB layout (default: '%s')\n --variant <variant>\n    The XKB layout variant (default: '%s')\n --options <options>\n    The XKB options (default: '%s')\n\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             *argv.offset(0 as ::core::ffi::c_int as isize),
             DEFAULT_STDEV * 100 as ::core::ffi::c_int as ::core::ffi::c_double,
             xkb_keymap_get_format_label(XKB_KEYMAP_FORMAT_TEXT_V2),
@@ -299,33 +287,32 @@ unsafe extern "C" fn usage(mut fp: *mut FILE, mut argv: *mut *mut ::core::ffi::c
             DEFAULT_XKB_MODEL.as_ptr(),
             DEFAULT_XKB_LAYOUT.as_ptr(),
             if !DEFAULT_XKB_VARIANT.is_null() {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
-                b"<none>\0".as_ptr() as *const ::core::ffi::c_char
+                b"<none>\0".as_ptr() as *const i8
             },
             if !DEFAULT_XKB_OPTIONS.is_null() {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
-                b"<none>\0".as_ptr() as *const ::core::ffi::c_char
+                b"<none>\0".as_ptr() as *const i8
             },
         );
     }
 }
 unsafe extern "C" fn load_keymap(
     mut ctx: *mut xkb_context,
-    mut keymap_path: *const ::core::ffi::c_char,
+    mut keymap_path: *const i8,
     mut rmlvo: *const xkb_rule_names,
     mut format: xkb_keymap_format,
     mut flags: xkb_keymap_compile_flags,
 ) -> *mut xkb_keymap {
     unsafe {
         if !keymap_path.is_null() {
-            let mut file: *mut FILE =
-                fopen(keymap_path, b"r\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            let mut file: *mut FILE = fopen(keymap_path, b"r\0".as_ptr() as *const i8) as *mut FILE;
             if file.is_null() {
                 fprintf(
                     stderr,
-                    b"ERROR: cannot open file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"ERROR: cannot open file: %s\n\0".as_ptr() as *const i8,
                     keymap_path,
                 );
                 return ::core::ptr::null_mut::<xkb_keymap>();
@@ -339,10 +326,7 @@ unsafe extern "C" fn load_keymap(
         };
     }
 }
-unsafe fn main_0(
-    mut argc: ::core::ffi::c_int,
-    mut argv: *mut *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core::ffi::c_int {
     unsafe {
         let mut stdout_old: ::core::ffi::c_int = 0;
         let mut stdout_new: ::core::ffi::c_int = 0;
@@ -376,104 +360,103 @@ unsafe fn main_0(
         let mut serialize_flags: xkb_keymap_serialize_flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
         let mut explicit_iterations: bool = false_0 != 0;
         let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        let mut keymap_path: *mut ::core::ffi::c_char =
-            ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut keymap_path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: DEFAULT_XKB_RULES.as_ptr(),
             model: DEFAULT_XKB_MODEL.as_ptr(),
-            layout: ::core::ptr::null::<::core::ffi::c_char>(),
-            variant: ::core::ptr::null::<::core::ffi::c_char>(),
-            options: ::core::ptr::null::<::core::ffi::c_char>(),
+            layout: ::core::ptr::null::<i8>(),
+            variant: ::core::ptr::null::<i8>(),
+            options: ::core::ptr::null::<i8>(),
         };
         let mut max_iterations: ::core::ffi::c_uint = DEFAULT_ITERATIONS as ::core::ffi::c_uint;
         let mut stdev: ::core::ffi::c_double = DEFAULT_STDEV;
         static mut opts: [option; 15] = [
             option {
-                name: b"help\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 'h' as i32,
             },
             option {
-                name: b"input-format\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"input-format\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP_INPUT_FORMAT as ::core::ffi::c_int,
             },
             option {
-                name: b"output-format\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"output-format\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP_OUTPUT_FORMAT as ::core::ffi::c_int,
             },
             option {
-                name: b"pretty\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"pretty\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP_PRETTY as ::core::ffi::c_int,
             },
             option {
-                name: b"keep-unused\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"keep-unused\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP_KEEP_UNUSED as ::core::ffi::c_int,
             },
             option {
-                name: b"explicit-values\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"explicit-values\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP_EXPLICIT_VALUES as ::core::ffi::c_int,
             },
             option {
-                name: b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"keymap\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_KEYMAP as ::core::ffi::c_int,
             },
             option {
-                name: b"rules\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"rules\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_RULES as ::core::ffi::c_int,
             },
             option {
-                name: b"model\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"model\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_MODEL as ::core::ffi::c_int,
             },
             option {
-                name: b"layout\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"layout\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_LAYOUT as ::core::ffi::c_int,
             },
             option {
-                name: b"variant\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"variant\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_VARIANT as ::core::ffi::c_int,
             },
             option {
-                name: b"options\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"options\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_OPTION as ::core::ffi::c_int,
             },
             option {
-                name: b"iter\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"iter\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_ITERATIONS as ::core::ffi::c_int,
             },
             option {
-                name: b"stdev\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"stdev\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_STDEV as ::core::ffi::c_int,
             },
             option {
-                name: ::core::ptr::null::<::core::ffi::c_char>(),
+                name: ::core::ptr::null::<i8>(),
                 has_arg: 0 as ::core::ffi::c_int,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 0 as ::core::ffi::c_int,
@@ -485,7 +468,7 @@ unsafe fn main_0(
             c = getopt_long(
                 argc,
                 argv,
-                b"h\0".as_ptr() as *const ::core::ffi::c_char,
+                b"h\0".as_ptr() as *const i8,
                 &raw mut opts as *mut option,
                 &raw mut option_index,
             );
@@ -502,8 +485,7 @@ unsafe fn main_0(
                     if keymap_input_format as u64 == 0 {
                         fprintf(
                             stderr,
-                            b"ERROR: invalid --input-format: \"%s\"\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
+                            b"ERROR: invalid --input-format: \"%s\"\n\0".as_ptr() as *const i8,
                             optarg,
                         );
                         usage(stderr, argv);
@@ -515,8 +497,7 @@ unsafe fn main_0(
                     if keymap_output_format as u64 == 0 {
                         fprintf(
                             stderr,
-                            b"ERROR: invalid --output-format: \"%s\"\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
+                            b"ERROR: invalid --output-format: \"%s\"\n\0".as_ptr() as *const i8,
                             optarg,
                         );
                         usage(stderr, argv);
@@ -592,13 +573,12 @@ unsafe fn main_0(
             if !rmlvo.variant.is_null() && *rmlvo.variant as ::core::ffi::c_int != 0 {
                 fprintf(
                     stderr,
-                    b"Error: a variant requires a layout\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Error: a variant requires a layout\n\0".as_ptr() as *const i8,
                 );
                 return EXIT_INVALID_USAGE;
             }
             rmlvo.layout = DEFAULT_XKB_LAYOUT.as_ptr();
-            rmlvo.variant = ::core::ptr::null::<::core::ffi::c_char>();
+            rmlvo.variant = ::core::ptr::null::<i8>();
         }
         context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         if context.is_null() {
@@ -614,35 +594,29 @@ unsafe fn main_0(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"ERROR: Cannot compile keymap.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"ERROR: Cannot compile keymap.\n\0".as_ptr() as *const i8,
             );
             ret = EXIT_FAILURE;
         } else {
             fflush(stdout);
             stdout_old = dup(STDOUT_FILENO);
-            stdout_new = open(
-                b"/dev/null\0".as_ptr() as *const ::core::ffi::c_char,
-                O_WRONLY,
-            );
+            stdout_new = open(b"/dev/null\0".as_ptr() as *const i8, O_WRONLY);
             if stdout_old == -1 as ::core::ffi::c_int
                 || stdout_new == -1 as ::core::ffi::c_int
                 || dup2(stdout_new, STDOUT_FILENO) == -1 as ::core::ffi::c_int
             {
-                perror(b"Stdout error\0".as_ptr() as *const ::core::ffi::c_char);
+                perror(b"Stdout error\0".as_ptr() as *const i8);
                 exit(EXIT_FAILURE);
             }
             close(stdout_new);
             fflush(stderr);
             stderr_old = dup(STDERR_FILENO);
-            stderr_new = open(
-                b"/dev/null\0".as_ptr() as *const ::core::ffi::c_char,
-                O_WRONLY,
-            );
+            stderr_new = open(b"/dev/null\0".as_ptr() as *const i8, O_WRONLY);
             if stderr_old == -1 as ::core::ffi::c_int
                 || stderr_new == -1 as ::core::ffi::c_int
                 || dup2(stderr_new, STDERR_FILENO) == -1 as ::core::ffi::c_int
             {
-                perror(b"Stderr error\0".as_ptr() as *const ::core::ffi::c_char);
+                perror(b"Stderr error\0".as_ptr() as *const i8);
                 exit(EXIT_FAILURE);
             }
             close(stderr_new);
@@ -651,7 +625,7 @@ unsafe fn main_0(
                 bench_start2(&raw mut bench);
                 let mut i: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
                 while i < max_iterations {
-                    let mut s: *mut ::core::ffi::c_char =
+                    let mut s: *mut i8 =
                         xkb_keymap_get_as_string2(keymap, keymap_output_format, serialize_flags);
                     free(s as *mut ::core::ffi::c_void);
                     i = i.wrapping_add(1);
@@ -685,7 +659,7 @@ unsafe fn main_0(
                 };
                 max_iterations = 1 as ::core::ffi::c_uint;
                 bench_start2(&raw mut _bench);
-                let mut s_0: *mut ::core::ffi::c_char =
+                let mut s_0: *mut i8 =
                     xkb_keymap_get_as_string2(keymap, keymap_output_format, serialize_flags);
                 free(s_0 as *mut ::core::ffi::c_void);
                 bench_stop2(&raw mut _bench);
@@ -694,7 +668,7 @@ unsafe fn main_0(
                     bench_start2(&raw mut _bench);
                     let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
                     while k < (2 as ::core::ffi::c_uint).wrapping_mul(max_iterations) {
-                        let mut s_1: *mut ::core::ffi::c_char = xkb_keymap_get_as_string2(
+                        let mut s_1: *mut i8 = xkb_keymap_get_as_string2(
                             keymap,
                             keymap_output_format,
                             serialize_flags,
@@ -742,7 +716,7 @@ unsafe fn main_0(
                 fprintf(
                     stderr,
                     b"mean: %lld \xC2\xB5s; compiled %u keymaps in %ld.%06lds\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     est.elapsed / 1000 as ::core::ffi::c_longlong,
                     max_iterations,
                     total_elapsed.seconds,
@@ -752,7 +726,7 @@ unsafe fn main_0(
                 fprintf(
                     stderr,
                     b"mean: %lld \xC2\xB5s; stdev: %Lf%% (target: %f%%); last run: compiled %u keymaps in %ld.%06lds; total time: %ld.%06lds\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     est.elapsed / 1000 as ::core::ffi::c_longlong,
                     (est.stdev as f64) * (100.0 as f64)
                         / (est.elapsed as f64),
@@ -777,15 +751,15 @@ pub fn main() {
                 .into_bytes_with_nul()
         })
         .collect();
-    let mut args_ptrs: Vec<*mut ::core::ffi::c_char> = args_strings
+    let mut args_ptrs: Vec<*mut i8> = args_strings
         .iter_mut()
-        .map(|arg| arg.as_mut_ptr() as *mut ::core::ffi::c_char)
+        .map(|arg| arg.as_mut_ptr() as *mut i8)
         .chain(::core::iter::once(::core::ptr::null_mut()))
         .collect();
     unsafe {
         ::std::process::exit(main_0(
             (args_ptrs.len() - 1) as ::core::ffi::c_int,
-            args_ptrs.as_mut_ptr() as *mut *mut ::core::ffi::c_char,
+            args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }
 }

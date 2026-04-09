@@ -3,7 +3,6 @@
 //! This is a simple intrusive linked list where the list node is embedded in the struct.
 //! Converted from unsafe C pointer manipulation to safe Rust using NonNull.
 
-use std::ptr::NonNull;
 
 /// Intrusive list node
 #[repr(C)]

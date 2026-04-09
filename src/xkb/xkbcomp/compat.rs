@@ -41,7 +41,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -53,7 +53,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -67,14 +67,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -82,17 +82,13 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
-        pub fn xkb_context_get_buffer(
-            ctx: *mut xkb_context,
-            size: usize,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
+        pub fn xkb_context_get_buffer(ctx: *mut xkb_context, size: usize) -> *mut i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -123,17 +119,16 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -204,10 +199,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -619,7 +614,7 @@ pub mod keymap_h {
         xkb_led_mask_t, xkb_level_index_t, xkb_mod_index_t, xkb_mod_mask_t, xkb_state_component,
     };
     extern "C" {
-        pub fn XkbEscapeMapName(name: *mut ::core::ffi::c_char);
+        pub fn XkbEscapeMapName(name: *mut i8);
     }
 }
 pub mod messages_codes_h {
@@ -788,10 +783,10 @@ pub mod ast_h {
     pub struct _IncludeStmt {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub stmt: *mut ::core::ffi::c_char,
-        pub file: *mut ::core::ffi::c_char,
-        pub map: *mut ::core::ffi::c_char,
-        pub modifier: *mut ::core::ffi::c_char,
+        pub stmt: *mut i8,
+        pub file: *mut i8,
+        pub map: *mut i8,
+        pub modifier: *mut i8,
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
@@ -940,7 +935,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct UnknownStatement {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
     }
     pub type xkb_map_flags = ::core::ffi::c_uint;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
@@ -955,7 +950,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
@@ -965,14 +960,14 @@ pub mod ast_h {
     use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const ::core::ffi::c_char;
+        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
     }
 }
 pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct LookupEntry {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub value: u32,
     }
     use super::context_h::xkb_context;
@@ -982,7 +977,7 @@ pub mod text_h {
     extern "C" {
         pub fn LookupString(
             tab: *const LookupEntry,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             value_rtrn: *mut ::core::ffi::c_uint,
         ) -> bool;
         pub static ctrlMaskNames: [LookupEntry; 0];
@@ -995,9 +990,9 @@ pub mod text_h {
             type_0: mod_type,
             mods: *const xkb_mod_set,
             mask: xkb_mod_mask_t,
-        ) -> *const ::core::ffi::c_char;
-        pub fn KeysymText(ctx: *mut xkb_context, sym: xkb_keysym_t) -> *const ::core::ffi::c_char;
-        pub fn SIMatchText(type_0: xkb_match_operation) -> *const ::core::ffi::c_char;
+        ) -> *const i8;
+        pub fn KeysymText(ctx: *mut xkb_context, sym: xkb_keysym_t) -> *const i8;
+        pub fn SIMatchText(type_0: xkb_match_operation) -> *const i8;
     }
 }
 pub mod xkbcomp_priv_h {
@@ -1068,9 +1063,9 @@ pub mod xkbcomp_priv_h {
     #[inline]
     pub unsafe extern "C" fn ReportNotArray(
         mut ctx: *mut xkb_context,
-        mut type_0: *const ::core::ffi::c_char,
-        mut field: *const ::core::ffi::c_char,
-        mut name: *const ::core::ffi::c_char,
+        mut type_0: *const i8,
+        mut field: *const i8,
+        mut name: *const i8,
     ) -> bool {
         unsafe {
             xkb_log(
@@ -1078,7 +1073,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] The %s %s field is not an array; Ignoring illegal assignment in %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 type_0,
                 field,
@@ -1091,10 +1086,10 @@ pub mod xkbcomp_priv_h {
     pub unsafe extern "C" fn ReportBadType(
         mut ctx: *mut xkb_context,
         mut code: xkb_message_code,
-        mut type_0: *const ::core::ffi::c_char,
-        mut field: *const ::core::ffi::c_char,
-        mut name: *const ::core::ffi::c_char,
-        mut wanted: *const ::core::ffi::c_char,
+        mut type_0: *const i8,
+        mut field: *const i8,
+        mut name: *const i8,
+        mut wanted: *const i8,
     ) -> bool {
         unsafe {
             xkb_log(
@@ -1102,7 +1097,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] The %s %s field must be a %s; Ignoring illegal assignment in %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 code as ::core::ffi::c_uint,
                 type_0,
                 field,
@@ -1115,9 +1110,9 @@ pub mod xkbcomp_priv_h {
     #[inline]
     pub unsafe extern "C" fn ReportBadField(
         mut ctx: *mut xkb_context,
-        mut type_0: *const ::core::ffi::c_char,
-        mut field: *const ::core::ffi::c_char,
-        mut name: *const ::core::ffi::c_char,
+        mut type_0: *const i8,
+        mut field: *const i8,
+        mut name: *const i8,
     ) -> bool {
         unsafe {
             xkb_log(
@@ -1125,7 +1120,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Unknown %s field \"%s\" in %s; Ignoring assignment to unknown field in %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 type_0,
                 field,
                 name,
@@ -1135,12 +1130,12 @@ pub mod xkbcomp_priv_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const ::core::ffi::c_char {
+    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
-                (*file).name as *const ::core::ffi::c_char
+                (*file).name as *const i8
             } else {
-                b"(unnamed map)\0".as_ptr() as *const ::core::ffi::c_char
+                b"(unnamed map)\0".as_ptr() as *const i8
             };
         }
     }
@@ -1184,8 +1179,8 @@ pub mod action_h {
             keymap_info: *const xkb_keymap_info,
             info: *mut ActionsInfo,
             mods: *mut xkb_mod_set,
-            elem: *const ::core::ffi::c_char,
-            field: *const ::core::ffi::c_char,
+            elem: *const i8,
+            field: *const i8,
             array_ndx: *mut ExprDef,
             value_ptr: *mut *mut ExprDef,
             merge: merge_mode,
@@ -1196,9 +1191,9 @@ pub mod stdio_h {
 
     extern "C" {
         pub fn snprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
     }
@@ -1223,38 +1218,30 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(
-        mut s: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char {
+    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
             } else {
-                ::core::ptr::null_mut::<::core::ffi::c_char>()
+                ::core::ptr::null_mut::<i8>()
             };
         }
     }
 
     use super::string_h::strdup;
     extern "C" {
-        pub fn istrcmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod limits_h {
@@ -1294,8 +1281,8 @@ pub mod expr_h {
         pub fn ExprResolveLhs(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            elem_rtrn: *mut *const ::core::ffi::c_char,
-            field_rtrn: *mut *const ::core::ffi::c_char,
+            elem_rtrn: *mut *const i8,
+            field_rtrn: *mut *const i8,
             index_rtrn: *mut *mut ExprDef,
         ) -> bool;
         pub fn ExprResolveModMask(
@@ -1362,7 +1349,7 @@ pub mod include_h {
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
-            path: *mut ::core::ffi::c_char,
+            path: *mut i8,
             path_size: usize,
         ) -> *mut XkbFile;
     }
@@ -1541,7 +1528,7 @@ pub use self::xkbcomp_priv_h::{
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CompatInfo {
-    pub name: *mut ::core::ffi::c_char,
+    pub name: *mut i8,
     pub errorCount: ::core::ffi::c_int,
     pub include_depth: ::core::ffi::c_uint,
     pub default_interp: SymInterpInfo,
@@ -1603,19 +1590,16 @@ pub struct C2Rust_Unnamed_20 {
     pub alloc: darray_size_t,
     pub item: *mut xkb_action,
 }
-unsafe extern "C" fn siText(
-    mut si: *mut SymInterpInfo,
-    mut info: *mut CompatInfo,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *const i8 {
     unsafe {
-        let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer((*info).ctx, 128 as usize);
+        let mut buf: *mut i8 = xkb_context_get_buffer((*info).ctx, 128 as usize);
         if si == &raw mut (*info).default_interp {
-            return b"default\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"default\0".as_ptr() as *const i8;
         }
         snprintf(
             buf,
             128 as usize,
-            b"%s+%s(%s)\0".as_ptr() as *const ::core::ffi::c_char,
+            b"%s+%s(%s)\0".as_ptr() as *const i8,
             KeysymText((*info).ctx, (*si).interp.sym),
             SIMatchText((*si).interp.match_0),
             ModMaskText(
@@ -1632,12 +1616,12 @@ unsafe extern "C" fn siText(
 unsafe extern "C" fn ReportSINotArray(
     mut info: *mut CompatInfo,
     mut si: *mut SymInterpInfo,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
 ) -> bool {
     unsafe {
         return ReportNotArray(
             (*info).ctx,
-            b"symbol interpretation\0".as_ptr() as *const ::core::ffi::c_char,
+            b"symbol interpretation\0".as_ptr() as *const i8,
             field,
             siText(si, info),
         );
@@ -1647,27 +1631,24 @@ unsafe extern "C" fn ReportSINotArray(
 unsafe extern "C" fn ReportSIBadType(
     mut info: *mut CompatInfo,
     mut si: *mut SymInterpInfo,
-    mut field: *const ::core::ffi::c_char,
-    mut wanted: *const ::core::ffi::c_char,
+    mut field: *const i8,
+    mut wanted: *const i8,
 ) -> bool {
     unsafe {
         return ReportBadType(
             (*info).ctx,
             XKB_ERROR_WRONG_FIELD_TYPE,
-            b"symbol interpretation\0".as_ptr() as *const ::core::ffi::c_char,
+            b"symbol interpretation\0".as_ptr() as *const i8,
             field,
             siText(si, info),
             wanted,
         );
     }
 }
-unsafe extern "C" fn LEDText(
-    mut info: *mut CompatInfo,
-    mut ledi: *mut LedInfo,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn LEDText(mut info: *mut CompatInfo, mut ledi: *mut LedInfo) -> *const i8 {
     unsafe {
         if ledi == &raw mut (*info).default_led {
-            return b"default\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"default\0".as_ptr() as *const i8;
         } else {
             return xkb_atom_text((*info).ctx, (*ledi).led.name);
         };
@@ -1677,14 +1658,14 @@ unsafe extern "C" fn LEDText(
 unsafe extern "C" fn ReportLedBadType(
     mut info: *mut CompatInfo,
     mut ledi: *mut LedInfo,
-    mut field: *const ::core::ffi::c_char,
-    mut wanted: *const ::core::ffi::c_char,
+    mut field: *const i8,
+    mut wanted: *const i8,
 ) -> bool {
     unsafe {
         return ReportBadType(
             (*info).ctx,
             XKB_ERROR_WRONG_FIELD_TYPE,
-            b"indicator map\0".as_ptr() as *const ::core::ffi::c_char,
+            b"indicator map\0".as_ptr() as *const i8,
             field,
             LEDText(info, ledi),
             wanted,
@@ -1695,12 +1676,12 @@ unsafe extern "C" fn ReportLedBadType(
 unsafe extern "C" fn ReportLedNotArray(
     mut info: *mut CompatInfo,
     mut ledi: *mut LedInfo,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
 ) -> bool {
     unsafe {
         return ReportNotArray(
             (*info).ctx,
-            b"indicator map\0".as_ptr() as *const ::core::ffi::c_char,
+            b"indicator map\0".as_ptr() as *const i8,
             field,
             LEDText(info, ledi),
         );
@@ -1829,7 +1810,7 @@ unsafe extern "C" fn MergeInterp(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Multiple definitions for \"%s\"; Earlier interpretation ignored\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     siText(new, info),
                 );
             }
@@ -1906,12 +1887,12 @@ unsafe extern "C" fn MergeInterp(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Multiple interpretations of \"%s\"; Using %s definition for duplicate fields\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 siText(old, info),
                 if clobber as ::core::ffi::c_int != 0 {
-                    b"last\0".as_ptr() as *const ::core::ffi::c_char
+                    b"last\0".as_ptr() as *const i8
                 } else {
-                    b"first\0".as_ptr() as *const ::core::ffi::c_char
+                    b"first\0".as_ptr() as *const i8
                 },
             );
         }
@@ -1965,8 +1946,7 @@ unsafe extern "C" fn ResolveStateAndPredicate(
         if (*expr).common.type_0 as ::core::ffi::c_uint
             == STMT_EXPR_ACTION_DECL as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            let mut pred_txt: *const ::core::ffi::c_char =
-                xkb_atom_text((*info).ctx, (*expr).action.name);
+            let mut pred_txt: *const i8 = xkb_atom_text((*info).ctx, (*expr).action.name);
             let mut pred: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             if !LookupString(
                 &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -1979,8 +1959,7 @@ unsafe extern "C" fn ResolveStateAndPredicate(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Illegal modifier predicate \"%s\"; Ignored\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Illegal modifier predicate \"%s\"; Ignored\n\0".as_ptr() as *const i8,
                     pred_txt,
                 );
                 return false_0 != 0;
@@ -1990,12 +1969,9 @@ unsafe extern "C" fn ResolveStateAndPredicate(
         } else if (*expr).common.type_0 as ::core::ffi::c_uint
             == STMT_EXPR_IDENT as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            let mut pred_txt_0: *const ::core::ffi::c_char =
-                xkb_atom_text((*info).ctx, (*expr).ident.ident);
+            let mut pred_txt_0: *const i8 = xkb_atom_text((*info).ctx, (*expr).ident.ident);
             if !pred_txt_0.is_null()
-                && istreq(pred_txt_0, b"any\0".as_ptr() as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0
+                && istreq(pred_txt_0, b"any\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
             {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -2071,7 +2047,7 @@ unsafe extern "C" fn MergeLedMap(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Map for indicator %s redefined; Earlier definition ignored\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     LEDText(info, old),
                 );
             }
@@ -2131,12 +2107,12 @@ unsafe extern "C" fn MergeLedMap(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Map for indicator %s redefined; Using %s definition for duplicate fields\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 LEDText(info, old),
                 if clobber as ::core::ffi::c_int != 0 {
-                    b"last\0".as_ptr() as *const ::core::ffi::c_char
+                    b"last\0".as_ptr() as *const i8
                 } else {
-                    b"first\0".as_ptr() as *const ::core::ffi::c_char
+                    b"first\0".as_ptr() as *const i8
                 },
             );
         }
@@ -2164,7 +2140,7 @@ unsafe extern "C" fn AddLedMap(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Too many LEDs defined (maximum %u)\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Too many LEDs defined (maximum %u)\n\0".as_ptr() as *const i8,
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
@@ -2193,8 +2169,8 @@ unsafe extern "C" fn MergeIncludedCompatMaps(
             merge,
         );
         if (*into).name.is_null() {
-            (*into).name = _steal(&raw mut (*from).name as *mut ::core::ffi::c_void)
-                as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+            (*into).name =
+                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
         if (*into).interps.size == 0 as darray_size_t {
             (*into).interps = (*from).interps;
@@ -2250,7 +2226,7 @@ unsafe extern "C" fn HandleIncludeCompatMap(
 ) -> bool {
     unsafe {
         let mut included: CompatInfo = CompatInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
@@ -2328,12 +2304,12 @@ unsafe extern "C" fn HandleIncludeCompatMap(
             (*info).include_depth.wrapping_add(1 as ::core::ffi::c_uint),
             &raw mut (*info).mods,
         );
-        included.name = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void)
-            as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+        included.name =
+            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: CompatInfo = CompatInfo {
-                name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                name: ::core::ptr::null_mut::<i8>(),
                 errorCount: 0,
                 include_depth: 0,
                 default_interp: SymInterpInfo {
@@ -2402,13 +2378,13 @@ unsafe extern "C" fn HandleIncludeCompatMap(
                 ctx: ::core::ptr::null_mut::<xkb_context>(),
             };
             let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-            let mut path: [::core::ffi::c_char; 4096] = [0; 4096];
+            let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
                 stmt,
                 FILE_TYPE_COMPAT,
-                &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
+                &raw mut path as *mut i8,
+                ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -2437,12 +2413,12 @@ unsafe extern "C" fn HandleIncludeCompatMap(
 unsafe extern "C" fn SetInterpField(
     mut info: *mut CompatInfo,
     mut si: *mut SymInterpInfo,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
     mut arrayNdx: *mut ExprDef,
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        if istreq(field, b"action\0".as_ptr() as *const ::core::ffi::c_char) {
+        if istreq(field, b"action\0".as_ptr() as *const i8) {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
@@ -2461,7 +2437,7 @@ unsafe extern "C" fn SetInterpField(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Interpret %s has too many actions; expected max %u, got: %u\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         siText(si, info),
                         65535 as ::core::ffi::c_int,
                         num_actions,
@@ -2535,8 +2511,7 @@ unsafe extern "C" fn SetInterpField(
                     act_0 = (*act_0).common.next as *mut ExprDef;
                 }
                 match actions.size {
-                    0 => {
-                    }
+                    0 => {}
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;
                         (*si).interp.a.action =
@@ -2595,16 +2570,9 @@ unsafe extern "C" fn SetInterpField(
             (*si).defined = ((*si).defined as ::core::ffi::c_uint
                 | SI_FIELD_ACTION as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as si_field;
-        } else if istreq(
-            field,
-            b"virtualmodifier\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
+        } else if istreq(field, b"virtualmodifier\0".as_ptr() as *const i8) as ::core::ffi::c_int
             != 0
-            || istreq(
-                field,
-                b"virtualmod\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+            || istreq(field, b"virtualmod\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -2621,46 +2589,35 @@ unsafe extern "C" fn SetInterpField(
                     info,
                     si,
                     field,
-                    b"virtual modifier\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"virtual modifier\0".as_ptr() as *const i8,
                 );
             }
             (*si).interp.virtual_mod = ndx;
             (*si).defined = ((*si).defined as ::core::ffi::c_uint
                 | SI_FIELD_VIRTUAL_MOD as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as si_field;
-        } else if istreq(field, b"repeat\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"repeat\0".as_ptr() as *const i8) {
             let mut set: bool = false_0 != 0;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
-                return ReportSIBadType(
-                    info,
-                    si,
-                    field,
-                    b"boolean\0".as_ptr() as *const ::core::ffi::c_char,
-                );
+                return ReportSIBadType(info, si, field, b"boolean\0".as_ptr() as *const i8);
             }
             (*si).interp.set_repeat(set as bool);
             (*si).defined = ((*si).defined as ::core::ffi::c_uint
                 | SI_FIELD_AUTO_REPEAT as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as si_field;
-        } else if istreq(field, b"locking\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"The \"locking\" field in symbol interpretation is unsupported; Ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
-        } else if istreq(field, b"usemodmap\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"usemodmapmods\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"usemodmap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"usemodmapmods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut val: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -2676,7 +2633,7 @@ unsafe extern "C" fn SetInterpField(
                     info,
                     si,
                     field,
-                    b"level specification\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"level specification\0".as_ptr() as *const i8,
                 );
             }
             (*si).interp.level_one_only = val != 0;
@@ -2686,7 +2643,7 @@ unsafe extern "C" fn SetInterpField(
         } else {
             ReportBadField(
                 (*info).ctx,
-                b"symbol interpretation\0".as_ptr() as *const ::core::ffi::c_char,
+                b"symbol interpretation\0".as_ptr() as *const i8,
                 field,
                 siText(si, info),
             );
@@ -2700,17 +2657,14 @@ unsafe extern "C" fn SetInterpField(
 unsafe extern "C" fn SetLedMapField(
     mut info: *mut CompatInfo,
     mut ledi: *mut LedInfo,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
     mut arrayNdx: *mut ExprDef,
     mut value_ptr: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"modifiers\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(field, b"mods\0".as_ptr() as *const ::core::ffi::c_char) as ::core::ffi::c_int
-                != 0
+        if istreq(field, b"modifiers\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"mods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -2726,13 +2680,13 @@ unsafe extern "C" fn SetLedMapField(
                     info,
                     ledi,
                     field,
-                    b"modifier mask\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"modifier mask\0".as_ptr() as *const i8,
                 );
             }
             (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
                 | LED_FIELD_MODS as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as led_field;
-        } else if istreq(field, b"groups\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"groups\0".as_ptr() as *const i8) {
             let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -2781,7 +2735,7 @@ unsafe extern "C" fn SetLedMapField(
                         info,
                         ledi,
                         field,
-                        b"group mask\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"group mask\0".as_ptr() as *const i8,
                     );
                 }
             } else {
@@ -2791,12 +2745,8 @@ unsafe extern "C" fn SetLedMapField(
             (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
                 | LED_FIELD_GROUPS as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as led_field;
-        } else if istreq(field, b"controls\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(field, b"ctrls\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"controls\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"ctrls\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut mask_0: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -2814,33 +2764,23 @@ unsafe extern "C" fn SetLedMapField(
                     info,
                     ledi,
                     field,
-                    b"controls mask\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"controls mask\0".as_ptr() as *const i8,
                 );
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined as ::core::ffi::c_uint
                 | LED_FIELD_CTRLS as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as led_field;
-        } else if istreq(
-            field,
-            b"allowexplicit\0".as_ptr() as *const ::core::ffi::c_char,
-        ) {
+        } else if istreq(field, b"allowexplicit\0".as_ptr() as *const i8) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
-        } else if istreq(
-            field,
-            b"whichmodstate\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"whichmodifierstate\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
+        } else if istreq(field, b"whichmodstate\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"whichmodifierstate\0".as_ptr() as *const i8) as ::core::ffi::c_int
                 != 0
         {
             let mut mask_1: u32 = 0 as u32;
@@ -2857,14 +2797,11 @@ unsafe extern "C" fn SetLedMapField(
                     info,
                     ledi,
                     field,
-                    b"mask of modifier state components\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"mask of modifier state components\0".as_ptr() as *const i8,
                 );
             }
             (*ledi).led.which_mods = mask_1 as xkb_state_component;
-        } else if istreq(
-            field,
-            b"whichgroupstate\0".as_ptr() as *const ::core::ffi::c_char,
-        ) {
+        } else if istreq(field, b"whichgroupstate\0".as_ptr() as *const i8) {
             let mut mask_2: u32 = 0 as u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -2879,39 +2816,21 @@ unsafe extern "C" fn SetLedMapField(
                     info,
                     ledi,
                     field,
-                    b"mask of group state components\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"mask of group state components\0".as_ptr() as *const i8,
                 );
             }
             (*ledi)
                 .led
                 .set_which_groups(mask_2 as xkb_state_component as xkb_state_component);
-        } else if istreq(field, b"driveskbd\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"driveskeyboard\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
+        } else if istreq(field, b"driveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"driveskeyboard\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"leddriveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"leddriveskeyboard\0".as_ptr() as *const i8) as ::core::ffi::c_int
                 != 0
-            || istreq(
-                field,
-                b"leddriveskbd\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
+            || istreq(field, b"indicatordriveskbd\0".as_ptr() as *const i8) as ::core::ffi::c_int
                 != 0
-            || istreq(
-                field,
-                b"leddriveskeyboard\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || istreq(
-                field,
-                b"indicatordriveskbd\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || istreq(
-                field,
-                b"indicatordriveskeyboard\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
+            || istreq(field, b"indicatordriveskeyboard\0".as_ptr() as *const i8)
+                as ::core::ffi::c_int
                 != 0
         {
             xkb_log(
@@ -2919,16 +2838,16 @@ unsafe extern "C" fn SetLedMapField(
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"The \"%s\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 field,
             );
-        } else if istreq(field, b"index\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"index\0".as_ptr() as *const i8) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"The \"index\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
             );
         } else {
             xkb_log(
@@ -2936,7 +2855,7 @@ unsafe extern "C" fn SetLedMapField(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Unknown field \"%s\" in map for %s indicator; Definition ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 field,
                 LEDText(info, ledi),
             );
@@ -2949,8 +2868,8 @@ unsafe extern "C" fn SetLedMapField(
 }
 unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut elem: *const i8 = ::core::ptr::null::<i8>();
+        let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut ndx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut ret: bool = false;
         if !ExprResolveLhs(
@@ -2962,9 +2881,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
         ) {
             ret = false_0 != 0;
         } else if !elem.is_null()
-            && istreq(elem, b"interpret\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+            && istreq(elem, b"interpret\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
@@ -3008,9 +2925,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                 );
             }
         } else if !elem.is_null()
-            && istreq(elem, b"indicator\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+            && istreq(elem, b"indicator\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
@@ -3059,7 +2974,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut V
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
                 field,
             );
@@ -3078,8 +2993,8 @@ unsafe extern "C" fn HandleInterpBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true_0 != 0;
-        let mut elem: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut elem: *const i8 = ::core::ptr::null::<i8>();
+        let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         while !def.is_null() {
             if !ExprResolveLhs(
@@ -3096,7 +3011,7 @@ unsafe extern "C" fn HandleInterpBody(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Cannot set a global default value for \"%s\" element from within an interpret statement; Move assignment to \"%s.%s\" to the global file scope\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     elem,
                     elem,
                     field,
@@ -3143,7 +3058,7 @@ unsafe extern "C" fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut In
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Couldn't determine matching modifiers; Symbol interpretation ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
             );
             return false_0 != 0;
         }
@@ -3171,8 +3086,8 @@ unsafe extern "C" fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut Le
         let mut ok: bool = true_0 != 0;
         let mut var: *mut VarDef = (*def).body;
         while !var.is_null() {
-            let mut elem: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-            let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            let mut elem: *const i8 = ::core::ptr::null::<i8>();
+            let mut field: *const i8 = ::core::ptr::null::<i8>();
             let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
             if !ExprResolveLhs(
                 (*info).ctx,
@@ -3188,7 +3103,7 @@ unsafe extern "C" fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut Le
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Cannot set defaults for \"%s\" element in indicator map; Assignment to %s.%s ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
                     elem,
                     elem,
@@ -3224,7 +3139,7 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                         XKB_LOG_LEVEL_DEBUG,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"The \"group\" statement in compat is unsupported; Ignored\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                     );
                     ok = true_0 != 0;
                 }
@@ -3243,14 +3158,14 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Unsupported compatibility %s statement \"%s\"; Ignoring\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
                         if (*stmt).type_0 as ::core::ffi::c_uint
                             == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as ::core::ffi::c_uint
                         {
-                            b"compound\0".as_ptr() as *const ::core::ffi::c_char
+                            b"compound\0".as_ptr() as *const i8
                         } else {
-                            b"declaration\0".as_ptr() as *const ::core::ffi::c_char
+                            b"declaration\0".as_ptr() as *const i8
                         },
                         (*(stmt as *mut UnknownStatement)).name,
                     );
@@ -3264,7 +3179,7 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Compat files may not include other types; Ignoring %s\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         stmt_type_to_string((*stmt).type_0),
                     );
                     ok = false_0 != 0;
@@ -3278,8 +3193,7 @@ unsafe extern "C" fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *m
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Abandoning compatibility map \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Abandoning compatibility map \"%s\"\n\0".as_ptr() as *const i8,
                     safe_map_name(file),
                 );
                 break;
@@ -3366,7 +3280,7 @@ unsafe extern "C" fn CopyLedMapDefsToKeymap(
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Indicator name \"%s\" was not declared in the keycodes section; Adding new indicator\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     LEDText(info, ledi),
                 );
                 i = 0 as xkb_led_index_t;
@@ -3385,7 +3299,7 @@ unsafe extern "C" fn CopyLedMapDefsToKeymap(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"Too many indicators (maximum is %u); Indicator name \"%s\" ignored\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             (::core::mem::size_of::<xkb_led_mask_t>() as usize)
                                 .wrapping_mul(8 as usize) as xkb_led_index_t,
                             LEDText(info, ledi),
@@ -3474,7 +3388,7 @@ pub unsafe extern "C" fn CompileCompatMap(
 ) -> bool {
     unsafe {
         let mut info: CompatInfo = CompatInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {

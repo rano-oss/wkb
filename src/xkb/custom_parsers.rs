@@ -10,7 +10,7 @@ pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct option {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub has_arg: ::core::ffi::c_int,
         pub flag: *mut ::core::ffi::c_int,
         pub val: ::core::ffi::c_int,
@@ -20,8 +20,8 @@ pub mod getopt_ext_h {
     extern "C" {
         pub fn getopt_long(
             ___argc: ::core::ffi::c_int,
-            ___argv: *const *mut ::core::ffi::c_char,
-            __shortopts: *const ::core::ffi::c_char,
+            ___argv: *const *mut i8,
+            __shortopts: *const i8,
             __longopts: *const option,
             __longind: *mut ::core::ffi::c_int,
         ) -> ::core::ffi::c_int;
@@ -37,27 +37,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -68,7 +68,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -113,21 +113,14 @@ pub mod stdio_h {
     extern "C" {
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(
-            __filename: *const ::core::ffi::c_char,
-            __modes: *const ::core::ffi::c_char,
-        ) -> *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn printf(__format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn printf(__format: *const i8, ...) -> ::core::ffi::c_int;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32
@@ -138,7 +131,6 @@ pub mod utils_h {
         }
     }
 
-    use super::FILE_h::FILE;
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
@@ -147,7 +139,7 @@ pub mod utils_numbers_h {
     use super::utils_h::is_xdigit;
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
@@ -443,7 +435,7 @@ pub mod utils_numbers_h {
     ];
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
@@ -471,7 +463,7 @@ pub mod utils_numbers_h {
     }
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint64_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
@@ -500,7 +492,7 @@ pub mod utils_numbers_h {
 }
 pub mod getopt_core_h {
     extern "C" {
-        pub static mut optarg: *mut ::core::ffi::c_char;
+        pub static mut optarg: *mut i8;
     }
 }
 pub mod stdbool_h {
@@ -509,10 +501,10 @@ pub mod stdbool_h {
 pub mod stdlib_h {
     pub const EXIT_SUCCESS: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     extern "C" {
-        pub fn atof(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_double;
+        pub fn atof(__nptr: *const i8) -> ::core::ffi::c_double;
         pub fn strtol(
-            __nptr: *const ::core::ffi::c_char,
-            __endptr: *mut *mut ::core::ffi::c_char,
+            __nptr: *const i8,
+            __endptr: *mut *mut i8,
             __base: ::core::ffi::c_int,
         ) -> ::core::ffi::c_long;
         pub fn exit(__status: ::core::ffi::c_int) -> !;
@@ -548,11 +540,11 @@ pub const OPT_STDEV: options = 0;
 pub type options = ::core::ffi::c_uint;
 #[no_mangle]
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
-unsafe extern "C" fn usage(mut argv: *mut *mut ::core::ffi::c_char) {
+unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
     unsafe {
         printf(
             b"Usage: %s [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: %f)\n\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             *argv.offset(0 as ::core::ffi::c_int as isize),
             DEFAULT_STDEV * 100 as ::core::ffi::c_int as ::core::ffi::c_double,
         );
@@ -574,7 +566,7 @@ unsafe extern "C" fn print_stats(
         fprintf(
             stderr,
             b"mean: %lld \xC2\xB5s; stdev: %Lf%% (target: %f%%); last run: parsed %u times in %ld.%06lds; total time: %ld.%06lds\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             (*est).elapsed / 1000 as ::core::ffi::c_longlong,
             ((*est).stdev as f64) * (100.0 as f64)
                 / ((*est).elapsed as f64),
@@ -587,10 +579,7 @@ unsafe extern "C" fn print_stats(
         );
     }
 }
-unsafe extern "C" fn parse_keysym_hex(
-    mut s: *const ::core::ffi::c_char,
-    mut out: *mut u32,
-) -> bool {
+unsafe extern "C" fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
     unsafe {
         let mut result: u32 = 0 as u32;
         let mut i: ::core::ffi::c_uint = 0;
@@ -629,10 +618,7 @@ unsafe extern "C" fn parse_keysym_hex(
             && i > 0 as ::core::ffi::c_uint;
     }
 }
-unsafe fn main_0(
-    mut argc: ::core::ffi::c_int,
-    mut argv: *mut *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core::ffi::c_int {
     unsafe {
         let mut bench: bench = bench {
             start: bench_time {
@@ -656,19 +642,19 @@ unsafe fn main_0(
         let mut stdev: ::core::ffi::c_double = DEFAULT_STDEV;
         static mut opts: [option; 3] = [
             option {
-                name: b"help\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 'h' as i32,
             },
             option {
-                name: b"stdev\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"stdev\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_STDEV as ::core::ffi::c_int,
             },
             option {
-                name: ::core::ptr::null::<::core::ffi::c_char>(),
+                name: ::core::ptr::null::<i8>(),
                 has_arg: 0 as ::core::ffi::c_int,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 0 as ::core::ffi::c_int,
@@ -680,7 +666,7 @@ unsafe fn main_0(
             c = getopt_long(
                 argc,
                 argv,
-                b"h\0".as_ptr() as *const ::core::ffi::c_char,
+                b"h\0".as_ptr() as *const i8,
                 &raw mut opts as *mut option,
                 &raw mut option_index,
             );
@@ -705,8 +691,8 @@ unsafe fn main_0(
             }
         }
         let mut file: *mut FILE = fopen(
-            b"../bench/custom-parsers.c\0".as_ptr() as *const ::core::ffi::c_char,
-            b"r\0".as_ptr() as *const ::core::ffi::c_char,
+            b"../bench/custom-parsers.c\0".as_ptr() as *const i8,
+            b"r\0".as_ptr() as *const i8,
         ) as *mut FILE;
 
         // Convert FILE* to Rust File and map it
@@ -716,10 +702,7 @@ unsafe fn main_0(
 
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            fprintf(
-                stderr,
-                b"Invalid file descriptor\n\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            fprintf(stderr, b"Invalid file descriptor\n\0".as_ptr() as *const i8);
             exit(1);
         }
 
@@ -729,7 +712,7 @@ unsafe fn main_0(
             Err(e) => {
                 fprintf(
                     stderr,
-                    b"Failed to map file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"Failed to map file: %s\n\0".as_ptr() as *const i8,
                     std::ffi::CString::new(e.to_string()).unwrap().as_ptr(),
                 );
                 std::mem::forget(rust_file);
@@ -742,7 +725,7 @@ unsafe fn main_0(
         let mut dummy32: u32 = 0 as u32;
         let mut dummy64: uint64_t = 0 as uint64_t;
         let mut max_iterations: ::core::ffi::c_uint = 0;
-        printf(b"*** parse_hex_to_uint32_t ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** parse_hex_to_uint32_t ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench: bench = bench {
             start: bench_time {
@@ -823,7 +806,7 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_keysym_hex ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** parse_keysym_hex ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench_0: bench = bench {
             start: bench_time {
@@ -904,7 +887,7 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_dec_to_uint64_t ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** parse_dec_to_uint64_t ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench_1: bench = bench {
             start: bench_time {
@@ -994,7 +977,7 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** strtol, base 10 ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** strtol, base 10 ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench_2: bench = bench {
             start: bench_time {
@@ -1023,7 +1006,7 @@ unsafe fn main_0(
                 ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t).wrapping_add(
                     strtol(
                         content.offset(n_5 as isize),
-                        ::core::ptr::null_mut::<*mut ::core::ffi::c_char>(),
+                        ::core::ptr::null_mut::<*mut i8>(),
                         10 as ::core::ffi::c_int,
                     ) as uint64_t,
                 ),
@@ -1043,7 +1026,7 @@ unsafe fn main_0(
                         ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
                             .wrapping_add(strtol(
                                 content.offset(n_6 as isize),
-                                ::core::ptr::null_mut::<*mut ::core::ffi::c_char>(),
+                                ::core::ptr::null_mut::<*mut i8>(),
                                 10 as ::core::ffi::c_int,
                             ) as uint64_t),
                     );
@@ -1081,7 +1064,7 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_hex_to_uint64_t ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** parse_hex_to_uint64_t ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench_3: bench = bench {
             start: bench_time {
@@ -1171,7 +1154,7 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** strtol, base 16 ***\n\0".as_ptr() as *const ::core::ffi::c_char);
+        printf(b"*** strtol, base 16 ***\n\0".as_ptr() as *const i8);
         bench_start2(&raw mut bench);
         let mut _bench_4: bench = bench {
             start: bench_time {
@@ -1200,7 +1183,7 @@ unsafe fn main_0(
                 ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t).wrapping_add(
                     strtol(
                         content.offset(n_9 as isize),
-                        ::core::ptr::null_mut::<*mut ::core::ffi::c_char>(),
+                        ::core::ptr::null_mut::<*mut i8>(),
                         16 as ::core::ffi::c_int,
                     ) as uint64_t,
                 ),
@@ -1220,7 +1203,7 @@ unsafe fn main_0(
                         ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
                             .wrapping_add(strtol(
                                 content.offset(n_10 as isize),
-                                ::core::ptr::null_mut::<*mut ::core::ffi::c_char>(),
+                                ::core::ptr::null_mut::<*mut i8>(),
                                 16 as ::core::ffi::c_int,
                             ) as uint64_t),
                     );
@@ -1272,15 +1255,15 @@ pub fn main() {
                 .into_bytes_with_nul()
         })
         .collect();
-    let mut args_ptrs: Vec<*mut ::core::ffi::c_char> = args_strings
+    let mut args_ptrs: Vec<*mut i8> = args_strings
         .iter_mut()
-        .map(|arg| arg.as_mut_ptr() as *mut ::core::ffi::c_char)
+        .map(|arg| arg.as_mut_ptr() as *mut i8)
         .chain(::core::iter::once(::core::ptr::null_mut()))
         .collect();
     unsafe {
         ::std::process::exit(main_0(
             (args_ptrs.len() - 1) as ::core::ffi::c_int,
-            args_ptrs.as_mut_ptr() as *mut *mut ::core::ffi::c_char,
+            args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }
 }

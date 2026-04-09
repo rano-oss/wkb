@@ -42,27 +42,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -73,7 +73,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -108,7 +108,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -120,7 +120,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -134,14 +134,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -149,18 +149,13 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_intern(
-            ctx: *mut xkb_context,
-            string: *const ::core::ffi::c_char,
-            len: usize,
-        ) -> xkb_atom_t;
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
+        pub fn xkb_atom_intern(ctx: *mut xkb_context, string: *const i8, len: usize) -> xkb_atom_t;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -191,17 +186,16 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -273,10 +267,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -728,7 +722,7 @@ pub mod keymap_h {
     };
     extern "C" {
         pub fn clear_level(leveli: *mut xkb_level);
-        pub fn XkbEscapeMapName(name: *mut ::core::ffi::c_char);
+        pub fn XkbEscapeMapName(name: *mut i8);
         pub fn XkbModNameToIndex(
             mods: *const xkb_mod_set,
             name: xkb_atom_t,
@@ -808,10 +802,10 @@ pub mod ast_h {
     pub struct _IncludeStmt {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub stmt: *mut ::core::ffi::c_char,
-        pub file: *mut ::core::ffi::c_char,
-        pub map: *mut ::core::ffi::c_char,
-        pub modifier: *mut ::core::ffi::c_char,
+        pub stmt: *mut i8,
+        pub file: *mut i8,
+        pub map: *mut i8,
+        pub modifier: *mut i8,
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
@@ -959,7 +953,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct UnknownStatement {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
     }
     pub type xkb_map_flags = ::core::ffi::c_uint;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
@@ -974,7 +968,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
@@ -984,7 +978,7 @@ pub mod ast_h {
     use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const ::core::ffi::c_char;
+        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
     }
 }
 pub mod messages_codes_h {
@@ -1087,7 +1081,7 @@ pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct LookupEntry {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub value: u32,
     }
     use super::atom_h::xkb_atom_t;
@@ -1100,10 +1094,10 @@ pub mod text_h {
             ctx: *mut xkb_context,
             mods: *const xkb_mod_set,
             ndx: xkb_mod_index_t,
-        ) -> *const ::core::ffi::c_char;
-        pub fn ActionTypeText(type_0: xkb_action_type) -> *const ::core::ffi::c_char;
-        pub fn KeysymText(ctx: *mut xkb_context, sym: xkb_keysym_t) -> *const ::core::ffi::c_char;
-        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const ::core::ffi::c_char;
+        ) -> *const i8;
+        pub fn ActionTypeText(type_0: xkb_action_type) -> *const i8;
+        pub fn KeysymText(ctx: *mut xkb_context, sym: xkb_keysym_t) -> *const i8;
+        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const i8;
     }
 }
 pub mod xkbcomp_priv_h {
@@ -1172,12 +1166,12 @@ pub mod xkbcomp_priv_h {
         pub overlapping_overlays: bool,
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const ::core::ffi::c_char {
+    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
-                (*file).name as *const ::core::ffi::c_char
+                (*file).name as *const i8
             } else {
-                b"(unnamed map)\0".as_ptr() as *const ::core::ffi::c_char
+                b"(unnamed map)\0".as_ptr() as *const i8
             };
         }
     }
@@ -1215,8 +1209,8 @@ pub mod action_h {
             keymap_info: *const xkb_keymap_info,
             info: *mut ActionsInfo,
             mods: *mut xkb_mod_set,
-            elem: *const ::core::ffi::c_char,
-            field: *const ::core::ffi::c_char,
+            elem: *const i8,
+            field: *const i8,
             array_ndx: *mut ExprDef,
             value_ptr: *mut *mut ExprDef,
             merge: merge_mode,
@@ -1241,25 +1235,21 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strdup(__s: *const i8) -> *mut i8;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
-            ...
-        ) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
     }
 }
 pub mod stdlib_h {
 
     extern "C" {
-        pub fn atoi(__nptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+        pub fn atoi(__nptr: *const i8) -> ::core::ffi::c_int;
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
@@ -1268,33 +1258,24 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn istrneq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-        mut len: usize,
-    ) -> bool {
+    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(
-        mut s: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char {
+    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
             } else {
-                ::core::ptr::null_mut::<::core::ffi::c_char>()
+                ::core::ptr::null_mut::<i8>()
             };
         }
     }
@@ -1316,15 +1297,8 @@ pub mod utils_h {
     use super::stdlib_h::calloc;
     use super::string_h::{memcpy, strdup};
     extern "C" {
-        pub fn istrcmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
-        pub fn istrncmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-            n: usize,
-        ) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
+        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> ::core::ffi::c_int;
     }
 }
 pub mod limits_h {
@@ -1334,7 +1308,7 @@ pub mod limits_h {
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
     ) -> ::core::ffi::c_int {
@@ -1435,8 +1409,8 @@ pub mod expr_h {
         pub fn ExprResolveLhs(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            elem_rtrn: *mut *const ::core::ffi::c_char,
-            field_rtrn: *mut *const ::core::ffi::c_char,
+            elem_rtrn: *mut *const i8,
+            field_rtrn: *mut *const i8,
             index_rtrn: *mut *mut ExprDef,
         ) -> bool;
         pub fn ExprResolveModMask(
@@ -1496,7 +1470,7 @@ pub mod include_h {
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
-            path: *mut ::core::ffi::c_char,
+            path: *mut i8,
             path_size: usize,
         ) -> *mut XkbFile;
     }
@@ -1681,7 +1655,7 @@ pub use self::FILE_h::FILE;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsInfo {
-    pub name: *mut ::core::ffi::c_char,
+    pub name: *mut i8,
     pub errorCount: ::core::ffi::c_int,
     pub include_depth: ::core::ffi::c_uint,
     pub explicit_group: xkb_layout_index_t,
@@ -1920,8 +1894,8 @@ unsafe extern "C" fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyIn
         );
         (*keyi).name = xkb_atom_intern(
             ctx,
-            b"*\0".as_ptr() as *const ::core::ffi::c_char,
-            (::core::mem::size_of::<[::core::ffi::c_char; 2]>() as usize).wrapping_sub(1 as usize),
+            b"*\0".as_ptr() as *const i8,
+            (::core::mem::size_of::<[i8; 2]>() as usize).wrapping_sub(1 as usize),
         );
         (*keyi).set_out_of_range_group_policy(
             XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy,
@@ -2008,10 +1982,7 @@ unsafe extern "C" fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
         ClearKeyInfo(&raw mut (*info).default_key);
     }
 }
-unsafe extern "C" fn KeyInfoText(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> *const i8 {
     unsafe {
         return KeyNameText((*info).ctx, (*keyi).name);
     }
@@ -2047,7 +2018,7 @@ unsafe extern "C" fn MergeGroups(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Multiple definitions for group %u type of key %s; Using %s, ignoring %s\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS
                                 as ::core::ffi::c_int,
                             group.wrapping_add(1 as xkb_layout_index_t),
@@ -2115,20 +2086,20 @@ unsafe extern "C" fn MergeGroups(
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                 b"[XKB-%03d] Multiple symbols for level %u/group %u on key %s; Using %s, ignoring %s\n\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 XKB_WARNING_CONFLICTING_KEY_SYMBOL as ::core::ffi::c_int,
                                 i.wrapping_add(1 as darray_size_t),
                                 group.wrapping_add(1 as xkb_layout_index_t),
                                 KeyNameText((*info).ctx, key_name),
                                 if clobber as ::core::ffi::c_int != 0 {
-                                    b"from\0".as_ptr() as *const ::core::ffi::c_char
+                                    b"from\0".as_ptr() as *const i8
                                 } else {
-                                    b"to\0".as_ptr() as *const ::core::ffi::c_char
+                                    b"to\0".as_ptr() as *const i8
                                 },
                                 if clobber as ::core::ffi::c_int != 0 {
-                                    b"to\0".as_ptr() as *const ::core::ffi::c_char
+                                    b"to\0".as_ptr() as *const i8
                                 } else {
-                                    b"from\0".as_ptr() as *const ::core::ffi::c_char
+                                    b"from\0".as_ptr() as *const i8
                                 },
                             );
                         }
@@ -2206,17 +2177,17 @@ unsafe extern "C" fn MergeGroups(
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                     b"[XKB-%03d] Multiple actions for level %u/group %u on key %s; %s\n\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
+                                        .as_ptr() as *const i8,
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as ::core::ffi::c_int,
                                     i.wrapping_add(1 as darray_size_t),
                                     group.wrapping_add(1 as xkb_layout_index_t),
                                     KeyNameText((*info).ctx, key_name),
                                     if clobber as ::core::ffi::c_int != 0 {
                                         b"Using from, ignoring to\0".as_ptr()
-                                            as *const ::core::ffi::c_char
+                                            as *const i8
                                     } else {
                                         b"Using to, ignoring from\0".as_ptr()
-                                            as *const ::core::ffi::c_char
+                                            as *const i8
                                     },
                                 );
                             } else {
@@ -2239,7 +2210,7 @@ unsafe extern "C" fn MergeGroups(
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                     b"[XKB-%03d] Multiple actions for level %u/group %u on key %s; Using %s, ignoring %s\n\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
+                                        .as_ptr() as *const i8,
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as ::core::ffi::c_int,
                                     i.wrapping_add(1 as darray_size_t),
                                     group.wrapping_add(1 as xkb_layout_index_t),
@@ -2527,8 +2498,8 @@ unsafe extern "C" fn overlays_insert(
                 fprintf(
                     stderr,
                     b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        as *const i8,
+                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
                     654 as ::core::ffi::c_int,
                 );
                 abort();
@@ -2603,8 +2574,8 @@ unsafe extern "C" fn merge_overlays(
                     fprintf(
                         stderr,
                         b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            as *const i8,
+                        b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
                         696 as ::core::ffi::c_int,
                     );
                     abort();
@@ -2688,8 +2659,8 @@ unsafe extern "C" fn merge_overlays(
                         fprintf(
                             stderr,
                             b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                as *const i8,
+                            b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
                             758 as ::core::ffi::c_int,
                         );
                         abort();
@@ -2902,13 +2873,13 @@ unsafe extern "C" fn MergeKeys(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Symbol map for key %s redefined; Using %s definition for conflicting fields\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_CONFLICTING_KEY_FIELDS as ::core::ffi::c_int,
                 KeyNameText((*info).ctx, (*into).name),
                 if clobber as ::core::ffi::c_int != 0 {
-                    b"first\0".as_ptr() as *const ::core::ffi::c_char
+                    b"first\0".as_ptr() as *const i8
                 } else {
-                    b"last\0".as_ptr() as *const ::core::ffi::c_char
+                    b"last\0".as_ptr() as *const i8
                 },
             );
         }
@@ -3018,7 +2989,7 @@ unsafe extern "C" fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut Mo
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Symbol \"%s\" added to modifier map for multiple modifiers; Using %s, ignoring %s\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_MODMAP as ::core::ffi::c_int,
                             KeysymText((*info).ctx, (*new).u.keySym),
                             ModIndexText((*info).ctx, &raw mut (*info).mods, use_0),
@@ -3030,7 +3001,7 @@ unsafe extern "C" fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut Mo
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Key \"%s\" added to modifier map for multiple modifiers; Using %s, ignoring %s\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_MODMAP as ::core::ffi::c_int,
                             KeyNameText((*info).ctx, (*new).u.keyName),
                             ModIndexText((*info).ctx, &raw mut (*info).mods, use_0),
@@ -3082,8 +3053,8 @@ unsafe extern "C" fn MergeIncludedSymbols(
             merge,
         );
         if (*into).name.is_null() {
-            (*into).name = _steal(&raw mut (*from).name as *mut ::core::ffi::c_void)
-                as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+            (*into).name =
+                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
         group_names_in_both = (if (*into).group_names.size < (*from).group_names.size {
             (*into).group_names.size
@@ -3188,7 +3159,7 @@ unsafe extern "C" fn HandleIncludeSymbols(
 ) -> bool {
     unsafe {
         let mut included: SymbolsInfo = SymbolsInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             explicit_group: 0,
@@ -3252,12 +3223,12 @@ unsafe extern "C" fn HandleIncludeSymbols(
             (*info).include_depth.wrapping_add(1 as ::core::ffi::c_uint),
             &raw mut (*info).mods,
         );
-        included.name = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void)
-            as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+        included.name =
+            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: SymbolsInfo = SymbolsInfo {
-                name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                name: ::core::ptr::null_mut::<i8>(),
                 errorCount: 0,
                 include_depth: 0,
                 explicit_group: 0,
@@ -3312,13 +3283,13 @@ unsafe extern "C" fn HandleIncludeSymbols(
                 keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
             };
             let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-            let mut path: [::core::ffi::c_char; 4096] = [0; 4096];
+            let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
                 stmt,
                 FILE_TYPE_SYMBOLS,
-                &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
+                &raw mut path as *mut i8,
+                ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -3340,7 +3311,7 @@ unsafe extern "C" fn HandleIncludeSymbols(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Cannot set explicit group to %u - must be between 1..%u; Ignoring group number\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                         next_incl.explicit_group.wrapping_add(1 as xkb_layout_index_t),
                         (*info).max_groups,
@@ -3373,12 +3344,12 @@ unsafe extern "C" fn GetGroupIndex(
     mut ndx_rtrn: *mut xkb_layout_index_t,
 ) -> bool {
     unsafe {
-        let mut name: *const ::core::ffi::c_char = if field as ::core::ffi::c_uint
+        let mut name: *const i8 = if field as ::core::ffi::c_uint
             == GROUP_FIELD_SYMS as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            b"symbols\0".as_ptr() as *const ::core::ffi::c_char
+            b"symbols\0".as_ptr() as *const i8
         } else {
-            b"actions\0".as_ptr() as *const ::core::ffi::c_char
+            b"actions\0".as_ptr() as *const i8
         };
         if arrayNdx.is_null() {
             let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
@@ -3403,7 +3374,7 @@ unsafe extern "C" fn GetGroupIndex(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Too many groups of %s for key %s (max %u); Ignoring %s defined for extra groups\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     name,
                     KeyInfoText(info, keyi),
@@ -3454,7 +3425,7 @@ unsafe extern "C" fn GetGroupIndex(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Illegal group index for %s of key %s\nDefinition with non-integer array index ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                 name,
                 KeyInfoText(info, keyi),
@@ -3520,7 +3491,7 @@ unsafe extern "C" fn AddSymbolsToKey(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Expected a list of symbols, found %s; Ignoring symbols for group %u of %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 stmt_type_to_string((*value).common.type_0),
                 ndx.wrapping_add(1 as xkb_layout_index_t),
@@ -3537,7 +3508,7 @@ unsafe extern "C" fn AddSymbolsToKey(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Symbols for key %s, group %u already defined; Ignoring duplicate definition\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
                 ndx.wrapping_add(1 as xkb_layout_index_t),
@@ -3601,7 +3572,7 @@ unsafe extern "C" fn AddSymbolsToKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Key %s has too many keysyms for group %u, level %u; expected max %u, got: %u\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     KeyInfoText(info, keyi),
                     ndx.wrapping_add(1 as xkb_layout_index_t),
                     level.wrapping_add(1 as xkb_level_index_t),
@@ -3678,7 +3649,7 @@ unsafe extern "C" fn AddActionsToKey(
                 XKB_LOG_LEVEL_CRITICAL,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Bad expression type (%d) for action list value; Ignoring actions for group %u of %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as ::core::ffi::c_int,
                 (*value).common.type_0 as ::core::ffi::c_uint,
                 ndx,
@@ -3695,7 +3666,7 @@ unsafe extern "C" fn AddActionsToKey(
                 XKB_LOG_LEVEL_CRITICAL,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Actions for key %s, group %u already defined\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_WARNING_CONFLICTING_KEY_ACTION as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
                 ndx,
@@ -3760,7 +3731,7 @@ unsafe extern "C" fn AddActionsToKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Key %s has too many actions for group %u, level %u; expected max %u, got: %u\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     KeyInfoText(info, keyi),
                     ndx.wrapping_add(1 as xkb_layout_index_t),
                     level.wrapping_add(1 as xkb_level_index_t),
@@ -3798,7 +3769,7 @@ unsafe extern "C" fn AddActionsToKey(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Illegal action definition for %s; Action for group %u/level %u ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                         KeyInfoText(info, keyi),
                         ndx.wrapping_add(1 as xkb_layout_index_t),
@@ -3928,41 +3899,41 @@ unsafe extern "C" fn AddActionsToKey(
 }
 static mut repeatEntries: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"true\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"true\0".as_ptr() as *const i8,
         value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"yes\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"yes\0".as_ptr() as *const i8,
         value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"on\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"on\0".as_ptr() as *const i8,
         value: KEY_REPEAT_YES as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"false\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"false\0".as_ptr() as *const i8,
         value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"no\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"no\0".as_ptr() as *const i8,
         value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"off\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"off\0".as_ptr() as *const i8,
         value: KEY_REPEAT_NO as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"default\0".as_ptr() as *const i8,
         value: KEY_REPEAT_UNDEFINED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 unsafe extern "C" fn ExprResolveOverlayEntry(
     mut keymap_info: *const xkb_keymap_info,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
     mut arrayNdx: *const ExprDef,
     mut expr: *const ExprDef,
     mut keyi: *mut KeyInfo,
@@ -3976,15 +3947,14 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Overlay field \"%s\" in %s does not support array index; ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 field,
                 KeyNameText((*keymap_info).keymap.ctx, (*keyi).name),
             );
             return false_0 != 0;
         }
-        let prefix: usize =
-            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize).wrapping_sub(1 as usize);
+        let prefix: usize = (::core::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize);
         let len: usize = strlen(field.offset(prefix as isize)) as usize;
         let mut raw_overlay: int64_t = XKB_OVERLAY_INVALID as int64_t;
         if parse_dec_to_uint64_t(
@@ -4000,7 +3970,7 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Unsupported overlay index \"%s\" field for %s: expected 1..%u, got: %ld; ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as ::core::ffi::c_int,
                 field,
                 KeyNameText((*keymap_info).keymap.ctx, (*keyi).name),
@@ -4024,7 +3994,7 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Unknown key \"%s\" for field %s in %s\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
                         xkb_atom_text((*keymap_info).keymap.ctx, (*expr).key_name.key_name),
                         field,
@@ -4035,20 +4005,15 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                 return true_0 != 0;
             }
             10 => {
-                let id: *const ::core::ffi::c_char =
-                    xkb_atom_text((*keymap_info).keymap.ctx, (*expr).ident.ident)
-                        as *const ::core::ffi::c_char;
+                let id: *const i8 =
+                    xkb_atom_text((*keymap_info).keymap.ctx, (*expr).ident.ident) as *const i8;
                 if !id.is_null()
-                    && istreq(id, b"none\0".as_ptr() as *const ::core::ffi::c_char)
-                        as ::core::ffi::c_int
-                        != 0
+                    && istreq(id, b"none\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
                     *key_rtrn = ::core::ptr::null::<xkb_key>();
                     return true_0 != 0;
                 } else if !id.is_null()
-                    && istreq(id, b"any\0".as_ptr() as *const ::core::ffi::c_char)
-                        as ::core::ffi::c_int
-                        != 0
+                    && istreq(id, b"any\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
                     *key_rtrn = ::core::ptr::null::<xkb_key>();
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
@@ -4059,7 +4024,7 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Unsupported overlay value \"%s\" for field %s in %s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     id,
                     field,
@@ -4073,7 +4038,7 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Expected %s for field \"%s\" in %s, got: %s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                     field,
@@ -4088,13 +4053,13 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
 unsafe extern "C" fn SetSymbolsField(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
-    mut field: *const ::core::ffi::c_char,
+    mut field: *const i8,
     mut arrayNdx: *mut ExprDef,
     mut value_ptr: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"type\0".as_ptr() as *const ::core::ffi::c_char) {
+        if istreq(field, b"type\0".as_ptr() as *const i8) {
             let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
@@ -4103,7 +4068,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] The type field of a key symbol map must be a string; Ignoring illegal type definition\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 );
                 return false_0 != 0;
@@ -4127,7 +4092,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal group index for type of key %s; Definition with non-integer array index ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4168,23 +4133,13 @@ unsafe extern "C" fn SetSymbolsField(
                     | GROUP_FIELD_TYPE as ::core::ffi::c_int as ::core::ffi::c_uint)
                     as group_field;
             }
-        } else if istreq(field, b"symbols\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"symbols\0".as_ptr() as *const i8) {
             return AddSymbolsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"actions\0".as_ptr() as *const ::core::ffi::c_char) {
+        } else if istreq(field, b"actions\0".as_ptr() as *const i8) {
             return AddActionsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"vmods\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"virtualmods\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || istreq(
-                field,
-                b"virtualmodifiers\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"vmods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"virtualmods\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"virtualmodifiers\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
             if !ExprResolveModMask(
@@ -4199,7 +4154,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Expected a virtual modifier mask, found %s; Ignoring virtual modifiers definition for key %s\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
                     stmt_type_to_string((*value).common.type_0),
                     KeyInfoText(info, keyi),
@@ -4210,65 +4165,51 @@ unsafe extern "C" fn SetSymbolsField(
             (*keyi).set_defined(
                 (*keyi).defined() | KEY_FIELD_VMODMAP as ::core::ffi::c_int as key_field,
             );
-        } else if istreq(field, b"locking\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(field, b"lock\0".as_ptr() as *const ::core::ffi::c_char) as ::core::ffi::c_int
-                != 0
-            || istreq(field, b"locks\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"locking\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"lock\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"locks\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                 b"[XKB-%03d] Key behaviors not supported; Ignoring locking specification for key %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
             );
-        } else if istreq(
-            field,
-            b"radiogroup\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"permanentradiogroup\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
+        } else if istreq(field, b"radiogroup\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"permanentradiogroup\0".as_ptr() as *const i8) as ::core::ffi::c_int
                 != 0
-            || istreq(field, b"allownone\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+            || istreq(field, b"allownone\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                 b"[XKB-%03d] Radio groups not supported; Ignoring radio group specification for key %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
             );
         } else if istrneq(
-            b"permanentoverlay\0".as_ptr() as *const ::core::ffi::c_char,
+            b"permanentoverlay\0".as_ptr() as *const i8,
             field,
-            (::core::mem::size_of::<[::core::ffi::c_char; 17]>() as usize).wrapping_sub(1 as usize),
+            (::core::mem::size_of::<[i8; 17]>() as usize).wrapping_sub(1 as usize),
         ) {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                 b"[XKB-%03d] Permanent overlays not supported; Ignoring overlay specification for key %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
             );
         } else if istrneq(
-            b"overlay\0".as_ptr() as *const ::core::ffi::c_char,
+            b"overlay\0".as_ptr() as *const i8,
             field,
-            (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize).wrapping_sub(1 as usize),
+            (::core::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
             let mut key: *const xkb_key = ::core::ptr::null::<xkb_key>();
@@ -4291,7 +4232,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                     b"Cannot overlay a key to itself; Ignoring overlay %u specification for key %s\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     overlay as ::core::ffi::c_int + 1 as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4304,20 +4245,20 @@ unsafe extern "C" fn SetSymbolsField(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Conflicting overlays defined in key %s; use overlay%d=%s, ignore overlay%u=%s\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_KEY_FIELDS as ::core::ffi::c_int,
                             KeyInfoText(info, keyi),
                             overlay as ::core::ffi::c_int + 1 as ::core::ffi::c_int,
                             if !prev.is_null() {
                                 KeyNameText((*info).ctx, (*prev).name)
                             } else {
-                                b"none\0".as_ptr() as *const ::core::ffi::c_char
+                                b"none\0".as_ptr() as *const i8
                             },
                             overlay as ::core::ffi::c_int + 1 as ::core::ffi::c_int,
                             if !key.is_null() {
                                 KeyNameText((*info).ctx, (*key).name)
                             } else {
-                                b"none\0".as_ptr() as *const ::core::ffi::c_char
+                                b"none\0".as_ptr() as *const i8
                             },
                         );
                     }
@@ -4355,7 +4296,7 @@ unsafe extern "C" fn SetSymbolsField(
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                 b"[XKB-%03d] Overlapping overlays are not allowed in %s; use overlay%d=%s, ignore overlay%u=%s\n\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 XKB_ERROR_OVERLAPPING_OVERLAY as ::core::ffi::c_int,
                                 KeyInfoText(info, keyi),
                                 (*keyi).overlays as ::core::ffi::c_int,
@@ -4374,15 +4315,9 @@ unsafe extern "C" fn SetSymbolsField(
                     }
                 }
             }
-        } else if istreq(field, b"repeating\0".as_ptr() as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || istreq(field, b"repeats\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-            || istreq(field, b"repeat\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"repeating\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"repeats\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"repeat\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut val_0: u32 = 0 as u32;
             if !ExprResolveEnum(
@@ -4396,7 +4331,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal repeat setting for %s; Non-boolean repeat setting ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4406,16 +4341,8 @@ unsafe extern "C" fn SetSymbolsField(
             (*keyi).set_defined(
                 (*keyi).defined() | KEY_FIELD_REPEAT as ::core::ffi::c_int as key_field,
             );
-        } else if istreq(
-            field,
-            b"groupswrap\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"wrapgroups\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"groupswrap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut set: bool = false_0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
@@ -4424,7 +4351,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal groupsWrap setting for %s; Non-boolean value ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4441,16 +4368,8 @@ unsafe extern "C" fn SetSymbolsField(
             (*keyi).set_defined(
                 (*keyi).defined() | KEY_FIELD_GROUPINFO as ::core::ffi::c_int as key_field,
             );
-        } else if istreq(
-            field,
-            b"groupsclamp\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || istreq(
-                field,
-                b"clampgroups\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut set_0: bool = false_0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
@@ -4459,7 +4378,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal groupsClamp setting for %s; Non-boolean value ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4476,16 +4395,9 @@ unsafe extern "C" fn SetSymbolsField(
             (*keyi).set_defined(
                 (*keyi).defined() | KEY_FIELD_GROUPINFO as ::core::ffi::c_int as key_field,
             );
-        } else if istreq(
-            field,
-            b"groupsredirect\0".as_ptr() as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
+        } else if istreq(field, b"groupsredirect\0".as_ptr() as *const i8) as ::core::ffi::c_int
             != 0
-            || istreq(
-                field,
-                b"redirectgroups\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+            || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut grp: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut pending: bool = false_0 != 0;
@@ -4504,7 +4416,7 @@ unsafe extern "C" fn SetSymbolsField(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal group index for redirect of key %s; Definition with non-integer group ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     KeyInfoText(info, keyi),
                 );
@@ -4561,7 +4473,7 @@ unsafe extern "C" fn SetSymbolsField(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Unknown field \"%s\" in a key; definition ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_UNKNOWN_FIELD as ::core::ffi::c_int,
                 field,
             );
@@ -4585,7 +4497,7 @@ unsafe extern "C" fn SetGroupName(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                 b"[XKB-%03d] You must specify an index when specifying a group name; Group name definition without array subscript ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -4605,7 +4517,7 @@ unsafe extern "C" fn SetGroupName(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Illegal index in group name definition; Definition with non-integer array index ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -4617,7 +4529,7 @@ unsafe extern "C" fn SetGroupName(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Group name must be a string; Illegal name for group %u ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 group,
             );
@@ -4634,7 +4546,7 @@ unsafe extern "C" fn SetGroupName(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] An explicit group was specified for the '%s' map, but it provides a name for a group other than Group1 (%u); Ignoring group name '%s'\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_NON_BASE_GROUP_NAME as ::core::ffi::c_int,
                 (*info).name,
                 group,
@@ -4690,7 +4602,7 @@ unsafe extern "C" fn SetGroupName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Multiple definitions of group %u name in map '%s'; Using '%s', ignoring '%s'\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     group_to_use,
                     (*info).name,
                     xkb_atom_text((*info).ctx, use_0),
@@ -4705,8 +4617,8 @@ unsafe extern "C" fn SetGroupName(
 }
 unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut elem: *const i8 = ::core::ptr::null::<i8>();
+        let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut ret: bool = false;
         if !ExprResolveLhs(
@@ -4719,8 +4631,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut 
             return false_0 != 0;
         }
         if !elem.is_null()
-            && istreq(elem, b"key\0".as_ptr() as *const ::core::ffi::c_char) as ::core::ffi::c_int
-                != 0
+            && istreq(elem, b"key\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut temp: KeyInfo = {
                 let mut init = KeyInfo {
@@ -4764,66 +4675,39 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut 
                 true_0 != 0,
             );
         } else if elem.is_null()
-            && (istreq(field, b"name\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-                || istreq(field, b"groupname\0".as_ptr() as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0)
+            && (istreq(field, b"name\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                || istreq(field, b"groupname\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
         {
             ret = SetGroupName(info, arrayNdx, (*stmt).value as *mut ExprDef, (*stmt).merge);
         } else if elem.is_null()
-            && (istreq(
-                field,
-                b"groupswrap\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-                || istreq(
-                    field,
-                    b"wrapgroups\0".as_ptr() as *const ::core::ffi::c_char,
-                ) as ::core::ffi::c_int
-                    != 0)
+            && (istreq(field, b"groupswrap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Global \"groupswrap\" not supported; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
             ret = true_0 != 0;
         } else if elem.is_null()
-            && (istreq(
-                field,
-                b"groupsclamp\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-                || istreq(
-                    field,
-                    b"clampgroups\0".as_ptr() as *const ::core::ffi::c_char,
-                ) as ::core::ffi::c_int
-                    != 0)
+            && (istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Global \"groupsclamp\" not supported; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
             ret = true_0 != 0;
         } else if elem.is_null()
-            && (istreq(
-                field,
-                b"groupsredirect\0".as_ptr() as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-                || istreq(
-                    field,
-                    b"redirectgroups\0".as_ptr() as *const ::core::ffi::c_char,
-                ) as ::core::ffi::c_int
+            && (istreq(field, b"groupsredirect\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+                || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int
                     != 0)
         {
             xkb_log(
@@ -4831,21 +4715,19 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut 
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Global \"groupsredirect\" not supported; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
             ret = true_0 != 0;
         } else if elem.is_null()
-            && istreq(field, b"allownone\0".as_ptr() as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
+            && istreq(field, b"allownone\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Radio groups not supported; Ignoring \"allownone\" specification\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
             ret = true_0 != 0;
@@ -4867,7 +4749,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut 
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
                 field,
             );
@@ -4887,7 +4769,7 @@ unsafe extern "C" fn HandleSymbolsBody(
     unsafe {
         let mut all_valid_entries: bool = true_0 != 0;
         while !def.is_null() {
-            let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            let mut field: *const i8 = ::core::ptr::null::<i8>();
             let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
             let mut ok: bool = true_0 != 0;
             if (*def).name.is_null() {
@@ -4895,14 +4777,13 @@ unsafe extern "C" fn HandleSymbolsBody(
                     || (*(*def).value).common.type_0 as ::core::ffi::c_uint
                         != STMT_EXPR_ACTION_LIST as ::core::ffi::c_int as ::core::ffi::c_uint
                 {
-                    field = b"symbols\0".as_ptr() as *const ::core::ffi::c_char;
+                    field = b"symbols\0".as_ptr() as *const i8;
                 } else {
-                    field = b"actions\0".as_ptr() as *const ::core::ffi::c_char;
+                    field = b"actions\0".as_ptr() as *const i8;
                 }
                 arrayNdx = ::core::ptr::null_mut::<ExprDef>();
             } else {
-                let mut elem: *const ::core::ffi::c_char =
-                    ::core::ptr::null::<::core::ffi::c_char>();
+                let mut elem: *const i8 = ::core::ptr::null::<i8>();
                 ok = ExprResolveLhs(
                     (*info).ctx,
                     (*def).name,
@@ -4916,7 +4797,7 @@ unsafe extern "C" fn HandleSymbolsBody(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Cannot set global defaults for \"%s\" element within a key statement: move statements to the global file scope. Assignment to \"%s.%s\" ignored.\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
                         elem,
                         elem,
@@ -4931,7 +4812,7 @@ unsafe extern "C" fn HandleSymbolsBody(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Could not allocate the value of field \"%s\". Statement ignored.\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                     field,
                 );
@@ -4972,7 +4853,7 @@ unsafe extern "C" fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] For the map %s the explicit group %u is specified, but key %s has more than one group defined; All groups except first one will be ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE as ::core::ffi::c_int,
                 (*info).name,
                 (*info).explicit_group.wrapping_add(1 as xkb_layout_index_t),
@@ -5095,11 +4976,8 @@ unsafe extern "C" fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut M
         let mut ndx: xkb_mod_index_t = 0;
         let mut ok: bool = false;
         let mut ctx: *mut xkb_context = (*info).ctx;
-        let mut modifier_name: *const ::core::ffi::c_char = xkb_atom_text(ctx, (*def).modifier);
-        if istreq(
-            modifier_name,
-            b"none\0".as_ptr() as *const ::core::ffi::c_char,
-        ) {
+        let mut modifier_name: *const i8 = xkb_atom_text(ctx, (*def).modifier);
+        if istreq(modifier_name, b"none\0".as_ptr() as *const i8) {
             ndx = XKB_MOD_NONE as xkb_mod_index_t;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);
@@ -5109,7 +4987,7 @@ unsafe extern "C" fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut M
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Illegal modifier map definition; Ignoring map for non-modifier \"%s\"\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_REAL_MODIFIER as ::core::ffi::c_int,
                     xkb_atom_text(ctx, (*def).modifier),
                 );
@@ -5144,7 +5022,7 @@ unsafe extern "C" fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut M
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Modmap entries may contain only key names or keysyms; Illegal definition for %s modifier ignored\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_MODMAP_ENTRY as ::core::ffi::c_int,
                     ModIndexText((*info).ctx, &raw mut (*info).mods, tmp.modifier),
                 );
@@ -5191,14 +5069,14 @@ unsafe extern "C" fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mu
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Unsupported symbols %s statement \"%s\"; Ignoring\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
                         if (*stmt).type_0 as ::core::ffi::c_uint
                             == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as ::core::ffi::c_uint
                         {
-                            b"compound\0".as_ptr() as *const ::core::ffi::c_char
+                            b"compound\0".as_ptr() as *const i8
                         } else {
-                            b"declaration\0".as_ptr() as *const ::core::ffi::c_char
+                            b"declaration\0".as_ptr() as *const i8
                         },
                         (*(stmt as *mut UnknownStatement)).name,
                     );
@@ -5212,7 +5090,7 @@ unsafe extern "C" fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mu
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Symbols files may not include other types; Ignoring %s\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
                         stmt_type_to_string((*stmt).type_0),
                     );
@@ -5227,8 +5105,7 @@ unsafe extern "C" fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mu
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Abandoning symbols file \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"[XKB-%03d] Abandoning symbols file \"%s\"\n\0".as_ptr() as *const i8,
                     XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
                     safe_map_name(file),
                 );
@@ -5320,9 +5197,8 @@ unsafe extern "C" fn FindAutomaticType(
         if width == 1 as xkb_level_index_t || width <= 0 as xkb_level_index_t {
             return xkb_atom_intern(
                 ctx,
-                b"ONE_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
-                    .wrapping_sub(1 as usize),
+                b"ONE_LEVEL\0".as_ptr() as *const i8,
+                (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
             );
         }
         sym0 = if (*(*groupi)
@@ -5391,9 +5267,8 @@ unsafe extern "C" fn FindAutomaticType(
             {
                 return xkb_atom_intern(
                     ctx,
-                    b"ALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
-                        .wrapping_sub(1 as usize),
+                    b"ALPHABETIC\0".as_ptr() as *const i8,
+                    (::core::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as ::core::ffi::c_int != 0
@@ -5401,16 +5276,14 @@ unsafe extern "C" fn FindAutomaticType(
             {
                 return xkb_atom_intern(
                     ctx,
-                    b"KEYPAD\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
-                        .wrapping_sub(1 as usize),
+                    b"KEYPAD\0".as_ptr() as *const i8,
+                    (::core::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
-                b"TWO_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
-                    .wrapping_sub(1 as usize),
+                b"TWO_LEVEL\0".as_ptr() as *const i8,
+                (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
             );
         }
         if width <= 4 as xkb_level_index_t {
@@ -5488,16 +5361,14 @@ unsafe extern "C" fn FindAutomaticType(
                 {
                     return xkb_atom_intern(
                         ctx,
-                        b"FOUR_LEVEL_ALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                        (::core::mem::size_of::<[::core::ffi::c_char; 22]>() as usize)
-                            .wrapping_sub(1 as usize),
+                        b"FOUR_LEVEL_ALPHABETIC\0".as_ptr() as *const i8,
+                        (::core::mem::size_of::<[i8; 22]>() as usize).wrapping_sub(1 as usize),
                     );
                 }
                 return xkb_atom_intern(
                     ctx,
-                    b"FOUR_LEVEL_SEMIALPHABETIC\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 26]>() as usize)
-                        .wrapping_sub(1 as usize),
+                    b"FOUR_LEVEL_SEMIALPHABETIC\0".as_ptr() as *const i8,
+                    (::core::mem::size_of::<[i8; 26]>() as usize).wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as ::core::ffi::c_int != 0
@@ -5505,16 +5376,14 @@ unsafe extern "C" fn FindAutomaticType(
             {
                 return xkb_atom_intern(
                     ctx,
-                    b"FOUR_LEVEL_KEYPAD\0".as_ptr() as *const ::core::ffi::c_char,
-                    (::core::mem::size_of::<[::core::ffi::c_char; 18]>() as usize)
-                        .wrapping_sub(1 as usize),
+                    b"FOUR_LEVEL_KEYPAD\0".as_ptr() as *const i8,
+                    (::core::mem::size_of::<[i8; 18]>() as usize).wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
-                b"FOUR_LEVEL\0".as_ptr() as *const ::core::ffi::c_char,
-                (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
-                    .wrapping_sub(1 as usize),
+                b"FOUR_LEVEL\0".as_ptr() as *const i8,
+                (::core::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
             );
         }
         return XKB_ATOM_NONE as xkb_atom_t;
@@ -5548,7 +5417,7 @@ unsafe extern "C" fn FindTypeForGroup(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Couldn't find an automatic type for key '%s' group %u with %u levels; Using the default type\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_CANNOT_INFER_KEY_TYPE as ::core::ffi::c_int,
                 KeyNameText((*keymap).ctx, (*keyi).name),
                 group.wrapping_add(1 as xkb_layout_index_t),
@@ -5569,7 +5438,7 @@ unsafe extern "C" fn FindTypeForGroup(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] The type \"%s\" for key '%s' group %u was not previously defined; Using the default type\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_WARNING_UNDEFINED_KEY_TYPE as ::core::ffi::c_int,
                     xkb_atom_text((*keymap).ctx, type_name),
                     KeyNameText((*keymap).ctx, (*keyi).name),
@@ -5603,7 +5472,7 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                 b"[XKB-%03d] Key %s not found in keycodes; Symbols ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
                 KeyInfoText(info, keyi),
             );
@@ -5702,7 +5571,7 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                             b"[XKB-%03d] Type \"%s\" has %u levels, but %s has %u levels; Ignoring extra symbols\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as ::core::ffi::c_int,
                             xkb_atom_text((*keymap).ctx, (*type_0).name),
                             (*type_0).num_levels,
@@ -5939,7 +5808,7 @@ unsafe extern "C" fn CopyModMapDefToKeymap(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                     b"[XKB-%03d] Key %s not found in keycodes; Modifier map entry for %s not updated\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
                     KeyNameText((*info).ctx, (*entry).u.keyName),
                     ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier),
@@ -5954,7 +5823,7 @@ unsafe extern "C" fn CopyModMapDefToKeymap(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                     b"[XKB-%03d] Key \"%s\" not found in symbol map; Modifier map entry for %s not updated\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as ::core::ffi::c_int,
                     KeysymText((*info).ctx, (*entry).u.keySym),
                     ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier),
@@ -6014,7 +5883,7 @@ unsafe extern "C" fn CopySymbolsToKeymap(
                             (*info).ctx,
                             XKB_LOG_LEVEL_INFO,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"No symbols defined for %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                            b"No symbols defined for %s\n\0".as_ptr() as *const i8,
                             KeyNameText((*info).ctx, (*key).name),
                         );
                     }
@@ -6046,7 +5915,7 @@ pub unsafe extern "C" fn CompileSymbols(
 ) -> bool {
     unsafe {
         let mut info: SymbolsInfo = SymbolsInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             explicit_group: 0,

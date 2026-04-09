@@ -65,7 +65,7 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
 // ============================================================================
 
 #[no_mangle]
-pub unsafe extern "C" fn utf8_sequence_length(s: *const ::core::ffi::c_char) -> u8 {
+pub unsafe extern "C" fn utf8_sequence_length(s: *const i8) -> u8 {
     if s.is_null() {
         return 0;
     }
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn utf8_sequence_length(s: *const ::core::ffi::c_char) -> 
 
 #[no_mangle]
 pub unsafe extern "C" fn utf8_next_code_point(
-    s: *const ::core::ffi::c_char,
+    s: *const i8,
     max_size: usize,
     size_out: *mut usize,
 ) -> u32 {

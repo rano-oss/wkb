@@ -81,27 +81,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -112,7 +112,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -138,25 +138,18 @@ pub mod stdio_h {
         pub static mut stdout: *mut FILE;
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(
-            __filename: *const ::core::ffi::c_char,
-            __modes: *const ::core::ffi::c_char,
-        ) -> *mut FILE;
+        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
         pub fn setvbuf(
             __stream: *mut FILE,
-            __buf: *mut ::core::ffi::c_char,
+            __buf: *mut i8,
             __modes: ::core::ffi::c_int,
             __n: usize,
         ) -> ::core::ffi::c_int;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn printf(__format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn printf(__format: *const i8, ...) -> ::core::ffi::c_int;
         pub fn vasprintf(
-            __ptr: *mut *mut ::core::ffi::c_char,
-            __f: *const ::core::ffi::c_char,
+            __ptr: *mut *mut i8,
+            __f: *const i8,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
         pub fn fread(
@@ -203,7 +196,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -215,7 +208,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -229,14 +222,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -258,7 +251,7 @@ pub mod darray_h {
     pub struct darray_string {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[inline]
     pub unsafe extern "C" fn darray_next_alloc(
@@ -276,12 +269,11 @@ pub mod darray_h {
             {
             } else {
                 __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"../src/darray.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr() as *const i8,
+                    b"../src/darray.h\0".as_ptr() as *const i8,
                     220 as ::core::ffi::c_uint,
                     b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
             };
             if alloc == 0 as darray_size_t {
@@ -300,11 +292,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -382,32 +374,32 @@ pub mod xkbcommon_h {
         pub type xkb_events;
         pub fn xkb_rmlvo_builder_new(
             context: *mut xkb_context,
-            rules: *const ::core::ffi::c_char,
-            model: *const ::core::ffi::c_char,
+            rules: *const i8,
+            model: *const i8,
             flags: xkb_rmlvo_builder_flags,
         ) -> *mut xkb_rmlvo_builder;
         pub fn xkb_rmlvo_builder_append_layout(
             rmlvo: *mut xkb_rmlvo_builder,
-            layout: *const ::core::ffi::c_char,
-            variant: *const ::core::ffi::c_char,
-            options: *const *const ::core::ffi::c_char,
+            layout: *const i8,
+            variant: *const i8,
+            options: *const *const i8,
             options_len: usize,
         ) -> bool;
         pub fn xkb_rmlvo_builder_append_option(
             rmlvo: *mut xkb_rmlvo_builder,
-            option: *const ::core::ffi::c_char,
+            option: *const i8,
         ) -> bool;
         pub fn xkb_rmlvo_builder_unref(rmlvo: *mut xkb_rmlvo_builder);
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
-            buffer: *mut ::core::ffi::c_char,
+            buffer: *mut i8,
             size: usize,
         ) -> ::core::ffi::c_int;
         pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
         pub fn xkb_context_unref(context: *mut xkb_context);
         pub fn xkb_context_include_path_append(
             context: *mut xkb_context,
-            path: *const ::core::ffi::c_char,
+            path: *const i8,
         ) -> ::core::ffi::c_int;
         pub fn xkb_keymap_new_from_rmlvo(
             rmlvo: *const xkb_rmlvo_builder,
@@ -428,13 +420,13 @@ pub mod xkbcommon_h {
         ) -> *mut xkb_keymap;
         pub fn xkb_keymap_new_from_string(
             context: *mut xkb_context,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
         ) -> *mut xkb_keymap;
         pub fn xkb_keymap_new_from_buffer(
             context: *mut xkb_context,
-            buffer: *const ::core::ffi::c_char,
+            buffer: *const i8,
             length: usize,
             format: xkb_keymap_format,
             flags: xkb_keymap_compile_flags,
@@ -444,7 +436,7 @@ pub mod xkbcommon_h {
             keymap: *mut xkb_keymap,
             format: xkb_keymap_format,
             flags: xkb_keymap_serialize_flags,
-        ) -> *mut ::core::ffi::c_char;
+        ) -> *mut i8;
         pub fn xkb_keymap_num_leds(keymap: *mut xkb_keymap) -> xkb_led_index_t;
         pub fn xkb_event_get_type(event: *const xkb_event) -> xkb_event_type;
         pub fn xkb_event_get_keycode(event: *const xkb_event) -> xkb_keycode_t;
@@ -512,10 +504,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -917,8 +909,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder {
-        pub rules: *mut ::core::ffi::c_char,
-        pub model: *mut ::core::ffi::c_char,
+        pub rules: *mut i8,
+        pub model: *mut i8,
         pub layouts: xkb_rmlvo_builder_layouts,
         pub options: xkb_rmlvo_builder_options,
         pub refcnt: ::core::ffi::c_int,
@@ -934,7 +926,7 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_option {
-        pub option: *mut ::core::ffi::c_char,
+        pub option: *mut i8,
         pub layout: xkb_layout_index_t,
     }
     #[derive(Copy, Clone)]
@@ -947,8 +939,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut ::core::ffi::c_char,
-        pub variant: *mut ::core::ffi::c_char,
+        pub layout: *mut i8,
+        pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -974,17 +966,17 @@ pub mod test_h {
         unsafe extern "C" fn(
             *mut xkb_context,
             xkb_keymap_format,
-            *const ::core::ffi::c_char,
+            *const i8,
             usize,
             *mut ::core::ffi::c_void,
         ) -> *mut xkb_keymap,
     >;
     pub type test_third_party_compile_buffer_t = Option<
         unsafe extern "C" fn(
-            *const ::core::ffi::c_char,
+            *const i8,
             usize,
             *mut ::core::ffi::c_void,
-            *mut *mut ::core::ffi::c_char,
+            *mut *mut i8,
             *mut usize,
         ) -> ::core::ffi::c_int,
     >;
@@ -1007,7 +999,7 @@ pub mod tools_common_h {
     use super::xkbcommon_h::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t, xkb_state};
     extern "C" {
         pub fn tools_print_keycode_state(
-            prefix: *const ::core::ffi::c_char,
+            prefix: *const i8,
             state: *mut xkb_state,
             compose_state: *mut xkb_compose_state,
             keycode: xkb_keycode_t,
@@ -1024,9 +1016,9 @@ pub mod stdlib_h {
         pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn unsetenv(__name: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-        pub fn mkdtemp(__template: *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn getenv(__name: *const i8) -> *mut i8;
+        pub fn unsetenv(__name: *const i8) -> ::core::ffi::c_int;
+        pub fn mkdtemp(__template: *mut i8) -> *mut i8;
     }
 }
 pub mod string_h {
@@ -1042,13 +1034,10 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
+        pub fn strdup(__s: *const i8) -> *mut i8;
+        pub fn strlen(__s: *const i8) -> usize;
+        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
 pub mod stat_h {
@@ -1056,31 +1045,27 @@ pub mod stat_h {
     use super::types_h::__mode_t;
     extern "C" {
         pub fn fstat(__fd: ::core::ffi::c_int, __buf: *mut stat) -> ::core::ffi::c_int;
-        pub fn mkdir(__path: *const ::core::ffi::c_char, __mode: __mode_t) -> ::core::ffi::c_int;
+        pub fn mkdir(__path: *const i8, __mode: __mode_t) -> ::core::ffi::c_int;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if !s1.is_null() && !s2.is_null() {
             } else {
                 __assert_fail(
-                    b"s1 && s2\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../src/utils.h\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"s1 && s2\0".as_ptr() as *const i8,
+                    b"../src/utils.h\0".as_ptr() as *const i8,
                     94 as ::core::ffi::c_uint,
-                    b"_Bool streq(const char *, const char *)\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"_Bool streq(const char *, const char *)\0".as_ptr() as *const i8,
                 );
             };
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null()
                 || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
@@ -1089,27 +1074,24 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe extern "C" fn vasprintf_safe(
-        mut fmt: *const ::core::ffi::c_char,
+        mut fmt: *const i8,
         mut args: ::core::ffi::VaList,
-    ) -> *mut ::core::ffi::c_char {
+    ) -> *mut i8 {
         unsafe {
-            let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
             let mut len: ::core::ffi::c_int = 0;
             len = vasprintf(&raw mut str, fmt, args);
             if len == -1 as ::core::ffi::c_int {
-                return ::core::ptr::null_mut::<::core::ffi::c_char>();
+                return ::core::ptr::null_mut::<i8>();
             }
             return str;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn asprintf_safe(
-        mut fmt: *const ::core::ffi::c_char,
-        mut c2rust_args: ...
-    ) -> *mut ::core::ffi::c_char {
+    pub unsafe extern "C" fn asprintf_safe(mut fmt: *const i8, mut c2rust_args: ...) -> *mut i8 {
         unsafe {
             let mut args: ::core::ffi::VaList;
-            let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
             args = c2rust_args.clone();
             str = vasprintf_safe(fmt, args);
             return str;
@@ -1124,16 +1106,13 @@ pub mod include_locale_h {
     pub const LC_ALL: ::core::ffi::c_int = __LC_ALL;
     use super::locale_h::__LC_ALL;
     extern "C" {
-        pub fn setlocale(
-            __category: ::core::ffi::c_int,
-            __locale: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn setlocale(__category: ::core::ffi::c_int, __locale: *const i8) -> *mut i8;
     }
 }
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint32_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
@@ -1187,10 +1166,10 @@ pub mod stdint_h {
 pub mod assert_h {
     extern "C" {
         pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
+            __assertion: *const i8,
+            __file: *const i8,
             __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
+            __function: *const i8,
         ) -> !;
     }
 }
@@ -1201,7 +1180,7 @@ pub mod errno_h {
 }
 pub mod utils_paths_h {
     extern "C" {
-        pub fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool;
+        pub fn is_absolute_path(path: *const i8) -> bool;
     }
 }
 pub mod rules_h {
@@ -1345,11 +1324,11 @@ pub unsafe extern "C" fn test_init() {
     unsafe {
         setvbuf(
             stdout,
-            ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            ::core::ptr::null_mut::<i8>(),
             _IONBF,
             BUFSIZ as usize,
         );
-        setlocale(LC_ALL, b"\0".as_ptr() as *const ::core::ffi::c_char);
+        setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
     }
 }
 #[no_mangle]
@@ -1357,8 +1336,7 @@ pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
     unsafe {
         fprintf(
             stderr,
-            b"  Layout: base: %d, latched: %d, locked: %d, effective: %u\n\0".as_ptr()
-                as *const ::core::ffi::c_char,
+            b"  Layout: base: %d, latched: %d, locked: %d, effective: %u\n\0".as_ptr() as *const i8,
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_DEPRESSED),
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LATCHED),
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LOCKED),
@@ -1367,7 +1345,7 @@ pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
         fprintf(
             stderr,
             b"  Modifiers: base: %#x, latched: %#x, locked: %#x, effective: %#x\n\0".as_ptr()
-                as *const ::core::ffi::c_char,
+                as *const i8,
             xkb_state_serialize_mods(state, XKB_STATE_MODS_DEPRESSED),
             xkb_state_serialize_mods(state, XKB_STATE_MODS_LATCHED),
             xkb_state_serialize_mods(state, XKB_STATE_MODS_LOCKED),
@@ -1383,11 +1361,7 @@ pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
             }
             led = led.wrapping_add(1);
         }
-        fprintf(
-            stderr,
-            b"  LEDs: 0x%x\n\0".as_ptr() as *const ::core::ffi::c_char,
-            leds,
-        );
+        fprintf(stderr, b"  LEDs: 0x%x\n\0".as_ptr() as *const i8, leds);
     }
 }
 unsafe extern "C" fn consume_events(
@@ -1435,56 +1409,55 @@ pub unsafe extern "C" fn test_key_seq_va(
         if sm.is_null() as ::core::ffi::c_int ^ events.is_null() as ::core::ffi::c_int == 0 {
         } else {
             __assert_fail(
-                b"!(!sm ^ !events)\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"!(!sm ^ !events)\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 137 as ::core::ffi::c_uint,
                 b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
-        fprintf(stderr, b"----\n\0".as_ptr() as *const ::core::ffi::c_char);
+        fprintf(stderr, b"----\n\0".as_ptr() as *const i8);
         let state: *mut xkb_state = xkb_state_new(keymap) as *mut xkb_state;
         if !state.is_null() {
         } else {
             __assert_fail(
-                b"state\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"state\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 142 as ::core::ffi::c_uint,
                 b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         let mut count: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-        let mut ksbuf: [::core::ffi::c_char; 31] = [0; 31];
+        let mut ksbuf: [i8; 31] = [0; 31];
         's_21: loop {
             let kc: xkb_keycode_t =
                 (ap.arg::<::core::ffi::c_int>() + EVDEV_OFFSET) as xkb_keycode_t;
             let op: ::core::ffi::c_int = ap.arg::<::core::ffi::c_int>();
-            let mut opstr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            let mut opstr: *const i8 = ::core::ptr::null::<i8>();
             match op {
                 0 => {
-                    opstr = b"DOWN\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"DOWN\0".as_ptr() as *const i8;
                 }
                 1 => {
-                    opstr = b"REPEAT\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"REPEAT\0".as_ptr() as *const i8;
                 }
                 2 => {
-                    opstr = b"UP\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"UP\0".as_ptr() as *const i8;
                 }
                 3 => {
-                    opstr = b"BOTH\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"BOTH\0".as_ptr() as *const i8;
                 }
                 4 => {
-                    opstr = b"NEXT\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"NEXT\0".as_ptr() as *const i8;
                 }
                 5 => {
-                    opstr = b"FINISH\0".as_ptr() as *const ::core::ffi::c_char;
+                    opstr = b"FINISH\0".as_ptr() as *const i8;
                 }
                 _ => {
                     fprintf(
                         stderr,
-                        b"ERROR: Unsupported operation: %d\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"ERROR: Unsupported operation: %d\n\0".as_ptr() as *const i8,
                         op,
                     );
                     c2rust_current_block = 10334003491957544446;
@@ -1512,11 +1485,11 @@ pub unsafe extern "C" fn test_key_seq_va(
                     } else {
                         __assert_fail(
                             b"!xkb_machine_process_key( sm, kc, (op == REPEAT ? XKB_KEY_REPEATED : XKB_KEY_DOWN), events )\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
+                            b"../test/common.c\0".as_ptr() as *const i8,
                             174 as ::core::ffi::c_uint,
                             b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                         );
                     };
                     if consume_events(sm, events, state, UNTIL_KEY_EVENT, &raw mut kc_new)
@@ -1526,11 +1499,11 @@ pub unsafe extern "C" fn test_key_seq_va(
                     } else {
                         __assert_fail(
                             b"consume_events(sm, events, state, UNTIL_KEY_EVENT, &kc_new)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
+                            b"../test/common.c\0".as_ptr() as *const i8,
                             175 as ::core::ffi::c_uint,
                             b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                         );
                     };
                 }
@@ -1543,12 +1516,12 @@ pub unsafe extern "C" fn test_key_seq_va(
                         } else {
                             __assert_fail(
                                 b"consume_events(sm, events, state, ALL_EVENTS, &kc_new)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 b"../test/common.c\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
+                                    as *const i8,
                                 180 as ::core::ffi::c_uint,
                                 b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                             );
                         };
                     }
@@ -1558,11 +1531,11 @@ pub unsafe extern "C" fn test_key_seq_va(
                     } else {
                         __assert_fail(
                             b"xkb_machine_process_key(sm, kc, XKB_KEY_UP, events) == 0\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
+                            b"../test/common.c\0".as_ptr() as *const i8,
                             183 as ::core::ffi::c_uint,
                             b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                         );
                     };
                     if consume_events(sm, events, state, UNTIL_KEY_EVENT, &raw mut kc_new)
@@ -1572,11 +1545,11 @@ pub unsafe extern "C" fn test_key_seq_va(
                     } else {
                         __assert_fail(
                             b"consume_events(sm, events, state, UNTIL_KEY_EVENT, &kc_new)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
-                            b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
+                            b"../test/common.c\0".as_ptr() as *const i8,
                             184 as ::core::ffi::c_uint,
                             b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                         );
                     };
                 }
@@ -1592,11 +1565,11 @@ pub unsafe extern "C" fn test_key_seq_va(
                 } else {
                     __assert_fail(
                         b"consume_events(sm, events, state, ALL_EVENTS, &kc_new)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
+                        b"../test/common.c\0".as_ptr() as *const i8,
                         193 as ::core::ffi::c_uint,
                         b"int test_key_seq_va(struct xkb_keymap *, struct xkb_machine *, struct xkb_events *, struct __va_list_tag *)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                     );
                 };
             } else {
@@ -1626,7 +1599,7 @@ pub unsafe extern "C" fn test_key_seq_va(
                 XKB_KEY_UP as ::core::ffi::c_int
             }) as xkb_key_direction;
             tools_print_keycode_state(
-                b"\0".as_ptr() as *const ::core::ffi::c_char,
+                b"\0".as_ptr() as *const i8,
                 state,
                 ::core::ptr::null_mut::<xkb_compose_state>(),
                 kc,
@@ -1638,8 +1611,7 @@ pub unsafe extern "C" fn test_key_seq_va(
             count = count.wrapping_add(1);
             fprintf(
                 stderr,
-                b"#%02u op %-6s got %d syms for keycode %3u\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"#%02u op %-6s got %d syms for keycode %3u\0".as_ptr() as *const i8,
                 count,
                 opstr,
                 nsyms,
@@ -1648,66 +1620,65 @@ pub unsafe extern "C" fn test_key_seq_va(
             if kc_new != kc {
                 fprintf(
                     stderr,
-                    b" (redirected to %3u)\0".as_ptr() as *const ::core::ffi::c_char,
+                    b" (redirected to %3u)\0".as_ptr() as *const i8,
                     kc_new,
                 );
             }
-            fprintf(stderr, b": [\0".as_ptr() as *const ::core::ffi::c_char);
+            fprintf(stderr, b": [\0".as_ptr() as *const i8);
             let mut keysym: xkb_keysym_t = 0;
             let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
             while i < nsyms {
                 keysym = ap.arg::<::core::ffi::c_int>() as xkb_keysym_t;
                 xkb_keysym_get_name(
                     *syms.offset(i as isize),
-                    &raw mut ksbuf as *mut ::core::ffi::c_char,
-                    ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                    &raw mut ksbuf as *mut i8,
+                    ::core::mem::size_of::<[i8; 31]>() as usize,
                 );
                 fprintf(
                     stderr,
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"%s%s\0".as_ptr() as *const i8,
                     if i != 0 as ::core::ffi::c_int {
-                        b", \0".as_ptr() as *const ::core::ffi::c_char
+                        b", \0".as_ptr() as *const i8
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
-                    &raw mut ksbuf as *mut ::core::ffi::c_char,
+                    &raw mut ksbuf as *mut i8,
                 );
                 if keysym == FINISH as ::core::ffi::c_int as xkb_keysym_t
                     || keysym == NEXT as ::core::ffi::c_int as xkb_keysym_t
                 {
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                        &raw mut ksbuf as *mut i8,
+                        ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
-                        b"\nERROR: Did not expect keysym: %s.\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        b"\nERROR: Did not expect keysym: %s.\n\0".as_ptr() as *const i8,
+                        &raw mut ksbuf as *mut i8,
                     );
                     c2rust_current_block = 10334003491957544446;
                     break 's_21;
                 } else if keysym != *syms.offset(i as isize) {
                     xkb_keysym_get_name(
                         keysym,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                        &raw mut ksbuf as *mut i8,
+                        ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
-                        b"\nERROR: Expected keysym: %s. \0".as_ptr() as *const ::core::ffi::c_char,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        b"\nERROR: Expected keysym: %s. \0".as_ptr() as *const i8,
+                        &raw mut ksbuf as *mut i8,
                     );
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                        &raw mut ksbuf as *mut i8,
+                        ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
-                        b" Got keysym: %s.\n\0".as_ptr() as *const ::core::ffi::c_char,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        b" Got keysym: %s.\n\0".as_ptr() as *const i8,
+                        &raw mut ksbuf as *mut i8,
                     );
                     c2rust_current_block = 10334003491957544446;
                     break 's_21;
@@ -1720,20 +1691,19 @@ pub unsafe extern "C" fn test_key_seq_va(
                 if keysym != XKB_KEY_NoSymbol as xkb_keysym_t {
                     xkb_keysym_get_name(
                         keysym,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
-                        ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                        &raw mut ksbuf as *mut i8,
+                        ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
                     fprintf(
                         stderr,
-                        b"\nERROR: Expected %s, but got no keysyms.\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
-                        &raw mut ksbuf as *mut ::core::ffi::c_char,
+                        b"\nERROR: Expected %s, but got no keysyms.\n\0".as_ptr() as *const i8,
+                        &raw mut ksbuf as *mut i8,
                     );
                     c2rust_current_block = 10334003491957544446;
                     break;
                 }
             }
-            fprintf(stderr, b"]\n\0".as_ptr() as *const ::core::ffi::c_char);
+            fprintf(stderr, b"]\n\0".as_ptr() as *const i8);
             keysym = ap.arg::<::core::ffi::c_int>() as xkb_keysym_t;
             if keysym == NEXT as ::core::ffi::c_int as xkb_keysym_t {
                 continue;
@@ -1744,24 +1714,20 @@ pub unsafe extern "C" fn test_key_seq_va(
             }
             xkb_keysym_get_name(
                 keysym,
-                &raw mut ksbuf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize,
+                &raw mut ksbuf as *mut i8,
+                ::core::mem::size_of::<[i8; 31]>() as usize,
             );
             fprintf(
                 stderr,
-                b"\nERROR: Expected keysym: %s. Didn't get it.\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                &raw mut ksbuf as *mut ::core::ffi::c_char,
+                b"\nERROR: Expected keysym: %s. Didn't get it.\n\0".as_ptr() as *const i8,
+                &raw mut ksbuf as *mut i8,
             );
             c2rust_current_block = 10334003491957544446;
             break;
         }
         match c2rust_current_block {
             10334003491957544446 => {
-                fprintf(
-                    stderr,
-                    b"Current state:\n\0".as_ptr() as *const ::core::ffi::c_char,
-                );
+                fprintf(stderr, b"Current state:\n\0".as_ptr() as *const i8);
                 print_detailed_state(state);
                 xkb_state_unref(state);
                 return 0 as ::core::ffi::c_int;
@@ -1807,128 +1773,108 @@ pub unsafe extern "C" fn test_key_seq2(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn test_makedir(
-    mut parent: *const ::core::ffi::c_char,
-    mut path: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C" fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i8 {
     unsafe {
-        let mut dirname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut dirname: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut err: ::core::ffi::c_int = 0;
-        dirname = asprintf_safe(
-            b"%s/%s\0".as_ptr() as *const ::core::ffi::c_char,
-            parent,
-            path,
-        );
+        dirname = asprintf_safe(b"%s/%s\0".as_ptr() as *const i8, parent, path);
         if !dirname.is_null() {
         } else {
             __assert_fail(
-                b"dirname\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"dirname\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 311 as ::core::ffi::c_uint,
-                b"char *test_makedir(const char *, const char *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"char *test_makedir(const char *, const char *)\0".as_ptr() as *const i8,
             );
         };
         err = mkdir(dirname, 0o777 as __mode_t);
         if err == 0 as ::core::ffi::c_int {
         } else {
             __assert_fail(
-                b"err == 0\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"err == 0\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 317 as ::core::ffi::c_uint,
-                b"char *test_makedir(const char *, const char *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"char *test_makedir(const char *, const char *)\0".as_ptr() as *const i8,
             );
         };
         return dirname;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn test_maketempdir(
-    mut template: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C" fn test_maketempdir(mut template: *const i8) -> *mut i8 {
     unsafe {
-        let mut tmpdir: *mut ::core::ffi::c_char = asprintf_safe(
-            b"/tmp/%s\0".as_ptr() as *const ::core::ffi::c_char,
-            template,
-        );
+        let mut tmpdir: *mut i8 = asprintf_safe(b"/tmp/%s\0".as_ptr() as *const i8, template);
         if !tmpdir.is_null() {
         } else {
             __assert_fail(
-                b"tmpdir != NULL\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"tmpdir != NULL\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 343 as ::core::ffi::c_uint,
-                b"char *test_maketempdir(const char *)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"char *test_maketempdir(const char *)\0".as_ptr() as *const i8,
             );
         };
-        let mut tmp: *mut ::core::ffi::c_char = mkdtemp(tmpdir);
+        let mut tmp: *mut i8 = mkdtemp(tmpdir);
         if tmp == tmpdir {
         } else {
             __assert_fail(
-                b"tmp == tmpdir\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"tmp == tmpdir\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 345 as ::core::ffi::c_uint,
-                b"char *test_maketempdir(const char *)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"char *test_maketempdir(const char *)\0".as_ptr() as *const i8,
             );
         };
         return tmpdir;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn test_get_path(
-    mut path_rel: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C" fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
-        let mut path: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut srcdir: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        srcdir = getenv(b"top_srcdir\0".as_ptr() as *const ::core::ffi::c_char);
+        let mut path: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut srcdir: *const i8 = ::core::ptr::null::<i8>();
+        srcdir = getenv(b"top_srcdir\0".as_ptr() as *const i8);
         if srcdir.is_null() {
-            srcdir = b".\0".as_ptr() as *const ::core::ffi::c_char;
+            srcdir = b".\0".as_ptr() as *const i8;
         }
         if is_absolute_path(path_rel) {
             return strdup(path_rel);
         }
         path = asprintf_safe(
-            b"%s/test/data%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+            b"%s/test/data%s%s\0".as_ptr() as *const i8,
             srcdir,
             if *path_rel.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 0 {
-                b"/\0".as_ptr() as *const ::core::ffi::c_char
+                b"/\0".as_ptr() as *const i8
             } else {
-                b"\0".as_ptr() as *const ::core::ffi::c_char
+                b"\0".as_ptr() as *const i8
             },
             path_rel,
         );
         if path.is_null() {
             fprintf(
                 stderr,
-                b"Failed to allocate path for %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Failed to allocate path for %s\n\0".as_ptr() as *const i8,
                 path_rel,
             );
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
         return path;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn read_file(
-    mut path: *const ::core::ffi::c_char,
-    mut file: *mut FILE,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C" fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
     unsafe {
         if file.is_null() {
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
         *__errno_location() = 0 as ::core::ffi::c_int;
         let fd: ::core::ffi::c_int = fileno(file) as ::core::ffi::c_int;
         if fd < 0 as ::core::ffi::c_int {
             fprintf(
                 stderr,
-                b"Error getting file descriptor for %s: %s\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Error getting file descriptor for %s: %s\n\0".as_ptr() as *const i8,
                 path,
                 strerror(*__errno_location()),
             );
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
         *__errno_location() = 0 as ::core::ffi::c_int;
         let mut info: stat = stat {
@@ -1960,67 +1906,62 @@ pub unsafe extern "C" fn read_file(
         if fstat(fd, &raw mut info) != 0 as ::core::ffi::c_int {
             fprintf(
                 stderr,
-                b"Error getting file stats for %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Error getting file stats for %s: %s\n\0".as_ptr() as *const i8,
                 path,
                 strerror(*__errno_location()),
             );
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
         let size: usize = info.st_size as usize;
         if size > MAX_FILE_SIZE as ::core::ffi::c_int as usize {
             fprintf(
                 stderr,
-                b"Error: file %s exceeds maximum size\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Error: file %s exceeds maximum size\n\0".as_ptr() as *const i8,
                 path,
             );
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
-        let mut ret: *mut ::core::ffi::c_char =
-            malloc(size.wrapping_add(1 as usize)) as *mut ::core::ffi::c_char;
+        let mut ret: *mut i8 = malloc(size.wrapping_add(1 as usize)) as *mut i8;
         if ret.is_null() {
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
-        *ret.offset(size as isize) = '\0' as i32 as ::core::ffi::c_char;
+        *ret.offset(size as isize) = '\0' as i32 as i8;
         *__errno_location() = 0 as ::core::ffi::c_int;
         let count: usize = fread(
             ret as *mut ::core::ffi::c_void,
-            ::core::mem::size_of::<::core::ffi::c_char>() as usize,
+            ::core::mem::size_of::<i8>() as usize,
             size,
             file,
         ) as usize;
         if count != size {
             if feof(file) == 0 {
                 printf(
-                    b"Error reading file %s: unexpected end of file\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Error reading file %s: unexpected end of file\n\0".as_ptr() as *const i8,
                     path,
                 );
             } else if ferror(file) != 0 {
                 fprintf(
                     stderr,
-                    b"Error reading file %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"Error reading file %s: %s\n\0".as_ptr() as *const i8,
                     path,
                     strerror(*__errno_location()),
                 );
             }
             free(ret as *mut ::core::ffi::c_void);
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
         return ret;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn test_read_file(
-    mut path_rel: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C" fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
-        let mut path: *mut ::core::ffi::c_char = test_get_path(path_rel);
+        let mut path: *mut i8 = test_get_path(path_rel);
         if path.is_null() {
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+            return ::core::ptr::null_mut::<i8>();
         }
-        let mut file: *mut FILE =
-            fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
-        let mut ret: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut file: *mut FILE = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
+        let mut ret: *mut i8 = ::core::ptr::null_mut::<i8>();
         if !file.is_null() {
             ret = read_file(path, file);
         }
@@ -2039,11 +1980,11 @@ pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) ->
             & CONTEXT_ALLOW_ENVIRONMENT_NAMES as ::core::ffi::c_int as ::core::ffi::c_uint
             != 0
         {
-            unsetenv(b"XKB_DEFAULT_RULES\0".as_ptr() as *const ::core::ffi::c_char);
-            unsetenv(b"XKB_DEFAULT_MODEL\0".as_ptr() as *const ::core::ffi::c_char);
-            unsetenv(b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const ::core::ffi::c_char);
-            unsetenv(b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const ::core::ffi::c_char);
-            unsetenv(b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const ::core::ffi::c_char);
+            unsetenv(b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
+            unsetenv(b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
+            unsetenv(b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
+            unsetenv(b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
+            unsetenv(b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
         } else {
             ctx_flags = (ctx_flags as ::core::ffi::c_uint
                 | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as ::core::ffi::c_int as ::core::ffi::c_uint)
@@ -2053,8 +1994,7 @@ pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) ->
         if ctx.is_null() {
             return ::core::ptr::null_mut::<xkb_context>();
         }
-        let path: *mut ::core::ffi::c_char =
-            test_get_path(b"\0".as_ptr() as *const ::core::ffi::c_char) as *mut ::core::ffi::c_char;
+        let path: *mut i8 = test_get_path(b"\0".as_ptr() as *const i8) as *mut i8;
         if path.is_null() {
             xkb_context_unref(ctx);
             return ::core::ptr::null_mut::<xkb_context>();
@@ -2068,21 +2008,21 @@ pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) ->
 pub unsafe extern "C" fn test_compile_file(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
-    mut path_rel: *const ::core::ffi::c_char,
+    mut path_rel: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let mut path: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut path: *mut i8 = ::core::ptr::null_mut::<i8>();
         path = test_get_path(path_rel);
         if path.is_null() {
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
-        file = fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+        file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         if file.is_null() {
             fprintf(
                 stderr,
-                b"Failed to open path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Failed to open path: %s\n\0".as_ptr() as *const i8,
                 path,
             );
             free(path as *mut ::core::ffi::c_void);
@@ -2091,11 +2031,11 @@ pub unsafe extern "C" fn test_compile_file(
         if !file.is_null() {
         } else {
             __assert_fail(
-                b"file != NULL\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"file != NULL\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 496 as ::core::ffi::c_uint,
                 b"struct xkb_keymap *test_compile_file(struct xkb_context *, enum xkb_keymap_format, const char *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         keymap = xkb_keymap_new_from_file(context, file, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
@@ -2103,7 +2043,7 @@ pub unsafe extern "C" fn test_compile_file(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"Failed to compile path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Failed to compile path: %s\n\0".as_ptr() as *const i8,
                 path,
             );
             free(path as *mut ::core::ffi::c_void);
@@ -2111,7 +2051,7 @@ pub unsafe extern "C" fn test_compile_file(
         }
         fprintf(
             stderr,
-            b"Successfully compiled path: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+            b"Successfully compiled path: %s\n\0".as_ptr() as *const i8,
             path,
         );
         free(path as *mut ::core::ffi::c_void);
@@ -2122,7 +2062,7 @@ pub unsafe extern "C" fn test_compile_file(
 pub unsafe extern "C" fn test_compile_string(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
@@ -2131,7 +2071,7 @@ pub unsafe extern "C" fn test_compile_string(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"Failed to compile string\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Failed to compile string\n\0".as_ptr() as *const i8,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -2142,7 +2082,7 @@ pub unsafe extern "C" fn test_compile_string(
 pub unsafe extern "C" fn test_compile_buffer(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
-    mut buf: *const ::core::ffi::c_char,
+    mut buf: *const i8,
     mut len: usize,
 ) -> *mut xkb_keymap {
     unsafe {
@@ -2154,7 +2094,7 @@ pub unsafe extern "C" fn test_compile_buffer2(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut flags: xkb_keymap_compile_flags,
-    mut buf: *const ::core::ffi::c_char,
+    mut buf: *const i8,
     mut len: usize,
 ) -> *mut xkb_keymap {
     unsafe {
@@ -2163,8 +2103,7 @@ pub unsafe extern "C" fn test_compile_buffer2(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"Failed to compile keymap from memory buffer\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Failed to compile keymap from memory buffer\n\0".as_ptr() as *const i8,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -2175,37 +2114,37 @@ pub unsafe extern "C" fn test_compile_buffer2(
 pub unsafe extern "C" fn test_compile_rules(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
-    mut rules: *const ::core::ffi::c_char,
-    mut model: *const ::core::ffi::c_char,
-    mut layout: *const ::core::ffi::c_char,
-    mut variant: *const ::core::ffi::c_char,
-    mut options: *const ::core::ffi::c_char,
+    mut rules: *const i8,
+    mut model: *const i8,
+    mut layout: *const i8,
+    mut variant: *const i8,
+    mut options: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: if isempty(rules) as ::core::ffi::c_int != 0 {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
                 rules
             },
             model: if isempty(model) as ::core::ffi::c_int != 0 {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
                 model
             },
             layout: if isempty(layout) as ::core::ffi::c_int != 0 {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
                 layout
             },
             variant: if isempty(variant) as ::core::ffi::c_int != 0 {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
                 variant
             },
             options: if isempty(options) as ::core::ffi::c_int != 0 {
-                ::core::ptr::null::<::core::ffi::c_char>()
+                ::core::ptr::null::<i8>()
             } else {
                 options
             },
@@ -2233,8 +2172,7 @@ pub unsafe extern "C" fn test_compile_rules(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"Failed to compile RMLVO: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Failed to compile RMLVO: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr() as *const i8,
                 rules,
                 model,
                 layout,
@@ -2261,12 +2199,12 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
         if rmlvo.is_null() {
             fprintf(
                 stderr,
-                b"ERROR: xkb_rmlvo_builder_new() failed\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"ERROR: xkb_rmlvo_builder_new() failed\n\0".as_ptr() as *const i8,
             );
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
         }
-        let mut buf: [::core::ffi::c_char; 1024] = [
-            0 as ::core::ffi::c_int as ::core::ffi::c_char,
+        let mut buf: [i8; 1024] = [
+            0 as ::core::ffi::c_int as i8,
             0,
             0,
             0,
@@ -3297,13 +3235,13 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
             item: ::core::ptr::null_mut::<darray_string>(),
         };
         if !isempty((*names).options) {
-            let mut o: *const ::core::ffi::c_char = (*names).options;
+            let mut o: *const i8 = (*names).options;
             loop {
                 if !(*o as ::core::ffi::c_int != '\0' as i32) {
                     c2rust_current_block = 11777552016271000781;
                     break;
                 }
-                let mut option: *const ::core::ffi::c_char = o;
+                let mut option: *const i8 = o;
                 while *o as ::core::ffi::c_int != '\0' as i32
                     && *o as ::core::ffi::c_int != ',' as i32
                     && *o as ::core::ffi::c_int != OPTIONS_GROUP_SPECIFIER_PREFIX
@@ -3311,16 +3249,16 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                     o = o.offset(1);
                 }
                 let len: usize = o.offset_from(option) as ::core::ffi::c_long as usize;
-                if len >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize {
+                if len >= ::core::mem::size_of::<[i8; 1024]>() as usize {
                     c2rust_current_block = 4427821232739340156;
                     break;
                 }
                 memcpy(
-                    &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
+                    &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
                     option as *const ::core::ffi::c_void,
                     len,
                 );
-                buf[len as usize] = '\0' as i32 as ::core::ffi::c_char;
+                buf[len as usize] = '\0' as i32 as i8;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                 if *o as ::core::ffi::c_int == OPTIONS_GROUP_SPECIFIER_PREFIX {
                     o = o.offset(1);
@@ -3335,7 +3273,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                     } else {
                         layout = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                     }
-                    let layout_index_end: *const ::core::ffi::c_char = o;
+                    let layout_index_end: *const i8 = o;
                     while *o as ::core::ffi::c_int != '\0' as i32
                         && *o as ::core::ffi::c_int != ',' as i32
                     {
@@ -3346,8 +3284,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                     }
                 }
                 if layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                    let mut opt: *mut ::core::ffi::c_char =
-                        strdup(&raw mut buf as *mut ::core::ffi::c_char);
+                    let mut opt: *mut i8 = strdup(&raw mut buf as *mut i8);
                     if opt.is_null() {
                         c2rust_current_block = 4427821232739340156;
                         break;
@@ -3391,17 +3328,15 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         *c2rust_fresh1 = darray_next_alloc(
                             (*loptions.item.offset(layout as isize)).alloc,
                             __need_0,
-                            ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize,
+                            ::core::mem::size_of::<*mut i8>() as usize,
                         );
                         let ref mut c2rust_fresh2 = (*loptions.item.offset(layout as isize)).item;
                         *c2rust_fresh2 = realloc(
                             (*loptions.item.offset(layout as isize)).item
                                 as *mut ::core::ffi::c_void,
                             (*c2rust_fresh1 as usize)
-                                .wrapping_mul(
-                                    ::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize
-                                ),
-                        ) as *mut *mut ::core::ffi::c_char;
+                                .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
+                        ) as *mut *mut i8;
                     }
                     let ref mut c2rust_fresh3 =
                         *(*loptions.item.offset(layout as isize)).item.offset(
@@ -3411,10 +3346,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                                 as isize,
                         );
                     *c2rust_fresh3 = opt;
-                } else if !xkb_rmlvo_builder_append_option(
-                    rmlvo,
-                    &raw mut buf as *mut ::core::ffi::c_char,
-                ) {
+                } else if !xkb_rmlvo_builder_append_option(rmlvo, &raw mut buf as *mut i8) {
                     c2rust_current_block = 4427821232739340156;
                     break;
                 }
@@ -3428,10 +3360,10 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
         match c2rust_current_block {
             11777552016271000781 => {
                 if !isempty((*names).layout) {
-                    let mut l: *const ::core::ffi::c_char = (*names).layout;
-                    let mut v: *const ::core::ffi::c_char = (*names).variant;
+                    let mut l: *const i8 = (*names).layout;
+                    let mut v: *const i8 = (*names).variant;
                     if (*names).variant.is_null() {
-                        v = b"\0".as_ptr() as *const ::core::ffi::c_char;
+                        v = b"\0".as_ptr() as *const i8;
                     }
                     let mut layout_count: xkb_layout_index_t = 0 as xkb_layout_index_t;
                     loop {
@@ -3439,12 +3371,10 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                             c2rust_current_block = 14498840325876589332;
                             break;
                         }
-                        let mut layout_0: *const ::core::ffi::c_char = l;
-                        let mut variant: *const ::core::ffi::c_char = v;
-                        let mut start: *mut ::core::ffi::c_char =
-                            &raw mut buf as *mut ::core::ffi::c_char;
-                        let mut buf_size: usize =
-                            ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize;
+                        let mut layout_0: *const i8 = l;
+                        let mut variant: *const i8 = v;
+                        let mut start: *mut i8 = &raw mut buf as *mut i8;
+                        let mut buf_size: usize = ::core::mem::size_of::<[i8; 1024]>() as usize;
                         while *l as ::core::ffi::c_int != '\0' as i32
                             && *l as ::core::ffi::c_int != ',' as i32
                         {
@@ -3466,7 +3396,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                             layout_0 as *const ::core::ffi::c_void,
                             len_0,
                         );
-                        *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
+                        *start.offset(len_0 as isize) = '\0' as i32 as i8;
                         start = start.offset(len_0 as isize);
                         buf_size = buf_size.wrapping_sub(len_0.wrapping_add(1 as usize));
                         len_0 = v.offset_from(variant) as ::core::ffi::c_long as usize;
@@ -3480,9 +3410,8 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                             variant as *const ::core::ffi::c_void,
                             len_0,
                         );
-                        *start.offset(len_0 as isize) = '\0' as i32 as ::core::ffi::c_char;
-                        let mut opts: *mut *mut ::core::ffi::c_char =
-                            ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                        *start.offset(len_0 as isize) = '\0' as i32 as i8;
+                        let mut opts: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
                         let mut opts_count: usize = 0 as usize;
                         if layout_count < loptions.size as xkb_layout_index_t {
                             opts = (*loptions.item.offset(layout_count as isize)).item;
@@ -3491,9 +3420,9 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
                         }
                         if !xkb_rmlvo_builder_append_layout(
                             rmlvo,
-                            &raw mut buf as *mut ::core::ffi::c_char,
+                            &raw mut buf as *mut i8,
                             start,
-                            opts as *mut *const ::core::ffi::c_char,
+                            opts as *mut *const i8,
                             opts_count,
                         ) {
                             c2rust_current_block = 4427821232739340156;
@@ -3517,8 +3446,8 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
             4427821232739340156 => {
                 fprintf(
                     stderr,
-                    b"ERROR: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"xkb_rules_names_to_rmlvo_builder\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"ERROR: %s\n\0".as_ptr() as *const i8,
+                    b"xkb_rules_names_to_rmlvo_builder\0".as_ptr() as *const i8,
                 );
                 xkb_rmlvo_builder_unref(rmlvo);
                 rmlvo = ::core::ptr::null_mut::<xkb_rmlvo_builder>();
@@ -3529,21 +3458,16 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
         if !loptions.item.is_null() {
             opts_0 = loptions.item.offset(0 as ::core::ffi::c_int as isize) as *mut darray_string;
             while opts_0 < loptions.item.offset(loptions.size as isize) as *mut darray_string {
-                let mut opt_0: *mut *mut ::core::ffi::c_char =
-                    ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                let mut opt_0: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
                 if !(*opts_0).item.is_null() {
-                    opt_0 = (*opts_0).item.offset(0 as ::core::ffi::c_int as isize)
-                        as *mut *mut ::core::ffi::c_char;
-                    while opt_0
-                        < (*opts_0).item.offset((*opts_0).size as isize)
-                            as *mut *mut ::core::ffi::c_char
-                    {
+                    opt_0 = (*opts_0).item.offset(0 as ::core::ffi::c_int as isize) as *mut *mut i8;
+                    while opt_0 < (*opts_0).item.offset((*opts_0).size as isize) as *mut *mut i8 {
                         free(*opt_0 as *mut ::core::ffi::c_void);
                         opt_0 = opt_0.offset(1);
                     }
                 }
                 free((*opts_0).item as *mut ::core::ffi::c_void);
-                (*opts_0).item = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+                (*opts_0).item = ::core::ptr::null_mut::<*mut i8>();
                 (*opts_0).size = 0 as darray_size_t;
                 (*opts_0).alloc = 0 as darray_size_t;
                 opts_0 = opts_0.offset(1);
@@ -3560,11 +3484,11 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
 pub unsafe extern "C" fn test_compile_rmlvo(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
-    mut rules: *const ::core::ffi::c_char,
-    mut model: *const ::core::ffi::c_char,
-    mut layout: *const ::core::ffi::c_char,
-    mut variant: *const ::core::ffi::c_char,
-    mut options: *const ::core::ffi::c_char,
+    mut rules: *const i8,
+    mut model: *const i8,
+    mut layout: *const i8,
+    mut variant: *const i8,
+    mut options: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
@@ -3581,7 +3505,7 @@ pub unsafe extern "C" fn test_compile_rmlvo(
             fprintf(
                 stderr,
                 b"Failed to create RMLVO builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 rules,
                 model,
                 layout,
@@ -3596,22 +3520,22 @@ pub unsafe extern "C" fn test_compile_rmlvo(
         } else {
             __assert_fail(
                 b"!xkb_keymap_new_from_rmlvo(rmlvo, format, -1)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 752 as ::core::ffi::c_uint,
                 b"struct xkb_keymap *test_compile_rmlvo(struct xkb_context *, enum xkb_keymap_format, const char *, const char *, const char *, const char *, const char *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         if xkb_keymap_new_from_rmlvo(rmlvo, format, 65535 as xkb_keymap_compile_flags).is_null() {
         } else {
             __assert_fail(
                 b"!xkb_keymap_new_from_rmlvo(rmlvo, format, 0xffff)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 753 as ::core::ffi::c_uint,
                 b"struct xkb_keymap *test_compile_rmlvo(struct xkb_context *, enum xkb_keymap_format, const char *, const char *, const char *, const char *, const char *)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         keymap = xkb_keymap_new_from_rmlvo(rmlvo, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
@@ -3620,7 +3544,7 @@ pub unsafe extern "C" fn test_compile_rmlvo(
             fprintf(
                 stderr,
                 b"Failed to compile RMLVO from builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 rules,
                 model,
                 layout,
@@ -3638,10 +3562,10 @@ pub unsafe extern "C" fn test_compile_output(
     mut output_format: xkb_keymap_format,
     mut compile_buffer: test_compile_buffer_t,
     mut compile_buffer_private: *mut ::core::ffi::c_void,
-    mut test_title: *const ::core::ffi::c_char,
-    mut keymap_str: *const ::core::ffi::c_char,
+    mut test_title: *const i8,
+    mut keymap_str: *const i8,
     mut keymap_len: usize,
-    mut rel_path: *const ::core::ffi::c_char,
+    mut rel_path: *const i8,
     mut update_output_files: bool,
 ) -> bool {
     unsafe {
@@ -3670,20 +3594,16 @@ pub unsafe extern "C" fn test_compile_output2(
     mut serialize_flags: xkb_keymap_serialize_flags,
     mut compile_buffer: test_compile_buffer_t,
     mut compile_buffer_private: *mut ::core::ffi::c_void,
-    mut test_title: *const ::core::ffi::c_char,
-    mut keymap_str: *const ::core::ffi::c_char,
+    mut test_title: *const i8,
+    mut keymap_str: *const i8,
     mut keymap_len: usize,
-    mut rel_path: *const ::core::ffi::c_char,
+    mut rel_path: *const i8,
     mut update_output_files: bool,
 ) -> bool {
     unsafe {
         let mut success: ::core::ffi::c_int = true_0;
         if !test_title.is_null() {
-            fprintf(
-                stderr,
-                b"*** %s ***\n\0".as_ptr() as *const ::core::ffi::c_char,
-                test_title,
-            );
+            fprintf(stderr, b"*** %s ***\n\0".as_ptr() as *const i8, test_title);
         }
         let mut keymap: *mut xkb_keymap = compile_buffer.expect("non-null function pointer")(
             ctx,
@@ -3694,23 +3614,22 @@ pub unsafe extern "C" fn test_compile_output2(
         );
         if rel_path.is_null() {
             if !keymap.is_null() {
-                let mut got: *mut ::core::ffi::c_char =
+                let mut got: *mut i8 =
                     xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
                 xkb_keymap_unref(keymap);
                 if !got.is_null() {
                 } else {
                     __assert_fail(
-                        b"got\0".as_ptr() as *const ::core::ffi::c_char,
-                        b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"got\0".as_ptr() as *const i8,
+                        b"../test/common.c\0".as_ptr() as *const i8,
                         810 as ::core::ffi::c_uint,
                         b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                     );
                 };
                 fprintf(
                     stderr,
-                    b"Unexpected keymap compilation success:\n%s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Unexpected keymap compilation success:\n%s\n\0".as_ptr() as *const i8,
                     got,
                 );
                 free(got as *mut ::core::ffi::c_void);
@@ -3720,48 +3639,45 @@ pub unsafe extern "C" fn test_compile_output2(
         if keymap.is_null() {
             fprintf(
                 stderr,
-                b"Unexpected keymap compilation failure\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Unexpected keymap compilation failure\n\0".as_ptr() as *const i8,
             );
             return false_0 != 0;
         }
-        let mut got_0: *mut ::core::ffi::c_char =
-            xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
+        let mut got_0: *mut i8 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
         if got_0.is_null() {
             fprintf(
                 stderr,
-                b"Unexpected keymap serialization failure\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Unexpected keymap serialization failure\n\0".as_ptr() as *const i8,
             );
             return false_0 != 0;
         }
         xkb_keymap_unref(keymap);
-        let path: *mut ::core::ffi::c_char = test_get_path(rel_path) as *mut ::core::ffi::c_char;
+        let path: *mut i8 = test_get_path(rel_path) as *mut i8;
         if !path.is_null() {
         } else {
             __assert_fail(
-                b"path\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"path\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 833 as ::core::ffi::c_uint,
                 b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         if update_output_files {
             fprintf(
                 stderr,
-                b"Writing golden test output to: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Writing golden test output to: %s\n\0".as_ptr() as *const i8,
                 path,
             );
-            let mut file: *mut FILE =
-                fopen(path, b"wb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            let mut file: *mut FILE = fopen(path, b"wb\0".as_ptr() as *const i8) as *mut FILE;
             if !file.is_null() {
             } else {
                 __assert_fail(
-                    b"file\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"file\0".as_ptr() as *const i8,
+                    b"../test/common.c\0".as_ptr() as *const i8,
                     838 as ::core::ffi::c_uint,
                     b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
             };
             fwrite(
@@ -3774,24 +3690,23 @@ pub unsafe extern "C" fn test_compile_output2(
         } else {
             fprintf(
                 stderr,
-                b"Reading golden test output: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Reading golden test output: %s\n\0".as_ptr() as *const i8,
                 path,
             );
-            let expected: *mut ::core::ffi::c_char =
-                test_read_file(rel_path) as *mut ::core::ffi::c_char;
+            let expected: *mut i8 = test_read_file(rel_path) as *mut i8;
             if !expected.is_null() {
             } else {
                 __assert_fail(
-                    b"expected\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"expected\0".as_ptr() as *const i8,
+                    b"../test/common.c\0".as_ptr() as *const i8,
                     844 as ::core::ffi::c_uint,
                     b"_Bool test_compile_output2(struct xkb_context *, enum xkb_keymap_format, enum xkb_keymap_format, enum xkb_keymap_serialize_flags, test_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
             };
-            static mut label: [*const ::core::ffi::c_char; 2] = [
-                b"Golden test\0".as_ptr() as *const ::core::ffi::c_char,
-                b"Roundtrip\0".as_ptr() as *const ::core::ffi::c_char,
+            static mut label: [*const i8; 2] = [
+                b"Golden test\0".as_ptr() as *const i8,
+                b"Roundtrip\0".as_ptr() as *const i8,
             ];
             let mut test_round_trip: bool = output_format as ::core::ffi::c_uint
                 == input_format as ::core::ffi::c_uint
@@ -3799,14 +3714,14 @@ pub unsafe extern "C" fn test_compile_output2(
                     == XKB_KEYMAP_USE_ORIGINAL_FORMAT as ::core::ffi::c_uint;
             let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while (k as usize)
-                < (::core::mem::size_of::<[*const ::core::ffi::c_char; 2]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
+                < (::core::mem::size_of::<[*const i8; 2]>() as usize)
+                    .wrapping_div(::core::mem::size_of::<*const i8>() as usize)
                 && success != 0
             {
                 if streq(expected, got_0) {
                     fprintf(
                         stderr,
-                        b"%s succeeded.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"%s succeeded.\n\0".as_ptr() as *const i8,
                         label[k as usize],
                     );
                     if !test_round_trip {
@@ -3823,7 +3738,7 @@ pub unsafe extern "C" fn test_compile_output2(
                         fprintf(
                             stderr,
                             b"Unexpected keymap roundtrip compilation failure\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
+                                as *const i8,
                         );
                         success = false_0;
                         break;
@@ -3834,7 +3749,7 @@ pub unsafe extern "C" fn test_compile_output2(
                             fprintf(
                                 stderr,
                                 b"Unexpected keymap roundtrip serialization failure\n\0".as_ptr()
-                                    as *const ::core::ffi::c_char,
+                                    as *const i8,
                             );
                             success = false_0;
                         }
@@ -3844,31 +3759,22 @@ pub unsafe extern "C" fn test_compile_output2(
                 } else {
                     fprintf(
                         stderr,
-                        b"%s failed: dumped map differs from expected.\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"%s failed: dumped map differs from expected.\n\0".as_ptr() as *const i8,
                         label[k as usize],
                     );
                     fprintf(
                         stderr,
-                        b"Path to expected file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"Path to expected file: %s\n\0".as_ptr() as *const i8,
                         path,
                     );
                     fprintf(
                         stderr,
-                        b"Length: expected %zu, got: %zu\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
                         strlen(expected),
                         strlen(got_0),
                     );
-                    fprintf(
-                        stderr,
-                        b"Dumped map:\n\0".as_ptr() as *const ::core::ffi::c_char,
-                    );
-                    fprintf(
-                        stderr,
-                        b"%s\n\0".as_ptr() as *const ::core::ffi::c_char,
-                        got_0,
-                    );
+                    fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
+                    fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got_0);
                     success = false_0;
                 }
                 k = k.wrapping_add(1);
@@ -3884,20 +3790,16 @@ pub unsafe extern "C" fn test_compile_output2(
 pub unsafe extern "C" fn test_third_pary_compile_output(
     mut compile_buffer: test_third_party_compile_buffer_t,
     mut compile_buffer_private: *mut ::core::ffi::c_void,
-    mut test_title: *const ::core::ffi::c_char,
-    mut keymap_in: *const ::core::ffi::c_char,
+    mut test_title: *const i8,
+    mut keymap_in: *const i8,
     mut keymap_in_size: usize,
-    mut rel_path: *const ::core::ffi::c_char,
+    mut rel_path: *const i8,
     mut update_output_files: bool,
 ) -> bool {
     unsafe {
         let mut success: ::core::ffi::c_int = true_0;
-        fprintf(
-            stderr,
-            b"*** %s ***\n\0".as_ptr() as *const ::core::ffi::c_char,
-            test_title,
-        );
-        let mut got: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        fprintf(stderr, b"*** %s ***\n\0".as_ptr() as *const i8, test_title);
+        let mut got: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut got_size: usize = 0 as usize;
         let mut ret: ::core::ffi::c_int = compile_buffer.expect("non-null function pointer")(
             keymap_in,
@@ -3911,7 +3813,7 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
                 fprintf(
                     stderr,
                     b"Unexpected keymap compilation success:\nstdout:\n%s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     got,
                 );
             }
@@ -3921,40 +3823,38 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
         if ret != EXIT_SUCCESS || isempty(got) as ::core::ffi::c_int != 0 {
             fprintf(
                 stderr,
-                b"Unexpected keymap compilation failure.\nstdout:\n%s\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Unexpected keymap compilation failure.\nstdout:\n%s\n\0".as_ptr() as *const i8,
                 got,
             );
             free(got as *mut ::core::ffi::c_void);
             return false_0 != 0;
         }
-        let mut path: *mut ::core::ffi::c_char = test_get_path(rel_path);
+        let mut path: *mut i8 = test_get_path(rel_path);
         if !path.is_null() {
         } else {
             __assert_fail(
-                b"path\0".as_ptr() as *const ::core::ffi::c_char,
-                b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                b"path\0".as_ptr() as *const i8,
+                b"../test/common.c\0".as_ptr() as *const i8,
                 927 as ::core::ffi::c_uint,
                 b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
             );
         };
         if update_output_files {
             fprintf(
                 stderr,
-                b"Writing golden test output to: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Writing golden test output to: %s\n\0".as_ptr() as *const i8,
                 path,
             );
-            let mut file: *mut FILE =
-                fopen(path, b"wb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            let mut file: *mut FILE = fopen(path, b"wb\0".as_ptr() as *const i8) as *mut FILE;
             if !file.is_null() {
             } else {
                 __assert_fail(
-                    b"file\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"file\0".as_ptr() as *const i8,
+                    b"../test/common.c\0".as_ptr() as *const i8,
                     932 as ::core::ffi::c_uint,
                     b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
             };
             fwrite(
@@ -3967,34 +3867,34 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
         } else {
             fprintf(
                 stderr,
-                b"Reading golden test output: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Reading golden test output: %s\n\0".as_ptr() as *const i8,
                 path,
             );
-            let mut expected: *mut ::core::ffi::c_char = test_read_file(rel_path);
+            let mut expected: *mut i8 = test_read_file(rel_path);
             if !expected.is_null() {
             } else {
                 __assert_fail(
-                    b"expected\0".as_ptr() as *const ::core::ffi::c_char,
-                    b"../test/common.c\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"expected\0".as_ptr() as *const i8,
+                    b"../test/common.c\0".as_ptr() as *const i8,
                     938 as ::core::ffi::c_uint,
                     b"_Bool test_third_pary_compile_output(test_third_party_compile_buffer_t, void *, const char *, const char *, usize, const char *, _Bool)\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                 );
             };
-            let mut label: [*const ::core::ffi::c_char; 2] = [
-                b"Golden test\0".as_ptr() as *const ::core::ffi::c_char,
-                b"Roundtrip\0".as_ptr() as *const ::core::ffi::c_char,
+            let mut label: [*const i8; 2] = [
+                b"Golden test\0".as_ptr() as *const i8,
+                b"Roundtrip\0".as_ptr() as *const i8,
             ];
             let mut k: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
             while (k as usize)
-                < (::core::mem::size_of::<[*const ::core::ffi::c_char; 2]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
+                < (::core::mem::size_of::<[*const i8; 2]>() as usize)
+                    .wrapping_div(::core::mem::size_of::<*const i8>() as usize)
                 && success != 0
             {
                 if streq(expected, got) {
                     fprintf(
                         stderr,
-                        b"%s succeeded.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"%s succeeded.\n\0".as_ptr() as *const i8,
                         label[k as usize],
                     );
                     if !(k > 0 as ::core::ffi::c_uint) {
@@ -4003,31 +3903,22 @@ pub unsafe extern "C" fn test_third_pary_compile_output(
                 } else {
                     fprintf(
                         stderr,
-                        b"%s failed: dumped map differs from expected.\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"%s failed: dumped map differs from expected.\n\0".as_ptr() as *const i8,
                         label[k as usize],
                     );
                     fprintf(
                         stderr,
-                        b"Path to expected file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"Path to expected file: %s\n\0".as_ptr() as *const i8,
                         path,
                     );
                     fprintf(
                         stderr,
-                        b"Length: expected %zu, got: %zu\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
                         strlen(expected),
                         strlen(got),
                     );
-                    fprintf(
-                        stderr,
-                        b"Dumped map:\n\0".as_ptr() as *const ::core::ffi::c_char,
-                    );
-                    fprintf(
-                        stderr,
-                        b"%s\n\0".as_ptr() as *const ::core::ffi::c_char,
-                        got,
-                    );
+                    fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
+                    fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got);
                     success = false_0;
                 }
                 k = k.wrapping_add(1);

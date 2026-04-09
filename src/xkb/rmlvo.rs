@@ -37,7 +37,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -49,7 +49,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -63,14 +63,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -82,7 +82,7 @@ pub mod context_h {
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -110,17 +110,16 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -143,8 +142,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder {
-        pub rules: *mut ::core::ffi::c_char,
-        pub model: *mut ::core::ffi::c_char,
+        pub rules: *mut i8,
+        pub model: *mut i8,
         pub layouts: xkb_rmlvo_builder_layouts,
         pub options: xkb_rmlvo_builder_options,
         pub refcnt: ::core::ffi::c_int,
@@ -160,7 +159,7 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_option {
-        pub option: *mut ::core::ffi::c_char,
+        pub option: *mut i8,
         pub layout: xkb_layout_index_t,
     }
     #[derive(Copy, Clone)]
@@ -173,8 +172,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut ::core::ffi::c_char,
-        pub variant: *mut ::core::ffi::c_char,
+        pub layout: *mut i8,
+        pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
@@ -280,9 +279,9 @@ pub mod stdio_h {
 
     extern "C" {
         pub fn snprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
     }
@@ -297,14 +296,12 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(
-        mut s: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char {
+    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
             } else {
-                ::core::ptr::null_mut::<::core::ffi::c_char>()
+                ::core::ptr::null_mut::<i8>()
             };
         }
     }
@@ -313,11 +310,8 @@ pub mod utils_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
+        pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
 pub mod __stddef_null_h {
@@ -406,8 +400,8 @@ pub use self::xkbcommon_h::{
 #[no_mangle]
 pub unsafe extern "C" fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
-    mut rules: *const ::core::ffi::c_char,
-    mut model: *const ::core::ffi::c_char,
+    mut rules: *const i8,
+    mut model: *const i8,
     mut flags: xkb_rmlvo_builder_flags,
 ) -> *mut xkb_rmlvo_builder {
     unsafe {
@@ -417,7 +411,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_new(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Unsupported RMLVO flags: 0x%x\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Unsupported RMLVO flags: 0x%x\n\0".as_ptr() as *const i8,
                 flags as ::core::ffi::c_uint & !(XKB_RMLVO_BUILDER_FLAGS as ::core::ffi::c_uint),
             );
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
@@ -447,8 +441,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_new(
             context,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] Cannot allocate a RMLVO builder.\n\0".as_ptr()
-                as *const ::core::ffi::c_char,
+            b"[XKB-%03d] Cannot allocate a RMLVO builder.\n\0".as_ptr() as *const i8,
             XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
         );
         xkb_rmlvo_builder_unref(builder);
@@ -458,9 +451,9 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_new(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
     mut rmlvo: *mut xkb_rmlvo_builder,
-    mut layout: *const ::core::ffi::c_char,
-    mut variant: *const ::core::ffi::c_char,
-    mut options: *const *const ::core::ffi::c_char,
+    mut layout: *const i8,
+    mut variant: *const i8,
+    mut options: *const *const i8,
     mut options_len: usize,
 ) -> bool {
     unsafe {
@@ -471,14 +464,14 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Maximum layout count reached: %u; cannot add layout \"%s(%s)\" to the RMLVO builder.\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                 32 as ::core::ffi::c_int,
                 layout,
                 if !variant.is_null() {
                     variant
                 } else {
-                    b"\0".as_ptr() as *const ::core::ffi::c_char
+                    b"\0".as_ptr() as *const i8
                 },
             );
             return false;
@@ -495,13 +488,13 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Cannot allocate layout \"%s(%s)\" to the RMLVO builder.\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                 layout,
                 if !variant.is_null() {
                     variant
                 } else {
-                    b"\0".as_ptr() as *const ::core::ffi::c_char
+                    b"\0".as_ptr() as *const i8
                 },
             );
             return false;
@@ -539,14 +532,14 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Cannot allocate option \"%s\" of layout \"%s(%s)\" to the RMLVO builder.\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                     *options.offset(k as isize),
                     layout,
                     if !variant.is_null() {
                         variant
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                 );
                 return false;
@@ -577,7 +570,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
     mut rmlvo: *mut xkb_rmlvo_builder,
-    mut option: *const ::core::ffi::c_char,
+    mut option: *const i8,
 ) -> bool {
     unsafe {
         if option.is_null() {
@@ -614,7 +607,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Cannot allocate option \"%s\" to the RMLVO builder.\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                 option,
             );
@@ -712,13 +705,13 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_build
 pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
     mut builder: *const xkb_rmlvo_builder,
     mut rmlvo: *mut xkb_rule_names,
-    mut buf: *mut ::core::ffi::c_char,
+    mut buf: *mut i8,
     mut buf_size: usize,
 ) -> bool {
     unsafe {
         (*rmlvo).rules = (*builder).rules;
         (*rmlvo).model = (*builder).model;
-        let mut start: *mut ::core::ffi::c_char = buf;
+        let mut start: *mut i8 = buf;
         (*rmlvo).layout = start;
         let mut k: darray_size_t = 0;
         let mut layout: *const xkb_rmlvo_builder_layout =
@@ -734,11 +727,11 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                 let mut count: ::core::ffi::c_int = snprintf(
                     start,
                     buf_size,
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"%s%s\0".as_ptr() as *const i8,
                     if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                        b",\0".as_ptr() as *const i8
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                     (*layout).layout,
                 );
@@ -754,7 +747,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
         if buf_size <= 1 as usize {
             return false;
         }
-        *start = '\0' as i32 as ::core::ffi::c_char;
+        *start = '\0' as i32 as i8;
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
         (*rmlvo).variant = start;
@@ -769,16 +762,16 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                 let mut count_0: ::core::ffi::c_int = snprintf(
                     start,
                     buf_size,
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"%s%s\0".as_ptr() as *const i8,
                     if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                        b",\0".as_ptr() as *const i8
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                     if !(*layout).variant.is_null() {
-                        (*layout).variant as *const ::core::ffi::c_char
+                        (*layout).variant as *const i8
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                 );
                 if count_0 < 0 as ::core::ffi::c_int || count_0 as usize >= buf_size {
@@ -793,7 +786,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
         if buf_size <= 1 as usize {
             return false;
         }
-        *start = '\0' as i32 as ::core::ffi::c_char;
+        *start = '\0' as i32 as i8;
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
         (*rmlvo).options = start;
@@ -810,11 +803,11 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                 let mut count_1: ::core::ffi::c_int = snprintf(
                     start,
                     buf_size,
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"%s%s\0".as_ptr() as *const i8,
                     if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const ::core::ffi::c_char
+                        b",\0".as_ptr() as *const i8
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                     (*option).option,
                 );
@@ -827,7 +820,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
                     count_1 = snprintf(
                         start,
                         buf_size,
-                        b"%c%u\0".as_ptr() as *const ::core::ffi::c_char,
+                        b"%c%u\0".as_ptr() as *const i8,
                         OPTIONS_GROUP_SPECIFIER_PREFIX,
                         (*option).layout,
                     );
@@ -844,7 +837,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
         if buf_size == 0 as usize {
             return false;
         }
-        *start = '\0' as i32 as ::core::ffi::c_char;
+        *start = '\0' as i32 as i8;
         return true;
     }
 }

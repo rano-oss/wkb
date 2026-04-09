@@ -54,27 +54,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -85,7 +85,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -108,7 +108,7 @@ pub mod stat_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
-        pub fn fdopen(__fd: ::core::ffi::c_int, __modes: *const ::core::ffi::c_char) -> *mut FILE;
+        pub fn fdopen(__fd: ::core::ffi::c_int, __modes: *const i8) -> *mut FILE;
         pub fn fileno(__stream: *mut FILE) -> ::core::ffi::c_int;
     }
 }
@@ -138,7 +138,7 @@ pub mod fcntl_linux_h {
 pub mod fcntl_h {
     extern "C" {
         pub fn open(
-            __file: *const ::core::ffi::c_char,
+            __file: *const i8,
             __oflag: ::core::ffi::c_int,
             ...
         ) -> ::core::ffi::c_int;
@@ -170,7 +170,7 @@ pub use self::mman_h::{mmap, munmap, MAP_FAILED};
 pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::stat_h::fstat;
 pub use self::stdbool_h::{false_0, true_0};
-use self::stdio_h::{fdopen, fileno};
+use self::stdio_h::fdopen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -181,7 +181,7 @@ pub use self::types_h::{
 use self::unistd_h::close;
 pub use self::FILE_h::FILE;
 #[no_mangle]
-pub unsafe extern "C" fn open_file(mut path: *const ::core::ffi::c_char) -> *mut FILE {
+pub unsafe extern "C" fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
             return ::core::ptr::null_mut::<FILE>();
@@ -223,7 +223,7 @@ pub unsafe extern "C" fn open_file(mut path: *const ::core::ffi::c_char) -> *mut
             close(fd);
             return ::core::ptr::null_mut::<FILE>();
         }
-        let mut fp: *mut FILE = fdopen(fd, b"rb\0".as_ptr() as *const ::core::ffi::c_char);
+        let mut fp: *mut FILE = fdopen(fd, b"rb\0".as_ptr() as *const i8);
         if fp.is_null() {
             close(fd);
         }
@@ -246,15 +246,15 @@ static mut lower_map: [u8; 256] = [
     245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 ];
 #[no_mangle]
-pub unsafe extern "C" fn to_lower(mut c: ::core::ffi::c_char) -> ::core::ffi::c_char {
+pub unsafe extern "C" fn to_lower(mut c: i8) -> i8 {
     unsafe {
-        return lower_map[c as ::core::ffi::c_uchar as usize] as ::core::ffi::c_char;
+        return lower_map[c as ::core::ffi::c_uchar as usize] as i8;
     }
 }
 #[no_mangle]
 pub unsafe extern "C" fn istrcmp(
-    mut a: *const ::core::ffi::c_char,
-    mut b: *const ::core::ffi::c_char,
+    mut a: *const i8,
+    mut b: *const i8,
 ) -> ::core::ffi::c_int {
     unsafe {
         let mut i: usize = 0 as usize;
@@ -275,8 +275,8 @@ pub unsafe extern "C" fn istrcmp(
 }
 #[no_mangle]
 pub unsafe extern "C" fn istrncmp(
-    mut a: *const ::core::ffi::c_char,
-    mut b: *const ::core::ffi::c_char,
+    mut a: *const i8,
+    mut b: *const i8,
     mut n: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -321,8 +321,8 @@ impl MappedFile {
     }
 
     /// Get the mapped data as a C string pointer (for FFI compatibility)
-    pub fn as_ptr(&self) -> *const ::core::ffi::c_char {
-        self.mmap.as_ptr() as *const ::core::ffi::c_char
+    pub fn as_ptr(&self) -> *const i8 {
+        self.mmap.as_ptr() as *const i8
     }
 
     /// Get the size of the mapped file
@@ -350,7 +350,7 @@ pub fn open_regular_file(path: &Path) -> io::Result<File> {
 }
 
 /// Open a file from a C string path
-pub unsafe fn open_file_from_cstr(path: *const ::core::ffi::c_char) -> io::Result<File> {
+pub unsafe fn open_file_from_cstr(path: *const i8) -> io::Result<File> {
     if path.is_null() {
         return Err(io::Error::new(io::ErrorKind::InvalidInput, "null path"));
     }

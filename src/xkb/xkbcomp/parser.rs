@@ -18,7 +18,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -30,7 +30,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -44,14 +44,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -61,14 +61,14 @@ pub mod context_h {
     extern "C" {
         pub fn xkb_atom_intern(
             ctx: *mut xkb_context,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             len: usize,
         ) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -88,11 +88,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -107,7 +107,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
     extern "C" {
         pub fn xkb_keysym_from_name(
-            name: *const ::core::ffi::c_char,
+            name: *const i8,
             flags: xkb_keysym_flags,
         ) -> xkb_keysym_t;
     }
@@ -182,10 +182,10 @@ pub mod ast_h {
     pub struct _IncludeStmt {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub stmt: *mut ::core::ffi::c_char,
-        pub file: *mut ::core::ffi::c_char,
-        pub map: *mut ::core::ffi::c_char,
-        pub modifier: *mut ::core::ffi::c_char,
+        pub stmt: *mut i8,
+        pub file: *mut i8,
+        pub map: *mut i8,
+        pub modifier: *mut i8,
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
@@ -391,7 +391,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct UnknownStatement {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
     }
     pub type xkb_map_flags = ::core::ffi::c_uint;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
@@ -406,7 +406,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
@@ -516,7 +516,7 @@ pub mod scanner_utils_h {
     #[repr(C)]
     pub struct sval {
         pub len: usize,
-        pub start: *const ::core::ffi::c_char,
+        pub start: *const i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -529,13 +529,13 @@ pub mod scanner_utils_h {
     pub struct scanner {
         pub pos: usize,
         pub len: usize,
-        pub s: *const ::core::ffi::c_char,
-        pub buf: [::core::ffi::c_char; 1024],
+        pub s: *const i8,
+        pub buf: [i8; 1024],
         pub buf_pos: usize,
         pub token_pos: usize,
         pub cached_pos: usize,
         pub cached_loc: scanner_loc,
-        pub file_name: *const ::core::ffi::c_char,
+        pub file_name: *const i8,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
@@ -627,7 +627,7 @@ pub mod parser_h {
     pub union YYSTYPE {
         pub num: i64,
         pub file_type: xkb_file_type,
-        pub str: *mut ::core::ffi::c_char,
+        pub str: *mut i8,
         pub sval: sval,
         pub atom: xkb_atom_t,
         pub merge: merge_mode,
@@ -711,21 +711,21 @@ pub mod string_h {
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
+            __s1: *const i8,
+            __s2: *const i8,
         ) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strlen(__s: *const i8) -> usize;
         pub fn stpcpy(
-            __dest: *mut ::core::ffi::c_char,
-            __src: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+            __dest: *mut i8,
+            __src: *const i8,
+        ) -> *mut i8;
     }
 }
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn streq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
+        mut s1: *const i8,
+        mut s2: *const i8,
     ) -> bool {
         unsafe {
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
@@ -733,8 +733,8 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe extern "C" fn streq_not_null(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
+        mut s1: *const i8,
+        mut s2: *const i8,
     ) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
@@ -748,8 +748,8 @@ pub mod utils_h {
     use super::string_h::strcmp;
     extern "C" {
         pub fn istrncmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
+            a: *const i8,
+            b: *const i8,
             n: usize,
         ) -> ::core::ffi::c_int;
     }
@@ -760,19 +760,19 @@ pub mod keysym_h {
     extern "C" {
         pub fn xkb_keysym_is_deprecated(
             keysym: xkb_keysym_t,
-            name: *const ::core::ffi::c_char,
-            reference_name: *mut *const ::core::ffi::c_char,
+            name: *const i8,
+            reference_name: *mut *const i8,
         ) -> bool;
     }
 }
 pub mod xkbcomp_priv_h {
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const ::core::ffi::c_char {
+    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
-                (*file).name as *const ::core::ffi::c_char
+                (*file).name as *const i8
             } else {
-                b"(unnamed map)\0".as_ptr() as *const ::core::ffi::c_char
+                b"(unnamed map)\0".as_ptr() as *const i8
             };
         }
     }
@@ -819,11 +819,11 @@ pub mod ast_build_h {
         pub fn ExprKeySymListAppendString(
             param: *mut scanner,
             expr: *mut ExprDef,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
         ) -> *mut ExprDef;
         pub fn KeysymParseString(
             scanner: *mut scanner,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
         ) -> xkb_keysym_t;
         pub fn KeycodeCreate(name: xkb_atom_t, value: i64) -> *mut KeycodeDef;
         pub fn KeyAliasCreate(alias: xkb_atom_t, real: xkb_atom_t) -> *mut KeyAliasDef;
@@ -840,12 +840,12 @@ pub mod ast_build_h {
         pub fn UnknownStatementCreate(_: stmt_type, name: sval) -> *mut UnknownStatement;
         pub fn IncludeCreate(
             ctx: *mut xkb_context,
-            str: *mut ::core::ffi::c_char,
+            str: *mut i8,
             merge: merge_mode,
         ) -> *mut IncludeStmt;
         pub fn XkbFileCreate(
             type_0: xkb_file_type,
-            name: *mut ::core::ffi::c_char,
+            name: *mut i8,
             defs: *mut ParseCommon,
             flags: xkb_map_flags,
         ) -> *mut XkbFile;
@@ -1176,7 +1176,7 @@ pub union yyalloc {
 pub type C2Rust_Unnamed_10 = ::core::ffi::c_int;
 unsafe extern "C" fn _xkbcommon_error(
     mut param: *mut parser_param,
-    mut msg: *const ::core::ffi::c_char,
+    mut msg: *const i8,
 ) {
     unsafe {
         let mut loc: scanner_loc = scanner_token_location((*param).scanner);
@@ -1184,7 +1184,7 @@ unsafe extern "C" fn _xkbcommon_error(
             (*(*param).scanner).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] %s:%zu:%zu: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+            b"[XKB-%03d] %s:%zu:%zu: %s\n\0".as_ptr() as *const i8,
             XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
             (*(*param).scanner).file_name,
             loc.line,
@@ -1203,18 +1203,18 @@ unsafe extern "C" fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                len: (::core::mem::size_of::<[i8; 4]>() as usize)
                     .wrapping_sub(1 as usize),
-                start: b"any\0".as_ptr() as *const ::core::ffi::c_char,
+                start: b"any\0".as_ptr() as *const i8,
             },
         ) as ::core::ffi::c_int
             != 0
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[::core::ffi::c_char; 9]>() as usize)
+                    len: (::core::mem::size_of::<[i8; 9]>() as usize)
                         .wrapping_sub(1 as usize),
-                    start: b"nosymbol\0".as_ptr() as *const ::core::ffi::c_char,
+                    start: b"nosymbol\0".as_ptr() as *const i8,
                 },
             ) as ::core::ffi::c_int
                 != 0
@@ -1225,18 +1225,18 @@ unsafe extern "C" fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                len: (::core::mem::size_of::<[i8; 5]>() as usize)
                     .wrapping_sub(1 as usize),
-                start: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+                start: b"none\0".as_ptr() as *const i8,
             },
         ) as ::core::ffi::c_int
             != 0
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[::core::ffi::c_char; 11]>() as usize)
+                    len: (::core::mem::size_of::<[i8; 11]>() as usize)
                         .wrapping_sub(1 as usize),
-                    start: b"voidsymbol\0".as_ptr() as *const ::core::ffi::c_char,
+                    start: b"voidsymbol\0".as_ptr() as *const i8,
                 },
             ) as ::core::ffi::c_int
                 != 0
@@ -1244,18 +1244,18 @@ unsafe extern "C" fn resolve_keysym(
             *sym_rtrn = XKB_KEY_VoidSymbol as xkb_keysym_t;
             return true_0 != 0;
         }
-        let mut buf: [::core::ffi::c_char; 31] = [0; 31];
-        if name.len >= ::core::mem::size_of::<[::core::ffi::c_char; 31]>() as usize {
+        let mut buf: [i8; 31] = [0; 31];
+        if name.len >= ::core::mem::size_of::<[i8; 31]>() as usize {
             return false_0 != 0;
         }
         memcpy(
-            &raw mut buf as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
+            &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
             name.start as *const ::core::ffi::c_void,
             name.len,
         );
-        buf[name.len as usize] = '\0' as i32 as ::core::ffi::c_char;
+        buf[name.len as usize] = '\0' as i32 as i8;
         sym = xkb_keysym_from_name(
-            &raw mut buf as *mut ::core::ffi::c_char,
+            &raw mut buf as *mut i8,
             XKB_KEYSYM_NO_FLAGS,
         );
         if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
@@ -1264,11 +1264,11 @@ unsafe extern "C" fn resolve_keysym(
                 as ::core::ffi::c_long
                 != 0
             {
-                let mut ref_name: *const ::core::ffi::c_char =
-                    ::core::ptr::null::<::core::ffi::c_char>();
+                let mut ref_name: *const i8 =
+                    ::core::ptr::null::<i8>();
                 if xkb_keysym_is_deprecated(
                     sym,
-                    &raw mut buf as *mut ::core::ffi::c_char,
+                    &raw mut buf as *mut i8,
                     &raw mut ref_name,
                 ) {
                     if ref_name.is_null() {
@@ -1278,12 +1278,12 @@ unsafe extern "C" fn resolve_keysym(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%s\".\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
+                                as *const i8,
                             XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
                             (*(*param).scanner).file_name,
                             loc.line,
                             loc.column,
-                            &raw mut buf as *mut ::core::ffi::c_char,
+                            &raw mut buf as *mut i8,
                         );
                     } else {
                         let mut loc_0: scanner_loc = scanner_token_location((*param).scanner);
@@ -1292,12 +1292,12 @@ unsafe extern "C" fn resolve_keysym(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%s\"; please use \"%s\" instead.\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
                             (*(*param).scanner).file_name,
                             loc_0.line,
                             loc_0.column,
-                            &raw mut buf as *mut ::core::ffi::c_char,
+                            &raw mut buf as *mut i8,
                             ref_name,
                         );
                     }
@@ -1576,159 +1576,159 @@ static mut yytranslate: [yytype_int8; 258] = [
     1 as ::core::ffi::c_int as yytype_int8,
     2 as ::core::ffi::c_int as yytype_int8,
 ];
-unsafe extern "C" fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const i8 {
     unsafe {
-        static mut yy_sname: [*const ::core::ffi::c_char; 150] = [
-            b"end of file\0".as_ptr() as *const ::core::ffi::c_char,
-            b"error\0".as_ptr() as *const ::core::ffi::c_char,
-            b"invalid token\0".as_ptr() as *const ::core::ffi::c_char,
-            b"invalid token\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_keymap\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_keycodes\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_types\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_symbols\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_compatibility\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_geometry\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_semantics\0".as_ptr() as *const ::core::ffi::c_char,
-            b"xkb_layout\0".as_ptr() as *const ::core::ffi::c_char,
-            b"include\0".as_ptr() as *const ::core::ffi::c_char,
-            b"override\0".as_ptr() as *const ::core::ffi::c_char,
-            b"augment\0".as_ptr() as *const ::core::ffi::c_char,
-            b"replace\0".as_ptr() as *const ::core::ffi::c_char,
-            b"alternate\0".as_ptr() as *const ::core::ffi::c_char,
-            b"virtual_modifiers\0".as_ptr() as *const ::core::ffi::c_char,
-            b"type\0".as_ptr() as *const ::core::ffi::c_char,
-            b"interpret\0".as_ptr() as *const ::core::ffi::c_char,
-            b"action\0".as_ptr() as *const ::core::ffi::c_char,
-            b"key\0".as_ptr() as *const ::core::ffi::c_char,
-            b"alias\0".as_ptr() as *const ::core::ffi::c_char,
-            b"group\0".as_ptr() as *const ::core::ffi::c_char,
-            b"modifier_map\0".as_ptr() as *const ::core::ffi::c_char,
-            b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
-            b"shape\0".as_ptr() as *const ::core::ffi::c_char,
-            b"keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"row\0".as_ptr() as *const ::core::ffi::c_char,
-            b"section\0".as_ptr() as *const ::core::ffi::c_char,
-            b"overlay\0".as_ptr() as *const ::core::ffi::c_char,
-            b"text\0".as_ptr() as *const ::core::ffi::c_char,
-            b"outline\0".as_ptr() as *const ::core::ffi::c_char,
-            b"solid\0".as_ptr() as *const ::core::ffi::c_char,
-            b"logo\0".as_ptr() as *const ::core::ffi::c_char,
-            b"virtual\0".as_ptr() as *const ::core::ffi::c_char,
-            b"=\0".as_ptr() as *const ::core::ffi::c_char,
-            b"+\0".as_ptr() as *const ::core::ffi::c_char,
-            b"-\0".as_ptr() as *const ::core::ffi::c_char,
-            b"/\0".as_ptr() as *const ::core::ffi::c_char,
-            b"*\0".as_ptr() as *const ::core::ffi::c_char,
-            b"{\0".as_ptr() as *const ::core::ffi::c_char,
-            b"}\0".as_ptr() as *const ::core::ffi::c_char,
-            b"(\0".as_ptr() as *const ::core::ffi::c_char,
-            b")\0".as_ptr() as *const ::core::ffi::c_char,
-            b"[\0".as_ptr() as *const ::core::ffi::c_char,
-            b"]\0".as_ptr() as *const ::core::ffi::c_char,
-            b".\0".as_ptr() as *const ::core::ffi::c_char,
-            b",\0".as_ptr() as *const ::core::ffi::c_char,
-            b";\0".as_ptr() as *const ::core::ffi::c_char,
-            b"!\0".as_ptr() as *const ::core::ffi::c_char,
-            b"~\0".as_ptr() as *const ::core::ffi::c_char,
-            b"string literal\0".as_ptr() as *const ::core::ffi::c_char,
-            b"decimal digit\0".as_ptr() as *const ::core::ffi::c_char,
-            b"integer literal\0".as_ptr() as *const ::core::ffi::c_char,
-            b"float literal\0".as_ptr() as *const ::core::ffi::c_char,
-            b"identifier\0".as_ptr() as *const ::core::ffi::c_char,
-            b"key name\0".as_ptr() as *const ::core::ffi::c_char,
-            b"partial\0".as_ptr() as *const ::core::ffi::c_char,
-            b"default\0".as_ptr() as *const ::core::ffi::c_char,
-            b"hidden\0".as_ptr() as *const ::core::ffi::c_char,
-            b"alphanumeric_keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"modifier_keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"keypad_keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"function_keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"alternate_group\0".as_ptr() as *const ::core::ffi::c_char,
-            b"$accept\0".as_ptr() as *const ::core::ffi::c_char,
-            b"XkbFile\0".as_ptr() as *const ::core::ffi::c_char,
-            b"XkbCompositeMap\0".as_ptr() as *const ::core::ffi::c_char,
-            b"XkbCompositeType\0".as_ptr() as *const ::core::ffi::c_char,
-            b"XkbMapConfigList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"XkbMapConfig\0".as_ptr() as *const ::core::ffi::c_char,
-            b"FileType\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OptFlags\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Flags\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Flag\0".as_ptr() as *const ::core::ffi::c_char,
-            b"DeclList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Decl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"VarDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyNameDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyAliasDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"VModDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"VModDefList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"VModDef\0".as_ptr() as *const ::core::ffi::c_char,
-            b"InterpretDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"InterpretMatch\0".as_ptr() as *const ::core::ffi::c_char,
-            b"VarDeclList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyTypeDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SymbolsDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OptSymbolsBody\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SymbolsBody\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SymbolsVarDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"MultiKeySymOrActionList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"NoSymbolOrActionList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"GroupCompatDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"ModMapDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyOrKeySymList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyOrKeySym\0".as_ptr() as *const ::core::ffi::c_char,
-            b"LedMapDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"LedNameDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"UnknownDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"UnknownCompoundStatementDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"ShapeDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SectionDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SectionBody\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SectionBodyItem\0".as_ptr() as *const ::core::ffi::c_char,
-            b"RowBody\0".as_ptr() as *const ::core::ffi::c_char,
-            b"RowBodyItem\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Keys\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Key\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OverlayDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OverlayKeyList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OverlayKey\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OutlineList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OutlineInList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"CoordList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Coord\0".as_ptr() as *const ::core::ffi::c_char,
-            b"DoodadDecl\0".as_ptr() as *const ::core::ffi::c_char,
-            b"DoodadType\0".as_ptr() as *const ::core::ffi::c_char,
-            b"FieldSpec\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Element\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OptMergeMode\0".as_ptr() as *const ::core::ffi::c_char,
-            b"MergeMode\0".as_ptr() as *const ::core::ffi::c_char,
-            b"ExprList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Expr\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Term\0".as_ptr() as *const ::core::ffi::c_char,
-            b"MultiActionList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"ActionList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"NonEmptyActions\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Actions\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Action\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Lhs\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OptTerminal\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Terminal\0".as_ptr() as *const ::core::ffi::c_char,
-            b"MultiKeySymList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeySymList\0".as_ptr() as *const ::core::ffi::c_char,
-            b"NonEmptyKeySyms\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeySyms\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeySym\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeySymLit\0".as_ptr() as *const ::core::ffi::c_char,
-            b"SignedNumber\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Number\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Float\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Integer\0".as_ptr() as *const ::core::ffi::c_char,
-            b"KeyCode\0".as_ptr() as *const ::core::ffi::c_char,
-            b"Ident\0".as_ptr() as *const ::core::ffi::c_char,
-            b"String\0".as_ptr() as *const ::core::ffi::c_char,
-            b"OptMapName\0".as_ptr() as *const ::core::ffi::c_char,
-            b"MapName\0".as_ptr() as *const ::core::ffi::c_char,
-            ::core::ptr::null::<::core::ffi::c_char>(),
+        static mut yy_sname: [*const i8; 150] = [
+            b"end of file\0".as_ptr() as *const i8,
+            b"error\0".as_ptr() as *const i8,
+            b"invalid token\0".as_ptr() as *const i8,
+            b"invalid token\0".as_ptr() as *const i8,
+            b"xkb_keymap\0".as_ptr() as *const i8,
+            b"xkb_keycodes\0".as_ptr() as *const i8,
+            b"xkb_types\0".as_ptr() as *const i8,
+            b"xkb_symbols\0".as_ptr() as *const i8,
+            b"xkb_compatibility\0".as_ptr() as *const i8,
+            b"xkb_geometry\0".as_ptr() as *const i8,
+            b"xkb_semantics\0".as_ptr() as *const i8,
+            b"xkb_layout\0".as_ptr() as *const i8,
+            b"include\0".as_ptr() as *const i8,
+            b"override\0".as_ptr() as *const i8,
+            b"augment\0".as_ptr() as *const i8,
+            b"replace\0".as_ptr() as *const i8,
+            b"alternate\0".as_ptr() as *const i8,
+            b"virtual_modifiers\0".as_ptr() as *const i8,
+            b"type\0".as_ptr() as *const i8,
+            b"interpret\0".as_ptr() as *const i8,
+            b"action\0".as_ptr() as *const i8,
+            b"key\0".as_ptr() as *const i8,
+            b"alias\0".as_ptr() as *const i8,
+            b"group\0".as_ptr() as *const i8,
+            b"modifier_map\0".as_ptr() as *const i8,
+            b"indicator\0".as_ptr() as *const i8,
+            b"shape\0".as_ptr() as *const i8,
+            b"keys\0".as_ptr() as *const i8,
+            b"row\0".as_ptr() as *const i8,
+            b"section\0".as_ptr() as *const i8,
+            b"overlay\0".as_ptr() as *const i8,
+            b"text\0".as_ptr() as *const i8,
+            b"outline\0".as_ptr() as *const i8,
+            b"solid\0".as_ptr() as *const i8,
+            b"logo\0".as_ptr() as *const i8,
+            b"virtual\0".as_ptr() as *const i8,
+            b"=\0".as_ptr() as *const i8,
+            b"+\0".as_ptr() as *const i8,
+            b"-\0".as_ptr() as *const i8,
+            b"/\0".as_ptr() as *const i8,
+            b"*\0".as_ptr() as *const i8,
+            b"{\0".as_ptr() as *const i8,
+            b"}\0".as_ptr() as *const i8,
+            b"(\0".as_ptr() as *const i8,
+            b")\0".as_ptr() as *const i8,
+            b"[\0".as_ptr() as *const i8,
+            b"]\0".as_ptr() as *const i8,
+            b".\0".as_ptr() as *const i8,
+            b",\0".as_ptr() as *const i8,
+            b";\0".as_ptr() as *const i8,
+            b"!\0".as_ptr() as *const i8,
+            b"~\0".as_ptr() as *const i8,
+            b"string literal\0".as_ptr() as *const i8,
+            b"decimal digit\0".as_ptr() as *const i8,
+            b"integer literal\0".as_ptr() as *const i8,
+            b"float literal\0".as_ptr() as *const i8,
+            b"identifier\0".as_ptr() as *const i8,
+            b"key name\0".as_ptr() as *const i8,
+            b"partial\0".as_ptr() as *const i8,
+            b"default\0".as_ptr() as *const i8,
+            b"hidden\0".as_ptr() as *const i8,
+            b"alphanumeric_keys\0".as_ptr() as *const i8,
+            b"modifier_keys\0".as_ptr() as *const i8,
+            b"keypad_keys\0".as_ptr() as *const i8,
+            b"function_keys\0".as_ptr() as *const i8,
+            b"alternate_group\0".as_ptr() as *const i8,
+            b"$accept\0".as_ptr() as *const i8,
+            b"XkbFile\0".as_ptr() as *const i8,
+            b"XkbCompositeMap\0".as_ptr() as *const i8,
+            b"XkbCompositeType\0".as_ptr() as *const i8,
+            b"XkbMapConfigList\0".as_ptr() as *const i8,
+            b"XkbMapConfig\0".as_ptr() as *const i8,
+            b"FileType\0".as_ptr() as *const i8,
+            b"OptFlags\0".as_ptr() as *const i8,
+            b"Flags\0".as_ptr() as *const i8,
+            b"Flag\0".as_ptr() as *const i8,
+            b"DeclList\0".as_ptr() as *const i8,
+            b"Decl\0".as_ptr() as *const i8,
+            b"VarDecl\0".as_ptr() as *const i8,
+            b"KeyNameDecl\0".as_ptr() as *const i8,
+            b"KeyAliasDecl\0".as_ptr() as *const i8,
+            b"VModDecl\0".as_ptr() as *const i8,
+            b"VModDefList\0".as_ptr() as *const i8,
+            b"VModDef\0".as_ptr() as *const i8,
+            b"InterpretDecl\0".as_ptr() as *const i8,
+            b"InterpretMatch\0".as_ptr() as *const i8,
+            b"VarDeclList\0".as_ptr() as *const i8,
+            b"KeyTypeDecl\0".as_ptr() as *const i8,
+            b"SymbolsDecl\0".as_ptr() as *const i8,
+            b"OptSymbolsBody\0".as_ptr() as *const i8,
+            b"SymbolsBody\0".as_ptr() as *const i8,
+            b"SymbolsVarDecl\0".as_ptr() as *const i8,
+            b"MultiKeySymOrActionList\0".as_ptr() as *const i8,
+            b"NoSymbolOrActionList\0".as_ptr() as *const i8,
+            b"GroupCompatDecl\0".as_ptr() as *const i8,
+            b"ModMapDecl\0".as_ptr() as *const i8,
+            b"KeyOrKeySymList\0".as_ptr() as *const i8,
+            b"KeyOrKeySym\0".as_ptr() as *const i8,
+            b"LedMapDecl\0".as_ptr() as *const i8,
+            b"LedNameDecl\0".as_ptr() as *const i8,
+            b"UnknownDecl\0".as_ptr() as *const i8,
+            b"UnknownCompoundStatementDecl\0".as_ptr() as *const i8,
+            b"ShapeDecl\0".as_ptr() as *const i8,
+            b"SectionDecl\0".as_ptr() as *const i8,
+            b"SectionBody\0".as_ptr() as *const i8,
+            b"SectionBodyItem\0".as_ptr() as *const i8,
+            b"RowBody\0".as_ptr() as *const i8,
+            b"RowBodyItem\0".as_ptr() as *const i8,
+            b"Keys\0".as_ptr() as *const i8,
+            b"Key\0".as_ptr() as *const i8,
+            b"OverlayDecl\0".as_ptr() as *const i8,
+            b"OverlayKeyList\0".as_ptr() as *const i8,
+            b"OverlayKey\0".as_ptr() as *const i8,
+            b"OutlineList\0".as_ptr() as *const i8,
+            b"OutlineInList\0".as_ptr() as *const i8,
+            b"CoordList\0".as_ptr() as *const i8,
+            b"Coord\0".as_ptr() as *const i8,
+            b"DoodadDecl\0".as_ptr() as *const i8,
+            b"DoodadType\0".as_ptr() as *const i8,
+            b"FieldSpec\0".as_ptr() as *const i8,
+            b"Element\0".as_ptr() as *const i8,
+            b"OptMergeMode\0".as_ptr() as *const i8,
+            b"MergeMode\0".as_ptr() as *const i8,
+            b"ExprList\0".as_ptr() as *const i8,
+            b"Expr\0".as_ptr() as *const i8,
+            b"Term\0".as_ptr() as *const i8,
+            b"MultiActionList\0".as_ptr() as *const i8,
+            b"ActionList\0".as_ptr() as *const i8,
+            b"NonEmptyActions\0".as_ptr() as *const i8,
+            b"Actions\0".as_ptr() as *const i8,
+            b"Action\0".as_ptr() as *const i8,
+            b"Lhs\0".as_ptr() as *const i8,
+            b"OptTerminal\0".as_ptr() as *const i8,
+            b"Terminal\0".as_ptr() as *const i8,
+            b"MultiKeySymList\0".as_ptr() as *const i8,
+            b"KeySymList\0".as_ptr() as *const i8,
+            b"NonEmptyKeySyms\0".as_ptr() as *const i8,
+            b"KeySyms\0".as_ptr() as *const i8,
+            b"KeySym\0".as_ptr() as *const i8,
+            b"KeySymLit\0".as_ptr() as *const i8,
+            b"SignedNumber\0".as_ptr() as *const i8,
+            b"Number\0".as_ptr() as *const i8,
+            b"Float\0".as_ptr() as *const i8,
+            b"Integer\0".as_ptr() as *const i8,
+            b"KeyCode\0".as_ptr() as *const i8,
+            b"Ident\0".as_ptr() as *const i8,
+            b"String\0".as_ptr() as *const i8,
+            b"OptMapName\0".as_ptr() as *const i8,
+            b"MapName\0".as_ptr() as *const i8,
+            ::core::ptr::null::<i8>(),
         ];
         return yy_sname[yysymbol as usize];
     }
@@ -4542,7 +4542,7 @@ static mut yycheck: [yytype_int16; 929] = [
 pub unsafe extern "C" fn parse(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
-    mut map: *const ::core::ffi::c_char,
+    mut map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
         let mut ret: ::core::ffi::c_int = 0;
@@ -4588,7 +4588,7 @@ pub unsafe extern "C" fn parse(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                 b"[XKB-%03d] No map in include statement, but \"%s\" contains several; Using first defined map, \"%s\"\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_WARNING_MISSING_DEFAULT_SECTION as ::core::ffi::c_int,
                 (*scanner).file_name,
                 safe_map_name(first),
@@ -5537,11 +5537,11 @@ unsafe extern "C" fn yy_syntax_error_arguments(
 }
 unsafe extern "C" fn yysyntax_error(
     mut yymsg_alloc: *mut ::core::ffi::c_long,
-    mut yymsg: *mut *mut ::core::ffi::c_char,
+    mut yymsg: *mut *mut i8,
     mut yyctx: *const yypcontext_t,
 ) -> ::core::ffi::c_int {
     unsafe {
-        let mut yyformat: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut yyformat: *const i8 = ::core::ptr::null::<i8>();
         let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
         let mut yysize: ::core::ffi::c_long = 0 as ::core::ffi::c_long;
         let mut yycount: ::core::ffi::c_int = yy_syntax_error_arguments(
@@ -5554,26 +5554,26 @@ unsafe extern "C" fn yysyntax_error(
         }
         match yycount {
             1 => {
-                yyformat = b"syntax error, unexpected %s\0".as_ptr() as *const ::core::ffi::c_char;
+                yyformat = b"syntax error, unexpected %s\0".as_ptr() as *const i8;
             }
             2 => {
                 yyformat = b"syntax error, unexpected %s, expecting %s\0".as_ptr()
-                    as *const ::core::ffi::c_char;
+                    as *const i8;
             }
             3 => {
                 yyformat = b"syntax error, unexpected %s, expecting %s or %s\0".as_ptr()
-                    as *const ::core::ffi::c_char;
+                    as *const i8;
             }
             4 => {
                 yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s\0".as_ptr()
-                    as *const ::core::ffi::c_char;
+                    as *const i8;
             }
             5 => {
                 yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s or %s\0".as_ptr()
-                    as *const ::core::ffi::c_char;
+                    as *const i8;
             }
             0 | _ => {
-                yyformat = b"syntax error\0".as_ptr() as *const ::core::ffi::c_char;
+                yyformat = b"syntax error\0".as_ptr() as *const i8;
             }
         }
         yysize = strlen(yyformat) as ::core::ffi::c_long
@@ -5623,7 +5623,7 @@ unsafe extern "C" fn yysyntax_error(
             }
             return -1 as ::core::ffi::c_int;
         }
-        let mut yyp: *mut ::core::ffi::c_char = *yymsg;
+        let mut yyp: *mut i8 = *yymsg;
         let mut yyi_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         loop {
             *yyp = *yyformat;
@@ -5648,14 +5648,14 @@ unsafe extern "C" fn yysyntax_error(
     }
 }
 unsafe extern "C" fn yydestruct(
-    mut yymsg: *const ::core::ffi::c_char,
+    mut yymsg: *const i8,
     mut yykind: yysymbol_kind_t,
     mut yyvaluep: *mut YYSTYPE,
     mut param: *mut parser_param,
 ) {
     unsafe {
         if yymsg.is_null() {
-            yymsg = b"Deleting\0".as_ptr() as *const ::core::ffi::c_char;
+            yymsg = b"Deleting\0".as_ptr() as *const i8;
         }
         match yykind as ::core::ffi::c_int {
             52 => {
@@ -5830,10 +5830,10 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
         let mut yyresult: ::core::ffi::c_int = 0;
         let mut yytoken: yysymbol_kind_t = YYSYMBOL_YYEMPTY;
         let mut yyval: YYSTYPE = YYSTYPE { num: 0 };
-        let mut yymsgbuf: [::core::ffi::c_char; 128] = [0; 128];
-        let mut yymsg: *mut ::core::ffi::c_char = &raw mut yymsgbuf as *mut ::core::ffi::c_char;
+        let mut yymsgbuf: [i8; 128] = [0; 128];
+        let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
         let mut yymsg_alloc: ::core::ffi::c_long =
-            ::core::mem::size_of::<[::core::ffi::c_char; 128]>() as ::core::ffi::c_long;
+            ::core::mem::size_of::<[i8; 128]>() as ::core::ffi::c_long;
         let mut yylen: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         yychar = YYEMPTY as ::core::ffi::c_int;
         's_60: loop {
@@ -5988,8 +5988,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                 yyssp: yyssp,
                                 yytoken: yytoken,
                             };
-                            let mut yymsgp: *const ::core::ffi::c_char =
-                                b"syntax error\0".as_ptr() as *const ::core::ffi::c_char;
+                            let mut yymsgp: *const i8 =
+                                b"syntax error\0".as_ptr() as *const i8;
                             let mut yysyntax_error_status: ::core::ffi::c_int = 0;
                             yysyntax_error_status = yysyntax_error(
                                 &raw mut yymsg_alloc,
@@ -5999,10 +5999,10 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             if yysyntax_error_status == 0 as ::core::ffi::c_int {
                                 yymsgp = yymsg;
                             } else if yysyntax_error_status == -1 as ::core::ffi::c_int {
-                                if yymsg != &raw mut yymsgbuf as *mut ::core::ffi::c_char {
+                                if yymsg != &raw mut yymsgbuf as *mut i8 {
                                     free(yymsg as *mut ::core::ffi::c_void);
                                 }
-                                yymsg = malloc(yymsg_alloc as usize) as *mut ::core::ffi::c_char;
+                                yymsg = malloc(yymsg_alloc as usize) as *mut i8;
                                 if !yymsg.is_null() {
                                     yysyntax_error_status = yysyntax_error(
                                         &raw mut yymsg_alloc,
@@ -6011,9 +6011,9 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     );
                                     yymsgp = yymsg;
                                 } else {
-                                    yymsg = &raw mut yymsgbuf as *mut ::core::ffi::c_char;
+                                    yymsg = &raw mut yymsgbuf as *mut i8;
                                     yymsg_alloc =
-                                        ::core::mem::size_of::<[::core::ffi::c_char; 128]>()
+                                        ::core::mem::size_of::<[i8; 128]>()
                                             as ::core::ffi::c_long;
                                     yysyntax_error_status = YYENOMEM as ::core::ffi::c_int;
                                 }
@@ -6032,7 +6032,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                 }
                             } else {
                                 yydestruct(
-                                    b"Error: discarding\0".as_ptr() as *const ::core::ffi::c_char,
+                                    b"Error: discarding\0".as_ptr() as *const i8,
                                     yytoken,
                                     &raw mut yylval,
                                     param,
@@ -6983,8 +6983,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         130 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"action\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 7]>() as usize)
+                                b"action\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 7]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6992,8 +6992,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         131 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"interpret\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                                b"interpret\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 10]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7001,8 +7001,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         132 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"type\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                                b"type\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 5]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7010,8 +7010,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         133 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"key\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                                b"key\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 4]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7019,8 +7019,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         134 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"group\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                                b"group\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 6]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7028,8 +7028,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         135 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"modifier_map\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 13]>() as usize)
+                                b"modifier_map\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 13]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7037,8 +7037,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         136 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 10]>() as usize)
+                                b"indicator\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 10]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7046,8 +7046,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         137 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"shape\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 6]>() as usize)
+                                b"shape\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 6]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7055,8 +7055,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         138 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"row\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 4]>() as usize)
+                                b"row\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 4]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7064,8 +7064,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         139 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"section\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                                b"section\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 8]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7073,8 +7073,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         140 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"text\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize)
+                                b"text\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 5]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7110,7 +7110,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                 b"%s:%zu:%zu: ignored unsupported legacy merge mode \"alternate\"\n\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 (*(*param).scanner).file_name,
                                 loc.line,
                                 loc.column,
@@ -7543,7 +7543,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                     b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%.*s\"\n\0"
                                         .as_ptr()
-                                        as *const ::core::ffi::c_char,
+                                        as *const i8,
                                     XKB_WARNING_UNRECOGNIZED_KEYSYM as ::core::ffi::c_int,
                                     (*(*param).scanner).file_name,
                                     loc_0.line,
@@ -7578,7 +7578,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                     b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"-%#06lx\" (%ld)\n\0"
-                                        .as_ptr() as *const ::core::ffi::c_char,
+                                        .as_ptr() as *const i8,
                                     XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
                                     (*(*param).scanner).file_name,
                                     loc_1.line,
@@ -7599,11 +7599,11 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                         as ::core::ffi::c_long
                                         != 0
                                     {
-                                        let mut ref_name: *const ::core::ffi::c_char =
-                                            ::core::ptr::null::<::core::ffi::c_char>();
+                                        let mut ref_name: *const i8 =
+                                            ::core::ptr::null::<i8>();
                                         if xkb_keysym_is_deprecated(
                                             yyval.keysym,
-                                            ::core::ptr::null::<::core::ffi::c_char>(),
+                                            ::core::ptr::null::<i8>(),
                                             &raw mut ref_name,
                                         ) {
                                             if ref_name.is_null() {
@@ -7614,7 +7614,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                                     b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%#06x\".\n\0"
-                                                        .as_ptr() as *const ::core::ffi::c_char,
+                                                        .as_ptr() as *const i8,
                                                     XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
                                                     (*(*param).scanner).file_name,
                                                     loc_2.line,
@@ -7629,7 +7629,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                                     b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%#06x\"; please use \"%s\" instead.\n\0"
-                                                        .as_ptr() as *const ::core::ffi::c_char,
+                                                        .as_ptr() as *const i8,
                                                     XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
                                                     (*(*param).scanner).file_name,
                                                     loc_3.line,
@@ -7648,7 +7648,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                                         b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%#06lx\" (%ld)\n\0"
-                                            .as_ptr() as *const ::core::ffi::c_char,
+                                            .as_ptr() as *const i8,
                                         XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
                                         (*(*param).scanner).file_name,
                                         loc_4.line,
@@ -7666,7 +7666,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                     XKB_LOG_VERBOSITY_COMPREHENSIVE as ::core::ffi::c_int,
                                     b"[XKB-%03d] %s:%zu:%zu: numeric keysym \"%#06lx\" (%ld)\n\0"
                                         .as_ptr()
-                                        as *const ::core::ffi::c_char,
+                                        as *const i8,
                                     XKB_WARNING_NUMERIC_KEYSYM as ::core::ffi::c_int,
                                     (*(*param).scanner).file_name,
                                     loc_5.line,
@@ -7728,8 +7728,8 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         215 => {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
-                                b"default\0".as_ptr() as *const ::core::ffi::c_char,
-                                (::core::mem::size_of::<[::core::ffi::c_char; 8]>() as usize)
+                                b"default\0".as_ptr() as *const i8,
+                                (::core::mem::size_of::<[i8; 8]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -7751,7 +7751,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             c2rust_current_block = 9699707990742192723;
                         }
                         218 => {
-                            yyval.str = ::core::ptr::null_mut::<::core::ffi::c_char>();
+                            yyval.str = ::core::ptr::null_mut::<i8>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         219 => {
@@ -7820,7 +7820,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             break 's_60;
                         }
                         yydestruct(
-                            b"Error: popping\0".as_ptr() as *const ::core::ffi::c_char,
+                            b"Error: popping\0".as_ptr() as *const i8,
                             yystos[yystate as usize] as yysymbol_kind_t,
                             yyvsp,
                             param,
@@ -7847,7 +7847,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
             _ => {
                 _xkbcommon_error(
                     param,
-                    b"memory exhausted\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"memory exhausted\0".as_ptr() as *const i8,
                 );
                 yyresult = 2 as ::core::ffi::c_int;
             }
@@ -7859,7 +7859,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                 YYSYMBOL_YYUNDEF as ::core::ffi::c_int
             }) as yysymbol_kind_t;
             yydestruct(
-                b"Cleanup: discarding lookahead\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Cleanup: discarding lookahead\0".as_ptr() as *const i8,
                 yytoken,
                 &raw mut yylval,
                 param,
@@ -7869,7 +7869,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
         yyssp = yyssp.offset(-(yylen as isize));
         while yyssp != yyss {
             yydestruct(
-                b"Cleanup: popping\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Cleanup: popping\0".as_ptr() as *const i8,
                 yystos[*yyssp as ::core::ffi::c_int as usize] as yysymbol_kind_t,
                 yyvsp,
                 param,
@@ -7880,7 +7880,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
         if yyss != &raw mut yyssa as *mut yy_state_t {
             free(yyss as *mut ::core::ffi::c_void);
         }
-        if yymsg != &raw mut yymsgbuf as *mut ::core::ffi::c_char {
+        if yymsg != &raw mut yymsgbuf as *mut i8 {
             free(yymsg as *mut ::core::ffi::c_void);
         }
         return yyresult;

@@ -12,7 +12,7 @@ pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct option {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub has_arg: ::core::ffi::c_int,
         pub flag: *mut ::core::ffi::c_int,
         pub val: ::core::ffi::c_int,
@@ -22,8 +22,8 @@ pub mod getopt_ext_h {
     extern "C" {
         pub fn getopt_long(
             ___argc: ::core::ffi::c_int,
-            ___argv: *const *mut ::core::ffi::c_char,
-            __shortopts: *const ::core::ffi::c_char,
+            ___argv: *const *mut i8,
+            __shortopts: *const i8,
             __longopts: *const option,
             __longind: *mut ::core::ffi::c_int,
         ) -> ::core::ffi::c_int;
@@ -45,27 +45,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -76,7 +76,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -99,7 +99,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -111,7 +111,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -125,14 +125,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -152,18 +152,18 @@ pub mod darray_h {
     pub struct darray_char {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut ::core::ffi::c_char,
+        pub item: *mut i8,
     }
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -192,7 +192,7 @@ pub mod table_h {
         pub format: xkb_compose_format,
         pub flags: xkb_compose_compile_flags,
         pub ctx: *mut xkb_context,
-        pub locale: *mut ::core::ffi::c_char,
+        pub locale: *mut i8,
         pub utf8: darray_char,
         pub nodes: C2Rust_Unnamed_1,
     }
@@ -258,13 +258,13 @@ pub mod xkbcommon_compose_h {
     extern "C" {
         pub fn xkb_compose_table_new_from_locale(
             context: *mut xkb_context,
-            locale: *const ::core::ffi::c_char,
+            locale: *const i8,
             flags: xkb_compose_compile_flags,
         ) -> *mut xkb_compose_table;
         pub fn xkb_compose_table_new_from_file(
             context: *mut xkb_context,
             file: *mut FILE,
-            locale: *const ::core::ffi::c_char,
+            locale: *const i8,
             format: xkb_compose_format,
             flags: xkb_compose_compile_flags,
         ) -> *mut xkb_compose_table;
@@ -277,16 +277,9 @@ pub mod stdio_h {
         pub static mut stdout: *mut FILE;
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(
-            __filename: *const ::core::ffi::c_char,
-            __modes: *const ::core::ffi::c_char,
-        ) -> *mut FILE;
-        pub fn fprintf(
-            __stream: *mut FILE,
-            __format: *const ::core::ffi::c_char,
-            ...
-        ) -> ::core::ffi::c_int;
-        pub fn perror(__s: *const ::core::ffi::c_char);
+        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
+        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
+        pub fn perror(__s: *const i8);
     }
 }
 pub mod dump_h {
@@ -310,15 +303,12 @@ pub mod include_locale_h {
     pub const LC_ALL: ::core::ffi::c_int = __LC_ALL;
     use super::locale_h::{__LC_ALL, __LC_CTYPE};
     extern "C" {
-        pub fn setlocale(
-            __category: ::core::ffi::c_int,
-            __locale: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn setlocale(__category: ::core::ffi::c_int, __locale: *const i8) -> *mut i8;
     }
 }
 pub mod getopt_core_h {
     extern "C" {
-        pub static mut optarg: *mut ::core::ffi::c_char;
+        pub static mut optarg: *mut i8;
         pub static mut optind: ::core::ffi::c_int;
     }
 }
@@ -337,10 +327,7 @@ pub mod stdlib_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod unistd_h {
@@ -348,7 +335,7 @@ pub mod unistd_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null()
                 || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
@@ -411,82 +398,79 @@ pub const OPT_LOCALE: options = 2;
 pub const OPT_FILE: options = 1;
 pub const OPT_VERBOSE: options = 0;
 pub type options = ::core::ffi::c_uint;
-unsafe extern "C" fn usage(mut fp: *mut FILE, mut progname: *mut ::core::ffi::c_char) {
+unsafe extern "C" fn usage(mut fp: *mut FILE, mut progname: *mut i8) {
     unsafe {
         fprintf(
             fp,
             b"Usage: %s [--help] [--verbose] [--locale LOCALE] [--test] [FILE]\n\0".as_ptr()
-                as *const ::core::ffi::c_char,
+                as *const i8,
             progname,
         );
         fprintf(
             fp,
             b"\nCompile a Compose file and print it\n\nOptions:\n --help\n    Print this help and exit\n --verbose\n    Enable verbose debugging output\n --file FILE\n    Specify a Compose file to load.\n    DEPRECATED: use the positional argument instead.\n --locale LOCALE\n    Specify the locale directly, instead of relying on the environment variables\n    LC_ALL, LC_TYPE and LANG.\n --test\n    Test compilation but do not print the Compose file.\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
         );
     }
 }
-unsafe fn main_0(
-    mut argc: ::core::ffi::c_int,
-    mut argv: *mut *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe fn main_0(mut argc: ::core::ffi::c_int, mut argv: *mut *mut i8) -> ::core::ffi::c_int {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut locale: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut path: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut locale: *const i8 = ::core::ptr::null::<i8>();
+        let mut path: *const i8 = ::core::ptr::null::<i8>();
         let mut format: xkb_compose_format = XKB_COMPOSE_FORMAT_TEXT_V1;
         let mut verbose: bool = false_0 != 0;
         let mut test: bool = false_0 != 0;
         static mut opts: [option; 6] = [
             option {
-                name: b"help\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 'h' as i32,
             },
             option {
-                name: b"verbose\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"verbose\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_VERBOSE as ::core::ffi::c_int,
             },
             option {
-                name: b"file\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"file\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_FILE as ::core::ffi::c_int,
             },
             option {
-                name: b"locale\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"locale\0".as_ptr() as *const i8,
                 has_arg: required_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_LOCALE as ::core::ffi::c_int,
             },
             option {
-                name: b"test\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"test\0".as_ptr() as *const i8,
                 has_arg: no_argument,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: OPT_TEST as ::core::ffi::c_int,
             },
             option {
-                name: ::core::ptr::null::<::core::ffi::c_char>(),
+                name: ::core::ptr::null::<i8>(),
                 has_arg: 0 as ::core::ffi::c_int,
                 flag: ::core::ptr::null::<::core::ffi::c_int>() as *mut ::core::ffi::c_int,
                 val: 0 as ::core::ffi::c_int,
             },
         ];
-        setlocale(LC_ALL, b"\0".as_ptr() as *const ::core::ffi::c_char);
-        locale = setlocale(LC_CTYPE, ::core::ptr::null::<::core::ffi::c_char>());
+        setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
+        locale = setlocale(LC_CTYPE, ::core::ptr::null::<i8>());
         if locale.is_null() {
-            locale = b"C\0".as_ptr() as *const ::core::ffi::c_char;
+            locale = b"C\0".as_ptr() as *const i8;
         }
         loop {
             let mut opt: ::core::ffi::c_int = 0;
             let mut option_index: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
             opt = getopt_long(
                 argc,
-                argv as *const *mut ::core::ffi::c_char,
-                b"h\0".as_ptr() as *const ::core::ffi::c_char,
+                argv as *const *mut i8,
+                b"h\0".as_ptr() as *const i8,
                 &raw mut opts as *mut option,
                 &raw mut option_index,
             );
@@ -501,8 +485,7 @@ unsafe fn main_0(
                     path = optarg;
                     fprintf(
                         stderr,
-                        b"WARNING: the flag --file is deprecated\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"WARNING: the flag --file is deprecated\n\0".as_ptr() as *const i8,
                     );
                 }
                 2 => {
@@ -524,7 +507,7 @@ unsafe fn main_0(
         if locale.is_null() {
             fprintf(
                 stderr,
-                b"ERROR: Cannot determine the locale.\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"ERROR: Cannot determine the locale.\n\0".as_ptr() as *const i8,
             );
             usage(stderr, *argv.offset(0 as ::core::ffi::c_int as isize));
             return EXIT_INVALID_USAGE;
@@ -533,8 +516,7 @@ unsafe fn main_0(
             if !path.is_null() {
                 fprintf(
                     stderr,
-                    b"ERROR: Path already provided via the flag: --file\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"ERROR: Path already provided via the flag: --file\n\0".as_ptr() as *const i8,
                 );
                 usage(stderr, *argv.offset(0 as ::core::ffi::c_int as isize));
                 exit(EXIT_INVALID_USAGE);
@@ -545,20 +527,19 @@ unsafe fn main_0(
             if optind < argc {
                 fprintf(
                     stderr,
-                    b"ERROR: Too many positional arguments\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"ERROR: Too many positional arguments\n\0".as_ptr() as *const i8,
                 );
                 usage(stderr, *argv.offset(0 as ::core::ffi::c_int as isize));
                 exit(EXIT_INVALID_USAGE);
             }
         } else if is_pipe_or_regular_file(STDIN_FILENO) {
-            path = b"-\0".as_ptr() as *const ::core::ffi::c_char;
+            path = b"-\0".as_ptr() as *const i8;
         }
         let mut ctx: *mut xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         if ctx.is_null() {
             fprintf(
                 stderr,
-                b"ERROR: Couldn't create xkb context\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"ERROR: Couldn't create xkb context\n\0".as_ptr() as *const i8,
             );
             return EXIT_FAILURE;
         }
@@ -571,12 +552,11 @@ unsafe fn main_0(
         if !path.is_null() {
             let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
             if isempty(path) as ::core::ffi::c_int != 0
-                || strcmp(path, b"-\0".as_ptr() as *const ::core::ffi::c_char)
-                    == 0 as ::core::ffi::c_int
+                || strcmp(path, b"-\0".as_ptr() as *const i8) == 0 as ::core::ffi::c_int
             {
                 file = tools_read_stdin();
             } else {
-                file = fopen(path, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+                file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
             }
             if file.is_null() {
                 perror(path);
@@ -593,8 +573,7 @@ unsafe fn main_0(
                 if compose_table.is_null() {
                     fprintf(
                         stderr,
-                        b"ERROR: Couldn't create compose from file: %s\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"ERROR: Couldn't create compose from file: %s\n\0".as_ptr() as *const i8,
                         path,
                     );
                     c2rust_current_block = 11742132266850903425;
@@ -608,8 +587,7 @@ unsafe fn main_0(
             if compose_table.is_null() {
                 fprintf(
                     stderr,
-                    b"ERROR: Couldn't create compose from locale \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"ERROR: Couldn't create compose from locale \"%s\"\n\0".as_ptr() as *const i8,
                     locale,
                 );
                 c2rust_current_block = 11742132266850903425;
@@ -652,15 +630,15 @@ pub fn main() {
                 .into_bytes_with_nul()
         })
         .collect();
-    let mut args_ptrs: Vec<*mut ::core::ffi::c_char> = args_strings
+    let mut args_ptrs: Vec<*mut i8> = args_strings
         .iter_mut()
-        .map(|arg| arg.as_mut_ptr() as *mut ::core::ffi::c_char)
+        .map(|arg| arg.as_mut_ptr() as *mut i8)
         .chain(::core::iter::once(::core::ptr::null_mut()))
         .collect();
     unsafe {
         ::std::process::exit(main_0(
             (args_ptrs.len() - 1) as ::core::ffi::c_int,
-            args_ptrs.as_mut_ptr() as *mut *mut ::core::ffi::c_char,
+            args_ptrs.as_mut_ptr() as *mut *mut i8,
         ) as i32)
     }
 }

@@ -27,7 +27,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -39,7 +39,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -53,14 +53,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -68,12 +68,8 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
-        pub fn xkb_context_get_buffer(
-            ctx: *mut xkb_context,
-            size: usize,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
+        pub fn xkb_context_get_buffer(ctx: *mut xkb_context, size: usize) -> *mut i8;
     }
 }
 pub mod atom_h {
@@ -90,11 +86,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -125,7 +121,7 @@ pub mod xkbcommon_h {
     extern "C" {
         pub fn xkb_keysym_get_name(
             keysym: xkb_keysym_t,
-            buffer: *mut ::core::ffi::c_char,
+            buffer: *mut i8,
             size: usize,
         ) -> ::core::ffi::c_int;
     }
@@ -231,7 +227,7 @@ pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct LookupEntry {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub value: u32,
     }
     pub type C2Rust_Unnamed_1 = ::core::ffi::c_uint;
@@ -256,9 +252,9 @@ pub mod stdio_h {
 
     extern "C" {
         pub fn snprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
     }
@@ -271,44 +267,36 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strlen_safe(mut s: *const ::core::ffi::c_char) -> usize {
+    pub unsafe extern "C" fn strlen_safe(mut s: *const i8) -> usize {
         unsafe {
             return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strempty(
-        mut s: *const ::core::ffi::c_char,
-    ) -> *const ::core::ffi::c_char {
+    pub unsafe extern "C" fn strempty(mut s: *const i8) -> *const i8 {
         unsafe {
             return if !s.is_null() {
                 s
             } else {
-                b"\0".as_ptr() as *const ::core::ffi::c_char
+                b"\0".as_ptr() as *const i8
             };
         }
     }
 
     use super::string_h::strlen;
     extern "C" {
-        pub fn istrcmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod __stddef_null_h {
@@ -369,7 +357,7 @@ pub use self::xkbcommon_h::{
 #[no_mangle]
 pub unsafe extern "C" fn LookupString(
     mut tab: *const LookupEntry,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut value_rtrn: *mut ::core::ffi::c_uint,
 ) -> bool {
     unsafe {
@@ -391,7 +379,7 @@ pub unsafe extern "C" fn LookupString(
 pub unsafe extern "C" fn LookupValue(
     mut tab: *const LookupEntry,
     mut value: ::core::ffi::c_uint,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
@@ -400,436 +388,436 @@ pub unsafe extern "C" fn LookupValue(
             }
             entry = entry.offset(1);
         }
-        return ::core::ptr::null::<::core::ffi::c_char>();
+        return ::core::ptr::null::<i8>();
     }
 }
 #[no_mangle]
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
-        name: b"Overlay3\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay3\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY3 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay4\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay4\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY4 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay5\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay5\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY5 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay6\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay6\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY6 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay7\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay7\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY7 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay8\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay8\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY8 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"all\0".as_ptr() as *const i8,
         value: CONTROL_ALL_BOOLEAN as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"RepeatKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"RepeatKeys\0".as_ptr() as *const i8,
         value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Repeat\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Repeat\0".as_ptr() as *const i8,
         value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AutoRepeat\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AutoRepeat\0".as_ptr() as *const i8,
         value: CONTROL_REPEAT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SlowKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SlowKeys\0".as_ptr() as *const i8,
         value: CONTROL_SLOW as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"BounceKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"BounceKeys\0".as_ptr() as *const i8,
         value: CONTROL_DEBOUNCE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"StickyKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"StickyKeys\0".as_ptr() as *const i8,
         value: CONTROL_STICKY_KEYS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"MouseKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"MouseKeys\0".as_ptr() as *const i8,
         value: CONTROL_MOUSE_KEYS as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"MouseKeysAccel\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"MouseKeysAccel\0".as_ptr() as *const i8,
         value: CONTROL_MOUSE_KEYS_ACCEL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AccessXKeys\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AccessXKeys\0".as_ptr() as *const i8,
         value: CONTROL_AX as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AccessXTimeout\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AccessXTimeout\0".as_ptr() as *const i8,
         value: CONTROL_AX_TIMEOUT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AccessXFeedback\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AccessXFeedback\0".as_ptr() as *const i8,
         value: CONTROL_AX_FEEDBACK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AudibleBell\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AudibleBell\0".as_ptr() as *const i8,
         value: CONTROL_BELL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"IgnoreGroupLock\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"IgnoreGroupLock\0".as_ptr() as *const i8,
         value: CONTROL_IGNORE_GROUP_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay1\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay1\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY1 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Overlay2\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Overlay2\0".as_ptr() as *const i8,
         value: CONTROL_OVERLAY2 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"all\0".as_ptr() as *const i8,
         value: CONTROL_ALL_BOOLEAN_V1 as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"none\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"base\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"base\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_DEPRESSED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"latched\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"latched\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_LATCHED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"locked\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"locked\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_LOCKED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"effective\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"effective\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"compat\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"compat\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"any\0".as_ptr() as *const i8,
         value: XKB_STATE_MODS_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"none\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
-        name: b"base\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"base\0".as_ptr() as *const i8,
         value: XKB_STATE_LAYOUT_DEPRESSED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"latched\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"latched\0".as_ptr() as *const i8,
         value: XKB_STATE_LAYOUT_LATCHED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"locked\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"locked\0".as_ptr() as *const i8,
         value: XKB_STATE_LAYOUT_LOCKED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"effective\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"effective\0".as_ptr() as *const i8,
         value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"any\0".as_ptr() as *const i8,
         value: XKB_STATE_LAYOUT_EFFECTIVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"none\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
-    name: ::core::ptr::null::<::core::ffi::c_char>(),
+    name: ::core::ptr::null::<i8>(),
     value: 0,
 }; 3];
 #[no_mangle]
 pub static mut buttonNames: [LookupEntry; 7] = [
     LookupEntry {
-        name: b"Button1\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Button1\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"Button2\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Button2\0".as_ptr() as *const i8,
         value: 2 as u32,
     },
     LookupEntry {
-        name: b"Button3\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Button3\0".as_ptr() as *const i8,
         value: 3 as u32,
     },
     LookupEntry {
-        name: b"Button4\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Button4\0".as_ptr() as *const i8,
         value: 4 as u32,
     },
     LookupEntry {
-        name: b"Button5\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Button5\0".as_ptr() as *const i8,
         value: 5 as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"default\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"LevelOne\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LevelOne\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"Level1\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Level1\0".as_ptr() as *const i8,
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"AnyLevel\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AnyLevel\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"any\0".as_ptr() as *const i8,
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut actionTypeNames: [LookupEntry; 43] = [
     LookupEntry {
-        name: b"NoAction\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"NoAction\0".as_ptr() as *const i8,
         value: ACTION_TYPE_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"VoidAction\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"VoidAction\0".as_ptr() as *const i8,
         value: ACTION_TYPE_VOID as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SetMods\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SetMods\0".as_ptr() as *const i8,
         value: ACTION_TYPE_MOD_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LatchMods\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LatchMods\0".as_ptr() as *const i8,
         value: ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockMods\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockMods\0".as_ptr() as *const i8,
         value: ACTION_TYPE_MOD_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SetGroup\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SetGroup\0".as_ptr() as *const i8,
         value: ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LatchGroup\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LatchGroup\0".as_ptr() as *const i8,
         value: ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockGroup\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockGroup\0".as_ptr() as *const i8,
         value: ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"MovePtr\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"MovePtr\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"MovePointer\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"MovePointer\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_MOVE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"PtrBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"PtrBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"PointerButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"PointerButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_BUTTON as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockPtrBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockPtrBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockPtrButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockPtrButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockPointerButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockPointerButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockPointerBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockPointerBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SetPtrDflt\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SetPtrDflt\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SetPointerDefault\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SetPointerDefault\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PTR_DEFAULT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Terminate\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Terminate\0".as_ptr() as *const i8,
         value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"TerminateServer\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"TerminateServer\0".as_ptr() as *const i8,
         value: ACTION_TYPE_TERMINATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SwitchScreen\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SwitchScreen\0".as_ptr() as *const i8,
         value: ACTION_TYPE_SWITCH_VT as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"SetControls\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"SetControls\0".as_ptr() as *const i8,
         value: ACTION_TYPE_CTRL_SET as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockControls\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockControls\0".as_ptr() as *const i8,
         value: ACTION_TYPE_CTRL_LOCK as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"RedirectKey\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"RedirectKey\0".as_ptr() as *const i8,
         value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Redirect\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Redirect\0".as_ptr() as *const i8,
         value: ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Private\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Private\0".as_ptr() as *const i8,
         value: ACTION_TYPE_PRIVATE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"ISOLock\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"ISOLock\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"ActionMessage\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"ActionMessage\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"MessageAction\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"MessageAction\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Message\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Message\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DeviceBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DeviceBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DevBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DevBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DevButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DevButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DeviceButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DeviceButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockDeviceBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockDeviceBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockDevBtn\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockDevBtn\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockDevButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockDevButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"LockDeviceButton\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"LockDeviceButton\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DeviceValuator\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DeviceValuator\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DevVal\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DevVal\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DeviceVal\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DeviceVal\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"DevValuator\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"DevValuator\0".as_ptr() as *const i8,
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
 #[no_mangle]
 pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
-        name: b"NoneOf\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"NoneOf\0".as_ptr() as *const i8,
         value: MATCH_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AnyOfOrNone\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AnyOfOrNone\0".as_ptr() as *const i8,
         value: MATCH_ANY_OR_NONE as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AnyOf\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AnyOf\0".as_ptr() as *const i8,
         value: MATCH_ANY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"AllOf\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"AllOf\0".as_ptr() as *const i8,
         value: MATCH_ALL as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: b"Exactly\0".as_ptr() as *const ::core::ffi::c_char,
+        name: b"Exactly\0".as_ptr() as *const i8,
         value: MATCH_EXACTLY as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<::core::ffi::c_char>(),
+        name: ::core::ptr::null::<i8>(),
         value: 0 as u32,
     },
 ];
@@ -838,68 +826,54 @@ pub unsafe extern "C" fn ModIndexText(
     mut ctx: *mut xkb_context,
     mut mods: *const xkb_mod_set,
     mut ndx: xkb_mod_index_t,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
         if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
-            return b"none\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"none\0".as_ptr() as *const i8;
         }
         if ndx == XKB_MOD_NONE as xkb_mod_index_t {
-            return b"None\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"None\0".as_ptr() as *const i8;
         }
         if ndx >= (*mods).num_mods {
-            return ::core::ptr::null::<::core::ffi::c_char>();
+            return ::core::ptr::null::<i8>();
         }
         return xkb_atom_text(ctx, (*mods).mods[ndx as usize].name);
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn ActionTypeText(mut type_0: xkb_action_type) -> *const ::core::ffi::c_char {
+pub unsafe extern "C" fn ActionTypeText(mut type_0: xkb_action_type) -> *const i8 {
     unsafe {
-        let mut name: *const ::core::ffi::c_char = LookupValue(
+        let mut name: *const i8 = LookupValue(
             &raw const actionTypeNames as *const LookupEntry,
             type_0 as ::core::ffi::c_uint,
         );
         return if !name.is_null() {
             name
         } else {
-            b"Private\0".as_ptr() as *const ::core::ffi::c_char
+            b"Private\0".as_ptr() as *const i8
         };
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn KeysymText(
-    mut ctx: *mut xkb_context,
-    mut sym: xkb_keysym_t,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C" fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *const i8 {
     unsafe {
-        let mut buffer: *mut ::core::ffi::c_char =
-            xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
+        let mut buffer: *mut i8 = xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return buffer;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn KeyNameText(
-    mut ctx: *mut xkb_context,
-    mut name: xkb_atom_t,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C" fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
     unsafe {
-        let mut sname: *const ::core::ffi::c_char = xkb_atom_text(ctx, name);
+        let mut sname: *const i8 = xkb_atom_text(ctx, name);
         let mut len: usize = strlen_safe(sname).wrapping_add(3 as usize);
-        let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer(ctx, len);
-        snprintf(
-            buf,
-            len,
-            b"<%s>\0".as_ptr() as *const ::core::ffi::c_char,
-            strempty(sname),
-        );
+        let mut buf: *mut i8 = xkb_context_get_buffer(ctx, len);
+        snprintf(buf, len, b"<%s>\0".as_ptr() as *const i8, strempty(sname));
         return buf;
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn SIMatchText(
-    mut type_0: xkb_match_operation,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C" fn SIMatchText(mut type_0: xkb_match_operation) -> *const i8 {
     unsafe {
         return LookupValue(
             &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -913,10 +887,10 @@ pub unsafe extern "C" fn ModMaskText(
     mut type_0: mod_type,
     mut mods: *const xkb_mod_set,
     mut mask: xkb_mod_mask_t,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
-        let mut buf: [::core::ffi::c_char; 1024] = [
-            0 as ::core::ffi::c_int as ::core::ffi::c_char,
+        let mut buf: [i8; 1024] = [
+            0 as ::core::ffi::c_int as i8,
             0,
             0,
             0,
@@ -1944,10 +1918,10 @@ pub unsafe extern "C" fn ModMaskText(
         let mut pos: usize = 0 as usize;
         let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
         if mask == 0 as xkb_mod_mask_t {
-            return b"none\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"none\0".as_ptr() as *const i8;
         }
         if mask == MOD_REAL_MASK_ALL {
-            return b"all\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"all\0".as_ptr() as *const i8;
         }
         if type_0 as ::core::ffi::c_uint == MOD_REAL as ::core::ffi::c_int as ::core::ffi::c_uint
             && mask & !MOD_REAL_MASK_ALL != 0
@@ -1958,9 +1932,9 @@ pub unsafe extern "C" fn ModMaskText(
                 != 0
         {
             let ret: ::core::ffi::c_int = snprintf(
-                &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize,
-                b"0x%x\0".as_ptr() as *const ::core::ffi::c_char,
+                &raw mut buf as *mut i8,
+                ::core::mem::size_of::<[i8; 1024]>() as usize,
+                b"0x%x\0".as_ptr() as *const i8,
                 mask,
             ) as ::core::ffi::c_int;
             pos = ret as usize;
@@ -1972,20 +1946,19 @@ pub unsafe extern "C" fn ModMaskText(
             {
                 if mask & 0x1 as xkb_mod_mask_t != 0 {
                     let mut ret_0: ::core::ffi::c_int = snprintf(
-                        (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                        (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
-                            .wrapping_sub(pos),
-                        b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                        (&raw mut buf as *mut i8).offset(pos as isize),
+                        (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                        b"%s%s\0".as_ptr() as *const i8,
                         if pos == 0 as usize {
-                            b"\0".as_ptr() as *const ::core::ffi::c_char
+                            b"\0".as_ptr() as *const i8
                         } else {
-                            b"+\0".as_ptr() as *const ::core::ffi::c_char
+                            b"+\0".as_ptr() as *const i8
                         },
                         xkb_atom_text(ctx, (*mod_0).name),
                     );
                     if ret_0 <= 0 as ::core::ffi::c_int
                         || pos.wrapping_add(ret_0 as usize)
-                            >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                            >= ::core::mem::size_of::<[i8; 1024]>() as usize
                     {
                         break;
                     }
@@ -1998,9 +1971,9 @@ pub unsafe extern "C" fn ModMaskText(
         pos = pos.wrapping_add(1);
         return memcpy(
             xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
             pos,
-        ) as *const ::core::ffi::c_char;
+        ) as *const i8;
     }
 }
 #[no_mangle]
@@ -2008,12 +1981,12 @@ pub unsafe extern "C" fn LedStateMaskText(
     mut ctx: *mut xkb_context,
     mut lookup: *const LookupEntry,
     mut mask: xkb_state_component,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
-        let mut buf: [::core::ffi::c_char; 1024] = [0; 1024];
+        let mut buf: [i8; 1024] = [0; 1024];
         let mut pos: usize = 0 as usize;
         if mask as ::core::ffi::c_uint == 0 as ::core::ffi::c_uint {
-            return b"0\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"0\0".as_ptr() as *const i8;
         }
         let mut i: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         while mask as u64 != 0 {
@@ -2021,26 +1994,24 @@ pub unsafe extern "C" fn LedStateMaskText(
             if !(mask as ::core::ffi::c_uint & (1 as ::core::ffi::c_uint) << i == 0) {
                 mask = (mask as ::core::ffi::c_uint & !((1 as ::core::ffi::c_uint) << i))
                     as xkb_state_component;
-                let maskText: *const ::core::ffi::c_char = LookupValue(
+                let maskText: *const i8 = LookupValue(
                     lookup as *const LookupEntry,
                     (1 as ::core::ffi::c_uint) << i,
-                )
-                    as *const ::core::ffi::c_char;
+                ) as *const i8;
                 ret = snprintf(
-                    (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
-                        .wrapping_sub(pos),
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    (&raw mut buf as *mut i8).offset(pos as isize),
+                    (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                    b"%s%s\0".as_ptr() as *const i8,
                     if pos == 0 as usize {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     } else {
-                        b"+\0".as_ptr() as *const ::core::ffi::c_char
+                        b"+\0".as_ptr() as *const i8
                     },
                     maskText,
                 );
                 if ret <= 0 as ::core::ffi::c_int
                     || pos.wrapping_add(ret as usize)
-                        >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                        >= ::core::mem::size_of::<[i8; 1024]>() as usize
                 {
                     break;
                 }
@@ -2051,9 +2022,9 @@ pub unsafe extern "C" fn LedStateMaskText(
         pos = pos.wrapping_add(1);
         return memcpy(
             xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
             pos,
-        ) as *const ::core::ffi::c_char;
+        ) as *const i8;
     }
 }
 #[no_mangle]
@@ -2061,18 +2032,18 @@ pub unsafe extern "C" fn ControlMaskText(
     mut ctx: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut mask: xkb_action_controls,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
-        let mut buf: [::core::ffi::c_char; 1024] = [0; 1024];
+        let mut buf: [i8; 1024] = [0; 1024];
         let mut pos: usize = 0 as usize;
         let all_ctrls: xkb_action_controls = format_boolean_controls(format) as xkb_action_controls;
         mask =
             (mask as ::core::ffi::c_uint & all_ctrls as ::core::ffi::c_uint) as xkb_action_controls;
         if mask as ::core::ffi::c_uint == 0 as ::core::ffi::c_uint {
-            return b"none\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"none\0".as_ptr() as *const i8;
         }
         if mask as ::core::ffi::c_uint == all_ctrls as ::core::ffi::c_uint {
-            return b"all\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"all\0".as_ptr() as *const i8;
         }
         let control_names_offset: uint8_t = format_control_names_offset(format) as uint8_t;
         let mut i: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
@@ -2081,27 +2052,25 @@ pub unsafe extern "C" fn ControlMaskText(
             if !(mask as ::core::ffi::c_uint & (1 as ::core::ffi::c_uint) << i == 0) {
                 mask = (mask as ::core::ffi::c_uint & !((1 as ::core::ffi::c_uint) << i))
                     as xkb_action_controls;
-                let maskText: *const ::core::ffi::c_char = LookupValue(
+                let maskText: *const i8 = LookupValue(
                     (&raw const ctrlMaskNames as *const LookupEntry)
                         .offset(control_names_offset as ::core::ffi::c_int as isize),
                     (1 as ::core::ffi::c_uint) << i,
-                )
-                    as *const ::core::ffi::c_char;
+                ) as *const i8;
                 ret = snprintf(
-                    (&raw mut buf as *mut ::core::ffi::c_char).offset(pos as isize),
-                    (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
-                        .wrapping_sub(pos),
-                    b"%s%s\0".as_ptr() as *const ::core::ffi::c_char,
+                    (&raw mut buf as *mut i8).offset(pos as isize),
+                    (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                    b"%s%s\0".as_ptr() as *const i8,
                     if pos == 0 as usize {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     } else {
-                        b"+\0".as_ptr() as *const ::core::ffi::c_char
+                        b"+\0".as_ptr() as *const i8
                     },
                     maskText,
                 );
                 if ret <= 0 as ::core::ffi::c_int
                     || pos.wrapping_add(ret as usize)
-                        >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                        >= ::core::mem::size_of::<[i8; 1024]>() as usize
                 {
                     break;
                 }
@@ -2112,24 +2081,24 @@ pub unsafe extern "C" fn ControlMaskText(
         pos = pos.wrapping_add(1);
         return memcpy(
             xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
             pos,
-        ) as *const ::core::ffi::c_char;
+        ) as *const i8;
     }
 }
 unsafe extern "C" fn c2rust_run_static_initializers() {
     unsafe {
         groupMaskNames = [
             LookupEntry {
-                name: b"none\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"none\0".as_ptr() as *const i8,
                 value: 0 as u32,
             },
             LookupEntry {
-                name: b"all\0".as_ptr() as *const ::core::ffi::c_char,
+                name: b"all\0".as_ptr() as *const i8,
                 value: XKB_ALL_GROUPS as u32,
             },
             LookupEntry {
-                name: ::core::ptr::null::<::core::ffi::c_char>(),
+                name: ::core::ptr::null::<i8>(),
                 value: 0 as u32,
             },
         ]

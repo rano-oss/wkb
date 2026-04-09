@@ -193,7 +193,7 @@ pub unsafe extern "C" fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
 #[no_mangle]
 pub unsafe extern "C" fn xkb_keysym_to_utf8(
     keysym: u32,
-    buffer: *mut ::core::ffi::c_char,
+    buffer: *mut i8,
     size: usize,
 ) -> ::core::ffi::c_int {
     const MAX_UTF8_SIZE: usize = 5;

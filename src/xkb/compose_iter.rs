@@ -23,7 +23,7 @@ pub mod darray_h {
     pub struct darray_char {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut ::core::ffi::c_char,
+        pub item: *mut i8,
     }
 }
 pub mod context_h {
@@ -35,7 +35,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -47,7 +47,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -61,14 +61,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -85,11 +85,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -108,7 +108,7 @@ pub mod table_h {
         pub format: xkb_compose_format,
         pub flags: xkb_compose_compile_flags,
         pub ctx: *mut xkb_context,
-        pub locale: *mut ::core::ffi::c_char,
+        pub locale: *mut i8,
         pub utf8: darray_char,
         pub nodes: C2Rust_Unnamed_1,
     }
@@ -163,7 +163,7 @@ pub mod table_h {
         pub sequence_length: usize,
         pub sequence: *mut xkb_keysym_t,
         pub keysym: xkb_keysym_t,
-        pub utf8: *const ::core::ffi::c_char,
+        pub utf8: *const i8,
     }
 
     use super::context_h::xkb_context;
@@ -229,7 +229,7 @@ unsafe extern "C" fn for_each_helper(
                     .utf8
                     .item
                     .offset((*node).c2rust_unnamed.leaf.utf8() as isize)
-                    as *mut ::core::ffi::c_char,
+                    as *mut i8,
             };
             iter.expect("non-null function pointer")(&raw mut entry, data);
         } else {

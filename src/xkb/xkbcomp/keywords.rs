@@ -88,51 +88,51 @@ pub struct keyword_tok {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct stringpool_t {
-    pub stringpool_str3: [::core::ffi::c_char; 4],
-    pub stringpool_str4: [::core::ffi::c_char; 5],
-    pub stringpool_str7: [::core::ffi::c_char; 8],
-    pub stringpool_str9: [::core::ffi::c_char; 5],
-    pub stringpool_str10: [::core::ffi::c_char; 11],
-    pub stringpool_str11: [::core::ffi::c_char; 12],
-    pub stringpool_str12: [::core::ffi::c_char; 13],
-    pub stringpool_str13: [::core::ffi::c_char; 13],
-    pub stringpool_str14: [::core::ffi::c_char; 10],
-    pub stringpool_str15: [::core::ffi::c_char; 11],
-    pub stringpool_str17: [::core::ffi::c_char; 8],
-    pub stringpool_str19: [::core::ffi::c_char; 15],
-    pub stringpool_str20: [::core::ffi::c_char; 11],
-    pub stringpool_str21: [::core::ffi::c_char; 12],
-    pub stringpool_str22: [::core::ffi::c_char; 18],
-    pub stringpool_str23: [::core::ffi::c_char; 14],
-    pub stringpool_str24: [::core::ffi::c_char; 5],
-    pub stringpool_str25: [::core::ffi::c_char; 6],
-    pub stringpool_str26: [::core::ffi::c_char; 22],
-    pub stringpool_str27: [::core::ffi::c_char; 18],
-    pub stringpool_str28: [::core::ffi::c_char; 14],
-    pub stringpool_str29: [::core::ffi::c_char; 10],
-    pub stringpool_str30: [::core::ffi::c_char; 6],
-    pub stringpool_str31: [::core::ffi::c_char; 7],
-    pub stringpool_str32: [::core::ffi::c_char; 8],
-    pub stringpool_str33: [::core::ffi::c_char; 4],
-    pub stringpool_str34: [::core::ffi::c_char; 5],
-    pub stringpool_str35: [::core::ffi::c_char; 16],
-    pub stringpool_str36: [::core::ffi::c_char; 7],
-    pub stringpool_str37: [::core::ffi::c_char; 8],
-    pub stringpool_str42: [::core::ffi::c_char; 8],
-    pub stringpool_str43: [::core::ffi::c_char; 8],
-    pub stringpool_str46: [::core::ffi::c_char; 7],
-    pub stringpool_str47: [::core::ffi::c_char; 18],
-    pub stringpool_str52: [::core::ffi::c_char; 8],
-    pub stringpool_str53: [::core::ffi::c_char; 9],
-    pub stringpool_str57: [::core::ffi::c_char; 8],
-    pub stringpool_str62: [::core::ffi::c_char; 13],
-    pub stringpool_str63: [::core::ffi::c_char; 14],
-    pub stringpool_str64: [::core::ffi::c_char; 10],
-    pub stringpool_str66: [::core::ffi::c_char; 6],
-    pub stringpool_str67: [::core::ffi::c_char; 8],
-    pub stringpool_str69: [::core::ffi::c_char; 10],
-    pub stringpool_str71: [::core::ffi::c_char; 6],
-    pub stringpool_str72: [::core::ffi::c_char; 8],
+    pub stringpool_str3: [i8; 4],
+    pub stringpool_str4: [i8; 5],
+    pub stringpool_str7: [i8; 8],
+    pub stringpool_str9: [i8; 5],
+    pub stringpool_str10: [i8; 11],
+    pub stringpool_str11: [i8; 12],
+    pub stringpool_str12: [i8; 13],
+    pub stringpool_str13: [i8; 13],
+    pub stringpool_str14: [i8; 10],
+    pub stringpool_str15: [i8; 11],
+    pub stringpool_str17: [i8; 8],
+    pub stringpool_str19: [i8; 15],
+    pub stringpool_str20: [i8; 11],
+    pub stringpool_str21: [i8; 12],
+    pub stringpool_str22: [i8; 18],
+    pub stringpool_str23: [i8; 14],
+    pub stringpool_str24: [i8; 5],
+    pub stringpool_str25: [i8; 6],
+    pub stringpool_str26: [i8; 22],
+    pub stringpool_str27: [i8; 18],
+    pub stringpool_str28: [i8; 14],
+    pub stringpool_str29: [i8; 10],
+    pub stringpool_str30: [i8; 6],
+    pub stringpool_str31: [i8; 7],
+    pub stringpool_str32: [i8; 8],
+    pub stringpool_str33: [i8; 4],
+    pub stringpool_str34: [i8; 5],
+    pub stringpool_str35: [i8; 16],
+    pub stringpool_str36: [i8; 7],
+    pub stringpool_str37: [i8; 8],
+    pub stringpool_str42: [i8; 8],
+    pub stringpool_str43: [i8; 8],
+    pub stringpool_str46: [i8; 7],
+    pub stringpool_str47: [i8; 18],
+    pub stringpool_str52: [i8; 8],
+    pub stringpool_str53: [i8; 9],
+    pub stringpool_str57: [i8; 8],
+    pub stringpool_str62: [i8; 13],
+    pub stringpool_str63: [i8; 14],
+    pub stringpool_str64: [i8; 10],
+    pub stringpool_str66: [i8; 6],
+    pub stringpool_str67: [i8; 8],
+    pub stringpool_str69: [i8; 10],
+    pub stringpool_str71: [i8; 6],
+    pub stringpool_str72: [i8; 8],
 }
 pub const MAX_HASH_VALUE: C2Rust_Unnamed = 72;
 pub const MIN_WORD_LENGTH: C2Rust_Unnamed = 3;
@@ -400,8 +400,8 @@ static mut gperf_downcase: [::core::ffi::c_uchar; 256] = [
     255 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
 unsafe extern "C" fn gperf_case_memcmp(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
+    mut s1: *const i8,
+    mut s2: *const i8,
     mut n: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -424,10 +424,7 @@ unsafe extern "C" fn gperf_case_memcmp(
     }
 }
 #[inline]
-unsafe extern "C" fn keyword_gperf_hash(
-    mut str: *const ::core::ffi::c_char,
-    mut len: usize,
-) -> ::core::ffi::c_uint {
+unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> ::core::ffi::c_uint {
     unsafe {
         static mut asso_values: [::core::ffi::c_uchar; 256] = [
             73 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -725,7 +722,7 @@ unsafe extern "C" fn keyword_gperf_hash(
 }
 #[no_mangle]
 pub unsafe extern "C" fn keyword_to_token(
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut len: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -738,117 +735,55 @@ pub unsafe extern "C" fn keyword_to_token(
 }
 static mut stringpool_contents: stringpool_t = unsafe {
     stringpool_t {
-        stringpool_str3: ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"key\0"),
-        stringpool_str4: ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"keys\0"),
-        stringpool_str7: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(*b"augment\0"),
-        stringpool_str9: ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"text\0"),
-        stringpool_str10: ::core::mem::transmute::<[u8; 11], [::core::ffi::c_char; 11]>(
-            *b"xkb_keymap\0",
-        ),
-        stringpool_str11: ::core::mem::transmute::<[u8; 12], [::core::ffi::c_char; 12]>(
-            *b"keypad_keys\0",
-        ),
-        stringpool_str12: ::core::mem::transmute::<[u8; 13], [::core::ffi::c_char; 13]>(
-            *b"xkb_keycodes\0",
-        ),
-        stringpool_str13: ::core::mem::transmute::<[u8; 13], [::core::ffi::c_char; 13]>(
-            *b"xkb_geometry\0",
-        ),
-        stringpool_str14: ::core::mem::transmute::<[u8; 10], [::core::ffi::c_char; 10]>(
-            *b"xkb_types\0",
-        ),
-        stringpool_str15: ::core::mem::transmute::<[u8; 11], [::core::ffi::c_char; 11]>(
-            *b"xkb_compat\0",
-        ),
-        stringpool_str17: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"replace\0",
-        ),
-        stringpool_str19: ::core::mem::transmute::<[u8; 15], [::core::ffi::c_char; 15]>(
-            *b"xkb_compat_map\0",
-        ),
-        stringpool_str20: ::core::mem::transmute::<[u8; 11], [::core::ffi::c_char; 11]>(
-            *b"xkb_layout\0",
-        ),
-        stringpool_str21: ::core::mem::transmute::<[u8; 12], [::core::ffi::c_char; 12]>(
-            *b"xkb_symbols\0",
-        ),
-        stringpool_str22: ::core::mem::transmute::<[u8; 18], [::core::ffi::c_char; 18]>(
-            *b"xkb_compatibility\0",
-        ),
-        stringpool_str23: ::core::mem::transmute::<[u8; 14], [::core::ffi::c_char; 14]>(
-            *b"xkb_semantics\0",
-        ),
-        stringpool_str24: ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"type\0"),
-        stringpool_str25: ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"alias\0"),
-        stringpool_str26: ::core::mem::transmute::<[u8; 22], [::core::ffi::c_char; 22]>(
-            *b"xkb_compatibility_map\0",
-        ),
-        stringpool_str27: ::core::mem::transmute::<[u8; 18], [::core::ffi::c_char; 18]>(
-            *b"alphanumeric_keys\0",
-        ),
-        stringpool_str28: ::core::mem::transmute::<[u8; 14], [::core::ffi::c_char; 14]>(
-            *b"function_keys\0",
-        ),
-        stringpool_str29: ::core::mem::transmute::<[u8; 10], [::core::ffi::c_char; 10]>(
-            *b"alternate\0",
-        ),
-        stringpool_str30: ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"shape\0"),
-        stringpool_str31: ::core::mem::transmute::<[u8; 7], [::core::ffi::c_char; 7]>(*b"action\0"),
-        stringpool_str32: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"section\0",
-        ),
-        stringpool_str33: ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"row\0"),
-        stringpool_str34: ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"logo\0"),
-        stringpool_str35: ::core::mem::transmute::<[u8; 16], [::core::ffi::c_char; 16]>(
-            *b"alternate_group\0",
-        ),
-        stringpool_str36: ::core::mem::transmute::<[u8; 7], [::core::ffi::c_char; 7]>(*b"hidden\0"),
-        stringpool_str37: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"virtual\0",
-        ),
-        stringpool_str42: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"outline\0",
-        ),
-        stringpool_str43: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"default\0",
-        ),
-        stringpool_str46: ::core::mem::transmute::<[u8; 7], [::core::ffi::c_char; 7]>(*b"modmap\0"),
-        stringpool_str47: ::core::mem::transmute::<[u8; 18], [::core::ffi::c_char; 18]>(
-            *b"virtual_modifiers\0",
-        ),
-        stringpool_str52: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"overlay\0",
-        ),
-        stringpool_str53: ::core::mem::transmute::<[u8; 9], [::core::ffi::c_char; 9]>(
-            *b"override\0",
-        ),
-        stringpool_str57: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"include\0",
-        ),
-        stringpool_str62: ::core::mem::transmute::<[u8; 13], [::core::ffi::c_char; 13]>(
-            *b"modifier_map\0",
-        ),
-        stringpool_str63: ::core::mem::transmute::<[u8; 14], [::core::ffi::c_char; 14]>(
-            *b"modifier_keys\0",
-        ),
-        stringpool_str64: ::core::mem::transmute::<[u8; 10], [::core::ffi::c_char; 10]>(
-            *b"indicator\0",
-        ),
-        stringpool_str66: ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"group\0"),
-        stringpool_str67: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"mod_map\0",
-        ),
-        stringpool_str69: ::core::mem::transmute::<[u8; 10], [::core::ffi::c_char; 10]>(
-            *b"interpret\0",
-        ),
-        stringpool_str71: ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"solid\0"),
-        stringpool_str72: ::core::mem::transmute::<[u8; 8], [::core::ffi::c_char; 8]>(
-            *b"partial\0",
-        ),
+        stringpool_str3: ::core::mem::transmute::<[u8; 4], [i8; 4]>(*b"key\0"),
+        stringpool_str4: ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"keys\0"),
+        stringpool_str7: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"augment\0"),
+        stringpool_str9: ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"text\0"),
+        stringpool_str10: ::core::mem::transmute::<[u8; 11], [i8; 11]>(*b"xkb_keymap\0"),
+        stringpool_str11: ::core::mem::transmute::<[u8; 12], [i8; 12]>(*b"keypad_keys\0"),
+        stringpool_str12: ::core::mem::transmute::<[u8; 13], [i8; 13]>(*b"xkb_keycodes\0"),
+        stringpool_str13: ::core::mem::transmute::<[u8; 13], [i8; 13]>(*b"xkb_geometry\0"),
+        stringpool_str14: ::core::mem::transmute::<[u8; 10], [i8; 10]>(*b"xkb_types\0"),
+        stringpool_str15: ::core::mem::transmute::<[u8; 11], [i8; 11]>(*b"xkb_compat\0"),
+        stringpool_str17: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"replace\0"),
+        stringpool_str19: ::core::mem::transmute::<[u8; 15], [i8; 15]>(*b"xkb_compat_map\0"),
+        stringpool_str20: ::core::mem::transmute::<[u8; 11], [i8; 11]>(*b"xkb_layout\0"),
+        stringpool_str21: ::core::mem::transmute::<[u8; 12], [i8; 12]>(*b"xkb_symbols\0"),
+        stringpool_str22: ::core::mem::transmute::<[u8; 18], [i8; 18]>(*b"xkb_compatibility\0"),
+        stringpool_str23: ::core::mem::transmute::<[u8; 14], [i8; 14]>(*b"xkb_semantics\0"),
+        stringpool_str24: ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"type\0"),
+        stringpool_str25: ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"alias\0"),
+        stringpool_str26: ::core::mem::transmute::<[u8; 22], [i8; 22]>(*b"xkb_compatibility_map\0"),
+        stringpool_str27: ::core::mem::transmute::<[u8; 18], [i8; 18]>(*b"alphanumeric_keys\0"),
+        stringpool_str28: ::core::mem::transmute::<[u8; 14], [i8; 14]>(*b"function_keys\0"),
+        stringpool_str29: ::core::mem::transmute::<[u8; 10], [i8; 10]>(*b"alternate\0"),
+        stringpool_str30: ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"shape\0"),
+        stringpool_str31: ::core::mem::transmute::<[u8; 7], [i8; 7]>(*b"action\0"),
+        stringpool_str32: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"section\0"),
+        stringpool_str33: ::core::mem::transmute::<[u8; 4], [i8; 4]>(*b"row\0"),
+        stringpool_str34: ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"logo\0"),
+        stringpool_str35: ::core::mem::transmute::<[u8; 16], [i8; 16]>(*b"alternate_group\0"),
+        stringpool_str36: ::core::mem::transmute::<[u8; 7], [i8; 7]>(*b"hidden\0"),
+        stringpool_str37: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"virtual\0"),
+        stringpool_str42: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"outline\0"),
+        stringpool_str43: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"default\0"),
+        stringpool_str46: ::core::mem::transmute::<[u8; 7], [i8; 7]>(*b"modmap\0"),
+        stringpool_str47: ::core::mem::transmute::<[u8; 18], [i8; 18]>(*b"virtual_modifiers\0"),
+        stringpool_str52: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"overlay\0"),
+        stringpool_str53: ::core::mem::transmute::<[u8; 9], [i8; 9]>(*b"override\0"),
+        stringpool_str57: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"include\0"),
+        stringpool_str62: ::core::mem::transmute::<[u8; 13], [i8; 13]>(*b"modifier_map\0"),
+        stringpool_str63: ::core::mem::transmute::<[u8; 14], [i8; 14]>(*b"modifier_keys\0"),
+        stringpool_str64: ::core::mem::transmute::<[u8; 10], [i8; 10]>(*b"indicator\0"),
+        stringpool_str66: ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"group\0"),
+        stringpool_str67: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"mod_map\0"),
+        stringpool_str69: ::core::mem::transmute::<[u8; 10], [i8; 10]>(*b"interpret\0"),
+        stringpool_str71: ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"solid\0"),
+        stringpool_str72: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"partial\0"),
     }
 };
 unsafe extern "C" fn keyword_gperf_lookup(
-    mut str: *const ::core::ffi::c_char,
+    mut str: *const i8,
     mut len: usize,
 ) -> *const keyword_tok {
     unsafe {
@@ -933,8 +868,7 @@ unsafe extern "C" fn keyword_gperf_lookup(
             let mut key: ::core::ffi::c_uint = keyword_gperf_hash(str, len);
             if key <= MAX_HASH_VALUE as ::core::ffi::c_int as ::core::ffi::c_uint {
                 if len == lengthtable[key as usize] as usize {
-                    let mut s: *const ::core::ffi::c_char = (&raw const stringpool_contents
-                        as *const ::core::ffi::c_char)
+                    let mut s: *const i8 = (&raw const stringpool_contents as *const i8)
                         .offset(wordlist[key as usize].name as isize);
                     if (*str as ::core::ffi::c_uchar as ::core::ffi::c_int
                         ^ *s as ::core::ffi::c_uchar as ::core::ffi::c_int)

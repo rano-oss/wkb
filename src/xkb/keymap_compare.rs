@@ -38,7 +38,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -50,7 +50,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -64,14 +64,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -79,13 +79,12 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -104,11 +103,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -173,10 +172,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -596,19 +595,13 @@ pub mod keymap_compare_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn streq_null(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
                 return s1 == s2;
@@ -624,10 +617,7 @@ pub mod __stddef_null_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod stdbool_h {}
@@ -710,17 +700,14 @@ unsafe extern "C" fn keymap_compare_mods(
                 .offset(mod_0 as isize) as *const xkb_mod;
             let mod2: *const xkb_mod = (&raw const (*keymap2).mods.mods as *const xkb_mod)
                 .offset(mod_0 as isize) as *const xkb_mod;
-            let name1: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap1).ctx, (*mod1).name) as *const ::core::ffi::c_char;
-            let name2: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap2).ctx, (*mod2).name) as *const ::core::ffi::c_char;
+            let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*mod1).name) as *const i8;
+            let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*mod2).name) as *const i8;
             if !streq_null(name1, name2) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Modifier #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Modifier #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     mod_0,
                     name1,
                     name2,
@@ -732,8 +719,7 @@ unsafe extern "C" fn keymap_compare_mods(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Modifier #%u types do not match: %d != %d\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Modifier #%u types do not match: %d != %d\n\0".as_ptr() as *const i8,
                     mod_0,
                     (*mod1).type_0 as ::core::ffi::c_uint,
                     (*mod2).type_0 as ::core::ffi::c_uint,
@@ -745,8 +731,7 @@ unsafe extern "C" fn keymap_compare_mods(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Modifier #%u mappings do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Modifier #%u mappings do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     mod_0,
                     (*mod1).mapping,
                     (*mod2).mapping,
@@ -760,8 +745,7 @@ unsafe extern "C" fn keymap_compare_mods(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Modifiers counts do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Modifiers counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).mods.num_mods,
                 (*keymap2).mods.num_mods,
             );
@@ -782,8 +766,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Keycodes counts do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_keys,
                 (*keymap2).num_keys,
             );
@@ -794,7 +777,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Min keycodes do not match: %u != %u\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Min keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
@@ -805,8 +788,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Low keycodes counts do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Low keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_keys_low,
                 (*keymap2).num_keys_low,
             );
@@ -817,7 +799,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Max keycodes do not match: %u != %u\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Max keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
@@ -837,8 +819,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
                     k,
                     (*key1).keycode,
                     (*key2).keycode,
@@ -846,17 +827,14 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 identical = false;
             } else {
                 let kc: xkb_keycode_t = (*key1).keycode;
-                let name1: *const ::core::ffi::c_char =
-                    xkb_atom_text((*keymap1).ctx, (*key1).name) as *const ::core::ffi::c_char;
-                let name2: *const ::core::ffi::c_char =
-                    xkb_atom_text((*keymap2).ctx, (*key2).name) as *const ::core::ffi::c_char;
+                let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*key1).name) as *const i8;
+                let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*key2).name) as *const i8;
                 if !streq_null(name1, name2) {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Key 0x%x names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Key 0x%x names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                         kc,
                         name1,
                         name2,
@@ -887,34 +865,29 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 .key_aliases
                 .offset(a as isize)
                 as *mut xkb_key_alias;
-            let alias1: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap1).ctx, (*entry1).alias) as *const ::core::ffi::c_char;
-            let alias2: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap2).ctx, (*entry2).alias) as *const ::core::ffi::c_char;
+            let alias1: *const i8 = xkb_atom_text((*keymap1).ctx, (*entry1).alias) as *const i8;
+            let alias2: *const i8 = xkb_atom_text((*keymap2).ctx, (*entry2).alias) as *const i8;
             if !streq_null(alias1, alias2) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Alias #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Alias #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     a,
                     alias1,
                     alias2,
                 );
                 identical = false;
             }
-            let real1: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap1).ctx, (*entry1).real) as *const ::core::ffi::c_char;
-            let real2: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap2).ctx, (*entry2).real) as *const ::core::ffi::c_char;
+            let real1: *const i8 = xkb_atom_text((*keymap1).ctx, (*entry1).real) as *const i8;
+            let real2: *const i8 = xkb_atom_text((*keymap2).ctx, (*entry2).real) as *const i8;
             if !streq_null(real1, real2) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Alias #%u \"%s\" target do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     a,
                     alias1,
                     real1,
@@ -931,7 +904,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Aliases count do not match: %u != %u\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Aliases count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
                 (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
             );
@@ -958,17 +931,14 @@ unsafe extern "C" fn keymap_compare_leds(
                 .offset(led as isize) as *const xkb_led;
             let led2: *const xkb_led = (&raw const (*keymap2).leds as *const xkb_led)
                 .offset(led as isize) as *const xkb_led;
-            let name1: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap1).ctx, (*led1).name) as *const ::core::ffi::c_char;
-            let name2: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap2).ctx, (*led2).name) as *const ::core::ffi::c_char;
+            let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*led1).name) as *const i8;
+            let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*led2).name) as *const i8;
             if !streq_null(name1, name2) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"LED #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"LED #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                     led,
                     name1,
                     name2,
@@ -983,7 +953,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"LED #%u \"%s\" `which_groups` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     led,
                     name1,
                     (*led1).which_groups() as ::core::ffi::c_int,
@@ -996,8 +966,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"LED #%u \"%s\" `groups` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"LED #%u \"%s\" `groups` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
                     (*led1).groups,
@@ -1013,7 +982,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"LED #%u \"%s\" `which_mods` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     led,
                     name1,
                     (*led1).which_mods as ::core::ffi::c_uint,
@@ -1026,8 +995,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"LED #%u \"%s\" `mods` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"LED #%u \"%s\" `mods` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
                     (*led1).mods.mods,
@@ -1040,8 +1008,7 @@ unsafe extern "C" fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"LED #%u \"%s\" `ctrls` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"LED #%u \"%s\" `ctrls` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                     led,
                     name1,
                     (*led1).ctrls as ::core::ffi::c_uint,
@@ -1056,7 +1023,7 @@ unsafe extern "C" fn keymap_compare_leds(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"LEDs count do not match: %u != %u\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"LEDs count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_leds,
                 (*keymap2).num_leds,
             );
@@ -1074,17 +1041,14 @@ unsafe extern "C" fn compare_types(
 ) -> bool {
     unsafe {
         let mut identical: bool = true;
-        let name1: *const ::core::ffi::c_char =
-            xkb_atom_text((*keymap1).ctx, (*type1).name) as *const ::core::ffi::c_char;
-        let name2: *const ::core::ffi::c_char =
-            xkb_atom_text((*keymap2).ctx, (*type2).name) as *const ::core::ffi::c_char;
+        let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*type1).name) as *const i8;
+        let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*type2).name) as *const i8;
         if !streq_null(name1, name2) {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key type names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key type names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                 name1,
                 name2,
             );
@@ -1095,8 +1059,7 @@ unsafe extern "C" fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key type \"%s\" mods do not match: 0x%x != 0x%x\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key type \"%s\" mods do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).mods.mods,
                 (*type2).mods.mods,
@@ -1108,8 +1071,7 @@ unsafe extern "C" fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key type \"%s\" levels count do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key type \"%s\" levels count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).num_levels,
                 (*type2).num_levels,
@@ -1122,7 +1084,7 @@ unsafe extern "C" fn compare_types(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Key type \"%s\" level names count do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 name1,
                 (*type1).num_level_names,
                 (*type2).num_level_names,
@@ -1131,19 +1093,19 @@ unsafe extern "C" fn compare_types(
         } else {
             let mut l: xkb_level_index_t = 0 as xkb_level_index_t;
             while l < (*type1).num_level_names {
-                let lname1: *const ::core::ffi::c_char =
+                let lname1: *const i8 =
                     xkb_atom_text((*keymap1).ctx, *(*type1).level_names.offset(l as isize))
-                        as *const ::core::ffi::c_char;
-                let lname2: *const ::core::ffi::c_char =
+                        as *const i8;
+                let lname2: *const i8 =
                     xkb_atom_text((*keymap2).ctx, *(*type2).level_names.offset(l as isize))
-                        as *const ::core::ffi::c_char;
+                        as *const i8;
                 if !streq_null(lname1, lname2) {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Key type \"%s\" level #%u names do not match: \"%s\" != \"%s\"\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         name1,
                         l,
                         lname1,
@@ -1159,8 +1121,7 @@ unsafe extern "C" fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key type \"%s\" entries count do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key type \"%s\" entries count do not match: %u != %u\n\0".as_ptr() as *const i8,
                 name1,
                 (*type1).num_entries,
                 (*type2).num_entries,
@@ -1179,7 +1140,7 @@ unsafe extern "C" fn compare_types(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Key type \"%s\" entry #%u levels do not match: %u != %u\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         name1,
                         e,
                         (*entry1).level,
@@ -1193,7 +1154,7 @@ unsafe extern "C" fn compare_types(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Key type \"%s\" entry #%u mods do not match: 0x%x != 0x%x\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         name1,
                         e,
                         (*entry1).mods.mods,
@@ -1207,7 +1168,7 @@ unsafe extern "C" fn compare_types(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Key type \"%s\" entry #%u preserve do not match: 0x%x != 0x%x\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         name1,
                         e,
                         (*entry1).preserve.mods,
@@ -1251,8 +1212,7 @@ unsafe extern "C" fn keymap_compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key types counts do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key types counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_types,
                 (*keymap2).num_types,
             );
@@ -1272,18 +1232,15 @@ unsafe extern "C" fn compare_groups(
 ) -> bool {
     unsafe {
         if !compare_types(ctx, keymap1, keymap2, (*group1).type_0, (*group2).type_0) {
-            let name1: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap1).ctx, (*(*group1).type_0).name)
-                    as *const ::core::ffi::c_char;
-            let name2: *const ::core::ffi::c_char =
-                xkb_atom_text((*keymap2).ctx, (*(*group2).type_0).name)
-                    as *const ::core::ffi::c_char;
+            let name1: *const i8 =
+                xkb_atom_text((*keymap1).ctx, (*(*group1).type_0).name) as *const i8;
+            let name2: *const i8 =
+                xkb_atom_text((*keymap2).ctx, (*(*group2).type_0).name) as *const i8;
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Key 0x%x/group %u types do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Key 0x%x/group %u types do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                 kc,
                 g,
                 name1,
@@ -1303,7 +1260,7 @@ unsafe extern "C" fn compare_groups(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Key 0x%x/group %u/level %u keysyms count do not match: %u != %u\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     kc,
                     g,
                     l,
@@ -1322,7 +1279,7 @@ unsafe extern "C" fn compare_groups(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"Key 0x%x/group %u/level %u keysyms #%u do not match: 0x%x != 0x%x\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             kc,
                             g,
                             l,
@@ -1340,7 +1297,7 @@ unsafe extern "C" fn compare_groups(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Key 0x%x/group %u/level %u keysyms do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     kc,
                     g,
                     l,
@@ -1357,7 +1314,7 @@ unsafe extern "C" fn compare_groups(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Key 0x%x/group %u/level %u actions count do not match: %u != %u\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     kc,
                     g,
                     l,
@@ -1377,7 +1334,7 @@ unsafe extern "C" fn compare_groups(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"Key 0x%x/group %u/level %u actions #%u do not match\n\0".as_ptr()
-                                as *const ::core::ffi::c_char,
+                                as *const i8,
                             kc,
                             g,
                             l,
@@ -1394,8 +1351,7 @@ unsafe extern "C" fn compare_groups(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Key 0x%x/group %u/level %u actions do not match\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Key 0x%x/group %u/level %u actions do not match\n\0".as_ptr() as *const i8,
                     kc,
                     g,
                     l,
@@ -1419,7 +1375,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Group counts do not match: %u != %u\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"Group counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_groups,
                 (*keymap2).num_groups,
             );
@@ -1430,8 +1386,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Group name counts do not match: %u != %u\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"Group name counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                 (*keymap1).num_group_names,
                 (*keymap2).num_group_names,
             );
@@ -1439,19 +1394,18 @@ unsafe extern "C" fn keymap_compare_symbols(
         } else {
             let mut g: xkb_layout_index_t = 0 as xkb_layout_index_t;
             while g < (*keymap1).num_group_names {
-                let name1: *const ::core::ffi::c_char =
+                let name1: *const i8 =
                     xkb_atom_text((*keymap1).ctx, *(*keymap1).group_names.offset(g as isize))
-                        as *const ::core::ffi::c_char;
-                let name2: *const ::core::ffi::c_char =
+                        as *const i8;
+                let name2: *const i8 =
                     xkb_atom_text((*keymap2).ctx, *(*keymap2).group_names.offset(g as isize))
-                        as *const ::core::ffi::c_char;
+                        as *const i8;
                 if !streq_null(name1, name2) {
                     xkb_log(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Group #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Group #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
                         g,
                         name1,
                         name2,
@@ -1475,8 +1429,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
                     k,
                     (*key1).keycode,
                     (*key2).keycode,
@@ -1489,8 +1442,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Key 0x%x modmap do not match: 0x%x != 0x%x\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Key 0x%x modmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).modmap,
                         (*key2).modmap,
@@ -1502,8 +1454,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Key 0x%x vmodmap do not match: 0x%x != 0x%x\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Key 0x%x vmodmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).vmodmap,
                         (*key2).vmodmap,
@@ -1517,8 +1468,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Key 0x%x repeats do not match: %d != %d\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Key 0x%x repeats do not match: %d != %d\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).repeats() as ::core::ffi::c_int,
                         (*key2).repeats() as ::core::ffi::c_int,
@@ -1535,7 +1485,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Key 0x%x out-of-range do not match: %d != %d or %u != %u\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         kc,
                         (*key1).out_of_range_group_policy() as ::core::ffi::c_int,
                         (*key2).out_of_range_group_policy() as ::core::ffi::c_int,
@@ -1551,8 +1501,7 @@ unsafe extern "C" fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Key 0x%x groups counts do not match: %u != %u\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                        b"Key 0x%x groups counts do not match: %u != %u\n\0".as_ptr() as *const i8,
                         kc,
                         (*key1).num_groups() as ::core::ffi::c_int,
                         (*key2).num_groups() as ::core::ffi::c_int,

@@ -23,15 +23,15 @@ pub mod string_h {
 
     extern "C" {
         pub fn strncmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
+            __s1: *const i8,
+            __s2: *const i8,
             __n: usize,
         ) -> ::core::ffi::c_int;
         pub fn strndup(
-            __string: *const ::core::ffi::c_char,
+            __string: *const i8,
             __n: usize,
-        ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        ) -> *mut i8;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdlib_h {
@@ -60,12 +60,12 @@ pub struct atom_table {
     pub index_size: usize,
     /// Vector of interned strings (raw C char pointers for FFI compat)
     /// Index 0 is always NULL (XKB_ATOM_NONE)
-    pub strings: Vec<*mut ::core::ffi::c_char>,
+    pub strings: Vec<*mut i8>,
 }
 
 /// FNV-1a hash function for strings
 #[inline]
-fn hash_buf(string: *const ::core::ffi::c_char, len: usize) -> u32 {
+fn hash_buf(string: *const i8, len: usize) -> u32 {
     unsafe {
         let mut hash: u32 = 2166136261;
         for i in 0..(len + 1) / 2 {
@@ -141,7 +141,7 @@ pub unsafe extern "C" fn atom_table_size(table: *mut atom_table) -> darray_size_
 pub unsafe extern "C" fn atom_text(
     table: *mut atom_table,
     atom: xkb_atom_t,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
         let strings_ptr = (*table).strings.as_ptr();
         assert!(
@@ -159,7 +159,7 @@ pub unsafe extern "C" fn atom_text(
 #[no_mangle]
 pub unsafe extern "C" fn atom_intern(
     table: *mut atom_table,
-    string: *const ::core::ffi::c_char,
+    string: *const i8,
     len: usize,
     add: bool,
 ) -> xkb_atom_t {

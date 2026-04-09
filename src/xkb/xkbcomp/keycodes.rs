@@ -41,7 +41,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -53,7 +53,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -67,14 +67,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::{atom_table, xkb_atom_t};
@@ -82,13 +82,12 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t)
-            -> *const ::core::ffi::c_char;
+        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -119,17 +118,16 @@ pub mod darray_h {
             return alloc;
         }
     }
-
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -202,10 +200,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -606,7 +604,7 @@ pub mod keymap_h {
         xkb_led_mask_t, xkb_level_index_t, xkb_mod_index_t, xkb_mod_mask_t, xkb_state_component,
     };
     extern "C" {
-        pub fn XkbEscapeMapName(name: *mut ::core::ffi::c_char);
+        pub fn XkbEscapeMapName(name: *mut i8);
     }
 }
 pub mod messages_codes_h {
@@ -775,10 +773,10 @@ pub mod ast_h {
     pub struct _IncludeStmt {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub stmt: *mut ::core::ffi::c_char,
-        pub file: *mut ::core::ffi::c_char,
-        pub map: *mut ::core::ffi::c_char,
-        pub modifier: *mut ::core::ffi::c_char,
+        pub stmt: *mut i8,
+        pub file: *mut i8,
+        pub map: *mut i8,
+        pub modifier: *mut i8,
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
@@ -927,7 +925,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct UnknownStatement {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
     }
     pub type xkb_map_flags = ::core::ffi::c_uint;
     pub const MAP_IS_ALTGR: xkb_map_flags = 128;
@@ -942,7 +940,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
@@ -952,21 +950,21 @@ pub mod ast_h {
     use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const ::core::ffi::c_char;
+        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
     }
 }
 pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct LookupEntry {
-        pub name: *const ::core::ffi::c_char,
+        pub name: *const i8,
         pub value: u32,
     }
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::stdint_uintn_h::u32;
     extern "C" {
-        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const ::core::ffi::c_char;
+        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const i8;
     }
 }
 pub mod xkbcomp_priv_h {
@@ -1033,9 +1031,9 @@ pub mod xkbcomp_priv_h {
     #[inline]
     pub unsafe extern "C" fn ReportNotArray(
         mut ctx: *mut xkb_context,
-        mut type_0: *const ::core::ffi::c_char,
-        mut field: *const ::core::ffi::c_char,
-        mut name: *const ::core::ffi::c_char,
+        mut type_0: *const i8,
+        mut field: *const i8,
+        mut name: *const i8,
     ) -> bool {
         unsafe {
             xkb_log(
@@ -1043,7 +1041,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] The %s %s field is not an array; Ignoring illegal assignment in %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 type_0,
                 field,
@@ -1056,10 +1054,10 @@ pub mod xkbcomp_priv_h {
     pub unsafe extern "C" fn ReportBadType(
         mut ctx: *mut xkb_context,
         mut code: xkb_message_code,
-        mut type_0: *const ::core::ffi::c_char,
-        mut field: *const ::core::ffi::c_char,
-        mut name: *const ::core::ffi::c_char,
-        mut wanted: *const ::core::ffi::c_char,
+        mut type_0: *const i8,
+        mut field: *const i8,
+        mut name: *const i8,
+        mut wanted: *const i8,
     ) -> bool {
         unsafe {
             xkb_log(
@@ -1067,7 +1065,7 @@ pub mod xkbcomp_priv_h {
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] The %s %s field must be a %s; Ignoring illegal assignment in %s\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 code as ::core::ffi::c_uint,
                 type_0,
                 field,
@@ -1078,12 +1076,12 @@ pub mod xkbcomp_priv_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const ::core::ffi::c_char {
+    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
-                (*file).name as *const ::core::ffi::c_char
+                (*file).name as *const i8
             } else {
-                b"(unnamed map)\0".as_ptr() as *const ::core::ffi::c_char
+                b"(unnamed map)\0".as_ptr() as *const i8
             };
         }
     }
@@ -1128,49 +1126,41 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
 pub mod stdio_h {
 
     extern "C" {
         pub fn snprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(
-        mut s1: *const ::core::ffi::c_char,
-        mut s2: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(
-        mut s: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char {
+    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
             } else {
-                ::core::ptr::null_mut::<::core::ffi::c_char>()
+                ::core::ptr::null_mut::<i8>()
             };
         }
     }
 
     use super::string_h::strdup;
     extern "C" {
-        pub fn istrcmp(
-            a: *const ::core::ffi::c_char,
-            b: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod limits_h {
@@ -1186,8 +1176,8 @@ pub mod expr_h {
         pub fn ExprResolveLhs(
             ctx: *mut xkb_context,
             expr: *const ExprDef,
-            elem_rtrn: *mut *const ::core::ffi::c_char,
-            field_rtrn: *mut *const ::core::ffi::c_char,
+            elem_rtrn: *mut *const i8,
+            field_rtrn: *mut *const i8,
             index_rtrn: *mut *mut ExprDef,
         ) -> bool;
         pub fn ExprResolveInteger(
@@ -1227,7 +1217,7 @@ pub mod include_h {
             ctx: *mut xkb_context,
             stmt: *const IncludeStmt,
             file_type: xkb_file_type,
-            path: *mut ::core::ffi::c_char,
+            path: *mut i8,
             path_size: usize,
         ) -> *mut XkbFile;
     }
@@ -1387,7 +1377,7 @@ pub use self::xkbcomp_priv_h::{
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct KeyNamesInfo {
-    pub name: *mut ::core::ffi::c_char,
+    pub name: *mut i8,
     pub errorCount: ::core::ffi::c_int,
     pub include_depth: ::core::ffi::c_uint,
     pub keycodes: KeycodeStore,
@@ -2078,7 +2068,7 @@ unsafe extern "C" fn AddLedName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Multiple indicators named \"%s\"; Identical definitions ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         xkb_atom_text((*info).ctx, (*new).name),
                     );
                 }
@@ -2100,7 +2090,7 @@ unsafe extern "C" fn AddLedName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Multiple indicators named %s; Using %u, ignoring %u\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     xkb_atom_text((*info).ctx, (*new).name),
                     use_0,
                     ignore,
@@ -2134,7 +2124,7 @@ unsafe extern "C" fn AddLedName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Multiple names for indicator %u; Using %s, ignoring %s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     new_idx.wrapping_add(1 as xkb_led_index_t),
                     xkb_atom_text((*info).ctx, use_1),
                     xkb_atom_text((*info).ctx, ignore_0),
@@ -2192,18 +2182,18 @@ unsafe extern "C" fn AddKeyName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Key name %s already assigned to an alias; Using %s, ignoring %s\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
                         KeyNameText((*info).ctx, name),
                         if clobber as ::core::ffi::c_int != 0 {
-                            b"key\0".as_ptr() as *const ::core::ffi::c_char
+                            b"key\0".as_ptr() as *const i8
                         } else {
-                            b"alias\0".as_ptr() as *const ::core::ffi::c_char
+                            b"alias\0".as_ptr() as *const i8
                         },
                         if clobber as ::core::ffi::c_int != 0 {
-                            b"alias\0".as_ptr() as *const ::core::ffi::c_char
+                            b"alias\0".as_ptr() as *const i8
                         } else {
-                            b"key\0".as_ptr() as *const ::core::ffi::c_char
+                            b"key\0".as_ptr() as *const i8
                         },
                     );
                 }
@@ -2234,7 +2224,7 @@ unsafe extern "C" fn AddKeyName(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Key name %s assigned to multiple keys; Using %u, ignoring %u\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
                             KeyNameText((*info).ctx, name),
                             use_0,
@@ -2261,7 +2251,7 @@ unsafe extern "C" fn AddKeyName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Multiple identical key name definitions; Later occurrences of \"%s = %u\" ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         KeyNameText((*info).ctx, old_name),
                         kc,
                     );
@@ -2271,16 +2261,14 @@ unsafe extern "C" fn AddKeyName(
             let clobber_0: bool = merge as ::core::ffi::c_uint
                 != MERGE_AUGMENT as ::core::ffi::c_int as ::core::ffi::c_uint;
             if report {
-                let kname: *const ::core::ffi::c_char =
-                    KeyNameText((*info).ctx, name) as *const ::core::ffi::c_char;
-                let old_kname: *const ::core::ffi::c_char =
-                    KeyNameText((*info).ctx, old_name) as *const ::core::ffi::c_char;
-                let use_1: *const ::core::ffi::c_char = if clobber_0 as ::core::ffi::c_int != 0 {
+                let kname: *const i8 = KeyNameText((*info).ctx, name) as *const i8;
+                let old_kname: *const i8 = KeyNameText((*info).ctx, old_name) as *const i8;
+                let use_1: *const i8 = if clobber_0 as ::core::ffi::c_int != 0 {
                     kname
                 } else {
                     old_kname
                 };
-                let ignore_0: *const ::core::ffi::c_char = if clobber_0 as ::core::ffi::c_int != 0 {
+                let ignore_0: *const i8 = if clobber_0 as ::core::ffi::c_int != 0 {
                     old_kname
                 } else {
                     kname
@@ -2290,7 +2278,7 @@ unsafe extern "C" fn AddKeyName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Multiple names for keycode %u; Using %s, ignoring %s\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     kc,
                     use_1,
                     ignore_0,
@@ -2305,7 +2293,7 @@ unsafe extern "C" fn AddKeyName(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Cannot add keycode\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Cannot add keycode\n\0".as_ptr() as *const i8,
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -2413,8 +2401,8 @@ unsafe extern "C" fn MergeIncludedKeycodes(
             return;
         }
         if (*into).name.is_null() {
-            (*into).name = _steal(&raw mut (*from).name as *mut ::core::ffi::c_void)
-                as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+            (*into).name =
+                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
         MergeKeycodeStores(into, from, merge, report);
         if (*into).num_led_names == 0 as xkb_led_index_t {
@@ -2450,7 +2438,7 @@ unsafe extern "C" fn HandleIncludeKeycodes(
 ) -> bool {
     unsafe {
         let mut included: KeyNamesInfo = KeyNamesInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
@@ -2488,12 +2476,12 @@ unsafe extern "C" fn HandleIncludeKeycodes(
             (*info).keymap_info,
             0 as ::core::ffi::c_uint,
         );
-        included.name = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void)
-            as *mut ::core::ffi::c_char as *mut ::core::ffi::c_char;
+        included.name =
+            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyNamesInfo = KeyNamesInfo {
-                name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                name: ::core::ptr::null_mut::<i8>(),
                 errorCount: 0,
                 include_depth: 0,
                 keycodes: KeycodeStore {
@@ -2523,13 +2511,13 @@ unsafe extern "C" fn HandleIncludeKeycodes(
                 keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
             };
             let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-            let mut path: [::core::ffi::c_char; 4096] = [0; 4096];
+            let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
                 stmt,
                 FILE_TYPE_KEYCODES,
-                &raw mut path as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 4096]>() as usize,
+                &raw mut path as *mut i8,
+                ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -2564,7 +2552,7 @@ unsafe extern "C" fn HandleKeycodeDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Illegal keycode %ld: must be between 0..%u; Key ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 (*stmt).value,
                 (0xffffffff as ::core::ffi::c_uint).wrapping_sub(1 as ::core::ffi::c_uint),
             );
@@ -2598,7 +2586,7 @@ unsafe extern "C" fn HandleAliasDef(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Alias of %s for %s declared more than once; First definition ignored\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
                             KeyNameText((*info).ctx, (*def).alias),
                             KeyNameText((*info).ctx, (*def).real),
@@ -2621,7 +2609,7 @@ unsafe extern "C" fn HandleAliasDef(
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] Multiple definitions for alias %s; Using %s, ignoring %s\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
                             KeyNameText((*info).ctx, (*def).alias),
                             KeyNameText((*info).ctx, use_0),
@@ -2638,18 +2626,18 @@ unsafe extern "C" fn HandleAliasDef(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Alias name %s already assigned to a real key; Using %s, ignoring %s\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
                         KeyNameText((*info).ctx, (*def).alias),
                         if clobber as ::core::ffi::c_int != 0 {
-                            b"alias\0".as_ptr() as *const ::core::ffi::c_char
+                            b"alias\0".as_ptr() as *const i8
                         } else {
-                            b"key\0".as_ptr() as *const ::core::ffi::c_char
+                            b"key\0".as_ptr() as *const i8
                         },
                         if clobber as ::core::ffi::c_int != 0 {
-                            b"key\0".as_ptr() as *const ::core::ffi::c_char
+                            b"key\0".as_ptr() as *const i8
                         } else {
-                            b"alias\0".as_ptr() as *const ::core::ffi::c_char
+                            b"alias\0".as_ptr() as *const i8
                         },
                     );
                 }
@@ -2665,8 +2653,8 @@ unsafe extern "C" fn HandleAliasDef(
 }
 unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut field: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut elem: *const i8 = ::core::ptr::null::<i8>();
+        let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         if !ExprResolveLhs(
             (*info).ctx,
@@ -2683,7 +2671,7 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Cannot set global defaults for \"%s\" element; Assignment to \"%s.%s\" ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
                 elem,
                 elem,
@@ -2694,15 +2682,15 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
                     as ::core::ffi::c_uint
                 == 0;
         }
-        if !istreq(field, b"minimum\0".as_ptr() as *const ::core::ffi::c_char)
-            && !istreq(field, b"maximum\0".as_ptr() as *const ::core::ffi::c_char)
+        if !istreq(field, b"minimum\0".as_ptr() as *const i8)
+            && !istreq(field, b"maximum\0".as_ptr() as *const i8)
         {
             xkb_log(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
                 field,
             );
@@ -2714,9 +2702,9 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
         if !arrayNdx.is_null() {
             ReportNotArray(
                 (*info).ctx,
-                b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
+                b"keycodes\0".as_ptr() as *const i8,
                 field,
-                b"defaults\0".as_ptr() as *const ::core::ffi::c_char,
+                b"defaults\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as ::core::ffi::c_uint
                 & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -2730,10 +2718,10 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
             ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
+                b"keycodes\0".as_ptr() as *const i8,
                 field,
-                b"defaults\0".as_ptr() as *const ::core::ffi::c_char,
-                b"integer 0..0xfffffffe\0".as_ptr() as *const ::core::ffi::c_char,
+                b"defaults\0".as_ptr() as *const i8,
+                b"integer 0..0xfffffffe\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as ::core::ffi::c_uint
                 & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as ::core::ffi::c_uint
@@ -2755,7 +2743,7 @@ unsafe extern "C" fn HandleLedNameDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Illegal indicator index (%ld) specified; must be between 1 .. %u; Ignored\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 (*def).ndx,
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
@@ -2764,21 +2752,21 @@ unsafe extern "C" fn HandleLedNameDef(
         }
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, (*def).name, &raw mut name) {
-            let mut buf: [::core::ffi::c_char; 20] = [0; 20];
+            let mut buf: [i8; 20] = [0; 20];
             snprintf(
-                &raw mut buf as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 20]>() as usize,
-                b"%ld\0".as_ptr() as *const ::core::ffi::c_char,
+                &raw mut buf as *mut i8,
+                ::core::mem::size_of::<[i8; 20]>() as usize,
+                b"%ld\0".as_ptr() as *const i8,
                 (*def).ndx,
             );
             (*info).errorCount += 1;
             return ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"indicator\0".as_ptr() as *const ::core::ffi::c_char,
-                b"name\0".as_ptr() as *const ::core::ffi::c_char,
-                &raw mut buf as *mut ::core::ffi::c_char,
-                b"string\0".as_ptr() as *const ::core::ffi::c_char,
+                b"indicator\0".as_ptr() as *const i8,
+                b"name\0".as_ptr() as *const i8,
+                &raw mut buf as *mut i8,
+                b"string\0".as_ptr() as *const i8,
             );
         }
         let mut ledi: LedNameInfo = LedNameInfo {
@@ -2827,14 +2815,14 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Unsupported keycodes %s statement \"%s\"; Ignoring\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
                         if (*stmt).type_0 as ::core::ffi::c_uint
                             == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as ::core::ffi::c_uint
                         {
-                            b"compound\0".as_ptr() as *const ::core::ffi::c_char
+                            b"compound\0".as_ptr() as *const i8
                         } else {
-                            b"declaration\0".as_ptr() as *const ::core::ffi::c_char
+                            b"declaration\0".as_ptr() as *const i8
                         },
                         (*(stmt as *mut UnknownStatement)).name,
                     );
@@ -2848,7 +2836,7 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"Keycode files may define key and indicator names only; Ignoring %s\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         stmt_type_to_string((*stmt).type_0),
                     );
                     ok = false_0 != 0;
@@ -2862,7 +2850,7 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Abandoning keycodes file \"%s\"\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"Abandoning keycodes file \"%s\"\n\0".as_ptr() as *const i8,
                     safe_map_name(file),
                 );
                 break;
@@ -2975,7 +2963,7 @@ unsafe extern "C" fn CopyKeycodeNameLUT(
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                                 b"[XKB-%03d] Attempt to alias %s to non-existent key %s; Ignored\n\0"
-                                    .as_ptr() as *const ::core::ffi::c_char,
+                                    .as_ptr() as *const i8,
                                 XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
                                 KeyNameText((*info).ctx, name),
                                 KeyNameText((*info).ctx, (*match_0).alias.real()),
@@ -3080,7 +3068,7 @@ pub unsafe extern "C" fn CompileKeycodes(
 ) -> bool {
     unsafe {
         let mut info: KeyNamesInfo = KeyNamesInfo {
-            name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            name: ::core::ptr::null_mut::<i8>(),
             errorCount: 0,
             include_depth: 0,
             keycodes: KeycodeStore {

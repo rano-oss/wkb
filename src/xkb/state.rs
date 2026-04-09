@@ -127,7 +127,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -139,7 +139,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -154,7 +154,7 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -162,7 +162,7 @@ pub mod context_h {
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -175,7 +175,7 @@ pub mod context_h {
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -221,11 +221,11 @@ pub mod xkbcommon_h {
     #[repr(C)]
 
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
 
     pub type xkb_log_level = ::core::ffi::c_uint;
@@ -415,7 +415,7 @@ pub mod xkbcommon_h {
 
         pub fn xkb_keysym_to_utf8(
             keysym: xkb_keysym_t,
-            buffer: *mut ::core::ffi::c_char,
+            buffer: *mut i8,
             size: usize,
         ) -> ::core::ffi::c_int;
 
@@ -435,17 +435,17 @@ pub mod xkbcommon_h {
 
         pub fn xkb_keymap_mod_get_index(
             keymap: *mut xkb_keymap,
-            name: *const ::core::ffi::c_char,
+            name: *const i8,
         ) -> xkb_mod_index_t;
 
         pub fn xkb_keymap_layout_get_index(
             keymap: *mut xkb_keymap,
-            name: *const ::core::ffi::c_char,
+            name: *const i8,
         ) -> xkb_layout_index_t;
 
         pub fn xkb_keymap_led_get_index(
             keymap: *mut xkb_keymap,
-            name: *const ::core::ffi::c_char,
+            name: *const i8,
         ) -> xkb_led_index_t;
 
         pub fn xkb_keymap_num_layouts_for_key(
@@ -490,10 +490,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -1557,7 +1557,7 @@ pub mod utf8_h {
 
     /// Native Rust UTF-8 validation (replaces C FFI)
     #[inline]
-    pub fn is_valid_utf8(ss: *const ::core::ffi::c_char, len: usize) -> bool {
+    pub fn is_valid_utf8(ss: *const i8, len: usize) -> bool {
         if ss.is_null() {
             return false;
         }
@@ -4207,7 +4207,7 @@ unsafe extern "C" fn state_update_layout_policy(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Layout policy: unsupported layout index %u > %u\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                         (*update).redirect.wrapping_add(1 as xkb_layout_index_t),
                         (*(*state).keymap).num_groups,
@@ -4223,7 +4223,7 @@ unsafe extern "C" fn state_update_layout_policy(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Unsupported layout policy: %d\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as ::core::ffi::c_int,
                 (*update).policy as ::core::ffi::c_uint,
             );
@@ -4234,7 +4234,7 @@ unsafe extern "C" fn state_update_layout_policy(
 
 unsafe extern "C" fn log_abi_error(
     mut ctx: *mut xkb_context,
-    mut func: *const ::core::ffi::c_char,
+    mut func: *const i8,
     mut error: xkb_error_code,
 ) {
     unsafe {
@@ -4245,7 +4245,7 @@ unsafe extern "C" fn log_abi_error(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] %s: ABI error: unsupported versioned struct\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_ABI_INVALID_STRUCT_SIZE as ::core::ffi::c_int,
                     func,
                 );
@@ -4256,7 +4256,7 @@ unsafe extern "C" fn log_abi_error(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] %s: ABI version mismatch: missing newer required fields\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_ABI_BACKWARD_COMPAT as ::core::ffi::c_int,
                     func,
                 );
@@ -4267,7 +4267,7 @@ unsafe extern "C" fn log_abi_error(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] %s: ABI version mismatch: cannot use newer fields\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_ABI_FORWARD_COMPAT as ::core::ffi::c_int,
                     func,
                 );
@@ -4280,7 +4280,7 @@ unsafe extern "C" fn log_abi_error(
 
 unsafe extern "C" fn check_state_update_abi_(
     mut ctx: *mut xkb_context,
-    mut func: *const ::core::ffi::c_char,
+    mut func: *const i8,
     mut update: *const xkb_state_update,
 ) -> xkb_error_code {
     unsafe {
@@ -4329,7 +4329,7 @@ pub unsafe extern "C" fn xkb_state_update_synthetic(
     unsafe {
         let mut error: xkb_error_code = check_state_update_abi_(
             (*(*state).keymap).ctx,
-            b"xkb_state_update_synthetic\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_state_update_synthetic\0".as_ptr() as *const i8,
             update,
         );
         if error as u64 != 0 {
@@ -4481,21 +4481,21 @@ pub unsafe extern "C" fn xkb_state_key_get_syms(
     }
 }
 
-unsafe extern "C" fn XkbToControl(mut ch: ::core::ffi::c_char) -> ::core::ffi::c_char {
+unsafe extern "C" fn XkbToControl(mut ch: i8) -> i8 {
     unsafe {
-        let mut c: ::core::ffi::c_char = ch;
+        let mut c: i8 = ch;
         if c as ::core::ffi::c_int >= '@' as i32 && (c as ::core::ffi::c_int) < '\u{7f}' as i32
             || c as ::core::ffi::c_int == ' ' as i32
         {
-            c = (c as ::core::ffi::c_int & 0x1f as ::core::ffi::c_int) as ::core::ffi::c_char;
+            c = (c as ::core::ffi::c_int & 0x1f as ::core::ffi::c_int) as i8;
         } else if c as ::core::ffi::c_int == '2' as i32 {
-            c = '\0' as i32 as ::core::ffi::c_char;
+            c = '\0' as i32 as i8;
         } else if c as ::core::ffi::c_int >= '3' as i32 && c as ::core::ffi::c_int <= '7' as i32 {
-            c = (c as ::core::ffi::c_int - ('3' as i32 - '\u{1b}' as i32)) as ::core::ffi::c_char;
+            c = (c as ::core::ffi::c_int - ('3' as i32 - '\u{1b}' as i32)) as i8;
         } else if c as ::core::ffi::c_int == '8' as i32 {
-            c = '\u{7f}' as i32 as ::core::ffi::c_char;
+            c = '\u{7f}' as i32 as i8;
         } else if c as ::core::ffi::c_int == '/' as i32 {
-            c = ('_' as i32 & 0x1f as ::core::ffi::c_int) as ::core::ffi::c_char;
+            c = ('_' as i32 & 0x1f as ::core::ffi::c_int) as i8;
         }
         return c;
     }
@@ -4575,7 +4575,7 @@ unsafe extern "C" fn get_one_sym_for_string(
 pub unsafe extern "C" fn xkb_state_key_get_utf8(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
-    mut buffer: *mut ::core::ffi::c_char,
+    mut buffer: *mut i8,
     mut size: usize,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -4590,7 +4590,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             nsyms = xkb_state_key_get_syms(state, kc, &raw mut syms);
         }
         let mut offset: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-        let mut tmp: [::core::ffi::c_char; 5] = [0; 5];
+        let mut tmp: [i8; 5] = [0; 5];
         let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         loop {
             if !(i < nsyms) {
@@ -4599,8 +4599,8 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             }
             let mut ret: ::core::ffi::c_int = xkb_keysym_to_utf8(
                 *syms.offset(i as isize),
-                &raw mut tmp as *mut ::core::ffi::c_char,
-                ::core::mem::size_of::<[::core::ffi::c_char; 5]>() as usize,
+                &raw mut tmp as *mut i8,
+                ::core::mem::size_of::<[i8; 5]>() as usize,
             );
             if ret <= 0 as ::core::ffi::c_int {
                 c2rust_current_block = 17545813786824981435;
@@ -4610,7 +4610,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             if (offset as usize).wrapping_add(ret as usize) <= size {
                 memcpy(
                     buffer.offset(offset as isize) as *mut ::core::ffi::c_void,
-                    &raw mut tmp as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+                    &raw mut tmp as *mut i8 as *const ::core::ffi::c_void,
                     ret as usize,
                 );
             }
@@ -4622,11 +4622,11 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
                 if offset as usize >= size {
                     if size > 0 as usize {
                         *buffer.offset(size.wrapping_sub(1 as usize) as isize) =
-                            '\0' as i32 as ::core::ffi::c_char;
+                            '\0' as i32 as i8;
                     }
                     return offset;
                 } else {
-                    *buffer.offset(offset as isize) = '\0' as i32 as ::core::ffi::c_char;
+                    *buffer.offset(offset as isize) = '\0' as i32 as i8;
                     if is_valid_utf8(buffer, offset as usize) {
                         if offset == 1 as ::core::ffi::c_int
                             && *buffer.offset(0 as ::core::ffi::c_int as isize)
@@ -4644,7 +4644,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
             _ => {}
         }
         if size > 0 as usize {
-            *buffer.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as ::core::ffi::c_char;
+            *buffer.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as i8;
         }
         return 0 as ::core::ffi::c_int;
     }
@@ -4659,7 +4659,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf32(
         let sym: xkb_keysym_t = get_one_sym_for_string(state, kc) as xkb_keysym_t;
         let mut cp: u32 = xkb_keysym_to_utf32(sym);
         if cp <= 127 as u32 && should_do_ctrl_transformation(state, kc) as ::core::ffi::c_int != 0 {
-            cp = XkbToControl(cp as ::core::ffi::c_char) as u32;
+            cp = XkbToControl(cp as i8) as u32;
         }
         return cp;
     }
@@ -4900,7 +4900,7 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
 
 pub unsafe extern "C" fn xkb_state_mod_name_is_active(
     mut state: *mut xkb_state,
-    mut name: *const ::core::ffi::c_char,
+    mut name: *const i8,
     mut type_0: xkb_state_component,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -4933,7 +4933,7 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
         let mut ret: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         ap = c2rust_args.clone();
         loop {
-            let mut str: *const ::core::ffi::c_char = ap.arg::<*const ::core::ffi::c_char>();
+            let mut str: *const i8 = ap.arg::<*const i8>();
             if str.is_null() {
                 break;
             }
@@ -4998,7 +4998,7 @@ pub unsafe extern "C" fn xkb_state_layout_index_is_active(
 
 pub unsafe extern "C" fn xkb_state_layout_name_is_active(
     mut state: *mut xkb_state,
-    mut name: *const ::core::ffi::c_char,
+    mut name: *const i8,
     mut type_0: xkb_state_component,
 ) -> ::core::ffi::c_int {
     unsafe {
@@ -5030,7 +5030,7 @@ pub unsafe extern "C" fn xkb_state_led_index_is_active(
 
 pub unsafe extern "C" fn xkb_state_led_name_is_active(
     mut state: *mut xkb_state,
-    mut name: *const ::core::ffi::c_char,
+    mut name: *const i8,
 ) -> ::core::ffi::c_int {
     unsafe {
         let idx: xkb_led_index_t =
@@ -5168,8 +5168,8 @@ pub unsafe extern "C" fn xkb_state_key_get_consumed_mods2(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"%s: unrecognized consumed modifiers mode: %d\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
-                    b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const ::core::ffi::c_char,
+                        as *const i8,
+                    b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const i8,
                     mode as ::core::ffi::c_uint,
                 );
                 return 0 as xkb_mod_mask_t;
@@ -5280,8 +5280,8 @@ pub unsafe extern "C" fn xkb_machine_options_update_a11y_flags(
                 (*options).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"%s: unrecognized state flags: %#x\n\0".as_ptr() as *const ::core::ffi::c_char,
-                b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const ::core::ffi::c_char,
+                b"%s: unrecognized state flags: %#x\n\0".as_ptr() as *const i8,
+                b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const i8,
                 flags as ::core::ffi::c_uint & !(XKB_A11Y_FLAGS as ::core::ffi::c_uint),
             );
             return XKB_ERROR_UNSUPPORTED_A11Y_FLAGS;
@@ -5791,7 +5791,7 @@ pub unsafe extern "C" fn xkb_machine_process_synthetic(
     unsafe {
         let mut error: xkb_error_code = check_state_update_abi_(
             (*(*sm).state.keymap).ctx,
-            b"xkb_machine_process_synthetic\0".as_ptr() as *const ::core::ffi::c_char,
+            b"xkb_machine_process_synthetic\0".as_ptr() as *const i8,
             update,
         );
         if error as u64 != 0 {
@@ -6374,8 +6374,8 @@ pub unsafe extern "C" fn xkb_events_new_batch(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"%s: unrecognized events batch flags: %#x\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-                b"xkb_events_new_batch\0".as_ptr() as *const ::core::ffi::c_char,
+                    as *const i8,
+                b"xkb_events_new_batch\0".as_ptr() as *const i8,
                 flags as ::core::ffi::c_uint & !(XKB_EVENTS_FLAGS as ::core::ffi::c_uint),
             );
             return ::core::ptr::null_mut::<xkb_events>();
@@ -6388,9 +6388,9 @@ pub unsafe extern "C" fn xkb_events_new_batch(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] %s: cannot allocate state events collection\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
-                b"xkb_events_new_batch\0".as_ptr() as *const ::core::ffi::c_char,
+                b"xkb_events_new_batch\0".as_ptr() as *const i8,
             );
             return events;
         }

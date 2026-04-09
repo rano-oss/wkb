@@ -25,27 +25,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -56,7 +56,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -80,20 +80,17 @@ pub mod stdio_h {
 
     extern "C" {
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(
-            __filename: *const ::core::ffi::c_char,
-            __modes: *const ::core::ffi::c_char,
-        ) -> *mut FILE;
+        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
         pub fn snprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
         pub fn vsnprintf(
-            __s: *mut ::core::ffi::c_char,
+            __s: *mut i8,
             __maxlen: usize,
-            __format: *const ::core::ffi::c_char,
+            __format: *const i8,
             __arg: ::core::ffi::VaList,
         ) -> ::core::ffi::c_int;
     }
@@ -203,7 +200,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -215,7 +212,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -229,14 +226,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -244,26 +241,19 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_context_getenv(
-            ctx: *mut xkb_context,
-            name: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_context_getenv(ctx: *mut xkb_context, name: *const i8) -> *mut i8;
         pub fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> darray_size_t;
         pub fn xkb_context_failed_include_path_get(
             ctx: *mut xkb_context,
             idx: darray_size_t,
-        ) -> *const ::core::ffi::c_char;
-        pub fn xkb_context_include_path_get_extra_path(
-            ctx: *mut xkb_context,
-        ) -> *const ::core::ffi::c_char;
-        pub fn xkb_context_include_path_get_system_path(
-            ctx: *mut xkb_context,
-        ) -> *const ::core::ffi::c_char;
+        ) -> *const i8;
+        pub fn xkb_context_include_path_get_extra_path(ctx: *mut xkb_context) -> *const i8;
+        pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
     }
@@ -280,11 +270,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -298,7 +288,7 @@ pub mod xkbcommon_h {
         pub fn xkb_context_include_path_get(
             context: *mut xkb_context,
             index: ::core::ffi::c_uint,
-        ) -> *const ::core::ffi::c_char;
+        ) -> *const i8;
     }
 }
 pub mod ast_h {
@@ -371,10 +361,10 @@ pub mod ast_h {
     pub struct _IncludeStmt {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub stmt: *mut ::core::ffi::c_char,
-        pub file: *mut ::core::ffi::c_char,
-        pub map: *mut ::core::ffi::c_char,
-        pub modifier: *mut ::core::ffi::c_char,
+        pub stmt: *mut i8,
+        pub file: *mut i8,
+        pub map: *mut i8,
+        pub modifier: *mut i8,
         pub next_incl: *mut _IncludeStmt,
     }
     pub type IncludeStmt = _IncludeStmt;
@@ -391,13 +381,13 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
     }
     extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const ::core::ffi::c_char;
+        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
     }
 }
 pub mod scanner_utils_h {
@@ -412,13 +402,13 @@ pub mod scanner_utils_h {
     pub struct scanner {
         pub pos: usize,
         pub len: usize,
-        pub s: *const ::core::ffi::c_char,
-        pub buf: [::core::ffi::c_char; 1024],
+        pub s: *const i8,
+        pub buf: [i8; 1024],
         pub buf_pos: usize,
         pub token_pos: usize,
         pub cached_pos: usize,
         pub cached_loc: scanner_loc,
-        pub file_name: *const ::core::ffi::c_char,
+        pub file_name: *const i8,
         pub ctx: *mut xkb_context,
         pub priv_0: *mut ::core::ffi::c_void,
     }
@@ -426,9 +416,9 @@ pub mod scanner_utils_h {
     pub unsafe extern "C" fn scanner_init(
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
-        mut string: *const ::core::ffi::c_char,
+        mut string: *const i8,
         mut len: usize,
-        mut file_name: *const ::core::ffi::c_char,
+        mut file_name: *const i8,
         mut priv_0: *mut ::core::ffi::c_void,
     ) {
         unsafe {
@@ -445,10 +435,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> ::core::ffi::c_char {
+    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
             if ((*s).pos >= (*s).len) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                return '\0' as i32 as ::core::ffi::c_char;
+                return '\0' as i32 as i8;
             }
             return *(*s).s.offset((*s).pos as isize);
         }
@@ -466,10 +456,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> ::core::ffi::c_char {
+    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
             if scanner_eof(s) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                return '\0' as i32 as ::core::ffi::c_char;
+                return '\0' as i32 as i8;
             }
             let c2rust_fresh0 = (*s).pos;
             (*s).pos = (*s).pos.wrapping_add(1);
@@ -477,7 +467,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
                 as ::core::ffi::c_int as ::core::ffi::c_long
@@ -490,13 +480,10 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_append(
-        mut s: *mut scanner,
-        mut ch: ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(1 as usize)
-                >= ::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize
+                >= ::core::mem::size_of::<[i8; 1024]>() as usize
             {
                 return false_0 != 0;
             }
@@ -507,22 +494,18 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_appends(
-        mut s: *mut scanner,
-        mut str: *const ::core::ffi::c_char,
-    ) -> bool {
+    pub unsafe extern "C" fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
         unsafe {
             let mut ret: ::core::ffi::c_int = 0;
             ret = snprintf(
-                (&raw mut (*s).buf as *mut ::core::ffi::c_char).offset((*s).buf_pos as isize),
-                (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
-                    .wrapping_sub((*s).buf_pos),
-                b"%s\0".as_ptr() as *const ::core::ffi::c_char,
+                (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
+                (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub((*s).buf_pos),
+                b"%s\0".as_ptr() as *const i8,
                 str,
             );
             if ret < 0 as ::core::ffi::c_int
                 || ret as usize
-                    >= (::core::mem::size_of::<[::core::ffi::c_char; 1024]>() as usize)
+                    >= (::core::mem::size_of::<[i8; 1024]>() as usize)
                         .wrapping_sub((*s).buf_pos as usize)
             {
                 return false_0 != 0;
@@ -547,24 +530,18 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn strchr(
-            __s: *const ::core::ffi::c_char,
-            __c: ::core::ffi::c_int,
-        ) -> *mut ::core::ffi::c_char;
-        pub fn strpbrk(
-            __s: *const ::core::ffi::c_char,
-            __accept: *const ::core::ffi::c_char,
-        ) -> *mut ::core::ffi::c_char;
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strdup(__s: *const i8) -> *mut i8;
+        pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
+        pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn snprintf_safe(
-        mut buf: *mut ::core::ffi::c_char,
+        mut buf: *mut i8,
         mut sz: usize,
-        mut format: *const ::core::ffi::c_char,
+        mut format: *const i8,
         mut c2rust_args: ...
     ) -> bool {
         unsafe {
@@ -586,8 +563,8 @@ pub mod xkbcomp_priv_h {
         pub fn XkbParseFile(
             ctx: *mut xkb_context,
             file: *mut FILE,
-            file_name: *const ::core::ffi::c_char,
-            map: *const ::core::ffi::c_char,
+            file_name: *const i8,
+            map: *const i8,
         ) -> *mut XkbFile;
         pub fn FreeXkbFile(file: *mut XkbFile);
     }
@@ -610,16 +587,16 @@ pub mod include_h {
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
     pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
-    pub static mut MERGE_MODE_PREFIXES: [::core::ffi::c_char; 4] = [
-        MERGE_OVERRIDE_PREFIX as ::core::ffi::c_char,
-        MERGE_AUGMENT_PREFIX as ::core::ffi::c_char,
-        MERGE_REPLACE_PREFIX as ::core::ffi::c_char,
-        0 as ::core::ffi::c_int as ::core::ffi::c_char,
+    pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
+        MERGE_OVERRIDE_PREFIX as i8,
+        MERGE_AUGMENT_PREFIX as i8,
+        MERGE_REPLACE_PREFIX as i8,
+        0 as ::core::ffi::c_int as i8,
     ];
 }
 pub mod utils_paths_h {
     extern "C" {
-        pub fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool;
+        pub fn is_absolute_path(path: *const i8) -> bool;
     }
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
@@ -718,43 +695,40 @@ use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
 #[no_mangle]
 pub unsafe extern "C" fn ParseIncludeMap(
-    mut str_inout: *mut *mut ::core::ffi::c_char,
-    mut file_rtrn: *mut *mut ::core::ffi::c_char,
-    mut map_rtrn: *mut *mut ::core::ffi::c_char,
-    mut nextop_rtrn: *mut ::core::ffi::c_char,
-    mut extra_data: *mut *mut ::core::ffi::c_char,
+    mut str_inout: *mut *mut i8,
+    mut file_rtrn: *mut *mut i8,
+    mut map_rtrn: *mut *mut i8,
+    mut nextop_rtrn: *mut i8,
+    mut extra_data: *mut *mut i8,
 ) -> bool {
     unsafe {
-        let mut tmp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut next: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut tmp: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut next: *mut i8 = ::core::ptr::null_mut::<i8>();
         str = *str_inout;
-        next = strpbrk(
-            str,
-            &raw const MERGE_MODE_PREFIXES as *const ::core::ffi::c_char,
-        );
+        next = strpbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
         if !next.is_null() {
             *nextop_rtrn = *next;
             let c2rust_fresh2 = next;
             next = next.offset(1);
-            *c2rust_fresh2 = '\0' as i32 as ::core::ffi::c_char;
+            *c2rust_fresh2 = '\0' as i32 as i8;
         } else {
-            *nextop_rtrn = '\0' as i32 as ::core::ffi::c_char;
-            next = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            *nextop_rtrn = '\0' as i32 as i8;
+            next = ::core::ptr::null_mut::<i8>();
         }
         tmp = strchr(str, ':' as i32);
         if !tmp.is_null() {
             let c2rust_fresh3 = tmp;
             tmp = tmp.offset(1);
-            *c2rust_fresh3 = '\0' as i32 as ::core::ffi::c_char;
+            *c2rust_fresh3 = '\0' as i32 as i8;
             *extra_data = strdup(tmp);
         } else {
-            *extra_data = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            *extra_data = ::core::ptr::null_mut::<i8>();
         }
         tmp = strchr(str, '(' as i32);
         if tmp.is_null() {
             *file_rtrn = strdup(str);
-            *map_rtrn = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            *map_rtrn = ::core::ptr::null_mut::<i8>();
         } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
         {
             free(*extra_data as *mut ::core::ffi::c_void);
@@ -762,7 +736,7 @@ pub unsafe extern "C" fn ParseIncludeMap(
         } else {
             let c2rust_fresh4 = tmp;
             tmp = tmp.offset(1);
-            *c2rust_fresh4 = '\0' as i32 as ::core::ffi::c_char;
+            *c2rust_fresh4 = '\0' as i32 as i8;
             *file_rtrn = strdup(str);
             str = tmp;
             tmp = strchr(str, ')' as i32);
@@ -776,11 +750,11 @@ pub unsafe extern "C" fn ParseIncludeMap(
             }
             let c2rust_fresh5 = tmp;
             tmp = tmp.offset(1);
-            *c2rust_fresh5 = '\0' as i32 as ::core::ffi::c_char;
+            *c2rust_fresh5 = '\0' as i32 as i8;
             *map_rtrn = strdup(str);
         }
         if *nextop_rtrn as ::core::ffi::c_int == '\0' as i32 {
-            *str_inout = ::core::ptr::null_mut::<::core::ffi::c_char>();
+            *str_inout = ::core::ptr::null_mut::<i8>();
         } else if *nextop_rtrn as ::core::ffi::c_int == MERGE_OVERRIDE_PREFIX
             || *nextop_rtrn as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
             || *nextop_rtrn as ::core::ffi::c_int == MERGE_REPLACE_PREFIX
@@ -792,21 +766,21 @@ pub unsafe extern "C" fn ParseIncludeMap(
         return true_0 != 0;
     }
 }
-static mut xkb_file_type_include_dirs: [*const ::core::ffi::c_char; 7] = [
-    b"keycodes\0".as_ptr() as *const ::core::ffi::c_char,
-    b"types\0".as_ptr() as *const ::core::ffi::c_char,
-    b"compat\0".as_ptr() as *const ::core::ffi::c_char,
-    b"symbols\0".as_ptr() as *const ::core::ffi::c_char,
-    b"geometry\0".as_ptr() as *const ::core::ffi::c_char,
-    b"keymap\0".as_ptr() as *const ::core::ffi::c_char,
-    b"rules\0".as_ptr() as *const ::core::ffi::c_char,
+static mut xkb_file_type_include_dirs: [*const i8; 7] = [
+    b"keycodes\0".as_ptr() as *const i8,
+    b"types\0".as_ptr() as *const i8,
+    b"compat\0".as_ptr() as *const i8,
+    b"symbols\0".as_ptr() as *const i8,
+    b"geometry\0".as_ptr() as *const i8,
+    b"keymap\0".as_ptr() as *const i8,
+    b"rules\0".as_ptr() as *const i8,
 ];
-unsafe extern "C" fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
         if type_0 as ::core::ffi::c_uint
             >= _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as ::core::ffi::c_uint
         {
-            return b"\0".as_ptr() as *const ::core::ffi::c_char;
+            return b"\0".as_ptr() as *const i8;
         }
         return xkb_file_type_include_dirs[type_0 as usize];
     }
@@ -818,7 +792,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %u include paths searched:\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"[XKB-%03d] %u include paths searched:\n\0".as_ptr() as *const i8,
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                 xkb_context_num_include_paths(ctx),
             );
@@ -828,7 +802,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                     xkb_context_include_path_get(ctx, i),
                 );
@@ -839,8 +813,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] There are no include paths to search\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] There are no include paths to search\n\0".as_ptr() as *const i8,
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
             );
         }
@@ -849,8 +822,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %u include paths could not be added:\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] %u include paths could not be added:\n\0".as_ptr() as *const i8,
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                 xkb_context_num_failed_include_paths(ctx),
             );
@@ -860,7 +832,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                     xkb_context_failed_include_path_get(ctx, i_0),
                 );
@@ -871,36 +843,36 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
 }
 unsafe extern "C" fn expand_percent(
     mut ctx: *mut xkb_context,
-    mut parent_file_name: *const ::core::ffi::c_char,
-    mut typeDir: *const ::core::ffi::c_char,
-    mut buf: *mut ::core::ffi::c_char,
+    mut parent_file_name: *const i8,
+    mut typeDir: *const i8,
+    mut buf: *mut i8,
     mut buf_size: usize,
-    mut name: *const ::core::ffi::c_char,
+    mut name: *const i8,
     mut name_len: usize,
 ) -> usize {
     unsafe {
         let mut s: scanner = scanner {
             pos: 0,
             len: 0,
-            s: ::core::ptr::null::<::core::ffi::c_char>(),
+            s: ::core::ptr::null::<i8>(),
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: ::core::ptr::null::<::core::ffi::c_char>(),
+            file_name: ::core::ptr::null::<i8>(),
             ctx: ::core::ptr::null_mut::<xkb_context>(),
             priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
         };
         scanner_init(&raw mut s, ctx, name, name_len, parent_file_name, NULL);
         s.buf_pos = 0 as usize;
         while !scanner_eof(&raw mut s) && !scanner_eol(&raw mut s) {
-            if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
-                if scanner_chr(&raw mut s, '%' as i32 as ::core::ffi::c_char) {
-                    scanner_buf_append(&raw mut s, '%' as i32 as ::core::ffi::c_char);
-                } else if scanner_chr(&raw mut s, 'H' as i32 as ::core::ffi::c_char) {
-                    let mut home: *const ::core::ffi::c_char =
-                        xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const ::core::ffi::c_char);
+            if scanner_chr(&raw mut s, '%' as i32 as i8) {
+                if scanner_chr(&raw mut s, '%' as i32 as i8) {
+                    scanner_buf_append(&raw mut s, '%' as i32 as i8);
+                } else if scanner_chr(&raw mut s, 'H' as i32 as i8) {
+                    let mut home: *const i8 =
+                        xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
                     if home.is_null() {
                         let mut loc: scanner_loc = scanner_token_location(&raw mut s);
                         xkb_log(
@@ -908,7 +880,7 @@ unsafe extern "C" fn expand_percent(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"%s:%zu:%zu: %%H was used in an include statement, but the HOME environment variable is not set\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             s.file_name,
                             loc.line,
                             loc.column,
@@ -922,7 +894,7 @@ unsafe extern "C" fn expand_percent(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%H is too long\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                             s.file_name,
                             loc_0.line,
@@ -930,11 +902,10 @@ unsafe extern "C" fn expand_percent(
                         );
                         return 0 as usize;
                     }
-                } else if scanner_chr(&raw mut s, 'S' as i32 as ::core::ffi::c_char) {
-                    let mut default_root: *const ::core::ffi::c_char =
-                        xkb_context_include_path_get_system_path(ctx);
+                } else if scanner_chr(&raw mut s, 'S' as i32 as i8) {
+                    let mut default_root: *const i8 = xkb_context_include_path_get_system_path(ctx);
                     if !scanner_buf_appends(&raw mut s, default_root)
-                        || !scanner_buf_append(&raw mut s, '/' as i32 as ::core::ffi::c_char)
+                        || !scanner_buf_append(&raw mut s, '/' as i32 as i8)
                         || !scanner_buf_appends(&raw mut s, typeDir)
                     {
                         let mut loc_1: scanner_loc = scanner_token_location(&raw mut s);
@@ -943,7 +914,7 @@ unsafe extern "C" fn expand_percent(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%S is too long\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                             s.file_name,
                             loc_1.line,
@@ -951,11 +922,11 @@ unsafe extern "C" fn expand_percent(
                         );
                         return 0 as usize;
                     }
-                } else if scanner_chr(&raw mut s, 'E' as i32 as ::core::ffi::c_char) {
-                    let mut default_root_0: *const ::core::ffi::c_char =
+                } else if scanner_chr(&raw mut s, 'E' as i32 as i8) {
+                    let mut default_root_0: *const i8 =
                         xkb_context_include_path_get_extra_path(ctx);
                     if !scanner_buf_appends(&raw mut s, default_root_0)
-                        || !scanner_buf_append(&raw mut s, '/' as i32 as ::core::ffi::c_char)
+                        || !scanner_buf_append(&raw mut s, '/' as i32 as i8)
                         || !scanner_buf_appends(&raw mut s, typeDir)
                     {
                         let mut loc_2: scanner_loc = scanner_token_location(&raw mut s);
@@ -964,7 +935,7 @@ unsafe extern "C" fn expand_percent(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                             b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%E is too long\n\0"
-                                .as_ptr() as *const ::core::ffi::c_char,
+                                .as_ptr() as *const i8,
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                             s.file_name,
                             loc_2.line,
@@ -979,7 +950,7 @@ unsafe extern "C" fn expand_percent(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] %s:%zu:%zu: unknown %% format (%c) in include statement\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                         s.file_name,
                         loc_3.line,
@@ -992,19 +963,19 @@ unsafe extern "C" fn expand_percent(
                 scanner_buf_append(&raw mut s, scanner_next(&raw mut s));
             }
         }
-        if !scanner_buf_append(&raw mut s, '\0' as i32 as ::core::ffi::c_char) {
+        if !scanner_buf_append(&raw mut s, '\0' as i32 as i8) {
             let mut loc_4: scanner_loc = scanner_token_location(&raw mut s);
             xkb_log(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] %s:%zu:%zu: include path is too long; max: %zu\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                 s.file_name,
                 loc_4.line,
                 loc_4.column,
-                ::core::mem::size_of::<[::core::ffi::c_char; 1024]>(),
+                ::core::mem::size_of::<[i8; 1024]>(),
             );
             return 0 as usize;
         }
@@ -1015,7 +986,7 @@ unsafe extern "C" fn expand_percent(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] %s:%zu:%zu: include path is too long: %zu > %zu\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
                 s.file_name,
                 loc_5.line,
@@ -1027,7 +998,7 @@ unsafe extern "C" fn expand_percent(
         }
         memcpy(
             buf as *mut ::core::ffi::c_void,
-            &raw mut s.buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+            &raw mut s.buf as *mut i8 as *const ::core::ffi::c_void,
             s.buf_pos,
         );
         return s.buf_pos;
@@ -1036,11 +1007,11 @@ unsafe extern "C" fn expand_percent(
 #[no_mangle]
 pub unsafe extern "C" fn expand_path(
     mut ctx: *mut xkb_context,
-    mut parent_file_name: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
+    mut parent_file_name: *const i8,
+    mut name: *const i8,
     mut name_len: usize,
     mut type_0: xkb_file_type,
-    mut buf: *mut ::core::ffi::c_char,
+    mut buf: *mut i8,
     mut buf_size: usize,
 ) -> ssize_t {
     unsafe {
@@ -1067,7 +1038,7 @@ pub unsafe extern "C" fn expand_path(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Path is too long: %zu > %zu, got raw path: %.*s\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
                         k,
                         buf_size,
@@ -1081,7 +1052,7 @@ pub unsafe extern "C" fn expand_path(
                     name as *const ::core::ffi::c_void,
                     k,
                 );
-                let mut typeDir: *const ::core::ffi::c_char = DirectoryForInclude(type_0);
+                let mut typeDir: *const i8 = DirectoryForInclude(type_0);
                 let mut count: usize = expand_percent(
                     ctx,
                     parent_file_name,
@@ -1103,11 +1074,11 @@ pub unsafe extern "C" fn expand_path(
 #[no_mangle]
 pub unsafe extern "C" fn FindFileInXkbPath(
     mut ctx: *mut xkb_context,
-    mut parent_file_name: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
+    mut parent_file_name: *const i8,
+    mut name: *const i8,
     mut name_len: usize,
     mut type_0: xkb_file_type,
-    mut buf: *mut ::core::ffi::c_char,
+    mut buf: *mut i8,
     mut buf_size: usize,
     mut offset: *mut ::core::ffi::c_uint,
     mut required: bool,
@@ -1115,9 +1086,8 @@ pub unsafe extern "C" fn FindFileInXkbPath(
     unsafe {
         let mut c2rust_current_block: u64;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let mut name_buffer: *mut ::core::ffi::c_char =
-            ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut typeDir: *const ::core::ffi::c_char = DirectoryForInclude(type_0);
+        let mut name_buffer: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut typeDir: *const i8 = DirectoryForInclude(type_0);
         let mut i: ::core::ffi::c_uint = *offset;
         loop {
             if !(i < xkb_context_num_include_paths(ctx)) {
@@ -1127,7 +1097,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
             if !snprintf_safe(
                 buf,
                 buf_size,
-                b"%s/%s/%.*s\0".as_ptr() as *const ::core::ffi::c_char,
+                b"%s/%s/%.*s\0".as_ptr() as *const i8,
                 xkb_context_include_path_get(ctx, i),
                 typeDir,
                 name_len as ::core::ffi::c_uint,
@@ -1138,7 +1108,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Path is too long: expected max length of %zu, got: %s/%s/%.*s\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
                     buf_size,
                     xkb_context_include_path_get(ctx, i),
@@ -1147,7 +1117,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
                     name,
                 );
             } else {
-                file = fopen(buf, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+                file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
                 if !file.is_null() {
                     *offset = i;
                     c2rust_current_block = 17619028831370153636;
@@ -1164,7 +1134,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Couldn't find file \"%s/%.*s\" in include paths\n\0".as_ptr()
-                            as *const ::core::ffi::c_char,
+                            as *const i8,
                         XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                         typeDir,
                         name_len as ::core::ffi::c_uint,
@@ -1190,8 +1160,7 @@ pub unsafe extern "C" fn ExceedsIncludeMaxDepth(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Exceeded include depth threshold (%u)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Exceeded include depth threshold (%u)\0".as_ptr() as *const i8,
                 XKB_ERROR_RECURSIVE_INCLUDE as ::core::ffi::c_int,
                 15 as ::core::ffi::c_int,
             );
@@ -1206,17 +1175,17 @@ pub unsafe extern "C" fn ProcessIncludeFile(
     mut ctx: *mut xkb_context,
     mut stmt: *const IncludeStmt,
     mut file_type: xkb_file_type,
-    mut path: *mut ::core::ffi::c_char,
+    mut path: *mut i8,
     mut path_size: usize,
 ) -> *mut XkbFile {
     unsafe {
         let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        let mut stmt_file: *const ::core::ffi::c_char = (*stmt).file;
+        let mut stmt_file: *const i8 = (*stmt).file;
         let mut stmt_file_len: usize = strlen(stmt_file);
         let expanded: ssize_t = expand_path(
             ctx,
-            b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+            b"(unknown)\0".as_ptr() as *const i8,
             stmt_file,
             stmt_file_len,
             file_type,
@@ -1233,13 +1202,13 @@ pub unsafe extern "C" fn ProcessIncludeFile(
         let mut offset: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
-            file = fopen(stmt_file, b"rb\0".as_ptr() as *const ::core::ffi::c_char) as *mut FILE;
+            file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         } else if (expanded != 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
             file = ::core::ptr::null_mut::<FILE>();
         } else {
             file = FindFileInXkbPath(
                 ctx,
-                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"(unknown)\0".as_ptr() as *const i8,
                 stmt_file,
                 stmt_file_len,
                 file_type,
@@ -1260,7 +1229,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Include file of wrong type (expected %s, got %s); Include file \"%s\" ignored\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
                         xkb_file_type_to_string(file_type),
                         xkb_file_type_to_string((*xkb_file).file_type),
@@ -1287,7 +1256,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
             offset = offset.wrapping_add(1);
             file = FindFileInXkbPath(
                 ctx,
-                b"(unknown)\0".as_ptr() as *const ::core::ffi::c_char,
+                b"(unknown)\0".as_ptr() as *const i8,
                 stmt_file,
                 stmt_file_len,
                 file_type,
@@ -1309,7 +1278,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Couldn't process include statement for '%s(%s)'\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
                     (*stmt).file,
                     (*stmt).map,
@@ -1320,7 +1289,7 @@ pub unsafe extern "C" fn ProcessIncludeFile(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"[XKB-%03d] Couldn't process include statement for '%s'\n\0".as_ptr()
-                        as *const ::core::ffi::c_char,
+                        as *const i8,
                     XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
                     (*stmt).file,
                 );

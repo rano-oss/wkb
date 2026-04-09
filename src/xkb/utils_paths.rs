@@ -12,7 +12,7 @@ pub fn is_absolute_path_safe(path: &str) -> bool {
 /// FFI wrapper for C compatibility
 /// Kept for compatibility with c2rust-generated code
 #[no_mangle]
-pub unsafe extern "C" fn is_absolute_path(path: *const ::core::ffi::c_char) -> bool {
+pub unsafe extern "C" fn is_absolute_path(path: *const i8) -> bool {
     if path.is_null() {
         return false;
     }

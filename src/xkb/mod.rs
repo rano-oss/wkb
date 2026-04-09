@@ -78,7 +78,6 @@ pub mod rust_types;
 use crate::modifiers::*;
 use crate::{ListComposer, WKB};
 use std::collections::{BTreeMap, HashSet};
-use std::ffi::CString;
 
 /// Path to XKB symbols directory
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";

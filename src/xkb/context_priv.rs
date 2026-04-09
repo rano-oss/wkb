@@ -27,7 +27,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -39,7 +39,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -53,14 +53,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -68,9 +68,7 @@ pub mod context_h {
 
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_context_include_path_get_system_path(
-            ctx: *mut xkb_context,
-        ) -> *const ::core::ffi::c_char;
+        pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
     }
 }
 pub mod atom_h {
@@ -82,11 +80,11 @@ pub mod atom_h {
         pub fn atom_table_size(table: *mut atom_table) -> darray_size_t;
         pub fn atom_intern(
             table: *mut atom_table,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             len: usize,
             add: bool,
         ) -> xkb_atom_t;
-        pub fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const ::core::ffi::c_char;
+        pub fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8;
     }
 }
 pub mod darray_h {
@@ -96,11 +94,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -222,17 +220,17 @@ pub mod rmlvo_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strlen(__s: *const ::core::ffi::c_char) -> usize;
+        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod config_h {
-    pub const DEFAULT_XKB_LAYOUT: [::core::ffi::c_char; 3] =
-        unsafe { ::core::mem::transmute::<[u8; 3], [::core::ffi::c_char; 3]>(*b"us\0") };
-    pub const DEFAULT_XKB_MODEL: [::core::ffi::c_char; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"pc105\0") };
+    pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
+        unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
+    pub const DEFAULT_XKB_MODEL: [i8; 6] =
+        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
     pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = NULL;
-    pub const DEFAULT_XKB_RULES: [::core::ffi::c_char; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"evdev\0") };
+    pub const DEFAULT_XKB_RULES: [i8; 6] =
+        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
     pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = NULL;
     use super::__stddef_null_h::NULL;
 }
@@ -246,13 +244,13 @@ pub mod __stddef_null_h {
 }
 pub mod stdlib_h {
     extern "C" {
-        pub fn getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-        pub fn secure_getenv(__name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+        pub fn getenv(__name: *const i8) -> *mut i8;
+        pub fn secure_getenv(__name: *const i8) -> *mut i8;
     }
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null()
                 || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
@@ -332,8 +330,8 @@ pub use self::xkbcommon_h::{
 #[no_mangle]
 pub unsafe extern "C" fn xkb_context_getenv(
     mut ctx: *mut xkb_context,
-    mut name: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+    mut name: *const i8,
+) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv() {
             return secure_getenv(name);
@@ -353,7 +351,7 @@ pub unsafe extern "C" fn xkb_context_init_includes(mut ctx: *mut xkb_context) ->
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         b"[XKB-%03d] Failed to add any default include path (system path: %s)\n\0"
-                            .as_ptr() as *const ::core::ffi::c_char,
+                            .as_ptr() as *const i8,
                         XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as ::core::ffi::c_int,
                         xkb_context_include_path_get_system_path(ctx),
                     );
@@ -383,10 +381,10 @@ pub unsafe extern "C" fn xkb_context_num_failed_include_paths(
 pub unsafe extern "C" fn xkb_context_failed_include_path_get(
     mut ctx: *mut xkb_context,
     mut idx: darray_size_t,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_failed_include_paths(ctx) {
-            return ::core::ptr::null::<::core::ffi::c_char>();
+            return ::core::ptr::null::<i8>();
         }
         return *(*ctx).failed_includes.item.offset(idx as isize);
     }
@@ -400,7 +398,7 @@ pub unsafe extern "C" fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darra
 #[no_mangle]
 pub unsafe extern "C" fn xkb_atom_lookup(
     mut ctx: *mut xkb_context,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
 ) -> xkb_atom_t {
     unsafe {
         return atom_intern((*ctx).atom_table, string, strlen(string), false_0 != 0);
@@ -409,7 +407,7 @@ pub unsafe extern "C" fn xkb_atom_lookup(
 #[no_mangle]
 pub unsafe extern "C" fn xkb_atom_intern(
     mut ctx: *mut xkb_context,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut len: usize,
 ) -> xkb_atom_t {
     unsafe {
@@ -420,7 +418,7 @@ pub unsafe extern "C" fn xkb_atom_intern(
 pub unsafe extern "C" fn xkb_atom_text(
     mut ctx: *mut xkb_context,
     mut atom: xkb_atom_t,
-) -> *const ::core::ffi::c_char {
+) -> *const i8 {
     unsafe {
         return atom_text((*ctx).atom_table, atom);
     }
@@ -430,7 +428,7 @@ pub unsafe extern "C" fn xkb_log(
     mut ctx: *mut xkb_context,
     mut level: xkb_log_level,
     mut verbosity: ::core::ffi::c_int,
-    mut fmt: *const ::core::ffi::c_char,
+    mut fmt: *const i8,
     mut c2rust_args: ...
 ) {
     unsafe {
@@ -448,34 +446,28 @@ pub unsafe extern "C" fn xkb_log(
 pub unsafe extern "C" fn xkb_context_get_buffer(
     mut ctx: *mut xkb_context,
     mut size: usize,
-) -> *mut ::core::ffi::c_char {
+) -> *mut i8 {
     unsafe {
-        let mut rtrn: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        if size >= ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize {
-            return ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut rtrn: *mut i8 = ::core::ptr::null_mut::<i8>();
+        if size >= ::core::mem::size_of::<[i8; 2048]>() as usize {
+            return ::core::ptr::null_mut::<i8>();
         }
-        if (::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize)
-            .wrapping_sub((*ctx).text_next as usize)
+        if (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub((*ctx).text_next as usize)
             <= size
         {
             (*ctx).text_next = 0 as usize;
         }
-        rtrn = (&raw mut (*ctx).text_buffer as *mut ::core::ffi::c_char)
-            .offset((*ctx).text_next as isize) as *mut ::core::ffi::c_char;
+        rtrn =
+            (&raw mut (*ctx).text_buffer as *mut i8).offset((*ctx).text_next as isize) as *mut i8;
         (*ctx).text_next = (*ctx).text_next.wrapping_add(size);
         return rtrn;
     }
 }
-unsafe extern "C" fn xkb_context_get_default_rules(
-    mut ctx: *mut xkb_context,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(
-                ctx,
-                b"XKB_DEFAULT_RULES\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
@@ -484,16 +476,11 @@ unsafe extern "C" fn xkb_context_get_default_rules(
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_model(
-    mut ctx: *mut xkb_context,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(
-                ctx,
-                b"XKB_DEFAULT_MODEL\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
@@ -502,16 +489,11 @@ unsafe extern "C" fn xkb_context_get_default_model(
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_layout(
-    mut ctx: *mut xkb_context,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(
-                ctx,
-                b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
@@ -520,43 +502,31 @@ unsafe extern "C" fn xkb_context_get_default_layout(
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_variant(
-    mut ctx: *mut xkb_context,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        let mut layout: *const ::core::ffi::c_char = xkb_context_getenv(
-            ctx,
-            b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const ::core::ffi::c_char,
-        );
+        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut layout: *const i8 =
+            xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
         if !layout.is_null() && (*ctx).use_environment_names() as ::core::ffi::c_int != 0 {
-            env = xkb_context_getenv(
-                ctx,
-                b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
         } else {
-            ::core::ptr::null::<::core::ffi::c_char>()
+            ::core::ptr::null::<i8>()
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_options(
-    mut ctx: *mut xkb_context,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C" fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+        let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(
-                ctx,
-                b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const ::core::ffi::c_char,
-            );
+            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
         } else {
-            ::core::ptr::null::<::core::ffi::c_char>()
+            ::core::ptr::null::<i8>()
         };
     }
 }
@@ -584,21 +554,20 @@ pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
             modified = (modified as ::core::ffi::c_uint
                 | RMLVO_LAYOUT as ::core::ffi::c_int as ::core::ffi::c_uint)
                 as RMLVO;
-            let variant: *const ::core::ffi::c_char =
-                xkb_context_get_default_variant(ctx) as *const ::core::ffi::c_char;
+            let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
             if !isempty((*rmlvo).variant) {
                 xkb_log(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                     b"Layout not provided, but variant set to \"%s\": ignoring variant and using defaults for both: layout=\"%s\", variant=\"%s\".\n\0"
-                        .as_ptr() as *const ::core::ffi::c_char,
+                        .as_ptr() as *const i8,
                     (*rmlvo).variant,
                     (*rmlvo).layout,
                     if !variant.is_null() {
                         variant
                     } else {
-                        b"\0".as_ptr() as *const ::core::ffi::c_char
+                        b"\0".as_ptr() as *const i8
                     },
                 );
             }

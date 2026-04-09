@@ -272,7 +272,7 @@ pub mod utils_numbers_h {
     ];
     #[inline]
     pub unsafe extern "C" fn parse_hex_to_uint32_t(
-        mut s: *const ::core::ffi::c_char,
+        mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
     ) -> ::core::ffi::c_int {
@@ -307,10 +307,7 @@ pub mod stdint_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(
-            __s1: *const ::core::ffi::c_char,
-            __s2: *const ::core::ffi::c_char,
-        ) -> ::core::ffi::c_int;
+        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
     }
 }
 pub mod stdbool_h {
@@ -323,7 +320,7 @@ pub mod __stddef_null_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: ::core::ffi::c_char) -> bool {
+    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32
@@ -349,26 +346,26 @@ pub use self::xkbcommon_h::{
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct format_label {
-    pub label: *const ::core::ffi::c_char,
+    pub label: *const i8,
     pub format: xkb_keymap_format,
 }
 static mut keymap_formats: [xkb_keymap_format; 2] =
     [XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2];
 static mut keymap_formats_labels: [format_label; 4] = [
     format_label {
-        label: b"xkb_v1\0".as_ptr() as *const ::core::ffi::c_char,
+        label: b"xkb_v1\0".as_ptr() as *const i8,
         format: XKB_KEYMAP_FORMAT_TEXT_V1,
     },
     format_label {
-        label: b"v1\0".as_ptr() as *const ::core::ffi::c_char,
+        label: b"v1\0".as_ptr() as *const i8,
         format: XKB_KEYMAP_FORMAT_TEXT_V1,
     },
     format_label {
-        label: b"xkb_v2\0".as_ptr() as *const ::core::ffi::c_char,
+        label: b"xkb_v2\0".as_ptr() as *const i8,
         format: XKB_KEYMAP_FORMAT_TEXT_V2,
     },
     format_label {
-        label: b"v2\0".as_ptr() as *const ::core::ffi::c_char,
+        label: b"v2\0".as_ptr() as *const i8,
         format: XKB_KEYMAP_FORMAT_TEXT_V2,
     },
 ];
@@ -407,9 +404,7 @@ pub unsafe extern "C" fn xkb_keymap_is_supported_format(mut format: xkb_keymap_f
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_parse_format(
-    mut raw: *const ::core::ffi::c_char,
-) -> xkb_keymap_format {
+pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
     unsafe {
         if raw.is_null() {
             return 0 as xkb_keymap_format;
@@ -441,14 +436,12 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_get_format_label(
-    mut format: xkb_keymap_format,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C" fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
     unsafe {
         if (format as ::core::ffi::c_uint)
             < keymap_formats_labels[0 as ::core::ffi::c_int as usize].format as ::core::ffi::c_uint
         {
-            return ::core::ptr::null::<::core::ffi::c_char>();
+            return ::core::ptr::null::<i8>();
         }
         let mut k: usize = 0 as usize;
         while k
@@ -463,10 +456,10 @@ pub unsafe extern "C" fn xkb_keymap_get_format_label(
             if keymap_formats_labels[k as usize].format as ::core::ffi::c_uint
                 > format as ::core::ffi::c_uint
             {
-                return ::core::ptr::null::<::core::ffi::c_char>();
+                return ::core::ptr::null::<i8>();
             }
             k = k.wrapping_add(1);
         }
-        return ::core::ptr::null::<::core::ffi::c_char>();
+        return ::core::ptr::null::<i8>();
     }
 }

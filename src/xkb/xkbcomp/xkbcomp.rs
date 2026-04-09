@@ -37,27 +37,27 @@ pub mod struct_FILE_h {
     #[repr(C)]
     pub struct _IO_FILE {
         pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut ::core::ffi::c_char,
-        pub _IO_read_end: *mut ::core::ffi::c_char,
-        pub _IO_read_base: *mut ::core::ffi::c_char,
-        pub _IO_write_base: *mut ::core::ffi::c_char,
-        pub _IO_write_ptr: *mut ::core::ffi::c_char,
-        pub _IO_write_end: *mut ::core::ffi::c_char,
-        pub _IO_buf_base: *mut ::core::ffi::c_char,
-        pub _IO_buf_end: *mut ::core::ffi::c_char,
-        pub _IO_save_base: *mut ::core::ffi::c_char,
-        pub _IO_backup_base: *mut ::core::ffi::c_char,
-        pub _IO_save_end: *mut ::core::ffi::c_char,
+        pub _IO_read_ptr: *mut i8,
+        pub _IO_read_end: *mut i8,
+        pub _IO_read_base: *mut i8,
+        pub _IO_write_base: *mut i8,
+        pub _IO_write_ptr: *mut i8,
+        pub _IO_write_end: *mut i8,
+        pub _IO_buf_base: *mut i8,
+        pub _IO_buf_end: *mut i8,
+        pub _IO_save_base: *mut i8,
+        pub _IO_backup_base: *mut i8,
+        pub _IO_save_end: *mut i8,
         pub _markers: *mut _IO_marker,
         pub _chain: *mut _IO_FILE,
         pub _fileno: ::core::ffi::c_int,
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
-        pub _short_backupbuf: [::core::ffi::c_char; 1],
+        pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: ::core::ffi::c_ushort,
         pub _vtable_offset: ::core::ffi::c_schar,
-        pub _shortbuf: [::core::ffi::c_char; 1],
+        pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
         pub _codecvt: *mut _IO_codecvt,
@@ -68,7 +68,7 @@ pub mod struct_FILE_h {
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
         pub _total_written: __uint64_t,
-        pub _unused2: [::core::ffi::c_char; 8],
+        pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
     use super::types_h::{__off64_t, __off_t, __uint64_t};
@@ -94,7 +94,7 @@ pub mod context_h {
             unsafe extern "C" fn(
                 *mut xkb_context,
                 xkb_log_level,
-                *const ::core::ffi::c_char,
+                *const i8,
                 ::core::ffi::VaList,
             ) -> (),
         >,
@@ -106,7 +106,7 @@ pub mod context_h {
         pub failed_includes: C2Rust_Unnamed,
         pub atom_table: *mut atom_table,
         pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [::core::ffi::c_char; 2048],
+        pub text_buffer: [i8; 2048],
         pub text_next: usize,
         #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
         #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
@@ -120,14 +120,14 @@ pub mod context_h {
     pub struct C2Rust_Unnamed {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct C2Rust_Unnamed_0 {
         pub size: darray_size_t,
         pub alloc: darray_size_t,
-        pub item: *mut *mut ::core::ffi::c_char,
+        pub item: *mut *mut i8,
     }
 
     use super::atom_h::atom_table;
@@ -136,15 +136,12 @@ pub mod context_h {
     use super::rmlvo_h::RMLVO;
     use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_context_get_buffer(
-            ctx: *mut xkb_context,
-            size: usize,
-        ) -> *mut ::core::ffi::c_char;
+        pub fn xkb_context_get_buffer(ctx: *mut xkb_context, size: usize) -> *mut i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
             verbosity: ::core::ffi::c_int,
-            fmt: *const ::core::ffi::c_char,
+            fmt: *const i8,
             ...
         );
         pub fn xkb_context_sanitize_rule_names(
@@ -164,11 +161,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rule_names {
-        pub rules: *const ::core::ffi::c_char,
-        pub model: *const ::core::ffi::c_char,
-        pub layout: *const ::core::ffi::c_char,
-        pub variant: *const ::core::ffi::c_char,
-        pub options: *const ::core::ffi::c_char,
+        pub rules: *const i8,
+        pub model: *const i8,
+        pub layout: *const i8,
+        pub variant: *const i8,
+        pub options: *const i8,
     }
     pub type xkb_log_level = ::core::ffi::c_uint;
     pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
@@ -208,11 +205,11 @@ pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_component_names {
-        pub keycodes: *mut ::core::ffi::c_char,
-        pub compatibility: *mut ::core::ffi::c_char,
-        pub geometry: *mut ::core::ffi::c_char,
-        pub symbols: *mut ::core::ffi::c_char,
-        pub types: *mut ::core::ffi::c_char,
+        pub keycodes: *mut i8,
+        pub compatibility: *mut i8,
+        pub geometry: *mut i8,
+        pub symbols: *mut i8,
+        pub types: *mut i8,
     }
     pub type xkb_keymap_serialize_flags = ::core::ffi::c_uint;
     pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
@@ -247,10 +244,10 @@ pub mod keymap_h {
         pub num_groups: xkb_layout_index_t,
         pub num_group_names: xkb_layout_index_t,
         pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut ::core::ffi::c_char,
-        pub symbols_section_name: *mut ::core::ffi::c_char,
-        pub types_section_name: *mut ::core::ffi::c_char,
-        pub compat_section_name: *mut ::core::ffi::c_char,
+        pub keycodes_section_name: *mut i8,
+        pub symbols_section_name: *mut i8,
+        pub types_section_name: *mut i8,
+        pub compat_section_name: *mut i8,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -641,16 +638,15 @@ pub mod keymap_h {
             Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
         pub keymap_new_from_names:
             Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
-        pub keymap_new_from_string: Option<
-            unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, usize) -> bool,
-        >,
+        pub keymap_new_from_string:
+            Option<unsafe extern "C" fn(*mut xkb_keymap, *const i8, usize) -> bool>,
         pub keymap_new_from_file: Option<unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool>,
         pub keymap_get_as_string: Option<
             unsafe extern "C" fn(
                 *mut xkb_keymap,
                 xkb_keymap_format,
                 xkb_keymap_serialize_flags,
-            ) -> *mut ::core::ffi::c_char,
+            ) -> *mut i8,
         >,
     }
     pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
@@ -688,8 +684,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder {
-        pub rules: *mut ::core::ffi::c_char,
-        pub model: *mut ::core::ffi::c_char,
+        pub rules: *mut i8,
+        pub model: *mut i8,
         pub layouts: xkb_rmlvo_builder_layouts,
         pub options: xkb_rmlvo_builder_options,
         pub refcnt: ::core::ffi::c_int,
@@ -705,7 +701,7 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_option {
-        pub option: *mut ::core::ffi::c_char,
+        pub option: *mut i8,
         pub layout: xkb_layout_index_t,
     }
     #[derive(Copy, Clone)]
@@ -718,8 +714,8 @@ pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut ::core::ffi::c_char,
-        pub variant: *mut ::core::ffi::c_char,
+        pub layout: *mut i8,
+        pub variant: *mut i8,
     }
     pub type RMLVO = ::core::ffi::c_uint;
     pub const RMLVO_OPTIONS: RMLVO = 16;
@@ -735,7 +731,7 @@ pub mod rmlvo_h {
         pub fn xkb_rmlvo_builder_to_rules_names(
             builder: *const xkb_rmlvo_builder,
             rmlvo: *mut xkb_rule_names,
-            buf: *mut ::core::ffi::c_char,
+            buf: *mut i8,
             buf_size: usize,
         ) -> bool;
     }
@@ -812,13 +808,13 @@ pub mod ast_h {
     #[repr(C)]
     pub struct XkbFile {
         pub common: ParseCommon,
-        pub name: *mut ::core::ffi::c_char,
+        pub name: *mut i8,
         pub defs: *mut ParseCommon,
         pub file_type: xkb_file_type,
         pub flags: xkb_map_flags,
     }
     extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const ::core::ffi::c_char;
+        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
     }
 }
 pub mod messages_codes_h {
@@ -948,7 +944,7 @@ pub mod xkbcomp_priv_h {
         _keymap: *mut xkb_keymap,
         _format: xkb_keymap_format,
         _flags: xkb_keymap_serialize_flags,
-    ) -> *mut ::core::ffi::c_char {
+    ) -> *mut i8 {
         // TODO: Implement keymap serialization (keymap-dump.c functionality)
         ::core::ptr::null_mut()
     }
@@ -957,15 +953,15 @@ pub mod xkbcomp_priv_h {
         pub fn XkbParseFile(
             ctx: *mut xkb_context,
             file: *mut FILE,
-            file_name: *const ::core::ffi::c_char,
-            map: *const ::core::ffi::c_char,
+            file_name: *const i8,
+            map: *const i8,
         ) -> *mut XkbFile;
         pub fn XkbParseString(
             ctx: *mut xkb_context,
-            string: *const ::core::ffi::c_char,
+            string: *const i8,
             len: usize,
-            file_name: *const ::core::ffi::c_char,
-            map: *const ::core::ffi::c_char,
+            file_name: *const i8,
+            map: *const i8,
         ) -> *mut XkbFile;
         pub fn FreeXkbFile(file: *mut XkbFile);
         pub fn XkbFileFromComponents(
@@ -1138,11 +1134,11 @@ pub unsafe extern "C" fn xkb_components_names_from_rules(
             return !rmlvo_out.is_null();
         }
         *components_out = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            compatibility: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            geometry: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            symbols: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            types: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            keycodes: ::core::ptr::null_mut::<i8>(),
+            compatibility: ::core::ptr::null_mut::<i8>(),
+            geometry: ::core::ptr::null_mut::<i8>(),
+            symbols: ::core::ptr::null_mut::<i8>(),
+            types: ::core::ptr::null_mut::<i8>(),
         };
         return xkb_components_from_rules_names(
             ctx,
@@ -1165,7 +1161,7 @@ unsafe extern "C" fn compile_keymap_file(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Cannot compile a %s file alone into a keymap\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
                 xkb_file_type_to_string((*file).file_type),
             );
@@ -1176,7 +1172,7 @@ unsafe extern "C" fn compile_keymap_file(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to compile keymap\n\0".as_ptr() as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Failed to compile keymap\n\0".as_ptr() as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1191,26 +1187,26 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
     unsafe {
         let mut ok: bool = false;
         let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            compatibility: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            geometry: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            symbols: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            types: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            keycodes: ::core::ptr::null_mut::<i8>(),
+            compatibility: ::core::ptr::null_mut::<i8>(),
+            geometry: ::core::ptr::null_mut::<i8>(),
+            symbols: ::core::ptr::null_mut::<i8>(),
+            types: ::core::ptr::null_mut::<i8>(),
         };
         let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         if (*(*keymap).ctx).log_level as ::core::ffi::c_uint
             >= XKB_LOG_LEVEL_DEBUG as ::core::ffi::c_int as ::core::ffi::c_uint
         {
             let mut names: xkb_rule_names = xkb_rule_names {
-                rules: ::core::ptr::null::<::core::ffi::c_char>(),
-                model: ::core::ptr::null::<::core::ffi::c_char>(),
-                layout: ::core::ptr::null::<::core::ffi::c_char>(),
-                variant: ::core::ptr::null::<::core::ffi::c_char>(),
-                options: ::core::ptr::null::<::core::ffi::c_char>(),
+                rules: ::core::ptr::null::<i8>(),
+                model: ::core::ptr::null::<i8>(),
+                layout: ::core::ptr::null::<i8>(),
+                variant: ::core::ptr::null::<i8>(),
+                options: ::core::ptr::null::<i8>(),
             };
-            let buf_size: usize = (::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize)
-                .wrapping_sub(1 as usize);
-            let mut buf: *mut ::core::ffi::c_char = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
+            let buf_size: usize =
+                (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub(1 as usize);
+            let mut buf: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
             if buf.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                 return false_0 != 0;
             }
@@ -1223,7 +1219,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"Compiling from RMLVO builder: rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 names.rules,
                 names.model,
                 names.layout,
@@ -1238,15 +1234,14 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
         );
         if !ok {
             let mut names_0: xkb_rule_names = xkb_rule_names {
-                rules: ::core::ptr::null::<::core::ffi::c_char>(),
-                model: ::core::ptr::null::<::core::ffi::c_char>(),
-                layout: ::core::ptr::null::<::core::ffi::c_char>(),
-                variant: ::core::ptr::null::<::core::ffi::c_char>(),
-                options: ::core::ptr::null::<::core::ffi::c_char>(),
+                rules: ::core::ptr::null::<i8>(),
+                model: ::core::ptr::null::<i8>(),
+                layout: ::core::ptr::null::<i8>(),
+                variant: ::core::ptr::null::<i8>(),
+                options: ::core::ptr::null::<i8>(),
             };
-            let buf_size_0: usize = ::core::mem::size_of::<[::core::ffi::c_char; 2048]>() as usize;
-            let mut buf_0: *mut ::core::ffi::c_char =
-                xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
+            let buf_size_0: usize = ::core::mem::size_of::<[i8; 2048]>() as usize;
+            let mut buf_0: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
             if buf_0.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                 return false_0 != 0;
             }
@@ -1259,7 +1254,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Couldn't look up rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
                 names_0.rules,
                 names_0.model,
@@ -1279,7 +1274,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"Compiling from KcCGST: keycodes '%s', types '%s', compat '%s', symbols '%s'\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             kccgst.keycodes,
             kccgst.types,
             kccgst.compatibility,
@@ -1297,7 +1292,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Failed to generate parsed XKB file from components\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1314,11 +1309,11 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
     unsafe {
         let mut ok: bool = false;
         let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            compatibility: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            geometry: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            symbols: ::core::ptr::null_mut::<::core::ffi::c_char>(),
-            types: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+            keycodes: ::core::ptr::null_mut::<i8>(),
+            compatibility: ::core::ptr::null_mut::<i8>(),
+            geometry: ::core::ptr::null_mut::<i8>(),
+            symbols: ::core::ptr::null_mut::<i8>(),
+            types: ::core::ptr::null_mut::<i8>(),
         };
         let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         xkb_log(
@@ -1326,7 +1321,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"Compiling from RMLVO: rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             (*rmlvo).rules,
             (*rmlvo).model,
             (*rmlvo).layout,
@@ -1345,7 +1340,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Couldn't look up rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
+                    .as_ptr() as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
                 (*rmlvo).rules,
                 (*rmlvo).model,
@@ -1365,7 +1360,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
             b"Compiling from KcCGST: keycodes '%s', types '%s', compat '%s', symbols '%s'\n\0"
-                .as_ptr() as *const ::core::ffi::c_char,
+                .as_ptr() as *const i8,
             kccgst.keycodes,
             kccgst.types,
             kccgst.compatibility,
@@ -1383,7 +1378,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 b"[XKB-%03d] Failed to generate parsed XKB file from components\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                    as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1395,7 +1390,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
 }
 unsafe extern "C" fn text_v1_keymap_new_from_string(
     mut keymap: *mut xkb_keymap,
-    mut string: *const ::core::ffi::c_char,
+    mut string: *const i8,
     mut len: usize,
 ) -> bool {
     unsafe {
@@ -1405,16 +1400,15 @@ unsafe extern "C" fn text_v1_keymap_new_from_string(
             (*keymap).ctx,
             string,
             len,
-            b"(input string)\0".as_ptr() as *const ::core::ffi::c_char,
-            ::core::ptr::null::<::core::ffi::c_char>(),
+            b"(input string)\0".as_ptr() as *const i8,
+            ::core::ptr::null::<i8>(),
         );
         if xkb_file.is_null() {
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to parse input xkb string\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Failed to parse input xkb string\n\0".as_ptr() as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1434,16 +1428,15 @@ unsafe extern "C" fn text_v1_keymap_new_from_file(
         xkb_file = XkbParseFile(
             (*keymap).ctx,
             file,
-            b"(unknown file)\0".as_ptr() as *const ::core::ffi::c_char,
-            ::core::ptr::null::<::core::ffi::c_char>(),
+            b"(unknown file)\0".as_ptr() as *const i8,
+            ::core::ptr::null::<i8>(),
         );
         if xkb_file.is_null() {
             xkb_log(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to parse input xkb file\n\0".as_ptr()
-                    as *const ::core::ffi::c_char,
+                b"[XKB-%03d] Failed to parse input xkb file\n\0".as_ptr() as *const i8,
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1466,7 +1459,7 @@ pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = unsafe {
         ),
         keymap_new_from_string: Some(
             text_v1_keymap_new_from_string
-                as unsafe extern "C" fn(*mut xkb_keymap, *const ::core::ffi::c_char, usize) -> bool,
+                as unsafe extern "C" fn(*mut xkb_keymap, *const i8, usize) -> bool,
         ),
         keymap_new_from_file: Some(
             text_v1_keymap_new_from_file
@@ -1478,7 +1471,7 @@ pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = unsafe {
                     *mut xkb_keymap,
                     xkb_keymap_format,
                     xkb_keymap_serialize_flags,
-                ) -> *mut ::core::ffi::c_char,
+                ) -> *mut i8,
         ),
     }
 };

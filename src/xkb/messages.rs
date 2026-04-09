@@ -91,7 +91,7 @@ pub mod messages_h {
     #[repr(C)]
     pub struct xkb_message_entry {
         pub code: xkb_message_code,
-        pub label: *const ::core::ffi::c_char,
+        pub label: *const i8,
     }
     use super::messages_codes_h::xkb_message_code;
     extern "C" {
