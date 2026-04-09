@@ -445,6 +445,57 @@ impl RxkbLayout {
     }
 }
 
+// ============================================================================
+// Compose Table Wrappers for Dead Key Sequences
+// ============================================================================
+
+/// Safe wrapper around xkb_compose_table for dead key composition
+///
+/// Note: The underlying type is opaque to avoid private struct imports
+pub struct ComposeTable {
+    ptr: *mut ::core::ffi::c_void,
+}
+
+impl ComposeTable {
+    /// Create a new compose table from locale
+    pub fn new_from_locale(ctx: &Context, locale: &str) -> Option<Self> {
+        unsafe {
+            let locale_cstr = std::ffi::CString::new(locale).ok()?;
+            let ctx_cast = ctx.as_ptr() as *mut super::compile_compose::context_h::xkb_context;
+
+            let ptr =
+                super::compile_compose::xkbcommon_compose_h::xkb_compose_table_new_from_locale(
+                    ctx_cast,
+                    locale_cstr.as_ptr(),
+                    super::compile_compose::xkbcommon_compose_h::XKB_COMPOSE_COMPILE_NO_FLAGS,
+                );
+
+            if ptr.is_null() {
+                None
+            } else {
+                Some(ComposeTable {
+                    ptr: ptr as *mut ::core::ffi::c_void,
+                })
+            }
+        }
+    }
+
+    /// Get raw pointer for FFI calls (needed for compose iteration)
+    pub fn as_ptr(&self) -> *mut ::core::ffi::c_void {
+        self.ptr
+    }
+}
+
+impl Drop for ComposeTable {
+    fn drop(&mut self) {
+        unsafe {
+            super::compile_compose::xkbcommon_compose_h::xkb_compose_table_unref(
+                self.ptr as *mut _,
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
