@@ -216,6 +216,52 @@ impl Keymap {
         }
     }
 
+    /// Get number of modifiers in the keymap
+    pub fn num_mods(&self) -> u32 {
+        unsafe { super::keymap::xkb_keymap_num_mods(self.ptr) }
+    }
+
+    /// Get modifier name by index
+    pub fn mod_get_name(&self, idx: u32) -> Option<String> {
+        unsafe {
+            let name_ptr = super::keymap::xkb_keymap_mod_get_name(self.ptr, idx);
+            if name_ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(name_ptr)
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            }
+        }
+    }
+
+    /// Get modifier mask by name
+    pub fn mod_get_mask(&self, name: &str) -> u32 {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
+            super::keymap::xkb_keymap_mod_get_mask(self.ptr, name_cstr.as_ptr())
+        }
+    }
+
+    /// Check if a key can repeat
+    pub fn key_repeats(&self, keycode: u32) -> bool {
+        unsafe { super::keymap::xkb_keymap_key_repeats(self.ptr, keycode) != 0 }
+    }
+
+    /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
+    pub fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
+        unsafe {
+            let key = super::keymap::XkbKey(self.ptr, keycode);
+            if key.is_null() {
+                None
+            } else {
+                Some(((*key).modmap, (*key).vmodmap))
+            }
+        }
+    }
+
     /// Create a new state for this keymap
     pub fn new_state(&self) -> Option<State> {
         unsafe {
