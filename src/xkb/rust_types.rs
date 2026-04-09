@@ -262,6 +262,28 @@ impl Keymap {
         }
     }
 
+    /// Iterate over all keycodes in the keymap
+    ///
+    /// Returns an iterator that yields (keycode, evdev_code) pairs.
+    /// evdev_code is keycode - 8 (the standard offset for evdev)
+    pub fn keycodes(&self) -> KeycodeIter {
+        KeycodeIter {
+            current: self.min_keycode(),
+            max: self.max_keycode(),
+            evdev_offset: 8,
+        }
+    }
+
+    /// Get keycode range as a Range
+    pub fn keycode_range(&self) -> std::ops::RangeInclusive<u32> {
+        self.min_keycode()..=self.max_keycode()
+    }
+
+    /// Convert keysym to character using the keysym_utf module
+    pub fn keysym_to_char(keysym: u32) -> Option<char> {
+        super::keysym_utf::keysym_to_char(keysym)
+    }
+
     /// Create a new state for this keymap
     pub fn new_state(&self) -> Option<State> {
         unsafe {
@@ -272,6 +294,38 @@ impl Keymap {
             } else {
                 Some(State { ptr: state_ptr })
             }
+        }
+    }
+}
+
+/// Iterator over keycode ranges in a keymap
+pub struct KeycodeIter {
+    current: u32,
+    max: u32,
+    evdev_offset: u32,
+}
+
+impl Iterator for KeycodeIter {
+    type Item = (u32, u32); // (xkb_keycode, evdev_code)
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current <= self.max {
+            let keycode = self.current;
+            let evdev_code = keycode - self.evdev_offset;
+            self.current += 1;
+            Some((keycode, evdev_code))
+        } else {
+            None
+        }
+    }
+}
+
+impl ExactSizeIterator for KeycodeIter {
+    fn len(&self) -> usize {
+        if self.current <= self.max {
+            (self.max - self.current + 1) as usize
+        } else {
+            0
         }
     }
 }
@@ -319,6 +373,21 @@ impl State {
                 String::new()
             }
         }
+    }
+
+    /// Press a key (convenience wrapper for update_key with KEY_DOWN)
+    pub fn key_down(&mut self, keycode: u32) {
+        self.update_key(keycode, super::common::XKB_KEY_DOWN);
+    }
+
+    /// Release a key (convenience wrapper for update_key with KEY_UP)
+    pub fn key_up(&mut self, keycode: u32) {
+        self.update_key(keycode, super::common::XKB_KEY_UP);
+    }
+
+    /// Get the character for a key as Option<char>
+    pub fn key_get_char(&self, keycode: u32) -> Option<char> {
+        self.key_get_utf8(keycode).chars().next()
     }
 }
 
