@@ -1005,3 +1005,191 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
     // loading from string (they already have the full keymap).
     build_wkb_from_keymap(&keymap, None, None, vec![String::new()])
 }
+
+#[cfg(test)]
+mod wrapper_tests {
+    use super::rust_types::{Context, RuleNames};
+
+    #[test]
+    fn test_keymap_layout_methods() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames {
+            rules: String::new(),
+            model: String::new(),
+            layout: "us,fr,de".to_string(),
+            variant: String::new(),
+            options: String::new(),
+        };
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+
+        // Test num_layouts
+        assert_eq!(keymap.num_layouts(), 3);
+
+        // Test layout names
+        assert_eq!(keymap.layout_get_name(0), Some("English (US)".to_string()));
+        assert_eq!(keymap.layout_get_name(1), Some("French".to_string()));
+        assert_eq!(keymap.layout_get_name(2), Some("German".to_string()));
+
+        // Test get_all_layouts
+        let layouts = keymap.get_all_layouts();
+        assert_eq!(layouts.len(), 3);
+        assert_eq!(layouts[0], "English (US)");
+
+        // Test layout_get_index
+        assert_eq!(keymap.layout_get_index("English (US)"), Some(0));
+        assert_eq!(keymap.layout_get_index("French"), Some(1));
+        assert_eq!(keymap.layout_get_index("NonExistent"), None);
+    }
+
+    #[test]
+    fn test_keymap_modifier_methods() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+
+        // Test num_mods
+        let num_mods = keymap.num_mods();
+        assert!(num_mods > 0);
+
+        // Test get_all_mods
+        let mods = keymap.get_all_mods();
+        assert_eq!(mods.len(), num_mods as usize);
+        assert!(mods.contains(&"Shift".to_string()));
+        assert!(mods.contains(&"Control".to_string()));
+
+        // Test mod_get_index
+        assert!(keymap.mod_get_index("Shift").is_some());
+        assert!(keymap.mod_get_index("Control").is_some());
+        assert_eq!(keymap.mod_get_index("NonExistent"), None);
+
+        // Test mod_get_mask
+        let shift_mask = keymap.mod_get_mask("Shift");
+        assert!(shift_mask > 0);
+    }
+
+    #[test]
+    fn test_keymap_led_methods() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+
+        // Test num_leds
+        let num_leds = keymap.num_leds();
+        assert!(num_leds > 0);
+
+        // Test get_all_leds
+        let leds = keymap.get_all_leds();
+        assert_eq!(leds.len(), num_leds as usize);
+
+        // Common LED names
+        if let Some(idx) = keymap.led_get_index("Caps Lock") {
+            assert!(keymap.led_get_name(idx).is_some());
+        }
+    }
+
+    #[test]
+    fn test_keymap_key_methods() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+
+        // Test key_get_name and key_by_name
+        for (xkb_keycode, _evdev_code) in keymap.keycodes() {
+            if let Some(name) = keymap.key_get_name(xkb_keycode) {
+                // Verify round-trip works
+                assert_eq!(keymap.key_by_name(&name), Some(xkb_keycode));
+            }
+        }
+
+        // Test specific known keys
+        if let Some(keycode) = keymap.key_by_name("SPCE") {
+            assert_eq!(keymap.key_get_name(keycode), Some("SPCE".to_string()));
+        }
+    }
+
+    #[test]
+    fn test_keymap_num_layouts_for_key() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames {
+            rules: String::new(),
+            model: String::new(),
+            layout: "us,fr".to_string(),
+            variant: String::new(),
+            options: String::new(),
+        };
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+
+        // Most keys should support both layouts
+        let min_keycode = keymap.min_keycode();
+        let num_layouts = keymap.num_layouts_for_key(min_keycode);
+        assert!(num_layouts > 0);
+        assert!(num_layouts <= keymap.num_layouts());
+    }
+
+    #[test]
+    fn test_state_modifier_queries() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+        let mut state = keymap.new_state().expect("Failed to create state");
+
+        // Initially no modifiers should be active
+        assert!(!state.mod_name_is_active("Shift", 0xFF));
+        assert!(!state.mod_name_is_active("Control", 0xFF));
+
+        // Get shift keycode and press it
+        if let Some(shift_idx) = keymap.mod_get_index("Shift") {
+            assert!(!state.mod_index_is_active(shift_idx, 0xFF));
+        }
+    }
+
+    #[test]
+    fn test_state_key_get_syms() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+        let state = keymap.new_state().expect("Failed to create state");
+
+        // Get syms for a key (e.g., space bar which is typically keycode 65 in XKB)
+        for (xkb_keycode, _evdev_code) in keymap.keycodes().take(10) {
+            let syms = state.key_get_syms(xkb_keycode);
+            let one_sym = state.key_get_one_sym(xkb_keycode);
+
+            if !syms.is_empty() {
+                // If there are syms, one_sym should match the first one
+                assert_eq!(one_sym, syms[0]);
+            }
+        }
+    }
+
+    #[test]
+    fn test_state_update_mask() {
+        let context = Context::new().expect("Failed to create context");
+        let rules = RuleNames::default();
+        let keymap = context
+            .keymap_from_names(&rules)
+            .expect("Failed to create keymap");
+        let mut state = keymap.new_state().expect("Failed to create state");
+
+        // Update state with shift pressed
+        let shift_mask = keymap.mod_get_mask("Shift");
+        state.update_mask(shift_mask, 0, 0, 0, 0, 0);
+
+        // Verify shift is now active
+        assert!(state.mod_name_is_active("Shift", 0xFF));
+    }
+}

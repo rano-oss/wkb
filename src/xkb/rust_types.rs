@@ -296,6 +296,145 @@ impl Keymap {
             }
         }
     }
+
+    /// Get number of layouts in the keymap
+    pub fn num_layouts(&self) -> u32 {
+        unsafe { super::keymap::xkb_keymap_num_layouts(self.ptr) }
+    }
+
+    /// Get layout name by index
+    pub fn layout_get_name(&self, idx: u32) -> Option<String> {
+        unsafe {
+            let name_ptr = super::keymap::xkb_keymap_layout_get_name(self.ptr, idx);
+            if name_ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(name_ptr)
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            }
+        }
+    }
+
+    /// Get layout index by name
+    pub fn layout_get_index(&self, name: &str) -> Option<u32> {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).ok()?;
+            let idx = super::keymap::xkb_keymap_layout_get_index(self.ptr, name_cstr.as_ptr());
+            if idx == u32::MAX {
+                None
+            } else {
+                Some(idx)
+            }
+        }
+    }
+
+    /// Get number of LEDs in the keymap
+    pub fn num_leds(&self) -> u32 {
+        unsafe { super::keymap::xkb_keymap_num_leds(self.ptr) }
+    }
+
+    /// Get LED name by index
+    pub fn led_get_name(&self, idx: u32) -> Option<String> {
+        unsafe {
+            let name_ptr = super::keymap::xkb_keymap_led_get_name(self.ptr, idx);
+            if name_ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(name_ptr)
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            }
+        }
+    }
+
+    /// Get LED index by name
+    pub fn led_get_index(&self, name: &str) -> Option<u32> {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).ok()?;
+            let idx = super::keymap::xkb_keymap_led_get_index(self.ptr, name_cstr.as_ptr());
+            if idx == u32::MAX {
+                None
+            } else {
+                Some(idx)
+            }
+        }
+    }
+
+    /// Get key name by keycode
+    pub fn key_get_name(&self, keycode: u32) -> Option<String> {
+        unsafe {
+            let name_ptr = super::keymap::xkb_keymap_key_get_name(self.ptr, keycode);
+            if name_ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(name_ptr)
+                        .to_string_lossy()
+                        .to_string(),
+                )
+            }
+        }
+    }
+
+    /// Get keycode by key name
+    pub fn key_by_name(&self, name: &str) -> Option<u32> {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).ok()?;
+            let keycode = super::keymap::xkb_keymap_key_by_name(self.ptr, name_cstr.as_ptr());
+            if keycode == 0 {
+                None
+            } else {
+                Some(keycode)
+            }
+        }
+    }
+
+    /// Get number of layouts for a specific key
+    pub fn num_layouts_for_key(&self, keycode: u32) -> u32 {
+        unsafe { super::keymap::xkb_keymap_num_layouts_for_key(self.ptr, keycode) }
+    }
+
+    /// Get modifier index by name
+    pub fn mod_get_index(&self, name: &str) -> Option<u32> {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).ok()?;
+            let idx = super::keymap::xkb_keymap_mod_get_index(self.ptr, name_cstr.as_ptr());
+            if idx == u32::MAX {
+                None
+            } else {
+                Some(idx)
+            }
+        }
+    }
+
+    /// Get all layout names as a Vec
+    pub fn get_all_layouts(&self) -> Vec<String> {
+        let num_layouts = self.num_layouts();
+        (0..num_layouts)
+            .filter_map(|idx| self.layout_get_name(idx))
+            .collect()
+    }
+
+    /// Get all modifier names as a Vec
+    pub fn get_all_mods(&self) -> Vec<String> {
+        let num_mods = self.num_mods();
+        (0..num_mods)
+            .filter_map(|idx| self.mod_get_name(idx))
+            .collect()
+    }
+
+    /// Get all LED names as a Vec
+    pub fn get_all_leds(&self) -> Vec<String> {
+        let num_leds = self.num_leds();
+        (0..num_leds)
+            .filter_map(|idx| self.led_get_name(idx))
+            .collect()
+    }
 }
 
 /// Iterator over keycode ranges in a keymap
@@ -388,6 +527,99 @@ impl State {
     /// Get the character for a key as Option<char>
     pub fn key_get_char(&self, keycode: u32) -> Option<char> {
         self.key_get_utf8(keycode).chars().next()
+    }
+
+    /// Get keysym for a key in the current state
+    pub fn key_get_one_sym(&self, keycode: u32) -> u32 {
+        unsafe { super::state::xkb_state_key_get_one_sym(self.ptr, keycode) }
+    }
+
+    /// Get all keysyms for a key in the current state
+    pub fn key_get_syms(&self, keycode: u32) -> &[u32] {
+        unsafe {
+            let mut syms_ptr: *const u32 = std::ptr::null();
+            let num_syms =
+                super::state::xkb_state_key_get_syms(self.ptr, keycode, &mut syms_ptr as *mut _);
+
+            if num_syms > 0 && !syms_ptr.is_null() {
+                std::slice::from_raw_parts(syms_ptr, num_syms as usize)
+            } else {
+                &[]
+            }
+        }
+    }
+
+    /// Get active layout index
+    pub fn serialize_layout(&self, component: u32) -> u32 {
+        unsafe { super::state::xkb_state_serialize_layout(self.ptr, component) }
+    }
+
+    /// Get active modifiers mask
+    pub fn serialize_mods(&self, component: u32) -> u32 {
+        unsafe { super::state::xkb_state_serialize_mods(self.ptr, component) }
+    }
+
+    /// Check if a modifier is active
+    pub fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
+            super::state::xkb_state_mod_name_is_active(self.ptr, name_cstr.as_ptr(), state_type) > 0
+        }
+    }
+
+    /// Check if a modifier index is active
+    pub fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
+        unsafe { super::state::xkb_state_mod_index_is_active(self.ptr, idx, state_type) > 0 }
+    }
+
+    /// Check if a layout is active
+    pub fn layout_name_is_active(&self, name: &str, state_type: u32) -> bool {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
+            super::state::xkb_state_layout_name_is_active(self.ptr, name_cstr.as_ptr(), state_type)
+                > 0
+        }
+    }
+
+    /// Check if a layout index is active
+    pub fn layout_index_is_active(&self, idx: u32, state_type: u32) -> bool {
+        unsafe { super::state::xkb_state_layout_index_is_active(self.ptr, idx, state_type) > 0 }
+    }
+
+    /// Check if a LED is active
+    pub fn led_name_is_active(&self, name: &str) -> bool {
+        unsafe {
+            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
+            super::state::xkb_state_led_name_is_active(self.ptr, name_cstr.as_ptr()) > 0
+        }
+    }
+
+    /// Check if a LED index is active
+    pub fn led_index_is_active(&self, idx: u32) -> bool {
+        unsafe { super::state::xkb_state_led_index_is_active(self.ptr, idx) > 0 }
+    }
+
+    /// Update state from modifier/layout masks (e.g., from Wayland compositor)
+    pub fn update_mask(
+        &mut self,
+        depressed_mods: u32,
+        latched_mods: u32,
+        locked_mods: u32,
+        depressed_layout: u32,
+        latched_layout: u32,
+        locked_layout: u32,
+    ) -> u32 {
+        unsafe {
+            super::state::xkb_state_update_mask(
+                self.ptr,
+                depressed_mods,
+                latched_mods,
+                locked_mods,
+                depressed_layout,
+                latched_layout,
+                locked_layout,
+            )
+        }
     }
 }
 
