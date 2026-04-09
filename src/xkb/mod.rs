@@ -92,6 +92,9 @@ pub mod extensions_directories;
 // Lenient mode
 pub mod lenient_mode;
 
+// Rust-native wrapper types
+pub mod rust_types;
+
 // WKB integration functions
 use crate::modifiers::*;
 use crate::{ListComposer, WKB};
@@ -175,20 +178,15 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
 
 /// Build WKB instance from an XKB keymap pointer
 /// This is the shared logic used by both new_from_names() and new_from_string()
-unsafe fn build_wkb_from_keymap(
-    keymap: *mut keymap::keymap_h::xkb_keymap,
-    ctx: *mut context::context_h::xkb_context,
+fn build_wkb_from_keymap(
+    keymap: &rust_types::Keymap,
     locale: Option<String>,
     layout: Option<String>,
     all_layouts: Vec<String>,
 ) -> WKB<ListComposer> {
-    if keymap.is_null() {
-        panic!("Keymap is null");
-    }
-
     // Get keycode range
-    let min_keycode = keymap::xkb_keymap_min_keycode(keymap);
-    let max_keycode = keymap::xkb_keymap_max_keycode(keymap);
+    let min_keycode = keymap.min_keycode();
+    let max_keycode = keymap.max_keycode();
 
     // XKB supports up to 8 levels (0-7)
     // We need to create 8 levels regardless of how many are actually defined in the keymap,
@@ -199,7 +197,7 @@ unsafe fn build_wkb_from_keymap(
     let mut max_defined_levels = 1; // At least level 0
     for keycode in min_keycode..=max_keycode {
         let layout_idx = 0;
-        let num_levels = keymap::xkb_keymap_num_levels_for_key(keymap, keycode, layout_idx);
+        let num_levels = keymap.num_levels_for_key(keycode, layout_idx);
         if num_levels > max_defined_levels {
             max_defined_levels = num_levels;
         }
@@ -217,7 +215,7 @@ unsafe fn build_wkb_from_keymap(
     let evdev_offset = 8; // Standard offset to convert XKB keycode to evdev code
 
     // Build modifiers map from XKB keymap FIRST so we can use it to set modifier states
-    let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
+    let modifiers = build_modifiers_from_keymap(keymap.as_ptr(), min_keycode, max_keycode);
 
     // Populate level_exceptions_keymap by querying keysyms directly from keymap
     // This is used by level_key() to return raw keymap level definitions
@@ -226,18 +224,10 @@ unsafe fn build_wkb_from_keymap(
             let evdev_code = keycode - evdev_offset;
             let layout_idx = 0;
 
-            // Query keysyms directly at this level
-            let mut syms_ptr: *const u32 = std::ptr::null();
-            let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
-                keymap,
-                keycode,
-                layout_idx,
-                level as u32,
-                &mut syms_ptr as *mut _,
-            );
+            // Query keysyms directly at this level using safe wrapper
+            let syms = keymap.key_get_syms_by_level(keycode, layout_idx, level as u32);
 
-            if num_syms > 0 && !syms_ptr.is_null() {
-                let keysym = *syms_ptr;
+            if let Some(&keysym) = syms.first() {
                 if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
                     level_exceptions_keymap[level].insert(evdev_code, ch);
                 }
@@ -256,10 +246,10 @@ unsafe fn build_wkb_from_keymap(
 
         for level in 0..XKB_MAX_LEVELS {
             // Create a FRESH state for this level to avoid locking modifier issues
-            let state_ptr = state::xkb_state_new(keymap as *mut state::keymap_h::xkb_keymap);
-            if state_ptr.is_null() {
-                continue;
-            }
+            let mut state = match keymap.new_state() {
+                Some(s) => s,
+                None => continue,
+            };
 
             // Set up modifiers for this level
             match level {
@@ -267,63 +257,62 @@ unsafe fn build_wkb_from_keymap(
                 1 => {
                     // Level2 (Shift)
                     if let Some(kc) = level2_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 2 => {
                     // Level3
                     if let Some(kc) = level3_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 3 => {
                     // Level3 + Level2 (order matters!)
                     if let Some(kc) = level3_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 4 => {
                     // Level5
                     if let Some(kc) = level5_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 5 => {
                     // Level5 + Level2
                     if let Some(kc) = level5_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 6 => {
                     // Level5 + Level3
                     if let Some(kc) = level5_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level3_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 7 => {
                     // Level5 + Level3 + Level2
                     if let Some(kc) = level5_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level3_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state::xkb_state_update_key(state_ptr, kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, common::XKB_KEY_DOWN);
                     }
                 }
                 _ => {
                     // Beyond level 7
-                    state::xkb_state_unref(state_ptr);
                     continue;
                 }
             }
@@ -333,37 +322,19 @@ unsafe fn build_wkb_from_keymap(
                 let evdev_code = keycode - evdev_offset;
                 let layout_idx = 0;
 
-                // Get the character at this state
-                let mut buffer: [u8; 32] = [0; 32];
-                let size = state::xkb_state_key_get_utf8(
-                    state_ptr,
-                    keycode,
-                    buffer.as_mut_ptr() as *mut i8,
-                    buffer.len(),
-                );
+                // Get the character at this state using safe wrapper
+                let s = state.key_get_utf8(keycode);
 
-                if size > 0 && (size as usize) < buffer.len() {
-                    if let Ok(s) = std::str::from_utf8(&buffer[..size as usize]) {
-                        if let Some(ch) = s.chars().next() {
-                            // Use the character from state - it already handles fallback internally
-                            state_keymap[level].insert(evdev_code, ch);
-                        }
-                    }
+                if let Some(ch) = s.chars().next() {
+                    // Use the character from state - it already handles fallback internally
+                    state_keymap[level].insert(evdev_code, ch);
                 } else {
                     // State returned nothing - this can happen for keys whose type doesn't respond
                     // to these modifiers (e.g., numpad with Shift). Fall back to querying the
                     // keymap directly at this level.
-                    let mut syms_ptr: *const u32 = std::ptr::null();
-                    let num_syms = keymap::xkb_keymap_key_get_syms_by_level(
-                        keymap,
-                        keycode,
-                        layout_idx,
-                        level as u32,
-                        &mut syms_ptr as *mut _,
-                    );
+                    let syms = keymap.key_get_syms_by_level(keycode, layout_idx, level as u32);
 
-                    if num_syms > 0 && !syms_ptr.is_null() {
-                        let keysym = *syms_ptr;
+                    if let Some(&keysym) = syms.first() {
                         if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
                             state_keymap[level].insert(evdev_code, ch);
                         }
@@ -371,8 +342,7 @@ unsafe fn build_wkb_from_keymap(
                 }
             }
 
-            // Clean up this level's state
-            state::xkb_state_unref(state_ptr);
+            // State is automatically cleaned up when it goes out of scope (Drop)
         }
     }
 
@@ -387,180 +357,105 @@ unsafe fn build_wkb_from_keymap(
 
         // Only build caps_lock_keymap if there actually is a caps lock key in this layout
         if let Some(caps_lock_keycode) = caps_lock_xkb_keycode {
-            // Create a fresh state for caps lock
-            let state_ptr = state::xkb_state_new(keymap as *mut state::keymap_h::xkb_keymap);
-            if !state_ptr.is_null() {
-                // Get modifier keycodes
-                let level2_keycode = modifiers.level2_code().map(|(code, _)| code + evdev_offset);
-                let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
-                let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
+            // Get modifier keycodes
+            let level2_keycode = modifiers.level2_code().map(|(code, _)| code + evdev_offset);
+            let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
+            let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
-                // Activate Caps Lock by pressing and releasing it
-                state::xkb_state_update_key(state_ptr, caps_lock_keycode, common::XKB_KEY_DOWN);
-                state::xkb_state_update_key(state_ptr, caps_lock_keycode, common::XKB_KEY_UP);
+            for level in 0..XKB_MAX_LEVELS {
+                // Create a FRESH state for this caps+level combination
+                let mut caps_state = match keymap.new_state() {
+                    Some(s) => s,
+                    None => continue,
+                };
 
-                for level in 0..XKB_MAX_LEVELS {
-                    // Create a FRESH state for this caps+level combination
-                    let caps_state_ptr =
-                        state::xkb_state_new(keymap as *mut state::keymap_h::xkb_keymap);
-                    if caps_state_ptr.is_null() {
+                // IMPORTANT: Press level modifiers FIRST, then Caps Lock
+                // This order matters! (e.g., JP layout needs Shift pressed before Caps)
+                match level {
+                    0 => { /* Caps only - no other modifiers */ }
+                    1 => {
+                        // Level2 (Shift) + Caps
+                        if let Some(kc) = level2_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    2 => {
+                        // Level3 + Caps
+                        if let Some(kc) = level3_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    3 => {
+                        // Level3 + Level2 + Caps (order matters!)
+                        if let Some(kc) = level3_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                        if let Some(kc) = level2_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    4 => {
+                        // Level5 + Caps
+                        if let Some(kc) = level5_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    5 => {
+                        // Level5 + Level2 + Caps
+                        if let Some(kc) = level5_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                        if let Some(kc) = level2_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    6 => {
+                        // Level5 + Level3 + Caps
+                        if let Some(kc) = level5_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                        if let Some(kc) = level3_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    7 => {
+                        // Level5 + Level3 + Level2 + Caps
+                        if let Some(kc) = level5_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                        if let Some(kc) = level3_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                        if let Some(kc) = level2_keycode {
+                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                        }
+                    }
+                    _ => {
+                        // Beyond level 7
                         continue;
                     }
-
-                    // IMPORTANT: Press level modifiers FIRST, then Caps Lock
-                    // This order matters! (e.g., JP layout needs Shift pressed before Caps)
-                    match level {
-                        0 => { /* Caps only - no other modifiers */ }
-                        1 => {
-                            // Level2 (Shift) + Caps
-                            if let Some(kc) = level2_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        2 => {
-                            // Level3 + Caps
-                            if let Some(kc) = level3_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        3 => {
-                            // Level3 + Level2 + Caps (order matters!)
-                            if let Some(kc) = level3_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                            if let Some(kc) = level2_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        4 => {
-                            // Level5 + Caps
-                            if let Some(kc) = level5_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        5 => {
-                            // Level5 + Level2 + Caps
-                            if let Some(kc) = level5_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                            if let Some(kc) = level2_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        6 => {
-                            // Level5 + Level3 + Caps
-                            if let Some(kc) = level5_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                            if let Some(kc) = level3_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        7 => {
-                            // Level5 + Level3 + Level2 + Caps
-                            if let Some(kc) = level5_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                            if let Some(kc) = level3_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                            if let Some(kc) = level2_keycode {
-                                state::xkb_state_update_key(
-                                    caps_state_ptr,
-                                    kc,
-                                    common::XKB_KEY_DOWN,
-                                );
-                            }
-                        }
-                        _ => {
-                            // Beyond level 7
-                            state::xkb_state_unref(caps_state_ptr);
-                            continue;
-                        }
-                    }
-
-                    // NOW press Caps Lock (after level modifiers)
-                    // Keep it pressed down - don't release!
-                    // This is key: caps lock acts as a level shift key in some layouts.
-                    state::xkb_state_update_key(
-                        caps_state_ptr,
-                        caps_lock_keycode,
-                        common::XKB_KEY_DOWN,
-                    );
-
-                    // Test each key at this level with Caps Lock active
-                    for keycode in min_keycode..=max_keycode {
-                        let evdev_code = keycode - evdev_offset;
-
-                        let mut buffer: [u8; 32] = [0; 32];
-                        let size = state::xkb_state_key_get_utf8(
-                            caps_state_ptr,
-                            keycode,
-                            buffer.as_mut_ptr() as *mut i8,
-                            buffer.len(),
-                        );
-
-                        if size > 0 && (size as usize) < buffer.len() {
-                            if let Ok(s) = std::str::from_utf8(&buffer[..size as usize]) {
-                                if let Some(ch) = s.chars().next() {
-                                    // Only store if it's different from the normal state_keymap
-                                    if state_keymap.get(level).and_then(|m| m.get(&evdev_code))
-                                        != Some(&ch)
-                                    {
-                                        caps_lock_keymap[level].insert(evdev_code, ch);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Clean up this caps+level state
-                    state::xkb_state_unref(caps_state_ptr);
                 }
+
+                // NOW press Caps Lock (after level modifiers)
+                // Keep it pressed down - don't release!
+                // This is key: caps lock acts as a level shift key in some layouts.
+                caps_state.update_key(caps_lock_keycode, common::XKB_KEY_DOWN);
+
+                // Test each key at this level with Caps Lock active
+                for keycode in min_keycode..=max_keycode {
+                    let evdev_code = keycode - evdev_offset;
+
+                    let s = caps_state.key_get_utf8(keycode);
+
+                    if let Some(ch) = s.chars().next() {
+                        // Only store if it's different from the normal state_keymap
+                        if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
+                            caps_lock_keymap[level].insert(evdev_code, ch);
+                        }
+                    }
+                }
+
+                // State is automatically cleaned up when it goes out of scope (Drop)
             }
         } // Close the if let Some(caps_lock_keycode)
     }
@@ -581,15 +476,14 @@ unsafe fn build_wkb_from_keymap(
 
             for level in 0..XKB_MAX_LEVELS {
                 // Create a FRESH state for this num+level combination
-                let num_state_ptr =
-                    state::xkb_state_new(keymap as *mut state::keymap_h::xkb_keymap);
-                if num_state_ptr.is_null() {
-                    continue;
-                }
+                let mut num_state = match keymap.new_state() {
+                    Some(s) => s,
+                    None => continue,
+                };
 
                 // Activate Num Lock
-                state::xkb_state_update_key(num_state_ptr, num_lock_keycode, common::XKB_KEY_DOWN);
-                state::xkb_state_update_key(num_state_ptr, num_lock_keycode, common::XKB_KEY_UP);
+                num_state.update_key(num_lock_keycode, common::XKB_KEY_DOWN);
+                num_state.update_key(num_lock_keycode, common::XKB_KEY_UP);
 
                 // Set up modifiers for this level
                 match level {
@@ -597,63 +491,62 @@ unsafe fn build_wkb_from_keymap(
                     1 => {
                         // Num + Level2 (Shift)
                         if let Some(kc) = level2_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     2 => {
                         // Num + Level3
                         if let Some(kc) = level3_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     3 => {
                         // Num + Level3 + Level2 (order matters!)
                         if let Some(kc) = level3_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     4 => {
                         // Num + Level5
                         if let Some(kc) = level5_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     5 => {
                         // Num + Level5 + Level2
                         if let Some(kc) = level5_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     6 => {
                         // Num + Level5 + Level3
                         if let Some(kc) = level5_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     7 => {
                         // Num + Level5 + Level3 + Level2
                         if let Some(kc) = level5_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            state::xkb_state_update_key(num_state_ptr, kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, common::XKB_KEY_DOWN);
                         }
                     }
                     _ => {
                         // Beyond level 7
-                        state::xkb_state_unref(num_state_ptr);
                         continue;
                     }
                 }
@@ -662,30 +555,17 @@ unsafe fn build_wkb_from_keymap(
                 for keycode in min_keycode..=max_keycode {
                     let evdev_code = keycode - evdev_offset;
 
-                    let mut buffer: [u8; 32] = [0; 32];
-                    let size = state::xkb_state_key_get_utf8(
-                        num_state_ptr,
-                        keycode,
-                        buffer.as_mut_ptr() as *mut i8,
-                        buffer.len(),
-                    );
+                    let s = num_state.key_get_utf8(keycode);
 
-                    if size > 0 && (size as usize) < buffer.len() {
-                        if let Ok(s) = std::str::from_utf8(&buffer[..size as usize]) {
-                            if let Some(ch) = s.chars().next() {
-                                // Only store if it's different from the normal state_keymap
-                                if state_keymap.get(level).and_then(|m| m.get(&evdev_code))
-                                    != Some(&ch)
-                                {
-                                    num_lock_keys[level].insert(evdev_code, ch);
-                                }
-                            }
+                    if let Some(ch) = s.chars().next() {
+                        // Only store if it's different from the normal state_keymap
+                        if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
+                            num_lock_keys[level].insert(evdev_code, ch);
                         }
                     }
                 }
 
-                // Clean up this num+level state
-                state::xkb_state_unref(num_state_ptr);
+                // State is automatically cleaned up when it goes out of scope (Drop)
             }
         } // Close the if let Some(num_lock_keycode)
     }
@@ -712,15 +592,15 @@ unsafe fn build_wkb_from_keymap(
     // Populate repeat_keys: determine which keys are repeatable
     let mut repeat_keys = HashSet::new();
     for keycode in min_keycode..=max_keycode {
-        if keymap::xkb_keymap_key_repeats(keymap, keycode) != 0 {
-            let evdev_code = keycode - evdev_offset;
-            repeat_keys.insert(evdev_code);
+        unsafe {
+            if keymap::xkb_keymap_key_repeats(keymap.as_ptr(), keycode) != 0 {
+                let evdev_code = keycode - evdev_offset;
+                repeat_keys.insert(evdev_code);
+            }
         }
     }
 
-    // Clean up
-    keymap::xkb_keymap_unref(keymap);
-    context::xkb_context_unref(ctx);
+    // Keymap and Context are automatically cleaned up via Drop
 
     WKB {
         layouts: all_layouts,
@@ -741,55 +621,29 @@ unsafe fn build_wkb_from_keymap(
 
 /// Create a new WKB instance from locale and layout names using rust-xkb
 pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
-    unsafe {
-        // Import necessary types and constants from rust-xkb modules
-        use context::xkbcommon_h::XKB_CONTEXT_NO_FLAGS;
-        use keymap::xkbcommon_h::{xkb_rule_names, XKB_KEYMAP_COMPILE_NO_FLAGS};
+    use rust_types::{Context, RuleNames};
 
-        // Get all available layouts for this locale
-        let all_layouts = if layout.is_none() {
-            get_all_layouts_for_locale(&locale)
-        } else {
-            // If a specific layout was requested, just use that one
-            vec![layout.clone().unwrap()]
-        };
+    // Get all available layouts for this locale
+    let all_layouts = if layout.is_none() {
+        get_all_layouts_for_locale(&locale)
+    } else {
+        // If a specific layout was requested, just use that one
+        vec![layout.clone().unwrap()]
+    };
 
-        // Create XKB context
-        let ctx = context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-        if ctx.is_null() {
-            panic!("Failed to create XKB context");
-        }
+    // Create XKB context using safe wrapper
+    let ctx = Context::new().expect("Failed to create XKB context");
 
-        // Prepare RMLVO names (Rules, Model, Layout, Variant, Options)
-        let rules = CString::new("evdev").unwrap();
-        let model = CString::new("").unwrap();
-        let layout_cstr = CString::new(locale.clone()).unwrap();
-        let variant_cstr = CString::new(layout.clone().unwrap_or_else(|| String::new())).unwrap();
-        let options_cstr = CString::new("").unwrap();
+    // Prepare RMLVO names using Rust-native wrapper
+    let rules = RuleNames::evdev(locale.clone(), layout.clone());
 
-        let rmlvo = xkb_rule_names {
-            rules: rules.as_ptr(),
-            model: model.as_ptr(),
-            layout: layout_cstr.as_ptr(),
-            variant: variant_cstr.as_ptr(),
-            options: options_cstr.as_ptr(),
-        };
+    // Compile keymap from RMLVO names
+    let keymap = ctx
+        .keymap_from_names(&rules)
+        .unwrap_or_else(|| panic!("Failed to compile keymap for layout: {:?}", layout));
 
-        // Compile keymap from RMLVO names
-        let keymap = keymap::xkb_keymap_new_from_names(
-            ctx as *mut _,
-            &rmlvo as *const _,
-            XKB_KEYMAP_COMPILE_NO_FLAGS,
-        );
-
-        if keymap.is_null() {
-            context::xkb_context_unref(ctx);
-            panic!("Failed to compile keymap for layout: {:?}", layout);
-        }
-
-        // Build WKB from the keymap
-        build_wkb_from_keymap(keymap, ctx, Some(locale), layout, all_layouts)
-    }
+    // Build WKB from the keymap using safe wrappers
+    build_wkb_from_keymap(&keymap, Some(locale), layout, all_layouts)
 }
 
 /// Build Modifiers struct from XKB keymap by querying modifier mappings
@@ -1217,35 +1071,18 @@ fn build_composer_from_xkb(
 
 /// Create a new WKB instance from a keymap string
 pub fn new_from_string(string: String) -> WKB<ListComposer> {
-    unsafe {
-        use context::xkbcommon_h::XKB_CONTEXT_NO_FLAGS;
-        use keymap::xkbcommon_h::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
+    use rust_types::Context;
 
-        // Create XKB context
-        let ctx = context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-        if ctx.is_null() {
-            panic!("Failed to create XKB context");
-        }
+    // Create XKB context using safe wrapper
+    let ctx = Context::new().expect("Failed to create XKB context");
 
-        // Convert string to C string
-        let keymap_cstr = CString::new(string).expect("Failed to convert keymap string to CString");
+    // Parse keymap from string using safe wrapper
+    let keymap = ctx
+        .keymap_from_string(&string)
+        .expect("Failed to parse keymap from string");
 
-        // Parse keymap from string
-        let keymap = keymap::xkb_keymap_new_from_string(
-            ctx as *mut _,
-            keymap_cstr.as_ptr(),
-            XKB_KEYMAP_FORMAT_TEXT_V1,
-            XKB_KEYMAP_COMPILE_NO_FLAGS,
-        );
-
-        if keymap.is_null() {
-            context::xkb_context_unref(ctx);
-            panic!("Failed to parse keymap from string");
-        }
-
-        // We don't know the original locale/layout from the string, so use None
-        // and empty layouts list. Applications typically don't need these when
-        // loading from string (they already have the full keymap).
-        build_wkb_from_keymap(keymap, ctx, None, None, vec![String::new()])
-    }
+    // We don't know the original locale/layout from the string, so use None
+    // and empty layouts list. Applications typically don't need these when
+    // loading from string (they already have the full keymap).
+    build_wkb_from_keymap(&keymap, None, None, vec![String::new()])
 }
