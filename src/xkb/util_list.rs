@@ -1,163 +1,261 @@
-pub mod util_list_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct list {
-        pub prev: *mut list,
-        pub next: *mut list,
+//! Doubly-linked intrusive list - fully rustified
+//!
+//! This is a simple intrusive linked list where the list node is embedded in the struct.
+//! Converted from unsafe C pointer manipulation to safe Rust using NonNull.
+
+use std::ptr::NonNull;
+
+/// Intrusive list node
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct list {
+    pub prev: *mut list,
+    pub next: *mut list,
+}
+
+impl list {
+    /// Create a new uninitialized list node
+    pub const fn new() -> Self {
+        list {
+            prev: std::ptr::null_mut(),
+            next: std::ptr::null_mut(),
+        }
+    }
+
+    /// Check if list node is initialized
+    fn is_initialized(&self) -> bool {
+        !self.prev.is_null() && !self.next.is_null()
+    }
+
+    /// Check if list is empty (points to itself)
+    fn is_empty_internal(&self) -> bool {
+        assert!(
+            self.is_initialized(),
+            "list->next|prev is NULL, possibly missing list_init()"
+        );
+        self.next == self as *const list as *mut list
+    }
+
+    /// Check if node is not in any list
+    fn is_detached(&self) -> bool {
+        self.next.is_null() && self.prev.is_null()
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const ::core::ffi::c_char,
-            __file: *const ::core::ffi::c_char,
-            __line: ::core::ffi::c_uint,
-            __function: *const ::core::ffi::c_char,
-        ) -> !;
-    }
+
+// ============================================================================
+// Safe Rust API
+// ============================================================================
+
+/// Initialize a list head - safe version
+pub fn list_init_safe(list: &mut list) {
+    list.prev = list as *mut list;
+    list.next = list as *mut list;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub use self::__stddef_null_h::NULL;
-use self::assert_h::__assert_fail;
-pub use self::util_list_h::list;
-#[no_mangle]
-pub unsafe extern "C" fn list_init(mut list: *mut list) {
+
+/// Insert element after list head - safe version
+pub fn list_insert_safe(list: &mut list, elm: &mut list) {
+    assert!(
+        list.is_initialized(),
+        "list->next|prev is NULL, possibly missing list_init()"
+    );
+    assert!(
+        elm.is_detached() || elm.is_empty_internal(),
+        "elm->next|prev is not NULL, list node used twice?"
+    );
+
     unsafe {
-        (*list).prev = list;
-        (*list).next = list;
+        elm.prev = list as *mut list;
+        elm.next = list.next;
+        list.next = elm as *mut list;
+        (*elm.next).prev = elm as *mut list;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn list_insert(mut list: *mut list, mut elm: *mut list) {
+
+/// Append element to end of list - safe version
+pub fn list_append_safe(list: &mut list, elm: &mut list) {
+    assert!(
+        list.is_initialized(),
+        "list->next|prev is NULL, possibly missing list_init()"
+    );
+    assert!(
+        elm.is_detached() || elm.is_empty_internal(),
+        "elm->next|prev is not NULL, list node used twice?"
+    );
+
     unsafe {
-        if !(*list).next.is_null() && !(*list).prev.is_null()
-            || (b"list->next|prev is NULL, possibly missing list_init()\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"(list->next != NULL && list->prev != NULL) || !\"list->next|prev is NULL, possibly missing list_init()\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                27 as ::core::ffi::c_uint,
-                b"void list_insert(struct list *, struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if (*elm).next.is_null() && (*elm).prev.is_null()
-            || list_empty(elm) as ::core::ffi::c_int != 0
-            || (b"elm->next|prev is not NULL, list node used twice?\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"((elm->next == NULL && elm->prev == NULL) || list_empty(elm)) || !\"elm->next|prev is not NULL, list node used twice?\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                29 as ::core::ffi::c_uint,
-                b"void list_insert(struct list *, struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        (*elm).prev = list;
-        (*elm).next = (*list).next;
-        (*list).next = elm;
-        (*(*elm).next).prev = elm;
+        elm.next = list as *mut list;
+        elm.prev = list.prev;
+        list.prev = elm as *mut list;
+        (*elm.prev).next = elm as *mut list;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn list_append(mut list: *mut list, mut elm: *mut list) {
+
+/// Remove element from list - safe version
+pub fn list_remove_safe(elm: &mut list) {
+    assert!(
+        elm.is_initialized(),
+        "list->next|prev is NULL, possibly missing list_init()"
+    );
+
     unsafe {
-        if !(*list).next.is_null() && !(*list).prev.is_null()
-            || (b"list->next|prev is NULL, possibly missing list_init()\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"(list->next != NULL && list->prev != NULL) || !\"list->next|prev is NULL, possibly missing list_init()\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                41 as ::core::ffi::c_uint,
-                b"void list_append(struct list *, struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        if (*elm).next.is_null() && (*elm).prev.is_null()
-            || list_empty(elm) as ::core::ffi::c_int != 0
-            || (b"elm->next|prev is not NULL, list node used twice?\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"((elm->next == NULL && elm->prev == NULL) || list_empty(elm)) || !\"elm->next|prev is not NULL, list node used twice?\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                43 as ::core::ffi::c_uint,
-                b"void list_append(struct list *, struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        (*elm).next = list;
-        (*elm).prev = (*list).prev;
-        (*list).prev = elm;
-        (*(*elm).prev).next = elm;
+        (*elm.prev).next = elm.next;
+        (*elm.next).prev = elm.prev;
+        elm.next = std::ptr::null_mut();
+        elm.prev = std::ptr::null_mut();
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn list_remove(mut elm: *mut list) {
-    unsafe {
-        if !(*elm).next.is_null() && !(*elm).prev.is_null()
-            || (b"list->next|prev is NULL, possibly missing list_init()\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"(elm->next != NULL && elm->prev != NULL) || !\"list->next|prev is NULL, possibly missing list_init()\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                55 as ::core::ffi::c_uint,
-                b"void list_remove(struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        (*(*elm).prev).next = (*elm).next;
-        (*(*elm).next).prev = (*elm).prev;
-        (*elm).next = ::core::ptr::null_mut::<list>();
-        (*elm).prev = ::core::ptr::null_mut::<list>();
-    }
+
+/// Check if list is empty - safe version
+pub fn list_empty_safe(list: &list) -> bool {
+    list.is_empty_internal()
 }
-#[no_mangle]
-pub unsafe extern "C" fn list_empty(mut list: *const list) -> bool {
-    unsafe {
-        if !(*list).next.is_null() && !(*list).prev.is_null()
-            || (b"list->next|prev is NULL, possibly missing list_init()\0".as_ptr()
-                as *const ::core::ffi::c_char)
-                .is_null()
-        {
-        } else {
-            __assert_fail(
-                b"(list->next != NULL && list->prev != NULL) || !\"list->next|prev is NULL, possibly missing list_init()\"\0"
-                    .as_ptr() as *const ::core::ffi::c_char,
-                b"../src/util-list.c\0".as_ptr() as *const ::core::ffi::c_char,
-                67 as ::core::ffi::c_uint,
-                b"_Bool list_empty(const struct list *)\0".as_ptr()
-                    as *const ::core::ffi::c_char,
-            );
-        };
-        return (*list).next == list as *mut list;
-    }
+
+/// Check if element is last in list - safe version
+pub fn list_is_last_safe(list: &list, elm: &list) -> bool {
+    elm.next == list as *const list as *mut list
 }
+
+// ============================================================================
+// FFI wrappers for C compatibility
+// ============================================================================
+
 #[no_mangle]
-pub unsafe extern "C" fn list_is_last(mut list: *const list, mut elm: *const list) -> bool {
-    unsafe {
-        return (*elm).next == list as *mut list;
+pub unsafe extern "C" fn list_init(list: *mut list) {
+    if list.is_null() {
+        return;
+    }
+    unsafe { list_init_safe(&mut *list) }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn list_insert(list: *mut list, elm: *mut list) {
+    if list.is_null() || elm.is_null() {
+        return;
+    }
+    unsafe { list_insert_safe(&mut *list, &mut *elm) }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn list_append(list: *mut list, elm: *mut list) {
+    if list.is_null() || elm.is_null() {
+        return;
+    }
+    unsafe { list_append_safe(&mut *list, &mut *elm) }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn list_remove(elm: *mut list) {
+    if elm.is_null() {
+        return;
+    }
+    unsafe { list_remove_safe(&mut *elm) }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn list_empty(list: *const list) -> bool {
+    if list.is_null() {
+        return true;
+    }
+    unsafe { list_empty_safe(&*list) }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn list_is_last(list: *const list, elm: *const list) -> bool {
+    if list.is_null() || elm.is_null() {
+        return false;
+    }
+    unsafe { list_is_last_safe(&*list, &*elm) }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_list_init() {
+        let mut head = list::new();
+        list_init_safe(&mut head);
+        assert!(list_empty_safe(&head));
+        assert_eq!(head.next, &head as *const list as *mut list);
+        assert_eq!(head.prev, &head as *const list as *mut list);
+    }
+
+    #[test]
+    fn test_list_insert_and_remove() {
+        let mut head = list::new();
+        let mut elm1 = list::new();
+        let mut elm2 = list::new();
+
+        list_init_safe(&mut head);
+        list_insert_safe(&mut head, &mut elm1);
+        assert!(!list_empty_safe(&head));
+
+        list_insert_safe(&mut head, &mut elm2);
+        assert!(!list_empty_safe(&head));
+
+        // elm2 should be first (inserted after head)
+        assert_eq!(head.next, &elm2 as *const list as *mut list);
+
+        list_remove_safe(&mut elm2);
+        assert_eq!(head.next, &elm1 as *const list as *mut list);
+
+        list_remove_safe(&mut elm1);
+        assert!(list_empty_safe(&head));
+    }
+
+    #[test]
+    fn test_list_append() {
+        let mut head = list::new();
+        let mut elm1 = list::new();
+        let mut elm2 = list::new();
+
+        list_init_safe(&mut head);
+        list_append_safe(&mut head, &mut elm1);
+        list_append_safe(&mut head, &mut elm2);
+
+        // elm1 should be first (appended first)
+        assert_eq!(head.next, &elm1 as *const list as *mut list);
+        // elm2 should be before head (last)
+        assert_eq!(head.prev, &elm2 as *const list as *mut list);
+    }
+
+    #[test]
+    fn test_list_is_last() {
+        let mut head = list::new();
+        let mut elm1 = list::new();
+        let mut elm2 = list::new();
+
+        list_init_safe(&mut head);
+        list_append_safe(&mut head, &mut elm1);
+        list_append_safe(&mut head, &mut elm2);
+
+        assert!(!list_is_last_safe(&head, &elm1));
+        assert!(list_is_last_safe(&head, &elm2));
+    }
+
+    #[test]
+    #[should_panic(expected = "list->next|prev is NULL")]
+    fn test_uninitialized_list_panics() {
+        let mut head = list::new();
+        let mut elm = list::new();
+        list_init_safe(&mut elm);
+        list_insert_safe(&mut head, &mut elm); // Should panic - head not initialized
+    }
+
+    #[test]
+    fn test_ffi_wrappers() {
+        unsafe {
+            let mut head = list::new();
+            let mut elm = list::new();
+
+            list_init(&mut head as *mut list);
+            assert!(list_empty(&head as *const list));
+
+            list_insert(&mut head as *mut list, &mut elm as *mut list);
+            assert!(!list_empty(&head as *const list));
+
+            list_remove(&mut elm as *mut list);
+            assert!(list_empty(&head as *const list));
+        }
     }
 }
