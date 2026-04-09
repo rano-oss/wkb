@@ -1143,14 +1143,7 @@ pub mod utils_h {
     use super::__stddef_size_t_h::size_t;
     use super::stdint_uintn_h::u32;
     use super::FILE_h::FILE;
-    extern "C" {
-        pub fn map_file(
-            file: *mut FILE,
-            string_out: *mut *mut ::core::ffi::c_char,
-            size_out: *mut size_t,
-        ) -> bool;
-        pub fn unmap_file(string: *mut ::core::ffi::c_char, size: size_t);
-    }
+    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
     #[inline]
@@ -1670,8 +1663,7 @@ use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{
-    is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit, map_file,
-    unmap_file,
+    is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
 };
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
@@ -2121,24 +2113,49 @@ pub unsafe extern "C" fn XkbParseFile(
     mut map: *const ::core::ffi::c_char,
 ) -> *mut XkbFile {
     unsafe {
-        let mut ok: bool = false;
-        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        let mut string: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut size: size_t = 0;
-        ok = map_file(file, &raw mut string, &raw mut size);
-        if !ok {
+        // Get file descriptor from FILE*
+        let fd = libc::fileno(file as *mut libc::FILE);
+        if fd < 0 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Couldn't read XKB file %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
-                file_name,
-                strerror(*__errno_location()),
+                b"Invalid file descriptor\n\0".as_ptr() as *const ::core::ffi::c_char,
             );
             return ::core::ptr::null_mut::<XkbFile>();
         }
-        xkb_file = XkbParseString(ctx, string, size, file_name, map);
-        unmap_file(string, size);
+
+        // Create Rust File from file descriptor
+        use crate::xkb::utils::MappedFile;
+        use std::fs::File;
+        use std::os::unix::io::FromRawFd;
+
+        let rust_file = File::from_raw_fd(fd);
+
+        // Map the file
+        let mapped = match MappedFile::new(&rust_file) {
+            Ok(m) => m,
+            Err(e) => {
+                let err_msg = std::ffi::CString::new(e.to_string())
+                    .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"Couldn't read XKB file %s: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    file_name,
+                    err_msg.as_ptr(),
+                );
+                std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
+                return ::core::ptr::null_mut::<XkbFile>();
+            }
+        };
+
+        let xkb_file = XkbParseString(ctx, mapped.as_ptr(), mapped.len(), file_name, map);
+
+        // Keep file descriptor open - don't close it
+        std::mem::forget(rust_file);
+
         return xkb_file;
     }
 }

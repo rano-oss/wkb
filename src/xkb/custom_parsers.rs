@@ -141,16 +141,12 @@ pub mod utils_h {
     }
     use super::__stddef_size_t_h::size_t;
     use super::FILE_h::FILE;
-    extern "C" {
-        pub fn map_file(
-            file: *mut FILE,
-            string_out: *mut *mut ::core::ffi::c_char,
-            size_out: *mut size_t,
-        ) -> bool;
-        pub fn unmap_file(string: *mut ::core::ffi::c_char, size: size_t);
-    }
+    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
+    use super::__stddef_size_t_h::size_t;
+    use super::stdint_uintn_h::uint64_t;
+    use super::utils_h::is_xdigit;
     #[inline]
     pub unsafe extern "C" fn parse_dec_to_uint64_t(
         mut s: *const ::core::ffi::c_char,
@@ -503,9 +499,6 @@ pub mod utils_numbers_h {
             };
         }
     }
-    use super::__stddef_size_t_h::size_t;
-    use super::stdint_uintn_h::{u32, uint64_t};
-    use super::utils_h::is_xdigit;
 }
 pub mod getopt_core_h {
     extern "C" {
@@ -559,7 +552,7 @@ use self::stdio_h::{fclose, fopen, fprintf, printf, stderr};
 pub use self::stdlib_h::{atof, exit, strtol, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint32_t, __uint64_t};
-pub use self::utils_h::{is_xdigit, map_file, unmap_file};
+pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
 };
@@ -737,9 +730,37 @@ unsafe fn main_0(
                 b"int main(int, char **)\0".as_ptr() as *const ::core::ffi::c_char,
             );
         };
-        let mut size: size_t = 0 as size_t;
-        let mut content: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        map_file(file, &raw mut content, &raw mut size);
+
+        // Convert FILE* to Rust File and map it
+        use crate::xkb::utils::MappedFile;
+        use std::fs::File;
+        use std::os::unix::io::FromRawFd;
+
+        let fd = libc::fileno(file as *mut libc::FILE);
+        if fd < 0 {
+            fprintf(
+                stderr,
+                b"Invalid file descriptor\n\0".as_ptr() as *const ::core::ffi::c_char,
+            );
+            exit(1);
+        }
+
+        let rust_file = File::from_raw_fd(fd);
+        let mapped = match MappedFile::new(&rust_file) {
+            Ok(m) => m,
+            Err(e) => {
+                fprintf(
+                    stderr,
+                    b"Failed to map file: %s\n\0".as_ptr() as *const ::core::ffi::c_char,
+                    std::ffi::CString::new(e.to_string()).unwrap().as_ptr(),
+                );
+                std::mem::forget(rust_file);
+                exit(1);
+            }
+        };
+
+        let content = mapped.as_ptr();
+        let size = mapped.len();
         if !content.is_null() {
         } else {
             __assert_fail(
@@ -1272,7 +1293,8 @@ unsafe fn main_0(
             &raw mut bench,
             &raw mut est,
         );
-        unmap_file(content, size);
+        // mapped will auto-unmap on drop
+        std::mem::forget(rust_file);
         fclose(file);
         return ret;
     }

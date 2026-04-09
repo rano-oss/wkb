@@ -753,14 +753,7 @@ pub mod utils_h {
     use super::stdio_h::vsnprintf;
     use super::string_h::strlen;
     use super::FILE_h::FILE;
-    extern "C" {
-        pub fn map_file(
-            file: *mut FILE,
-            string_out: *mut *mut ::core::ffi::c_char,
-            size_out: *mut size_t,
-        ) -> bool;
-        pub fn unmap_file(string: *mut ::core::ffi::c_char, size: size_t);
-    }
+    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
     #[inline]
@@ -956,9 +949,7 @@ use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::{memcpy, memmove, memset, strchr, strerror, strlen, strncmp};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
-pub use self::utils_h::{
-    is_ascii, is_graph, is_space, isempty, map_file, snprintf_safe, strlen_safe, unmap_file,
-};
+pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe, strlen_safe};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_errors_h::{
@@ -9319,8 +9310,6 @@ unsafe extern "C" fn read_rules_file(
 ) -> bool {
     unsafe {
         let mut ret: bool = false;
-        let mut string: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut size: size_t = 0;
         let mut scanner: scanner = scanner {
             pos: 0,
             len: 0,
@@ -9334,18 +9323,51 @@ unsafe extern "C" fn read_rules_file(
             ctx: ::core::ptr::null_mut::<xkb_context>(),
             priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
         };
-        if !map_file(file, &raw mut string, &raw mut size) {
+
+        // Convert FILE* to Rust File and map it
+        use crate::xkb::utils::MappedFile;
+        use std::fs::File;
+        use std::os::unix::io::FromRawFd;
+
+        let fd = libc::fileno(file as *mut libc::FILE);
+        if fd < 0 {
             xkb_log(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Couldn't read rules file \"%s\": %s\n\0".as_ptr() as *const ::core::ffi::c_char,
-                path,
-                strerror(*__errno_location()),
+                b"Invalid file descriptor\n\0".as_ptr() as *const ::core::ffi::c_char,
             );
             return false_0 != 0;
         }
-        scanner_init(&raw mut scanner, (*matcher).ctx, string, size, path, NULL);
+
+        let rust_file = File::from_raw_fd(fd);
+        let mapped = match MappedFile::new(&rust_file) {
+            Ok(m) => m,
+            Err(e) => {
+                let err_msg = std::ffi::CString::new(e.to_string())
+                    .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
+                xkb_log(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    b"Couldn't read rules file \"%s\": %s\n\0".as_ptr()
+                        as *const ::core::ffi::c_char,
+                    path,
+                    err_msg.as_ptr(),
+                );
+                std::mem::forget(rust_file);
+                return false_0 != 0;
+            }
+        };
+
+        scanner_init(
+            &raw mut scanner,
+            (*matcher).ctx,
+            mapped.as_ptr(),
+            mapped.len(),
+            path,
+            NULL,
+        );
         if !scanner_check_supported_char_encoding(&raw mut scanner) {
             let mut loc: scanner_loc = scanner_token_location(&raw mut scanner);
             xkb_log(
@@ -9371,11 +9393,18 @@ unsafe extern "C" fn read_rules_file(
                 loc_0.line,
                 loc_0.column,
             );
-            unmap_file(string, size);
+            std::mem::forget(rust_file);
             return false_0 != 0;
         }
-        ret = matcher_match(matcher, &raw mut scanner, include_depth, string, size, path);
-        unmap_file(string, size);
+        ret = matcher_match(
+            matcher,
+            &raw mut scanner,
+            include_depth,
+            mapped.as_ptr(),
+            mapped.len(),
+            path,
+        );
+        std::mem::forget(rust_file);
         return ret;
     }
 }

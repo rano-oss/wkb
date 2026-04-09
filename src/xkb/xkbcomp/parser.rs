@@ -8,18 +8,6 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type int64_t = __int64_t;
-    use super::types_h::__int64_t;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
 pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
@@ -119,7 +107,6 @@ pub mod xkbcommon_h {
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
-    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keysym_from_name(
             name: *const ::core::ffi::c_char,
@@ -292,7 +279,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -334,7 +321,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub name: xkb_atom_t,
-        pub value: int64_t,
+        pub value: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -373,7 +360,7 @@ pub mod ast_h {
     pub struct GroupCompatDef {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub group: int64_t,
+        pub group: i64,
         pub def: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -391,7 +378,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub virtual_0: bool,
-        pub ndx: int64_t,
+        pub ndx: i64,
         pub name: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -428,7 +415,6 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod messages_codes_h {
@@ -641,7 +627,7 @@ pub mod parser_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub union YYSTYPE {
-        pub num: int64_t,
+        pub num: i64,
         pub file_type: xkb_file_type,
         pub str: *mut ::core::ffi::c_char,
         pub sval: sval,
@@ -709,8 +695,6 @@ pub mod parser_h {
     };
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
-    use super::stdint_intn_h::int64_t;
-    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod stdlib_h {
@@ -819,11 +803,10 @@ pub mod ast_build_h {
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::scanner_utils_h::{scanner, sval};
-    use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
     extern "C" {
         pub fn ExprCreateString(str: xkb_atom_t) -> *mut ExprDef;
-        pub fn ExprCreateInteger(ival: int64_t) -> *mut ExprDef;
+        pub fn ExprCreateInteger(ival: i64) -> *mut ExprDef;
         pub fn ExprCreateFloat() -> *mut ExprDef;
         pub fn ExprCreateKeyName(key_name: xkb_atom_t) -> *mut ExprDef;
         pub fn ExprCreateKeySym(keysym: xkb_keysym_t) -> *mut ExprDef;
@@ -854,7 +837,7 @@ pub mod ast_build_h {
             scanner: *mut scanner,
             string: *const ::core::ffi::c_char,
         ) -> xkb_keysym_t;
-        pub fn KeycodeCreate(name: xkb_atom_t, value: int64_t) -> *mut KeycodeDef;
+        pub fn KeycodeCreate(name: xkb_atom_t, value: i64) -> *mut KeycodeDef;
         pub fn KeyAliasCreate(alias: xkb_atom_t, real: xkb_atom_t) -> *mut KeyAliasDef;
         pub fn VModCreate(name: xkb_atom_t, value: *mut ExprDef) -> *mut VModDef;
         pub fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef;
@@ -862,10 +845,10 @@ pub mod ast_build_h {
         pub fn InterpCreate(sym: xkb_keysym_t, match_0: *mut ExprDef) -> *mut InterpDef;
         pub fn KeyTypeCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut KeyTypeDef;
         pub fn SymbolsCreate(keyName: xkb_atom_t, symbols: *mut VarDef) -> *mut SymbolsDef;
-        pub fn GroupCompatCreate(group: int64_t, def: *mut ExprDef) -> *mut GroupCompatDef;
+        pub fn GroupCompatCreate(group: i64, def: *mut ExprDef) -> *mut GroupCompatDef;
         pub fn ModMapCreate(modifier: xkb_atom_t, keys: *mut ExprDef) -> *mut ModMapDef;
         pub fn LedMapCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut LedMapDef;
-        pub fn LedNameCreate(ndx: int64_t, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef;
+        pub fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef;
         pub fn UnknownStatementCreate(_: stmt_type, name: sval) -> *mut UnknownStatement;
         pub fn IncludeCreate(
             ctx: *mut xkb_context,
@@ -1015,11 +998,8 @@ pub use self::parser_h::{
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::u32;
 use self::stdlib_h::{free, malloc};
 use self::string_h::{memcpy, stpcpy, strlen};
-pub use self::types_h::{__int64_t, __uint32_t};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -7005,19 +6985,19 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             c2rust_current_block = 9699707990742192723;
                         }
                         124 => {
-                            yyval.num = 0 as int64_t;
+                            yyval.num = 0 as i64;
                             c2rust_current_block = 9699707990742192723;
                         }
                         125 => {
-                            yyval.num = 0 as int64_t;
+                            yyval.num = 0 as i64;
                             c2rust_current_block = 9699707990742192723;
                         }
                         126 => {
-                            yyval.num = 0 as int64_t;
+                            yyval.num = 0 as i64;
                             c2rust_current_block = 9699707990742192723;
                         }
                         127 => {
-                            yyval.num = 0 as int64_t;
+                            yyval.num = 0 as i64;
                             c2rust_current_block = 9699707990742192723;
                         }
                         128 => {
@@ -7617,7 +7597,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                         }
                         203 => {
                             if (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num
-                                < XKB_KEYSYM_MIN as int64_t
+                                < XKB_KEYSYM_MIN as i64
                             {
                                 let mut loc_1: scanner_loc =
                                     scanner_token_location((*param).scanner);
@@ -7637,7 +7617,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                                 yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
                             } else {
                                 if (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num
-                                    <= XKB_KEYSYM_MAX as int64_t
+                                    <= XKB_KEYSYM_MAX as i64
                                 {
                                     yyval.keysym = (*yyvsp.offset(0 as ::core::ffi::c_int as isize))
                                         .num
@@ -7746,7 +7726,7 @@ pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::cor
                             c2rust_current_block = 9699707990742192723;
                         }
                         209 => {
-                            yyval.num = 0 as int64_t;
+                            yyval.num = 0 as i64;
                             c2rust_current_block = 9699707990742192723;
                         }
                         210 => {

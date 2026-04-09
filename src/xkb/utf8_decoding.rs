@@ -13,9 +13,7 @@ pub mod __stddef_size_t_h {
 pub mod utils_h {
     #[inline]
     pub unsafe extern "C" fn is_surrogate(mut cp: u32) -> bool {
-        unsafe {
-            return cp >= 0xd800 as u32 && cp <= 0xdfff as u32;
-        }
+        return cp >= 0xd800 as u32 && cp <= 0xdfff as u32;
     }
     use super::stdint_uintn_h::u32;
 }

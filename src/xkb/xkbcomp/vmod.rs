@@ -9,18 +9,6 @@ pub mod internal {
     }
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
 }
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type int64_t = __int64_t;
-    use super::types_h::__int64_t;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
 pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
@@ -114,7 +102,6 @@ pub mod xkbcommon_h {
     pub type xkb_mod_mask_t = u32;
     pub type xkb_mod_index_t = u32;
     pub type xkb_keysym_t = u32;
-    use super::stdint_uintn_h::u32;
 }
 pub mod keymap_h {
     #[derive(Copy, Clone)]
@@ -293,7 +280,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -323,7 +310,6 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod limits_h {
@@ -404,10 +390,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::u32;
 use self::text_h::ModMaskText;
-pub use self::types_h::{__int64_t, __uint32_t};
 pub use self::xkbcommon_h::{
     xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
     XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,

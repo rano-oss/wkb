@@ -183,70 +183,6 @@ pub use self::types_h::{
 use self::unistd_h::close;
 pub use self::FILE_h::FILE;
 #[no_mangle]
-pub unsafe extern "C" fn map_file(
-    mut file: *mut FILE,
-    mut string_out: *mut *mut ::core::ffi::c_char,
-    mut size_out: *mut size_t,
-) -> bool {
-    unsafe {
-        let mut stat_buf: stat = stat {
-            st_dev: 0,
-            st_ino: 0,
-            st_nlink: 0,
-            st_mode: 0,
-            st_uid: 0,
-            st_gid: 0,
-            __pad0: 0,
-            st_rdev: 0,
-            st_size: 0,
-            st_blksize: 0,
-            st_blocks: 0,
-            st_atim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_mtim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_ctim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            __glibc_reserved: [0; 3],
-        };
-        let mut fd: ::core::ffi::c_int = 0;
-        let mut string: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        fd = fileno(file);
-        if fd < 0 as ::core::ffi::c_int {
-            return false_0 != 0;
-        }
-        if fstat(fd, &raw mut stat_buf) != 0 as ::core::ffi::c_int {
-            return false_0 != 0;
-        }
-        string = mmap(
-            NULL,
-            stat_buf.st_size as size_t,
-            PROT_READ,
-            MAP_SHARED,
-            fd,
-            0 as __off64_t,
-        ) as *mut ::core::ffi::c_char;
-        if string == MAP_FAILED as *mut ::core::ffi::c_char {
-            return false_0 != 0;
-        }
-        *string_out = string;
-        *size_out = stat_buf.st_size as size_t;
-        return true_0 != 0;
-    }
-}
-#[no_mangle]
-pub unsafe extern "C" fn unmap_file(mut str: *mut ::core::ffi::c_char, mut size: size_t) {
-    unsafe {
-        munmap(str as *mut ::core::ffi::c_void, size);
-    }
-}
-#[no_mangle]
 pub unsafe extern "C" fn open_file(mut path: *const ::core::ffi::c_char) -> *mut FILE {
     unsafe {
         if path.is_null() {
@@ -604,4 +540,67 @@ pub unsafe extern "C" fn istrncmp(
         }
         return 0 as ::core::ffi::c_int;
     }
+}
+
+// New Rust file utilities
+use memmap2::Mmap;
+use std::fs::File;
+use std::io;
+use std::path::Path;
+
+/// Memory-mapped file wrapper with automatic cleanup
+pub struct MappedFile {
+    mmap: Mmap,
+}
+
+impl MappedFile {
+    /// Create a new memory-mapped file
+    pub fn new(file: &File) -> io::Result<Self> {
+        let mmap = unsafe { Mmap::map(file)? };
+        Ok(MappedFile { mmap })
+    }
+
+    /// Get the mapped data as a byte slice
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.mmap
+    }
+
+    /// Get the mapped data as a C string pointer (for FFI compatibility)
+    pub fn as_ptr(&self) -> *const ::core::ffi::c_char {
+        self.mmap.as_ptr() as *const ::core::ffi::c_char
+    }
+
+    /// Get the size of the mapped file
+    pub fn len(&self) -> usize {
+        self.mmap.len()
+    }
+
+    /// Check if the mapped file is empty
+    pub fn is_empty(&self) -> bool {
+        self.mmap.is_empty()
+    }
+}
+
+/// Open a file and verify it's a regular file
+pub fn open_regular_file(path: &Path) -> io::Result<File> {
+    let file = File::open(path)?;
+    let metadata = file.metadata()?;
+    if !metadata.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "not a regular file",
+        ));
+    }
+    Ok(file)
+}
+
+/// Open a file from a C string path
+pub unsafe fn open_file_from_cstr(path: *const ::core::ffi::c_char) -> io::Result<File> {
+    if path.is_null() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "null path"));
+    }
+    let path_str = std::ffi::CStr::from_ptr(path)
+        .to_str()
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid UTF-8 in path"))?;
+    open_regular_file(Path::new(path_str))
 }

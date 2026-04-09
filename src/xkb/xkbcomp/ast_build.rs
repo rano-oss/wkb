@@ -8,18 +8,6 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type int64_t = __int64_t;
-    use super::types_h::__int64_t;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
 pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
@@ -249,7 +237,6 @@ pub mod xkbcommon_h {
         pub symbols: *mut ::core::ffi::c_char,
         pub types: *mut ::core::ffi::c_char,
     }
-    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
     }
@@ -419,7 +406,7 @@ pub mod ast_h {
     #[repr(C)]
     pub struct ExprInteger {
         pub common: ParseCommon,
-        pub ival: int64_t,
+        pub ival: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -461,7 +448,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub name: xkb_atom_t,
-        pub value: int64_t,
+        pub value: i64,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -500,7 +487,7 @@ pub mod ast_h {
     pub struct GroupCompatDef {
         pub common: ParseCommon,
         pub merge: merge_mode,
-        pub group: int64_t,
+        pub group: i64,
         pub def: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -518,7 +505,7 @@ pub mod ast_h {
         pub common: ParseCommon,
         pub merge: merge_mode,
         pub virtual_0: bool,
-        pub ndx: int64_t,
+        pub ndx: i64,
         pub name: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
@@ -555,7 +542,6 @@ pub mod ast_h {
     }
     use super::atom_h::xkb_atom_t;
     use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::int64_t;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod scanner_utils_h {
@@ -641,7 +627,6 @@ pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: ::core::ffi::c_uint = UINT32_MAX;
     use super::__stddef_size_t_h::size_t;
     use super::stdint_h::UINT32_MAX;
-    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn utf8_next_code_point(
             s: *const ::core::ffi::c_char,
@@ -764,11 +749,8 @@ pub use self::messages_codes_h::{
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdint_h::UINT32_MAX;
-pub use self::stdint_intn_h::int64_t;
-pub use self::stdint_uintn_h::u32;
 use self::stdlib_h::{calloc, free, malloc, realloc};
 use self::string_h::{strlen, strndup};
-pub use self::types_h::{__int64_t, __uint32_t};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -801,7 +783,7 @@ pub unsafe extern "C" fn ExprCreateString(mut str: xkb_atom_t) -> *mut ExprDef {
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn ExprCreateInteger(mut ival: int64_t) -> *mut ExprDef {
+pub unsafe extern "C" fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_INTEGER_LITERAL);
         if expr.is_null() {
@@ -1219,10 +1201,7 @@ pub unsafe extern "C" fn KeysymParseString(
     }
 }
 #[no_mangle]
-pub unsafe extern "C" fn KeycodeCreate(
-    mut name: xkb_atom_t,
-    mut value: int64_t,
-) -> *mut KeycodeDef {
+pub unsafe extern "C" fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut KeycodeDef {
     unsafe {
         let mut def: *mut KeycodeDef =
             malloc(::core::mem::size_of::<KeycodeDef>() as size_t) as *mut KeycodeDef;
@@ -1367,7 +1346,7 @@ pub unsafe extern "C" fn SymbolsCreate(
 }
 #[no_mangle]
 pub unsafe extern "C" fn GroupCompatCreate(
-    mut group: int64_t,
+    mut group: i64,
     mut val: *mut ExprDef,
 ) -> *mut GroupCompatDef {
     unsafe {
@@ -1424,7 +1403,7 @@ pub unsafe extern "C" fn LedMapCreate(
 }
 #[no_mangle]
 pub unsafe extern "C" fn LedNameCreate(
-    mut ndx: int64_t,
+    mut ndx: i64,
     mut name: *mut ExprDef,
     mut virtual_0: bool,
 ) -> *mut LedNameDef {
