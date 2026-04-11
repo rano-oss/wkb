@@ -630,8 +630,7 @@ pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
-pub unsafe extern "C" fn ModIndexText(
+pub unsafe fn ModIndexText(
     mut ctx: *mut xkb_context,
     mut mods: *const xkb_mod_set,
     mut ndx: xkb_mod_index_t,
@@ -649,8 +648,7 @@ pub unsafe extern "C" fn ModIndexText(
         return xkb_atom_text(ctx, (*mods).mods[ndx as usize].name);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ActionTypeText(mut type_0: xkb_action_type) -> *const i8 {
+pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> *const i8 {
     unsafe {
         let mut name: *const i8 = LookupValue(
             &raw const actionTypeNames as *const LookupEntry,
@@ -663,16 +661,14 @@ pub unsafe extern "C" fn ActionTypeText(mut type_0: xkb_action_type) -> *const i
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *const i8 {
+pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *const i8 {
     unsafe {
         let mut buffer: *mut i8 = xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return buffer;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
+pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
     unsafe {
         let mut sname: *const i8 = xkb_atom_text(ctx, name);
         let mut len: usize = strlen_safe(sname).wrapping_add(3 as usize);
@@ -681,8 +677,7 @@ pub unsafe extern "C" fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_at
         return buf;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn SIMatchText(mut type_0: xkb_match_operation) -> *const i8 {
+pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> *const i8 {
     unsafe {
         return LookupValue(
             &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -690,8 +685,7 @@ pub unsafe extern "C" fn SIMatchText(mut type_0: xkb_match_operation) -> *const 
         );
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ModMaskText(
+pub unsafe fn ModMaskText(
     mut ctx: *mut xkb_context,
     mut type_0: mod_type,
     mut mods: *const xkb_mod_set,

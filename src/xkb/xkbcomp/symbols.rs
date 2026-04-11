@@ -206,250 +206,8 @@ pub mod keymap_h {
     }
 }
 pub mod ast_h {
-    pub type xkb_file_type = u32;
-    pub const FILE_TYPE_INVALID: xkb_file_type = 7;
-    pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
-    pub const FILE_TYPE_RULES: xkb_file_type = 6;
-    pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
-    pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
-    pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
-    pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
-    pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
-    pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
-    pub const FILE_TYPE_TYPES: xkb_file_type = 1;
-    pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
-    pub type stmt_type = u32;
-    pub const _STMT_NUM_VALUES: stmt_type = 37;
-    pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
-    pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
-    pub const STMT_LED_NAME: stmt_type = 34;
-    pub const STMT_LED_MAP: stmt_type = 33;
-    pub const STMT_GROUP_COMPAT: stmt_type = 32;
-    pub const STMT_MODMAP: stmt_type = 31;
-    pub const STMT_SYMBOLS: stmt_type = 30;
-    pub const STMT_VMOD: stmt_type = 29;
-    pub const STMT_INTERP: stmt_type = 28;
-    pub const STMT_TYPE: stmt_type = 27;
-    pub const STMT_VAR: stmt_type = 26;
-    pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
-    pub const STMT_EXPR_INVERT: stmt_type = 24;
-    pub const STMT_EXPR_NEGATE: stmt_type = 23;
-    pub const STMT_EXPR_NOT: stmt_type = 22;
-    pub const STMT_EXPR_ASSIGN: stmt_type = 21;
-    pub const STMT_EXPR_DIVIDE: stmt_type = 20;
-    pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
-    pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
-    pub const STMT_EXPR_ADD: stmt_type = 17;
-    pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
-    pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
-    pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
-    pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
-    pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
-    pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
-    pub const STMT_EXPR_IDENT: stmt_type = 10;
-    pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
-    pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
-    pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
-    pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
-    pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
-    pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
-    pub const STMT_ALIAS: stmt_type = 3;
-    pub const STMT_KEYCODE: stmt_type = 2;
-    pub const STMT_INCLUDE: stmt_type = 1;
-    pub const STMT_UNKNOWN: stmt_type = 0;
-    pub type merge_mode = u32;
-    pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
-    pub const MERGE_REPLACE: merge_mode = 3;
-    pub const MERGE_OVERRIDE: merge_mode = 2;
-    pub const MERGE_AUGMENT: merge_mode = 1;
-    pub const MERGE_DEFAULT: merge_mode = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _ParseCommon {
-        pub next: *mut _ParseCommon,
-        pub type_0: stmt_type,
-    }
-    pub type ParseCommon = _ParseCommon;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _IncludeStmt {
-        pub common: ParseCommon,
-        pub merge: merge_mode,
-        pub stmt: *mut i8,
-        pub file: *mut i8,
-        pub map: *mut i8,
-        pub modifier: *mut i8,
-        pub next_incl: *mut _IncludeStmt,
-    }
-    pub type IncludeStmt = _IncludeStmt;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union ExprDef {
-        pub common: ParseCommon,
-        pub ident: ExprIdent,
-        pub string: ExprString,
-        pub boolean: ExprBoolean,
-        pub integer: ExprInteger,
-        pub key_name: ExprKeyName,
-        pub keysym: ExprKeySym,
-        pub binary: ExprBinary,
-        pub unary: ExprUnary,
-        pub field_ref: ExprFieldRef,
-        pub array_ref: ExprArrayRef,
-        pub action: ExprAction,
-        pub actions: ExprActionList,
-        pub keysym_list: ExprKeysymList,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprKeysymList {
-        pub common: ParseCommon,
-        pub syms: C2Rust_Unnamed_13,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_13 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_keysym_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprActionList {
-        pub common: ParseCommon,
-        pub actions: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprAction {
-        pub common: ParseCommon,
-        pub name: xkb_atom_t,
-        pub args: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprArrayRef {
-        pub common: ParseCommon,
-        pub element: xkb_atom_t,
-        pub field: xkb_atom_t,
-        pub entry: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprFieldRef {
-        pub common: ParseCommon,
-        pub element: xkb_atom_t,
-        pub field: xkb_atom_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprUnary {
-        pub common: ParseCommon,
-        pub child: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprBinary {
-        pub common: ParseCommon,
-        pub left: *mut ExprDef,
-        pub right: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprKeySym {
-        pub common: ParseCommon,
-        pub keysym: xkb_keysym_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprKeyName {
-        pub common: ParseCommon,
-        pub key_name: xkb_atom_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprInteger {
-        pub common: ParseCommon,
-        pub ival: i64,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprBoolean {
-        pub common: ParseCommon,
-        pub set: bool,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprString {
-        pub common: ParseCommon,
-        pub str: xkb_atom_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ExprIdent {
-        pub common: ParseCommon,
-        pub ident: xkb_atom_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct VarDef {
-        pub common: ParseCommon,
-        pub merge: merge_mode,
-        pub name: *mut ExprDef,
-        pub value: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct VModDef {
-        pub common: ParseCommon,
-        pub merge: merge_mode,
-        pub name: xkb_atom_t,
-        pub value: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct SymbolsDef {
-        pub common: ParseCommon,
-        pub merge: merge_mode,
-        pub keyName: xkb_atom_t,
-        pub symbols: *mut VarDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ModMapDef {
-        pub common: ParseCommon,
-        pub merge: merge_mode,
-        pub modifier: xkb_atom_t,
-        pub keys: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct UnknownStatement {
-        pub common: ParseCommon,
-        pub name: *mut i8,
-    }
-    pub type xkb_map_flags = u32;
-    pub const MAP_IS_ALTGR: xkb_map_flags = 128;
-    pub const MAP_HAS_FN: xkb_map_flags = 64;
-    pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
-    pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
-    pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
-    pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
-    pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
-    pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct XkbFile {
-        pub common: ParseCommon,
-        pub name: *mut i8,
-        pub defs: *mut ParseCommon,
-        pub file_type: xkb_file_type,
-        pub flags: xkb_map_flags,
-    }
-    use super::atom_h::xkb_atom_t;
-    use super::darray_h::darray_size_t;
-    use super::stdint_intn_h::i64;
-    use super::xkbcommon_h::xkb_keysym_t;
+    pub use crate::xkb::shared_ast_types::*;
+    pub type C2Rust_Unnamed_13 = DarrayKeysym;
     extern "C" {
         pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
     }
@@ -555,99 +313,26 @@ pub mod text_h {
     use super::context_h::xkb_context;
     use super::keymap_h::{xkb_action_type, xkb_mod_set};
     use super::xkbcommon_h::{xkb_keysym_t, xkb_mod_index_t};
-    pub use crate::xkb::text::LookupEntry;
-    extern "C" {
-        pub fn ModIndexText(
-            ctx: *mut xkb_context,
-            mods: *const xkb_mod_set,
-            ndx: xkb_mod_index_t,
-        ) -> *const i8;
-        pub fn ActionTypeText(type_0: xkb_action_type) -> *const i8;
-        pub fn KeysymText(ctx: *mut xkb_context, sym: xkb_keysym_t) -> *const i8;
-        pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const i8;
-    }
+    pub use crate::xkb::text::{
+        ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText,
+    };
 }
 pub mod xkbcomp_priv_h {
-    pub type xkb_parser_error = u32;
-    pub const PARSER_FATAL_ERROR: xkb_parser_error = 2;
-    pub const PARSER_RECOVERABLE_ERROR: xkb_parser_error = 1;
-    pub const PARSER_SUCCESS: xkb_parser_error = 0;
-    pub type xkb_parser_strict_flags = u32;
-    pub const PARSER_V2_LAX_FLAGS: xkb_parser_strict_flags = 0;
-    pub const PARSER_V2_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
-    pub const PARSER_V1_LAX_FLAGS: xkb_parser_strict_flags = 16379;
-    pub const PARSER_V1_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
-    pub const PARSER_NO_ILLEGAL_ACTION_FIELDS: xkb_parser_strict_flags = 8192;
-    pub const PARSER_NO_UNKNOWN_ACTION_FIELDS: xkb_parser_strict_flags = 4096;
-    pub const PARSER_NO_UNKNOWN_ACTION: xkb_parser_strict_flags = 2048;
-    pub const PARSER_NO_UNKNOWN_KEY_FIELDS: xkb_parser_strict_flags = 1024;
-    pub const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: xkb_parser_strict_flags = 512;
-    pub const PARSER_NO_UNKNOWN_LED_FIELDS: xkb_parser_strict_flags = 256;
-    pub const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: xkb_parser_strict_flags = 128;
-    pub const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: xkb_parser_strict_flags = 64;
-    pub const PARSER_NO_UNKNOWN_TYPE_FIELDS: xkb_parser_strict_flags = 32;
-    pub const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: xkb_parser_strict_flags = 16;
-    pub const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: xkb_parser_strict_flags = 8;
-    pub const PARSER_NO_FIELD_VALUE_MISMATCH: xkb_parser_strict_flags = 4;
-    pub const PARSER_NO_FIELD_TYPE_MISMATCH: xkb_parser_strict_flags = 2;
-    pub const PARSER_NO_UNKNOWN_STATEMENTS: xkb_parser_strict_flags = 1;
-    pub const PARSER_NO_STRICT_FLAGS: xkb_parser_strict_flags = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct pending_computation {
-        pub expr: *mut ExprDef,
-        pub computed: bool,
-        pub value: u32,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct pending_computation_array {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut pending_computation,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_keymap_info {
-        pub keymap: xkb_keymap,
-        pub strict: xkb_parser_strict_flags,
-        pub features: C2Rust_Unnamed_17,
-        pub lookup: C2Rust_Unnamed_16,
-        pub pending_computations: *mut pending_computation_array,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_16 {
-        pub groupIndexNames: [LookupEntry; 3],
-        pub groupMaskNames: [LookupEntry; 5],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_17 {
-        pub max_groups: xkb_layout_index_t,
-        pub max_overlays: xkb_overlay_index_t,
-        pub controls_name_offset: uint8_t,
-        pub group_lock_on_release: bool,
-        pub mods_unlock_on_press: bool,
-        pub mods_latch_on_press: bool,
-        pub overlapping_overlays: bool,
-    }
-    #[inline]
-    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
-        unsafe {
-            return if !(*file).name.is_null() {
-                (*file).name as *const i8
-            } else {
-                b"(unnamed map)\0".as_ptr() as *const i8
-            };
-        }
-    }
-    use super::ast_h::{ExprDef, XkbFile};
-    use super::darray_h::darray_size_t;
-    use super::keymap_h::{xkb_keymap, xkb_overlay_index_t};
-    use super::stdint_uintn_h::{u32, uint8_t};
-    use super::text_h::LookupEntry;
-    use super::xkbcommon_h::xkb_layout_index_t;
+    pub use crate::xkb::shared_ast_types::{
+        pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
+        xkb_parser_error, xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup,
+        PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
+        PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
+        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
+        PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
+        PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
+    };
+    pub type C2Rust_Unnamed_16 = XkbcompLookup;
+    pub type C2Rust_Unnamed_17 = XkbcompFeatures;
+    use super::ast_h::XkbFile;
     extern "C" {
         pub fn FreeXkbFile(file: *mut XkbFile);
     }
@@ -868,45 +553,10 @@ pub mod expr_h {
     use super::text_h::LookupEntry;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_mod_mask_t};
     use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
-    extern "C" {
-        pub fn ExprResolveLhs(
-            ctx: *mut xkb_context,
-            expr: *const ExprDef,
-            elem_rtrn: *mut *const i8,
-            field_rtrn: *mut *const i8,
-            index_rtrn: *mut *mut ExprDef,
-        ) -> bool;
-        pub fn ExprResolveModMask(
-            ctx: *mut xkb_context,
-            expr: *const ExprDef,
-            mod_type: mod_type,
-            mods: *const xkb_mod_set,
-            mask_rtrn: *mut xkb_mod_mask_t,
-        ) -> bool;
-        pub fn ExprResolveBoolean(
-            ctx: *mut xkb_context,
-            expr: *const ExprDef,
-            set_rtrn: *mut bool,
-        ) -> bool;
-        pub fn ExprResolveGroup(
-            keymap_info: *const xkb_keymap_info,
-            expr: *const ExprDef,
-            absolute: bool,
-            group_rtrn: *mut xkb_layout_index_t,
-            pending_rtrn: *mut bool,
-        ) -> xkb_parser_error;
-        pub fn ExprResolveString(
-            ctx: *mut xkb_context,
-            expr: *const ExprDef,
-            val_rtrn: *mut xkb_atom_t,
-        ) -> bool;
-        pub fn ExprResolveEnum(
-            ctx: *mut xkb_context,
-            expr: *const ExprDef,
-            val_rtrn: *mut u32,
-            values: *const LookupEntry,
-        ) -> bool;
-    }
+    pub use crate::xkb::xkbcomp::expr::{
+        ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
+        ExprResolveString,
+    };
 }
 pub mod util_mem_h {
     #[inline]

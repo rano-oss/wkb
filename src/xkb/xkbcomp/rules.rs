@@ -217,18 +217,7 @@ pub mod rmlvo_h {
     use super::xkbcommon_h::xkb_layout_index_t;
 }
 pub mod ast_h {
-    pub type xkb_file_type = u32;
-    pub const FILE_TYPE_INVALID: xkb_file_type = 7;
-    pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
-    pub const FILE_TYPE_RULES: xkb_file_type = 6;
-    pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
-    pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
-    pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
-    pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
-    pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
-    pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
-    pub const FILE_TYPE_TYPES: xkb_file_type = 1;
-    pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
+    pub use crate::xkb::shared_ast_types::*;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;

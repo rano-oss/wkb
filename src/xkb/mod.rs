@@ -33,6 +33,7 @@ pub mod keymap;
 pub mod keymap_compare;
 pub mod keymap_formats;
 pub mod keymap_priv;
+pub mod shared_ast_types;
 pub mod shared_types;
 pub mod state;
 

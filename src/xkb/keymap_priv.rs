@@ -359,10 +359,7 @@ pub unsafe fn XkbModNameToIndex(
         return XKB_MOD_INVALID as xkb_mod_index_t;
     }
 }
-pub unsafe fn XkbLevelsSameSyms(
-    mut a: *const xkb_level,
-    mut b: *const xkb_level,
-) -> bool {
+pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_syms as i32 != (*b).num_syms as i32 {
             return false_0 != 0;
@@ -437,10 +434,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
         };
     }
 }
-pub unsafe fn XkbLevelsSameActions(
-    mut a: *const xkb_level,
-    mut b: *const xkb_level,
-) -> bool {
+pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_actions as i32 != (*b).num_actions as i32 {
             return false_0 != 0;

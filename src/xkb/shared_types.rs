@@ -575,6 +575,7 @@ pub union C2Rust_Unnamed_12 {
 
 pub type xkb_keysym_count_t = uint16_t;
 pub type xkb_overlay_mask_t = uint8_t;
+pub type xkb_overlay_index_t = uint8_t;
 
 pub type xkb_explicit_components = u32;
 pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
