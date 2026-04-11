@@ -396,13 +396,20 @@ pub mod xkbcomp_priv_h {
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::FILE_h::FILE;
+
+    pub unsafe fn XkbParseFile(
+        ctx: *mut xkb_context,
+        file: *mut FILE,
+        file_name: *const i8,
+        map: *const i8,
+    ) -> *mut XkbFile {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseFile(ctx, file as *mut _, file_name, map)
+                as *mut XkbFile
+        }
+    }
+
     extern "C" {
-        pub fn XkbParseFile(
-            ctx: *mut xkb_context,
-            file: *mut FILE,
-            file_name: *const i8,
-            map: *const i8,
-        ) -> *mut XkbFile;
         pub fn FreeXkbFile(file: *mut XkbFile);
     }
 }
@@ -528,8 +535,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
-#[no_mangle]
-pub unsafe extern "C" fn ParseIncludeMap(
+pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,
     mut map_rtrn: *mut *mut i8,
@@ -837,8 +843,7 @@ unsafe fn expand_percent(
         return s.buf_pos;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn expand_path(
+pub unsafe fn expand_path(
     mut ctx: *mut xkb_context,
     mut parent_file_name: *const i8,
     mut name: *const i8,
@@ -904,8 +909,7 @@ pub unsafe extern "C" fn expand_path(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn FindFileInXkbPath(
+pub unsafe fn FindFileInXkbPath(
     mut ctx: *mut xkb_context,
     mut parent_file_name: *const i8,
     mut name: *const i8,
@@ -982,11 +986,7 @@ pub unsafe extern "C" fn FindFileInXkbPath(
         return file;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExceedsIncludeMaxDepth(
-    mut ctx: *mut xkb_context,
-    mut include_depth: u32,
-) -> bool {
+pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_depth: u32) -> bool {
     unsafe {
         if include_depth >= INCLUDE_MAX_DEPTH as u32 {
             xkb_log(
@@ -1003,8 +1003,7 @@ pub unsafe extern "C" fn ExceedsIncludeMaxDepth(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ProcessIncludeFile(
+pub unsafe fn ProcessIncludeFile(
     mut ctx: *mut xkb_context,
     mut stmt: *const IncludeStmt,
     mut file_type: xkb_file_type,

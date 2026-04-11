@@ -309,19 +309,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
-
-    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
-    use super::context_h::xkb_context;
-    extern "C" {
-        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
-        pub fn ProcessIncludeFile(
-            ctx: *mut xkb_context,
-            stmt: *const IncludeStmt,
-            file_type: xkb_file_type,
-            path: *mut i8,
-            path_size: usize,
-        ) -> *mut XkbFile;
-    }
+    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =

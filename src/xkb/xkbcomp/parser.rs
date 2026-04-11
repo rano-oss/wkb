@@ -462,8 +462,12 @@ pub mod ast_build_h {
 pub mod parser_priv_h {
     use super::parser_h::YYSTYPE;
     use super::scanner_utils_h::scanner;
-    extern "C" {
-        pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> ::core::ffi::c_int;
+
+    pub unsafe fn _xkbcommon_lex(
+        yylval: *mut YYSTYPE,
+        scanner: *mut scanner,
+    ) -> ::core::ffi::c_int {
+        unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
     }
 }
 pub mod __stddef_null_h {

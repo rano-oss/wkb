@@ -362,30 +362,36 @@ pub mod utils_h {
     }
 }
 pub mod include_h {
+    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
-    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
+    use super::ast_h::xkb_file_type;
     use super::context_h::xkb_context;
     use super::FILE_h::FILE;
-    extern "C" {
-        pub fn FindFileInXkbPath(
-            ctx: *mut xkb_context,
-            parent_file_name: *const i8,
-            name: *const i8,
-            name_len: usize,
-            type_0: xkb_file_type,
-            buf: *mut i8,
-            buf_size: usize,
-            offset: *mut u32,
-            required: bool,
-        ) -> *mut FILE;
-        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
-        pub fn ProcessIncludeFile(
-            ctx: *mut xkb_context,
-            stmt: *const IncludeStmt,
-            file_type: xkb_file_type,
-            path: *mut i8,
-            path_size: usize,
-        ) -> *mut XkbFile;
+
+    pub unsafe fn FindFileInXkbPath(
+        ctx: *mut xkb_context,
+        parent_file_name: *const i8,
+        name: *const i8,
+        name_len: usize,
+        type_0: xkb_file_type,
+        buf: *mut i8,
+        buf_size: usize,
+        offset: *mut u32,
+        required: bool,
+    ) -> *mut FILE {
+        unsafe {
+            crate::xkb::xkbcomp::include::FindFileInXkbPath(
+                ctx,
+                parent_file_name,
+                name,
+                name_len,
+                type_0,
+                buf,
+                buf_size,
+                offset,
+                required,
+            ) as *mut FILE
+        }
     }
 }
 pub mod xkbcomp_priv_h {
@@ -394,27 +400,56 @@ pub mod xkbcomp_priv_h {
     use super::context_h::xkb_context;
     use super::scanner_utils_h::scanner;
     use super::FILE_h::FILE;
+
+    pub unsafe fn XkbParseFile(
+        ctx: *mut xkb_context,
+        file: *mut FILE,
+        file_name: *const i8,
+        map: *const i8,
+    ) -> *mut XkbFile {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseFile(ctx, file as *mut _, file_name, map)
+                as *mut XkbFile
+        }
+    }
+
+    pub unsafe fn XkbParseStringInit(
+        ctx: *mut xkb_context,
+        scanner: *mut scanner,
+        string: *const i8,
+        len: usize,
+        file_name: *const i8,
+        map: *const i8,
+    ) -> bool {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseStringInit(
+                ctx,
+                scanner as *mut _,
+                string,
+                len,
+                file_name,
+                map,
+            )
+        }
+    }
+
+    pub unsafe fn XkbParseStringNext(
+        ctx: *mut xkb_context,
+        scanner: *mut scanner,
+        map: *const i8,
+        out: *mut *mut XkbFile,
+    ) -> bool {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseStringNext(
+                ctx,
+                scanner as *mut _,
+                map,
+                out as *mut *mut _,
+            )
+        }
+    }
+
     extern "C" {
-        pub fn XkbParseFile(
-            ctx: *mut xkb_context,
-            file: *mut FILE,
-            file_name: *const i8,
-            map: *const i8,
-        ) -> *mut XkbFile;
-        pub fn XkbParseStringInit(
-            ctx: *mut xkb_context,
-            scanner: *mut scanner,
-            string: *const i8,
-            len: usize,
-            file_name: *const i8,
-            map: *const i8,
-        ) -> bool;
-        pub fn XkbParseStringNext(
-            ctx: *mut xkb_context,
-            scanner: *mut scanner,
-            map: *const i8,
-            out: *mut *mut XkbFile,
-        ) -> bool;
         pub fn FreeXkbFile(file: *mut XkbFile);
     }
 }

@@ -111,12 +111,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
     XKB_LOG_LEVEL_WARNING,
 };
-#[no_mangle]
-pub unsafe extern "C" fn InitVMods(
-    mut info: *mut xkb_mod_set,
-    mut mods: *const xkb_mod_set,
-    mut reset: bool,
-) {
+pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set, mut reset: bool) {
     unsafe {
         *info = *mods;
         if !reset {
@@ -134,8 +129,7 @@ pub unsafe extern "C" fn InitVMods(
         (*info).explicit_vmods = 0 as xkb_mod_mask_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn MergeModSets(
+pub unsafe fn MergeModSets(
     mut ctx: *mut xkb_context,
     mut into: *mut xkb_mod_set,
     mut from: *const xkb_mod_set,
@@ -190,8 +184,7 @@ pub unsafe extern "C" fn MergeModSets(
         (*into).num_mods = (*from).num_mods;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn HandleVModDef(
+pub unsafe fn HandleVModDef(
     mut ctx: *mut xkb_context,
     mut mods: *mut xkb_mod_set,
     mut stmt: *mut VModDef,

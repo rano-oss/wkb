@@ -251,15 +251,7 @@ pub mod keymap_h {}
 pub mod include_h {
     pub const MERGE_AUGMENT_PREFIX: i32 = 124;
     pub const MERGE_REPLACE_PREFIX: i32 = 94;
-    extern "C" {
-        pub fn ParseIncludeMap(
-            str_inout: *mut *mut i8,
-            file_rtrn: *mut *mut i8,
-            map_rtrn: *mut *mut i8,
-            nextop_rtrn: *mut i8,
-            extra_data: *mut *mut i8,
-        ) -> bool;
-    }
+    pub use crate::xkb::xkbcomp::include::ParseIncludeMap;
 }
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;

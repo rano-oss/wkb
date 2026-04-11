@@ -677,32 +677,36 @@ pub mod include_h {
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
     pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
+    pub use crate::xkb::xkbcomp::include::expand_path;
 
     use super::ast_h::xkb_file_type;
     use super::context_h::xkb_context;
-    use super::stdio_h::ssize_t;
     use super::FILE_h::FILE;
-    extern "C" {
-        pub fn expand_path(
-            ctx: *mut xkb_context,
-            parent_file_name: *const i8,
-            name: *const i8,
-            name_len: usize,
-            type_0: xkb_file_type,
-            buf: *mut i8,
-            buf_size: usize,
-        ) -> ssize_t;
-        pub fn FindFileInXkbPath(
-            ctx: *mut xkb_context,
-            parent_file_name: *const i8,
-            name: *const i8,
-            name_len: usize,
-            type_0: xkb_file_type,
-            buf: *mut i8,
-            buf_size: usize,
-            offset: *mut u32,
-            required: bool,
-        ) -> *mut FILE;
+
+    pub unsafe fn FindFileInXkbPath(
+        ctx: *mut xkb_context,
+        parent_file_name: *const i8,
+        name: *const i8,
+        name_len: usize,
+        type_0: xkb_file_type,
+        buf: *mut i8,
+        buf_size: usize,
+        offset: *mut u32,
+        required: bool,
+    ) -> *mut FILE {
+        unsafe {
+            crate::xkb::xkbcomp::include::FindFileInXkbPath(
+                ctx,
+                parent_file_name,
+                name,
+                name_len,
+                type_0,
+                buf,
+                buf_size,
+                offset,
+                required,
+            ) as *mut FILE
+        }
     }
 }
 pub mod __stddef_null_h {

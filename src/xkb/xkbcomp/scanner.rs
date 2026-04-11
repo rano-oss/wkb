@@ -1332,11 +1332,7 @@ unsafe fn number(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn _xkbcommon_lex(
-    mut yylval: *mut YYSTYPE,
-    mut s: *mut scanner,
-) -> ::core::ffi::c_int {
+pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> ::core::ffi::c_int {
     unsafe {
         loop {
             while is_space(scanner_peek(s)) {
@@ -1614,8 +1610,7 @@ pub unsafe extern "C" fn _xkbcommon_lex(
         return ERROR_TOK as ::core::ffi::c_int;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbParseStringInit(
+pub unsafe fn XkbParseStringInit(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
     mut string: *const i8,
@@ -1655,8 +1650,7 @@ pub unsafe extern "C" fn XkbParseStringInit(
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbParseString(
+pub unsafe fn XkbParseString(
     mut ctx: *mut xkb_context,
     mut string: *const i8,
     mut len: usize,
@@ -1684,8 +1678,7 @@ pub unsafe extern "C" fn XkbParseString(
         return parse(ctx as *mut _, &raw mut scanner as *mut _, map) as *mut XkbFile;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbParseStringNext(
+pub unsafe fn XkbParseStringNext(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
     mut map: *const i8,
@@ -1702,8 +1695,7 @@ pub unsafe extern "C" fn XkbParseStringNext(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbParseFile(
+pub unsafe fn XkbParseFile(
     mut ctx: *mut xkb_context,
     mut file: *mut FILE,
     mut file_name: *const i8,

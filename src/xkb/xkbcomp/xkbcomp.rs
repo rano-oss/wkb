@@ -357,20 +357,32 @@ pub mod xkbcomp_priv_h {
         ::core::ptr::null_mut()
     }
 
+    pub unsafe fn XkbParseFile(
+        ctx: *mut xkb_context,
+        file: *mut FILE,
+        file_name: *const i8,
+        map: *const i8,
+    ) -> *mut XkbFile {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseFile(ctx, file as *mut _, file_name, map)
+                as *mut XkbFile
+        }
+    }
+
+    pub unsafe fn XkbParseString(
+        ctx: *mut xkb_context,
+        string: *const i8,
+        len: usize,
+        file_name: *const i8,
+        map: *const i8,
+    ) -> *mut XkbFile {
+        unsafe {
+            crate::xkb::xkbcomp::scanner::XkbParseString(ctx, string, len, file_name, map)
+                as *mut XkbFile
+        }
+    }
+
     extern "C" {
-        pub fn XkbParseFile(
-            ctx: *mut xkb_context,
-            file: *mut FILE,
-            file_name: *const i8,
-            map: *const i8,
-        ) -> *mut XkbFile;
-        pub fn XkbParseString(
-            ctx: *mut xkb_context,
-            string: *const i8,
-            len: usize,
-            file_name: *const i8,
-            map: *const i8,
-        ) -> *mut XkbFile;
         pub fn FreeXkbFile(file: *mut XkbFile);
         pub fn XkbFileFromComponents(
             ctx: *mut xkb_context,

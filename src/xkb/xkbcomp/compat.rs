@@ -323,25 +323,7 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod vmod_h {
-
-    use super::ast_h::{merge_mode, VModDef};
-    use super::context_h::xkb_context;
-    use super::keymap_h::xkb_mod_set;
-
-    extern "C" {
-        pub fn InitVMods(info: *mut xkb_mod_set, mods: *const xkb_mod_set, reset: bool);
-        pub fn MergeModSets(
-            ctx: *mut xkb_context,
-            into: *mut xkb_mod_set,
-            from: *const xkb_mod_set,
-            merge: merge_mode,
-        );
-        pub fn HandleVModDef(
-            ctx: *mut xkb_context,
-            mods: *mut xkb_mod_set,
-            stmt: *mut VModDef,
-        ) -> bool;
-    }
+    pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
     use super::ast_h::ExprDef;
@@ -369,19 +351,7 @@ pub mod util_mem_h {
     use super::__stddef_null_h::NULL_0;
 }
 pub mod include_h {
-
-    use super::ast_h::{xkb_file_type, IncludeStmt, XkbFile};
-    use super::context_h::xkb_context;
-    extern "C" {
-        pub fn ExceedsIncludeMaxDepth(ctx: *mut xkb_context, include_depth: u32) -> bool;
-        pub fn ProcessIncludeFile(
-            ctx: *mut xkb_context,
-            stmt: *const IncludeStmt,
-            file_type: xkb_file_type,
-            path: *mut i8,
-            path_size: usize,
-        ) -> *mut XkbFile;
-    }
+    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 }
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
