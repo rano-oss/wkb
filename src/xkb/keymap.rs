@@ -1,14 +1,5 @@
-#[c2rust::header_src = "internal:0"]
 pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "0:0"]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
+    pub use crate::xkb::shared_types::__va_list_tag;
 }
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
 pub mod types_h {
@@ -114,66 +105,15 @@ pub mod FILE_h {
     pub type FILE = _IO_FILE;
     use super::struct_FILE_h::_IO_FILE;
 }
-#[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/context.h:22"]
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    #[c2rust::src_loc = "21:1"]
-    pub struct xkb_context {
-        pub refcnt: i32,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: i32,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "34:5"]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "33:5"]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-
-    use super::atom_h::{atom_table, xkb_atom_t};
-    use super::darray_h::darray_size_t;
-
-    use super::rmlvo_h::RMLVO;
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    pub use crate::xkb::context_priv::{
+        xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names,
+    };
+    pub use crate::xkb::shared_types::{
+        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
+        C2Rust_Unnamed, C2Rust_Unnamed_0,
+    };
     extern "C" {
-        #[c2rust::src_loc = "82:1"]
-        pub fn xkb_atom_lookup(ctx: *mut xkb_context, string: *const i8) -> xkb_atom_t;
-        #[c2rust::src_loc = "100:1"]
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
-        #[c2rust::src_loc = "106:1"]
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
@@ -181,113 +121,32 @@ pub mod context_h {
             fmt: *const i8,
             ...
         );
-        #[c2rust::src_loc = "110:1"]
-        pub fn xkb_context_sanitize_rule_names(
-            ctx: *mut xkb_context,
-            rmlvo: *mut xkb_rule_names,
-        ) -> RMLVO;
     }
 }
-#[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/atom.h:20"]
 pub mod atom_h {
-    #[c2rust::src_loc = "17:1"]
-    pub type xkb_atom_t = darray_size_t;
+    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
     #[c2rust::src_loc = "19:9"]
     pub const XKB_ATOM_NONE: i32 = 0 as i32;
-    use super::darray_h::darray_size_t;
-    extern "C" {
-        #[c2rust::src_loc = "21:1"]
-        pub type atom_table;
-    }
 }
-#[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/darray.h:20"]
 pub mod darray_h {
-    #[c2rust::src_loc = "19:1"]
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
 }
-#[c2rust::header_src = "/home/rano/Public/libxkbcommon/include/xkbcommon/xkbcommon.h:19"]
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "536:1"]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    #[c2rust::src_loc = "1118:1"]
-    pub type xkb_log_level = u32;
-    #[c2rust::src_loc = "1123:5"]
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    #[c2rust::src_loc = "1122:5"]
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    #[c2rust::src_loc = "1121:5"]
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    #[c2rust::src_loc = "1120:5"]
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    #[c2rust::src_loc = "1119:5"]
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    #[c2rust::src_loc = "253:1"]
-    pub type xkb_layout_index_t = u32;
-    #[c2rust::src_loc = "183:1"]
-    pub type xkb_keycode_t = u32;
-    #[c2rust::src_loc = "316:1"]
-    pub type xkb_mod_mask_t = u32;
-    #[c2rust::src_loc = "295:1"]
-    pub type xkb_mod_index_t = u32;
-    #[c2rust::src_loc = "223:1"]
-    pub type xkb_keysym_t = u32;
-    #[c2rust::src_loc = "269:1"]
-    pub type xkb_level_index_t = u32;
-    #[c2rust::src_loc = "3094:1"]
-    pub type xkb_layout_out_of_range_policy = u32;
-    #[c2rust::src_loc = "3113:5"]
-    pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
-    #[c2rust::src_loc = "3107:5"]
-    pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
-    #[c2rust::src_loc = "3100:5"]
-    pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    #[c2rust::src_loc = "2260:1"]
-    pub type xkb_state_component = u32;
-    #[c2rust::src_loc = "2344:5"]
-    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
-    #[c2rust::src_loc = "2336:5"]
-    pub const XKB_STATE_LEDS: xkb_state_component = 256;
-    #[c2rust::src_loc = "2330:5"]
-    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
-    #[c2rust::src_loc = "2322:5"]
-    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
-    #[c2rust::src_loc = "2313:5"]
-    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
-    #[c2rust::src_loc = "2304:5"]
-    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
-    #[c2rust::src_loc = "2296:5"]
-    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
-    #[c2rust::src_loc = "2286:5"]
-    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
-    #[c2rust::src_loc = "2277:5"]
-    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
-    #[c2rust::src_loc = "2268:5"]
-    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    #[c2rust::src_loc = "255:1"]
-    pub type xkb_layout_mask_t = u32;
-    #[c2rust::src_loc = "345:1"]
-    pub type xkb_led_index_t = u32;
+    pub use crate::xkb::shared_types::{
+        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
+        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
+        xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
+        xkb_state_component, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE,
+        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_INVALID,
+        XKB_LAYOUT_OUT_OF_RANGE_CLAMP, XKB_LAYOUT_OUT_OF_RANGE_REDIRECT,
+        XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID,
+        XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
+        XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
+        XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
+        XKB_STATE_MODS_LOCKED,
+    };
     #[c2rust::src_loc = "1321:1"]
-    pub type xkb_keymap_format = u32;
-    #[c2rust::src_loc = "1355:5"]
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    #[c2rust::src_loc = "1334:5"]
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    #[c2rust::src_loc = "1220:1"]
-    pub type xkb_keymap_compile_flags = u32;
-    #[c2rust::src_loc = "1240:5"]
-    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
-    #[c2rust::src_loc = "1222:5"]
-    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    #[c2rust::src_loc = "1523:1"]
     pub type xkb_keymap_serialize_flags = u32;
     #[c2rust::src_loc = "1548:5"]
     pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
@@ -311,17 +170,12 @@ pub mod xkbcommon_h {
     >;
     #[c2rust::src_loc = "350:9"]
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
-    #[c2rust::src_loc = "352:9"]
-    pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff as u32;
-    #[c2rust::src_loc = "356:9"]
-    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "358:9"]
     pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "1515:9"]
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::stdint_uintn_h::u32;
     extern "C" {
         #[c2rust::src_loc = "983:1"]
         pub fn xkb_context_unref(context: *mut xkb_context);
@@ -886,10 +740,7 @@ pub mod keymap_h {
     pub const XKB_MAX_GROUPS: i32 = 32 as i32;
     #[inline]
     #[c2rust::src_loc = "855:1"]
-    pub unsafe fn XkbKey(
-        mut keymap: *mut xkb_keymap,
-        mut kc: xkb_keycode_t,
-    ) -> *const xkb_key {
+    pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
         unsafe {
             if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
                 return ::core::ptr::null::<xkb_key>();
@@ -1559,9 +1410,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
     }
 }
 #[c2rust::src_loc = "99:1"]
-unsafe fn get_keymap_format_ops(
-    mut format: xkb_keymap_format,
-) -> *const xkb_keymap_format_ops {
+unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_keymap_format_ops {
     unsafe {
         static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] = unsafe {
             [
@@ -2390,10 +2239,7 @@ pub unsafe fn xkb_keymap_key_by_name(
 }
 #[no_mangle]
 #[c2rust::src_loc = "733:1"]
-pub unsafe fn xkb_keymap_key_repeats(
-    mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-) -> i32 {
+pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> i32 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {

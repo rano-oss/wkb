@@ -780,10 +780,7 @@ static mut stringpool_contents: stringpool_t = unsafe {
         stringpool_str72: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"partial\0"),
     }
 };
-unsafe fn keyword_gperf_lookup(
-    mut str: *const i8,
-    mut len: usize,
-) -> *const keyword_tok {
+unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const keyword_tok {
     unsafe {
         static mut lengthtable: [::core::ffi::c_uchar; 73] = [
             0 as ::core::ffi::c_int as ::core::ffi::c_uchar,

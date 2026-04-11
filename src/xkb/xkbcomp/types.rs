@@ -1,12 +1,5 @@
 pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
+    pub use crate::xkb::shared_types::__va_list_tag;
 }
 pub mod types_h {
     pub type __int8_t = i8;
@@ -44,76 +37,27 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-
-    use super::atom_h::{atom_table, xkb_atom_t};
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    pub use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
+    pub use crate::xkb::shared_types::{
+        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
+        C2Rust_Unnamed, C2Rust_Unnamed_0,
+    };
     extern "C" {
-        pub fn xkb_atom_intern(ctx: *mut xkb_context, string: *const i8, len: usize) -> xkb_atom_t;
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
+            verbosity: i32,
             fmt: *const i8,
             ...
         );
     }
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
+    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
     pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    use super::darray_h::darray_size_t;
-    extern "C" {
-        pub type atom_table;
-    }
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
     #[inline]
     pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
@@ -132,52 +76,19 @@ pub mod darray_h {
     }
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = u32;
-    pub type xkb_keycode_t = u32;
-    pub type xkb_mod_mask_t = u32;
-    pub type xkb_mod_index_t = u32;
-    pub type xkb_keysym_t = u32;
-    pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = u32;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = u32;
-    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
-    pub const XKB_STATE_LEDS: xkb_state_component = 256;
-    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
-    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
-    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
-    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
-    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
-    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
-    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
-    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = u32;
-    pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = u32;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = u32;
-    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
-    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    use super::context_h::xkb_context;
-    use super::stdint_uintn_h::u32;
+    pub use crate::xkb::shared_types::{
+        xkb_context, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
+        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
+        xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
+        xkb_state_component, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE,
+        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
+        XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL,
+        XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+        XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
+        XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
+        XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
+        XKB_STATE_MODS_LOCKED,
+    };
     extern "C" {
         pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> ::core::ffi::c_int;
     }
@@ -948,16 +859,10 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod text_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct LookupEntry {
-        pub name: *const i8,
-        pub value: u32,
-    }
     use super::context_h::xkb_context;
     use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_mod_mask_t;
+    pub use crate::xkb::text::LookupEntry;
     extern "C" {
         pub fn ModMaskText(
             ctx: *mut xkb_context,
@@ -1438,19 +1343,13 @@ unsafe fn MapEntryTxt(
     }
 }
 #[inline]
-unsafe fn TypeTxt(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-) -> *const i8 {
+unsafe fn TypeTxt(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> *const i8 {
     unsafe {
         return xkb_atom_text((*info).ctx, (*type_0).name);
     }
 }
 #[inline]
-unsafe fn TypeMaskTxt(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-) -> *const i8 {
+unsafe fn TypeMaskTxt(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> *const i8 {
     unsafe {
         return ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, (*type_0).mods);
     }
@@ -2391,10 +2290,7 @@ unsafe fn HandleKeyTypeBody(
         return ok;
     }
 }
-unsafe fn HandleKeyTypeDef(
-    mut info: *mut KeyTypesInfo,
-    mut def: *mut KeyTypeDef,
-) -> bool {
+unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef) -> bool {
     unsafe {
         let mut type_0: KeyTypeInfo = KeyTypeInfo {
             defined: 0 as type_field,
@@ -2553,10 +2449,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
         }
     }
 }
-unsafe fn CopyKeyTypesToKeymap(
-    mut keymap: *mut xkb_keymap,
-    mut info: *mut KeyTypesInfo,
-) -> bool {
+unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTypesInfo) -> bool {
     unsafe {
         let num_types: darray_size_t = if (*info).types.size == 0 as darray_size_t {
             1 as darray_size_t

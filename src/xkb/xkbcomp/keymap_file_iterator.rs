@@ -494,11 +494,7 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe fn strcpy_safe(
-        mut dest: *mut i8,
-        mut size: usize,
-        mut src: *const i8,
-    ) -> *mut i8 {
+    pub unsafe fn strcpy_safe(mut dest: *mut i8, mut size: usize, mut src: *const i8) -> *mut i8 {
         unsafe {
             if dest.is_null() || size == 0 || src.is_null() {
                 return ::core::ptr::null_mut::<i8>();

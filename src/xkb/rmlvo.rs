@@ -626,9 +626,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
     }
 }
 
-pub unsafe fn xkb_rmlvo_builder_ref(
-    mut rmlvo: *mut xkb_rmlvo_builder,
-) -> *mut xkb_rmlvo_builder {
+pub unsafe fn xkb_rmlvo_builder_ref(mut rmlvo: *mut xkb_rmlvo_builder) -> *mut xkb_rmlvo_builder {
     unsafe {
         (*rmlvo).refcnt += 1;
         return rmlvo;

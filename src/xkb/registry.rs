@@ -1612,18 +1612,14 @@ pub unsafe extern "C" fn rxkb_iso639_code_next(
     }
 }
 
-pub unsafe fn rxkb_iso639_code_ref(
-    mut object: *mut rxkb_iso639_code,
-) -> *mut rxkb_iso639_code {
+pub unsafe fn rxkb_iso639_code_ref(mut object: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code {
     unsafe {
         rxkb_object_ref(&raw mut (*object).base);
         return object;
     }
 }
 
-pub unsafe fn rxkb_iso639_code_unref(
-    mut object: *mut rxkb_iso639_code,
-) -> *mut rxkb_iso639_code {
+pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code {
     unsafe {
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_iso639_code>();
@@ -1638,9 +1634,7 @@ pub unsafe fn rxkb_iso639_code_unref(
     }
 }
 #[inline]
-unsafe fn rxkb_iso639_code_create(
-    mut parent: *mut rxkb_object,
-) -> *mut rxkb_iso639_code {
+unsafe fn rxkb_iso639_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso639_code {
     unsafe {
         let mut t: *mut rxkb_iso639_code = calloc(
             1 as usize,
@@ -1711,18 +1705,14 @@ pub unsafe fn rxkb_iso3166_code_unref(
     }
 }
 
-pub unsafe fn rxkb_iso3166_code_ref(
-    mut object: *mut rxkb_iso3166_code,
-) -> *mut rxkb_iso3166_code {
+pub unsafe fn rxkb_iso3166_code_ref(mut object: *mut rxkb_iso3166_code) -> *mut rxkb_iso3166_code {
     unsafe {
         rxkb_object_ref(&raw mut (*object).base);
         return object;
     }
 }
 #[inline]
-unsafe fn rxkb_iso3166_code_create(
-    mut parent: *mut rxkb_object,
-) -> *mut rxkb_iso3166_code {
+unsafe fn rxkb_iso3166_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso3166_code {
     unsafe {
         let mut t: *mut rxkb_iso3166_code = calloc(
             1 as usize,
@@ -1801,9 +1791,7 @@ pub unsafe extern "C" fn rxkb_option_get_description(mut object: *mut rxkb_optio
     }
 }
 
-pub unsafe fn rxkb_option_get_popularity(
-    mut object: *mut rxkb_option,
-) -> rxkb_popularity {
+pub unsafe fn rxkb_option_get_popularity(mut object: *mut rxkb_option) -> rxkb_popularity {
     unsafe {
         return (*object).popularity;
     }
@@ -1934,9 +1922,7 @@ pub unsafe extern "C" fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -
     }
 }
 
-pub unsafe fn rxkb_layout_get_popularity(
-    mut object: *mut rxkb_layout,
-) -> rxkb_popularity {
+pub unsafe fn rxkb_layout_get_popularity(mut object: *mut rxkb_layout) -> rxkb_popularity {
     unsafe {
         return (*object).popularity;
     }
@@ -2084,9 +2070,7 @@ pub unsafe extern "C" fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_opti
     }
 }
 
-pub unsafe fn rxkb_option_group_ref(
-    mut object: *mut rxkb_option_group,
-) -> *mut rxkb_option_group {
+pub unsafe fn rxkb_option_group_ref(mut object: *mut rxkb_option_group) -> *mut rxkb_option_group {
     unsafe {
         rxkb_object_ref(&raw mut (*object).base);
         return object;
@@ -2110,9 +2094,7 @@ pub unsafe fn rxkb_option_group_unref(
     }
 }
 #[inline]
-unsafe fn rxkb_option_group_create(
-    mut parent: *mut rxkb_object,
-) -> *mut rxkb_option_group {
+unsafe fn rxkb_option_group_create(mut parent: *mut rxkb_object) -> *mut rxkb_option_group {
     unsafe {
         let mut t: *mut rxkb_option_group = calloc(
             1 as usize,
@@ -2272,17 +2254,12 @@ unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context
     }
 }
 
-pub unsafe fn rxkb_context_get_log_level(
-    mut object: *mut rxkb_context,
-) -> rxkb_log_level {
+pub unsafe fn rxkb_context_get_log_level(mut object: *mut rxkb_context) -> rxkb_log_level {
     unsafe {
         return (*object).log_level;
     }
 }
-unsafe fn rxkb_context_getenv(
-    mut ctx: *mut rxkb_context,
-    mut name: *const i8,
-) -> *mut i8 {
+unsafe fn rxkb_context_getenv(mut ctx: *mut rxkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv {
             return secure_getenv(name);
@@ -3062,9 +3039,7 @@ pub unsafe fn rxkb_context_set_user_data(
     }
 }
 
-pub unsafe fn rxkb_context_get_user_data(
-    mut ctx: *mut rxkb_context,
-) -> *mut ::core::ffi::c_void {
+pub unsafe fn rxkb_context_get_user_data(mut ctx: *mut rxkb_context) -> *mut ::core::ffi::c_void {
     unsafe {
         return (*ctx).userdata;
     }
@@ -3237,10 +3212,7 @@ unsafe fn parse_model_list(
         }
     }
 }
-unsafe fn parse_language_list(
-    mut language_list: *mut xmlNode,
-    mut layout: *mut rxkb_layout,
-) {
+unsafe fn parse_language_list(mut language_list: *mut xmlNode, mut layout: *mut rxkb_layout) {
     unsafe {
         let mut node: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         let mut code: *mut rxkb_iso639_code = ::core::ptr::null_mut::<rxkb_iso639_code>();
@@ -3262,10 +3234,7 @@ unsafe fn parse_language_list(
         }
     }
 }
-unsafe fn parse_country_list(
-    mut country_list: *mut xmlNode,
-    mut layout: *mut rxkb_layout,
-) {
+unsafe fn parse_country_list(mut country_list: *mut xmlNode, mut layout: *mut rxkb_layout) {
     unsafe {
         let mut node: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         let mut code: *mut rxkb_iso3166_code = ::core::ptr::null_mut::<rxkb_iso3166_code>();

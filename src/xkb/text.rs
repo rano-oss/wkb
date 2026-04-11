@@ -1,12 +1,5 @@
 pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
+    pub use crate::xkb::shared_types::__va_list_tag;
 }
 pub mod types_h {
     pub type __uint8_t = u8;
@@ -19,105 +12,28 @@ pub mod stdint_uintn_h {
 }
 
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: i32,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: i32,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-
-    use super::atom_h::{atom_table, xkb_atom_t};
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
-    extern "C" {
-        pub fn xkb_atom_text(ctx: *mut xkb_context, atom: xkb_atom_t) -> *const i8;
-        pub fn xkb_context_get_buffer(ctx: *mut xkb_context, size: usize) -> *mut i8;
-    }
+    pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
+    pub use crate::xkb::shared_types::{
+        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
+        C2Rust_Unnamed, C2Rust_Unnamed_0,
+    };
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
-    use super::darray_h::darray_size_t;
-    extern "C" {
-        pub type atom_table;
-    }
+    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_mod_mask_t = u32;
-    pub type xkb_mod_index_t = u32;
-    pub type xkb_keysym_t = u32;
-    pub type xkb_state_component = u32;
-    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
-    pub const XKB_STATE_LEDS: xkb_state_component = 256;
-    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
-    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
-    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
-    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
-    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
-    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
-    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
-    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_keymap_format = u32;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
-
-    use super::stdint_uintn_h::u32;
+    pub use crate::xkb::shared_types::{
+        xkb_keymap_format, xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
+        xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
+        XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
+        XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
+        XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED,
+        XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
+        XKB_STATE_MODS_LOCKED,
+    };
     extern "C" {
         pub fn xkb_keysym_get_name(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
     }
@@ -200,9 +116,7 @@ pub mod keymap_h {
     pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
     pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
     #[inline]
-    pub unsafe fn format_boolean_controls(
-        mut format: xkb_keymap_format,
-    ) -> xkb_action_controls {
+    pub unsafe fn format_boolean_controls(mut format: xkb_keymap_format) -> xkb_action_controls {
         unsafe {
             return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
                 CONTROL_ALL_BOOLEAN_V1 as i32
@@ -338,8 +252,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE,
     XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
 };
-#[no_mangle]
-pub unsafe extern "C" fn LookupString(
+pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,
     mut value_rtrn: *mut u32,
@@ -359,8 +272,7 @@ pub unsafe extern "C" fn LookupString(
         return false_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const i8 {
+pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const i8 {
     unsafe {
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
@@ -372,7 +284,6 @@ pub unsafe extern "C" fn LookupValue(mut tab: *const LookupEntry, mut value: u32
         return ::core::ptr::null::<i8>();
     }
 }
-#[no_mangle]
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
         name: b"Overlay3\0".as_ptr() as *const i8,
@@ -475,7 +386,6 @@ pub static mut ctrlMaskNames: [LookupEntry; 25] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const i8,
@@ -510,7 +420,6 @@ pub static mut modComponentMaskNames: [LookupEntry; 8] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const i8,
@@ -545,7 +454,6 @@ pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
     name: ::core::ptr::null::<i8>(),
     value: 0,
 }; 3];
-#[no_mangle]
 pub static mut buttonNames: [LookupEntry; 7] = [
     LookupEntry {
         name: b"Button1\0".as_ptr() as *const i8,
@@ -576,7 +484,6 @@ pub static mut buttonNames: [LookupEntry; 7] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
         name: b"LevelOne\0".as_ptr() as *const i8,
@@ -599,7 +506,6 @@ pub static mut useModMapValueNames: [LookupEntry; 5] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut actionTypeNames: [LookupEntry; 43] = [
     LookupEntry {
         name: b"NoAction\0".as_ptr() as *const i8,
@@ -774,7 +680,6 @@ pub static mut actionTypeNames: [LookupEntry; 43] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
         name: b"NoneOf\0".as_ptr() as *const i8,

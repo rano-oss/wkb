@@ -1,13 +1,6 @@
 pub mod internal {
+    pub use crate::xkb::shared_types::__va_list_tag;
     pub type __builtin_va_list = [__va_list_tag; 1];
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
 }
 
 pub mod __stdarg___gnuc_va_list_h {
@@ -192,61 +185,15 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-
-    use super::atom_h::atom_table;
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    pub use crate::xkb::context_priv::{
+        xkb_context_failed_include_path_get, xkb_context_getenv,
+        xkb_context_num_failed_include_paths,
+    };
+    pub use crate::xkb::shared_types::{
+        atom_table, darray_size_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
+        C2Rust_Unnamed_0,
+    };
     extern "C" {
-        pub fn xkb_context_getenv(ctx: *mut xkb_context, name: *const i8) -> *mut i8;
-        pub fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> darray_size_t;
-        pub fn xkb_context_failed_include_path_get(
-            ctx: *mut xkb_context,
-            idx: darray_size_t,
-        ) -> *const i8;
         pub fn xkb_context_include_path_get_extra_path(ctx: *mut xkb_context) -> *const i8;
         pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
         pub fn xkb_log(
@@ -259,30 +206,16 @@ pub mod context_h {
     }
 }
 pub mod atom_h {
-    extern "C" {
-        pub type atom_table;
-    }
+    pub use crate::xkb::shared_types::atom_table;
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    use super::context_h::xkb_context;
+    pub use crate::xkb::shared_types::{
+        xkb_context, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+    };
     extern "C" {
         pub fn xkb_context_num_include_paths(context: *mut xkb_context) -> u32;
         pub fn xkb_context_include_path_get(context: *mut xkb_context, index: u32) -> *const i8;

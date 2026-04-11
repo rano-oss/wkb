@@ -19,54 +19,9 @@ pub mod stdio_h {
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: i32,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: i32,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
+    pub use crate::xkb::shared_types::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 
-    use super::atom_h::atom_table;
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
+    use super::xkbcommon_h::xkb_log_level;
     extern "C" {
         pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
     }
@@ -78,25 +33,14 @@ pub mod atom_h {
     pub use crate::xkb::atom::{atom_intern, atom_table, atom_table_size, atom_text};
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
     use super::context_h::xkb_context;
+    pub use crate::xkb::shared_types::{
+        xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+    };
     extern "C" {
         pub fn xkb_context_include_path_append_default(context: *mut xkb_context) -> i32;
     }
@@ -313,11 +257,7 @@ pub use self::xkbcommon_h::{
     xkb_context_include_path_append_default, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL,
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_getenv(
-    mut ctx: *mut xkb_context,
-    mut name: *const i8,
-) -> *mut i8 {
+pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv() {
             return secure_getenv(name);
@@ -326,8 +266,7 @@ pub unsafe extern "C" fn xkb_context_getenv(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
+pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
     unsafe {
         if (*ctx).pending_default_includes() {
             if (*ctx).failed_includes.size == 0 as darray_size_t {
@@ -351,10 +290,7 @@ pub unsafe extern "C" fn xkb_context_init_includes(mut ctx: *mut xkb_context) ->
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_num_failed_include_paths(
-    mut ctx: *mut xkb_context,
-) -> darray_size_t {
+pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> darray_size_t {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
             (*ctx).failed_includes.size
@@ -363,8 +299,7 @@ pub unsafe extern "C" fn xkb_context_num_failed_include_paths(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_failed_include_path_get(
+pub unsafe fn xkb_context_failed_include_path_get(
     mut ctx: *mut xkb_context,
     mut idx: darray_size_t,
 ) -> *const i8 {
@@ -381,17 +316,12 @@ pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
         return atom_table_size((*ctx).atom_table);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_atom_lookup(
-    mut ctx: *mut xkb_context,
-    mut string: *const i8,
-) -> xkb_atom_t {
+pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
     unsafe {
         return atom_intern((*ctx).atom_table, string, strlen(string), false_0 != 0);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_atom_intern(
+pub unsafe fn xkb_atom_intern(
     mut ctx: *mut xkb_context,
     mut string: *const i8,
     mut len: usize,
@@ -400,11 +330,7 @@ pub unsafe extern "C" fn xkb_atom_intern(
         return atom_intern((*ctx).atom_table, string, len, true_0 != 0);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_atom_text(
-    mut ctx: *mut xkb_context,
-    mut atom: xkb_atom_t,
-) -> *const i8 {
+pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> *const i8 {
     unsafe {
         return atom_text((*ctx).atom_table, atom);
     }
@@ -426,11 +352,7 @@ pub unsafe extern "C" fn xkb_log(
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, fmt, args);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_get_buffer(
-    mut ctx: *mut xkb_context,
-    mut size: usize,
-) -> *mut i8 {
+pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
     unsafe {
         let mut rtrn: *mut i8 = ::core::ptr::null_mut::<i8>();
         if size >= ::core::mem::size_of::<[i8; 2048]>() as usize {
@@ -514,8 +436,7 @@ unsafe fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
+pub unsafe fn xkb_context_sanitize_rule_names(
     mut ctx: *mut xkb_context,
     mut rmlvo: *mut xkb_rule_names,
 ) -> RMLVO {

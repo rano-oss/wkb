@@ -629,9 +629,7 @@ pub mod keymap_h {
     pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
-    pub unsafe fn format_max_groups(
-        mut format: xkb_keymap_format,
-    ) -> xkb_layout_index_t {
+    pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
         unsafe {
             return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
                 XKB_MAX_GROUPS_X11
@@ -644,9 +642,7 @@ pub mod keymap_h {
     pub const XKB_OVERLAY_MAX: u64 =
         (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
     #[inline]
-    pub unsafe fn format_max_overlays(
-        mut format: xkb_keymap_format,
-    ) -> xkb_overlay_index_t {
+    pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
         unsafe {
             return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
                 XKB_OVERLAY_MAX_X11 as usize
@@ -684,9 +680,7 @@ pub mod keymap_h {
         }
     }
     #[inline]
-    pub unsafe fn areOverlappingOverlaysSupported(
-        mut format: xkb_keymap_format,
-    ) -> bool {
+    pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
         unsafe {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
@@ -1001,12 +995,7 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod text_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct LookupEntry {
-        pub name: *const i8,
-        pub value: u32,
-    }
+    pub use crate::xkb::text::LookupEntry;
     pub type C2Rust_Unnamed_16 = u32;
     pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_16 = 0;
     pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_16 = 7;
@@ -1025,7 +1014,7 @@ pub mod text_h {
     use super::atom_h::xkb_atom_t;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_action_type;
-    use super::stdint_uintn_h::{u32, uint8_t};
+    use super::stdint_uintn_h::uint8_t;
     use super::xkbcommon_h::{xkb_keymap_format, xkb_keysym_t, XKB_KEYMAP_FORMAT_TEXT_V1};
     extern "C" {
         pub fn ActionTypeText(type_0: xkb_action_type) -> *const i8;
@@ -1385,10 +1374,7 @@ pub const GROUP_INDEX_NAME_LAST: C2Rust_Unnamed_20 = 1;
 pub type compile_file_fn = Option<unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
 pub type C2Rust_Unnamed_20 = u32;
 pub type C2Rust_Unnamed_21 = u32;
-unsafe fn has_unbound_vmods(
-    mut keymap: *mut xkb_keymap,
-    mut mask: xkb_mod_mask_t,
-) -> bool {
+unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_t) -> bool {
     unsafe {
         let mut k: xkb_mod_index_t = 0;
         let mut mod_0: *mut xkb_mod = ::core::ptr::null_mut::<xkb_mod>();
@@ -1882,10 +1868,7 @@ unsafe fn is_group_action(mut action: *mut xkb_action) -> bool {
             || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as u32;
     }
 }
-unsafe fn CheckMultipleActionsCategories(
-    mut keymap: *mut xkb_keymap,
-    mut key: *mut xkb_key,
-) {
+unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) {
     unsafe {
         let mut g: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while g < (*key).num_groups() {
@@ -1982,10 +1965,7 @@ unsafe fn add_key_aliases(
         }
     }
 }
-unsafe fn update_pending_key_fields(
-    mut info: *mut xkb_keymap_info,
-    mut key: *mut xkb_key,
-) -> bool {
+unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mut xkb_key) -> bool {
     unsafe {
         if (*key).out_of_range_pending_group() {
             let pc: *mut pending_computation = (*(*info).pending_computations)
@@ -2108,10 +2088,7 @@ unsafe fn update_pending_action_fields(
         };
     }
 }
-unsafe fn update_pending_led_fields(
-    mut info: *mut xkb_keymap_info,
-    mut led: *mut xkb_led,
-) -> bool {
+unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mut xkb_led) -> bool {
     unsafe {
         if (*led).pending_groups() {
             let pc: *mut pending_computation = (*(*info).pending_computations)

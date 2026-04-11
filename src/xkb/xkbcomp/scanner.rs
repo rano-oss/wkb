@@ -1,12 +1,5 @@
 pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
+    pub use crate::xkb::shared_types::__va_list_tag;
 }
 pub mod types_h {
     pub type __uint8_t = u8;
@@ -78,56 +71,13 @@ pub mod FILE_h {
     use super::struct_FILE_h::_IO_FILE;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
+    pub use crate::xkb::context_priv::xkb_atom_intern;
+    pub use crate::xkb::shared_types::{
+        atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
+        C2Rust_Unnamed_0,
+    };
 
-    use super::atom_h::{atom_table, xkb_atom_t};
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
-        pub fn xkb_atom_intern(ctx: *mut xkb_context, string: *const i8, len: usize) -> xkb_atom_t;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
@@ -138,33 +88,17 @@ pub mod context_h {
     }
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
-    use super::darray_h::darray_size_t;
-    extern "C" {
-        pub type atom_table;
-    }
+    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_keysym_t = u32;
     use super::stdint_uintn_h::u32;
+    pub use crate::xkb::shared_types::{
+        xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
+        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
+    };
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -374,11 +308,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_str(
-        mut s: *mut scanner,
-        mut string: *const i8,
-        mut len: usize,
-    ) -> bool {
+    pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
         unsafe {
             if (*s).len.wrapping_sub((*s).pos) < len {
                 return false_0 != 0;
@@ -410,10 +340,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_buf_appends_code_point(
-        mut s: *mut scanner,
-        mut c: u32,
-    ) -> bool {
+    pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(5 as usize)
                 <= ::core::mem::size_of::<[i8; 1024]>() as usize
@@ -465,10 +392,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_dec_int64(
-        mut s: *mut scanner,
-        mut out: *mut i64,
-    ) -> ::core::ffi::c_int {
+    pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
         unsafe {
             let mut val: uint64_t = 0 as uint64_t;
             let count: ::core::ffi::c_int = parse_dec_to_uint64_t(
@@ -487,10 +411,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_hex_int64(
-        mut s: *mut scanner,
-        mut out: *mut i64,
-    ) -> ::core::ffi::c_int {
+    pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
         unsafe {
             let mut val: uint64_t = 0 as uint64_t;
             let count: ::core::ffi::c_int = parse_hex_to_uint64_t(
@@ -509,10 +430,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_unicode_code_point(
-        mut s: *mut scanner,
-        mut out: *mut u32,
-    ) -> bool {
+    pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32) -> bool {
         unsafe {
             if !scanner_chr(s, '{' as i32 as i8) {
                 return false_0 != 0;
@@ -545,9 +463,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_check_supported_char_encoding(
-        mut scanner: *mut scanner,
-    ) -> bool {
+    pub unsafe fn scanner_check_supported_char_encoding(mut scanner: *mut scanner) -> bool {
         unsafe {
             if scanner_str(scanner, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize)
                 as ::core::ffi::c_int

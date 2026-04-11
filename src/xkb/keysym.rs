@@ -26732,11 +26732,7 @@ unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
     }
 }
 #[inline]
-unsafe fn get_unicode_name(
-    mut ks: xkb_keysym_t,
-    mut buffer: *mut i8,
-    mut size: usize,
-) -> i32 {
+unsafe fn get_unicode_name(mut ks: xkb_keysym_t, mut buffer: *mut i8, mut size: usize) -> i32 {
     unsafe {
         return snprintf(
             buffer,
@@ -26857,17 +26853,13 @@ pub unsafe fn xkb_keysym_iterator_unref(
     }
 }
 
-pub unsafe fn xkb_keysym_iterator_get_keysym(
-    mut iter: *mut xkb_keysym_iterator,
-) -> xkb_keysym_t {
+pub unsafe fn xkb_keysym_iterator_get_keysym(mut iter: *mut xkb_keysym_iterator) -> xkb_keysym_t {
     unsafe {
         return (*iter).keysym;
     }
 }
 
-pub unsafe fn xkb_keysym_iterator_is_explicitly_named(
-    mut iter: *mut xkb_keysym_iterator,
-) -> bool {
+pub unsafe fn xkb_keysym_iterator_is_explicitly_named(mut iter: *mut xkb_keysym_iterator) -> bool {
     unsafe {
         return (*iter).index >= 0 as i32
             && (*iter).index
@@ -27059,10 +27051,7 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
     }
 }
 
-pub unsafe fn xkb_utf8_to_keysym(
-    mut buffer: *const i8,
-    mut size: usize,
-) -> xkb_keysym_t {
+pub unsafe fn xkb_utf8_to_keysym(mut buffer: *const i8, mut size: usize) -> xkb_keysym_t {
     unsafe {
         if buffer.is_null() || size == 0 {
             return 0 as xkb_keysym_t;

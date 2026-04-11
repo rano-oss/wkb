@@ -1,14 +1,7 @@
 use c2rust_bitfields;
 pub mod internal {
+    pub use crate::xkb::shared_types::__va_list_tag;
     pub type __builtin_va_list = [__va_list_tag; 1];
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
 }
 pub mod types_h {
     pub type __uint8_t = u8;
@@ -116,55 +109,11 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
+    pub use crate::xkb::context_priv::{xkb_context_sanitize_rule_names, RMLVO};
+    pub use crate::xkb::shared_types::{
+        xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    };
 
-    use super::atom_h::atom_table;
-    use super::darray_h::darray_size_t;
-
-    use super::rmlvo_h::RMLVO;
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -173,19 +122,13 @@ pub mod context_h {
             fmt: *const i8,
             ...
         );
-        pub fn xkb_context_sanitize_rule_names(
-            ctx: *mut xkb_context,
-            rmlvo: *mut xkb_rule_names,
-        ) -> RMLVO;
     }
 }
 pub mod atom_h {
-    extern "C" {
-        pub type atom_table;
-    }
+    pub use crate::xkb::shared_types::atom_table;
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::darray_size_t;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct darray_char {
@@ -211,23 +154,11 @@ pub mod darray_h {
     }
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = u32;
-    pub type xkb_layout_mask_t = u32;
+    pub use crate::xkb::shared_types::{
+        xkb_layout_index_t, xkb_layout_mask_t, xkb_log_level, xkb_rule_names, XKB_LAYOUT_INVALID,
+        XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
+        XKB_LOG_LEVEL_WARNING,
+    };
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct xkb_component_names {
@@ -237,8 +168,6 @@ pub mod xkbcommon_h {
         pub symbols: *mut i8,
         pub types: *mut i8,
     }
-    pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff as u32;
-    use super::stdint_uintn_h::u32;
 }
 pub mod rmlvo_h {
     #[derive(Copy, Clone)]
@@ -538,11 +467,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_str(
-        mut s: *mut scanner,
-        mut string: *const i8,
-        mut len: usize,
-    ) -> bool {
+    pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
         unsafe {
             if (*s).len.wrapping_sub((*s).pos) < len {
                 return false_0 != 0;
@@ -560,9 +485,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe fn scanner_check_supported_char_encoding(
-        mut scanner: *mut scanner,
-    ) -> bool {
+    pub unsafe fn scanner_check_supported_char_encoding(mut scanner: *mut scanner) -> bool {
         unsafe {
             if scanner_str(scanner, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize)
                 as ::core::ffi::c_int
@@ -1871,11 +1794,7 @@ unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
             .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize) = group;
     }
 }
-unsafe fn matcher_group_add_element(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut element: sval,
-) {
+unsafe fn matcher_group_add_element(mut m: *mut matcher, mut s: *mut scanner, mut element: sval) {
     unsafe {
         let ref mut c2rust_fresh1 = (*(*m)
             .groups
@@ -6310,11 +6229,7 @@ unsafe fn is_mlvo_mask_defined(mut m: *mut matcher, mut mlvo: rules_mlvo) -> boo
         return (*m).mapping.defined_mlvo_mask as u32 & (1 as u32) << mlvo as u32 != 0;
     }
 }
-unsafe fn matcher_mapping_set_mlvo(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-) {
+unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         let mut mlvo: rules_mlvo = MLVO_MODEL;
         let mut mlvo_sval: sval = sval {
@@ -6521,11 +6436,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         };
     }
 }
-unsafe fn matcher_mapping_set_kccgst(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-) {
+unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
         let mut kccgst_sval: sval = sval {
@@ -6794,29 +6705,17 @@ unsafe fn matcher_rule_set_mlvo_wildcard(
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
     }
 }
-unsafe fn matcher_rule_set_mlvo_group(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-) {
+unsafe fn matcher_rule_set_mlvo_group(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
     }
 }
-unsafe fn matcher_rule_set_mlvo(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-) {
+unsafe fn matcher_rule_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
     }
 }
-unsafe fn matcher_rule_set_kccgst(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-) {
+unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         if (*m).rule.num_kccgst_values as ::core::ffi::c_int
             >= (*m).mapping.num_kccgst as ::core::ffi::c_int
@@ -8009,11 +7908,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe fn concat_kccgst(
-    mut into: *mut darray_char,
-    mut size: darray_size_t,
-    mut from: *const i8,
-) {
+unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut from: *const i8) {
     unsafe {
         let from_plus: bool = *from.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
             == MERGE_OVERRIDE_PREFIX

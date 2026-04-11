@@ -366,9 +366,7 @@ static mut keymap_formats_labels: [format_label; 4] = [
     },
 ];
 
-pub unsafe fn xkb_keymap_supported_formats(
-    mut formats: *mut *const xkb_keymap_format,
-) -> usize {
+pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_format) -> usize {
     unsafe {
         *formats = &raw const keymap_formats as *const xkb_keymap_format;
         return (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
