@@ -337,29 +337,12 @@ pub mod keymap_h {
     }
     extern "C" {
 
-        pub fn XkbLevelsSameSyms(a: *const xkb_level, b: *const xkb_level) -> bool;
-
-        pub fn XkbWrapGroupIntoRange(
-            group: i32,
-            num_groups: xkb_layout_index_t,
-            out_of_range_group_policy: xkb_layout_out_of_range_policy,
-            out_of_range_group_number: xkb_layout_index_t,
-        ) -> xkb_layout_index_t;
-
         pub fn xkb_keymap_key_get_level(
             keymap: *mut xkb_keymap,
             key: *const xkb_key,
             layout: xkb_layout_index_t,
             level: xkb_level_index_t,
         ) -> *mut xkb_level;
-
-        pub fn xkb_keymap_key_get_actions_by_level(
-            keymap: *mut xkb_keymap,
-            key: *const xkb_key,
-            layout: xkb_layout_index_t,
-            level: xkb_level_index_t,
-            actions: *mut *const xkb_action,
-        ) -> xkb_action_count_t;
     }
 }
 
@@ -828,14 +811,13 @@ pub use self::keymap_h::{
     xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
     xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
     xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keymap_key_get_actions_by_level, xkb_keymap_key_get_level, xkb_keysym_count_t,
-    xkb_led, xkb_level, xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
-    xkb_overlay_index_t, xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action,
-    xkb_pointer_default_action, xkb_private_action, xkb_redirect_key_action,
-    xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1, C2Rust_Unnamed_10,
-    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_23, C2Rust_Unnamed_3,
-    C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
-    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
+    xkb_keymap, xkb_keymap_key_get_level, xkb_keysym_count_t, xkb_led, xkb_level,
+    xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2,
+    C2Rust_Unnamed_23, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
+    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey,
     _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
     ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
     ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
@@ -968,6 +950,9 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use crate::xkb::keymap_priv::{
+    xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
+};
 #[derive(Copy, Clone)]
 #[repr(C)]
 

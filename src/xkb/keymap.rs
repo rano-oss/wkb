@@ -247,25 +247,8 @@ pub mod keymap_h {
     }
     extern "C" {
         #[c2rust::src_loc = "902:1"]
-        pub fn xkb_keymap_new(
-            ctx: *mut xkb_context,
-            func: *const i8,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
         #[c2rust::src_loc = "910:1"]
-        pub fn XkbModNameToIndex(
-            mods: *const xkb_mod_set,
-            name: xkb_atom_t,
-            type_0: mod_type,
-        ) -> xkb_mod_index_t;
         #[c2rust::src_loc = "923:1"]
-        pub fn XkbWrapGroupIntoRange(
-            group: i32,
-            num_groups: xkb_layout_index_t,
-            out_of_range_group_policy: xkb_layout_out_of_range_policy,
-            out_of_range_group_number: xkb_layout_index_t,
-        ) -> xkb_layout_index_t;
         #[c2rust::src_loc = "956:1"]
         #[no_mangle]
         pub static text_v1_keymap_format_ops: xkb_keymap_format_ops;
@@ -628,25 +611,24 @@ pub use self::keymap_h::{
     xkb_action_count_t, xkb_action_flags, xkb_action_type, xkb_controls_action,
     xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
     xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keymap_format_ops, xkb_keymap_new, xkb_keysym_count_t, xkb_led, xkb_level,
-    xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
+    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
+    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
     C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
     C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
-    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels, XkbModNameToIndex,
-    XkbWrapGroupIntoRange, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
-    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
-    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
-    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
-    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
-    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
-    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES,
+    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -733,6 +715,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_LOCKED,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 #[derive(Copy, Clone)]
 #[repr(C)]
 #[c2rust::src_loc = "591:1"]

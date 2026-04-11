@@ -114,9 +114,6 @@ pub mod keymap_h {
             return ::core::ptr::null_mut::<xkb_key>();
         }
     }
-    extern "C" {
-        pub fn action_equal(a: *const xkb_action, b: *const xkb_action) -> bool;
-    }
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
@@ -613,7 +610,7 @@ use self::expr_h::{
 };
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
-    action_equal, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
+    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
     xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
@@ -723,6 +720,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
+pub use crate::xkb::keymap_priv::action_equal;
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;

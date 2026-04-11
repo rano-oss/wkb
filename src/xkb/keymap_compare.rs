@@ -63,10 +63,6 @@ pub mod xkbcommon_h {
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub fn action_equal(a: *const xkb_action, b: *const xkb_action) -> bool;
-    }
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
@@ -128,7 +124,7 @@ pub use self::keymap_compare_h::{
     XKB_KEYMAP_CMP_TYPES,
 };
 pub use self::keymap_h::{
-    action_equal, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
+    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
     xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
@@ -177,6 +173,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
     XKB_STATE_MODS_LOCKED,
 };
+pub use crate::xkb::keymap_priv::action_equal;
 unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,

@@ -257,8 +257,7 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
         (*keymap).canonical_state_mask = MOD_REAL_MASK_ALL;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_new(
+pub unsafe fn xkb_keymap_new(
     mut ctx: *mut xkb_context,
     mut func: *const i8,
     mut format: xkb_keymap_format,
@@ -291,8 +290,7 @@ pub unsafe extern "C" fn xkb_keymap_new(
         return keymap;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbEscapeMapName(mut name: *mut i8) {
+pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
     unsafe {
         static mut legal: [::core::ffi::c_uchar; 32] = [
             0 as i32 as ::core::ffi::c_uchar,
@@ -341,8 +339,7 @@ pub unsafe extern "C" fn XkbEscapeMapName(mut name: *mut i8) {
         }
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbModNameToIndex(
+pub unsafe fn XkbModNameToIndex(
     mut mods: *const xkb_mod_set,
     mut name: xkb_atom_t,
     mut type_0: mod_type,
@@ -362,8 +359,7 @@ pub unsafe extern "C" fn XkbModNameToIndex(
         return XKB_MOD_INVALID as xkb_mod_index_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbLevelsSameSyms(
+pub unsafe fn XkbLevelsSameSyms(
     mut a: *const xkb_level,
     mut b: *const xkb_level,
 ) -> bool {
@@ -381,8 +377,7 @@ pub unsafe extern "C" fn XkbLevelsSameSyms(
         ) == 0 as i32;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
+pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
     unsafe {
         if (*a).type_0 as u32 != (*b).type_0 as u32 {
             return false_0 != 0;
@@ -442,8 +437,7 @@ pub unsafe extern "C" fn action_equal(mut a: *const xkb_action, mut b: *const xk
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbLevelsSameActions(
+pub unsafe fn XkbLevelsSameActions(
     mut a: *const xkb_level,
     mut b: *const xkb_level,
 ) -> bool {
@@ -467,8 +461,7 @@ pub unsafe extern "C" fn XkbLevelsSameActions(
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbWrapGroupIntoRange(
+pub unsafe fn XkbWrapGroupIntoRange(
     mut group: i32,
     mut num_groups: xkb_layout_index_t,
     mut out_of_range_group_policy: xkb_layout_out_of_range_policy,
@@ -506,8 +499,7 @@ pub unsafe extern "C" fn XkbWrapGroupIntoRange(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_key_get_actions_by_level(
+pub unsafe fn xkb_keymap_key_get_actions_by_level(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
     mut layout: xkb_layout_index_t,

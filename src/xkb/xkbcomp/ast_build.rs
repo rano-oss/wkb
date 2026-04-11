@@ -546,11 +546,7 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
-pub mod keymap_h {
-    extern "C" {
-        pub fn XkbEscapeMapName(name: *mut i8);
-    }
-}
+pub mod keymap_h {}
 pub mod include_h {
     pub const MERGE_AUGMENT_PREFIX: i32 = 124;
     pub const MERGE_REPLACE_PREFIX: i32 = 94;
@@ -595,7 +591,6 @@ pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::internal::__va_list_tag;
-use self::keymap_h::XkbEscapeMapName;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -652,6 +647,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
