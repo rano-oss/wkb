@@ -39,82 +39,10 @@ pub mod xkbcommon_h {
     }
 }
 pub mod keymap_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod_set {
-        pub mods: [xkb_mod; 32],
-        pub num_mods: xkb_mod_index_t,
-        pub explicit_vmods: xkb_mod_mask_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod {
-        pub name: xkb_atom_t,
-        pub type_0: mod_type,
-        pub mapping: xkb_mod_mask_t,
-    }
-    pub type mod_type = u32;
-    pub const MOD_BOTH: mod_type = 3;
-    pub const MOD_VIRT: mod_type = 2;
-    pub const MOD_REAL: mod_type = 1;
-    pub type xkb_action_type = u32;
-    pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
-    pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
-    pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
-    pub const ACTION_TYPE_UNKNOWN: xkb_action_type = 18;
-    pub const ACTION_TYPE_UNSUPPORTED_LEGACY: xkb_action_type = 17;
-    pub const ACTION_TYPE_REDIRECT_KEY: xkb_action_type = 16;
-    pub const ACTION_TYPE_CTRL_LOCK: xkb_action_type = 15;
-    pub const ACTION_TYPE_CTRL_SET: xkb_action_type = 14;
-    pub const ACTION_TYPE_SWITCH_VT: xkb_action_type = 13;
-    pub const ACTION_TYPE_TERMINATE: xkb_action_type = 12;
-    pub const ACTION_TYPE_PTR_DEFAULT: xkb_action_type = 11;
-    pub const ACTION_TYPE_PTR_LOCK: xkb_action_type = 10;
-    pub const ACTION_TYPE_PTR_BUTTON: xkb_action_type = 9;
-    pub const ACTION_TYPE_PTR_MOVE: xkb_action_type = 8;
-    pub const ACTION_TYPE_GROUP_LOCK: xkb_action_type = 7;
-    pub const ACTION_TYPE_GROUP_LATCH: xkb_action_type = 6;
-    pub const ACTION_TYPE_GROUP_SET: xkb_action_type = 5;
-    pub const ACTION_TYPE_MOD_LOCK: xkb_action_type = 4;
-    pub const ACTION_TYPE_MOD_LATCH: xkb_action_type = 3;
-    pub const ACTION_TYPE_MOD_SET: xkb_action_type = 2;
-    pub const ACTION_TYPE_VOID: xkb_action_type = 1;
-    pub const ACTION_TYPE_NONE: xkb_action_type = 0;
-    pub type xkb_action_controls = u32;
-    pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
-    pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
-    pub const CONTROL_ALL: xkb_action_controls = 2088959;
-    pub const CONTROL_ALL_V1: xkb_action_controls = 2088455;
-    pub const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
-    pub const CONTROL_BELL: xkb_action_controls = 524288;
-    pub const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
-    pub const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
-    pub const CONTROL_AX: xkb_action_controls = 65536;
-    pub const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
-    pub const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
-    pub const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
-    pub const CONTROL_SLOW: xkb_action_controls = 2048;
-    pub const CONTROL_REPEAT: xkb_action_controls = 1024;
-    pub const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
-    pub const CONTROL_OVERLAY8: xkb_action_controls = 256;
-    pub const CONTROL_OVERLAY7: xkb_action_controls = 128;
-    pub const CONTROL_OVERLAY6: xkb_action_controls = 64;
-    pub const CONTROL_OVERLAY5: xkb_action_controls = 32;
-    pub const CONTROL_OVERLAY4: xkb_action_controls = 16;
-    pub const CONTROL_OVERLAY3: xkb_action_controls = 8;
-    pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
-    pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
-    pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
-    pub type xkb_match_operation = u32;
-    pub const MATCH_EXACTLY: xkb_match_operation = 4;
-    pub const MATCH_ALL: xkb_match_operation = 3;
-    pub const MATCH_ANY: xkb_match_operation = 2;
-    pub const MATCH_ANY_OR_NONE: xkb_match_operation = 1;
-    pub const MATCH_NONE: xkb_match_operation = 0;
-    pub const XKB_MAX_GROUPS: i32 = 32 as i32;
+    pub use crate::xkb::shared_types::*;
+
     pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
     pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
-    pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
     #[inline]
     pub unsafe fn format_boolean_controls(mut format: xkb_keymap_format) -> xkb_action_controls {
         unsafe {
@@ -125,10 +53,6 @@ pub mod keymap_h {
             }) as xkb_action_controls;
         }
     }
-    use super::atom_h::xkb_atom_t;
-    use super::xkbcommon_h::{
-        xkb_keymap_format, xkb_mod_index_t, xkb_mod_mask_t, XKB_KEYMAP_FORMAT_TEXT_V1,
-    };
 }
 pub mod text_h {
     #[derive(Copy, Clone)]

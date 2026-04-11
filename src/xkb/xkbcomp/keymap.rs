@@ -49,54 +49,8 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
 pub mod context_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_context {
-        pub refcnt: ::core::ffi::c_int,
-        pub log_fn: Option<
-            unsafe extern "C" fn(
-                *mut xkb_context,
-                xkb_log_level,
-                *const i8,
-                ::core::ffi::VaList,
-            ) -> (),
-        >,
-        pub log_level: xkb_log_level,
-        pub log_verbosity: ::core::ffi::c_int,
-        pub user_data: *mut ::core::ffi::c_void,
-        pub names_dflt: xkb_rule_names,
-        pub includes: C2Rust_Unnamed_0,
-        pub failed_includes: C2Rust_Unnamed,
-        pub atom_table: *mut atom_table,
-        pub x11_atom_cache: *mut ::core::ffi::c_void,
-        pub text_buffer: [i8; 2048],
-        pub text_next: usize,
-        #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-        pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_0 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
+    pub use crate::xkb::shared_types::*;
 
-    use super::atom_h::atom_table;
-    use super::darray_h::darray_size_t;
-
-    use super::xkbcommon_h::{xkb_log_level, xkb_rule_names};
     extern "C" {
         pub fn xkb_log(
             ctx: *mut xkb_context,
@@ -108,15 +62,15 @@ pub mod context_h {
     }
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
-    use super::darray_h::darray_size_t;
+    pub use crate::xkb::shared_types::*;
+
     extern "C" {
         pub type atom_table;
     }
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
-    #[inline]
+    pub use crate::xkb::shared_types::*;
+
     pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
@@ -134,54 +88,9 @@ pub mod darray_h {
     }
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
-    pub type xkb_layout_index_t = u32;
-    pub type xkb_keycode_t = u32;
-    pub type xkb_mod_mask_t = u32;
-    pub type xkb_mod_index_t = u32;
-    pub type xkb_keysym_t = u32;
-    pub type xkb_level_index_t = u32;
-    pub type xkb_layout_out_of_range_policy = u32;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
-    pub type xkb_state_component = u32;
-    pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
-    pub const XKB_STATE_LEDS: xkb_state_component = 256;
-    pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
-    pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
-    pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
-    pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
-    pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
-    pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
-    pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
-    pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
-    pub type xkb_layout_mask_t = u32;
-    pub type xkb_led_index_t = u32;
-    pub type xkb_keymap_format = u32;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_compile_flags = u32;
-    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
-    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
+    pub use crate::xkb::shared_types::*;
+
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
-    pub const XKB_MOD_INVALID: u32 = 0xffffffff as u32;
-    use super::keymap_h::xkb_keymap;
-    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_keymap_key_get_syms_by_level(
             keymap: *mut xkb_keymap,
@@ -193,418 +102,8 @@ pub mod xkbcommon_h {
     }
 }
 pub mod keymap_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_keymap {
-        pub ctx: *mut xkb_context,
-        pub refcnt: ::core::ffi::c_int,
-        pub flags: xkb_keymap_compile_flags,
-        pub format: xkb_keymap_format,
-        pub num_leds: xkb_led_index_t,
-        pub leds: [xkb_led; 32],
-        pub min_key_code: xkb_keycode_t,
-        pub max_key_code: xkb_keycode_t,
-        pub num_keys: xkb_keycode_t,
-        pub num_keys_low: xkb_keycode_t,
-        pub keys: *mut xkb_key,
-        pub c2rust_unnamed: C2Rust_Unnamed_3,
-        pub types: *mut xkb_key_type,
-        pub num_types: darray_size_t,
-        pub num_sym_interprets: darray_size_t,
-        pub sym_interprets: *mut xkb_sym_interpret,
-        pub mods: xkb_mod_set,
-        pub canonical_state_mask: xkb_mod_mask_t,
-        pub redirect_key_auto: xkb_keycode_t,
-        pub num_groups: xkb_layout_index_t,
-        pub num_group_names: xkb_layout_index_t,
-        pub group_names: *mut xkb_atom_t,
-        pub keycodes_section_name: *mut i8,
-        pub symbols_section_name: *mut i8,
-        pub types_section_name: *mut i8,
-        pub compat_section_name: *mut i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod_set {
-        pub mods: [xkb_mod; 32],
-        pub num_mods: xkb_mod_index_t,
-        pub explicit_vmods: xkb_mod_mask_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod {
-        pub name: xkb_atom_t,
-        pub type_0: mod_type,
-        pub mapping: xkb_mod_mask_t,
-    }
-    pub type mod_type = u32;
-    pub const MOD_BOTH: mod_type = 3;
-    pub const MOD_VIRT: mod_type = 2;
-    pub const MOD_REAL: mod_type = 1;
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_sym_interpret {
-        pub sym: xkb_keysym_t,
-        pub match_0: xkb_match_operation,
-        pub mods: xkb_mod_mask_t,
-        pub virtual_mod: xkb_mod_index_t,
-        pub level_one_only: bool,
-        #[bitfield(name = "repeat", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "required", ty = "bool", bits = "1..=1")]
-        pub repeat_required: [u8; 1],
-        pub num_actions: xkb_action_count_t,
-        pub a: C2Rust_Unnamed_1,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_1 {
-        pub action: xkb_action,
-        pub actions: *mut xkb_action,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union xkb_action {
-        pub type_0: xkb_action_type,
-        pub mods: xkb_mod_action,
-        pub group: xkb_group_action,
-        pub ctrls: xkb_controls_action,
-        pub dflt: xkb_pointer_default_action,
-        pub screen: xkb_switch_screen_action,
-        pub ptr: xkb_pointer_action,
-        pub btn: xkb_pointer_button_action,
-        pub redirect: xkb_redirect_key_action,
-        pub priv_0: xkb_private_action,
-        pub internal: xkb_internal_action,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_internal_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_internal_action_flags,
-        pub c2rust_unnamed: C2Rust_Unnamed_2,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_2 {
-        pub clear_latched_mods: xkb_mod_mask_t,
-    }
-    pub type xkb_internal_action_flags = u32;
-    pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
-    pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
-    pub type xkb_action_type = u32;
-    pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
-    pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
-    pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
-    pub const ACTION_TYPE_UNKNOWN: xkb_action_type = 18;
-    pub const ACTION_TYPE_UNSUPPORTED_LEGACY: xkb_action_type = 17;
-    pub const ACTION_TYPE_REDIRECT_KEY: xkb_action_type = 16;
-    pub const ACTION_TYPE_CTRL_LOCK: xkb_action_type = 15;
-    pub const ACTION_TYPE_CTRL_SET: xkb_action_type = 14;
-    pub const ACTION_TYPE_SWITCH_VT: xkb_action_type = 13;
-    pub const ACTION_TYPE_TERMINATE: xkb_action_type = 12;
-    pub const ACTION_TYPE_PTR_DEFAULT: xkb_action_type = 11;
-    pub const ACTION_TYPE_PTR_LOCK: xkb_action_type = 10;
-    pub const ACTION_TYPE_PTR_BUTTON: xkb_action_type = 9;
-    pub const ACTION_TYPE_PTR_MOVE: xkb_action_type = 8;
-    pub const ACTION_TYPE_GROUP_LOCK: xkb_action_type = 7;
-    pub const ACTION_TYPE_GROUP_LATCH: xkb_action_type = 6;
-    pub const ACTION_TYPE_GROUP_SET: xkb_action_type = 5;
-    pub const ACTION_TYPE_MOD_LOCK: xkb_action_type = 4;
-    pub const ACTION_TYPE_MOD_LATCH: xkb_action_type = 3;
-    pub const ACTION_TYPE_MOD_SET: xkb_action_type = 2;
-    pub const ACTION_TYPE_VOID: xkb_action_type = 1;
-    pub const ACTION_TYPE_NONE: xkb_action_type = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_private_action {
-        pub type_0: xkb_action_type,
-        pub data: [uint8_t; 7],
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_redirect_key_action {
-        pub type_0: xkb_action_type,
-        pub keycode: xkb_keycode_t,
-        pub affect: xkb_mod_mask_t,
-        pub mods: xkb_mod_mask_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_pointer_button_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub count: uint8_t,
-        pub button: uint8_t,
-    }
-    pub type xkb_action_flags = u32;
-    pub const ACTION_PENDING_COMPUTATION: xkb_action_flags = 8192;
-    pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
-    pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
-    pub const ACTION_LOCK_ON_RELEASE: xkb_action_flags = 1024;
-    pub const ACTION_SAME_SCREEN: xkb_action_flags = 512;
-    pub const ACTION_ACCEL: xkb_action_flags = 256;
-    pub const ACTION_ABSOLUTE_Y: xkb_action_flags = 128;
-    pub const ACTION_ABSOLUTE_X: xkb_action_flags = 64;
-    pub const ACTION_ABSOLUTE_SWITCH: xkb_action_flags = 32;
-    pub const ACTION_MODS_LOOKUP_MODMAP: xkb_action_flags = 16;
-    pub const ACTION_LOCK_NO_UNLOCK: xkb_action_flags = 8;
-    pub const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
-    pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
-    pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_pointer_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub x: i16,
-        pub y: i16,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_switch_screen_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub screen: i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_pointer_default_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub value: i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_controls_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub ctrls: xkb_action_controls,
-    }
-    pub type xkb_action_controls = u32;
-    pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
-    pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
-    pub const CONTROL_ALL: xkb_action_controls = 2088959;
-    pub const CONTROL_ALL_V1: xkb_action_controls = 2088455;
-    pub const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
-    pub const CONTROL_BELL: xkb_action_controls = 524288;
-    pub const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
-    pub const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
-    pub const CONTROL_AX: xkb_action_controls = 65536;
-    pub const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
-    pub const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
-    pub const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
-    pub const CONTROL_SLOW: xkb_action_controls = 2048;
-    pub const CONTROL_REPEAT: xkb_action_controls = 1024;
-    pub const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
-    pub const CONTROL_OVERLAY8: xkb_action_controls = 256;
-    pub const CONTROL_OVERLAY7: xkb_action_controls = 128;
-    pub const CONTROL_OVERLAY6: xkb_action_controls = 64;
-    pub const CONTROL_OVERLAY5: xkb_action_controls = 32;
-    pub const CONTROL_OVERLAY4: xkb_action_controls = 16;
-    pub const CONTROL_OVERLAY3: xkb_action_controls = 8;
-    pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
-    pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
-    pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_group_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub group: i32,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod_action {
-        pub type_0: xkb_action_type,
-        pub flags: xkb_action_flags,
-        pub mods: xkb_mods,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mods {
-        pub mods: xkb_mod_mask_t,
-        pub mask: xkb_mod_mask_t,
-    }
-    pub type xkb_action_count_t = uint16_t;
-    pub type xkb_match_operation = u32;
-    pub const MATCH_EXACTLY: xkb_match_operation = 4;
-    pub const MATCH_ALL: xkb_match_operation = 3;
-    pub const MATCH_ANY: xkb_match_operation = 2;
-    pub const MATCH_ANY_OR_NONE: xkb_match_operation = 1;
-    pub const MATCH_NONE: xkb_match_operation = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_key_type {
-        pub name: xkb_atom_t,
-        pub mods: xkb_mods,
-        pub required: bool,
-        pub num_levels: xkb_level_index_t,
-        pub num_level_names: xkb_level_index_t,
-        pub level_names: *mut xkb_atom_t,
-        pub num_entries: darray_size_t,
-        pub entries: *mut xkb_key_type_entry,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_key_type_entry {
-        pub level: xkb_level_index_t,
-        pub mods: xkb_mods,
-        pub preserve: xkb_mods,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_3 {
-        pub c2rust_unnamed: C2Rust_Unnamed_5,
-        pub c2rust_unnamed_0: C2Rust_Unnamed_4,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_4 {
-        pub num_key_aliases: darray_size_t,
-        pub key_aliases: *mut xkb_key_alias,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_key_alias {
-        pub real: xkb_atom_t,
-        pub alias: xkb_atom_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_5 {
-        pub num_key_names: darray_size_t,
-        pub key_names: *mut KeycodeMatch,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union KeycodeMatch {
-        pub c2rust_unnamed: C2Rust_Unnamed_8,
-        pub key: C2Rust_Unnamed_7,
-        pub alias: C2Rust_Unnamed_6,
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_6 {
-        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-        #[bitfield(name = "real", ty = "xkb_atom_t", bits = "3..=31")]
-        pub found_c2rust_unnamed_is_alias_real: [u8; 4],
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_7 {
-        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "low", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-        #[bitfield(name = "index", ty = "darray_size_t", bits = "3..=31")]
-        pub found_low_is_alias_index: [u8; 4],
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_8 {
-        #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-        #[bitfield(name = "c2rust_unnamed_0", ty = "darray_size_t", bits = "3..=31")]
-        pub found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [u8; 4],
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_key {
-        pub keycode: xkb_keycode_t,
-        pub name: xkb_atom_t,
-        pub explicit: xkb_explicit_components,
-        pub modmap: xkb_mod_mask_t,
-        pub vmodmap: xkb_mod_mask_t,
-        pub overlays: xkb_overlay_mask_t,
-        #[bitfield(name = "overlays_inline", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "repeats", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
-        #[bitfield(name = "out_of_range_pending_group", ty = "bool", bits = "3..=3")]
-        #[bitfield(
-            name = "out_of_range_group_policy",
-            ty = "xkb_layout_out_of_range_policy",
-            bits = "4..=7"
-        )]
-        #[bitfield(
-            name = "out_of_range_group_number",
-            ty = "xkb_layout_index_t",
-            bits = "8..=15"
-        )]
-        #[bitfield(name = "num_groups", ty = "xkb_layout_index_t", bits = "16..=23")]
-        pub overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups:
-            [u8; 3],
-        pub groups: *mut xkb_group,
-        pub c2rust_unnamed: C2Rust_Unnamed_9,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_9 {
-        pub overlay_key: *const xkb_key,
-        pub overlays_keys: *mut *const xkb_key,
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_group {
-        #[bitfield(name = "explicit_symbols", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "explicit_actions", ty = "bool", bits = "1..=1")]
-        #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
-        #[bitfield(name = "explicit_type", ty = "bool", bits = "3..=3")]
-        pub explicit_symbols_explicit_actions_implicit_actions_explicit_type: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 7],
-        pub type_0: *const xkb_key_type,
-        pub levels: *mut xkb_level,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_level {
-        pub num_syms: xkb_keysym_count_t,
-        pub num_actions: xkb_action_count_t,
-        pub c2rust_unnamed: C2Rust_Unnamed_12,
-        pub s: C2Rust_Unnamed_11,
-        pub a: C2Rust_Unnamed_10,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_10 {
-        pub action: xkb_action,
-        pub actions: *mut xkb_action,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_11 {
-        pub sym: xkb_keysym_t,
-        pub syms: *mut xkb_keysym_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_12 {
-        pub upper: xkb_keysym_t,
-        pub has_upper: bool,
-    }
-    pub type xkb_keysym_count_t = uint16_t;
-    pub type xkb_overlay_mask_t = uint8_t;
-    pub type xkb_explicit_components = u32;
-    pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
-    pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
-    pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
-    pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
-    pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
-    pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_led {
-        pub name: xkb_atom_t,
-        #[bitfield(name = "which_groups", ty = "xkb_state_component", bits = "0..=30")]
-        #[bitfield(name = "pending_groups", ty = "bool", bits = "31..=31")]
-        pub which_groups_pending_groups: [u8; 4],
-        pub groups: xkb_layout_mask_t,
-        pub which_mods: xkb_state_component,
-        pub mods: xkb_mods,
-        pub ctrls: xkb_action_controls,
-    }
+    pub use crate::xkb::shared_types::*;
+
     pub type real_mod_index = u32;
     pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
     pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
@@ -625,7 +124,6 @@ pub mod keymap_h {
     pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
     pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_15 = 4294967295;
     pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
     pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
@@ -653,15 +151,6 @@ pub mod keymap_h {
     }
     pub const MAX_ACTIONS_PER_LEVEL: ::core::ffi::c_int = UINT16_MAX;
     #[inline]
-    pub unsafe fn XkbKeyNumLevels(
-        mut key: *const xkb_key,
-        mut layout: xkb_layout_index_t,
-    ) -> xkb_level_index_t {
-        unsafe {
-            return (*(*(*key).groups.offset(layout as isize)).type_0).num_levels;
-        }
-    }
-    #[inline]
     pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
         unsafe {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
@@ -685,19 +174,6 @@ pub mod keymap_h {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
     }
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
-    use super::limits_h::CHAR_BIT;
-    use super::stdint_h::UINT16_MAX;
-    use super::stdint_intn_h::{i16, i32, i8};
-    use super::stdint_uintn_h::{uint16_t, uint8_t};
-    use super::xkbcommon_h::{
-        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
-        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
-        xkb_level_index_t, xkb_mod_index_t, xkb_mod_mask_t, xkb_state_component,
-        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-    };
     extern "C" {
         pub fn mod_mask_get_effective(
             keymap: *mut xkb_keymap,

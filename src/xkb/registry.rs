@@ -1013,7 +1013,8 @@ pub mod xkbregistry_h {
     pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 }
 pub mod darray_h {
-    pub type darray_size_t = u32;
+    pub use crate::xkb::shared_types::*;
+
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct darray_string {
@@ -1021,7 +1022,6 @@ pub mod darray_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut i8,
     }
-    #[inline]
     pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,

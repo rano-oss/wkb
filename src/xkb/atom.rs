@@ -15,9 +15,9 @@ pub mod darray_h {
     pub type darray_size_t = u32;
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
+    pub use crate::xkb::shared_types::*;
+
     pub const XKB_ATOM_NONE: i32 = 0 as i32;
-    use super::darray_h::darray_size_t;
 }
 
 pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};

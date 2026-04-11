@@ -19,12 +19,7 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
 pub mod xkbcommon_h {
-    pub type xkb_log_level = u32;
-    pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-    pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-    pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-    pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-    pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+    pub use crate::xkb::shared_types::*;
 }
 pub mod xkbcommon_features_h {
     pub type xkb_feature = u32;

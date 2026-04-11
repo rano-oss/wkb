@@ -7,9 +7,7 @@ pub mod stdint_uintn_h {
 }
 
 pub mod xkbcommon_h {
-    pub type xkb_keymap_format = u32;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
+    pub use crate::xkb::shared_types::*;
 }
 pub mod utils_numbers_h {
     pub static mut digits__: [::core::ffi::c_uchar; 256] = [

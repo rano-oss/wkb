@@ -27,9 +27,8 @@ pub mod context_h {
     }
 }
 pub mod atom_h {
-    pub type xkb_atom_t = darray_size_t;
+    pub use crate::xkb::shared_types::*;
 
-    use super::darray_h::darray_size_t;
     pub use crate::xkb::atom::{atom_intern, atom_table, atom_table_size, atom_text};
 }
 pub mod darray_h {

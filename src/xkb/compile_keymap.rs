@@ -76,33 +76,15 @@ pub mod FILE_h {
     use super::struct_FILE_h::_IO_FILE;
 }
 pub mod xkbcommon_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rule_names {
-        pub rules: *const i8,
-        pub model: *const i8,
-        pub layout: *const i8,
-        pub variant: *const i8,
-        pub options: *const i8,
-    }
+    use super::FILE_h::FILE;
+    pub use crate::xkb::shared_types::*;
+
     pub type xkb_context_flags = u32;
     pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
     pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
     pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
     pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-    pub type xkb_keymap_compile_flags = u32;
-    pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
-    pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
-    pub type xkb_keymap_format = u32;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-    pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-    pub type xkb_keymap_serialize_flags = u32;
-    pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
-    pub const XKB_KEYMAP_SERIALIZE_KEEP_UNUSED: xkb_keymap_serialize_flags = 2;
-    pub const XKB_KEYMAP_SERIALIZE_PRETTY: xkb_keymap_serialize_flags = 1;
-    pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    use super::FILE_h::FILE;
     extern "C" {
         pub type xkb_context;
         pub type xkb_keymap;

@@ -19,12 +19,12 @@ pub mod sys_types_h {
     pub type ssize_t = isize;
 }
 pub mod xkbcommon_h {
-    pub type xkb_keysym_t = u32;
+    pub use crate::xkb::shared_types::*;
+
     pub type xkb_keysym_flags = u32;
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff as i32;
-    use super::stdint_uintn_h::u32;
     extern "C" {
         pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
     }

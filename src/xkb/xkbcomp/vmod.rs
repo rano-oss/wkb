@@ -33,30 +33,11 @@ pub mod xkbcommon_h {
     };
 }
 pub mod keymap_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod_set {
-        pub mods: [xkb_mod; 32],
-        pub num_mods: xkb_mod_index_t,
-        pub explicit_vmods: xkb_mod_mask_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_mod {
-        pub name: xkb_atom_t,
-        pub type_0: mod_type,
-        pub mapping: xkb_mod_mask_t,
-    }
-    pub type mod_type = u32;
-    pub const MOD_BOTH: mod_type = 3;
-    pub const MOD_VIRT: mod_type = 2;
-    pub const MOD_REAL: mod_type = 1;
+    pub use crate::xkb::shared_types::*;
+
     pub const XKB_MAX_MODS: xkb_mod_index_t = (::core::mem::size_of::<xkb_mod_mask_t>() as usize)
         .wrapping_mul(CHAR_BIT as usize)
         as xkb_mod_index_t;
-    use super::atom_h::xkb_atom_t;
-    use super::limits_h::CHAR_BIT;
-    use super::xkbcommon_h::{xkb_mod_index_t, xkb_mod_mask_t};
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
