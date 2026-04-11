@@ -201,7 +201,7 @@ pub use self::xkbregistry_h::{
     RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO, RXKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-unsafe extern "C" fn usage(mut progname: *const i8, mut fp: *mut FILE) {
+unsafe fn usage(mut progname: *const i8, mut fp: *mut FILE) {
     unsafe {
         fprintf(
             fp,

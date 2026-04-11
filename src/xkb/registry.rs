@@ -1021,7 +1021,7 @@ pub mod darray_h {
         pub item: *mut *mut i8,
     }
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -1152,13 +1152,13 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return strcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
                 return s1 == s2;
@@ -1167,13 +1167,13 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
+    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
+    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -1183,13 +1183,13 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
+    pub unsafe fn is_space(mut ch: i8) -> bool {
         unsafe {
             return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
+    pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
         unsafe {
             if eaccess(path, mode) != 0 as i32 {
                 return false;
@@ -1220,7 +1220,7 @@ pub mod utils_h {
 }
 pub mod util_mem_h {
     #[inline]
-    pub unsafe extern "C" fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
+    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
@@ -1562,20 +1562,20 @@ unsafe extern "C" fn rxkb_log(
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, fmt, args);
     }
 }
-unsafe extern "C" fn rxkb_object_init(mut object: *mut rxkb_object, mut parent: *mut rxkb_object) {
+unsafe fn rxkb_object_init(mut object: *mut rxkb_object, mut parent: *mut rxkb_object) {
     unsafe {
         (*object).refcount = 1 as u32;
         (*object).parent = parent;
         list_init(&raw mut (*object).link);
     }
 }
-unsafe extern "C" fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_void {
+unsafe fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_void {
     unsafe {
         (*object).refcount = (*object).refcount.wrapping_add(1);
         return object as *mut ::core::ffi::c_void;
     }
 }
-unsafe extern "C" fn rxkb_iso639_code_destroy(mut code: *mut rxkb_iso639_code) {
+unsafe fn rxkb_iso639_code_destroy(mut code: *mut rxkb_iso639_code) {
     unsafe {
         free((*code).code as *mut ::core::ffi::c_void);
     }
@@ -1637,7 +1637,7 @@ pub unsafe extern "C" fn rxkb_iso639_code_unref(
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_iso639_code_create(
+unsafe fn rxkb_iso639_code_create(
     mut parent: *mut rxkb_object,
 ) -> *mut rxkb_iso639_code {
     unsafe {
@@ -1657,7 +1657,7 @@ pub unsafe extern "C" fn rxkb_iso639_code_get_code(mut object: *mut rxkb_iso639_
         return (*object).code;
     }
 }
-unsafe extern "C" fn rxkb_iso3166_code_destroy(mut code: *mut rxkb_iso3166_code) {
+unsafe fn rxkb_iso3166_code_destroy(mut code: *mut rxkb_iso3166_code) {
     unsafe {
         free((*code).code as *mut ::core::ffi::c_void);
     }
@@ -1719,7 +1719,7 @@ pub unsafe extern "C" fn rxkb_iso3166_code_ref(
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_iso3166_code_create(
+unsafe fn rxkb_iso3166_code_create(
     mut parent: *mut rxkb_object,
 ) -> *mut rxkb_iso3166_code {
     unsafe {
@@ -1741,7 +1741,7 @@ pub unsafe extern "C" fn rxkb_iso3166_code_get_code(
         return (*object).code;
     }
 }
-unsafe extern "C" fn rxkb_option_destroy(mut o: *mut rxkb_option) {
+unsafe fn rxkb_option_destroy(mut o: *mut rxkb_option) {
     unsafe {
         free((*o).name as *mut ::core::ffi::c_void);
         free((*o).brief as *mut ::core::ffi::c_void);
@@ -1771,7 +1771,7 @@ pub unsafe extern "C" fn rxkb_option_ref(mut object: *mut rxkb_option) -> *mut r
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
+unsafe fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
     unsafe {
         let mut t: *mut rxkb_option =
             calloc(1 as usize, ::core::mem::size_of::<rxkb_option>() as usize) as *mut rxkb_option;
@@ -1839,7 +1839,7 @@ pub unsafe extern "C" fn rxkb_option_first(mut parent: *mut rxkb_option_group) -
         return o;
     }
 }
-unsafe extern "C" fn rxkb_layout_destroy(mut l: *mut rxkb_layout) {
+unsafe fn rxkb_layout_destroy(mut l: *mut rxkb_layout) {
     unsafe {
         let mut iso639: *mut rxkb_iso639_code = ::core::ptr::null_mut::<rxkb_iso639_code>();
         let mut tmp_639: *mut rxkb_iso639_code = ::core::ptr::null_mut::<rxkb_iso639_code>();
@@ -1898,7 +1898,7 @@ pub unsafe extern "C" fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
+unsafe fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
     unsafe {
         let mut t: *mut rxkb_layout =
             calloc(1 as usize, ::core::mem::size_of::<rxkb_layout>() as usize) as *mut rxkb_layout;
@@ -1966,7 +1966,7 @@ pub unsafe extern "C" fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_
         return next;
     }
 }
-unsafe extern "C" fn rxkb_model_destroy(mut m: *mut rxkb_model) {
+unsafe fn rxkb_model_destroy(mut m: *mut rxkb_model) {
     unsafe {
         free((*m).name as *mut ::core::ffi::c_void);
         free((*m).vendor as *mut ::core::ffi::c_void);
@@ -1996,7 +1996,7 @@ pub unsafe extern "C" fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut r
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
+unsafe fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
     unsafe {
         let mut t: *mut rxkb_model =
             calloc(1 as usize, ::core::mem::size_of::<rxkb_model>() as usize) as *mut rxkb_model;
@@ -2056,7 +2056,7 @@ pub unsafe extern "C" fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut
         return o;
     }
 }
-unsafe extern "C" fn rxkb_option_group_destroy(mut og: *mut rxkb_option_group) {
+unsafe fn rxkb_option_group_destroy(mut og: *mut rxkb_option_group) {
     unsafe {
         let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
         let mut otmp: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
@@ -2109,7 +2109,7 @@ pub unsafe extern "C" fn rxkb_option_group_unref(
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_option_group_create(
+unsafe fn rxkb_option_group_create(
     mut parent: *mut rxkb_object,
 ) -> *mut rxkb_option_group {
     unsafe {
@@ -2177,7 +2177,7 @@ pub unsafe extern "C" fn rxkb_option_group_next(
         return next;
     }
 }
-unsafe extern "C" fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
+unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
     unsafe {
         let mut m: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
         let mut mtmp: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
@@ -2259,7 +2259,7 @@ pub unsafe extern "C" fn rxkb_context_unref(mut object: *mut rxkb_context) -> *m
     }
 }
 #[inline]
-unsafe extern "C" fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
+unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
     unsafe {
         let mut t: *mut rxkb_context =
             calloc(1 as usize, ::core::mem::size_of::<rxkb_context>() as usize)
@@ -2278,7 +2278,7 @@ pub unsafe extern "C" fn rxkb_context_get_log_level(
         return (*object).log_level;
     }
 }
-unsafe extern "C" fn rxkb_context_getenv(
+unsafe fn rxkb_context_getenv(
     mut ctx: *mut rxkb_context,
     mut name: *const i8,
 ) -> *mut i8 {
@@ -2299,7 +2299,7 @@ pub unsafe extern "C" fn rxkb_context_set_log_level(
         (*ctx).log_level = level;
     }
 }
-unsafe extern "C" fn log_level_to_prefix(mut level: rxkb_log_level) -> *const i8 {
+unsafe fn log_level_to_prefix(mut level: rxkb_log_level) -> *const i8 {
     unsafe {
         match level as u32 {
             50 => return b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
@@ -2329,7 +2329,7 @@ unsafe extern "C" fn default_log_fn(
         vfprintf(stderr, fmt, args);
     }
 }
-unsafe extern "C" fn log_level(mut level: *const i8) -> rxkb_log_level {
+unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
     unsafe {
         let mut endptr: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut lvl: rxkb_log_level = 0 as rxkb_log_level;
@@ -2649,7 +2649,7 @@ unsafe extern "C" fn compare_str(
         return strcmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
 }
-unsafe extern "C" fn add_direct_subdirectories(
+unsafe fn add_direct_subdirectories(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
     mut extensions: *mut darray_string,
@@ -3069,13 +3069,13 @@ pub unsafe extern "C" fn rxkb_context_get_user_data(
     }
 }
 #[inline]
-unsafe extern "C" fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
+unsafe fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
     unsafe {
         return (*node).type_0 as u32 == XML_ELEMENT_NODE as i32 as u32
             && xmlStrEqual((*node).name, name as *const xmlChar) != 0;
     }
 }
-unsafe extern "C" fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
+unsafe fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
     unsafe {
         let mut n: *mut xmlNode = ::core::ptr::null_mut::<xmlNode>();
         n = (*node).children as *mut xmlNode;
@@ -3088,7 +3088,7 @@ unsafe extern "C" fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
         return ::core::ptr::null_mut::<i8>();
     }
 }
-unsafe extern "C" fn config_item_free(mut config: *mut config_item) {
+unsafe fn config_item_free(mut config: *mut config_item) {
     unsafe {
         free((*config).name as *mut ::core::ffi::c_void);
         free((*config).description as *mut ::core::ffi::c_void);
@@ -3096,7 +3096,7 @@ unsafe extern "C" fn config_item_free(mut config: *mut config_item) {
         free((*config).vendor as *mut ::core::ffi::c_void);
     }
 }
-unsafe extern "C" fn parse_config_item(
+unsafe fn parse_config_item(
     mut ctx: *mut rxkb_context,
     mut parent: *mut xmlNode,
     mut config: *mut config_item,
@@ -3181,7 +3181,7 @@ unsafe extern "C" fn parse_config_item(
         return false;
     }
 }
-unsafe extern "C" fn parse_model(
+unsafe fn parse_model(
     mut ctx: *mut rxkb_context,
     mut model: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3220,7 +3220,7 @@ unsafe extern "C" fn parse_model(
         }
     }
 }
-unsafe extern "C" fn parse_model_list(
+unsafe fn parse_model_list(
     mut ctx: *mut rxkb_context,
     mut model_list: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3236,7 +3236,7 @@ unsafe extern "C" fn parse_model_list(
         }
     }
 }
-unsafe extern "C" fn parse_language_list(
+unsafe fn parse_language_list(
     mut language_list: *mut xmlNode,
     mut layout: *mut rxkb_layout,
 ) {
@@ -3261,7 +3261,7 @@ unsafe extern "C" fn parse_language_list(
         }
     }
 }
-unsafe extern "C" fn parse_country_list(
+unsafe fn parse_country_list(
     mut country_list: *mut xmlNode,
     mut layout: *mut rxkb_layout,
 ) {
@@ -3286,7 +3286,7 @@ unsafe extern "C" fn parse_country_list(
         }
     }
 }
-unsafe extern "C" fn parse_variant(
+unsafe fn parse_variant(
     mut ctx: *mut rxkb_context,
     mut l: *mut rxkb_layout,
     mut variant: *mut xmlNode,
@@ -3397,7 +3397,7 @@ unsafe extern "C" fn parse_variant(
         }
     }
 }
-unsafe extern "C" fn parse_variant_list(
+unsafe fn parse_variant_list(
     mut ctx: *mut rxkb_context,
     mut l: *mut rxkb_layout,
     mut variant_list: *mut xmlNode,
@@ -3414,7 +3414,7 @@ unsafe extern "C" fn parse_variant_list(
         }
     }
 }
-unsafe extern "C" fn parse_layout(
+unsafe fn parse_layout(
     mut ctx: *mut rxkb_context,
     mut layout: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3484,7 +3484,7 @@ unsafe extern "C" fn parse_layout(
         }
     }
 }
-unsafe extern "C" fn parse_layout_list(
+unsafe fn parse_layout_list(
     mut ctx: *mut rxkb_context,
     mut layout_list: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3500,7 +3500,7 @@ unsafe extern "C" fn parse_layout_list(
         }
     }
 }
-unsafe extern "C" fn parse_option(
+unsafe fn parse_option(
     mut ctx: *mut rxkb_context,
     mut group: *mut rxkb_option_group,
     mut option: *mut xmlNode,
@@ -3539,7 +3539,7 @@ unsafe extern "C" fn parse_option(
         }
     }
 }
-unsafe extern "C" fn parse_group(
+unsafe fn parse_group(
     mut ctx: *mut rxkb_context,
     mut group: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3603,7 +3603,7 @@ unsafe extern "C" fn parse_group(
         }
     }
 }
-unsafe extern "C" fn parse_option_list(
+unsafe fn parse_option_list(
     mut ctx: *mut rxkb_context,
     mut option_list: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3619,7 +3619,7 @@ unsafe extern "C" fn parse_option_list(
         }
     }
 }
-unsafe extern "C" fn parse_rules_xml(
+unsafe fn parse_rules_xml(
     mut ctx: *mut rxkb_context,
     mut root: *mut xmlNode,
     mut popularity: rxkb_popularity,
@@ -3694,7 +3694,7 @@ unsafe extern "C" fn xml_error_func(
         }
     }
 }
-unsafe extern "C" fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
+unsafe fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
     unsafe {
         let mut dtd: *mut xmlDtd = ::core::ptr::null_mut::<xmlDtd>();
         let mut dtdvalid: *mut xmlValidCtxt = ::core::ptr::null_mut::<xmlValidCtxt>();
@@ -3740,7 +3740,7 @@ unsafe extern "C" fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) 
         return success;
     }
 }
-unsafe extern "C" fn parse(
+unsafe fn parse(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
     mut popularity: rxkb_popularity,

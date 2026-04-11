@@ -120,7 +120,7 @@ pub mod stdio_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
+    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
                 || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
@@ -135,7 +135,7 @@ pub mod utils_numbers_h {
     use super::stdint_uintn_h::uint64_t;
     use super::utils_h::is_xdigit;
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint64_t(
+    pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
@@ -429,7 +429,7 @@ pub mod utils_numbers_h {
         0xff as i32 as ::core::ffi::c_uchar,
     ];
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint32_t(
+    pub unsafe fn parse_hex_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -456,7 +456,7 @@ pub mod utils_numbers_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint64_t(
+    pub unsafe fn parse_hex_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
@@ -529,7 +529,7 @@ pub const OPT_STDEV: options = 0;
 pub type options = u32;
 #[no_mangle]
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
-unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
+unsafe fn usage(mut argv: *mut *mut i8) {
     unsafe {
         printf(
             b"Usage: %s [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: %f)\n\n\0"
@@ -539,7 +539,7 @@ unsafe extern "C" fn usage(mut argv: *mut *mut i8) {
         );
     }
 }
-unsafe extern "C" fn print_stats(
+unsafe fn print_stats(
     mut stdev: ::core::ffi::c_double,
     mut max_iterations: u32,
     mut elapsed: *mut bench_time,
@@ -568,7 +568,7 @@ unsafe extern "C" fn print_stats(
         );
     }
 }
-unsafe extern "C" fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
+unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
     unsafe {
         let mut result: u32 = 0 as u32;
         let mut i: u32 = 0;

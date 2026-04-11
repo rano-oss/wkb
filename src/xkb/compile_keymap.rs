@@ -274,7 +274,7 @@ pub const OPT_KEYMAP_INPUT_FORMAT: options = 0;
 pub type options = u32;
 pub const DEFAULT_ITERATIONS: i32 = 3000 as i32;
 pub const DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
-unsafe extern "C" fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
+unsafe fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
     unsafe {
         fprintf(
             fp,
@@ -299,7 +299,7 @@ unsafe extern "C" fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
         );
     }
 }
-unsafe extern "C" fn load_keymap(
+unsafe fn load_keymap(
     mut ctx: *mut xkb_context,
     mut keymap_path: *const i8,
     mut rmlvo: *const xkb_rule_names,

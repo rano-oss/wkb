@@ -194,7 +194,7 @@ pub mod darray_h {
         pub item: *mut i8,
     }
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -433,7 +433,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
     #[inline]
-    pub unsafe extern "C" fn svaleq(mut s1: sval, mut s2: sval) -> bool {
+    pub unsafe fn svaleq(mut s1: sval, mut s2: sval) -> bool {
         unsafe {
             return s1.len == s2.len
                 && memcmp(
@@ -444,7 +444,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn svaleq_prefix(mut s1: sval, mut s2: sval) -> bool {
+    pub unsafe fn svaleq_prefix(mut s1: sval, mut s2: sval) -> bool {
         unsafe {
             return s1.len <= s2.len
                 && memcmp(
@@ -455,7 +455,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_init(
+    pub unsafe fn scanner_init(
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const i8,
@@ -477,7 +477,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
             if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -486,19 +486,19 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eof(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
         unsafe {
             return (*s).pos >= (*s).len;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eol(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
         unsafe {
             return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_skip_to_eol(mut s: *mut scanner) {
+    pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
         unsafe {
             let mut nl: *const i8 = memchr(
                 (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
@@ -514,7 +514,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
             if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -525,7 +525,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
+    pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
                 as ::core::ffi::c_int as i64
@@ -538,7 +538,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_str(
+    pub unsafe fn scanner_str(
         mut s: *mut scanner,
         mut string: *const i8,
         mut len: usize,
@@ -560,7 +560,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_check_supported_char_encoding(
+    pub unsafe fn scanner_check_supported_char_encoding(
         mut scanner: *mut scanner,
     ) -> bool {
         unsafe {
@@ -663,13 +663,13 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn strlen_safe(mut s: *const i8) -> usize {
+    pub unsafe fn strlen_safe(mut s: *const i8) -> usize {
         unsafe {
             return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
+    pub unsafe fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null()
                 || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
@@ -677,14 +677,14 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_ascii(mut ch: i8) -> bool {
+    pub unsafe fn is_ascii(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int)
                 == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
+    pub unsafe fn is_space(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int == ' ' as i32
                 || ch as ::core::ffi::c_int >= '\t' as i32
@@ -692,7 +692,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_graph(mut ch: i8) -> bool {
+    pub unsafe fn is_graph(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '!' as i32
                 && ch as ::core::ffi::c_int <= '~' as i32;
@@ -721,7 +721,7 @@ pub mod utils_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint32_t(
+    pub unsafe fn parse_dec_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -1091,12 +1091,12 @@ pub const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
 pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
 pub const MAX_INCLUDE_DEPTH: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 #[inline]
-unsafe extern "C" fn is_ident(mut ch: i8) -> bool {
+unsafe fn is_ident(mut ch: i8) -> bool {
     unsafe {
         return is_graph(ch) as ::core::ffi::c_int != 0 && ch as ::core::ffi::c_int != '\\' as i32;
     }
 }
-unsafe extern "C" fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
+unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
     unsafe {
         loop {
             while scanner_chr(s, ' ' as i32 as i8) as ::core::ffi::c_int != 0
@@ -1234,7 +1234,7 @@ static mut rules_kccgst_svals: [sval; 5] = [sval {
     start: ::core::ptr::null::<i8>(),
 }; 5];
 pub const OPTIONS_MATCH_ALL_GROUPS: ::core::ffi::c_int = XKB_MAX_GROUPS;
-unsafe extern "C" fn strip_spaces(mut v: sval) -> sval {
+unsafe fn strip_spaces(mut v: sval) -> sval {
     unsafe {
         while v.len > 0 as usize
             && is_space(*v.start.offset(0 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int
@@ -1253,7 +1253,7 @@ unsafe extern "C" fn strip_spaces(mut v: sval) -> sval {
         return v;
     }
 }
-unsafe extern "C" fn split_comma_separated_mlvo(
+unsafe fn split_comma_separated_mlvo(
     mut ctx: *mut xkb_context,
     mut mlvo: rules_mlvo,
     mut s: *const i8,
@@ -1408,7 +1408,7 @@ unsafe extern "C" fn split_comma_separated_mlvo(
         return arr;
     }
 }
-unsafe extern "C" fn matcher_new_from_rmlvo(
+unsafe fn matcher_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut rules: *mut *const i8,
 ) -> *mut matcher {
@@ -1682,7 +1682,7 @@ unsafe extern "C" fn matcher_new_from_rmlvo(
         return m;
     }
 }
-unsafe extern "C" fn matcher_new_from_names(
+unsafe fn matcher_new_from_names(
     mut ctx: *mut xkb_context,
     mut rmlvo: *const xkb_rule_names,
 ) -> *mut matcher {
@@ -1789,7 +1789,7 @@ unsafe extern "C" fn matcher_new_from_names(
         return m;
     }
 }
-unsafe extern "C" fn matcher_free(mut m: *mut matcher) {
+unsafe fn matcher_free(mut m: *mut matcher) {
     unsafe {
         if m.is_null() {
             return;
@@ -1842,7 +1842,7 @@ unsafe extern "C" fn matcher_free(mut m: *mut matcher) {
         free(m as *mut ::core::ffi::c_void);
     }
 }
-unsafe extern "C" fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
+unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
     unsafe {
         let mut group: group = group {
             name: name,
@@ -1871,7 +1871,7 @@ unsafe extern "C" fn matcher_group_start_new(mut m: *mut matcher, mut name: sval
             .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize) = group;
     }
 }
-unsafe extern "C" fn matcher_group_add_element(
+unsafe fn matcher_group_add_element(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut element: sval,
@@ -1948,7 +1948,7 @@ unsafe extern "C" fn matcher_group_add_element(
         ) = element;
     }
 }
-unsafe extern "C" fn matcher_include(
+unsafe fn matcher_include(
     mut m: *mut matcher,
     mut parent_scanner: *mut scanner,
     mut include_depth: u32,
@@ -6176,7 +6176,7 @@ unsafe extern "C" fn matcher_include(
         );
     }
 }
-unsafe extern "C" fn matcher_mapping_start_new(mut m: *mut matcher) {
+unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
     unsafe {
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as ::core::ffi::c_int)
@@ -6204,7 +6204,7 @@ unsafe extern "C" fn matcher_mapping_start_new(mut m: *mut matcher) {
         (*m).mapping.c2rust_unnamed_0.active = true_0 as xkb_layout_mask_t;
     }
 }
-unsafe extern "C" fn parse_layout_int_index(
+unsafe fn parse_layout_int_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
@@ -6228,7 +6228,7 @@ unsafe extern "C" fn parse_layout_int_index(
         return count + 2 as ::core::ffi::c_int;
     }
 }
-unsafe extern "C" fn extract_layout_index(
+unsafe fn extract_layout_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
@@ -6250,7 +6250,7 @@ unsafe extern "C" fn extract_layout_index(
         return parse_layout_int_index(s, max_len, out);
     }
 }
-unsafe extern "C" fn extract_mapping_layout_index(
+unsafe fn extract_mapping_layout_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
@@ -6305,12 +6305,12 @@ unsafe extern "C" fn extract_mapping_layout_index(
     }
 }
 #[inline]
-unsafe extern "C" fn is_mlvo_mask_defined(mut m: *mut matcher, mut mlvo: rules_mlvo) -> bool {
+unsafe fn is_mlvo_mask_defined(mut m: *mut matcher, mut mlvo: rules_mlvo) -> bool {
     unsafe {
         return (*m).mapping.defined_mlvo_mask as u32 & (1 as u32) << mlvo as u32 != 0;
     }
 }
-unsafe extern "C" fn matcher_mapping_set_mlvo(
+unsafe fn matcher_mapping_set_mlvo(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6448,7 +6448,7 @@ unsafe extern "C" fn matcher_mapping_set_mlvo(
         (*m).mapping.num_mlvo = (*m).mapping.num_mlvo.wrapping_add(1);
     }
 }
-unsafe extern "C" fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
+unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
     unsafe {
         let mut idx: xkb_layout_index_t = if (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
             < (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
@@ -6521,7 +6521,7 @@ unsafe extern "C" fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         };
     }
 }
-unsafe extern "C" fn matcher_mapping_set_kccgst(
+unsafe fn matcher_mapping_set_kccgst(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6583,7 +6583,7 @@ unsafe extern "C" fn matcher_mapping_set_kccgst(
         (*m).mapping.num_kccgst = (*m).mapping.num_kccgst.wrapping_add(1);
     }
 }
-unsafe extern "C" fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bool {
+unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bool {
     unsafe {
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
@@ -6741,7 +6741,7 @@ unsafe extern "C" fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut sca
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn matcher_rule_start_new(mut m: *mut matcher) {
+unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
     unsafe {
         memset(
             &raw mut (*m).rule as *mut ::core::ffi::c_void,
@@ -6751,7 +6751,7 @@ unsafe extern "C" fn matcher_rule_start_new(mut m: *mut matcher) {
         (*m).rule.skip = (*m).mapping.c2rust_unnamed_0.active == 0;
     }
 }
-unsafe extern "C" fn matcher_rule_set_mlvo_common(
+unsafe fn matcher_rule_set_mlvo_common(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6781,7 +6781,7 @@ unsafe extern "C" fn matcher_rule_set_mlvo_common(
         (*m).rule.num_mlvo_values = (*m).rule.num_mlvo_values.wrapping_add(1);
     }
 }
-unsafe extern "C" fn matcher_rule_set_mlvo_wildcard(
+unsafe fn matcher_rule_set_mlvo_wildcard(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut match_type: mlvo_match_type,
@@ -6794,7 +6794,7 @@ unsafe extern "C" fn matcher_rule_set_mlvo_wildcard(
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
     }
 }
-unsafe extern "C" fn matcher_rule_set_mlvo_group(
+unsafe fn matcher_rule_set_mlvo_group(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6803,7 +6803,7 @@ unsafe extern "C" fn matcher_rule_set_mlvo_group(
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
     }
 }
-unsafe extern "C" fn matcher_rule_set_mlvo(
+unsafe fn matcher_rule_set_mlvo(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6812,7 +6812,7 @@ unsafe extern "C" fn matcher_rule_set_mlvo(
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
     }
 }
-unsafe extern "C" fn matcher_rule_set_kccgst(
+unsafe fn matcher_rule_set_kccgst(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut ident: sval,
@@ -6840,7 +6840,7 @@ unsafe extern "C" fn matcher_rule_set_kccgst(
         (*m).rule.num_kccgst_values = (*m).rule.num_kccgst_values.wrapping_add(1);
     }
 }
-unsafe extern "C" fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
+unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
     unsafe {
         let mut group: *mut group = ::core::ptr::null_mut::<group>();
         let mut element: *mut sval = ::core::ptr::null_mut::<sval>();
@@ -6879,7 +6879,7 @@ unsafe extern "C" fn match_group(mut m: *mut matcher, mut group_name: sval, mut 
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn match_value(
+unsafe fn match_value(
     mut m: *mut matcher,
     mut val: sval,
     mut to: sval,
@@ -6902,7 +6902,7 @@ unsafe extern "C" fn match_value(
         };
     }
 }
-unsafe extern "C" fn match_value_and_mark(
+unsafe fn match_value_and_mark(
     mut m: *mut matcher,
     mut val: sval,
     mut to: *mut matched_sval,
@@ -6917,7 +6917,7 @@ unsafe extern "C" fn match_value_and_mark(
         return matched;
     }
 }
-unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
+unsafe fn expand_rmlvo_in_kccgst_value(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut value: sval,
@@ -7839,7 +7839,7 @@ unsafe extern "C" fn expand_rmlvo_in_kccgst_value(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn expand_qualifier_in_kccgst_value(
+unsafe fn expand_qualifier_in_kccgst_value(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut value: sval,
@@ -8009,7 +8009,7 @@ unsafe extern "C" fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe extern "C" fn concat_kccgst(
+unsafe fn concat_kccgst(
     mut into: *mut darray_char,
     mut size: darray_size_t,
     mut from: *const i8,
@@ -8091,7 +8091,7 @@ unsafe extern "C" fn concat_kccgst(
         };
     }
 }
-unsafe extern "C" fn append_expanded_kccgst_value(
+unsafe fn append_expanded_kccgst_value(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut merge: bool,
@@ -8287,7 +8287,7 @@ unsafe extern "C" fn append_expanded_kccgst_value(
         };
     }
 }
-unsafe extern "C" fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
+unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
     unsafe {
         if !(*m).mapping.has_layout_idx_range {
             return true_0 != 0;
@@ -8326,7 +8326,7 @@ unsafe extern "C" fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool 
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
+unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
     unsafe {
         if (*m).rule.num_mlvo_values as ::core::ffi::c_int
             != (*m).mapping.num_mlvo as ::core::ffi::c_int
@@ -8349,7 +8349,7 @@ unsafe extern "C" fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanne
         }
     }
 }
-unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner) {
+unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner) {
     unsafe {
         let mut candidate_layouts: xkb_layout_mask_t =
             (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask;
@@ -8588,12 +8588,12 @@ unsafe extern "C" fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *
         }
     }
 }
-unsafe extern "C" fn gettok(mut m: *mut matcher, mut s: *mut scanner) -> rules_token {
+unsafe fn gettok(mut m: *mut matcher, mut s: *mut scanner) -> rules_token {
     unsafe {
         return lex(s, &raw mut (*m).val);
     }
 }
-unsafe extern "C" fn matcher_match(
+unsafe fn matcher_match(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut include_depth: u32,
@@ -8870,7 +8870,7 @@ unsafe extern "C" fn matcher_match(
         };
     }
 }
-unsafe extern "C" fn read_rules_file(
+unsafe fn read_rules_file(
     mut ctx: *mut xkb_context,
     mut matcher: *mut matcher,
     mut include_depth: u32,
@@ -8976,7 +8976,7 @@ unsafe extern "C" fn read_rules_file(
         return ret;
     }
 }
-unsafe extern "C" fn xkb_resolve_partial_rules(
+unsafe fn xkb_resolve_partial_rules(
     mut ctx: *mut xkb_context,
     mut path: *mut i8,
     mut path_size: usize,
@@ -9042,7 +9042,7 @@ unsafe extern "C" fn xkb_resolve_partial_rules(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn xkb_resolve_rules(
+unsafe fn xkb_resolve_rules(
     mut ctx: *mut xkb_context,
     mut rules: *const i8,
     mut matcher: *mut matcher,

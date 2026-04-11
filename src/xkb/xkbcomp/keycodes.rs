@@ -103,7 +103,7 @@ pub mod atom_h {
 pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -1028,7 +1028,7 @@ pub mod xkbcomp_priv_h {
         pub overlapping_overlays: bool,
     }
     #[inline]
-    pub unsafe extern "C" fn ReportNotArray(
+    pub unsafe fn ReportNotArray(
         mut ctx: *mut xkb_context,
         mut type_0: *const i8,
         mut field: *const i8,
@@ -1050,7 +1050,7 @@ pub mod xkbcomp_priv_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn ReportBadType(
+    pub unsafe fn ReportBadType(
         mut ctx: *mut xkb_context,
         mut code: xkb_message_code,
         mut type_0: *const i8,
@@ -1075,7 +1075,7 @@ pub mod xkbcomp_priv_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
+    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
                 (*file).name as *const i8
@@ -1141,13 +1141,13 @@ pub mod stdio_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
+    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -1191,7 +1191,7 @@ pub mod expr_h {
 }
 pub mod util_mem_h {
     #[inline]
-    pub unsafe extern "C" fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
+    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
@@ -1422,7 +1422,7 @@ pub struct C2Rust_Unnamed_18 {
     pub item: *mut xkb_atom_t,
 }
 #[inline]
-unsafe extern "C" fn keycode_store_init(mut store: *mut KeycodeStore) {
+unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
     unsafe {
         (*store).low.item = ::core::ptr::null_mut::<xkb_atom_t>();
         (*store).low.size = 0 as darray_size_t;
@@ -1437,7 +1437,7 @@ unsafe extern "C" fn keycode_store_init(mut store: *mut KeycodeStore) {
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_free(mut store: *mut KeycodeStore) {
+unsafe fn keycode_store_free(mut store: *mut KeycodeStore) {
     unsafe {
         free((*store).low.item as *mut ::core::ffi::c_void);
         (*store).low.item = ::core::ptr::null_mut::<xkb_atom_t>();
@@ -1454,7 +1454,7 @@ unsafe extern "C" fn keycode_store_free(mut store: *mut KeycodeStore) {
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_update_key(
+unsafe fn keycode_store_update_key(
     mut store: *mut KeycodeStore,
     mut match_0: KeycodeMatch,
     mut name: xkb_atom_t,
@@ -1502,7 +1502,7 @@ unsafe extern "C" fn keycode_store_update_key(
         *(*store).names.item.offset(name as isize) = match_0;
     }
 }
-unsafe extern "C" fn keycode_store_insert_key(
+unsafe fn keycode_store_insert_key(
     mut store: *mut KeycodeStore,
     mut kc: xkb_keycode_t,
     mut name: xkb_atom_t,
@@ -1717,7 +1717,7 @@ unsafe extern "C" fn keycode_store_insert_key(
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_insert_alias(
+unsafe fn keycode_store_insert_alias(
     mut store: *mut KeycodeStore,
     mut alias: xkb_atom_t,
     mut real: xkb_atom_t,
@@ -1767,7 +1767,7 @@ unsafe extern "C" fn keycode_store_insert_alias(
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_update_alias(
+unsafe fn keycode_store_update_alias(
     mut store: *mut KeycodeStore,
     mut alias: xkb_atom_t,
     mut real: xkb_atom_t,
@@ -1779,7 +1779,7 @@ unsafe extern "C" fn keycode_store_update_alias(
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_delete_name(
+unsafe fn keycode_store_delete_name(
     mut store: *const KeycodeStore,
     mut name: xkb_atom_t,
 ) {
@@ -1790,7 +1790,7 @@ unsafe extern "C" fn keycode_store_delete_name(
         }
     }
 }
-unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: KeycodeMatch) {
+unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: KeycodeMatch) {
     unsafe {
         if (!match_0.c2rust_unnamed.found()
             || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0)
@@ -1895,7 +1895,7 @@ unsafe extern "C" fn keycode_store_delete_key(mut store: *mut KeycodeStore, matc
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_get_keycode(
+unsafe fn keycode_store_get_keycode(
     mut store: *const KeycodeStore,
     mut match_0: KeycodeMatch,
 ) -> xkb_keycode_t {
@@ -1912,7 +1912,7 @@ unsafe extern "C" fn keycode_store_get_keycode(
     }
 }
 #[inline]
-unsafe extern "C" fn keycode_store_get_key_name(
+unsafe fn keycode_store_get_key_name(
     mut store: *const KeycodeStore,
     mut match_0: KeycodeMatch,
 ) -> xkb_atom_t {
@@ -1928,7 +1928,7 @@ unsafe extern "C" fn keycode_store_get_key_name(
         };
     }
 }
-unsafe extern "C" fn keycode_store_lookup_keycode(
+unsafe fn keycode_store_lookup_keycode(
     mut store: *const KeycodeStore,
     mut kc: xkb_keycode_t,
 ) -> KeycodeMatch {
@@ -2000,7 +2000,7 @@ unsafe extern "C" fn keycode_store_lookup_keycode(
         };
     }
 }
-unsafe extern "C" fn keycode_store_lookup_name(
+unsafe fn keycode_store_lookup_name(
     mut store: *const KeycodeStore,
     mut name: xkb_atom_t,
 ) -> KeycodeMatch {
@@ -2021,7 +2021,7 @@ unsafe extern "C" fn keycode_store_lookup_name(
         };
     }
 }
-unsafe extern "C" fn FindLedByName(
+unsafe fn FindLedByName(
     mut info: *mut KeyNamesInfo,
     mut name: xkb_atom_t,
     mut idx_out: *mut xkb_led_index_t,
@@ -2041,7 +2041,7 @@ unsafe extern "C" fn FindLedByName(
         return ::core::ptr::null_mut::<LedNameInfo>();
     }
 }
-unsafe extern "C" fn AddLedName(
+unsafe fn AddLedName(
     mut info: *mut KeyNamesInfo,
     mut same_file: bool,
     mut new: *mut LedNameInfo,
@@ -2132,13 +2132,13 @@ unsafe extern "C" fn AddLedName(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn ClearKeyNamesInfo(mut info: *mut KeyNamesInfo) {
+unsafe fn ClearKeyNamesInfo(mut info: *mut KeyNamesInfo) {
     unsafe {
         free((*info).name as *mut ::core::ffi::c_void);
         keycode_store_free(&raw mut (*info).keycodes);
     }
 }
-unsafe extern "C" fn InitKeyNamesInfo(
+unsafe fn InitKeyNamesInfo(
     mut info: *mut KeyNamesInfo,
     mut keymap_info: *const xkb_keymap_info,
     mut include_depth: u32,
@@ -2155,7 +2155,7 @@ unsafe extern "C" fn InitKeyNamesInfo(
         keycode_store_init(&raw mut (*info).keycodes);
     }
 }
-unsafe extern "C" fn AddKeyName(
+unsafe fn AddKeyName(
     mut info: *mut KeyNamesInfo,
     mut kc: xkb_keycode_t,
     mut name: xkb_atom_t,
@@ -2292,7 +2292,7 @@ unsafe extern "C" fn AddKeyName(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn MergeKeycodeStores(
+unsafe fn MergeKeycodeStores(
     mut into: *mut KeyNamesInfo,
     mut from: *mut KeyNamesInfo,
     mut merge: merge_mode,
@@ -2380,7 +2380,7 @@ unsafe extern "C" fn MergeKeycodeStores(
         };
     }
 }
-unsafe extern "C" fn MergeIncludedKeycodes(
+unsafe fn MergeIncludedKeycodes(
     mut into: *mut KeyNamesInfo,
     mut from: *mut KeyNamesInfo,
     mut merge: merge_mode,
@@ -2422,7 +2422,7 @@ unsafe extern "C" fn MergeIncludedKeycodes(
         };
     }
 }
-unsafe extern "C" fn HandleIncludeKeycodes(
+unsafe fn HandleIncludeKeycodes(
     mut info: *mut KeyNamesInfo,
     mut include: *mut IncludeStmt,
     mut report: bool,
@@ -2527,7 +2527,7 @@ unsafe extern "C" fn HandleIncludeKeycodes(
         return (*info).errorCount == 0 as ::core::ffi::c_int;
     }
 }
-unsafe extern "C" fn HandleKeycodeDef(
+unsafe fn HandleKeycodeDef(
     mut info: *mut KeyNamesInfo,
     mut stmt: *mut KeycodeDef,
     mut report: bool,
@@ -2554,7 +2554,7 @@ unsafe extern "C" fn HandleKeycodeDef(
         );
     }
 }
-unsafe extern "C" fn HandleAliasDef(
+unsafe fn HandleAliasDef(
     mut info: *mut KeyNamesInfo,
     mut def: *const KeyAliasDef,
     mut report: bool,
@@ -2637,7 +2637,7 @@ unsafe extern "C" fn HandleAliasDef(
         return keycode_store_insert_alias(&raw mut (*info).keycodes, (*def).alias, (*def).real);
     }
 }
-unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -> bool {
+unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: *const i8 = ::core::ptr::null::<i8>();
         let mut field: *const i8 = ::core::ptr::null::<i8>();
@@ -2714,7 +2714,7 @@ unsafe extern "C" fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mu
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn HandleLedNameDef(
+unsafe fn HandleLedNameDef(
     mut info: *mut KeyNamesInfo,
     mut def: *mut LedNameDef,
     mut report: bool,
@@ -2766,7 +2766,7 @@ unsafe extern "C" fn HandleLedNameDef(
         );
     }
 }
-unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile) {
+unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
         let verbosity: ::core::ffi::c_int =
@@ -2844,7 +2844,7 @@ unsafe extern "C" fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *
         }
     }
 }
-unsafe extern "C" fn CopyKeyNamesToKeymap(
+unsafe fn CopyKeyNamesToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut KeyNamesInfo,
 ) -> bool {
@@ -2919,7 +2919,7 @@ unsafe extern "C" fn CopyKeyNamesToKeymap(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn CopyKeycodeNameLUT(
+unsafe fn CopyKeycodeNameLUT(
     mut keymap: *mut xkb_keymap,
     mut info: *mut KeyNamesInfo,
 ) -> bool {
@@ -2988,7 +2988,7 @@ unsafe extern "C" fn CopyKeycodeNameLUT(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn CopyLedNamesToKeymap(
+unsafe fn CopyLedNamesToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut KeyNamesInfo,
 ) -> bool {
@@ -3007,7 +3007,7 @@ unsafe extern "C" fn CopyLedNamesToKeymap(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn CopyKeyNamesInfoToKeymap(
+unsafe fn CopyKeyNamesInfoToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut KeyNamesInfo,
 ) -> bool {

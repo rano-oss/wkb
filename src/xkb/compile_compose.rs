@@ -335,7 +335,7 @@ pub mod unistd_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
+    pub unsafe fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
         }
@@ -396,7 +396,7 @@ pub const OPT_LOCALE: options = 2;
 pub const OPT_FILE: options = 1;
 pub const OPT_VERBOSE: options = 0;
 pub type options = u32;
-unsafe extern "C" fn usage(mut fp: *mut FILE, mut progname: *mut i8) {
+unsafe fn usage(mut fp: *mut FILE, mut progname: *mut i8) {
     unsafe {
         fprintf(
             fp,

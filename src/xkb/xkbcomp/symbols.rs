@@ -171,7 +171,7 @@ pub mod atom_h {
 pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -667,7 +667,7 @@ pub mod keymap_h {
     pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
     pub const XKB_OVERLAY_INVALID: ::core::ffi::c_int = 255 as ::core::ffi::c_int;
     #[inline]
-    pub unsafe extern "C" fn XkbKeyByName(
+    pub unsafe fn XkbKeyByName(
         mut keymap: *const xkb_keymap,
         mut name: xkb_atom_t,
         mut use_aliases: bool,
@@ -701,7 +701,7 @@ pub mod keymap_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn XkbKeyNumLevels(
+    pub unsafe fn XkbKeyNumLevels(
         mut key: *const xkb_key,
         mut layout: xkb_layout_index_t,
     ) -> xkb_level_index_t {
@@ -1166,7 +1166,7 @@ pub mod xkbcomp_priv_h {
         pub overlapping_overlays: bool,
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
+    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
                 (*file).name as *const i8
@@ -1258,19 +1258,19 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
+    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
+    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -1280,7 +1280,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn memdup(
+    pub unsafe fn memdup(
         mut mem: *const ::core::ffi::c_void,
         mut nmemb: usize,
         mut size: usize,
@@ -1304,7 +1304,7 @@ pub mod limits_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint64_t(
+    pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
@@ -1342,13 +1342,13 @@ pub mod utils_numbers_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn popcount32(mut x: u32) -> u32 {
+    pub unsafe fn popcount32(mut x: u32) -> u32 {
         unsafe {
             return (x as u64).count_ones() as i32 as u32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn next_pow2(mut x: u32) -> u32 {
+    pub unsafe fn next_pow2(mut x: u32) -> u32 {
         unsafe {
             if x <= 1 as u32 {
                 return 1 as u32;
@@ -1442,7 +1442,7 @@ pub mod expr_h {
 }
 pub mod util_mem_h {
     #[inline]
-    pub unsafe extern "C" fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
+    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
@@ -1770,7 +1770,7 @@ pub struct C2Rust_Unnamed_25 {
     pub alloc: darray_size_t,
     pub item: *mut xkb_action,
 }
-unsafe extern "C" fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
+unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
     unsafe {
         clear_level(into);
         if (*from).num_syms as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
@@ -1791,7 +1791,7 @@ unsafe extern "C" fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb
         (*from).num_actions = 0 as xkb_action_count_t;
     }
 }
-unsafe extern "C" fn InitGroupInfo(mut groupi: *mut GroupInfo) {
+unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
         memset(
             groupi as *mut ::core::ffi::c_void,
@@ -1800,7 +1800,7 @@ unsafe extern "C" fn InitGroupInfo(mut groupi: *mut GroupInfo) {
         );
     }
 }
-unsafe extern "C" fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
+unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
         let mut leveli: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
         if !(*groupi).levels.item.is_null() {
@@ -1821,7 +1821,7 @@ unsafe extern "C" fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
         (*groupi).levels.alloc = 0 as darray_size_t;
     }
 }
-unsafe extern "C" fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
+unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
     unsafe {
         (*to).defined = (*from).defined;
         (*to).type_0 = (*from).type_0;
@@ -1877,7 +1877,7 @@ unsafe extern "C" fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const Grou
         }
     }
 }
-unsafe extern "C" fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
+unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
     unsafe {
         memset(
             keyi as *mut ::core::ffi::c_void,
@@ -1898,7 +1898,7 @@ unsafe extern "C" fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyIn
         (*keyi).c2rust_unnamed.overlay_key = ::core::ptr::null::<xkb_key>();
     }
 }
-unsafe extern "C" fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
+unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
     unsafe {
         let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
         if !(*keyi).groups.item.is_null() {
@@ -1919,7 +1919,7 @@ unsafe extern "C" fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
         }
     }
 }
-unsafe extern "C" fn InitSymbolsInfo(
+unsafe fn InitSymbolsInfo(
     mut info: *mut SymbolsInfo,
     mut keymap_info: *const xkb_keymap_info,
     mut include_depth: u32,
@@ -1944,7 +1944,7 @@ unsafe extern "C" fn InitSymbolsInfo(
         (*info).explicit_group = XKB_LAYOUT_INVALID as xkb_layout_index_t;
     }
 }
-unsafe extern "C" fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
+unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
     unsafe {
         let mut keyi: *mut KeyInfo = ::core::ptr::null_mut::<KeyInfo>();
         free((*info).name as *mut ::core::ffi::c_void);
@@ -1970,12 +1970,12 @@ unsafe extern "C" fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
         ClearKeyInfo(&raw mut (*info).default_key);
     }
 }
-unsafe extern "C" fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> *const i8 {
+unsafe fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> *const i8 {
     unsafe {
         return KeyNameText((*info).ctx, (*keyi).name);
     }
 }
-unsafe extern "C" fn MergeGroups(
+unsafe fn MergeGroups(
     mut info: *mut SymbolsInfo,
     mut into: *mut GroupInfo,
     mut from: *mut GroupInfo,
@@ -2323,7 +2323,7 @@ unsafe extern "C" fn MergeGroups(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn UseNewKeyField(
+unsafe fn UseNewKeyField(
     mut field: key_field,
     mut old: key_field,
     mut new: key_field,
@@ -2344,7 +2344,7 @@ unsafe extern "C" fn UseNewKeyField(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn overlays_get(
+unsafe fn overlays_get(
     mut info: *const KeyInfo,
     mut bit: xkb_overlay_index_t,
     mut key_out: *mut *const xkb_key,
@@ -2376,7 +2376,7 @@ unsafe extern "C" fn overlays_get(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn overlays_insert(
+unsafe fn overlays_insert(
     mut keyi: *mut KeyInfo,
     mut bit: xkb_overlay_index_t,
     mut key: *const xkb_key,
@@ -2510,7 +2510,7 @@ unsafe extern "C" fn overlays_insert(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn merge_overlays(
+unsafe fn merge_overlays(
     mut info: *mut SymbolsInfo,
     mut into: *mut KeyInfo,
     mut from: *mut KeyInfo,
@@ -2715,7 +2715,7 @@ unsafe extern "C" fn merge_overlays(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn MergeKeys(
+unsafe fn MergeKeys(
     mut info: *mut SymbolsInfo,
     mut into: *mut KeyInfo,
     mut from: *mut KeyInfo,
@@ -2860,7 +2860,7 @@ unsafe extern "C" fn MergeKeys(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn XkbResolveKeyAlias(
+unsafe fn XkbResolveKeyAlias(
     mut keymap: *const xkb_keymap,
     mut name: xkb_atom_t,
 ) -> xkb_atom_t {
@@ -2880,7 +2880,7 @@ unsafe extern "C" fn XkbResolveKeyAlias(
         return name;
     }
 }
-unsafe extern "C" fn AddKeySymbols(
+unsafe fn AddKeySymbols(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut same_file: bool,
@@ -2919,7 +2919,7 @@ unsafe extern "C" fn AddKeySymbols(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
+unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
     unsafe {
         let mut old: *mut ModMapEntry = ::core::ptr::null_mut::<ModMapEntry>();
         let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
@@ -3005,7 +3005,7 @@ unsafe extern "C" fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut Mo
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn MergeIncludedSymbols(
+unsafe fn MergeIncludedSymbols(
     mut into: *mut SymbolsInfo,
     mut from: *mut SymbolsInfo,
     mut merge: merge_mode,
@@ -3123,7 +3123,7 @@ unsafe extern "C" fn MergeIncludedSymbols(
         };
     }
 }
-unsafe extern "C" fn HandleIncludeSymbols(
+unsafe fn HandleIncludeSymbols(
     mut info: *mut SymbolsInfo,
     mut include: *mut IncludeStmt,
 ) -> bool {
@@ -3306,7 +3306,7 @@ unsafe extern "C" fn HandleIncludeSymbols(
         return (*info).errorCount == 0 as ::core::ffi::c_int;
     }
 }
-unsafe extern "C" fn GetGroupIndex(
+unsafe fn GetGroupIndex(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut arrayNdx: *mut ExprDef,
@@ -3430,7 +3430,7 @@ unsafe extern "C" fn GetGroupIndex(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn AddSymbolsToKey(
+unsafe fn AddSymbolsToKey(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut arrayNdx: *mut ExprDef,
@@ -3580,7 +3580,7 @@ unsafe extern "C" fn AddSymbolsToKey(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn AddActionsToKey(
+unsafe fn AddActionsToKey(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut arrayNdx: *mut ExprDef,
@@ -3869,7 +3869,7 @@ static mut repeatEntries: [LookupEntry; 8] = [
         value: 0 as u32,
     },
 ];
-unsafe extern "C" fn ExprResolveOverlayEntry(
+unsafe fn ExprResolveOverlayEntry(
     mut keymap_info: *const xkb_keymap_info,
     mut field: *const i8,
     mut arrayNdx: *const ExprDef,
@@ -3988,7 +3988,7 @@ unsafe extern "C" fn ExprResolveOverlayEntry(
         };
     }
 }
-unsafe extern "C" fn SetSymbolsField(
+unsafe fn SetSymbolsField(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut field: *const i8,
@@ -4420,7 +4420,7 @@ unsafe extern "C" fn SetSymbolsField(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn SetGroupName(
+unsafe fn SetGroupName(
     mut info: *mut SymbolsInfo,
     mut arrayNdx: *mut ExprDef,
     mut value: *mut ExprDef,
@@ -4550,7 +4550,7 @@ unsafe extern "C" fn SetGroupName(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
+unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: *const i8 = ::core::ptr::null::<i8>();
         let mut field: *const i8 = ::core::ptr::null::<i8>();
@@ -4695,7 +4695,7 @@ unsafe extern "C" fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut 
         return ret;
     }
 }
-unsafe extern "C" fn HandleSymbolsBody(
+unsafe fn HandleSymbolsBody(
     mut info: *mut SymbolsInfo,
     mut def: *mut VarDef,
     mut keyi: *mut KeyInfo,
@@ -4760,7 +4760,7 @@ unsafe extern "C" fn HandleSymbolsBody(
         return all_valid_entries;
     }
 }
-unsafe extern "C" fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> bool {
+unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> bool {
     unsafe {
         let mut i: xkb_layout_index_t = 0;
         let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
@@ -4830,7 +4830,7 @@ unsafe extern "C" fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn HandleSymbolsDef(
+unsafe fn HandleSymbolsDef(
     mut info: *mut SymbolsInfo,
     mut stmt: *mut SymbolsDef,
 ) -> bool {
@@ -4899,7 +4899,7 @@ unsafe extern "C" fn HandleSymbolsDef(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -> bool {
+unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -> bool {
     unsafe {
         let mut tmp: ModMapEntry = ModMapEntry {
             merge: MERGE_DEFAULT,
@@ -4973,7 +4973,7 @@ unsafe extern "C" fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut M
         return ok;
     }
 }
-unsafe extern "C" fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) {
+unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
         free((*info).name as *mut ::core::ffi::c_void);
@@ -5049,7 +5049,7 @@ unsafe extern "C" fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mu
         }
     }
 }
-unsafe extern "C" fn FindKeyForSymbol(
+unsafe fn FindKeyForSymbol(
     mut keymap: *mut xkb_keymap,
     mut sym: xkb_keysym_t,
 ) -> *mut xkb_key {
@@ -5119,7 +5119,7 @@ unsafe extern "C" fn FindKeyForSymbol(
         return ::core::ptr::null_mut::<xkb_key>();
     }
 }
-unsafe extern "C" fn FindAutomaticType(
+unsafe fn FindAutomaticType(
     mut ctx: *mut xkb_context,
     mut groupi: *mut GroupInfo,
 ) -> xkb_atom_t {
@@ -5322,7 +5322,7 @@ unsafe extern "C" fn FindAutomaticType(
         return XKB_ATOM_NONE as xkb_atom_t;
     }
 }
-unsafe extern "C" fn FindTypeForGroup(
+unsafe fn FindTypeForGroup(
     mut keymap: *mut xkb_keymap,
     mut keyi: *mut KeyInfo,
     mut group: xkb_layout_index_t,
@@ -5386,7 +5386,7 @@ unsafe extern "C" fn FindTypeForGroup(
         return (*keymap).types.offset(0 as ::core::ffi::c_int as isize) as *mut xkb_key_type;
     }
 }
-unsafe extern "C" fn CopySymbolsDefToKeymap(
+unsafe fn CopySymbolsDefToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
@@ -5723,7 +5723,7 @@ unsafe extern "C" fn CopySymbolsDefToKeymap(
     }
 }
 
-unsafe extern "C" fn CopyModMapDefToKeymap(
+unsafe fn CopyModMapDefToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut SymbolsInfo,
     mut entry: *mut ModMapEntry,
@@ -5768,7 +5768,7 @@ unsafe extern "C" fn CopyModMapDefToKeymap(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn CopySymbolsToKeymap(
+unsafe fn CopySymbolsToKeymap(
     mut keymap: *mut xkb_keymap,
     mut info: *mut SymbolsInfo,
 ) -> bool {

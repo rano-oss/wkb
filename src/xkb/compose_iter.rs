@@ -190,7 +190,7 @@ pub use self::xkbcommon_h::{
     xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-unsafe extern "C" fn for_each_helper(
+unsafe fn for_each_helper(
     mut table: *mut xkb_compose_table,
     mut iter: xkb_compose_table_iter_t,
     mut data: *mut ::core::ffi::c_void,

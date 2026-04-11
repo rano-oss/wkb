@@ -595,13 +595,13 @@ pub mod keymap_compare_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return strcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
                 return s1 == s2;
@@ -682,7 +682,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
     XKB_STATE_MODS_LOCKED,
 };
-unsafe extern "C" fn keymap_compare_mods(
+unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -754,7 +754,7 @@ unsafe extern "C" fn keymap_compare_mods(
         return identical;
     }
 }
-unsafe extern "C" fn keymap_compare_keycodes(
+unsafe fn keymap_compare_keycodes(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -913,7 +913,7 @@ unsafe extern "C" fn keymap_compare_keycodes(
         return identical;
     }
 }
-unsafe extern "C" fn keymap_compare_leds(
+unsafe fn keymap_compare_leds(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -1028,7 +1028,7 @@ unsafe extern "C" fn keymap_compare_leds(
         return identical;
     }
 }
-unsafe extern "C" fn compare_types(
+unsafe fn compare_types(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -1178,7 +1178,7 @@ unsafe extern "C" fn compare_types(
         return identical;
     }
 }
-unsafe extern "C" fn keymap_compare_types(
+unsafe fn keymap_compare_types(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -1217,7 +1217,7 @@ unsafe extern "C" fn keymap_compare_types(
         return identical;
     }
 }
-unsafe extern "C" fn compare_groups(
+unsafe fn compare_groups(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,
@@ -1356,7 +1356,7 @@ unsafe extern "C" fn compare_groups(
         return identical;
     }
 }
-unsafe extern "C" fn keymap_compare_symbols(
+unsafe fn keymap_compare_symbols(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,

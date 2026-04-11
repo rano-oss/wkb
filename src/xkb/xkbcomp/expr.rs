@@ -955,13 +955,13 @@ pub mod inttypes_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
+    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as i32;
         }
@@ -971,7 +971,7 @@ pub mod utils_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint32_t(
+    pub unsafe fn parse_dec_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -1465,7 +1465,7 @@ pub unsafe extern "C" fn ExprResolveBoolean(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn ExprResolveIntegerLookup(
+unsafe fn ExprResolveIntegerLookup(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
     mut val_rtrn: *mut i64,
@@ -1970,7 +1970,7 @@ pub unsafe extern "C" fn ExprResolveEnum(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn ExprResolveMaskLookup(
+unsafe fn ExprResolveMaskLookup(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
     mut val_rtrn: *mut u32,

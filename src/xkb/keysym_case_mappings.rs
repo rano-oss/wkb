@@ -628,7 +628,7 @@ static mut legacy_keysym_offsets2: [uint16_t; 40] = [
     0xbc as i32 as uint16_t,
 ];
 #[inline]
-unsafe extern "C" fn get_legacy_keysym_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
+unsafe fn get_legacy_keysym_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
     unsafe {
         return (&raw const legacy_keysym_data as *const CaseMappings).offset(
             (*(&raw const legacy_keysym_offsets1 as *const uint8_t).offset(
@@ -2054,7 +2054,7 @@ static mut unicode_offsets2: [uint16_t; 498] = [
     0x206 as i32 as uint16_t,
 ];
 #[inline]
-unsafe extern "C" fn get_unicode_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
+unsafe fn get_unicode_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
     unsafe {
         return (&raw const unicode_data as *const CaseMappings).offset(
             (*(&raw const unicode_offsets1 as *const uint16_t).offset(

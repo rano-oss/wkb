@@ -194,7 +194,7 @@ pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
 
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -1028,7 +1028,7 @@ pub mod keymap_h {
     pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1 as i32;
     #[inline]
 
-    pub unsafe extern "C" fn format_max_overlays(
+    pub unsafe fn format_max_overlays(
         mut format: xkb_keymap_format,
     ) -> xkb_overlay_index_t {
         unsafe {
@@ -1041,7 +1041,7 @@ pub mod keymap_h {
     }
     #[inline]
 
-    pub unsafe extern "C" fn XkbKey(
+    pub unsafe fn XkbKey(
         mut keymap: *mut xkb_keymap,
         mut kc: xkb_keycode_t,
     ) -> *const xkb_key {
@@ -1075,7 +1075,7 @@ pub mod keymap_h {
     }
     #[inline]
 
-    pub unsafe extern "C" fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
+    pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
         unsafe {
             return (*entry).mods.mods == 0 as xkb_mod_mask_t
                 || (*entry).mods.mask != 0 as xkb_mod_mask_t;
@@ -1472,7 +1472,7 @@ pub mod string_h {
 pub mod utils_numbers_h {
     #[inline]
 
-    pub unsafe extern "C" fn popcount32(mut x: u32) -> u32 {
+    pub unsafe fn popcount32(mut x: u32) -> u32 {
         unsafe {
             return (x as u64).count_ones() as i32 as u32;
         }
@@ -1489,7 +1489,7 @@ pub mod limits_h {
 pub mod util_mem_h {
     #[inline]
 
-    pub unsafe extern "C" fn xkb_check_versioned_struct_size_(
+    pub unsafe fn xkb_check_versioned_struct_size_(
         mut v1_size: usize,
         mut min_size: usize,
         mut lib_size: usize,
@@ -1530,7 +1530,7 @@ pub mod util_mem_h {
 pub mod utils_h {
     #[inline]
 
-    pub unsafe extern "C" fn one_bit_set(mut x: u32) -> i32 {
+    pub unsafe fn one_bit_set(mut x: u32) -> i32 {
         unsafe {
             return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
         }
@@ -1980,7 +1980,7 @@ static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
     },
 };
 
-unsafe extern "C" fn get_entry_for_mods(
+unsafe fn get_entry_for_mods(
     mut type_0: *const xkb_key_type,
     mut mods: xkb_mod_mask_t,
 ) -> *const xkb_key_type_entry {
@@ -2000,7 +2000,7 @@ unsafe extern "C" fn get_entry_for_mods(
     }
 }
 
-unsafe extern "C" fn get_entry_for_key_state(
+unsafe fn get_entry_for_key_state(
     mut state: *mut xkb_state,
     mut key: *const xkb_key,
     mut group: xkb_layout_index_t,
@@ -2013,7 +2013,7 @@ unsafe extern "C" fn get_entry_for_key_state(
 }
 #[inline]
 
-unsafe extern "C" fn state_key_get_level(
+unsafe fn state_key_get_level(
     mut state: *mut xkb_state,
     mut key: *const xkb_key,
     mut layout: xkb_layout_index_t,
@@ -2033,7 +2033,7 @@ unsafe extern "C" fn state_key_get_level(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_level(
+pub unsafe fn xkb_state_key_get_level(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut layout: xkb_layout_index_t,
@@ -2049,7 +2049,7 @@ pub unsafe extern "C" fn xkb_state_key_get_level(
 }
 #[inline]
 
-unsafe extern "C" fn state_key_get_layout(
+unsafe fn state_key_get_layout(
     mut state: *mut xkb_state,
     mut key: *const xkb_key,
 ) -> xkb_layout_index_t {
@@ -2064,7 +2064,7 @@ unsafe extern "C" fn state_key_get_layout(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_layout(
+pub unsafe fn xkb_state_key_get_layout(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> xkb_layout_index_t {
@@ -2081,7 +2081,7 @@ static mut dummy_action: xkb_action = xkb_action {
     type_0: ACTION_TYPE_NONE,
 };
 
-unsafe extern "C" fn xkb_key_get_actions(
+unsafe fn xkb_key_get_actions(
     mut state: *mut xkb_state,
     mut key: *const xkb_key,
     mut actions: *mut *const xkb_action,
@@ -2103,7 +2103,7 @@ unsafe extern "C" fn xkb_key_get_actions(
     }
 }
 
-unsafe extern "C" fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
+unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
     unsafe {
         let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
         let mut iter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
@@ -2212,7 +2212,7 @@ unsafe extern "C" fn xkb_filter_group_set_func(
     }
 }
 
-unsafe extern "C" fn get_state_component_changes(
+unsafe fn get_state_component_changes(
     mut a: *const state_components,
     mut b: *const state_components,
 ) -> xkb_state_component {
@@ -2314,7 +2314,7 @@ unsafe extern "C" fn xkb_filter_group_lock_func(
     }
 }
 
-unsafe extern "C" fn xkb_action_breaks_latch(
+unsafe fn xkb_action_breaks_latch(
     mut action: *const xkb_action,
     mut flag: xkb_internal_action_flags,
     mut mask: xkb_mod_mask_t,
@@ -2856,7 +2856,7 @@ unsafe extern "C" fn xkb_filter_ctrls_func(
     }
 }
 
-unsafe extern "C" fn append_redirect_key_events(
+unsafe fn append_redirect_key_events(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut redirect: *const xkb_redirect_key_action,
@@ -3249,7 +3249,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
     ]
 };
 
-unsafe extern "C" fn xkb_filter_apply_all(
+unsafe fn xkb_filter_apply_all(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut key: *const xkb_key,
@@ -3335,7 +3335,7 @@ unsafe extern "C" fn xkb_filter_apply_all(
 }
 #[inline]
 
-unsafe extern "C" fn xkb_state_init(
+unsafe fn xkb_state_init(
     mut state: *mut xkb_state,
     mut keymap: *mut xkb_keymap,
     mut a11y_affect: xkb_a11y_flags,
@@ -3358,7 +3358,7 @@ unsafe extern "C" fn xkb_state_init(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
+pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
         let state: *mut xkb_state =
             calloc(1 as usize, ::core::mem::size_of::<xkb_state>() as usize) as *mut xkb_state;
@@ -3371,7 +3371,7 @@ pub unsafe extern "C" fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
+pub unsafe fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
     unsafe {
         (*state).refcnt += 1;
         return state;
@@ -3379,7 +3379,7 @@ pub unsafe extern "C" fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_st
 }
 #[inline]
 
-unsafe extern "C" fn xkb_state_destroy(mut state: *mut xkb_state) {
+unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
     unsafe {
         xkb_keymap_unref((*state).keymap);
         free((*state).filters.item as *mut ::core::ffi::c_void);
@@ -3390,7 +3390,7 @@ unsafe extern "C" fn xkb_state_destroy(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_unref(mut state: *mut xkb_state) {
+pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
             (*state).refcnt -= 1;
@@ -3404,13 +3404,13 @@ pub unsafe extern "C" fn xkb_state_unref(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
+pub unsafe fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
     unsafe {
         return (*state).keymap;
     }
 }
 
-unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
+unsafe fn xkb_state_led_update_all(mut state: *mut xkb_state) {
     unsafe {
         let mut idx: xkb_led_index_t = 0;
         let mut led: *const xkb_led = ::core::ptr::null::<xkb_led>();
@@ -3512,7 +3512,7 @@ unsafe extern "C" fn xkb_state_led_update_all(mut state: *mut xkb_state) {
     }
 }
 
-unsafe extern "C" fn xkb_state_update_derived(mut state: *mut xkb_state) {
+unsafe fn xkb_state_update_derived(mut state: *mut xkb_state) {
     unsafe {
         let mut wrapped: xkb_layout_index_t = 0;
         (*state).components.mods = (*state).components.base_mods
@@ -3547,7 +3547,7 @@ unsafe extern "C" fn xkb_state_update_derived(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_update_key(
+pub unsafe fn xkb_state_update_key(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut direction: xkb_key_direction,
@@ -3630,7 +3630,7 @@ static mut synthetic_key: xkb_key = xkb_key {
     },
 };
 
-unsafe extern "C" fn update_latch_modifiers(
+unsafe fn update_latch_modifiers(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut mask: xkb_mod_mask_t,
@@ -3740,7 +3740,7 @@ unsafe extern "C" fn update_latch_modifiers(
     }
 }
 
-unsafe extern "C" fn update_latch_group(
+unsafe fn update_latch_group(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut group: i32,
@@ -3788,7 +3788,7 @@ unsafe extern "C" fn update_latch_group(
 }
 #[inline]
 
-unsafe extern "C" fn resolve_to_canonical_mods(
+unsafe fn resolve_to_canonical_mods(
     mut keymap: *mut xkb_keymap,
     mut mods: xkb_mod_mask_t,
 ) -> xkb_mod_mask_t {
@@ -3798,7 +3798,7 @@ unsafe extern "C" fn resolve_to_canonical_mods(
     }
 }
 
-unsafe extern "C" fn state_update_latched_locked(
+unsafe fn state_update_latched_locked(
     mut state: *mut xkb_state,
     mut update: *const xkb_state_components_update,
     mut events: *mut xkb_events,
@@ -3832,7 +3832,7 @@ unsafe extern "C" fn state_update_latched_locked(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_update_latched_locked(
+pub unsafe fn xkb_state_update_latched_locked(
     mut state: *mut xkb_state,
     mut affect_latched_mods: xkb_mod_mask_t,
     mut latched_mods: xkb_mod_mask_t,
@@ -3889,7 +3889,7 @@ pub unsafe extern "C" fn xkb_state_update_latched_locked(
 }
 #[inline]
 
-unsafe extern "C" fn clear_all_latches_and_locks(
+unsafe fn clear_all_latches_and_locks(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
 ) {
@@ -3915,7 +3915,7 @@ unsafe extern "C" fn clear_all_latches_and_locks(
     }
 }
 
-unsafe extern "C" fn state_update_enabled_controls(
+unsafe fn state_update_enabled_controls(
     mut state: *mut xkb_state,
     mut affect: xkb_keyboard_control_flags,
     mut controls: xkb_keyboard_control_flags,
@@ -3940,7 +3940,7 @@ unsafe extern "C" fn state_update_enabled_controls(
     }
 }
 
-unsafe extern "C" fn state_update_layout_policy(
+unsafe fn state_update_layout_policy(
     mut state: *mut xkb_state,
     mut update: *const xkb_layout_policy_update,
 ) -> xkb_error_code {
@@ -3982,7 +3982,7 @@ unsafe extern "C" fn state_update_layout_policy(
     }
 }
 
-unsafe extern "C" fn log_abi_error(
+unsafe fn log_abi_error(
     mut ctx: *mut xkb_context,
     mut func: *const i8,
     mut error: xkb_error_code,
@@ -4027,7 +4027,7 @@ unsafe extern "C" fn log_abi_error(
     }
 }
 
-unsafe extern "C" fn check_state_update_abi_(
+unsafe fn check_state_update_abi_(
     mut ctx: *mut xkb_context,
     mut func: *const i8,
     mut update: *const xkb_state_update,
@@ -4070,7 +4070,7 @@ unsafe extern "C" fn check_state_update_abi_(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_update_synthetic(
+pub unsafe fn xkb_state_update_synthetic(
     mut state: *mut xkb_state,
     mut update: *const xkb_state_update,
     mut changed: *mut xkb_state_component,
@@ -4113,7 +4113,7 @@ pub unsafe extern "C" fn xkb_state_update_synthetic(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_update_mask(
+pub unsafe fn xkb_state_update_mask(
     mut state: *mut xkb_state,
     mut base_mods: xkb_mod_mask_t,
     mut latched_mods: xkb_mod_mask_t,
@@ -4138,7 +4138,7 @@ pub unsafe extern "C" fn xkb_state_update_mask(
     }
 }
 
-unsafe extern "C" fn should_do_caps_transformation(
+unsafe fn should_do_caps_transformation(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> bool {
@@ -4156,7 +4156,7 @@ unsafe extern "C" fn should_do_caps_transformation(
     }
 }
 
-unsafe extern "C" fn should_do_ctrl_transformation(
+unsafe fn should_do_ctrl_transformation(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> bool {
@@ -4175,7 +4175,7 @@ unsafe extern "C" fn should_do_ctrl_transformation(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_syms(
+pub unsafe fn xkb_state_key_get_syms(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut syms_out: *mut *const xkb_keysym_t,
@@ -4223,7 +4223,7 @@ pub unsafe extern "C" fn xkb_state_key_get_syms(
     }
 }
 
-unsafe extern "C" fn XkbToControl(mut ch: i8) -> i8 {
+unsafe fn XkbToControl(mut ch: i8) -> i8 {
     unsafe {
         let mut c: i8 = ch;
         if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32 || c as i32 == ' ' as i32 {
@@ -4242,7 +4242,7 @@ unsafe extern "C" fn XkbToControl(mut ch: i8) -> i8 {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_one_sym(
+pub unsafe fn xkb_state_key_get_one_sym(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> xkb_keysym_t {
@@ -4257,7 +4257,7 @@ pub unsafe extern "C" fn xkb_state_key_get_one_sym(
     }
 }
 
-unsafe extern "C" fn get_one_sym_for_string(
+unsafe fn get_one_sym_for_string(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> xkb_keysym_t {
@@ -4307,7 +4307,7 @@ unsafe extern "C" fn get_one_sym_for_string(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_utf8(
+pub unsafe fn xkb_state_key_get_utf8(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut buffer: *mut i8,
@@ -4383,7 +4383,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf8(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_utf32(
+pub unsafe fn xkb_state_key_get_utf32(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> u32 {
@@ -4398,7 +4398,7 @@ pub unsafe extern "C" fn xkb_state_key_get_utf32(
 }
 #[inline]
 
-unsafe extern "C" fn serialize_mods(
+unsafe fn serialize_mods(
     mut components: *const state_components,
     mut type_0: xkb_state_component,
 ) -> xkb_mod_mask_t {
@@ -4421,7 +4421,7 @@ unsafe extern "C" fn serialize_mods(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_serialize_mods(
+pub unsafe fn xkb_state_serialize_mods(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
 ) -> xkb_mod_mask_t {
@@ -4431,7 +4431,7 @@ pub unsafe extern "C" fn xkb_state_serialize_mods(
 }
 #[inline]
 
-unsafe extern "C" fn serialize_layout(
+unsafe fn serialize_layout(
     mut components: *const state_components,
     mut type_0: xkb_state_component,
 ) -> xkb_layout_index_t {
@@ -4454,7 +4454,7 @@ unsafe extern "C" fn serialize_layout(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_serialize_layout(
+pub unsafe fn xkb_state_serialize_layout(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
 ) -> xkb_layout_index_t {
@@ -4464,7 +4464,7 @@ pub unsafe extern "C" fn xkb_state_serialize_layout(
 }
 #[inline]
 
-unsafe extern "C" fn serialize_controls(
+unsafe fn serialize_controls(
     mut components: *const state_components,
     mut type_0: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
@@ -4479,7 +4479,7 @@ unsafe extern "C" fn serialize_controls(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_serialize_enabled_controls(
+pub unsafe fn xkb_state_serialize_enabled_controls(
     mut state: *const xkb_state,
     mut type_0: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
@@ -4489,7 +4489,7 @@ pub unsafe extern "C" fn xkb_state_serialize_enabled_controls(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn mod_mask_get_effective(
+pub unsafe fn mod_mask_get_effective(
     mut keymap: *mut xkb_keymap,
     mut mods: xkb_mod_mask_t,
 ) -> xkb_mod_mask_t {
@@ -4512,7 +4512,7 @@ pub unsafe extern "C" fn mod_mask_get_effective(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_mod_index_is_active(
+pub unsafe fn xkb_state_mod_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_mod_index_t,
     mut type_0: xkb_state_component,
@@ -4529,7 +4529,7 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_active(
     }
 }
 
-unsafe extern "C" fn match_mod_masks(
+unsafe fn match_mod_masks(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
     mut match_0: xkb_state_match,
@@ -4588,7 +4588,7 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_mod_name_is_active(
+pub unsafe fn xkb_state_mod_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
     mut type_0: xkb_state_component,
@@ -4643,7 +4643,7 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_layout_index_is_active(
+pub unsafe fn xkb_state_layout_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_layout_index_t,
     mut type_0: xkb_state_component,
@@ -4670,7 +4670,7 @@ pub unsafe extern "C" fn xkb_state_layout_index_is_active(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_layout_name_is_active(
+pub unsafe fn xkb_state_layout_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
     mut type_0: xkb_state_component,
@@ -4686,7 +4686,7 @@ pub unsafe extern "C" fn xkb_state_layout_name_is_active(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_led_index_is_active(
+pub unsafe fn xkb_state_led_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_led_index_t,
 ) -> i32 {
@@ -4701,7 +4701,7 @@ pub unsafe extern "C" fn xkb_state_led_index_is_active(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_led_name_is_active(
+pub unsafe fn xkb_state_led_name_is_active(
     mut state: *mut xkb_state,
     mut name: *const i8,
 ) -> i32 {
@@ -4715,7 +4715,7 @@ pub unsafe extern "C" fn xkb_state_led_name_is_active(
     }
 }
 
-unsafe extern "C" fn key_get_consumed(
+unsafe fn key_get_consumed(
     mut state: *mut xkb_state,
     mut key: *const xkb_key,
     mut mode: xkb_consumed_mode,
@@ -4777,7 +4777,7 @@ unsafe extern "C" fn key_get_consumed(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_mod_index_is_consumed2(
+pub unsafe fn xkb_state_mod_index_is_consumed2(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut idx: xkb_mod_index_t,
@@ -4797,7 +4797,7 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_consumed2(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_mod_index_is_consumed(
+pub unsafe fn xkb_state_mod_index_is_consumed(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut idx: xkb_mod_index_t,
@@ -4808,7 +4808,7 @@ pub unsafe extern "C" fn xkb_state_mod_index_is_consumed(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_mod_mask_remove_consumed(
+pub unsafe fn xkb_state_mod_mask_remove_consumed(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut mask: xkb_mod_mask_t,
@@ -4824,7 +4824,7 @@ pub unsafe extern "C" fn xkb_state_mod_mask_remove_consumed(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_consumed_mods2(
+pub unsafe fn xkb_state_key_get_consumed_mods2(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
     mut mode: xkb_consumed_mode,
@@ -4853,7 +4853,7 @@ pub unsafe extern "C" fn xkb_state_key_get_consumed_mods2(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_key_get_consumed_mods(
+pub unsafe fn xkb_state_key_get_consumed_mods(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
 ) -> xkb_mod_mask_t {
@@ -4882,7 +4882,7 @@ static mut default_machine_options: xkb_machine_options = xkb_machine_options {
 };
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_new(
+pub unsafe fn xkb_machine_options_new(
     mut context: *mut xkb_context,
 ) -> *mut xkb_machine_options {
     unsafe {
@@ -4916,7 +4916,7 @@ pub unsafe extern "C" fn xkb_machine_options_new(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options) {
+pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options) {
     unsafe {
         if options.is_null() {
             return;
@@ -4935,7 +4935,7 @@ pub unsafe extern "C" fn xkb_machine_options_destroy(mut options: *mut xkb_machi
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_update_a11y_flags(
+pub unsafe fn xkb_machine_options_update_a11y_flags(
     mut options: *mut xkb_machine_options,
     mut affect: xkb_a11y_flags,
     mut flags: xkb_a11y_flags,
@@ -4964,7 +4964,7 @@ pub unsafe extern "C" fn xkb_machine_options_update_a11y_flags(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_remap_mods(
+pub unsafe fn xkb_machine_options_remap_mods(
     mut options: *mut xkb_machine_options,
     mut source: xkb_mod_mask_t,
     mut target: xkb_mod_mask_t,
@@ -5062,7 +5062,7 @@ pub unsafe extern "C" fn xkb_machine_options_remap_mods(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_update_shortcut_mods(
+pub unsafe fn xkb_machine_options_update_shortcut_mods(
     mut options: *mut xkb_machine_options,
     mut affect: xkb_mod_mask_t,
     mut mask: xkb_mod_mask_t,
@@ -5075,7 +5075,7 @@ pub unsafe extern "C" fn xkb_machine_options_update_shortcut_mods(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_options_remap_shortcut_layout(
+pub unsafe fn xkb_machine_options_remap_shortcut_layout(
     mut options: *mut xkb_machine_options,
     mut source: xkb_layout_index_t,
     mut target: xkb_layout_index_t,
@@ -5156,7 +5156,7 @@ unsafe extern "C" fn cmp_mod_masks(
     }
 }
 
-unsafe extern "C" fn machine_set_mods(
+unsafe fn machine_set_mods(
     mut sm: *mut xkb_machine,
     mut raw_mappings: *const machine_mods_mappings,
 ) -> bool {
@@ -5242,7 +5242,7 @@ unsafe extern "C" fn machine_set_mods(
     }
 }
 
-unsafe extern "C" fn machine_set_shortcuts(
+unsafe fn machine_set_shortcuts(
     mut sm: *mut xkb_machine,
     mut options: *const xkb_shortcuts_config_options,
 ) -> bool {
@@ -5314,7 +5314,7 @@ unsafe extern "C" fn machine_set_shortcuts(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_new(
+pub unsafe fn xkb_machine_new(
     mut keymap: *mut xkb_keymap,
     mut options: *const xkb_machine_options,
 ) -> *mut xkb_machine {
@@ -5348,7 +5348,7 @@ pub unsafe extern "C" fn xkb_machine_new(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
+pub unsafe fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
     unsafe {
         (*sm).state.refcnt += 1;
         return sm;
@@ -5356,7 +5356,7 @@ pub unsafe extern "C" fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_m
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_unref(mut sm: *mut xkb_machine) {
+pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
     unsafe {
         if sm.is_null() || {
             (*sm).state.refcnt -= 1;
@@ -5376,20 +5376,20 @@ pub unsafe extern "C" fn xkb_machine_unref(mut sm: *mut xkb_machine) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_get_keymap(mut sm: *const xkb_machine) -> *mut xkb_keymap {
+pub unsafe fn xkb_machine_get_keymap(mut sm: *const xkb_machine) -> *mut xkb_keymap {
     unsafe {
         return (*sm).state.keymap;
     }
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_get_state(mut sm: *mut xkb_machine) -> *mut xkb_state {
+pub unsafe fn xkb_machine_get_state(mut sm: *mut xkb_machine) -> *mut xkb_state {
     unsafe {
         return &raw mut (*sm).state;
     }
 }
 
-unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
+unsafe fn machine_update_overlays(mut sm: *mut xkb_machine) {
     unsafe {
         let mask: xkb_overlay_mask_t = ((*sm).state.components.controls as u32
             >> XKB_OVERLAY1_CONTROLS_OFFSET
@@ -5432,7 +5432,7 @@ unsafe extern "C" fn machine_update_overlays(mut sm: *mut xkb_machine) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_process_synthetic(
+pub unsafe fn xkb_machine_process_synthetic(
     mut sm: *mut xkb_machine,
     mut update: *const xkb_state_update,
     mut events: *mut xkb_events,
@@ -5505,7 +5505,7 @@ pub unsafe extern "C" fn xkb_machine_process_synthetic(
     }
 }
 
-unsafe extern "C" fn do_remap_modifiers(
+unsafe fn do_remap_modifiers(
     mut mappings: *const machine_modifiers_config,
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
@@ -5582,7 +5582,7 @@ unsafe extern "C" fn do_remap_modifiers(
     }
 }
 
-unsafe extern "C" fn do_shortcuts_tweak(
+unsafe fn do_shortcuts_tweak(
     mut config: *const machine_shortcuts_config,
     mut state: *mut xkb_state,
     mut previous_components: *const state_components,
@@ -5664,7 +5664,7 @@ unsafe extern "C" fn do_shortcuts_tweak(
     }
 }
 
-unsafe extern "C" fn undo_tweaks(
+unsafe fn undo_tweaks(
     mut state: *const xkb_state,
     mut previous_components: *const state_components,
     mut events: *mut xkb_events,
@@ -5727,7 +5727,7 @@ unsafe extern "C" fn undo_tweaks(
     }
 }
 
-unsafe extern "C" fn process_overlayable_key(
+unsafe fn process_overlayable_key(
     mut sm: *mut xkb_machine,
     mut key: *const xkb_key,
     mut direction: xkb_key_direction,
@@ -5823,7 +5823,7 @@ unsafe extern "C" fn process_overlayable_key(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_machine_process_key(
+pub unsafe fn xkb_machine_process_key(
     mut sm: *mut xkb_machine,
     mut kc: xkb_keycode_t,
     mut direction: xkb_key_direction,
@@ -5975,7 +5975,7 @@ pub unsafe extern "C" fn xkb_machine_process_key(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_events_new_batch(
+pub unsafe fn xkb_events_new_batch(
     mut context: *mut xkb_context,
     mut flags: xkb_events_flags,
 ) -> *mut xkb_events {
@@ -6015,7 +6015,7 @@ pub unsafe extern "C" fn xkb_events_new_batch(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_events_destroy(mut events: *mut xkb_events) {
+pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
     unsafe {
         if events.is_null() {
             return;
@@ -6030,7 +6030,7 @@ pub unsafe extern "C" fn xkb_events_destroy(mut events: *mut xkb_events) {
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
+pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
     unsafe {
         if (*events).next < (*events).queue.size {
             let c2rust_fresh0 = (*events).next;
@@ -6044,14 +6044,14 @@ pub unsafe extern "C" fn xkb_events_next(mut events: *mut xkb_events) -> *const 
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type {
+pub unsafe fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type {
     unsafe {
         return (*event).type_0;
     }
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
+pub unsafe fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
     unsafe {
         match (*event).type_0 as u32 {
             1 | 2 | 3 => return (*event).c2rust_unnamed.keycode,
@@ -6061,7 +6061,7 @@ pub unsafe extern "C" fn xkb_event_get_keycode(mut event: *const xkb_event) -> x
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_get_changed_components(
+pub unsafe fn xkb_event_get_changed_components(
     mut event: *const xkb_event,
 ) -> xkb_state_component {
     unsafe {
@@ -6074,7 +6074,7 @@ pub unsafe extern "C" fn xkb_event_get_changed_components(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_serialize_enabled_controls(
+pub unsafe fn xkb_event_serialize_enabled_controls(
     mut event: *const xkb_event,
     mut components: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
@@ -6091,7 +6091,7 @@ pub unsafe extern "C" fn xkb_event_serialize_enabled_controls(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_serialize_mods(
+pub unsafe fn xkb_event_serialize_mods(
     mut event: *const xkb_event,
     mut components: xkb_state_component,
 ) -> xkb_mod_mask_t {
@@ -6108,7 +6108,7 @@ pub unsafe extern "C" fn xkb_event_serialize_mods(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_event_serialize_layout(
+pub unsafe fn xkb_event_serialize_layout(
     mut event: *const xkb_event,
     mut components: xkb_state_component,
 ) -> xkb_layout_index_t {
@@ -6125,7 +6125,7 @@ pub unsafe extern "C" fn xkb_event_serialize_layout(
 }
 #[no_mangle]
 
-pub unsafe extern "C" fn xkb_state_update_event(
+pub unsafe fn xkb_state_update_event(
     mut state: *mut xkb_state,
     mut event: *const xkb_event,
 ) -> xkb_state_component {

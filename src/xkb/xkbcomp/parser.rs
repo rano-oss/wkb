@@ -533,7 +533,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
     #[inline]
-    pub unsafe extern "C" fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
+    pub unsafe fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
         unsafe {
             return s1.len == s2.len
                 && istrncmp(s1.start, s2.start, s1.len) == 0 as ::core::ffi::c_int;
@@ -710,13 +710,13 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn streq_not_null(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn streq_not_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
                 return false_0 != 0;
@@ -742,7 +742,7 @@ pub mod keysym_h {
 }
 pub mod xkbcomp_priv_h {
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
+    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
                 (*file).name as *const i8
@@ -1146,7 +1146,7 @@ pub union yyalloc {
     pub yyvs_alloc: YYSTYPE,
 }
 pub type C2Rust_Unnamed_10 = ::core::ffi::c_int;
-unsafe extern "C" fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
+unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
     unsafe {
         let mut loc: scanner_loc = scanner_token_location((*param).scanner);
         xkb_log(
@@ -1162,7 +1162,7 @@ unsafe extern "C" fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *co
         );
     }
 }
-unsafe extern "C" fn resolve_keysym(
+unsafe fn resolve_keysym(
     mut param: *mut parser_param,
     mut name: sval,
     mut sym_rtrn: *mut xkb_keysym_t,
@@ -1532,7 +1532,7 @@ static mut yytranslate: [yytype_int8; 258] = [
     1 as ::core::ffi::c_int as yytype_int8,
     2 as ::core::ffi::c_int as yytype_int8,
 ];
-unsafe extern "C" fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const i8 {
+unsafe fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const i8 {
     unsafe {
         static mut yy_sname: [*const i8; 150] = [
             b"end of file\0".as_ptr() as *const i8,
@@ -5408,7 +5408,7 @@ static mut yyr2: [yytype_int8; 220] = [
 ];
 pub const YYINITDEPTH: ::core::ffi::c_int = 200 as ::core::ffi::c_int;
 pub const YYMAXDEPTH: ::core::ffi::c_int = 10000 as ::core::ffi::c_int;
-unsafe extern "C" fn yypcontext_expected_tokens(
+unsafe fn yypcontext_expected_tokens(
     mut yyctx: *const yypcontext_t,
     mut yyarg: *mut yysymbol_kind_t,
     mut yyargn: ::core::ffi::c_int,
@@ -5458,7 +5458,7 @@ unsafe extern "C" fn yypcontext_expected_tokens(
         return yycount;
     }
 }
-unsafe extern "C" fn yy_syntax_error_arguments(
+unsafe fn yy_syntax_error_arguments(
     mut yyctx: *const yypcontext_t,
     mut yyarg: *mut yysymbol_kind_t,
     mut yyargn: ::core::ffi::c_int,
@@ -5489,7 +5489,7 @@ unsafe extern "C" fn yy_syntax_error_arguments(
         return yycount;
     }
 }
-unsafe extern "C" fn yysyntax_error(
+unsafe fn yysyntax_error(
     mut yymsg_alloc: *mut i64,
     mut yymsg: *mut *mut i8,
     mut yyctx: *const yypcontext_t,
@@ -5591,7 +5591,7 @@ unsafe extern "C" fn yysyntax_error(
         return 0 as ::core::ffi::c_int;
     }
 }
-unsafe extern "C" fn yydestruct(
+unsafe fn yydestruct(
     mut yymsg: *const i8,
     mut yykind: yysymbol_kind_t,
     mut yyvaluep: *mut YYSTYPE,

@@ -410,7 +410,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_init(
+    pub unsafe fn scanner_init(
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const i8,
@@ -432,7 +432,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
             if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -441,19 +441,19 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eof(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
         unsafe {
             return (*s).pos >= (*s).len;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eol(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
         unsafe {
             return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
             if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -464,7 +464,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
+    pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
                 as ::core::ffi::c_int as i64
@@ -477,7 +477,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
+    pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[i8; 1024]>() as usize
@@ -491,7 +491,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
+    pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
         unsafe {
             let mut ret: ::core::ffi::c_int = 0;
             ret = snprintf(
@@ -770,7 +770,7 @@ static mut xkb_file_type_include_dirs: [*const i8; 7] = [
     b"keymap\0".as_ptr() as *const i8,
     b"rules\0".as_ptr() as *const i8,
 ];
-unsafe extern "C" fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
+unsafe fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as u32 {
             return b"\0".as_ptr() as *const i8;
@@ -778,7 +778,7 @@ unsafe extern "C" fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8
         return xkb_file_type_include_dirs[type_0 as usize];
     }
 }
-unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
+unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
     unsafe {
         if xkb_context_num_include_paths(ctx) > 0 as u32 {
             xkb_log(
@@ -834,7 +834,7 @@ unsafe extern "C" fn LogIncludePaths(mut ctx: *mut xkb_context) {
         }
     }
 }
-unsafe extern "C" fn expand_percent(
+unsafe fn expand_percent(
     mut ctx: *mut xkb_context,
     mut parent_file_name: *const i8,
     mut typeDir: *const i8,

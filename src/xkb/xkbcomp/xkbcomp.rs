@@ -652,7 +652,7 @@ pub mod keymap_h {
     pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
-    pub unsafe extern "C" fn format_max_groups(
+    pub unsafe fn format_max_groups(
         mut format: xkb_keymap_format,
     ) -> xkb_layout_index_t {
         unsafe {
@@ -1146,7 +1146,7 @@ pub unsafe extern "C" fn xkb_components_names_from_rules(
         );
     }
 }
-unsafe extern "C" fn compile_keymap_file(
+unsafe fn compile_keymap_file(
     mut keymap: *mut xkb_keymap,
     mut file: *mut XkbFile,
 ) -> bool {

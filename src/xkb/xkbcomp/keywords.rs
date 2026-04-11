@@ -399,7 +399,7 @@ static mut gperf_downcase: [::core::ffi::c_uchar; 256] = [
     254 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     255 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-unsafe extern "C" fn gperf_case_memcmp(
+unsafe fn gperf_case_memcmp(
     mut s1: *const i8,
     mut s2: *const i8,
     mut n: usize,
@@ -424,7 +424,7 @@ unsafe extern "C" fn gperf_case_memcmp(
     }
 }
 #[inline]
-unsafe extern "C" fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
+unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
     unsafe {
         static mut asso_values: [::core::ffi::c_uchar; 256] = [
             73 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -780,7 +780,7 @@ static mut stringpool_contents: stringpool_t = unsafe {
         stringpool_str72: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"partial\0"),
     }
 };
-unsafe extern "C" fn keyword_gperf_lookup(
+unsafe fn keyword_gperf_lookup(
     mut str: *const i8,
     mut len: usize,
 ) -> *const keyword_tok {

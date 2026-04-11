@@ -4777,7 +4777,7 @@ pub mod keysym_names_h {
         2414 as i32 as uint16_t,
     ];
     #[inline]
-    pub unsafe extern "C" fn keysym_name_perfect_hash(mut key: *const i8) -> usize {
+    pub unsafe fn keysym_name_perfect_hash(mut key: *const i8) -> usize {
         unsafe {
             let mut T1: *const i8 = b"gQEXVgBVbDK59TnjkSMO7UnyrqsrcaA4\0".as_ptr() as *const i8;
             let mut T2: *const i8 = b"AB6xkcvEK5OHbYOD14cPYBxnVAoDGTPL\0".as_ptr() as *const i8;
@@ -26332,7 +26332,7 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
+    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
         return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
             || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
             || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
@@ -26600,7 +26600,7 @@ pub mod utils_numbers_h {
         0xff as i32 as ::core::ffi::c_uchar,
     ];
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint32_t(
+    pub unsafe fn parse_hex_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -26703,7 +26703,7 @@ pub struct xkb_keysym_iterator {
     pub index: i32,
     pub keysym: xkb_keysym_t,
 }
-unsafe extern "C" fn find_keysym_index(mut ks: xkb_keysym_t) -> ssize_t {
+unsafe fn find_keysym_index(mut ks: xkb_keysym_t) -> ssize_t {
     unsafe {
         if ks > XKB_KEYSYM_MAX_EXPLICIT as xkb_keysym_t {
             return -1 as i32 as ssize_t;
@@ -26726,13 +26726,13 @@ unsafe extern "C" fn find_keysym_index(mut ks: xkb_keysym_t) -> ssize_t {
     }
 }
 #[inline]
-unsafe extern "C" fn get_name(mut entry: *const name_keysym) -> *const i8 {
+unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
     unsafe {
         return keysym_names.offset((*entry).offset as i32 as isize);
     }
 }
 #[inline]
-unsafe extern "C" fn get_unicode_name(
+unsafe fn get_unicode_name(
     mut ks: xkb_keysym_t,
     mut buffer: *mut i8,
     mut size: usize,
@@ -26939,7 +26939,7 @@ pub unsafe extern "C" fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iter
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
+unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
     unsafe {
         let count: i32 = parse_hex_to_uint32_t(s, 8 as usize, out as *mut u32) as i32;
         return count > 0 as i32 && *s.offset(count as isize) as i32 == '\0' as i32;

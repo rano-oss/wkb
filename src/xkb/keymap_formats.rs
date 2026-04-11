@@ -271,7 +271,7 @@ pub mod utils_numbers_h {
         0xff as i32 as ::core::ffi::c_uchar,
     ];
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint32_t(
+    pub unsafe fn parse_hex_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -319,7 +319,7 @@ pub mod __stddef_null_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
+    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
                 || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32

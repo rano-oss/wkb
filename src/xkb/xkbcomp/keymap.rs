@@ -117,7 +117,7 @@ pub mod atom_h {
 pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -629,7 +629,7 @@ pub mod keymap_h {
     pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
-    pub unsafe extern "C" fn format_max_groups(
+    pub unsafe fn format_max_groups(
         mut format: xkb_keymap_format,
     ) -> xkb_layout_index_t {
         unsafe {
@@ -644,7 +644,7 @@ pub mod keymap_h {
     pub const XKB_OVERLAY_MAX: u64 =
         (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
     #[inline]
-    pub unsafe extern "C" fn format_max_overlays(
+    pub unsafe fn format_max_overlays(
         mut format: xkb_keymap_format,
     ) -> xkb_overlay_index_t {
         unsafe {
@@ -657,7 +657,7 @@ pub mod keymap_h {
     }
     pub const MAX_ACTIONS_PER_LEVEL: ::core::ffi::c_int = UINT16_MAX;
     #[inline]
-    pub unsafe extern "C" fn XkbKeyNumLevels(
+    pub unsafe fn XkbKeyNumLevels(
         mut key: *const xkb_key,
         mut layout: xkb_layout_index_t,
     ) -> xkb_level_index_t {
@@ -666,25 +666,25 @@ pub mod keymap_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
+    pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
         unsafe {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
+    pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
         unsafe {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
+    pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
         unsafe {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn areOverlappingOverlaysSupported(
+    pub unsafe fn areOverlappingOverlaysSupported(
         mut format: xkb_keymap_format,
     ) -> bool {
         unsafe {
@@ -1013,7 +1013,7 @@ pub mod text_h {
     pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
     #[inline]
-    pub unsafe extern "C" fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
+    pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
         unsafe {
             return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
                 CONTROL_NAMES_MIN_V1_INDEX as ::core::ffi::c_int
@@ -1099,7 +1099,7 @@ pub mod xkbcomp_priv_h {
         pub overlapping_overlays: bool,
     }
     #[inline]
-    pub unsafe extern "C" fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
+    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
         unsafe {
             return if !(*file).name.is_null() {
                 (*file).name as *const i8
@@ -1141,7 +1141,7 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_aligned(
+    pub unsafe fn is_aligned(
         mut pointer: *const ::core::ffi::c_void,
         mut byte_count: usize,
     ) -> bool {
@@ -1150,7 +1150,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn memdup(
+    pub unsafe fn memdup(
         mut mem: *const ::core::ffi::c_void,
         mut nmemb: usize,
         mut size: usize,
@@ -1385,7 +1385,7 @@ pub const GROUP_INDEX_NAME_LAST: C2Rust_Unnamed_20 = 1;
 pub type compile_file_fn = Option<unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
 pub type C2Rust_Unnamed_20 = u32;
 pub type C2Rust_Unnamed_21 = u32;
-unsafe extern "C" fn has_unbound_vmods(
+unsafe fn has_unbound_vmods(
     mut keymap: *mut xkb_keymap,
     mut mask: xkb_mod_mask_t,
 ) -> bool {
@@ -1407,14 +1407,14 @@ unsafe extern "C" fn has_unbound_vmods(
     }
 }
 #[inline]
-unsafe extern "C" fn ComputeEffectiveMask(mut keymap: *mut xkb_keymap, mut mods: *mut xkb_mods) {
+unsafe fn ComputeEffectiveMask(mut keymap: *mut xkb_keymap, mut mods: *mut xkb_mods) {
     unsafe {
         let unknown_mods: xkb_mod_mask_t =
             !(((1 as u64) << (*keymap).mods.num_mods).wrapping_sub(1 as u64) as xkb_mod_mask_t);
         (*mods).mask = mod_mask_get_effective(keymap, (*mods).mods) | (*mods).mods & unknown_mods;
     }
 }
-unsafe extern "C" fn UpdateActionMods(
+unsafe fn UpdateActionMods(
     mut keymap: *mut xkb_keymap,
     mut act: *mut xkb_action,
     mut modmap: xkb_mod_mask_t,
@@ -1447,7 +1447,7 @@ static mut default_interpret: xkb_sym_interpret = xkb_sym_interpret {
         },
     },
 };
-unsafe extern "C" fn FindInterpForKey(
+unsafe fn FindInterpForKey(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
     mut group: xkb_layout_index_t,
@@ -1608,7 +1608,7 @@ unsafe extern "C" fn FindInterpForKey(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) -> bool {
+unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) -> bool {
     unsafe {
         let mut vmodmap: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         let mut level: xkb_level_index_t = 0;
@@ -1867,7 +1867,7 @@ unsafe extern "C" fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mu
     }
 }
 #[inline]
-unsafe extern "C" fn is_mod_action(mut action: *mut xkb_action) -> bool {
+unsafe fn is_mod_action(mut action: *mut xkb_action) -> bool {
     unsafe {
         return (*action).type_0 as u32 == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as u32
             || (*action).type_0 as u32 == ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as u32
@@ -1875,14 +1875,14 @@ unsafe extern "C" fn is_mod_action(mut action: *mut xkb_action) -> bool {
     }
 }
 #[inline]
-unsafe extern "C" fn is_group_action(mut action: *mut xkb_action) -> bool {
+unsafe fn is_group_action(mut action: *mut xkb_action) -> bool {
     unsafe {
         return (*action).type_0 as u32 == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as u32
             || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as u32
             || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as u32;
     }
 }
-unsafe extern "C" fn CheckMultipleActionsCategories(
+unsafe fn CheckMultipleActionsCategories(
     mut keymap: *mut xkb_keymap,
     mut key: *mut xkb_key,
 ) {
@@ -1955,7 +1955,7 @@ unsafe extern "C" fn CheckMultipleActionsCategories(
         }
     }
 }
-unsafe extern "C" fn add_key_aliases(
+unsafe fn add_key_aliases(
     mut keymap: *mut xkb_keymap,
     mut min: darray_size_t,
     mut max: darray_size_t,
@@ -1982,7 +1982,7 @@ unsafe extern "C" fn add_key_aliases(
         }
     }
 }
-unsafe extern "C" fn update_pending_key_fields(
+unsafe fn update_pending_key_fields(
     mut info: *mut xkb_keymap_info,
     mut key: *mut xkb_key,
 ) -> bool {
@@ -2030,7 +2030,7 @@ unsafe extern "C" fn update_pending_key_fields(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn update_pending_action_fields(
+unsafe fn update_pending_action_fields(
     mut info: *mut xkb_keymap_info,
     mut keycode: xkb_keycode_t,
     mut act: *mut xkb_action,
@@ -2108,7 +2108,7 @@ unsafe extern "C" fn update_pending_action_fields(
         };
     }
 }
-unsafe extern "C" fn update_pending_led_fields(
+unsafe fn update_pending_led_fields(
     mut info: *mut xkb_keymap_info,
     mut led: *mut xkb_led,
 ) -> bool {
@@ -2144,7 +2144,7 @@ unsafe extern "C" fn update_pending_led_fields(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
+unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = &raw mut (*info).keymap;
         let mut num_key_aliases: darray_size_t = 0 as darray_size_t;
@@ -2507,7 +2507,7 @@ static mut compile_file_fns: [compile_file_fn; 4] = unsafe {
         Some(CompileSymbols as unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
     ]
 };
-unsafe extern "C" fn pending_computations_array_free(mut p: *mut pending_computation_array) {
+unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array) {
     unsafe {
         let mut pc: *mut pending_computation = ::core::ptr::null_mut::<pending_computation>();
         if !(*p).item.is_null() {

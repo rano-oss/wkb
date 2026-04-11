@@ -200,7 +200,7 @@ pub mod keymap_h {
     pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
     pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
     #[inline]
-    pub unsafe extern "C" fn format_boolean_controls(
+    pub unsafe fn format_boolean_controls(
         mut format: xkb_keymap_format,
     ) -> xkb_action_controls {
         unsafe {
@@ -227,7 +227,7 @@ pub mod text_h {
     pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
     pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
     #[inline]
-    pub unsafe extern "C" fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
+    pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
         unsafe {
             return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
                 CONTROL_NAMES_MIN_V1_INDEX as i32
@@ -258,19 +258,19 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strlen_safe(mut s: *const i8) -> usize {
+    pub unsafe fn strlen_safe(mut s: *const i8) -> usize {
         unsafe {
             return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strempty(mut s: *const i8) -> *const i8 {
+    pub unsafe fn strempty(mut s: *const i8) -> *const i8 {
         unsafe {
             return if !s.is_null() {
                 s

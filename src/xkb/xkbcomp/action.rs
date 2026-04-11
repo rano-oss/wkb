@@ -102,7 +102,7 @@ pub mod atom_h {
 pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -580,7 +580,7 @@ pub mod keymap_h {
     }
     pub type xkb_overlay_index_t = uint8_t;
     #[inline]
-    pub unsafe extern "C" fn XkbKeyByName(
+    pub unsafe fn XkbKeyByName(
         mut keymap: *const xkb_keymap,
         mut name: xkb_atom_t,
         mut use_aliases: bool,
@@ -1095,7 +1095,7 @@ pub mod stdint_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
+    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as i32;
         }
@@ -1473,7 +1473,7 @@ static mut fieldStrings: [LookupEntry; 37] = [
         value: 0 as u32,
     },
 ];
-unsafe extern "C" fn stringToActionType(
+unsafe fn stringToActionType(
     mut str: *const i8,
     mut type_rtrn: *mut xkb_action_type,
 ) -> bool {
@@ -1488,7 +1488,7 @@ unsafe extern "C" fn stringToActionType(
         return ret;
     }
 }
-unsafe extern "C" fn stringToField(mut str: *const i8, mut field_rtrn: *mut action_field) -> bool {
+unsafe fn stringToField(mut str: *const i8, mut field_rtrn: *mut action_field) -> bool {
     unsafe {
         let mut field: u32 = 0 as u32;
         let ret: bool = LookupString(
@@ -1500,13 +1500,13 @@ unsafe extern "C" fn stringToField(mut str: *const i8, mut field_rtrn: *mut acti
         return ret;
     }
 }
-unsafe extern "C" fn fieldText(mut field: action_field) -> *const i8 {
+unsafe fn fieldText(mut field: action_field) -> *const i8 {
     unsafe {
         return LookupValue(&raw const fieldStrings as *const LookupEntry, field as u32);
     }
 }
 #[inline]
-unsafe extern "C" fn ReportMismatch(
+unsafe fn ReportMismatch(
     mut ctx: *mut xkb_context,
     mut code: xkb_message_code,
     mut action: xkb_action_type,
@@ -1534,7 +1534,7 @@ unsafe extern "C" fn ReportMismatch(
     }
 }
 #[inline]
-unsafe extern "C" fn ReportFormatVersionMismatch(
+unsafe fn ReportFormatVersionMismatch(
     mut ctx: *mut xkb_context,
     mut action: xkb_action_type,
     mut field: action_field,
@@ -1563,7 +1563,7 @@ unsafe extern "C" fn ReportFormatVersionMismatch(
     }
 }
 #[inline]
-unsafe extern "C" fn ReportIllegal(
+unsafe fn ReportIllegal(
     mut ctx: *mut xkb_context,
     mut action: xkb_action_type,
     mut field: action_field,
@@ -1588,7 +1588,7 @@ unsafe extern "C" fn ReportIllegal(
     }
 }
 #[inline]
-unsafe extern "C" fn ReportActionNotArray(
+unsafe fn ReportActionNotArray(
     mut ctx: *mut xkb_context,
     mut action: xkb_action_type,
     mut field: action_field,
@@ -1640,7 +1640,7 @@ unsafe extern "C" fn HandleNoAction(
         }) as xkb_parser_error;
     }
 }
-unsafe extern "C" fn CheckBooleanFlag(
+unsafe fn CheckBooleanFlag(
     mut ctx: *mut xkb_context,
     mut strict: xkb_parser_strict_flags,
     mut action: xkb_action_type,
@@ -1673,7 +1673,7 @@ unsafe extern "C" fn CheckBooleanFlag(
         return PARSER_SUCCESS;
     }
 }
-unsafe extern "C" fn CheckModifierField(
+unsafe fn CheckModifierField(
     mut ctx: *mut xkb_context,
     mut strict: xkb_parser_strict_flags,
     mut mods: *const xkb_mod_set,
@@ -1737,7 +1737,7 @@ static mut lockWhich: [LookupEntry; 5] = [
         value: 0 as u32,
     },
 ];
-unsafe extern "C" fn CheckAffectField(
+unsafe fn CheckAffectField(
     mut ctx: *mut xkb_context,
     mut strict: xkb_parser_strict_flags,
     mut action: xkb_action_type,
@@ -1887,7 +1887,7 @@ unsafe extern "C" fn HandleSetLatchLockMods(
         return ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict);
     }
 }
-unsafe extern "C" fn CheckGroupField(
+unsafe fn CheckGroupField(
     mut keymap_info: *const xkb_keymap_info,
     mut action: xkb_action_type,
     mut array_ndx: *const ExprDef,

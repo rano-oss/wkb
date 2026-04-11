@@ -173,7 +173,7 @@ pub mod atom_h {
 pub mod darray_h {
     pub type darray_size_t = u32;
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -575,7 +575,7 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
+    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -585,7 +585,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
+    pub unsafe fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
         }
@@ -712,7 +712,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
-unsafe extern "C" fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
+unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
             malloc(::core::mem::size_of::<ExprDef>() as usize) as *mut ExprDef;
@@ -1577,7 +1577,7 @@ pub unsafe extern "C" fn XkbFileFromComponents(
         return ::core::ptr::null_mut::<XkbFile>();
     }
 }
-unsafe extern "C" fn FreeInclude(mut incl: *mut IncludeStmt) {
+unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
     unsafe {
         let mut next: *mut IncludeStmt = ::core::ptr::null_mut::<IncludeStmt>();
         while !incl.is_null() {

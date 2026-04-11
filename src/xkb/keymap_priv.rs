@@ -568,7 +568,7 @@ pub mod keymap_h {
     pub const XKB_MAX_GROUPS: i32 = 32 as i32;
     pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
     #[inline]
-    pub unsafe extern "C" fn XkbKeyNumLevels(
+    pub unsafe fn XkbKeyNumLevels(
         mut key: *const xkb_key,
         mut layout: xkb_layout_index_t,
     ) -> xkb_level_index_t {
@@ -744,7 +744,7 @@ pub use self::xkbcommon_names_h::{
     XKB_MOD_NAME_CAPS, XKB_MOD_NAME_CTRL, XKB_MOD_NAME_MOD1, XKB_MOD_NAME_MOD2, XKB_MOD_NAME_MOD3,
     XKB_MOD_NAME_MOD4, XKB_MOD_NAME_MOD5, XKB_MOD_NAME_SHIFT,
 };
-unsafe extern "C" fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
+unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
     unsafe {
         static mut builtin_mods: [*const i8; 8] = [
             XKB_MOD_NAME_SHIFT.as_ptr(),

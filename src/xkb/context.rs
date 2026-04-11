@@ -230,7 +230,7 @@ pub mod darray_h {
         pub item: *mut *mut i8,
     }
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -312,13 +312,13 @@ pub mod stat_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
+    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
         unsafe {
             return istrncmp(s1, s2, len) == 0 as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn strdup_safe(mut s: *const i8) -> *mut i8 {
+    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
         unsafe {
             return if !s.is_null() {
                 strdup(s)
@@ -328,13 +328,13 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
+    pub unsafe fn is_space(mut ch: i8) -> bool {
         unsafe {
             return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
+    pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
         unsafe {
             if eaccess(path, mode) != 0 as i32 {
                 return false_0 != 0;
@@ -358,7 +358,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn vasprintf_safe(
+    pub unsafe fn vasprintf_safe(
         mut fmt: *const i8,
         mut args: ::core::ffi::VaList,
     ) -> *mut i8 {
@@ -480,7 +480,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-unsafe extern "C" fn context_include_path_append(
+unsafe fn context_include_path_append(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
 ) -> i32 {
@@ -677,7 +677,7 @@ unsafe extern "C" fn compare_str(
         return strcmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
 }
-unsafe extern "C" fn add_direct_subdirectories(
+unsafe fn add_direct_subdirectories(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
     mut extensions: *mut darray_string,
@@ -1042,7 +1042,7 @@ pub unsafe extern "C" fn xkb_context_unref(mut ctx: *mut xkb_context) {
         free(ctx as *mut ::core::ffi::c_void);
     }
 }
-unsafe extern "C" fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
+unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
     unsafe {
         match level as u32 {
             50 => return b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
@@ -1070,7 +1070,7 @@ unsafe extern "C" fn default_log_fn(
         vfprintf(stderr, fmt, args);
     }
 }
-unsafe extern "C" fn log_level(mut level: *const i8) -> xkb_log_level {
+unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
     unsafe {
         let mut endptr: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut lvl: xkb_log_level = 0 as xkb_log_level;
@@ -1128,7 +1128,7 @@ unsafe extern "C" fn log_level(mut level: *const i8) -> xkb_log_level {
         return XKB_LOG_LEVEL_ERROR;
     }
 }
-unsafe extern "C" fn log_verbosity(mut verbosity: *const i8) -> i32 {
+unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
     unsafe {
         *__errno_location() = 0 as i32;
         let v: i64 = strtol(verbosity, ::core::ptr::null_mut::<*mut i8>(), 10 as i32) as i64;

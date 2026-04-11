@@ -238,7 +238,7 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
+    pub unsafe fn isempty(mut s: *const i8) -> bool {
         unsafe {
             return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
         }
@@ -447,7 +447,7 @@ pub unsafe extern "C" fn xkb_context_get_buffer(
         return rtrn;
     }
 }
-unsafe extern "C" fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 {
+unsafe fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
@@ -460,7 +460,7 @@ unsafe extern "C" fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) ->
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 {
+unsafe fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
@@ -473,7 +473,7 @@ unsafe extern "C" fn xkb_context_get_default_model(mut ctx: *mut xkb_context) ->
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8 {
+unsafe fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {
@@ -486,7 +486,7 @@ unsafe extern "C" fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i8 {
+unsafe fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         let mut layout: *const i8 =
@@ -501,7 +501,7 @@ unsafe extern "C" fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) 
         };
     }
 }
-unsafe extern "C" fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i8 {
+unsafe fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
         if (*ctx).use_environment_names() {

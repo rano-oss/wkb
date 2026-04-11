@@ -291,7 +291,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_init(
+    pub unsafe fn scanner_init(
         mut s: *mut scanner,
         mut ctx: *mut xkb_context,
         mut string: *const i8,
@@ -313,7 +313,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_peek(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
         unsafe {
             if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -322,19 +322,19 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eof(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
         unsafe {
             return (*s).pos >= (*s).len;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_eol(mut s: *mut scanner) -> bool {
+    pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
         unsafe {
             return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_skip_to_eol(mut s: *mut scanner) {
+    pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
         unsafe {
             let mut nl: *const i8 = memchr(
                 (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
@@ -350,7 +350,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_next(mut s: *mut scanner) -> i8 {
+    pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
         unsafe {
             if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
                 return '\0' as i32 as i8;
@@ -361,7 +361,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
+    pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
                 as ::core::ffi::c_int as i64
@@ -374,7 +374,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_str(
+    pub unsafe fn scanner_str(
         mut s: *mut scanner,
         mut string: *const i8,
         mut len: usize,
@@ -396,7 +396,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
+    pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
         unsafe {
             if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[i8; 1024]>() as usize
@@ -410,7 +410,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_buf_appends_code_point(
+    pub unsafe fn scanner_buf_appends_code_point(
         mut s: *mut scanner,
         mut c: u32,
     ) -> bool {
@@ -441,7 +441,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_oct(mut s: *mut scanner, mut out: *mut uint8_t) -> bool {
+    pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut uint8_t) -> bool {
         unsafe {
             let mut i: uint8_t = 0 as uint8_t;
             let mut c: uint8_t = 0 as uint8_t;
@@ -465,7 +465,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_dec_int64(
+    pub unsafe fn scanner_dec_int64(
         mut s: *mut scanner,
         mut out: *mut i64,
     ) -> ::core::ffi::c_int {
@@ -487,7 +487,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_hex_int64(
+    pub unsafe fn scanner_hex_int64(
         mut s: *mut scanner,
         mut out: *mut i64,
     ) -> ::core::ffi::c_int {
@@ -509,7 +509,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_unicode_code_point(
+    pub unsafe fn scanner_unicode_code_point(
         mut s: *mut scanner,
         mut out: *mut u32,
     ) -> bool {
@@ -545,7 +545,7 @@ pub mod scanner_utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn scanner_check_supported_char_encoding(
+    pub unsafe fn scanner_check_supported_char_encoding(
         mut scanner: *mut scanner,
     ) -> bool {
         unsafe {
@@ -1065,20 +1065,20 @@ pub mod string_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn is_valid_char(mut cp: u32) -> bool {
+    pub unsafe fn is_valid_char(mut cp: u32) -> bool {
         unsafe {
             return cp != 0 as u32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_ascii(mut ch: i8) -> bool {
+    pub unsafe fn is_ascii(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int)
                 == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_space(mut ch: i8) -> bool {
+    pub unsafe fn is_space(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int == ' ' as i32
                 || ch as ::core::ffi::c_int >= '\t' as i32
@@ -1086,7 +1086,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_alpha(mut ch: i8) -> bool {
+    pub unsafe fn is_alpha(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= 'a' as i32
                 && ch as ::core::ffi::c_int <= 'z' as i32
@@ -1095,21 +1095,21 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_digit(mut ch: i8) -> bool {
+    pub unsafe fn is_digit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_alnum(mut ch: i8) -> bool {
+    pub unsafe fn is_alnum(mut ch: i8) -> bool {
         unsafe {
             return is_alpha(ch) as ::core::ffi::c_int != 0
                 || is_digit(ch) as ::core::ffi::c_int != 0;
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_xdigit(mut ch: i8) -> bool {
+    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '0' as i32
                 && ch as ::core::ffi::c_int <= '9' as i32
@@ -1120,7 +1120,7 @@ pub mod utils_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn is_graph(mut ch: i8) -> bool {
+    pub unsafe fn is_graph(mut ch: i8) -> bool {
         unsafe {
             return ch as ::core::ffi::c_int >= '!' as i32
                 && ch as ::core::ffi::c_int <= '~' as i32;
@@ -1133,7 +1133,7 @@ pub mod utils_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint64_t(
+    pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
@@ -1429,7 +1429,7 @@ pub mod utils_numbers_h {
         0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     ];
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint32_t(
+    pub unsafe fn parse_hex_to_uint32_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut u32,
@@ -1456,7 +1456,7 @@ pub mod utils_numbers_h {
         }
     }
     #[inline]
-    pub unsafe extern "C" fn parse_hex_to_uint64_t(
+    pub unsafe fn parse_hex_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
         mut out: *mut uint64_t,
@@ -1654,7 +1654,7 @@ pub use self::xkbcommon_h::{
 pub use self::FILE_h::FILE;
 #[no_mangle]
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-unsafe extern "C" fn number(
+unsafe fn number(
     mut s: *mut scanner,
     mut out: *mut i64,
     mut out_tok: *mut ::core::ffi::c_int,

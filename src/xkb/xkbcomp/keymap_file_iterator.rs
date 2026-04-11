@@ -138,7 +138,7 @@ pub mod darray_h {
         pub item: *mut i8,
     }
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         mut need: darray_size_t,
         mut itemSize: usize,
@@ -494,7 +494,7 @@ pub mod stdlib_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn strcpy_safe(
+    pub unsafe fn strcpy_safe(
         mut dest: *mut i8,
         mut size: usize,
         mut src: *const i8,
@@ -963,7 +963,7 @@ pub unsafe extern "C" fn xkb_file_section_init(mut section: *mut xkb_file_sectio
             '\0' as i32 as i8;
     }
 }
-unsafe extern "C" fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
+unsafe fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
     unsafe {
         (*section).include_groups.size = 0 as darray_size_t;
         (*section).includes.size = 0 as darray_size_t;
@@ -990,7 +990,7 @@ pub unsafe extern "C" fn xkb_file_section_free(mut section: *mut xkb_file_sectio
         (*section).buffer.alloc = 0 as darray_size_t;
     }
 }
-unsafe extern "C" fn xkb_file_section_set_meta_data(
+unsafe fn xkb_file_section_set_meta_data(
     mut ctx: *mut xkb_context,
     mut section: *mut xkb_file_section,
     mut xkb_file: *const XkbFile,
@@ -1029,7 +1029,7 @@ unsafe extern "C" fn xkb_file_section_set_meta_data(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn xkb_file_section_append_includes(
+unsafe fn xkb_file_section_append_includes(
     mut ctx: *mut xkb_context,
     mut flags: xkb_file_iterator_flags,
     mut section_path: *const i8,
@@ -1282,7 +1282,7 @@ unsafe extern "C" fn xkb_file_section_append_includes(
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn xkb_file_section_process(
+unsafe fn xkb_file_section_process(
     mut ctx: *mut xkb_context,
     mut flags: xkb_file_iterator_flags,
     mut path: *const i8,
