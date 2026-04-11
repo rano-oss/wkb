@@ -193,8 +193,7 @@ unsafe extern "C" fn is_supported_enum_value_mask(
     mut value: u32,
 ) -> bool {
     unsafe {
-        return value < UINT32_WIDTH as u32
-            && values as u32 & (1 as u32) << value != 0;
+        return value < UINT32_WIDTH as u32 && values as u32 & (1 as u32) << value != 0;
     }
 }
 unsafe extern "C" fn is_supported_enum_value_array(
@@ -221,8 +220,7 @@ unsafe extern "C" fn is_supported_flag_value(
 ) -> bool {
     return (accept_zero as i32 != 0 || value != 0) && values as u32 & value == value;
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {
+pub unsafe fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {
     unsafe {
         match feature as u32 {
             1 => {

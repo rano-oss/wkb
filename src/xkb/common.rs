@@ -245,7 +245,7 @@ pub mod darray_h {
         pub item: *mut *mut i8,
     }
     #[inline]
-    pub unsafe extern "C" fn darray_next_alloc(
+    pub unsafe fn darray_next_alloc(
         mut alloc: darray_size_t,
         need: darray_size_t,
         itemSize: usize,
@@ -1016,19 +1016,16 @@ pub mod stat_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(s1: *const i8, s2: *const i8) -> bool {
+    pub unsafe fn streq(s1: *const i8, s2: *const i8) -> bool {
         assert!(!s1.is_null() && !s2.is_null(), "s1 && s2");
         unsafe { std::ffi::CStr::from_ptr(s1) == std::ffi::CStr::from_ptr(s2) }
     }
     #[inline]
-    pub unsafe extern "C" fn isempty(s: *const i8) -> bool {
+    pub unsafe fn isempty(s: *const i8) -> bool {
         s.is_null() || unsafe { *s == 0 }
     }
     #[inline]
-    pub unsafe extern "C" fn vasprintf_safe(
-        mut fmt: *const i8,
-        mut args: ::core::ffi::VaList,
-    ) -> *mut i8 {
+    pub unsafe fn vasprintf_safe(mut fmt: *const i8, mut args: ::core::ffi::VaList) -> *mut i8 {
         unsafe {
             let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
             let mut len: i32 = 0;
@@ -1061,7 +1058,7 @@ pub mod include_locale_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint32_t(s: *const i8, len: usize, out: *mut u32) -> i32 {
+    pub unsafe fn parse_dec_to_uint32_t(s: *const i8, len: usize, out: *mut u32) -> i32 {
         unsafe {
             let bytes = std::slice::from_raw_parts(s as *const u8, len);
             let mut result: u32 = 0;
@@ -1258,8 +1255,7 @@ pub struct C2Rust_Unnamed_15 {
     pub alloc: darray_size_t,
     pub item: *mut darray_string,
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_init() {
+pub unsafe fn test_init() {
     unsafe {
         setvbuf(
             stdout,
@@ -1270,8 +1266,7 @@ pub unsafe extern "C" fn test_init() {
         setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
+pub unsafe fn print_detailed_state(mut state: *mut xkb_state) {
     unsafe {
         fprintf(
             stderr,
@@ -1302,7 +1297,7 @@ pub unsafe extern "C" fn print_detailed_state(mut state: *mut xkb_state) {
         fprintf(stderr, b"  LEDs: 0x%x\n\0".as_ptr() as *const i8, leds);
     }
 }
-unsafe extern "C" fn consume_events(
+unsafe fn consume_events(
     mut sm: *mut xkb_machine,
     mut events: *mut xkb_events,
     mut state: *mut xkb_state,
@@ -1332,8 +1327,7 @@ unsafe extern "C" fn consume_events(
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_key_seq_va(
+pub unsafe fn test_key_seq_va(
     mut keymap: *mut xkb_keymap,
     mut sm: *mut xkb_machine,
     mut events: *mut xkb_events,
@@ -1656,7 +1650,6 @@ pub unsafe extern "C" fn test_key_seq_va(
         };
     }
 }
-#[no_mangle]
 pub unsafe extern "C" fn test_key_seq(mut keymap: *mut xkb_keymap, mut c2rust_args: ...) -> i32 {
     unsafe {
         let mut ap: ::core::ffi::VaList;
@@ -1671,7 +1664,6 @@ pub unsafe extern "C" fn test_key_seq(mut keymap: *mut xkb_keymap, mut c2rust_ar
         return ret;
     }
 }
-#[no_mangle]
 pub unsafe extern "C" fn test_key_seq2(
     mut keymap: *mut xkb_keymap,
     mut sm: *mut xkb_machine,
@@ -1686,8 +1678,7 @@ pub unsafe extern "C" fn test_key_seq2(
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i8 {
+pub unsafe fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i8 {
     unsafe {
         let mut dirname: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut err: i32 = 0;
@@ -1714,8 +1705,7 @@ pub unsafe extern "C" fn test_makedir(mut parent: *const i8, mut path: *const i8
         return dirname;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_maketempdir(mut template: *const i8) -> *mut i8 {
+pub unsafe fn test_maketempdir(mut template: *const i8) -> *mut i8 {
     unsafe {
         let mut tmpdir: *mut i8 = asprintf_safe(b"/tmp/%s\0".as_ptr() as *const i8, template);
         if !tmpdir.is_null() {
@@ -1740,8 +1730,7 @@ pub unsafe extern "C" fn test_maketempdir(mut template: *const i8) -> *mut i8 {
         return tmpdir;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
+pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
         let mut path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut srcdir: *const i8 = ::core::ptr::null::<i8>();
@@ -1773,8 +1762,7 @@ pub unsafe extern "C" fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
         return path;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
+pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
     unsafe {
         if file.is_null() {
             return ::core::ptr::null_mut::<i8>();
@@ -1867,8 +1855,7 @@ pub unsafe extern "C" fn read_file(mut path: *const i8, mut file: *mut FILE) -> 
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
+pub unsafe fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
         let mut path: *mut i8 = test_get_path(path_rel);
         if path.is_null() {
@@ -1886,8 +1873,7 @@ pub unsafe extern "C" fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_context {
+pub unsafe fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_context {
     unsafe {
         let mut ctx_flags: xkb_context_flags = XKB_CONTEXT_NO_DEFAULT_INCLUDES;
         if test_flags as u32 & CONTEXT_ALLOW_ENVIRONMENT_NAMES as i32 as u32 != 0 {
@@ -1914,8 +1900,7 @@ pub unsafe extern "C" fn test_get_context(mut test_flags: test_context_flags) ->
         return ctx;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_file(
+pub unsafe fn test_compile_file(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut path_rel: *const i8,
@@ -1968,8 +1953,7 @@ pub unsafe extern "C" fn test_compile_file(
         return keymap;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_string(
+pub unsafe fn test_compile_string(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut string: *const i8,
@@ -1988,8 +1972,7 @@ pub unsafe extern "C" fn test_compile_string(
         return keymap;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_buffer(
+pub unsafe fn test_compile_buffer(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut buf: *const i8,
@@ -1999,8 +1982,7 @@ pub unsafe extern "C" fn test_compile_buffer(
         return test_compile_buffer2(context, format, XKB_KEYMAP_COMPILE_STRICT_MODE, buf, len);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_buffer2(
+pub unsafe fn test_compile_buffer2(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut flags: xkb_keymap_compile_flags,
@@ -2020,8 +2002,7 @@ pub unsafe extern "C" fn test_compile_buffer2(
         return keymap;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_rules(
+pub unsafe fn test_compile_rules(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut rules: *const i8,
@@ -2094,7 +2075,7 @@ pub unsafe extern "C" fn test_compile_rules(
         return keymap;
     }
 }
-unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
+unsafe fn xkb_rules_names_to_rmlvo_builder(
     mut context: *mut xkb_context,
     mut names: *const xkb_rule_names,
 ) -> *mut xkb_rmlvo_builder {
@@ -3383,8 +3364,7 @@ unsafe extern "C" fn xkb_rules_names_to_rmlvo_builder(
         return rmlvo;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_rmlvo(
+pub unsafe fn test_compile_rmlvo(
     mut context: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut rules: *const i8,
@@ -3458,8 +3438,7 @@ pub unsafe extern "C" fn test_compile_rmlvo(
         return keymap;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_output(
+pub unsafe fn test_compile_output(
     mut ctx: *mut xkb_context,
     mut input_format: xkb_keymap_format,
     mut output_format: xkb_keymap_format,
@@ -3488,8 +3467,7 @@ pub unsafe extern "C" fn test_compile_output(
         );
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_compile_output2(
+pub unsafe fn test_compile_output2(
     mut ctx: *mut xkb_context,
     mut input_format: xkb_keymap_format,
     mut output_format: xkb_keymap_format,
@@ -3686,8 +3664,7 @@ pub unsafe extern "C" fn test_compile_output2(
         return success != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn test_third_pary_compile_output(
+pub unsafe fn test_third_pary_compile_output(
     mut compile_buffer: test_third_party_compile_buffer_t,
     mut compile_buffer_private: *mut ::core::ffi::c_void,
     mut test_title: *const i8,

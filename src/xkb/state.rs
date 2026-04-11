@@ -1442,10 +1442,7 @@ pub mod xkbcommon_features_h {
 
     pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
     use super::stdint_uintn_h::u32;
-    extern "C" {
-
-        pub fn xkb_feature_supported(feature: xkb_feature, value: u32) -> bool;
-    }
+    pub use crate::xkb::features::xkb_feature_supported;
 }
 
 pub mod string_h {
