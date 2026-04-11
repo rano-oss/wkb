@@ -68,7 +68,6 @@ pub mod registry_list;
 pub mod rmlvo;
 
 // Messages and logging
-pub mod check_messages;
 pub mod messages;
 
 // Rust-native wrapper types

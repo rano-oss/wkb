@@ -1,6 +1,7 @@
 //! Native Rust atom table - string interning system
 //!
-//! Converted from C darray to Vec<T> for safety and simplicity.
+//! Fully safe internals. Only function signatures remain `unsafe extern "C"`
+//! for FFI compatibility with c2rust-generated callers.
 
 pub mod types_h {
     pub type __uint8_t = u8;
@@ -19,107 +20,58 @@ pub mod atom_h {
     pub const XKB_ATOM_NONE: i32 = 0 as i32;
     use super::darray_h::darray_size_t;
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strncmp(__s1: *const i8, __s2: *const i8, __n: usize) -> i32;
-        pub fn strndup(__string: *const i8, __n: usize) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
-    }
-}
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 
 pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};
 pub use self::darray_h::darray_size_t;
 pub use self::stdint_uintn_h::{u32, uint8_t};
-use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{strlen, strncmp, strndup};
 pub use self::types_h::{__uint32_t, __uint8_t};
+
+use std::ffi::CString;
 
 /// Atom table - string interning system
 ///
-/// NOTE: Still uses raw C pointers for index hash table and string storage
-/// to maintain FFI compatibility. Strings Vec replaces darray manual management.
-#[repr(C)]
+/// Fully safe Rust internals. No C allocations.
 pub struct atom_table {
-    pub index: *mut xkb_atom_t,
-    pub index_size: usize,
-    /// Vector of interned strings (raw C char pointers for FFI compat)
-    /// Index 0 is always NULL (XKB_ATOM_NONE)
-    pub strings: Vec<*mut i8>,
+    /// Hash index for O(1) lookups (open addressing, linear probing)
+    index: Vec<xkb_atom_t>,
+    /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
+    /// Stored as CString so `.as_ptr()` returns a valid `*const i8`.
+    strings: Vec<Option<CString>>,
 }
 
-/// FNV-1a hash function for strings
+/// FNV-1a hash function for byte slices
 #[inline]
-fn hash_buf(string: *const i8, len: usize) -> u32 {
-    unsafe {
-        let mut hash: u32 = 2166136261;
-        for i in 0..(len + 1) / 2 {
-            hash ^= *string.offset(i as isize) as u8 as u32;
-            hash = hash.wrapping_mul(0x1000193);
-            hash ^= *string.offset((len - 1 - i) as isize) as u8 as u32;
-            hash = hash.wrapping_mul(0x1000193);
-        }
-        hash
+fn hash_buf(bytes: &[u8]) -> u32 {
+    let len = bytes.len();
+    let mut hash: u32 = 2166136261;
+    for i in 0..(len + 1) / 2 {
+        hash ^= bytes[i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
+        hash ^= bytes[len - 1 - i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
     }
+    hash
 }
 
 /// Create new atom table
 #[no_mangle]
 pub unsafe extern "C" fn atom_table_new() -> *mut atom_table {
-    unsafe {
-        let mut table: *mut atom_table =
-            calloc(1, ::core::mem::size_of::<atom_table>()) as *mut atom_table;
-        if table.is_null() {
-            return ::core::ptr::null_mut();
-        }
-
-        // Initialize strings vector with capacity 4, push NULL for index 0
-        let mut strings = Vec::with_capacity(4);
-        strings.push(::core::ptr::null_mut());
-
-        // Move Vec into atom_table struct
-        std::ptr::write(&mut (*table).strings, strings);
-
-        // Initialize hash table index
-        (*table).index_size = 4;
-        (*table).index =
-            calloc((*table).index_size, ::core::mem::size_of::<xkb_atom_t>()) as *mut xkb_atom_t;
-
-        table
-    }
+    let table = atom_table {
+        index: vec![0; 4],
+        strings: vec![None], // index 0 = XKB_ATOM_NONE
+    };
+    Box::into_raw(Box::new(table))
 }
 
 /// Free atom table and all interned strings
 #[no_mangle]
-pub unsafe extern "C" fn atom_table_free(mut table: *mut atom_table) {
+pub unsafe extern "C" fn atom_table_free(table: *mut atom_table) {
+    if table.is_null() {
+        return;
+    }
+    // Safety: pointer came from Box::into_raw in atom_table_new
     unsafe {
-        if table.is_null() {
-            return;
-        }
-
-        // Free all interned strings (skip index 0 which is NULL)
-        for string_ptr in (*table).strings.iter().skip(1) {
-            if !string_ptr.is_null() {
-                free(*string_ptr as *mut ::core::ffi::c_void);
-            }
-        }
-
-        // Drop the Vec (automatically frees its buffer)
-        std::ptr::drop_in_place(&mut (*table).strings);
-
-        // Free hash table index
-        free((*table).index as *mut ::core::ffi::c_void);
-
-        // Free the table itself
-        free(table as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(table));
     }
 }
 
@@ -133,12 +85,15 @@ pub unsafe extern "C" fn atom_table_size(table: *mut atom_table) -> darray_size_
 #[no_mangle]
 pub unsafe extern "C" fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
     unsafe {
-        let strings_ptr = (*table).strings.as_ptr();
+        let t = &*table;
         assert!(
-            (atom as usize) < (*table).strings.len(),
+            (atom as usize) < t.strings.len(),
             "atom index out of bounds"
         );
-        *strings_ptr.add(atom as usize)
+        match &t.strings[atom as usize] {
+            Some(cstr) => cstr.as_ptr(),
+            None => std::ptr::null(),
+        }
     }
 }
 
@@ -154,61 +109,59 @@ pub unsafe extern "C" fn atom_intern(
     add: bool,
 ) -> xkb_atom_t {
     unsafe {
-        // Resize hash table if load factor > 0.8
-        if (*table).strings.len() > (*table).index_size * 4 / 5 {
-            (*table).index_size *= 2;
-            (*table).index = realloc(
-                (*table).index as *mut ::core::ffi::c_void,
-                (*table).index_size * ::core::mem::size_of::<xkb_atom_t>(),
-            ) as *mut xkb_atom_t;
+        // Convert input C string to a byte slice (not including null terminator)
+        let input_bytes = std::slice::from_raw_parts(string as *const u8, len);
 
-            // Clear hash table
-            std::ptr::write_bytes((*table).index, 0, (*table).index_size);
+        let t = &mut *table;
+
+        // Resize hash table if load factor > 0.8
+        if t.strings.len() > t.index.len() * 4 / 5 {
+            let new_size = t.index.len() * 2;
+            t.index = vec![0; new_size];
 
             // Rehash all strings (skip index 0)
-            let strings_ptr = (*table).strings.as_ptr();
-            for j in 1..(*table).strings.len() {
-                let s = *strings_ptr.add(j);
-                let hash = hash_buf(s, strlen(s));
+            for j in 1..t.strings.len() {
+                if let Some(ref s) = t.strings[j] {
+                    let s_bytes = s.as_bytes(); // does not include null terminator
+                    let hash = hash_buf(s_bytes);
 
-                // Linear probing to find empty slot
-                for i in 0..(*table).index_size {
-                    let index_pos = ((hash as usize) + i) & ((*table).index_size - 1);
-                    if index_pos == 0 {
-                        continue; // Skip slot 0 (reserved for NONE)
-                    }
-
-                    let atom = *(*table).index.offset(index_pos as isize);
-                    if atom == XKB_ATOM_NONE as xkb_atom_t {
-                        *(*table).index.offset(index_pos as isize) = j as xkb_atom_t;
-                        break;
+                    for i in 0..t.index.len() {
+                        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+                        if index_pos == 0 {
+                            continue;
+                        }
+                        if t.index[index_pos] == XKB_ATOM_NONE as xkb_atom_t {
+                            t.index[index_pos] = j as xkb_atom_t;
+                            break;
+                        }
                     }
                 }
             }
         }
 
         // Look up or insert string
-        let hash = hash_buf(string, len);
+        let hash = hash_buf(input_bytes);
 
-        for i in 0..(*table).index_size {
-            let index_pos = ((hash as usize) + i) & ((*table).index_size - 1);
+        for i in 0..t.index.len() {
+            let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
             if index_pos == 0 {
-                continue; // Skip slot 0
+                continue;
             }
 
-            let existing_atom = *(*table).index.offset(index_pos as isize);
+            let existing_atom = t.index[index_pos];
 
             // Empty slot - not found
             if existing_atom == XKB_ATOM_NONE as xkb_atom_t {
                 if add {
-                    let new_atom = (*table).strings.len() as xkb_atom_t;
+                    let new_atom = t.strings.len() as xkb_atom_t;
 
-                    // Add string to Vec
-                    let new_string = strndup(string, len);
-                    (*table).strings.push(new_string);
+                    // Create CString from bytes
+                    let new_string =
+                        CString::new(input_bytes.to_vec()).expect("string contains interior null");
+                    t.strings.push(Some(new_string));
 
                     // Update hash table
-                    *(*table).index.offset(index_pos as isize) = new_atom;
+                    t.index[index_pos] = new_atom;
 
                     return new_atom;
                 } else {
@@ -217,12 +170,11 @@ pub unsafe extern "C" fn atom_intern(
             }
 
             // Check if existing string matches
-            let strings_ptr = (*table).strings.as_ptr();
-            let existing_value = *strings_ptr.add(existing_atom as usize);
-            if strncmp(existing_value, string, len) == 0
-                && *existing_value.offset(len as isize) as i32 == '\0' as i32
-            {
-                return existing_atom;
+            if let Some(ref existing_cstr) = t.strings[existing_atom as usize] {
+                let existing_bytes = existing_cstr.as_bytes();
+                if existing_bytes == input_bytes {
+                    return existing_atom;
+                }
             }
         }
 

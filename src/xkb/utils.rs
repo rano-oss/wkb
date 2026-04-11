@@ -223,7 +223,7 @@ pub unsafe extern "C" fn open_file(mut path: *const i8) -> *mut FILE {
         return fp;
     }
 }
-static mut lower_map: [u8; 256] = [
+static LOWER_MAP: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
     26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
     50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99, 100, 101, 102, 103,
@@ -241,7 +241,7 @@ static mut lower_map: [u8; 256] = [
 #[no_mangle]
 pub unsafe extern "C" fn to_lower(mut c: i8) -> i8 {
     unsafe {
-        return lower_map[c as ::core::ffi::c_uchar as usize] as i8;
+        return LOWER_MAP[c as ::core::ffi::c_uchar as usize] as i8;
     }
 }
 #[no_mangle]
@@ -347,7 +347,7 @@ pub unsafe fn open_file_from_cstr(path: *const i8) -> io::Result<File> {
 /// Convert a character to lowercase using the same lookup table as the C code
 #[inline]
 pub fn to_lower_char(c: u8) -> u8 {
-    unsafe { lower_map[c as usize] }
+    LOWER_MAP[c as usize]
 }
 
 /// Case-insensitive string comparison (safe Rust version)

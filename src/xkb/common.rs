@@ -247,37 +247,22 @@ pub mod darray_h {
     #[inline]
     pub unsafe extern "C" fn darray_next_alloc(
         mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
+        need: darray_size_t,
+        itemSize: usize,
     ) -> darray_size_t {
-        unsafe {
-            if (need as usize)
-                < ((2147483647 as i32 as u32)
-                    .wrapping_mul(2 as u32)
-                    .wrapping_add(1 as u32) as usize)
-                    .wrapping_div(itemSize)
-                    .wrapping_div(2 as usize)
-            {
-            } else {
-                __assert_fail(
-                    b"need < darray_max_alloc(itemSize) / 2\0".as_ptr() as *const i8,
-                    b"../src/darray.h\0".as_ptr() as *const i8,
-                    220 as u32,
-                    b"darray_size_t darray_next_alloc(darray_size_t, darray_size_t, usize)\0"
-                        .as_ptr() as *const i8,
-                );
-            };
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
+        let max_alloc = (u32::MAX as usize) / itemSize / 2;
+        assert!(
+            (need as usize) < max_alloc,
+            "need < darray_max_alloc(itemSize) / 2"
+        );
+        if alloc == 0 {
+            alloc = 4;
         }
+        while alloc < need {
+            alloc = alloc.wrapping_mul(2);
+        }
+        alloc
     }
-
-    use super::assert_h::__assert_fail;
 }
 pub mod xkbcommon_h {
     #[derive(Copy, Clone)]
@@ -1031,25 +1016,13 @@ pub mod stat_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe extern "C" fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            if !s1.is_null() && !s2.is_null() {
-            } else {
-                __assert_fail(
-                    b"s1 && s2\0".as_ptr() as *const i8,
-                    b"../src/utils.h\0".as_ptr() as *const i8,
-                    94 as u32,
-                    b"_Bool streq(const char *, const char *)\0".as_ptr() as *const i8,
-                );
-            };
-            return strcmp(s1, s2) == 0 as i32;
-        }
+    pub unsafe extern "C" fn streq(s1: *const i8, s2: *const i8) -> bool {
+        assert!(!s1.is_null() && !s2.is_null(), "s1 && s2");
+        unsafe { std::ffi::CStr::from_ptr(s1) == std::ffi::CStr::from_ptr(s2) }
     }
     #[inline]
-    pub unsafe extern "C" fn isempty(mut s: *const i8) -> bool {
-        unsafe {
-            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
-        }
+    pub unsafe extern "C" fn isempty(s: *const i8) -> bool {
+        s.is_null() || unsafe { *s == 0 }
     }
     #[inline]
     pub unsafe extern "C" fn vasprintf_safe(
@@ -1077,9 +1050,7 @@ pub mod utils_h {
         }
     }
 
-    use super::assert_h::__assert_fail;
     use super::stdio_h::vasprintf;
-    use super::string_h::strcmp;
 }
 pub mod include_locale_h {
     pub const LC_ALL: i32 = __LC_ALL;
@@ -1090,38 +1061,32 @@ pub mod include_locale_h {
 }
 pub mod utils_numbers_h {
     #[inline]
-    pub unsafe extern "C" fn parse_dec_to_uint32_t(
-        mut s: *const i8,
-        mut len: usize,
-        mut out: *mut u32,
-    ) -> i32 {
+    pub unsafe extern "C" fn parse_dec_to_uint32_t(s: *const i8, len: usize, out: *mut u32) -> i32 {
         unsafe {
-            let mut result: u32 = 0 as u32;
+            let bytes = std::slice::from_raw_parts(s as *const u8, len);
+            let mut result: u32 = 0;
             let mut i: usize = 0;
-            i = 0 as usize;
-            while i < len
-                && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
-                    < 10 as u32
-                && result <= (4294967295 as u32).wrapping_div(10 as u32)
-                && result.wrapping_mul(10 as u32)
-                    <= (4294967295 as u32).wrapping_sub(
-                        (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32,
-                    )
-            {
-                result = result
-                    .wrapping_mul(10 as u32)
-                    .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as u32);
-                i = i.wrapping_add(1);
+            while i < bytes.len() {
+                let digit = bytes[i].wrapping_sub(b'0');
+                if digit >= 10 {
+                    break;
+                }
+                if result > u32::MAX / 10 {
+                    break;
+                }
+                let next = result.wrapping_mul(10);
+                if next > u32::MAX - digit as u32 {
+                    break;
+                }
+                result = next + digit as u32;
+                i += 1;
             }
-            *out = result as u32;
-            return if i >= len
-                || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
-                    >= 10 as u32
-            {
+            *out = result;
+            if i >= len || bytes.get(i).map_or(true, |&b| b.wrapping_sub(b'0') >= 10) {
                 i as i32
             } else {
-                -1 as i32
-            };
+                -1
+            }
         }
     }
 
