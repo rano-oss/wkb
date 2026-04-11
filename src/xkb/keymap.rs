@@ -973,6 +973,7 @@ pub mod keymap_h {
             out_of_range_group_number: xkb_layout_index_t,
         ) -> xkb_layout_index_t;
         #[c2rust::src_loc = "956:1"]
+        #[no_mangle]
         pub static text_v1_keymap_format_ops: xkb_keymap_format_ops;
     }
 }
@@ -1451,6 +1452,7 @@ pub struct xkb_keymap_key_iterator {
 }
 #[no_mangle]
 #[c2rust::src_loc = "26:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
         (*keymap).refcnt += 1;
@@ -1459,6 +1461,7 @@ pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
 }
 #[no_mangle]
 #[c2rust::src_loc = "34:1"]
+#[no_mangle]
 pub unsafe fn clear_level(mut leveli: *mut xkb_level) {
     unsafe {
         if (*leveli).num_syms as i32 > 1 as i32 {
@@ -1479,6 +1482,7 @@ unsafe fn clear_interpret(mut interp: *mut xkb_sym_interpret) {
 }
 #[no_mangle]
 #[c2rust::src_loc = "50:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
     unsafe {
         if keymap.is_null() || {
@@ -1579,6 +1583,7 @@ unsafe fn get_keymap_format_ops(
 }
 #[no_mangle]
 #[c2rust::src_loc = "113:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut format: xkb_keymap_format,
@@ -1618,6 +1623,7 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
 }
 #[no_mangle]
 #[c2rust::src_loc = "138:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_names2(
     mut ctx: *mut xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
@@ -1680,6 +1686,7 @@ pub unsafe fn xkb_keymap_new_from_names(
 }
 #[no_mangle]
 #[c2rust::src_loc = "178:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_string(
     mut ctx: *mut xkb_context,
     mut string: *const i8,
@@ -1692,6 +1699,7 @@ pub unsafe fn xkb_keymap_new_from_string(
 }
 #[no_mangle]
 #[c2rust::src_loc = "188:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_buffer(
     mut ctx: *mut xkb_context,
     mut buffer: *const i8,
@@ -1748,6 +1756,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
 }
 #[no_mangle]
 #[c2rust::src_loc = "223:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_file(
     mut ctx: *mut xkb_context,
     mut file: *mut FILE,
@@ -1798,6 +1807,7 @@ pub unsafe fn xkb_keymap_new_from_file(
 }
 #[no_mangle]
 #[c2rust::src_loc = "254:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_get_as_string2(
     mut keymap: *mut xkb_keymap,
     mut format: xkb_keymap_format,
@@ -1850,6 +1860,7 @@ pub unsafe fn xkb_keymap_get_as_string(
 }
 #[no_mangle]
 #[c2rust::src_loc = "294:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_num_mods(mut keymap: *mut xkb_keymap) -> xkb_mod_index_t {
     unsafe {
         return (*keymap).mods.num_mods;
@@ -1870,6 +1881,7 @@ pub unsafe fn xkb_keymap_mod_get_name(
 }
 #[no_mangle]
 #[c2rust::src_loc = "315:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_mod_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -1934,6 +1946,7 @@ pub unsafe fn xkb_keymap_layout_get_name(
 }
 #[no_mangle]
 #[c2rust::src_loc = "371:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_layout_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -1956,6 +1969,7 @@ pub unsafe fn xkb_keymap_layout_get_index(
 }
 #[no_mangle]
 #[c2rust::src_loc = "390:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_num_layouts_for_key(
     mut keymap: *mut xkb_keymap,
     mut kc: xkb_keycode_t,
@@ -1994,6 +2008,7 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
 }
 #[no_mangle]
 #[c2rust::src_loc = "426:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_num_leds(mut keymap: *mut xkb_keymap) -> xkb_led_index_t {
     unsafe {
         return (*keymap).num_leds;
@@ -2014,6 +2029,7 @@ pub unsafe fn xkb_keymap_led_get_name(
 }
 #[no_mangle]
 #[c2rust::src_loc = "447:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_led_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -2106,6 +2122,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
 }
 #[no_mangle]
 #[c2rust::src_loc = "525:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_key_get_level(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
@@ -2132,6 +2149,7 @@ pub unsafe fn xkb_keymap_key_get_level(
 }
 #[no_mangle]
 #[c2rust::src_loc = "545:1"]
+#[no_mangle]
 pub unsafe fn xkb_keymap_key_get_syms_by_level(
     mut keymap: *mut xkb_keymap,
     mut kc: xkb_keycode_t,

@@ -133,7 +133,9 @@ pub mod xkbregistry_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
+        #[no_mangle]
         pub static mut stdout: *mut FILE;
+        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn printf(__format: *const i8, ...) -> i32;
@@ -153,7 +155,9 @@ pub mod config_h {
 }
 pub mod getopt_core_h {
     extern "C" {
+        #[no_mangle]
         pub static mut optarg: *mut i8;
+        #[no_mangle]
         pub static mut optind: i32;
     }
 }

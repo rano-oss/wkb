@@ -3358,6 +3358,7 @@ unsafe fn xkb_state_init(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
         let state: *mut xkb_state =
@@ -3390,6 +3391,7 @@ unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
@@ -3404,6 +3406,7 @@ pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
     unsafe {
         return (*state).keymap;
@@ -3547,6 +3550,7 @@ unsafe fn xkb_state_update_derived(mut state: *mut xkb_state) {
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_update_key(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
@@ -4175,6 +4179,7 @@ unsafe fn should_do_ctrl_transformation(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_key_get_syms(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
@@ -4421,6 +4426,7 @@ unsafe fn serialize_mods(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_serialize_mods(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
@@ -4454,6 +4460,7 @@ unsafe fn serialize_layout(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_serialize_layout(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
@@ -4489,6 +4496,7 @@ pub unsafe fn xkb_state_serialize_enabled_controls(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn mod_mask_get_effective(
     mut keymap: *mut xkb_keymap,
     mut mods: xkb_mod_mask_t,
@@ -4686,6 +4694,7 @@ pub unsafe fn xkb_state_layout_name_is_active(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_led_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_led_index_t,
@@ -5823,6 +5832,7 @@ unsafe fn process_overlayable_key(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_machine_process_key(
     mut sm: *mut xkb_machine,
     mut kc: xkb_keycode_t,
@@ -6030,6 +6040,7 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
     unsafe {
         if (*events).next < (*events).queue.size {
@@ -6044,6 +6055,7 @@ pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type {
     unsafe {
         return (*event).type_0;
@@ -6051,6 +6063,7 @@ pub unsafe fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type 
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
     unsafe {
         match (*event).type_0 as u32 {
@@ -6125,6 +6138,7 @@ pub unsafe fn xkb_event_serialize_layout(
 }
 #[no_mangle]
 
+#[no_mangle]
 pub unsafe fn xkb_state_update_event(
     mut state: *mut xkb_state,
     mut event: *const xkb_event,

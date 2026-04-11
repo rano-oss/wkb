@@ -1242,6 +1242,7 @@ pub mod string_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
+        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
     }

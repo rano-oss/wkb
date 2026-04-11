@@ -1115,8 +1115,8 @@ use self::xkbcomp_priv_h::{
     XkbParseString,
 };
 pub use self::FILE_h::FILE;
-#[no_mangle]
-pub unsafe extern "C" fn xkb_components_names_from_rules(
+
+pub unsafe fn xkb_components_names_from_rules(
     mut ctx: *mut xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
     mut rmlvo_out: *mut xkb_rule_names,

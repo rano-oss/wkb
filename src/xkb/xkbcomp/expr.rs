@@ -872,6 +872,7 @@ pub mod text_h {
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
     use super::stdint_uintn_h::u32;
     extern "C" {
+        #[no_mangle]
         pub static buttonNames: [LookupEntry; 0];
     }
 }

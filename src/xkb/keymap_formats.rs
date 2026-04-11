@@ -365,8 +365,8 @@ static mut keymap_formats_labels: [format_label; 4] = [
         format: XKB_KEYMAP_FORMAT_TEXT_V2,
     },
 ];
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_supported_formats(
+
+pub unsafe fn xkb_keymap_supported_formats(
     mut formats: *mut *const xkb_keymap_format,
 ) -> usize {
     unsafe {
@@ -375,8 +375,8 @@ pub unsafe extern "C" fn xkb_keymap_supported_formats(
             .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
+
+pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {
         if (format as u32) < keymap_formats[0 as i32 as usize] as u32 {
             return false_0 != 0;

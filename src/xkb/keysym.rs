@@ -26777,16 +26777,16 @@ pub unsafe extern "C" fn xkb_keysym_get_name(
         return snprintf(buffer, size, b"0x%08x\0".as_ptr() as *const i8, ks);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_assigned(mut ks: xkb_keysym_t) -> bool {
+
+pub unsafe fn xkb_keysym_is_assigned(mut ks: xkb_keysym_t) -> bool {
     unsafe {
         return XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t <= ks
             && ks <= XKB_KEYSYM_UNICODE_MAX as xkb_keysym_t
             || find_keysym_index(ks) != -1 as i32 as ssize_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
+
+pub unsafe fn xkb_keysym_get_explicit_names(
     mut ks: xkb_keysym_t,
     mut buffer: *mut *const i8,
     mut size: usize,
@@ -26830,8 +26830,8 @@ pub unsafe extern "C" fn xkb_keysym_get_explicit_names(
         return count;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_new(
+
+pub unsafe fn xkb_keysym_iterator_new(
     mut iterate_only_explicit_keysyms: bool,
 ) -> *mut xkb_keysym_iterator {
     unsafe {
@@ -26845,8 +26845,8 @@ pub unsafe extern "C" fn xkb_keysym_iterator_new(
         return iter;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_unref(
+
+pub unsafe fn xkb_keysym_iterator_unref(
     mut iter: *mut xkb_keysym_iterator,
 ) -> *mut xkb_keysym_iterator {
     unsafe {
@@ -26856,16 +26856,16 @@ pub unsafe extern "C" fn xkb_keysym_iterator_unref(
         return ::core::ptr::null_mut::<xkb_keysym_iterator>();
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_get_keysym(
+
+pub unsafe fn xkb_keysym_iterator_get_keysym(
     mut iter: *mut xkb_keysym_iterator,
 ) -> xkb_keysym_t {
     unsafe {
         return (*iter).keysym;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_is_explicitly_named(
+
+pub unsafe fn xkb_keysym_iterator_is_explicitly_named(
     mut iter: *mut xkb_keysym_iterator,
 ) -> bool {
     unsafe {
@@ -26878,8 +26878,8 @@ pub unsafe extern "C" fn xkb_keysym_iterator_is_explicitly_named(
                 || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_get_name(
+
+pub unsafe fn xkb_keysym_iterator_get_name(
     mut iter: *mut xkb_keysym_iterator,
     mut buffer: *mut i8,
     mut size: usize,
@@ -26909,8 +26909,8 @@ pub unsafe extern "C" fn xkb_keysym_iterator_get_name(
         return get_unicode_name((*iter).keysym, buffer, size);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bool {
+
+pub unsafe fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bool {
     unsafe {
         if (*iter).index
             >= (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
@@ -27058,8 +27058,8 @@ pub unsafe extern "C" fn xkb_keysym_from_name(
         return XKB_KEY_NoSymbol as xkb_keysym_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_utf8_to_keysym(
+
+pub unsafe fn xkb_utf8_to_keysym(
     mut buffer: *const i8,
     mut size: usize,
 ) -> xkb_keysym_t {
@@ -27081,8 +27081,8 @@ pub unsafe extern "C" fn xkb_keysym_is_keypad(mut keysym: xkb_keysym_t) -> bool 
     return keysym >= XKB_KEY_KP_Space as xkb_keysym_t
         && keysym <= XKB_KEY_KP_Equal as xkb_keysym_t;
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_modifier(mut keysym: xkb_keysym_t) -> bool {
+
+pub unsafe fn xkb_keysym_is_modifier(mut keysym: xkb_keysym_t) -> bool {
     return keysym >= XKB_KEY_Shift_L as xkb_keysym_t && keysym <= XKB_KEY_Hyper_R as xkb_keysym_t
         || keysym >= XKB_KEY_ISO_Lock as xkb_keysym_t
             && keysym <= XKB_KEY_ISO_Level5_Lock as xkb_keysym_t

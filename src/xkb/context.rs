@@ -144,6 +144,7 @@ pub mod stdio_h {
     use super::FILE_h::FILE;
 
     extern "C" {
+        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
@@ -637,8 +638,8 @@ pub unsafe extern "C" fn xkb_context_include_path_get_extra_path(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_get_unversioned_extensions_path(
+
+pub unsafe fn xkb_context_include_path_get_unversioned_extensions_path(
     mut ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
@@ -653,8 +654,8 @@ pub unsafe extern "C" fn xkb_context_include_path_get_unversioned_extensions_pat
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_get_versioned_extensions_path(
+
+pub unsafe fn xkb_context_include_path_get_versioned_extensions_path(
     mut ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
@@ -956,8 +957,8 @@ pub unsafe extern "C" fn xkb_context_include_path_append_default(mut ctx: *mut x
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
+
+pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
     unsafe {
         let mut path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
         if !(*ctx).includes.item.is_null() {
@@ -991,8 +992,8 @@ pub unsafe extern "C" fn xkb_context_include_path_clear(mut ctx: *mut xkb_contex
         (*ctx).set_pending_default_includes((false_0 != 0) as bool);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_include_path_reset_defaults(mut ctx: *mut xkb_context) -> i32 {
+
+pub unsafe fn xkb_context_include_path_reset_defaults(mut ctx: *mut xkb_context) -> i32 {
     unsafe {
         xkb_context_include_path_clear(ctx);
         return xkb_context_include_path_append_default(ctx);
@@ -1214,8 +1215,8 @@ pub unsafe extern "C" fn xkb_context_new(mut flags: xkb_context_flags) -> *mut x
         return ctx;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_set_log_fn(
+
+pub unsafe fn xkb_context_set_log_fn(
     mut ctx: *mut xkb_context,
     mut log_fn: Option<
         unsafe extern "C" fn(*mut xkb_context, xkb_log_level, *const i8, ::core::ffi::VaList) -> (),
@@ -1253,14 +1254,14 @@ pub unsafe extern "C" fn xkb_context_set_log_fn(
             >;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_get_log_level(mut ctx: *mut xkb_context) -> xkb_log_level {
+
+pub unsafe fn xkb_context_get_log_level(mut ctx: *mut xkb_context) -> xkb_log_level {
     unsafe {
         return (*ctx).log_level;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_set_log_level(
+
+pub unsafe fn xkb_context_set_log_level(
     mut ctx: *mut xkb_context,
     mut level: xkb_log_level,
 ) {
@@ -1274,8 +1275,8 @@ pub unsafe extern "C" fn xkb_context_get_log_verbosity(mut ctx: *mut xkb_context
         return (*ctx).log_verbosity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_set_log_verbosity(
+
+pub unsafe fn xkb_context_set_log_verbosity(
     mut ctx: *mut xkb_context,
     mut verbosity: i32,
 ) {
@@ -1283,8 +1284,8 @@ pub unsafe extern "C" fn xkb_context_set_log_verbosity(
         (*ctx).log_verbosity = verbosity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_get_user_data(
+
+pub unsafe fn xkb_context_get_user_data(
     mut ctx: *mut xkb_context,
 ) -> *mut ::core::ffi::c_void {
     unsafe {
@@ -1294,8 +1295,8 @@ pub unsafe extern "C" fn xkb_context_get_user_data(
         return NULL;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_context_set_user_data(
+
+pub unsafe fn xkb_context_set_user_data(
     mut ctx: *mut xkb_context,
     mut user_data: *mut ::core::ffi::c_void,
 ) {

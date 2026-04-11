@@ -4494,8 +4494,8 @@ static mut yycheck: [yytype_int16; 929] = [
     -1 as ::core::ffi::c_int as yytype_int16,
     59 as ::core::ffi::c_int as yytype_int16,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn parse(
+
+pub unsafe fn parse(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
     mut map: *const i8,
@@ -4937,8 +4937,8 @@ static mut yystos: [yytype_uint8; 384] = [
     49 as ::core::ffi::c_int as yytype_uint8,
     109 as ::core::ffi::c_int as yytype_uint8,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn parse_next(
+
+pub unsafe fn parse_next(
     mut ctx: *mut xkb_context,
     mut scanner: *mut scanner,
     mut xkb_file: *mut *mut XkbFile,
@@ -5753,8 +5753,8 @@ unsafe fn yydestruct(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_int {
+
+pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_int {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut yychar: ::core::ffi::c_int = 0;

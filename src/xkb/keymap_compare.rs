@@ -1524,8 +1524,8 @@ unsafe fn keymap_compare_symbols(
         return identical;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_compare(
+
+pub unsafe fn xkb_keymap_compare(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
     mut keymap2: *const xkb_keymap,

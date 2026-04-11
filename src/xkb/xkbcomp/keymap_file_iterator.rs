@@ -685,8 +685,8 @@ pub struct C2Rust_Unnamed_1 {
     pub flag: xkb_map_flags,
     pub name: *const i8,
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
+
+pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
         if type_0 as u32 > FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
             return b"unknown\0".as_ptr() as *const i8;
@@ -703,8 +703,8 @@ pub unsafe extern "C" fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const
         return xkb_file_type_strings[type_0 as usize];
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8 {
+
+pub unsafe fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8 {
     unsafe {
         if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as ::core::ffi::c_int as u32 {
             return b"unknown\0".as_ptr() as *const i8;
@@ -718,8 +718,8 @@ pub unsafe extern "C" fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8
         return merge_mode_strings[merge as usize];
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_map_flags_string_iter(
+
+pub unsafe fn xkb_map_flags_string_iter(
     mut index: *mut u32,
     mut flags: xkb_map_flags,
 ) -> *const i8 {
@@ -775,8 +775,8 @@ pub unsafe extern "C" fn xkb_map_flags_string_iter(
         return ::core::ptr::null::<i8>();
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_resolve_file(
+
+pub unsafe fn xkb_resolve_file(
     mut ctx: *mut xkb_context,
     mut file_type: xkb_file_type,
     mut path: *const i8,
@@ -930,8 +930,8 @@ pub unsafe extern "C" fn xkb_resolve_file(
         return ::core::ptr::null_mut::<FILE>();
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_section_init(mut section: *mut xkb_file_section) {
+
+pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
     unsafe {
         (*section).include_groups.item = ::core::ptr::null_mut::<xkb_file_include_group>();
         (*section).include_groups.size = 0 as darray_size_t;
@@ -970,8 +970,8 @@ unsafe fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
         (*section).buffer.size = 1 as darray_size_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_section_free(mut section: *mut xkb_file_section) {
+
+pub unsafe fn xkb_file_section_free(mut section: *mut xkb_file_section) {
     unsafe {
         if section.is_null() {
             return;
@@ -1311,8 +1311,8 @@ unsafe fn xkb_file_section_process(
         return ok;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_section_parse(
+
+pub unsafe fn xkb_file_section_parse(
     mut ctx: *mut xkb_context,
     mut iterator_flags: xkb_file_iterator_flags,
     mut format: xkb_keymap_format,
@@ -1367,8 +1367,8 @@ pub unsafe extern "C" fn xkb_file_section_parse(
         return ok;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_iterator_new_from_buffer(
+
+pub unsafe fn xkb_file_iterator_new_from_buffer(
     mut ctx: *mut xkb_context,
     mut iterator_flags: xkb_file_iterator_flags,
     mut format: xkb_keymap_format,
@@ -1414,8 +1414,8 @@ pub unsafe extern "C" fn xkb_file_iterator_new_from_buffer(
         return iter;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator) {
+
+pub unsafe fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator) {
     unsafe {
         if iter.is_null() {
             return;
@@ -1425,8 +1425,8 @@ pub unsafe extern "C" fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator
         free(iter as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_iterator_next(
+
+pub unsafe fn xkb_file_iterator_next(
     mut iter: *mut xkb_file_iterator,
     mut section: *mut *const xkb_file_section,
 ) -> bool {
@@ -1550,8 +1550,8 @@ pub unsafe extern "C" fn xkb_file_iterator_next(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_section_get_string(
+
+pub unsafe fn xkb_file_section_get_string(
     mut section: *const xkb_file_section,
     mut idx: darray_size_t,
 ) -> *const i8 {

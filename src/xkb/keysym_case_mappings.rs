@@ -2066,8 +2066,8 @@ unsafe fn get_unicode_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
         ) as *const CaseMappings;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_lower(mut ks: xkb_keysym_t) -> xkb_keysym_t {
+
+pub unsafe fn xkb_keysym_to_lower(mut ks: xkb_keysym_t) -> xkb_keysym_t {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);

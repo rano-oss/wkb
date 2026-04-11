@@ -234,8 +234,8 @@ unsafe fn for_each_helper(
         for_each_helper(table, iter, data, syms, nsyms, (*node).hikid);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_compose_table_for_each(
+
+pub unsafe fn xkb_compose_table_for_each(
     mut table: *mut xkb_compose_table,
     mut iter: xkb_compose_table_iter_t,
     mut data: *mut ::core::ffi::c_void,

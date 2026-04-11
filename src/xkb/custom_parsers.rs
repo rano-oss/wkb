@@ -111,6 +111,7 @@ pub mod bench_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
+        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
@@ -485,6 +486,7 @@ pub mod utils_numbers_h {
 }
 pub mod getopt_core_h {
     extern "C" {
+        #[no_mangle]
         pub static mut optarg: *mut i8;
     }
 }
@@ -527,7 +529,6 @@ pub use self::utils_numbers_h::{
 pub use self::FILE_h::FILE;
 pub const OPT_STDEV: options = 0;
 pub type options = u32;
-#[no_mangle]
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
 unsafe fn usage(mut argv: *mut *mut i8) {
     unsafe {

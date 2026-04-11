@@ -909,7 +909,9 @@ pub mod text_h {
             value_rtrn: *mut u32,
         ) -> bool;
         pub fn LookupValue(tab: *const LookupEntry, value: u32) -> *const i8;
+        #[no_mangle]
         pub static ctrlMaskNames: [LookupEntry; 0];
+        #[no_mangle]
         pub static actionTypeNames: [LookupEntry; 0];
         pub fn ActionTypeText(type_0: xkb_action_type) -> *const i8;
         pub fn KeyNameText(ctx: *mut xkb_context, name: xkb_atom_t) -> *const i8;

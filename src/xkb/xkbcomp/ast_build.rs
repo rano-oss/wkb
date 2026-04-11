@@ -756,8 +756,8 @@ pub unsafe extern "C" fn ExprCreateFloat() -> *mut ExprDef {
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateBoolean(mut set: bool) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateBoolean(mut set: bool) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
         if expr.is_null() {

@@ -541,7 +541,6 @@ pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
         value: 0 as u32,
     },
 ];
-#[no_mangle]
 pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
     name: ::core::ptr::null::<i8>(),
     value: 0,
@@ -1954,8 +1953,8 @@ pub unsafe extern "C" fn ModMaskText(
         ) as *const i8;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn LedStateMaskText(
+
+pub unsafe fn LedStateMaskText(
     mut ctx: *mut xkb_context,
     mut lookup: *const LookupEntry,
     mut mask: xkb_state_component,
@@ -2002,8 +2001,8 @@ pub unsafe extern "C" fn LedStateMaskText(
         ) as *const i8;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ControlMaskText(
+
+pub unsafe fn ControlMaskText(
     mut ctx: *mut xkb_context,
     mut format: xkb_keymap_format,
     mut mask: xkb_action_controls,

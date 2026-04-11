@@ -375,8 +375,8 @@ pub unsafe extern "C" fn xkb_context_failed_include_path_get(
         return *(*ctx).failed_includes.item.offset(idx as isize);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
+
+pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
     unsafe {
         return atom_table_size((*ctx).atom_table);
     }

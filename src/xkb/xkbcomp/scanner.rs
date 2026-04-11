@@ -1652,7 +1652,6 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-#[no_mangle]
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,

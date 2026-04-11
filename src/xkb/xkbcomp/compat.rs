@@ -980,10 +980,15 @@ pub mod text_h {
             string: *const i8,
             value_rtrn: *mut u32,
         ) -> bool;
+        #[no_mangle]
         pub static ctrlMaskNames: [LookupEntry; 0];
+        #[no_mangle]
         pub static modComponentMaskNames: [LookupEntry; 0];
+        #[no_mangle]
         pub static groupComponentMaskNames: [LookupEntry; 0];
+        #[no_mangle]
         pub static useModMapValueNames: [LookupEntry; 0];
+        #[no_mangle]
         pub static symInterpretMatchMaskNames: [LookupEntry; 0];
         pub fn ModMaskText(
             ctx: *mut xkb_context,
