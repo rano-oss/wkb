@@ -3,7 +3,6 @@
 //! This is a simple intrusive linked list where the list node is embedded in the struct.
 //! Converted from unsafe C pointer manipulation to safe Rust using NonNull.
 
-
 /// Intrusive list node
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -115,51 +114,45 @@ pub fn list_is_last_safe(list: &list, elm: &list) -> bool {
 }
 
 // ============================================================================
-// FFI wrappers for C compatibility
+// Raw pointer wrappers (no longer extern "C")
 // ============================================================================
 
-#[no_mangle]
-pub unsafe extern "C" fn list_init(list: *mut list) {
+pub unsafe fn list_init(list: *mut list) {
     if list.is_null() {
         return;
     }
     unsafe { list_init_safe(&mut *list) }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_insert(list: *mut list, elm: *mut list) {
+pub unsafe fn list_insert(list: *mut list, elm: *mut list) {
     if list.is_null() || elm.is_null() {
         return;
     }
     unsafe { list_insert_safe(&mut *list, &mut *elm) }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_append(list: *mut list, elm: *mut list) {
+pub unsafe fn list_append(list: *mut list, elm: *mut list) {
     if list.is_null() || elm.is_null() {
         return;
     }
     unsafe { list_append_safe(&mut *list, &mut *elm) }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_remove(elm: *mut list) {
+pub unsafe fn list_remove(elm: *mut list) {
     if elm.is_null() {
         return;
     }
     unsafe { list_remove_safe(&mut *elm) }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_empty(list: *const list) -> bool {
+pub unsafe fn list_empty(list: *const list) -> bool {
     if list.is_null() {
         return true;
     }
     unsafe { list_empty_safe(&*list) }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_is_last(list: *const list, elm: *const list) -> bool {
+pub unsafe fn list_is_last(list: *const list, elm: *const list) -> bool {
     if list.is_null() || elm.is_null() {
         return false;
     }

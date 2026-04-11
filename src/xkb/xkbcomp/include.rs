@@ -592,9 +592,7 @@ pub mod include_h {
     ];
 }
 pub mod utils_paths_h {
-    extern "C" {
-        pub fn is_absolute_path(path: *const i8) -> bool;
-    }
+    pub use crate::xkb::utils_paths::is_absolute_path;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;

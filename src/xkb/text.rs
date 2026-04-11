@@ -281,9 +281,7 @@ pub mod utils_h {
     }
 
     use super::string_h::strlen;
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
-    }
+    pub use crate::xkb::utils::istrcmp;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =

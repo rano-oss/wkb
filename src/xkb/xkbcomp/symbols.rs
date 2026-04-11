@@ -1296,10 +1296,7 @@ pub mod utils_h {
 
     use super::stdlib_h::calloc;
     use super::string_h::{memcpy, strdup};
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;

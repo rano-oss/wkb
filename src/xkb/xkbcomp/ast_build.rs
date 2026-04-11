@@ -597,9 +597,7 @@ pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = UINT32_MAX;
 
     use super::stdint_h::UINT32_MAX;
-    extern "C" {
-        pub fn utf8_next_code_point(s: *const i8, max_size: usize, size_out: *mut usize) -> u32;
-    }
+    pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
 pub mod stdint_h {
     pub const UINT32_MAX: u32 = 4294967295 as u32;

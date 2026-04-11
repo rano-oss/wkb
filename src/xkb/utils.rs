@@ -175,8 +175,7 @@ pub use self::types_h::{
 };
 use self::unistd_h::close;
 pub use self::FILE_h::FILE;
-#[no_mangle]
-pub unsafe extern "C" fn open_file(mut path: *const i8) -> *mut FILE {
+pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
             return ::core::ptr::null_mut::<FILE>();
@@ -238,14 +237,12 @@ static LOWER_MAP: [u8; 256] = [
     226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
     245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn to_lower(mut c: i8) -> i8 {
+pub unsafe fn to_lower(mut c: i8) -> i8 {
     unsafe {
         return LOWER_MAP[c as ::core::ffi::c_uchar as usize] as i8;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
+pub unsafe fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
     unsafe {
         let mut i: usize = 0 as usize;
         loop {
@@ -261,8 +258,7 @@ pub unsafe extern "C" fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
         return 0 as i32;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 {
+pub unsafe fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 {
     unsafe {
         let mut i: usize = 0 as usize;
         while i < n {

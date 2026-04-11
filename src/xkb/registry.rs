@@ -1038,19 +1038,9 @@ pub mod darray_h {
     }
 }
 pub mod util_list_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct list {
-        pub prev: *mut list,
-        pub next: *mut list,
-    }
-    extern "C" {
-        pub fn list_init(list: *mut list);
-        pub fn list_append(list: *mut list, elm: *mut list);
-        pub fn list_remove(elm: *mut list);
-        pub fn list_empty(list: *const list) -> bool;
-        pub fn list_is_last(list: *const list, elm: *const list) -> bool;
-    }
+    pub use crate::xkb::util_list::{
+        list, list_append, list_empty, list_init, list_is_last, list_remove,
+    };
 }
 pub mod messages_codes_h {
     pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: xkb_message_code = 632;
@@ -1226,9 +1216,7 @@ pub mod utils_h {
     use super::stdio_h::vsnprintf;
     use super::string_h::{strcmp, strdup};
     use super::unistd_h::eaccess;
-    extern "C" {
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
-    }
+    pub use crate::xkb::utils::istrncmp;
 }
 pub mod util_mem_h {
     #[inline]

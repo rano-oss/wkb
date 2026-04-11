@@ -1138,9 +1138,7 @@ pub mod utils_h {
     }
 
     use super::string_h::strdup;
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::utils::istrcmp;
 }
 pub mod vmod_h {
     use super::ast_h::{merge_mode, VModDef};

@@ -61,11 +61,10 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
 }
 
 // ============================================================================
-// FFI wrappers for C compatibility (kept for c2rust-generated code)
+// FFI wrappers for raw pointer callers (no longer extern "C")
 // ============================================================================
 
-#[no_mangle]
-pub unsafe extern "C" fn utf8_sequence_length(s: *const i8) -> u8 {
+pub unsafe fn utf8_sequence_length(s: *const i8) -> u8 {
     if s.is_null() {
         return 0;
     }
@@ -75,12 +74,7 @@ pub unsafe extern "C" fn utf8_sequence_length(s: *const i8) -> u8 {
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn utf8_next_code_point(
-    s: *const i8,
-    max_size: usize,
-    size_out: *mut usize,
-) -> u32 {
+pub unsafe fn utf8_next_code_point(s: *const i8, max_size: usize, size_out: *mut usize) -> u32 {
     if s.is_null() || size_out.is_null() || max_size == 0 {
         if !size_out.is_null() {
             unsafe {

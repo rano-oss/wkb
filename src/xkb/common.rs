@@ -1120,9 +1120,7 @@ pub mod errno_h {
     }
 }
 pub mod utils_paths_h {
-    extern "C" {
-        pub fn is_absolute_path(path: *const i8) -> bool;
-    }
+    pub use crate::xkb::utils_paths::is_absolute_path;
 }
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;

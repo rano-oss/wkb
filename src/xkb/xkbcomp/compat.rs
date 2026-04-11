@@ -1235,9 +1235,7 @@ pub mod utils_h {
     }
 
     use super::string_h::strdup;
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
-    }
+    pub use crate::xkb::utils::istrcmp;
 }
 pub mod limits_h {
     pub const CHAR_BIT: i32 = __CHAR_BIT__;

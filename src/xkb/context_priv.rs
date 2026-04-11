@@ -75,17 +75,7 @@ pub mod atom_h {
     pub type xkb_atom_t = darray_size_t;
 
     use super::darray_h::darray_size_t;
-    extern "C" {
-        pub type atom_table;
-        pub fn atom_table_size(table: *mut atom_table) -> darray_size_t;
-        pub fn atom_intern(
-            table: *mut atom_table,
-            string: *const i8,
-            len: usize,
-            add: bool,
-        ) -> xkb_atom_t;
-        pub fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8;
-    }
+    pub use crate::xkb::atom::{atom_intern, atom_table, atom_table_size, atom_text};
 }
 pub mod darray_h {
     pub type darray_size_t = u32;
@@ -429,9 +419,7 @@ pub unsafe extern "C" fn xkb_log(
 ) {
     unsafe {
         let mut args: ::core::ffi::VaList;
-        if ((*ctx).log_level as u32) < level as u32
-            || (*ctx).log_verbosity < verbosity
-        {
+        if ((*ctx).log_level as u32) < level as u32 || (*ctx).log_verbosity < verbosity {
             return;
         }
         args = c2rust_args.clone();
@@ -535,18 +523,15 @@ pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
         let mut modified: RMLVO = 0 as RMLVO;
         if isempty((*rmlvo).rules) {
             (*rmlvo).rules = xkb_context_get_default_rules(ctx);
-            modified = (modified as u32 | RMLVO_RULES as i32 as u32)
-                as RMLVO;
+            modified = (modified as u32 | RMLVO_RULES as i32 as u32) as RMLVO;
         }
         if isempty((*rmlvo).model) {
             (*rmlvo).model = xkb_context_get_default_model(ctx);
-            modified = (modified as u32 | RMLVO_MODEL as i32 as u32)
-                as RMLVO;
+            modified = (modified as u32 | RMLVO_MODEL as i32 as u32) as RMLVO;
         }
         if isempty((*rmlvo).layout) {
             (*rmlvo).layout = xkb_context_get_default_layout(ctx);
-            modified = (modified as u32
-                | RMLVO_LAYOUT as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_LAYOUT as i32 as u32) as RMLVO;
             let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
             if !isempty((*rmlvo).variant) {
                 xkb_log(
@@ -565,13 +550,11 @@ pub unsafe extern "C" fn xkb_context_sanitize_rule_names(
                 );
             }
             (*rmlvo).variant = variant;
-            modified = (modified as u32
-                | RMLVO_VARIANT as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_VARIANT as i32 as u32) as RMLVO;
         }
         if (*rmlvo).options.is_null() {
             (*rmlvo).options = xkb_context_get_default_options(ctx);
-            modified = (modified as u32
-                | RMLVO_OPTIONS as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_OPTIONS as i32 as u32) as RMLVO;
         }
         return modified;
     }

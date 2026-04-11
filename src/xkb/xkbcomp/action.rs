@@ -1100,9 +1100,7 @@ pub mod utils_h {
             return istrcmp(s1, s2) == 0 as i32;
         }
     }
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
-    }
+    pub use crate::xkb::utils::istrcmp;
 }
 pub mod stdbool_h {
     pub const true_0: i32 = 1 as i32;

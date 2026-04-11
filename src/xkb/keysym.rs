@@ -26338,10 +26338,7 @@ pub mod utils_h {
             || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
     }
 
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
-    }
+    pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod utils_numbers_h {
     pub static mut digits__: [::core::ffi::c_uchar; 256] = [
@@ -26638,9 +26635,7 @@ pub mod utf8_decoding_h {
 
     use super::stdint_h::UINT32_MAX;
     use super::stdint_uintn_h::u32;
-    extern "C" {
-        pub fn utf8_next_code_point(s: *const i8, max_size: usize, size_out: *mut usize) -> u32;
-    }
+    pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;

@@ -727,9 +727,7 @@ pub mod utils_h {
 
     use super::stdbool_h::false_0;
     use super::string_h::strcmp;
-    extern "C" {
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::utils::istrncmp;
 }
 pub mod keysym_h {
     pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;

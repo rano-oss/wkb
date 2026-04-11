@@ -812,9 +812,7 @@ pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
 pub mod utils_paths_h {
-    extern "C" {
-        pub fn is_absolute_path(path: *const i8) -> bool;
-    }
+    pub use crate::xkb::utils_paths::is_absolute_path;
 }
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;

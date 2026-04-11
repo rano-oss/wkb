@@ -9,10 +9,8 @@ pub fn is_absolute_path_safe(path: &str) -> bool {
     path.starts_with(PATH_SEPARATOR)
 }
 
-/// FFI wrapper for C compatibility
-/// Kept for compatibility with c2rust-generated code
-#[no_mangle]
-pub unsafe extern "C" fn is_absolute_path(path: *const i8) -> bool {
+/// Raw pointer wrapper for callers that pass *const i8
+pub unsafe fn is_absolute_path(path: *const i8) -> bool {
     if path.is_null() {
         return false;
     }

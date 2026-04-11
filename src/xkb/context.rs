@@ -218,11 +218,7 @@ pub mod context_h {
     }
 }
 pub mod atom_h {
-    extern "C" {
-        pub type atom_table;
-        pub fn atom_table_new() -> *mut atom_table;
-        pub fn atom_table_free(table: *mut atom_table);
-    }
+    pub use crate::xkb::atom::{atom_table, atom_table_free, atom_table_new};
 }
 pub mod darray_h {
     pub type darray_size_t = u32;
@@ -391,9 +387,7 @@ pub mod utils_h {
     use super::stdio_h::{vasprintf, vsnprintf};
     use super::string_h::strdup;
     use super::unistd_h::eaccess;
-    extern "C" {
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
-    }
+    pub use crate::xkb::utils::istrncmp;
 }
 pub mod errno_h {
     extern "C" {

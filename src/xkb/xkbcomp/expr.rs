@@ -967,10 +967,7 @@ pub mod utils_h {
         }
     }
 
-    extern "C" {
-        pub fn istrcmp(a: *const i8, b: *const i8) -> i32;
-        pub fn istrncmp(a: *const i8, b: *const i8, n: usize) -> i32;
-    }
+    pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod utils_numbers_h {
     #[inline]

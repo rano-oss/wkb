@@ -1,7 +1,6 @@
 //! Native Rust atom table - string interning system
 //!
-//! Fully safe internals. Only function signatures remain `unsafe extern "C"`
-//! for FFI compatibility with c2rust-generated callers.
+//! Fully safe internals. Functions are normal Rust — no FFI wrappers.
 
 pub mod types_h {
     pub type __uint8_t = u8;
@@ -54,8 +53,7 @@ fn hash_buf(bytes: &[u8]) -> u32 {
 }
 
 /// Create new atom table
-#[no_mangle]
-pub unsafe extern "C" fn atom_table_new() -> *mut atom_table {
+pub fn atom_table_new() -> *mut atom_table {
     let table = atom_table {
         index: vec![0; 4],
         strings: vec![None], // index 0 = XKB_ATOM_NONE
@@ -64,8 +62,7 @@ pub unsafe extern "C" fn atom_table_new() -> *mut atom_table {
 }
 
 /// Free atom table and all interned strings
-#[no_mangle]
-pub unsafe extern "C" fn atom_table_free(table: *mut atom_table) {
+pub unsafe fn atom_table_free(table: *mut atom_table) {
     if table.is_null() {
         return;
     }
@@ -76,14 +73,12 @@ pub unsafe extern "C" fn atom_table_free(table: *mut atom_table) {
 }
 
 /// Get number of atoms in table
-#[no_mangle]
-pub unsafe extern "C" fn atom_table_size(table: *mut atom_table) -> darray_size_t {
+pub unsafe fn atom_table_size(table: *mut atom_table) -> darray_size_t {
     unsafe { (*table).strings.len() as darray_size_t }
 }
 
 /// Get text for an atom (returns pointer to interned string)
-#[no_mangle]
-pub unsafe extern "C" fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
+pub unsafe fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
     unsafe {
         let t = &*table;
         assert!(
@@ -101,8 +96,7 @@ pub unsafe extern "C" fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> 
 ///
 /// If `add` is true, adds string to table if not found.
 /// Returns atom ID or XKB_ATOM_NONE if not found and add=false.
-#[no_mangle]
-pub unsafe extern "C" fn atom_intern(
+pub unsafe fn atom_intern(
     table: *mut atom_table,
     string: *const i8,
     len: usize,
