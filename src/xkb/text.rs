@@ -11,9 +11,7 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::keysym::xkb_keysym_get_name;
     pub use crate::xkb::shared_types::{
@@ -96,7 +94,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,

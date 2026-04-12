@@ -19,9 +19,7 @@ pub mod atom_h {
         pub type atom_table;
     }
 }
-pub mod darray_h {
-    pub type darray_size_t = u32;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -51,7 +49,7 @@ pub mod scanner_utils_h {
     use super::context_h::xkb_context;
 }
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::xkbcommon_h::{

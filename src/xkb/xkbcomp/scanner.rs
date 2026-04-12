@@ -81,11 +81,9 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
-    
+
     pub use crate::xkb::shared_types::{
         xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
         XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
@@ -668,40 +666,25 @@ pub mod parser_h {
 pub mod utils_h {
     #[inline]
     pub unsafe fn is_valid_char(mut cp: u32) -> bool {
-        unsafe {
-            return cp != 0 as u32;
-        }
+        return cp != 0 as u32;
     }
     #[inline]
     pub unsafe fn is_ascii(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int)
-                == 0 as ::core::ffi::c_int;
-        }
+        return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int) == 0 as ::core::ffi::c_int;
     }
     #[inline]
     pub unsafe fn is_space(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int == ' ' as i32
-                || ch as ::core::ffi::c_int >= '\t' as i32
-                    && ch as ::core::ffi::c_int <= '\r' as i32;
-        }
+        return ch as ::core::ffi::c_int == ' ' as i32
+            || ch as ::core::ffi::c_int >= '\t' as i32 && ch as ::core::ffi::c_int <= '\r' as i32;
     }
     #[inline]
     pub unsafe fn is_alpha(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= 'a' as i32
-                && ch as ::core::ffi::c_int <= 'z' as i32
-                || ch as ::core::ffi::c_int >= 'A' as i32
-                    && ch as ::core::ffi::c_int <= 'Z' as i32;
-        }
+        return ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'z' as i32
+            || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'Z' as i32;
     }
     #[inline]
     pub unsafe fn is_digit(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= '0' as i32
-                && ch as ::core::ffi::c_int <= '9' as i32;
-        }
+        return ch as ::core::ffi::c_int >= '0' as i32 && ch as ::core::ffi::c_int <= '9' as i32;
     }
     #[inline]
     pub unsafe fn is_alnum(mut ch: i8) -> bool {
@@ -712,21 +695,13 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn is_xdigit(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= '0' as i32
-                && ch as ::core::ffi::c_int <= '9' as i32
-                || ch as ::core::ffi::c_int >= 'a' as i32
-                    && ch as ::core::ffi::c_int <= 'f' as i32
-                || ch as ::core::ffi::c_int >= 'A' as i32
-                    && ch as ::core::ffi::c_int <= 'F' as i32;
-        }
+        return ch as ::core::ffi::c_int >= '0' as i32 && ch as ::core::ffi::c_int <= '9' as i32
+            || ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'f' as i32
+            || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'F' as i32;
     }
     #[inline]
     pub unsafe fn is_graph(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= '!' as i32
-                && ch as ::core::ffi::c_int <= '~' as i32;
-        }
+        return ch as ::core::ffi::c_int >= '!' as i32 && ch as ::core::ffi::c_int <= '~' as i32;
     }
 
     use super::stdint_uintn_h::u32;
@@ -1167,7 +1142,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -1249,6 +1223,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(

@@ -120,9 +120,7 @@ pub mod atom_h {
     #[c2rust::src_loc = "19:9"]
     pub const XKB_ATOM_NONE: i32 = 0 as i32;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -291,7 +289,7 @@ pub mod rmlvo_h {
     #[c2rust::src_loc = "15:5"]
     pub const RMLVO_RULES: RMLVO = 1;
     use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
+    use crate::xkb::shared_types::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/messages-codes.h:21"]
@@ -566,7 +564,7 @@ pub use self::context_h::{
     xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,

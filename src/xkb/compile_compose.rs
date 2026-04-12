@@ -100,17 +100,7 @@ pub mod atom_h {
         pub type atom_table;
     }
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
 
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_char {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut i8,
-    }
-}
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 
@@ -179,7 +169,7 @@ pub mod table_h {
         pub _pad_is_leaf: [u8; 4],
     }
     use super::context_h::xkb_context;
-    use super::darray_h::{darray_char, darray_size_t};
+    use crate::xkb::shared_types::{darray_char, darray_size_t};
     use super::stdint_uintn_h::u32;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
@@ -288,7 +278,7 @@ pub use self::__stddef_null_h::{NULL, NULL_0};
 
 pub use self::config_h::EXIT_INVALID_USAGE;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_char, darray_size_t};
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use self::dump_h::xkb_compose_table_dump;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};

@@ -14,9 +14,7 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
     pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
         xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
@@ -456,7 +454,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
 pub use self::messages_codes_h::{

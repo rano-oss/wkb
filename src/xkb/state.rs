@@ -87,9 +87,6 @@ pub mod atom_h {
     }
 }
 
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
-}
 
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -187,13 +184,11 @@ pub mod keymap_h {
         (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
     pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1 as i32;
     pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-                XKB_OVERLAY_MAX_X11 as usize
-            } else {
-                XKB_OVERLAY_MAX as usize
-            }) as xkb_overlay_index_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+            XKB_OVERLAY_MAX_X11 as usize
+        } else {
+            XKB_OVERLAY_MAX as usize
+        }) as xkb_overlay_index_t;
     }
     pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
         unsafe {
@@ -615,9 +610,7 @@ pub mod utils_h {
     #[inline]
 
     pub unsafe fn one_bit_set(mut x: u32) -> i32 {
-        unsafe {
-            return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
-        }
+        return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
     }
 }
 
@@ -663,7 +656,7 @@ pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
@@ -2066,7 +2059,7 @@ unsafe fn xkb_filter_redirect_key_func(
     }
 }
 
-static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
+static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
     [
         C2Rust_Unnamed_21 {
             new: None,
@@ -2609,7 +2602,7 @@ static mut synthetic_key_level_entry: xkb_key_type_entry = xkb_key_type_entry {
     preserve: xkb_mods { mods: 0, mask: 0 },
 };
 
-static mut synthetic_key_type: xkb_key_type = unsafe {
+static mut synthetic_key_type: xkb_key_type = {
     xkb_key_type {
         name: 0,
         mods: xkb_mods { mods: 0, mask: 0 },
@@ -3208,21 +3201,19 @@ pub unsafe fn xkb_state_key_get_syms(
 }
 
 unsafe fn XkbToControl(mut ch: i8) -> i8 {
-    unsafe {
-        let mut c: i8 = ch;
-        if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32 || c as i32 == ' ' as i32 {
-            c = (c as i32 & 0x1f as i32) as i8;
-        } else if c as i32 == '2' as i32 {
-            c = '\0' as i32 as i8;
-        } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
-            c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
-        } else if c as i32 == '8' as i32 {
-            c = '\u{7f}' as i32 as i8;
-        } else if c as i32 == '/' as i32 {
-            c = ('_' as i32 & 0x1f as i32) as i8;
-        }
-        return c;
+    let mut c: i8 = ch;
+    if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32 || c as i32 == ' ' as i32 {
+        c = (c as i32 & 0x1f as i32) as i8;
+    } else if c as i32 == '2' as i32 {
+        c = '\0' as i32 as i8;
+    } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
+        c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
+    } else if c as i32 == '8' as i32 {
+        c = '\u{7f}' as i32 as i8;
+    } else if c as i32 == '/' as i32 {
+        c = ('_' as i32 & 0x1f as i32) as i8;
     }
+    return c;
 }
 
 pub unsafe fn xkb_state_key_get_one_sym(

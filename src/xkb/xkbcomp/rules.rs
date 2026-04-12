@@ -104,16 +104,7 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_char {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut i8,
-    }
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
         xkb_layout_index_t, xkb_layout_mask_t, xkb_log_level, xkb_rule_names, XKB_LAYOUT_INVALID,
@@ -174,8 +165,8 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
     use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
+    use crate::xkb::shared_types::darray_size_t;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -472,11 +463,11 @@ pub mod scanner_utils_h {
     }
 
     use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
     use super::utils_h::is_ascii;
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
+    use crate::xkb::shared_types::darray_size_t;
     use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
@@ -504,25 +495,16 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn is_ascii(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int)
-                == 0 as ::core::ffi::c_int;
-        }
+        return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int) == 0 as ::core::ffi::c_int;
     }
     #[inline]
     pub unsafe fn is_space(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int == ' ' as i32
-                || ch as ::core::ffi::c_int >= '\t' as i32
-                    && ch as ::core::ffi::c_int <= '\r' as i32;
-        }
+        return ch as ::core::ffi::c_int == ' ' as i32
+            || ch as ::core::ffi::c_int >= '\t' as i32 && ch as ::core::ffi::c_int <= '\r' as i32;
     }
     #[inline]
     pub unsafe fn is_graph(mut ch: i8) -> bool {
-        unsafe {
-            return ch as ::core::ffi::c_int >= '!' as i32
-                && ch as ::core::ffi::c_int <= '~' as i32;
-        }
+        return ch as ::core::ffi::c_int >= '!' as i32 && ch as ::core::ffi::c_int <= '~' as i32;
     }
 
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
@@ -641,7 +623,6 @@ pub use self::ast_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_char, darray_size_t};
 pub use self::include_h::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -725,6 +706,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
     darray_growalloc, darray_resize, darray_resize_zero,

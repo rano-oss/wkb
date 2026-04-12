@@ -402,21 +402,17 @@ pub mod utils_numbers_h {
     }
     #[inline]
     pub unsafe fn popcount32(mut x: u32) -> u32 {
-        unsafe {
-            return (x as u64).count_ones() as i32 as u32;
-        }
+        return (x as u64).count_ones() as i32 as u32;
     }
     #[inline]
     pub unsafe fn next_pow2(mut x: u32) -> u32 {
-        unsafe {
-            if x <= 1 as u32 {
-                return 1 as u32;
-            }
-            return (1 as u32)
-                << (::core::mem::size_of::<u32>() as usize)
-                    .wrapping_mul(CHAR_BIT as usize)
-                    .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize);
+        if x <= 1 as u32 {
+            return 1 as u32;
         }
+        return (1 as u32)
+            << (::core::mem::size_of::<u32>() as usize)
+                .wrapping_mul(CHAR_BIT as usize)
+                .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize);
     }
 
     use super::limits_h::CHAR_BIT;

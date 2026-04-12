@@ -185,17 +185,7 @@ pub mod atom_h {
         pub type atom_table;
     }
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
 
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_string {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-}
 pub mod xkbcommon_h {
     use super::rmlvo_h::xkb_rmlvo_builder;
     use super::xkbcommon_errors_h::xkb_error_code;
@@ -367,7 +357,7 @@ pub mod rmlvo_h {
         pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
+    use crate::xkb::shared_types::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
 }
 pub mod xkbcommon_compose_h {
@@ -543,7 +533,7 @@ pub use self::__stddef_null_h::{NULL, NULL_0};
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t, darray_string};
+pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use self::errno_h::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::internal::{__builtin_va_list, __va_list_tag};

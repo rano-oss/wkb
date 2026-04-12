@@ -33,9 +33,7 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::context::xkb_context_ref;
     pub use crate::xkb::shared_types::{
@@ -129,7 +127,7 @@ pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,

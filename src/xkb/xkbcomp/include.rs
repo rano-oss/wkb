@@ -181,9 +181,7 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
     pub use crate::xkb::shared_types::{
@@ -397,7 +395,7 @@ pub use self::context_h::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
     xkb_context_num_failed_include_paths, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::include_h::{
     INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,

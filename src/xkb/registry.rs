@@ -982,17 +982,7 @@ pub mod xkbregistry_h {
     pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
     pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
 
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_string {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-}
 pub mod util_list_h {
     pub use crate::xkb::util_list::{
         list, list_append, list_empty, list_init, list_is_last, list_remove,
@@ -1120,9 +1110,7 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn is_space(mut ch: i8) -> bool {
-        unsafe {
-            return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
-        }
+        return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
     }
     #[inline]
     pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
@@ -1206,7 +1194,6 @@ pub use self::config_h::{
     DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH, DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_LEGACY_ROOT,
 };
-pub use self::darray_h::{darray_size_t, darray_string};
 pub use self::dict_h::{xmlDict, xmlDictPtr};
 pub use self::dirent_h::dirent;
 pub use self::encoding_h::{
@@ -1361,6 +1348,7 @@ pub use self::xmlmemory_h::{xmlFree, xmlFreeFunc};
 pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 #[derive(Copy, Clone)]
@@ -2146,20 +2134,18 @@ pub unsafe fn rxkb_context_set_log_level(mut ctx: *mut rxkb_context, mut level: 
     }
 }
 unsafe fn log_level_to_prefix(mut level: rxkb_log_level) -> *const i8 {
-    unsafe {
-        match level as u32 {
-            50 => return b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
-            40 => return b"xkbregistry: INFO: \0".as_ptr() as *const i8,
-            30 => {
-                return b"xkbregistry: WARNING: \0".as_ptr() as *const i8;
-            }
-            20 => return b"xkbregistry: ERROR: \0".as_ptr() as *const i8,
-            10 => {
-                return b"xkbregistry: CRITICAL: \0".as_ptr() as *const i8;
-            }
-            _ => return ::core::ptr::null::<i8>(),
-        };
-    }
+    match level as u32 {
+        50 => return b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
+        40 => return b"xkbregistry: INFO: \0".as_ptr() as *const i8,
+        30 => {
+            return b"xkbregistry: WARNING: \0".as_ptr() as *const i8;
+        }
+        20 => return b"xkbregistry: ERROR: \0".as_ptr() as *const i8,
+        10 => {
+            return b"xkbregistry: CRITICAL: \0".as_ptr() as *const i8;
+        }
+        _ => return ::core::ptr::null::<i8>(),
+    };
 }
 unsafe fn default_log_fn(
     mut ctx: *mut rxkb_context,

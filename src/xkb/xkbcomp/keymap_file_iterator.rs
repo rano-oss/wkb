@@ -71,17 +71,7 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
 
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_char {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut i8,
-    }
-}
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -276,7 +266,7 @@ pub mod keymap_file_iterator_h {
     }
     use super::ast_h::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
     use super::context_h::xkb_context;
-    use super::darray_h::{darray_char, darray_size_t};
+    use crate::xkb::shared_types::{darray_char, darray_size_t};
     use super::scanner_utils_h::scanner;
 }
 pub mod string_h {}
@@ -441,7 +431,7 @@ pub use self::ast_h::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_char, darray_size_t};
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_file_iterator_h::{

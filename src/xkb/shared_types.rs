@@ -88,6 +88,24 @@ pub struct C2Rust_Unnamed_0 {
     pub item: *mut *mut i8,
 }
 
+/// Char darray (used in rules, compose, keymap_file_iterator)
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct darray_char {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut i8,
+}
+
+/// String pointer darray (used in common, context, registry)
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct darray_string {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut *mut i8,
+}
+
 // ── Opaque types ────────────────────────────────────────────────────
 
 // atom_table is defined in atom.rs — re-export it here for unified access

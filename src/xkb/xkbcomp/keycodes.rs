@@ -37,9 +37,7 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
     pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
@@ -277,7 +275,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use crate::xkb::shared_types::{darray_size_t};
 use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};

@@ -8,17 +8,7 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
 
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_char {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut i8,
-    }
-}
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -99,7 +89,7 @@ pub mod table_h {
     }
 
     use super::context_h::xkb_context;
-    use super::darray_h::{darray_char, darray_size_t};
+    use crate::xkb::shared_types::{darray_char, darray_size_t};
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
 }
@@ -117,7 +107,7 @@ pub mod compose_iter_h {
 
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_char, darray_size_t};
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,

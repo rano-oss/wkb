@@ -152,16 +152,7 @@ pub mod atom_h {
     pub use crate::xkb::atom::{atom_table_free, atom_table_new};
     pub use crate::xkb::shared_types::atom_table;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct darray_string {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut *mut i8,
-    }
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
         xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
@@ -291,7 +282,7 @@ pub use self::config_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_size_t, darray_string};
+pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;

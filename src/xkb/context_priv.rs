@@ -28,9 +28,7 @@ pub mod atom_h {
 
     pub use crate::xkb::atom::{atom_intern, atom_table, atom_table_size, atom_text};
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::context::xkb_context_include_path_append_default;
     pub use crate::xkb::shared_types::{
@@ -187,7 +185,7 @@ pub use self::config_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_include_path_get_system_path, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::darray_size_t;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

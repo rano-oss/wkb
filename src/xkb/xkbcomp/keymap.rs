@@ -60,9 +60,7 @@ pub mod atom_h {
         pub type atom_table;
     }
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::*;
-}
+
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 
@@ -96,51 +94,39 @@ pub mod keymap_h {
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
     pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-                XKB_MAX_GROUPS_X11
-            } else {
-                XKB_MAX_GROUPS
-            }) as xkb_layout_index_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
+            XKB_MAX_GROUPS_X11
+        } else {
+            XKB_MAX_GROUPS
+        }) as xkb_layout_index_t;
     }
     pub const XKB_OVERLAY_MAX_X11: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
     pub const XKB_OVERLAY_MAX: u64 =
         (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
     #[inline]
     pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-                XKB_OVERLAY_MAX_X11 as usize
-            } else {
-                XKB_OVERLAY_MAX as usize
-            }) as xkb_overlay_index_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
+            XKB_OVERLAY_MAX_X11 as usize
+        } else {
+            XKB_OVERLAY_MAX as usize
+        }) as xkb_overlay_index_t;
     }
     pub const MAX_ACTIONS_PER_LEVEL: ::core::ffi::c_int = UINT16_MAX;
     #[inline]
     pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
-        unsafe {
-            return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-        }
+        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
     }
     #[inline]
     pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
-        unsafe {
-            return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-        }
+        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
     }
     #[inline]
     pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
-        unsafe {
-            return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-        }
+        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
     }
     #[inline]
     pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
-        unsafe {
-            return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-        }
+        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
     }
     pub use crate::xkb::state::mod_mask_get_effective;
 }
@@ -254,13 +240,11 @@ pub mod text_h {
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
     #[inline]
     pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-                CONTROL_NAMES_MIN_V1_INDEX as ::core::ffi::c_int
-            } else {
-                CONTROL_NAMES_MIN_V2_INDEX as ::core::ffi::c_int
-            }) as uint8_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
+            CONTROL_NAMES_MIN_V1_INDEX as ::core::ffi::c_int
+        } else {
+            CONTROL_NAMES_MIN_V2_INDEX as ::core::ffi::c_int
+        }) as uint8_t;
     }
 
     use super::stdint_uintn_h::uint8_t;
@@ -302,9 +286,7 @@ pub mod utils_h {
         mut pointer: *const ::core::ffi::c_void,
         mut byte_count: usize,
     ) -> bool {
-        unsafe {
-            return (pointer as uintptr_t).wrapping_rem(byte_count as uintptr_t) == 0 as uintptr_t;
-        }
+        return (pointer as uintptr_t).wrapping_rem(byte_count as uintptr_t) == 0 as uintptr_t;
     }
     #[inline]
     pub unsafe fn memdup(
@@ -373,7 +355,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::darray_size_t;
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
@@ -505,6 +486,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
@@ -1526,7 +1508,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         return true_0 != 0;
     }
 }
-static mut compile_file_fns: [compile_file_fn; 4] = unsafe {
+static mut compile_file_fns: [compile_file_fn; 4] = {
     [
         Some(CompileKeycodes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
         Some(CompileKeyTypes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),

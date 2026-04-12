@@ -51,9 +51,7 @@ pub mod FILE_h {
     pub type FILE = _IO_FILE;
     use super::struct_FILE_h::_IO_FILE;
 }
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+
 pub mod context_h {
     pub use crate::xkb::context_priv::{
         xkb_context_get_buffer, xkb_context_sanitize_rule_names, RMLVO,
@@ -116,13 +114,11 @@ pub mod keymap_h {
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
     #[inline]
     pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-                XKB_MAX_GROUPS_X11
-            } else {
-                XKB_MAX_GROUPS
-            }) as xkb_layout_index_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
+            XKB_MAX_GROUPS_X11
+        } else {
+            XKB_MAX_GROUPS
+        }) as xkb_layout_index_t;
     }
 }
 pub mod rmlvo_h {
@@ -170,8 +166,8 @@ pub mod rmlvo_h {
     pub const RMLVO_RULES: RMLVO = 1;
 
     use super::context_h::xkb_context;
-    use super::darray_h::darray_size_t;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_rule_names};
+    use crate::xkb::shared_types::darray_size_t;
     pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         builder: *const xkb_rmlvo_builder,
         rmlvo: *mut xkb_rule_names,
@@ -416,7 +412,6 @@ pub use self::context_h::{
     xkb_context, xkb_context_get_buffer, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
-pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     format_max_groups, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
@@ -520,6 +515,7 @@ use self::xkbcomp_priv_h::{
     XkbParseString,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::darray_size_t;
 
 pub unsafe fn xkb_components_names_from_rules(
     mut ctx: *mut xkb_context,
