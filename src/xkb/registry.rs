@@ -1362,7 +1362,7 @@ pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_growalloc};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_growalloc, darray_free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_context {
@@ -2085,10 +2085,7 @@ unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
                 path = path.offset(1);
             }
         }
-        free((*ctx).includes.item as *mut ::core::ffi::c_void);
-        (*ctx).includes.item = ::core::ptr::null_mut::<*mut i8>();
-        (*ctx).includes.size = 0 as darray_size_t;
-        (*ctx).includes.alloc = 0 as darray_size_t;
+        darray_free(&mut (*ctx).includes.item, &mut (*ctx).includes.size, &mut (*ctx).includes.alloc);
     }
 }
 
@@ -2705,10 +2702,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
                 ext_path = ext_path.offset(1);
             }
         }
-        free(extensions.item as *mut ::core::ffi::c_void);
-        extensions.item = ::core::ptr::null_mut::<*mut i8>();
-        extensions.size = 0 as darray_size_t;
-        extensions.alloc = 0 as darray_size_t;
+        darray_free(&mut extensions.item, &mut extensions.size, &mut extensions.alloc);
         let root: *const i8 = rxkb_context_getenv(ctx, b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8);
         let has_root: bool = rxkb_context_include_path_append(
             ctx,

@@ -391,7 +391,7 @@ pub use self::xkbcomp_priv_h::{
 };
 pub use crate::xkb::keymap_priv::action_equal;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;
@@ -1074,19 +1074,7 @@ unsafe fn CheckGroupField(
         if pending {
             flags = (flags as u32 | ACTION_PENDING_COMPUTATION as i32 as u32) as xkb_action_flags;
             let pending_index: darray_size_t = (*(*keymap_info).pending_computations).size;
-            (*(*keymap_info).pending_computations).size = (*(*keymap_info).pending_computations)
-                .size
-                .wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*(*keymap_info).pending_computations).item, &mut (*(*keymap_info).pending_computations).alloc, (*(*keymap_info).pending_computations).size);
-            *(*(*keymap_info).pending_computations).item.offset(
-                (*(*keymap_info).pending_computations)
-                    .size
-                    .wrapping_sub(1 as darray_size_t) as isize,
-            ) = pending_computation {
-                expr: *value_ptr,
-                computed: false,
-                value: 0 as u32,
-            };
+            darray_append(&mut (*(*keymap_info).pending_computations).item, &mut (*(*keymap_info).pending_computations).size, &mut (*(*keymap_info).pending_computations).alloc, pending_computation { expr: *value_ptr, computed: false, value: 0 as u32, });
             *value_ptr = ::core::ptr::null_mut::<ExprDef>();
             *group_rtrn = pending_index as i32;
         } else {

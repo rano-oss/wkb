@@ -323,7 +323,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc, darray_append};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc, darray_append, darray_free};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -707,10 +707,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ext_path = ext_path.offset(1);
             }
         }
-        free(extensions.item as *mut ::core::ffi::c_void);
-        extensions.item = ::core::ptr::null_mut::<*mut i8>();
-        extensions.size = 0 as darray_size_t;
-        extensions.alloc = 0 as darray_size_t;
+        darray_free(&mut extensions.item, &mut extensions.size, &mut extensions.alloc);
         let root: *const i8 = xkb_context_include_path_get_system_path(ctx) as *const i8;
         let has_root: bool = context_include_path_append(ctx, root) != 0;
         ret |= has_root as i32;
@@ -740,10 +737,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
                 path = path.offset(1);
             }
         }
-        free((*ctx).includes.item as *mut ::core::ffi::c_void);
-        (*ctx).includes.item = ::core::ptr::null_mut::<*mut i8>();
-        (*ctx).includes.size = 0 as darray_size_t;
-        (*ctx).includes.alloc = 0 as darray_size_t;
+        darray_free(&mut (*ctx).includes.item, &mut (*ctx).includes.size, &mut (*ctx).includes.alloc);
         if !(*ctx).failed_includes.item.is_null() {
             path = (*ctx).failed_includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path
@@ -756,10 +750,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
                 path = path.offset(1);
             }
         }
-        free((*ctx).failed_includes.item as *mut ::core::ffi::c_void);
-        (*ctx).failed_includes.item = ::core::ptr::null_mut::<*mut i8>();
-        (*ctx).failed_includes.size = 0 as darray_size_t;
-        (*ctx).failed_includes.alloc = 0 as darray_size_t;
+        darray_free(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.size, &mut (*ctx).failed_includes.alloc);
         (*ctx).set_pending_default_includes((false_0 != 0) as bool);
     }
 }

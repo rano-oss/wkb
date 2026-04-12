@@ -113,7 +113,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -246,7 +245,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
@@ -307,7 +306,7 @@ pub use self::xkbcommon_h::{
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_append, darray_free, darray_growalloc};
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
@@ -492,19 +491,12 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
         (*expr).keysym_list.syms.size = 0 as darray_size_t;
         (*expr).keysym_list.syms.alloc = 0 as darray_size_t;
         if !(sym == XKB_KEY_NoSymbol as xkb_keysym_t) {
-            (*expr).keysym_list.syms.size = (*expr)
-                .keysym_list
-                .syms
-                .size
-                .wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
-            *(*expr).keysym_list.syms.item.offset(
-                (*expr)
-                    .keysym_list
-                    .syms
-                    .size
-                    .wrapping_sub(1 as darray_size_t) as isize,
-            ) = sym;
+            darray_append(
+                &mut (*expr).keysym_list.syms.item,
+                &mut (*expr).keysym_list.syms.size,
+                &mut (*expr).keysym_list.syms.alloc,
+                sym,
+            );
         }
         return expr;
     }
@@ -513,19 +505,12 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
 pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: xkb_keysym_t) -> *mut ExprDef {
     unsafe {
         if !(sym == XKB_KEY_NoSymbol as xkb_keysym_t) {
-            (*expr).keysym_list.syms.size = (*expr)
-                .keysym_list
-                .syms
-                .size
-                .wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
-            *(*expr).keysym_list.syms.item.offset(
-                (*expr)
-                    .keysym_list
-                    .syms
-                    .size
-                    .wrapping_sub(1 as darray_size_t) as isize,
-            ) = sym;
+            darray_append(
+                &mut (*expr).keysym_list.syms.item,
+                &mut (*expr).keysym_list.syms.size,
+                &mut (*expr).keysym_list.syms.alloc,
+                sym,
+            );
         }
         return expr;
     }
@@ -587,19 +572,12 @@ pub unsafe fn ExprKeySymListAppendString(
                     c2rust_current_block = 5140853804782746302;
                     break;
                 } else {
-                    (*expr).keysym_list.syms.size = (*expr)
-                        .keysym_list
-                        .syms
-                        .size
-                        .wrapping_add(1 as darray_size_t);
-                    darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
-                    *(*expr).keysym_list.syms.item.offset(
-                        (*expr)
-                            .keysym_list
-                            .syms
-                            .size
-                            .wrapping_sub(1 as darray_size_t) as isize,
-                    ) = sym;
+                    darray_append(
+                        &mut (*expr).keysym_list.syms.item,
+                        &mut (*expr).keysym_list.syms.size,
+                        &mut (*expr).keysym_list.syms.alloc,
+                        sym,
+                    );
                     idx = idx.wrapping_add(count);
                     idx_cp = idx_cp.wrapping_add(1);
                 }
@@ -1135,11 +1113,11 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                     FreeStmt((*(stmt as *mut ExprArrayRef)).entry as *mut ParseCommon);
                 }
                 15 => {
-                    free((*(stmt as *mut ExprKeysymList)).syms.item as *mut ::core::ffi::c_void);
-                    let ref mut c2rust_fresh0 = (*(stmt as *mut ExprKeysymList)).syms.item;
-                    *c2rust_fresh0 = ::core::ptr::null_mut::<xkb_keysym_t>();
-                    (*(stmt as *mut ExprKeysymList)).syms.size = 0 as darray_size_t;
-                    (*(stmt as *mut ExprKeysymList)).syms.alloc = 0 as darray_size_t;
+                    darray_free(
+                        &mut (*(stmt as *mut ExprKeysymList)).syms.item,
+                        &mut (*(stmt as *mut ExprKeysymList)).syms.size,
+                        &mut (*(stmt as *mut ExprKeysymList)).syms.alloc,
+                    );
                 }
                 26 => {
                     FreeStmt((*(stmt as *mut VarDef)).name as *mut ParseCommon);

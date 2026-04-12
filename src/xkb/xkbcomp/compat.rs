@@ -408,7 +408,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_growalloc, darray_append, darray_free};
 pub use self::xkbcommon_h::{
     xkb_context_get_log_verbosity, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy,
@@ -637,10 +637,7 @@ unsafe fn InitCompatInfo(
 unsafe fn ClearCompatInfo(mut info: *mut CompatInfo) {
     unsafe {
         free((*info).name as *mut ::core::ffi::c_void);
-        free((*info).interps.item as *mut ::core::ffi::c_void);
-        (*info).interps.item = ::core::ptr::null_mut::<SymInterpInfo>();
-        (*info).interps.size = 0 as darray_size_t;
-        (*info).interps.alloc = 0 as darray_size_t;
+        darray_free(&mut (*info).interps.item, &mut (*info).interps.size, &mut (*info).interps.alloc);
     }
 }
 unsafe fn FindMatchingInterp(
@@ -1301,10 +1298,7 @@ unsafe fn SetInterpField(
                             toAct.type_0 = ACTION_TYPE_NONE;
                         }
                         2 => {
-                            free(actions.item as *mut ::core::ffi::c_void);
-                            actions.item = ::core::ptr::null_mut::<xkb_action>();
-                            actions.size = 0 as darray_size_t;
-                            actions.alloc = 0 as darray_size_t;
+                            darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
                             return false_0 != 0;
                         }
                         _ => {}
@@ -1324,10 +1318,7 @@ unsafe fn SetInterpField(
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;
                         (*si).interp.a.action = *actions.item.offset(1 as i32 as isize);
-                        free(actions.item as *mut ::core::ffi::c_void);
-                        actions.item = ::core::ptr::null_mut::<xkb_action>();
-                        actions.size = 0 as darray_size_t;
-                        actions.alloc = 0 as darray_size_t;
+                        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
                     }
                     _ => {
                         if actions.size > 0 as darray_size_t {
@@ -1976,21 +1967,7 @@ unsafe fn CopyInterps(
                     && ((*si).interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as i32
                         == needSymbol as i32
                 {
-                    (*collect).sym_interprets.size = (*collect)
-                        .sym_interprets
-                        .size
-                        .wrapping_add(1 as darray_size_t);
-                    darray_growalloc(
-                        &mut (*collect).sym_interprets.item,
-                        &mut (*collect).sym_interprets.alloc,
-                        (*collect).sym_interprets.size,
-                    );
-                    *(*collect).sym_interprets.item.offset(
-                        (*collect)
-                            .sym_interprets
-                            .size
-                            .wrapping_sub(1 as darray_size_t) as isize,
-                    ) = (*si).interp;
+                    darray_append(&mut (*collect).sym_interprets.item, &mut (*collect).sym_interprets.size, &mut (*collect).sym_interprets.alloc, (*si).interp);
                 }
                 si = si.offset(1);
             }

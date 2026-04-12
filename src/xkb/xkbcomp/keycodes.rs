@@ -361,7 +361,7 @@ pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -465,18 +465,9 @@ unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
 #[inline]
 unsafe fn keycode_store_free(mut store: *mut KeycodeStore) {
     unsafe {
-        free((*store).low.item as *mut ::core::ffi::c_void);
-        (*store).low.item = ::core::ptr::null_mut::<xkb_atom_t>();
-        (*store).low.size = 0 as darray_size_t;
-        (*store).low.alloc = 0 as darray_size_t;
-        free((*store).high.item as *mut ::core::ffi::c_void);
-        (*store).high.item = ::core::ptr::null_mut::<HighKeycodeEntry>();
-        (*store).high.size = 0 as darray_size_t;
-        (*store).high.alloc = 0 as darray_size_t;
-        free((*store).names.item as *mut ::core::ffi::c_void);
-        (*store).names.item = ::core::ptr::null_mut::<KeycodeMatch>();
-        (*store).names.size = 0 as darray_size_t;
-        (*store).names.alloc = 0 as darray_size_t;
+        darray_free(&mut (*store).low.item, &mut (*store).low.size, &mut (*store).low.alloc);
+        darray_free(&mut (*store).high.item, &mut (*store).high.size, &mut (*store).high.alloc);
+        darray_free(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc);
     }
 }
 #[inline]
@@ -498,19 +489,7 @@ unsafe fn keycode_store_update_key(
             (*(*store).high.item.offset(match_0.key.index() as isize)).name = name;
         }
         if name >= (*store).names.size {
-            let mut __oldSize: darray_size_t = (*store).names.size;
-            let mut __newSize: darray_size_t =
-                (name as darray_size_t).wrapping_add(1 as darray_size_t);
-            (*store).names.size = __newSize;
-            if __newSize > __oldSize {
-                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
-                std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                );
-            }
+            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (name as darray_size_t).wrapping_add(1 as darray_size_t));
         }
         *(*store).names.item.offset(name as isize) = match_0;
     }
@@ -522,36 +501,11 @@ unsafe fn keycode_store_insert_key(
 ) -> bool {
     unsafe {
         if name >= (*store).names.size {
-            let mut __oldSize: darray_size_t = (*store).names.size;
-            let mut __newSize: darray_size_t =
-                (name as darray_size_t).wrapping_add(1 as darray_size_t);
-            (*store).names.size = __newSize;
-            if __newSize > __oldSize {
-                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
-                std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                );
-            }
+            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (name as darray_size_t).wrapping_add(1 as darray_size_t));
         }
         if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as xkb_keycode_t {
             if kc >= (*store).low.size as xkb_keycode_t {
-                let mut __oldSize_0: darray_size_t = (*store).low.size;
-                let mut __newSize_0: darray_size_t =
-                    (kc as darray_size_t).wrapping_add(1 as darray_size_t);
-                (*store).low.size = __newSize_0;
-                if __newSize_0 > __oldSize_0 {
-                    darray_growalloc(&mut (*store).low.item, &mut (*store).low.alloc, __newSize_0);
-                    std::ptr::write_bytes(
-                        (*store).low.item.offset(__oldSize_0 as isize) as *mut xkb_atom_t
-                            as *mut u8,
-                        0u8,
-                        (__newSize_0.wrapping_sub(__oldSize_0) as usize)
-                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
-                    );
-                }
+                darray_resize_zero(&mut (*store).low.item, &mut (*store).low.size, &mut (*store).low.alloc, (kc as darray_size_t).wrapping_add(1 as darray_size_t));
             }
             *(*store).low.item.offset(kc as isize) = name;
             if kc < (*store).min {
@@ -674,19 +628,7 @@ unsafe fn keycode_store_insert_alias(
 ) -> bool {
     unsafe {
         if alias >= (*store).names.size {
-            let mut __oldSize: darray_size_t = (*store).names.size;
-            let mut __newSize: darray_size_t =
-                (alias as darray_size_t).wrapping_add(1 as darray_size_t);
-            (*store).names.size = __newSize;
-            if __newSize > __oldSize {
-                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
-                std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                );
-            }
+            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (alias as darray_size_t).wrapping_add(1 as darray_size_t));
         }
         *(*store).names.item.offset(alias as isize) = KeycodeMatch {
             alias: {

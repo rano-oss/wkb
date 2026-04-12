@@ -10,7 +10,6 @@ pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = i64;
     pub type __off64_t = i64;
-    pub type __ssize_t = i64;
 }
 pub mod stdint_uintn_h {
     pub type uint8_t = __uint8_t;
@@ -74,10 +73,9 @@ pub mod FILE_h {
 }
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
-    pub type ssize_t = __ssize_t;
+    pub type ssize_t = i64;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
-    use super::types_h::__ssize_t;
     use super::FILE_h::FILE;
 
     extern "C" {
@@ -711,7 +709,7 @@ pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::{calloc, free};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
+pub use self::types_h::{__off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
@@ -728,7 +726,8 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::{
-    cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul, darray_growalloc, darray_resize_zero,
+    cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
+    darray_growalloc, darray_resize_zero,
 };
 #[derive(Copy, Clone)]
 #[repr(C)]

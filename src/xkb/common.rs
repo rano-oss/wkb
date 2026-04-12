@@ -651,7 +651,7 @@ pub use self::xkbcommon_h::{
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_dup, darray_growalloc};
+use crate::xkb::utils::{cstr_dup, darray_growalloc, darray_resize_zero, darray_free};
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
@@ -2527,20 +2527,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         c2rust_current_block = 4427821232739340156;
                         break;
                     }
-                    let mut __oldSize: darray_size_t = loptions.size;
-                    let mut __newSize: darray_size_t =
-                        (layout as darray_size_t).wrapping_add(1 as darray_size_t);
-                    loptions.size = __newSize;
-                    if __newSize > __oldSize {
-                        darray_growalloc(&mut loptions.item, &mut loptions.alloc, __newSize);
-                        std::ptr::write_bytes(
-                            loptions.item.offset(__oldSize as isize) as *mut darray_string
-                                as *mut u8,
-                            0u8,
-                            (__newSize.wrapping_sub(__oldSize) as usize)
-                                .wrapping_mul(::core::mem::size_of::<darray_string>() as usize),
-                        );
-                    }
+                    darray_resize_zero(&mut loptions.item, &mut loptions.size, &mut loptions.alloc, (layout as darray_size_t).wrapping_add(1 as darray_size_t));
                     let ref mut c2rust_fresh0 = (*loptions.item.offset(layout as isize)).size;
                     *c2rust_fresh0 = (*loptions.item.offset(layout as isize))
                         .size
@@ -2677,17 +2664,11 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         opt_0 = opt_0.offset(1);
                     }
                 }
-                free((*opts_0).item as *mut ::core::ffi::c_void);
-                (*opts_0).item = ::core::ptr::null_mut::<*mut i8>();
-                (*opts_0).size = 0 as darray_size_t;
-                (*opts_0).alloc = 0 as darray_size_t;
+                darray_free(&mut (*opts_0).item, &mut (*opts_0).size, &mut (*opts_0).alloc);
                 opts_0 = opts_0.offset(1);
             }
         }
-        free(loptions.item as *mut ::core::ffi::c_void);
-        loptions.item = ::core::ptr::null_mut::<darray_string>();
-        loptions.size = 0 as darray_size_t;
-        loptions.alloc = 0 as darray_size_t;
+        darray_free(&mut loptions.item, &mut loptions.size, &mut loptions.alloc);
         return rmlvo;
     }
 }

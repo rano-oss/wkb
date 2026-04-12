@@ -1,4 +1,4 @@
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -1201,23 +1201,7 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
             }
         }
         if filter.is_null() {
-            let mut __oldSize: darray_size_t = (*state).filters.size;
-            let mut __newSize: darray_size_t =
-                (*state).filters.size.wrapping_add(1 as darray_size_t);
-            (*state).filters.size = __newSize;
-            if __newSize > __oldSize {
-                darray_growalloc(
-                    &mut (*state).filters.item,
-                    &mut (*state).filters.alloc,
-                    __newSize,
-                );
-                std::ptr::write_bytes(
-                    (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
-                );
-            }
+            darray_resize_zero(&mut (*state).filters.item, &mut (*state).filters.size, &mut (*state).filters.alloc, (*state).filters.size.wrapping_add(1 as darray_size_t));
             filter = (*state)
                 .filters
                 .item
@@ -2391,10 +2375,7 @@ pub unsafe fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
 unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
     unsafe {
         xkb_keymap_unref((*state).keymap);
-        free((*state).filters.item as *mut ::core::ffi::c_void);
-        (*state).filters.item = ::core::ptr::null_mut::<xkb_filter>();
-        (*state).filters.size = 0 as darray_size_t;
-        (*state).filters.alloc = 0 as darray_size_t;
+        darray_free(&mut (*state).filters.item, &mut (*state).filters.size, &mut (*state).filters.alloc);
     }
 }
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
@@ -3867,14 +3848,8 @@ pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options)
         if options.is_null() {
             return;
         }
-        free((*options).shortcuts.targets.item as *mut ::core::ffi::c_void);
-        (*options).shortcuts.targets.item = ::core::ptr::null_mut::<xkb_layout_index_t>();
-        (*options).shortcuts.targets.size = 0 as darray_size_t;
-        (*options).shortcuts.targets.alloc = 0 as darray_size_t;
-        free((*options).mods.item as *mut ::core::ffi::c_void);
-        (*options).mods.item = ::core::ptr::null_mut::<machine_mods_mapping>();
-        (*options).mods.size = 0 as darray_size_t;
-        (*options).mods.alloc = 0 as darray_size_t;
+        darray_free(&mut (*options).shortcuts.targets.item, &mut (*options).shortcuts.targets.size, &mut (*options).shortcuts.targets.alloc);
+        darray_free(&mut (*options).mods.item, &mut (*options).mods.size, &mut (*options).mods.alloc);
         xkb_context_unref((*options).ctx);
         free(options as *mut ::core::ffi::c_void);
     }
@@ -4237,10 +4212,7 @@ pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
             return;
         }
         xkb_state_destroy(&raw mut (*sm).state);
-        free((*sm).overlays.keys.item as *mut ::core::ffi::c_void);
-        (*sm).overlays.keys.item = ::core::ptr::null_mut::<xkb_overlaid_key>();
-        (*sm).overlays.keys.size = 0 as darray_size_t;
-        (*sm).overlays.keys.alloc = 0 as darray_size_t;
+        darray_free(&mut (*sm).overlays.keys.item, &mut (*sm).overlays.keys.size, &mut (*sm).overlays.keys.alloc);
         free((*sm).config.shortcuts.targets as *mut ::core::ffi::c_void);
         free((*sm).config.modifiers.mappings as *mut ::core::ffi::c_void);
         free(sm as *mut ::core::ffi::c_void);
@@ -4771,10 +4743,7 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
         if events.is_null() {
             return;
         }
-        free((*events).queue.item as *mut ::core::ffi::c_void);
-        (*events).queue.item = ::core::ptr::null_mut::<xkb_event>();
-        (*events).queue.size = 0 as darray_size_t;
-        (*events).queue.alloc = 0 as darray_size_t;
+        darray_free(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc);
         xkb_context_unref((*events).ctx);
         free(events as *mut ::core::ffi::c_void);
     }

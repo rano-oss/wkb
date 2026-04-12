@@ -287,7 +287,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
 use crate::xkb::utils::cstr_cmp;
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_growalloc, darray_append, darray_free};
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -495,10 +495,7 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
                 layout = layout.offset(1);
             }
         }
-        free((*rmlvo).layouts.item as *mut ::core::ffi::c_void);
-        (*rmlvo).layouts.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_layout>();
-        (*rmlvo).layouts.size = 0 as darray_size_t;
-        (*rmlvo).layouts.alloc = 0 as darray_size_t;
+        darray_free(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.size, &mut (*rmlvo).layouts.alloc);
         let mut option: *const xkb_rmlvo_builder_option =
             ::core::ptr::null::<xkb_rmlvo_builder_option>();
         if !(*rmlvo).options.item.is_null() {
@@ -513,10 +510,7 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
                 option = option.offset(1);
             }
         }
-        free((*rmlvo).options.item as *mut ::core::ffi::c_void);
-        (*rmlvo).options.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_option>();
-        (*rmlvo).options.size = 0 as darray_size_t;
-        (*rmlvo).options.alloc = 0 as darray_size_t;
+        darray_free(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc);
         xkb_context_unref((*rmlvo).ctx);
         free(rmlvo as *mut ::core::ffi::c_void);
     }

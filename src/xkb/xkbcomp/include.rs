@@ -12,7 +12,6 @@ pub mod types_h {
     pub type __uint64_t = u64;
     pub type __off_t = i64;
     pub type __off64_t = i64;
-    pub type __ssize_t = i64;
 }
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -66,10 +65,9 @@ pub mod FILE_h {
 }
 pub mod stdio_h {
     pub type va_list = __gnuc_va_list;
-    pub type ssize_t = __ssize_t;
+    pub type ssize_t = i64;
     use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
-    use super::types_h::__ssize_t;
     use super::FILE_h::FILE;
 
     extern "C" {
@@ -463,7 +461,7 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::free;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
+pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_h::{
     xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,
@@ -793,7 +791,7 @@ pub unsafe fn expand_path(
             k = k.wrapping_add(1);
         }
         match c2rust_current_block {
-            17179679302217393232 => return 0 as ssize_t,
+            17179679302217393232 => return 0 as i64,
             _ => {
                 if (k >= buf_size) as ::core::ffi::c_int as i64 != 0 {
                     xkb_logf!(

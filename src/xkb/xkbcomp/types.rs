@@ -369,7 +369,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -526,14 +526,8 @@ unsafe fn InitKeyTypesInfo(
 }
 unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
     unsafe {
-        free((*type_0).entries.item as *mut ::core::ffi::c_void);
-        (*type_0).entries.item = ::core::ptr::null_mut::<xkb_key_type_entry>();
-        (*type_0).entries.size = 0 as darray_size_t;
-        (*type_0).entries.alloc = 0 as darray_size_t;
-        free((*type_0).level_names.item as *mut ::core::ffi::c_void);
-        (*type_0).level_names.item = ::core::ptr::null_mut::<xkb_atom_t>();
-        (*type_0).level_names.size = 0 as darray_size_t;
-        (*type_0).level_names.alloc = 0 as darray_size_t;
+        darray_free(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc);
+        darray_free(&mut (*type_0).level_names.item, &mut (*type_0).level_names.size, &mut (*type_0).level_names.alloc);
     }
 }
 unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
@@ -550,10 +544,7 @@ unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
                 type_0 = type_0.offset(1);
             }
         }
-        free((*info).types.item as *mut ::core::ffi::c_void);
-        (*info).types.item = ::core::ptr::null_mut::<KeyTypeInfo>();
-        (*info).types.size = 0 as darray_size_t;
-        (*info).types.alloc = 0 as darray_size_t;
+        darray_free(&mut (*info).types.item, &mut (*info).types.size, &mut (*info).types.alloc);
     }
 }
 unsafe fn FindMatchingKeyType(
@@ -666,10 +657,7 @@ unsafe fn MergeIncludedKeyTypes(
                     type_0 = type_0.offset(1);
                 }
             }
-            free((*from).types.item as *mut ::core::ffi::c_void);
-            (*from).types.item = ::core::ptr::null_mut::<KeyTypeInfo>();
-            (*from).types.size = 0 as darray_size_t;
-            (*from).types.alloc = 0 as darray_size_t;
+            darray_free(&mut (*from).types.item, &mut (*from).types.size, &mut (*from).types.alloc);
         };
     }
 }
@@ -1140,20 +1128,7 @@ unsafe fn AddLevelName(
 ) -> bool {
     unsafe {
         if level >= (*type_0).level_names.size as xkb_level_index_t {
-            let mut __oldSize: darray_size_t = (*type_0).level_names.size;
-            let mut __newSize: darray_size_t =
-                (level as darray_size_t).wrapping_add(1 as darray_size_t);
-            (*type_0).level_names.size = __newSize;
-            if __newSize > __oldSize {
-                darray_growalloc(&mut (*type_0).level_names.item, &mut (*type_0).level_names.alloc, __newSize);
-                std::ptr::write_bytes(
-                    (*type_0).level_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
-                        as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
-                );
-            }
+            darray_resize_zero(&mut (*type_0).level_names.item, &mut (*type_0).level_names.size, &mut (*type_0).level_names.alloc, (level as darray_size_t).wrapping_add(1 as darray_size_t));
         } else {
             if *(*type_0).level_names.item.offset(level as isize) == name {
                 xkb_logf!(

@@ -1,4 +1,4 @@
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::{darray_append, darray_free, darray_growalloc};
 use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
@@ -62,7 +62,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -263,9 +262,7 @@ pub mod text_h {
             }) as uint8_t;
         }
     }
-    
-    
-    
+
     use super::stdint_uintn_h::uint8_t;
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
     pub use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText};
@@ -339,9 +336,7 @@ pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
 pub mod expr_h {
-    
-    
-    
+
     pub use crate::xkb::xkbcomp::expr::{ExprResolveGroup, ExprResolveGroupMask};
 }
 pub mod xkbcommon_keysyms_h {
@@ -378,7 +373,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
@@ -685,7 +680,12 @@ unsafe fn FindInterpForKey(
                         }
                     }
                     if found {
-                        darray_append(&mut (*interprets).item, &mut (*interprets).size, &mut (*interprets).alloc, interp);
+                        darray_append(
+                            &mut (*interprets).item,
+                            &mut (*interprets).size,
+                            &mut (*interprets).alloc,
+                            interp,
+                        );
                         (*interp).set_required((true_0 != 0) as bool);
                         c2rust_current_block_34 = 7659304154607701039;
                         break;
@@ -705,7 +705,12 @@ unsafe fn FindInterpForKey(
             }
             match c2rust_current_block_34 {
                 2209838995503123840 => {
-                    darray_append(&mut (*interprets).item, &mut (*interprets).size, &mut (*interprets).alloc, &raw const default_interpret);
+                    darray_append(
+                        &mut (*interprets).item,
+                        &mut (*interprets).size,
+                        &mut (*interprets).alloc,
+                        &raw const default_interpret,
+                    );
                 }
                 _ => {}
             }
@@ -773,7 +778,12 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 match (*interp).num_actions as ::core::ffi::c_int {
                                     0 => {}
                                     1 => {
-                                        darray_append(&mut actions.item, &mut actions.size, &mut actions.alloc, (*interp).a.action);
+                                        darray_append(
+                                            &mut actions.item,
+                                            &mut actions.size,
+                                            &mut actions.alloc,
+                                            (*interp).a.action,
+                                        );
                                     }
                                     _ => {
                                         let mut __count: darray_size_t =
@@ -865,15 +875,16 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         "[XKB-{:03}] Could not allocate interpret actions\n",
                                         XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                                     );
-                                    free(actions.item as *mut ::core::ffi::c_void);
-                                    actions.item = ::core::ptr::null_mut::<xkb_action>();
-                                    actions.size = 0 as darray_size_t;
-                                    actions.alloc = 0 as darray_size_t;
-                                    free(interprets.item as *mut ::core::ffi::c_void);
-                                    interprets.item =
-                                        ::core::ptr::null_mut::<*const xkb_sym_interpret>();
-                                    interprets.size = 0 as darray_size_t;
-                                    interprets.alloc = 0 as darray_size_t;
+                                    darray_free(
+                                        &mut actions.item,
+                                        &mut actions.size,
+                                        &mut actions.alloc,
+                                    );
+                                    darray_free(
+                                        &mut interprets.item,
+                                        &mut interprets.size,
+                                        &mut interprets.alloc,
+                                    );
                                     return false_0 != 0;
                                 }
                             }
@@ -893,14 +904,12 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
             }
             group = group.wrapping_add(1);
         }
-        free(actions.item as *mut ::core::ffi::c_void);
-        actions.item = ::core::ptr::null_mut::<xkb_action>();
-        actions.size = 0 as darray_size_t;
-        actions.alloc = 0 as darray_size_t;
-        free(interprets.item as *mut ::core::ffi::c_void);
-        interprets.item = ::core::ptr::null_mut::<*const xkb_sym_interpret>();
-        interprets.size = 0 as darray_size_t;
-        interprets.alloc = 0 as darray_size_t;
+        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
+        darray_free(
+            &mut interprets.item,
+            &mut interprets.size,
+            &mut interprets.alloc,
+        );
         if (*key).explicit as u32 & EXPLICIT_VMODMAP as ::core::ffi::c_int as u32 == 0 {
             (*key).vmodmap = vmodmap;
         }
@@ -1544,10 +1553,7 @@ unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array)
                 pc = pc.offset(1);
             }
         }
-        free((*p).item as *mut ::core::ffi::c_void);
-        (*p).item = ::core::ptr::null_mut::<pending_computation>();
-        (*p).size = 0 as darray_size_t;
-        (*p).alloc = 0 as darray_size_t;
+        darray_free(&mut (*p).item, &mut (*p).size, &mut (*p).alloc);
     }
 }
 pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap) -> bool {

@@ -509,7 +509,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len, darray_append, darray_growalloc};
+use crate::xkb::utils::{cstr_len, darray_append, darray_growalloc, darray_free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -797,18 +797,9 @@ pub unsafe fn xkb_file_section_free(mut section: *mut xkb_file_section) {
         if section.is_null() {
             return;
         }
-        free((*section).include_groups.item as *mut ::core::ffi::c_void);
-        (*section).include_groups.item = ::core::ptr::null_mut::<xkb_file_include_group>();
-        (*section).include_groups.size = 0 as darray_size_t;
-        (*section).include_groups.alloc = 0 as darray_size_t;
-        free((*section).includes.item as *mut ::core::ffi::c_void);
-        (*section).includes.item = ::core::ptr::null_mut::<xkb_file_include>();
-        (*section).includes.size = 0 as darray_size_t;
-        (*section).includes.alloc = 0 as darray_size_t;
-        free((*section).buffer.item as *mut ::core::ffi::c_void);
-        (*section).buffer.item = ::core::ptr::null_mut::<i8>();
-        (*section).buffer.size = 0 as darray_size_t;
-        (*section).buffer.alloc = 0 as darray_size_t;
+        darray_free(&mut (*section).include_groups.item, &mut (*section).include_groups.size, &mut (*section).include_groups.alloc);
+        darray_free(&mut (*section).includes.item, &mut (*section).includes.size, &mut (*section).includes.alloc);
+        darray_free(&mut (*section).buffer.item, &mut (*section).buffer.size, &mut (*section).buffer.alloc);
     }
 }
 unsafe fn xkb_file_section_set_meta_data(
@@ -981,24 +972,7 @@ unsafe fn xkb_file_section_append_includes(
                 );
                 if group.is_null() {
                     let group_idx: darray_size_t = (*section).include_groups.size;
-                    (*section).include_groups.size = (*section)
-                        .include_groups
-                        .size
-                        .wrapping_add(1 as darray_size_t);
-                    darray_growalloc(
-                        &mut (*section).include_groups.item,
-                        &mut (*section).include_groups.alloc,
-                        (*section).include_groups.size,
-                    );
-                    *(*section).include_groups.item.offset(
-                        (*section)
-                            .include_groups
-                            .size
-                            .wrapping_sub(1 as darray_size_t) as isize,
-                    ) = xkb_file_include_group {
-                        start: idx,
-                        end: idx,
-                    };
+                    darray_append(&mut (*section).include_groups.item, &mut (*section).include_groups.size, &mut (*section).include_groups.alloc, xkb_file_include_group { start: idx, end: idx, });
                     group = (*section).include_groups.item.offset(group_idx as isize)
                         as *mut xkb_file_include_group;
                 } else {
