@@ -147,8 +147,6 @@ pub mod stdio_h {
 
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
-        pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
         pub fn vsnprintf(
             __s: *mut i8,
             __maxlen: usize,
@@ -1110,12 +1108,6 @@ pub mod stat_h {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strerror(__errnum: i32) -> *mut i8;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -1325,11 +1317,10 @@ pub use self::parser_h::{
 };
 use self::stat_h::stat;
 pub use self::stdint_uintn_h::u32;
-pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
+pub use self::stdio_h::{stderr, va_list, vsnprintf};
 pub use self::stdlib_h::{
     __compar_fn_t, calloc, free, getenv, qsort, realloc, secure_getenv, strtol,
 };
-use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -2195,9 +2186,9 @@ unsafe fn default_log_fn(
     unsafe {
         let mut prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
-            fprintf(stderr, b"%s\0".as_ptr() as *const i8, prefix);
+            eprint!("{}", crate::xkb::utils::CStrDisplay(prefix));
         }
-        fprintf(stderr, b"%s\0".as_ptr() as *const i8, msg);
+        eprint!("{}", crate::xkb::utils::CStrDisplay(msg));
     }
 }
 unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
@@ -2464,7 +2455,7 @@ pub unsafe fn rxkb_context_include_path_append(
             RXKB_LOG_LEVEL_INFO,
             "Include path failed: \"{}\" ({})\n",
             crate::xkb::utils::CStrDisplay(path),
-            crate::xkb::utils::CStrDisplay(strerror(err)),
+            crate::xkb::utils::StrerrorDisplay(err),
         );
         return false;
     }
@@ -2648,7 +2639,7 @@ unsafe fn add_direct_subdirectories(
             RXKB_LOG_LEVEL_DEBUG,
             "Include extensions path failed: {} ({})\n",
             crate::xkb::utils::CStrDisplay(path),
-            crate::xkb::utils::CStrDisplay(strerror(err)),
+            crate::xkb::utils::StrerrorDisplay(err),
         );
         if !dir.is_null() {
             closedir(dir);

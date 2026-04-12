@@ -141,7 +141,6 @@ pub mod stdio_h {
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fflush(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn perror(__s: *const i8);
     }
 }
@@ -221,7 +220,7 @@ pub use self::keymap_formats_h::{
     xkb_keymap_get_format_label, xkb_keymap_parse_format, DEFAULT_OUTPUT_KEYMAP_FORMAT,
 };
 pub use self::stdbool_h::{false_0, true_0};
-use self::stdio_h::{fclose, fflush, fopen, fprintf, perror, stderr, stdout};
+use self::stdio_h::{fclose, fflush, fopen, perror, stderr, stdout};
 pub use self::stdlib_h::{atof, atoi, exit, free, EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
@@ -255,27 +254,31 @@ pub const DEFAULT_ITERATIONS: i32 = 3000 as i32;
 pub const DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
 unsafe fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
     unsafe {
-        fprintf(
-            fp,
-            b"Usage: %s [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --iter\n    Exact number of iterations to run\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: %f)\nNote: --iter and --stdev are mutually exclusive.\n\nXKB-specific options:\n --input-format <format>\n    The keymap format to use for parsing (default: '%s')\n --output-format <format>\n    The keymap format to use for serializing (default: same as input)\n --pretty\n    Enable pretty-printing in keymap serialization\n --keep-unused\n    Keep unused bits in keymap serialization\n --explicit-values\n    Force serializing explicit values\n --keymap\n    Load the corresponding XKB file, ignore RMLVO options.\n --rules <rules>\n    The XKB ruleset (default: '%s')\n --model <model>\n    The XKB model (default: '%s')\n --layout <layout>\n    The XKB layout (default: '%s')\n --variant <variant>\n    The XKB layout variant (default: '%s')\n --options <options>\n    The XKB options (default: '%s')\n\n\0"
-                .as_ptr() as *const i8,
-            *argv.offset(0 as i32 as isize),
+        let use_stderr = fp == stderr;
+        let msg = format!(
+            "Usage: {} [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --iter\n    Exact number of iterations to run\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: {})\nNote: --iter and --stdev are mutually exclusive.\n\nXKB-specific options:\n --input-format <format>\n    The keymap format to use for parsing (default: '{}')\n --output-format <format>\n    The keymap format to use for serializing (default: same as input)\n --pretty\n    Enable pretty-printing in keymap serialization\n --keep-unused\n    Keep unused bits in keymap serialization\n --explicit-values\n    Force serializing explicit values\n --keymap\n    Load the corresponding XKB file, ignore RMLVO options.\n --rules <rules>\n    The XKB ruleset (default: '{}')\n --model <model>\n    The XKB model (default: '{}')\n --layout <layout>\n    The XKB layout (default: '{}')\n --variant <variant>\n    The XKB layout variant (default: '{}')\n --options <options>\n    The XKB options (default: '{}')\n\n",
+            crate::xkb::utils::CStrDisplay(*argv.offset(0 as i32 as isize)),
             DEFAULT_STDEV * 100 as i32 as ::core::ffi::c_double,
-            xkb_keymap_get_format_label(XKB_KEYMAP_FORMAT_TEXT_V2),
-            DEFAULT_XKB_RULES.as_ptr(),
-            DEFAULT_XKB_MODEL.as_ptr(),
-            DEFAULT_XKB_LAYOUT.as_ptr(),
-            if !DEFAULT_XKB_VARIANT.is_null() {
+            crate::xkb::utils::CStrDisplay(xkb_keymap_get_format_label(XKB_KEYMAP_FORMAT_TEXT_V2)),
+            crate::xkb::utils::CStrDisplay(DEFAULT_XKB_RULES.as_ptr()),
+            crate::xkb::utils::CStrDisplay(DEFAULT_XKB_MODEL.as_ptr()),
+            crate::xkb::utils::CStrDisplay(DEFAULT_XKB_LAYOUT.as_ptr()),
+            crate::xkb::utils::CStrDisplay(if !DEFAULT_XKB_VARIANT.is_null() {
                 ::core::ptr::null::<i8>()
             } else {
                 b"<none>\0".as_ptr() as *const i8
-            },
-            if !DEFAULT_XKB_OPTIONS.is_null() {
+            }),
+            crate::xkb::utils::CStrDisplay(if !DEFAULT_XKB_OPTIONS.is_null() {
                 ::core::ptr::null::<i8>()
             } else {
                 b"<none>\0".as_ptr() as *const i8
-            },
+            }),
         );
+        if use_stderr {
+            eprint!("{}", msg);
+        } else {
+            print!("{}", msg);
+        }
     }
 }
 unsafe fn load_keymap(
@@ -289,10 +292,9 @@ unsafe fn load_keymap(
         if !keymap_path.is_null() {
             let mut file: *mut FILE = fopen(keymap_path, b"r\0".as_ptr() as *const i8) as *mut FILE;
             if file.is_null() {
-                fprintf(
-                    stderr,
-                    b"ERROR: cannot open file: %s\n\0".as_ptr() as *const i8,
-                    keymap_path,
+                eprintln!(
+                    "ERROR: cannot open file: {}",
+                    crate::xkb::utils::CStrDisplay(keymap_path),
                 );
                 return ::core::ptr::null_mut::<xkb_keymap>();
             }
@@ -462,10 +464,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 0 => {
                     keymap_input_format = xkb_keymap_parse_format(optarg);
                     if keymap_input_format as u64 == 0 {
-                        fprintf(
-                            stderr,
-                            b"ERROR: invalid --input-format: \"%s\"\n\0".as_ptr() as *const i8,
-                            optarg,
+                        eprintln!(
+                            "ERROR: invalid --input-format: \"{}\"",
+                            crate::xkb::utils::CStrDisplay(optarg),
                         );
                         usage(stderr, argv);
                         exit(EXIT_INVALID_USAGE);
@@ -474,10 +475,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 1 => {
                     keymap_output_format = xkb_keymap_parse_format(optarg);
                     if keymap_output_format as u64 == 0 {
-                        fprintf(
-                            stderr,
-                            b"ERROR: invalid --output-format: \"%s\"\n\0".as_ptr() as *const i8,
-                            optarg,
+                        eprintln!(
+                            "ERROR: invalid --output-format: \"{}\"",
+                            crate::xkb::utils::CStrDisplay(optarg),
                         );
                         usage(stderr, argv);
                         exit(EXIT_INVALID_USAGE);
@@ -548,10 +548,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         }
         if rmlvo.layout.is_null() || *rmlvo.layout == 0 {
             if !rmlvo.variant.is_null() && *rmlvo.variant as i32 != 0 {
-                fprintf(
-                    stderr,
-                    b"Error: a variant requires a layout\n\0".as_ptr() as *const i8,
-                );
+                eprintln!("Error: a variant requires a layout");
                 return EXIT_INVALID_USAGE;
             }
             rmlvo.layout = DEFAULT_XKB_LAYOUT.as_ptr();
@@ -569,10 +566,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             XKB_KEYMAP_COMPILE_NO_FLAGS,
         );
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"ERROR: Cannot compile keymap.\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("ERROR: Cannot compile keymap.");
             ret = EXIT_FAILURE;
         } else {
             fflush(stdout);
@@ -688,20 +682,16 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             };
             bench_elapsed(&raw mut bench, &raw mut total_elapsed);
             if explicit_iterations {
-                fprintf(
-                    stderr,
-                    b"mean: %lld \xC2\xB5s; compiled %u keymaps in %ld.%06lds\n\0".as_ptr()
-                        as *const i8,
+                eprintln!(
+                    "mean: {} \u{00B5}s; compiled {} keymaps in {}.{:06}s",
                     est.elapsed / 1000 as i64,
                     max_iterations,
                     total_elapsed.seconds,
                     total_elapsed.nanoseconds / 1000 as i64,
                 );
             } else {
-                fprintf(
-                    stderr,
-                    b"mean: %lld \xC2\xB5s; stdev: %Lf%% (target: %f%%); last run: compiled %u keymaps in %ld.%06lds; total time: %ld.%06lds\n\0"
-                        .as_ptr() as *const i8,
+                eprintln!(
+                    "mean: {} \u{00B5}s; stdev: {}% (target: {}%); last run: compiled {} keymaps in {}.{:06}s; total time: {}.{:06}s",
                     est.elapsed / 1000 as i64,
                     (est.stdev as f64) * (100.0 as f64)
                         / (est.elapsed as f64),

@@ -332,13 +332,7 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
-        pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
-    }
-}
+pub mod string_h {}
 pub mod xkbcomp_priv_h {
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
@@ -468,7 +462,6 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::free;
-use self::string_h::{strchr, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
 use self::utils_paths_h::is_absolute_path;
@@ -494,7 +487,7 @@ pub unsafe fn ParseIncludeMap(
         let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut next: *mut i8 = ::core::ptr::null_mut::<i8>();
         str = *str_inout;
-        next = strpbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
+        next = crate::xkb::utils::cstr_pbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
         if !next.is_null() {
             *nextop_rtrn = *next;
             let c2rust_fresh2 = next;
@@ -504,7 +497,7 @@ pub unsafe fn ParseIncludeMap(
             *nextop_rtrn = '\0' as i32 as i8;
             next = ::core::ptr::null_mut::<i8>();
         }
-        tmp = strchr(str, ':' as i32);
+        tmp = crate::xkb::utils::cstr_chr(str, ':' as i32);
         if !tmp.is_null() {
             let c2rust_fresh3 = tmp;
             tmp = tmp.offset(1);
@@ -513,7 +506,7 @@ pub unsafe fn ParseIncludeMap(
         } else {
             *extra_data = ::core::ptr::null_mut::<i8>();
         }
-        tmp = strchr(str, '(' as i32);
+        tmp = crate::xkb::utils::cstr_chr(str, '(' as i32);
         if tmp.is_null() {
             *file_rtrn = cstr_dup(str);
             *map_rtrn = ::core::ptr::null_mut::<i8>();
@@ -527,11 +520,8 @@ pub unsafe fn ParseIncludeMap(
             *c2rust_fresh4 = '\0' as i32 as i8;
             *file_rtrn = cstr_dup(str);
             str = tmp;
-            tmp = strchr(str, ')' as i32);
-            if tmp.is_null()
-                || *tmp.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != '\0' as i32
-            {
+            tmp = crate::xkb::utils::cstr_chr(str, ')' as i32);
+            if tmp.is_null() || *tmp.offset(1 as i32 as isize) as i32 != '\0' as i32 {
                 free(*file_rtrn as *mut ::core::ffi::c_void);
                 free(*extra_data as *mut ::core::ffi::c_void);
                 return false_0 != 0;

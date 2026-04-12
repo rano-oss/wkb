@@ -114,8 +114,6 @@ pub mod stdio_h {
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
-        pub fn printf(__format: *const i8, ...) -> i32;
     }
 }
 pub mod utils_h {
@@ -514,7 +512,7 @@ use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::stdbool_h::false_0;
 pub use self::stdint_uintn_h::{u32, uint64_t};
-use self::stdio_h::{fclose, fopen, fprintf, printf, stderr};
+use self::stdio_h::{fclose, fopen};
 pub use self::stdlib_h::{atof, exit, strtol, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint32_t, __uint64_t};
@@ -528,10 +526,9 @@ pub type options = u32;
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
 unsafe fn usage(mut argv: *mut *mut i8) {
     unsafe {
-        printf(
-            b"Usage: %s [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: %f)\n\n\0"
-                .as_ptr() as *const i8,
-            *argv.offset(0 as i32 as isize),
+        print!(
+            "Usage: {} [OPTIONS]\n\nBenchmark compilation of the given RMLVO\n\nOptions:\n --help\n    Print this help and exit\n --stdev\n    Minimal relative standard deviation (percentage) to reach.\n    (default: {})\n\n",
+            crate::xkb::utils::CStrDisplay(*argv.offset(0 as i32 as isize)),
             DEFAULT_STDEV * 100 as i32 as ::core::ffi::c_double,
         );
     }
@@ -549,10 +546,8 @@ unsafe fn print_stats(
             nanoseconds: 0,
         };
         bench_elapsed(bench, &raw mut total_elapsed);
-        fprintf(
-            stderr,
-            b"mean: %lld \xC2\xB5s; stdev: %Lf%% (target: %f%%); last run: parsed %u times in %ld.%06lds; total time: %ld.%06lds\n\0"
-                .as_ptr() as *const i8,
+        eprintln!(
+            "mean: {} \u{00B5}s; stdev: {}% (target: {}%); last run: parsed {} times in {}.{:06}s; total time: {}.{:06}s",
             (*est).elapsed / 1000 as i64,
             ((*est).stdev as f64) * (100.0 as f64)
                 / ((*est).elapsed as f64),
@@ -679,7 +674,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
 
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            fprintf(stderr, b"Invalid file descriptor\n\0".as_ptr() as *const i8);
+            eprintln!("Invalid file descriptor");
             exit(1);
         }
 
@@ -687,11 +682,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                fprintf(
-                    stderr,
-                    b"Failed to map file: %s\n\0".as_ptr() as *const i8,
-                    std::ffi::CString::new(e.to_string()).unwrap().as_ptr(),
-                );
+                eprintln!("Failed to map file: {}", e,);
                 std::mem::forget(rust_file);
                 exit(1);
             }
@@ -702,7 +693,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut dummy32: u32 = 0 as u32;
         let mut dummy64: uint64_t = 0 as uint64_t;
         let mut max_iterations: u32 = 0;
-        printf(b"*** parse_hex_to_uint32_t ***\n\0".as_ptr() as *const i8);
+        print!("*** parse_hex_to_uint32_t ***\n");
         bench_start2(&raw mut bench);
         let mut _bench: bench = bench {
             start: bench_time {
@@ -783,7 +774,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_keysym_hex ***\n\0".as_ptr() as *const i8);
+        print!("*** parse_keysym_hex ***\n");
         bench_start2(&raw mut bench);
         let mut _bench_0: bench = bench {
             start: bench_time {
@@ -864,7 +855,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_dec_to_uint64_t ***\n\0".as_ptr() as *const i8);
+        print!("*** parse_dec_to_uint64_t ***\n");
         bench_start2(&raw mut bench);
         let mut _bench_1: bench = bench {
             start: bench_time {
@@ -954,7 +945,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** strtol, base 10 ***\n\0".as_ptr() as *const i8);
+        print!("*** strtol, base 10 ***\n");
         bench_start2(&raw mut bench);
         let mut _bench_2: bench = bench {
             start: bench_time {
@@ -1041,7 +1032,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** parse_hex_to_uint64_t ***\n\0".as_ptr() as *const i8);
+        print!("*** parse_hex_to_uint64_t ***\n");
         bench_start2(&raw mut bench);
         let mut _bench_3: bench = bench {
             start: bench_time {
@@ -1131,7 +1122,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             &raw mut bench,
             &raw mut est,
         );
-        printf(b"*** strtol, base 16 ***\n\0".as_ptr() as *const i8);
+        print!("*** strtol, base 16 ***\n");
         bench_start2(&raw mut bench);
         let mut _bench_4: bench = bench {
             start: bench_time {

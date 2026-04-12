@@ -140,8 +140,6 @@ pub mod stdio_h {
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
         pub fn setvbuf(__stream: *mut FILE, __buf: *mut i8, __modes: i32, __n: usize) -> i32;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
-        pub fn printf(__format: *const i8, ...) -> i32;
         pub fn fread(
             __ptr: *mut ::core::ffi::c_void,
             __size: usize,
@@ -459,12 +457,6 @@ pub mod stdlib_h {
         pub fn mkdtemp(__template: *mut i8) -> *mut i8;
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strerror(__errnum: i32) -> *mut i8;
-    }
-}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     use super::types_h::__mode_t;
@@ -615,11 +607,10 @@ pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::{
-    fclose, feof, ferror, fileno, fopen, fprintf, fread, fwrite, printf, setvbuf, stderr, stdout,
-    va_list, _IONBF, BUFSIZ,
+    fclose, feof, ferror, fileno, fopen, fread, fwrite, setvbuf, stderr, stdout, va_list, _IONBF,
+    BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
-use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -705,18 +696,15 @@ pub unsafe fn test_init() {
 }
 pub unsafe fn print_detailed_state(mut state: *mut xkb_state) {
     unsafe {
-        fprintf(
-            stderr,
-            b"  Layout: base: %d, latched: %d, locked: %d, effective: %u\n\0".as_ptr() as *const i8,
+        eprintln!(
+            "  Layout: base: {}, latched: {}, locked: {}, effective: {}",
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_DEPRESSED),
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LATCHED),
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_LOCKED),
             xkb_state_serialize_layout(state, XKB_STATE_LAYOUT_EFFECTIVE),
         );
-        fprintf(
-            stderr,
-            b"  Modifiers: base: %#x, latched: %#x, locked: %#x, effective: %#x\n\0".as_ptr()
-                as *const i8,
+        eprintln!(
+            "  Modifiers: base: {:#x}, latched: {:#x}, locked: {:#x}, effective: {:#x}",
             xkb_state_serialize_mods(state, XKB_STATE_MODS_DEPRESSED),
             xkb_state_serialize_mods(state, XKB_STATE_MODS_LATCHED),
             xkb_state_serialize_mods(state, XKB_STATE_MODS_LOCKED),
@@ -731,7 +719,7 @@ pub unsafe fn print_detailed_state(mut state: *mut xkb_state) {
             }
             led = led.wrapping_add(1);
         }
-        fprintf(stderr, b"  LEDs: 0x%x\n\0".as_ptr() as *const i8, leds);
+        eprintln!("  LEDs: 0x{:x}", leds);
     }
 }
 unsafe fn consume_events(
@@ -782,7 +770,7 @@ pub unsafe fn test_key_seq_va(
                     .as_ptr() as *const i8,
             );
         };
-        fprintf(stderr, b"----\n\0".as_ptr() as *const i8);
+        eprintln!("----");
         let state: *mut xkb_state = xkb_state_new(keymap) as *mut xkb_state;
         if !state.is_null() {
         } else {
@@ -820,11 +808,7 @@ pub unsafe fn test_key_seq_va(
                     opstr = b"FINISH\0".as_ptr() as *const i8;
                 }
                 _ => {
-                    fprintf(
-                        stderr,
-                        b"ERROR: Unsupported operation: %d\n\0".as_ptr() as *const i8,
-                        op,
-                    );
+                    eprintln!("ERROR: Unsupported operation: {}", op);
                     c2rust_current_block = 10334003491957544446;
                     break;
                 }
@@ -958,22 +942,17 @@ pub unsafe fn test_key_seq_va(
                 (PRINT_ALL_FIELDS as i32 | PRINT_UNILINE as i32) as print_state_options,
             );
             count = count.wrapping_add(1);
-            fprintf(
-                stderr,
-                b"#%02u op %-6s got %d syms for keycode %3u\0".as_ptr() as *const i8,
+            eprint!(
+                "#{:02} op {:<6} got {} syms for keycode {:3}",
                 count,
-                opstr,
+                crate::xkb::utils::CStrDisplay(opstr),
                 nsyms,
                 kc,
             );
             if kc_new != kc {
-                fprintf(
-                    stderr,
-                    b" (redirected to %3u)\0".as_ptr() as *const i8,
-                    kc_new,
-                );
+                eprint!(" (redirected to {:3})", kc_new);
             }
-            fprintf(stderr, b": [\0".as_ptr() as *const i8);
+            eprint!(": [");
             let mut keysym: xkb_keysym_t = 0;
             let mut i: i32 = 0 as i32;
             while i < nsyms {
@@ -983,15 +962,14 @@ pub unsafe fn test_key_seq_va(
                     &raw mut ksbuf as *mut i8,
                     ::core::mem::size_of::<[i8; 31]>() as usize,
                 );
-                fprintf(
-                    stderr,
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if i != 0 as i32 {
+                eprint!(
+                    "{}{}",
+                    crate::xkb::utils::CStrDisplay(if i != 0 as i32 {
                         b", \0".as_ptr() as *const i8
                     } else {
                         b"\0".as_ptr() as *const i8
-                    },
-                    &raw mut ksbuf as *mut i8,
+                    }),
+                    crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8),
                 );
                 if keysym == FINISH as i32 as xkb_keysym_t || keysym == NEXT as i32 as xkb_keysym_t
                 {
@@ -1000,10 +978,9 @@ pub unsafe fn test_key_seq_va(
                         &raw mut ksbuf as *mut i8,
                         ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
-                    fprintf(
-                        stderr,
-                        b"\nERROR: Did not expect keysym: %s.\n\0".as_ptr() as *const i8,
-                        &raw mut ksbuf as *mut i8,
+                    eprintln!(
+                        "\nERROR: Did not expect keysym: {}.",
+                        crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8)
                     );
                     c2rust_current_block = 10334003491957544446;
                     break 's_21;
@@ -1013,20 +990,18 @@ pub unsafe fn test_key_seq_va(
                         &raw mut ksbuf as *mut i8,
                         ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
-                    fprintf(
-                        stderr,
-                        b"\nERROR: Expected keysym: %s. \0".as_ptr() as *const i8,
-                        &raw mut ksbuf as *mut i8,
+                    eprint!(
+                        "\nERROR: Expected keysym: {}. ",
+                        crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8)
                     );
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
                         &raw mut ksbuf as *mut i8,
                         ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
-                    fprintf(
-                        stderr,
-                        b" Got keysym: %s.\n\0".as_ptr() as *const i8,
-                        &raw mut ksbuf as *mut i8,
+                    eprintln!(
+                        " Got keysym: {}.",
+                        crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8)
                     );
                     c2rust_current_block = 10334003491957544446;
                     break 's_21;
@@ -1042,16 +1017,15 @@ pub unsafe fn test_key_seq_va(
                         &raw mut ksbuf as *mut i8,
                         ::core::mem::size_of::<[i8; 31]>() as usize,
                     );
-                    fprintf(
-                        stderr,
-                        b"\nERROR: Expected %s, but got no keysyms.\n\0".as_ptr() as *const i8,
-                        &raw mut ksbuf as *mut i8,
+                    eprintln!(
+                        "\nERROR: Expected {}, but got no keysyms.",
+                        crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8)
                     );
                     c2rust_current_block = 10334003491957544446;
                     break;
                 }
             }
-            fprintf(stderr, b"]\n\0".as_ptr() as *const i8);
+            eprintln!("]");
             keysym = ap.arg::<i32>() as xkb_keysym_t;
             if keysym == NEXT as i32 as xkb_keysym_t {
                 continue;
@@ -1065,17 +1039,16 @@ pub unsafe fn test_key_seq_va(
                 &raw mut ksbuf as *mut i8,
                 ::core::mem::size_of::<[i8; 31]>() as usize,
             );
-            fprintf(
-                stderr,
-                b"\nERROR: Expected keysym: %s. Didn't get it.\n\0".as_ptr() as *const i8,
-                &raw mut ksbuf as *mut i8,
+            eprintln!(
+                "\nERROR: Expected keysym: {}. Didn't get it.",
+                crate::xkb::utils::CStrDisplay(&raw mut ksbuf as *mut i8)
             );
             c2rust_current_block = 10334003491957544446;
             break;
         }
         match c2rust_current_block {
             10334003491957544446 => {
-                fprintf(stderr, b"Current state:\n\0".as_ptr() as *const i8);
+                eprintln!("Current state:");
                 print_detailed_state(state);
                 xkb_state_unref(state);
                 return 0 as i32;
@@ -1186,11 +1159,10 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
         *__errno_location() = 0 as i32;
         let fd: i32 = fileno(file) as i32;
         if fd < 0 as i32 {
-            fprintf(
-                stderr,
-                b"Error getting file descriptor for %s: %s\n\0".as_ptr() as *const i8,
-                path,
-                strerror(*__errno_location()),
+            eprintln!(
+                "Error getting file descriptor for {}: {}",
+                crate::xkb::utils::CStrDisplay(path),
+                crate::xkb::utils::StrerrorDisplay(*__errno_location()),
             );
             return ::core::ptr::null_mut::<i8>();
         }
@@ -1222,20 +1194,18 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
             __glibc_reserved: [0; 3],
         };
         if fstat(fd, &raw mut info) != 0 as i32 {
-            fprintf(
-                stderr,
-                b"Error getting file stats for %s: %s\n\0".as_ptr() as *const i8,
-                path,
-                strerror(*__errno_location()),
+            eprintln!(
+                "Error getting file stats for {}: {}",
+                crate::xkb::utils::CStrDisplay(path),
+                crate::xkb::utils::StrerrorDisplay(*__errno_location()),
             );
             return ::core::ptr::null_mut::<i8>();
         }
         let size: usize = info.st_size as usize;
         if size > MAX_FILE_SIZE as i32 as usize {
-            fprintf(
-                stderr,
-                b"Error: file %s exceeds maximum size\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Error: file {} exceeds maximum size",
+                crate::xkb::utils::CStrDisplay(path)
             );
             return ::core::ptr::null_mut::<i8>();
         }
@@ -1253,16 +1223,15 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
         ) as usize;
         if count != size {
             if feof(file) == 0 {
-                printf(
-                    b"Error reading file %s: unexpected end of file\n\0".as_ptr() as *const i8,
-                    path,
+                println!(
+                    "Error reading file {}: unexpected end of file",
+                    crate::xkb::utils::CStrDisplay(path)
                 );
             } else if ferror(file) != 0 {
-                fprintf(
-                    stderr,
-                    b"Error reading file %s: %s\n\0".as_ptr() as *const i8,
-                    path,
-                    strerror(*__errno_location()),
+                eprintln!(
+                    "Error reading file {}: {}",
+                    crate::xkb::utils::CStrDisplay(path),
+                    crate::xkb::utils::StrerrorDisplay(*__errno_location()),
                 );
             }
             free(ret as *mut ::core::ffi::c_void);
@@ -1331,10 +1300,9 @@ pub unsafe fn test_compile_file(
         }
         file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         if file.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to open path: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Failed to open path: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             free(path as *mut ::core::ffi::c_void);
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -1352,18 +1320,16 @@ pub unsafe fn test_compile_file(
         keymap = xkb_keymap_new_from_file(context, file, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
         fclose(file);
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to compile path: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Failed to compile path: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             free(path as *mut ::core::ffi::c_void);
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
-        fprintf(
-            stderr,
-            b"Successfully compiled path: %s\n\0".as_ptr() as *const i8,
-            path,
+        eprintln!(
+            "Successfully compiled path: {}",
+            crate::xkb::utils::CStrDisplay(path)
         );
         free(path as *mut ::core::ffi::c_void);
         return keymap;
@@ -1379,10 +1345,7 @@ pub unsafe fn test_compile_string(
         keymap =
             xkb_keymap_new_from_string(context, string, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to compile string\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("Failed to compile string");
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         return keymap;
@@ -1409,10 +1372,7 @@ pub unsafe fn test_compile_buffer2(
         let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
         keymap = xkb_keymap_new_from_buffer(context, buf, len, format, flags);
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to compile keymap from memory buffer\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("Failed to compile keymap from memory buffer");
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         return keymap;
@@ -1477,14 +1437,13 @@ pub unsafe fn test_compile_rules(
             );
         }
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to compile RMLVO: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr() as *const i8,
-                rules,
-                model,
-                layout,
-                variant,
-                options,
+            eprintln!(
+                "Failed to compile RMLVO: '{}', '{}', '{}', '{}', '{}'",
+                crate::xkb::utils::CStrDisplay(rules),
+                crate::xkb::utils::CStrDisplay(model),
+                crate::xkb::utils::CStrDisplay(layout),
+                crate::xkb::utils::CStrDisplay(variant),
+                crate::xkb::utils::CStrDisplay(options),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1504,10 +1463,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
             XKB_RMLVO_BUILDER_NO_FLAGS,
         );
         if rmlvo.is_null() {
-            fprintf(
-                stderr,
-                b"ERROR: xkb_rmlvo_builder_new() failed\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("ERROR: xkb_rmlvo_builder_new() failed");
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
         }
         let mut buf: [i8; 1024] = [
@@ -2740,10 +2696,11 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
         }
         match c2rust_current_block {
             4427821232739340156 => {
-                fprintf(
-                    stderr,
-                    b"ERROR: %s\n\0".as_ptr() as *const i8,
-                    b"xkb_rules_names_to_rmlvo_builder\0".as_ptr() as *const i8,
+                eprintln!(
+                    "ERROR: {}",
+                    crate::xkb::utils::CStrDisplay(
+                        b"xkb_rules_names_to_rmlvo_builder\0".as_ptr() as *const i8
+                    ),
                 );
                 xkb_rmlvo_builder_unref(rmlvo);
                 rmlvo = ::core::ptr::null_mut::<xkb_rmlvo_builder>();
@@ -2797,15 +2754,13 @@ pub unsafe fn test_compile_rmlvo(
         let mut rmlvo: *mut xkb_rmlvo_builder =
             xkb_rules_names_to_rmlvo_builder(context, &raw const names);
         if rmlvo.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to create RMLVO builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
-                    as *const i8,
-                rules,
-                model,
-                layout,
-                variant,
-                options,
+            eprintln!(
+                "Failed to create RMLVO builder: '{}', '{}', '{}', '{}', '{}'",
+                crate::xkb::utils::CStrDisplay(rules),
+                crate::xkb::utils::CStrDisplay(model),
+                crate::xkb::utils::CStrDisplay(layout),
+                crate::xkb::utils::CStrDisplay(variant),
+                crate::xkb::utils::CStrDisplay(options),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -2836,15 +2791,13 @@ pub unsafe fn test_compile_rmlvo(
         keymap = xkb_keymap_new_from_rmlvo(rmlvo, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
         xkb_rmlvo_builder_unref(rmlvo);
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to compile RMLVO from builder: '%s', '%s', '%s', '%s', '%s'\n\0".as_ptr()
-                    as *const i8,
-                rules,
-                model,
-                layout,
-                variant,
-                options,
+            eprintln!(
+                "Failed to compile RMLVO from builder: '{}', '{}', '{}', '{}', '{}'",
+                crate::xkb::utils::CStrDisplay(rules),
+                crate::xkb::utils::CStrDisplay(model),
+                crate::xkb::utils::CStrDisplay(layout),
+                crate::xkb::utils::CStrDisplay(variant),
+                crate::xkb::utils::CStrDisplay(options),
             );
         }
         return keymap;
@@ -2895,7 +2848,7 @@ pub unsafe fn test_compile_output2(
     unsafe {
         let mut success: i32 = true_0;
         if !test_title.is_null() {
-            fprintf(stderr, b"*** %s ***\n\0".as_ptr() as *const i8, test_title);
+            eprintln!("*** {} ***", crate::xkb::utils::CStrDisplay(test_title));
         }
         let mut keymap: *mut xkb_keymap = compile_buffer.expect("non-null function pointer")(
             ctx,
@@ -2919,28 +2872,21 @@ pub unsafe fn test_compile_output2(
                             .as_ptr() as *const i8,
                     );
                 };
-                fprintf(
-                    stderr,
-                    b"Unexpected keymap compilation success:\n%s\n\0".as_ptr() as *const i8,
-                    got,
+                eprintln!(
+                    "Unexpected keymap compilation success:\n{}",
+                    crate::xkb::utils::CStrDisplay(got)
                 );
                 free(got as *mut ::core::ffi::c_void);
             }
             return keymap.is_null();
         }
         if keymap.is_null() {
-            fprintf(
-                stderr,
-                b"Unexpected keymap compilation failure\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("Unexpected keymap compilation failure");
             return false_0 != 0;
         }
         let mut got_0: *mut i8 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
         if got_0.is_null() {
-            fprintf(
-                stderr,
-                b"Unexpected keymap serialization failure\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("Unexpected keymap serialization failure");
             return false_0 != 0;
         }
         xkb_keymap_unref(keymap);
@@ -2956,10 +2902,9 @@ pub unsafe fn test_compile_output2(
             );
         };
         if update_output_files {
-            fprintf(
-                stderr,
-                b"Writing golden test output to: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Writing golden test output to: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             let mut file: *mut FILE = fopen(path, b"wb\0".as_ptr() as *const i8) as *mut FILE;
             if !file.is_null() {
@@ -2980,10 +2925,9 @@ pub unsafe fn test_compile_output2(
             );
             fclose(file);
         } else {
-            fprintf(
-                stderr,
-                b"Reading golden test output: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Reading golden test output: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             let expected: *mut i8 = test_read_file(rel_path) as *mut i8;
             if !expected.is_null() {
@@ -3009,10 +2953,9 @@ pub unsafe fn test_compile_output2(
                 && success != 0
             {
                 if streq(expected, got_0) {
-                    fprintf(
-                        stderr,
-                        b"%s succeeded.\n\0".as_ptr() as *const i8,
-                        label[k as usize],
+                    eprintln!(
+                        "{} succeeded.",
+                        crate::xkb::utils::CStrDisplay(label[k as usize])
                     );
                     if !test_round_trip {
                         break;
@@ -3025,46 +2968,35 @@ pub unsafe fn test_compile_output2(
                         compile_buffer_private,
                     );
                     if keymap.is_null() {
-                        fprintf(
-                            stderr,
-                            b"Unexpected keymap roundtrip compilation failure\n\0".as_ptr()
-                                as *const i8,
-                        );
+                        eprintln!("Unexpected keymap roundtrip compilation failure");
                         success = false_0;
                         break;
                     } else {
                         free(got_0 as *mut ::core::ffi::c_void);
                         got_0 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
                         if got_0.is_null() {
-                            fprintf(
-                                stderr,
-                                b"Unexpected keymap roundtrip serialization failure\n\0".as_ptr()
-                                    as *const i8,
-                            );
+                            eprintln!("Unexpected keymap roundtrip serialization failure");
                             success = false_0;
                         }
                         xkb_keymap_unref(keymap);
                         test_round_trip = false_0 != 0;
                     }
                 } else {
-                    fprintf(
-                        stderr,
-                        b"%s failed: dumped map differs from expected.\n\0".as_ptr() as *const i8,
-                        label[k as usize],
+                    eprintln!(
+                        "{} failed: dumped map differs from expected.",
+                        crate::xkb::utils::CStrDisplay(label[k as usize])
                     );
-                    fprintf(
-                        stderr,
-                        b"Path to expected file: %s\n\0".as_ptr() as *const i8,
-                        path,
+                    eprintln!(
+                        "Path to expected file: {}",
+                        crate::xkb::utils::CStrDisplay(path)
                     );
-                    fprintf(
-                        stderr,
-                        b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
+                    eprintln!(
+                        "Length: expected {}, got: {}",
                         cstr_len(expected),
-                        cstr_len(got_0),
+                        cstr_len(got_0)
                     );
-                    fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
-                    fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got_0);
+                    eprintln!("Dumped map:");
+                    eprintln!("{}", crate::xkb::utils::CStrDisplay(got_0));
                     success = false_0;
                 }
                 k = k.wrapping_add(1);
@@ -3087,7 +3019,7 @@ pub unsafe fn test_third_pary_compile_output(
 ) -> bool {
     unsafe {
         let mut success: i32 = true_0;
-        fprintf(stderr, b"*** %s ***\n\0".as_ptr() as *const i8, test_title);
+        eprintln!("*** {} ***", crate::xkb::utils::CStrDisplay(test_title));
         let mut got: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut got_size: usize = 0 as usize;
         let mut ret: i32 = compile_buffer.expect("non-null function pointer")(
@@ -3099,21 +3031,18 @@ pub unsafe fn test_third_pary_compile_output(
         );
         if rel_path.is_null() {
             if ret == EXIT_SUCCESS {
-                fprintf(
-                    stderr,
-                    b"Unexpected keymap compilation success:\nstdout:\n%s\n\0".as_ptr()
-                        as *const i8,
-                    got,
+                eprintln!(
+                    "Unexpected keymap compilation success:\nstdout:\n{}",
+                    crate::xkb::utils::CStrDisplay(got)
                 );
             }
             free(got as *mut ::core::ffi::c_void);
             return ret != EXIT_SUCCESS;
         }
         if ret != EXIT_SUCCESS || isempty(got) as i32 != 0 {
-            fprintf(
-                stderr,
-                b"Unexpected keymap compilation failure.\nstdout:\n%s\n\0".as_ptr() as *const i8,
-                got,
+            eprintln!(
+                "Unexpected keymap compilation failure.\nstdout:\n{}",
+                crate::xkb::utils::CStrDisplay(got)
             );
             free(got as *mut ::core::ffi::c_void);
             return false_0 != 0;
@@ -3130,10 +3059,9 @@ pub unsafe fn test_third_pary_compile_output(
             );
         };
         if update_output_files {
-            fprintf(
-                stderr,
-                b"Writing golden test output to: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Writing golden test output to: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             let mut file: *mut FILE = fopen(path, b"wb\0".as_ptr() as *const i8) as *mut FILE;
             if !file.is_null() {
@@ -3154,10 +3082,9 @@ pub unsafe fn test_third_pary_compile_output(
             );
             fclose(file);
         } else {
-            fprintf(
-                stderr,
-                b"Reading golden test output: %s\n\0".as_ptr() as *const i8,
-                path,
+            eprintln!(
+                "Reading golden test output: {}",
+                crate::xkb::utils::CStrDisplay(path)
             );
             let mut expected: *mut i8 = test_read_file(rel_path);
             if !expected.is_null() {
@@ -3181,33 +3108,29 @@ pub unsafe fn test_third_pary_compile_output(
                 && success != 0
             {
                 if streq(expected, got) {
-                    fprintf(
-                        stderr,
-                        b"%s succeeded.\n\0".as_ptr() as *const i8,
-                        label[k as usize],
+                    eprintln!(
+                        "{} succeeded.",
+                        crate::xkb::utils::CStrDisplay(label[k as usize])
                     );
                     if !(k > 0 as u32) {
                         break;
                     }
                 } else {
-                    fprintf(
-                        stderr,
-                        b"%s failed: dumped map differs from expected.\n\0".as_ptr() as *const i8,
-                        label[k as usize],
+                    eprintln!(
+                        "{} failed: dumped map differs from expected.",
+                        crate::xkb::utils::CStrDisplay(label[k as usize])
                     );
-                    fprintf(
-                        stderr,
-                        b"Path to expected file: %s\n\0".as_ptr() as *const i8,
-                        path,
+                    eprintln!(
+                        "Path to expected file: {}",
+                        crate::xkb::utils::CStrDisplay(path)
                     );
-                    fprintf(
-                        stderr,
-                        b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
+                    eprintln!(
+                        "Length: expected {}, got: {}",
                         cstr_len(expected),
-                        cstr_len(got),
+                        cstr_len(got)
                     );
-                    fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
-                    fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got);
+                    eprintln!("Dumped map:");
+                    eprintln!("{}", crate::xkb::utils::CStrDisplay(got));
                     success = false_0;
                 }
                 k = k.wrapping_add(1);

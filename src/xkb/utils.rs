@@ -651,3 +651,85 @@ mod tests {
         assert_eq!(to_lower_char(b'9'), b'9');
     }
 }
+
+/// Like C `strchr`: find first occurrence of byte `c` in C string `s`.
+/// Returns pointer to the byte, or null if not found.
+///
+/// # Safety
+/// `s` must point to a valid NUL-terminated C string.
+pub unsafe fn cstr_chr(s: *const i8, c: i32) -> *mut i8 {
+    if s.is_null() {
+        return std::ptr::null_mut();
+    }
+    let mut p = s;
+    let target = c as i8;
+    loop {
+        if *p == target {
+            return p as *mut i8;
+        }
+        if *p == 0 {
+            return std::ptr::null_mut();
+        }
+        p = p.offset(1);
+    }
+}
+
+/// Like C `strpbrk`: find first occurrence of any byte from `accept` in C string `s`.
+/// Returns pointer to the byte, or null if not found.
+///
+/// # Safety
+/// `s` and `accept` must point to valid NUL-terminated C strings.
+pub unsafe fn cstr_pbrk(s: *const i8, accept: *const i8) -> *mut i8 {
+    if s.is_null() || accept.is_null() {
+        return std::ptr::null_mut();
+    }
+    let mut p = s;
+    while *p != 0 {
+        let mut a = accept;
+        while *a != 0 {
+            if *p == *a {
+                return p as *mut i8;
+            }
+            a = a.offset(1);
+        }
+        p = p.offset(1);
+    }
+    std::ptr::null_mut()
+}
+
+/// Like C `stpcpy`: copy C string `src` to `dst`, return pointer to the NUL terminator in dst.
+///
+/// # Safety
+/// `dst` must have enough space for the copy. Both must be valid C strings.
+pub unsafe fn cstr_pcpy(dst: *mut i8, src: *const i8) -> *mut i8 {
+    if src.is_null() || dst.is_null() {
+        return dst;
+    }
+    let mut d = dst;
+    let mut s = src;
+    while *s != 0 {
+        *d = *s;
+        d = d.offset(1);
+        s = s.offset(1);
+    }
+    *d = 0;
+    d
+}
+
+/// Safe wrapper around C `strerror`. Returns a display-able error message.
+pub struct StrerrorDisplay(pub i32);
+
+impl core::fmt::Display for StrerrorDisplay {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        extern "C" {
+            fn strerror(__errnum: i32) -> *mut i8;
+        }
+        unsafe {
+            let p = strerror(self.0);
+            if p.is_null() {
+                return f.write_str("Unknown error");
+            }
+            CStrDisplay(p as *const i8).fmt(f)
+        }
+    }
+}

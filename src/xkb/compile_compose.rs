@@ -215,7 +215,6 @@ pub mod stdio_h {
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn perror(__s: *const i8);
     }
 }
@@ -298,7 +297,7 @@ pub use self::internal::__va_list_tag;
 pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::u32;
-use self::stdio_h::{fclose, fopen, fprintf, perror, stderr, stdout};
+use self::stdio_h::{fclose, fopen, perror, stderr, stdout};
 pub use self::stdlib_h::{exit, EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::table_h::{
@@ -331,17 +330,17 @@ pub const OPT_VERBOSE: options = 0;
 pub type options = u32;
 unsafe fn usage(mut fp: *mut FILE, mut progname: *mut i8) {
     unsafe {
-        fprintf(
-            fp,
-            b"Usage: %s [--help] [--verbose] [--locale LOCALE] [--test] [FILE]\n\0".as_ptr()
-                as *const i8,
-            progname,
+        let use_stderr = fp == stderr;
+        let msg1 = format!(
+            "Usage: {} [--help] [--verbose] [--locale LOCALE] [--test] [FILE]\n",
+            crate::xkb::utils::CStrDisplay(progname),
         );
-        fprintf(
-            fp,
-            b"\nCompile a Compose file and print it\n\nOptions:\n --help\n    Print this help and exit\n --verbose\n    Enable verbose debugging output\n --file FILE\n    Specify a Compose file to load.\n    DEPRECATED: use the positional argument instead.\n --locale LOCALE\n    Specify the locale directly, instead of relying on the environment variables\n    LC_ALL, LC_TYPE and LANG.\n --test\n    Test compilation but do not print the Compose file.\n\0"
-                .as_ptr() as *const i8,
-        );
+        let msg2 = "\nCompile a Compose file and print it\n\nOptions:\n --help\n    Print this help and exit\n --verbose\n    Enable verbose debugging output\n --file FILE\n    Specify a Compose file to load.\n    DEPRECATED: use the positional argument instead.\n --locale LOCALE\n    Specify the locale directly, instead of relying on the environment variables\n    LC_ALL, LC_TYPE and LANG.\n --test\n    Test compilation but do not print the Compose file.\n";
+        if use_stderr {
+            eprint!("{}{}", msg1, msg2);
+        } else {
+            print!("{}{}", msg1, msg2);
+        }
     }
 }
 unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
@@ -414,10 +413,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 1 => {
                     path = optarg;
-                    fprintf(
-                        stderr,
-                        b"WARNING: the flag --file is deprecated\n\0".as_ptr() as *const i8,
-                    );
+                    eprintln!("WARNING: the flag --file is deprecated");
                 }
                 2 => {
                     locale = optarg;
@@ -436,19 +432,13 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             }
         }
         if locale.is_null() {
-            fprintf(
-                stderr,
-                b"ERROR: Cannot determine the locale.\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("ERROR: Cannot determine the locale.");
             usage(stderr, *argv.offset(0 as i32 as isize));
             return EXIT_INVALID_USAGE;
         }
         if optind < argc && !isempty(*argv.offset(optind as isize)) {
             if !path.is_null() {
-                fprintf(
-                    stderr,
-                    b"ERROR: Path already provided via the flag: --file\n\0".as_ptr() as *const i8,
-                );
+                eprintln!("ERROR: Path already provided via the flag: --file");
                 usage(stderr, *argv.offset(0 as i32 as isize));
                 exit(EXIT_INVALID_USAGE);
             }
@@ -456,10 +446,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             optind = optind + 1;
             path = *argv.offset(c2rust_fresh0 as isize);
             if optind < argc {
-                fprintf(
-                    stderr,
-                    b"ERROR: Too many positional arguments\n\0".as_ptr() as *const i8,
-                );
+                eprintln!("ERROR: Too many positional arguments");
                 usage(stderr, *argv.offset(0 as i32 as isize));
                 exit(EXIT_INVALID_USAGE);
             }
@@ -468,10 +455,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         }
         let mut ctx: *mut xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         if ctx.is_null() {
-            fprintf(
-                stderr,
-                b"ERROR: Couldn't create xkb context\n\0".as_ptr() as *const i8,
-            );
+            eprintln!("ERROR: Couldn't create xkb context");
             return EXIT_FAILURE;
         }
         if verbose {
@@ -501,10 +485,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 );
                 fclose(file);
                 if compose_table.is_null() {
-                    fprintf(
-                        stderr,
-                        b"ERROR: Couldn't create compose from file: %s\n\0".as_ptr() as *const i8,
-                        path,
+                    eprintln!(
+                        "ERROR: Couldn't create compose from file: {}",
+                        crate::xkb::utils::CStrDisplay(path),
                     );
                     c2rust_current_block = 11742132266850903425;
                 } else {
@@ -515,10 +498,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             compose_table =
                 xkb_compose_table_new_from_locale(ctx, locale, XKB_COMPOSE_COMPILE_NO_FLAGS);
             if compose_table.is_null() {
-                fprintf(
-                    stderr,
-                    b"ERROR: Couldn't create compose from locale \"%s\"\n\0".as_ptr() as *const i8,
-                    locale,
+                eprintln!(
+                    "ERROR: Couldn't create compose from locale \"{}\"",
+                    crate::xkb::utils::CStrDisplay(locale),
                 );
                 c2rust_current_block = 11742132266850903425;
             } else {

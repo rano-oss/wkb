@@ -326,13 +326,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub static mut stderr: *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
-    }
-}
 pub mod stdlib_h {
 
     extern "C" {
@@ -615,7 +608,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT8_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
-use self::stdio_h::{fprintf, stderr};
 use self::stdlib_h::{abort, atoi, calloc, free, realloc};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
@@ -1476,12 +1468,9 @@ unsafe fn overlays_insert(
                 as xkb_overlay_mask_t;
             let index_0: xkb_overlay_index_t = popcount32(low_2 as u32) as xkb_overlay_index_t;
             if index_0 as ::core::ffi::c_int >= (*keyi).overlays_alloc as ::core::ffi::c_int {
-                fprintf(
-                    stderr,
-                    b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                        as *const i8,
-                    b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
-                    654 as ::core::ffi::c_int,
+                eprintln!(
+                    "Critical Error: Reached unreachable line in {} at {}",
+                    "../src/xkbcomp/symbols.c", 654
                 );
                 abort();
             }
@@ -1546,12 +1535,9 @@ unsafe fn merge_overlays(
                 let count: xkb_overlay_index_t =
                     popcount32(result_mask as u32) as xkb_overlay_index_t;
                 if count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-                    fprintf(
-                        stderr,
-                        b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                            as *const i8,
-                        b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
-                        696 as ::core::ffi::c_int,
+                    eprintln!(
+                        "Critical Error: Reached unreachable line in {} at {}",
+                        "../src/xkbcomp/symbols.c", 696
                     );
                     abort();
                 }
@@ -1630,12 +1616,9 @@ unsafe fn merge_overlays(
                         && (*src).overlays_alloc == 0
                         && remaining as ::core::ffi::c_int != 0
                     {
-                        fprintf(
-                            stderr,
-                            b"Critical Error: Reached unreachable line in %s at %d\n\0".as_ptr()
-                                as *const i8,
-                            b"../src/xkbcomp/symbols.c\0".as_ptr() as *const i8,
-                            758 as ::core::ffi::c_int,
+                        eprintln!(
+                            "Critical Error: Reached unreachable line in {} at {}",
+                            "../src/xkbcomp/symbols.c", 758
                         );
                         abort();
                     }
@@ -2865,7 +2848,10 @@ unsafe fn ExprResolveOverlayEntry(
                 "[XKB-{:03}] Overlay field \"{}\" in {} does not support array index; ignored\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 crate::xkb::utils::CStrDisplay(field),
-                crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                crate::xkb::utils::CStrDisplay(KeyNameText(
+                    (*keymap_info).keymap.ctx,
+                    (*keyi).name
+                )),
             );
             return false_0 != 0;
         }
@@ -2909,9 +2895,15 @@ unsafe fn ExprResolveOverlayEntry(
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in {}\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text((*keymap_info).keymap.ctx, (*expr).key_name.key_name)),
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(
+                            (*keymap_info).keymap.ctx,
+                            (*expr).key_name.key_name
+                        )),
                         crate::xkb::utils::CStrDisplay(field),
-                        crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                        crate::xkb::utils::CStrDisplay(KeyNameText(
+                            (*keymap_info).keymap.ctx,
+                            (*keyi).name
+                        )),
                     );
                     return false_0 != 0;
                 }
@@ -2940,7 +2932,10 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(id),
                     crate::xkb::utils::CStrDisplay(field),
-                    crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                        (*keymap_info).keymap.ctx,
+                        (*keyi).name
+                    )),
                 );
                 return false_0 != 0;
             }
@@ -2953,7 +2948,10 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL)),
                     crate::xkb::utils::CStrDisplay(field),
-                    crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                        (*keymap_info).keymap.ctx,
+                        (*keyi).name
+                    )),
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
@@ -3943,13 +3941,15 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32
-                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
-                        {
-                            b"compound\0".as_ptr() as *const i8
-                        } else {
-                            b"declaration\0".as_ptr() as *const i8
-                        }),
+                        crate::xkb::utils::CStrDisplay(
+                            if (*stmt).type_0 as u32
+                                == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
+                            {
+                                b"compound\0".as_ptr() as *const i8
+                            } else {
+                                b"declaration\0".as_ptr() as *const i8
+                            }
+                        ),
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32

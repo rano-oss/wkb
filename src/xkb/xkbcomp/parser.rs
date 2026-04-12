@@ -323,12 +323,7 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn stpcpy(__dest: *mut i8, __src: *const i8) -> *mut i8;
-    }
-}
+pub mod string_h {}
 pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -523,7 +518,6 @@ use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdlib_h::{free, malloc};
-use self::string_h::stpcpy;
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -5155,8 +5149,9 @@ unsafe fn yysyntax_error(
             {
                 let c2rust_fresh3 = yyi_0;
                 yyi_0 = yyi_0 + 1;
-                yyp = stpcpy(yyp, yysymbol_name(yyarg[c2rust_fresh3 as usize]));
-                yyformat = yyformat.offset(2 as ::core::ffi::c_int as isize);
+                yyp =
+                    crate::xkb::utils::cstr_pcpy(yyp, yysymbol_name(yyarg[c2rust_fresh3 as usize]));
+                yyformat = yyformat.offset(2 as isize);
             } else {
                 yyp = yyp.offset(1);
                 yyformat = yyformat.offset(1);
@@ -7048,8 +7043,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                     loc_0.line,
                                     loc_0.column,
-                                    crate::xkb::utils::CStrNDisplay((*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.len
-                                        as usize, (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.start),
+                                    crate::xkb::utils::CStrNDisplay(
+                                        (*yyvsp.offset(0 as isize)).sval.len as usize,
+                                        (*yyvsp.offset(0 as isize)).sval.start
+                                    ),
                                 );
                                 yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
                             }

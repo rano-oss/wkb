@@ -521,8 +521,6 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
 pub mod utils_h {
@@ -740,7 +738,6 @@ pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::strchr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
@@ -9053,11 +9050,9 @@ unsafe fn xkb_resolve_rules(
                                 *explicit_layouts = 1 as xkb_layout_index_t;
                                 let mut symbols: *const i8 = (*out).symbols;
                                 loop {
-                                    symbols = strchr(symbols, ':' as i32);
+                                    symbols = crate::xkb::utils::cstr_chr(symbols, ':' as i32);
                                     if !(!symbols.is_null()
-                                        && *symbols.offset(1 as ::core::ffi::c_int as isize)
-                                            as ::core::ffi::c_int
-                                            != '\0' as i32)
+                                        && *symbols.offset(1 as isize) as i32 != '\0' as i32)
                                     {
                                         break;
                                     }

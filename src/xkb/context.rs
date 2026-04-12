@@ -139,14 +139,6 @@ pub mod stdio_h {
 
     extern "C" {
         pub static mut stderr: *mut FILE;
-        pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
-        pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
-        pub fn vsnprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> i32;
     }
 }
 pub mod context_h {
@@ -224,12 +216,7 @@ pub mod stdlib_h {
         );
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strerror(__errnum: i32) -> *mut i8;
-    }
-}
+pub mod string_h {}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
@@ -334,9 +321,8 @@ pub use self::messages_codes_h::{
 };
 use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
+pub use self::stdio_h::{stderr, va_list};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc, strtol};
-use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -477,7 +463,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Include path failed: \"{}\" ({})\n",
             crate::xkb::utils::CStrDisplay(path),
-            crate::xkb::utils::CStrDisplay(strerror(err)),
+            crate::xkb::utils::StrerrorDisplay(err),
         );
         return 0 as i32;
     }
@@ -716,7 +702,7 @@ unsafe fn add_direct_subdirectories(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Include extensions path failed: {} ({})\n",
             crate::xkb::utils::CStrDisplay(path),
-            crate::xkb::utils::CStrDisplay(strerror(err)),
+            crate::xkb::utils::StrerrorDisplay(err),
         );
         if !dir.is_null() {
             closedir(dir);
@@ -912,9 +898,9 @@ unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mu
     unsafe {
         let mut prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
-            fprintf(stderr, b"%s\0".as_ptr() as *const i8, prefix);
+            eprint!("{}", crate::xkb::utils::CStrDisplay(prefix));
         }
-        fprintf(stderr, b"%s\0".as_ptr() as *const i8, msg);
+        eprint!("{}", crate::xkb::utils::CStrDisplay(msg));
     }
 }
 unsafe fn log_level(mut level: *const i8) -> xkb_log_level {

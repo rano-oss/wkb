@@ -674,7 +674,6 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
 pub mod utils_h {
@@ -1262,7 +1261,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{CStrDisplay};
+use crate::xkb::utils::CStrDisplay;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,
