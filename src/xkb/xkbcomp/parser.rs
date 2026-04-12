@@ -697,7 +697,7 @@ pub const YYSYMBOL_YYerror: yysymbol_kind_t = 1;
 pub const YYSYMBOL_YYEOF: yysymbol_kind_t = 0;
 pub const YYSYMBOL_YYEMPTY: yysymbol_kind_t = -2;
 pub type yytype_uint8 = ::core::ffi::c_uchar;
-pub type yytype_int8 = ::core::ffi::c_schar;
+pub type yytype_int8 = :i8;
 pub type yy_state_fast_t = ::core::ffi::c_int;
 pub const YYENOMEM: C2Rust_Unnamed_10 = -2;
 #[derive(Copy, Clone)]

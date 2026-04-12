@@ -19,11 +19,6 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod types_h {
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -46,12 +41,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _old_offset: i64,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -59,11 +54,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -153,7 +147,6 @@ pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fprintf, printf, stderr, stdout};
 pub use self::stdlib_h::{EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::xkbregistry_h::{
     rxkb_context, rxkb_context_flags, rxkb_context_include_path_append,
     rxkb_context_include_path_append_default, rxkb_context_new, rxkb_context_parse,

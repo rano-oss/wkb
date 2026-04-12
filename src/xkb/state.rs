@@ -17,46 +17,6 @@ pub mod internal {
     pub const __CHAR_BIT__: i32 = 8 as i32;
 }
 
-pub mod types_h {
-
-    pub type __int8_t = i8;
-
-    pub type __uint8_t = u8;
-
-    pub type __int16_t = i16;
-
-    pub type __uint16_t = u16;
-
-    pub type __int32_t = i32;
-
-    pub type __uint32_t = u32;
-}
-
-pub mod stdint_intn_h {
-
-    pub type i8 = __int8_t;
-
-    pub type i16 = __int16_t;
-
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
-
-pub mod stdint_uintn_h {
-
-    pub type uint8_t = __uint8_t;
-
-    pub type uint16_t = __uint16_t;
-
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
-
-pub mod sys_types_h {
-
-    pub type ssize_t = isize;
-}
-
 pub mod stdlib_h {
 
     pub type __compar_fn_t =
@@ -360,7 +320,6 @@ pub mod state_priv_h {
     }
 
     use super::keymap_h::xkb_action_controls;
-    use super::stdint_intn_h::i32;
     use super::xkbcommon_h::{
         xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t, xkb_layout_index_t,
         xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t, xkb_state_component,
@@ -609,24 +568,17 @@ pub mod xkbcommon_features_h {
     pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 
     pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
-    use super::stdint_uintn_h::u32;
     pub use crate::xkb::features::xkb_feature_supported;
 }
 
-pub mod string_h {
-
-    
-}
+pub mod string_h {}
 
 pub mod utils_numbers_h {
     #[inline]
 
     pub unsafe fn popcount32(mut x: u32) -> u32 {
-        unsafe {
-            return (x as u64).count_ones() as i32 as u32;
-        }
+        return (x as u64).count_ones() as i32 as u32;
     }
-    use super::stdint_uintn_h::u32;
 }
 
 pub mod limits_h {
@@ -684,7 +636,6 @@ pub mod utils_h {
             return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
         }
     }
-    use super::stdint_uintn_h::u32;
 }
 
 pub mod utf8_h {
@@ -816,12 +767,8 @@ pub use self::state_priv_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::va_list;
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc};
-pub use self::sys_types_h::ssize_t;
-pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
 use self::utf8_h::is_valid_utf8;
 pub use self::util_mem_h::xkb_check_versioned_struct_size_;
 pub use self::utils_h::one_bit_set;
@@ -1288,8 +1235,7 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
                     ) as *mut xkb_filter;
                 }
                 std::ptr::write_bytes(
-                    (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter
-                        as *mut u8,
+                    (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
@@ -4458,7 +4404,7 @@ unsafe fn machine_update_overlays(mut sm: *mut xkb_machine) {
         let mut order: u32 = (*sm).overlays.order;
         let overlay_max: xkb_overlay_index_t =
             format_max_overlays((*(*sm).state.keymap).format) as xkb_overlay_index_t;
-        let mut n: uint8_t = 0 as uint8_t;
+        let mut n: u8 = 0;
         while (n as i32) < overlay_max as i32 {
             let mut overlay_idx: xkb_overlay_index_t =
                 (order >> n as i32 * 4 as i32 & 0xf as u32) as xkb_overlay_index_t;
@@ -4567,14 +4513,14 @@ unsafe fn do_remap_modifiers(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut key: *const xkb_key,
-) -> ssize_t {
+) -> isize {
     unsafe {
         if (*mappings).mask & (*state).components.mods == 0 {
-            return -1 as i32 as ssize_t;
+            return -1 as isize;
         }
         let layout: xkb_layout_index_t = state_key_get_layout(state, key) as xkb_layout_index_t;
         if layout >= (*key).num_groups() {
-            return -1 as i32 as ssize_t;
+            return -1 as isize;
         }
         let type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
         let mut affect: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
@@ -4593,19 +4539,19 @@ unsafe fn do_remap_modifiers(
             m = m.wrapping_add(1);
         }
         if affect == 0 {
-            return -1 as i32 as ssize_t;
+            return -1 as isize;
         }
         let mut new: xkb_state = *state;
         new.components.base_mods = new.components.base_mods & !affect | mods;
         new.components.latched_mods = new.components.latched_mods & !affect;
         new.components.locked_mods = new.components.locked_mods & !affect;
         xkb_state_update_derived(&raw mut new);
-        let mut event_idx: ssize_t = -1 as i32 as ssize_t;
+        let mut event_idx: isize = -1 as isize;
         let changed: xkb_state_component =
             get_state_component_changes(&raw mut (*state).components, &raw mut new.components)
                 as xkb_state_component;
         if changed as u64 != 0 {
-            event_idx = (*events).queue.size as ssize_t;
+            event_idx = (*events).queue.size as isize;
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
             let mut __need: darray_size_t = (*events).queue.size;
             if __need > (*events).queue.alloc {
@@ -4644,8 +4590,8 @@ unsafe fn do_shortcuts_tweak(
     mut state: *mut xkb_state,
     mut previous_components: *const state_components,
     mut events: *mut xkb_events,
-    mut remap_event: ssize_t,
-) -> ssize_t {
+    mut remap_event: isize,
+) -> isize {
     unsafe {
         if !(*config).targets.is_null()
             && (*state).components.mods & (*config).mask != 0
@@ -4653,8 +4599,8 @@ unsafe fn do_shortcuts_tweak(
                 != XKB_LAYOUT_INVALID as xkb_layout_index_t
         {
             let mut new: xkb_state = *state;
-            if remap_event < 0 as ssize_t {
-                remap_event = (*events).queue.size as ssize_t;
+            if remap_event < 0 as isize {
+                remap_event = (*events).queue.size as isize;
                 (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
                 let mut __need: darray_size_t = (*events).queue.size;
                 if __need > (*events).queue.alloc {
@@ -4897,7 +4843,7 @@ pub unsafe fn xkb_machine_process_key(
         if (*key).overlays != 0 {
             key = process_overlayable_key(sm, key, direction);
         }
-        let mut remap_event: ssize_t =
+        let mut remap_event: isize =
             do_remap_modifiers(&raw mut (*sm).config.modifiers, state, events, key);
         remap_event = do_shortcuts_tweak(
             &raw mut (*sm).config.shortcuts,
@@ -4986,7 +4932,7 @@ pub unsafe fn xkb_machine_process_key(
                     },
                 };
         }
-        if remap_event >= 0 as ssize_t {
+        if remap_event >= 0 as isize {
             undo_tweaks(state, &raw const previous_components, events);
         }
         let changed: xkb_state_component = get_state_component_changes(

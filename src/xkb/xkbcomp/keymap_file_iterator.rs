@@ -38,8 +38,8 @@ pub mod struct_FILE_h {
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
@@ -294,10 +294,7 @@ pub mod keymap_file_iterator_h {
     use super::darray_h::{darray_char, darray_size_t};
     use super::scanner_utils_h::scanner;
 }
-pub mod string_h {
-
-    
-}
+pub mod string_h {}
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {

@@ -61,7 +61,7 @@ pub mod dirent_h {
     pub struct dirent {
         pub d_ino: __ino64_t,
         pub d_off: __off64_t,
-        pub d_reclen: ::core::ffi::c_ushort,
+        pub d_reclen: u16,
         pub d_type: ::core::ffi::c_uchar,
         pub d_name: [i8; 256],
     }
@@ -104,8 +104,8 @@ pub mod struct_FILE_h {
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,

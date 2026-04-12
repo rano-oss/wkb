@@ -47,15 +47,13 @@ pub mod darray_h {
         mut need: darray_size_t,
         mut itemSize: usize,
     ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
+        if alloc == 0 as darray_size_t {
+            alloc = 4 as darray_size_t;
         }
+        while alloc < need {
+            alloc = alloc.wrapping_mul(2 as darray_size_t);
+        }
+        return alloc;
     }
 }
 pub mod xkbcommon_h {

@@ -45,8 +45,8 @@ pub mod struct_FILE_h {
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
@@ -771,7 +771,7 @@ pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{strchr};
+use self::string_h::strchr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe};
@@ -6607,11 +6607,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
 }
 unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
     unsafe {
-        std::ptr::write_bytes::<rule>(
-            &raw mut (*m).rule as *mut rule,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<rule>(&raw mut (*m).rule as *mut rule, 0u8, 1);
         (*m).rule.skip = (*m).mapping.c2rust_unnamed_0.active == 0;
     }
 }
@@ -7078,8 +7074,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     as *mut i8;
                                             }
                                             std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start
-                                                    as *const u8,
+                                                (*expanded_value).sval.start as *const u8,
                                                 (*expanded).item.offset(__oldSize_1 as isize)
                                                     as *mut u8,
                                                 __count_1 as usize,
@@ -7337,8 +7332,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     as *mut i8;
                                             }
                                             std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start
-                                                    as *const u8,
+                                                (*expanded_value).sval.start as *const u8,
                                                 (*expanded).item.offset(__oldSize_1 as isize)
                                                     as *mut u8,
                                                 __count_1 as usize,
@@ -7596,8 +7590,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     as *mut i8;
                                             }
                                             std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start
-                                                    as *const u8,
+                                                (*expanded_value).sval.start as *const u8,
                                                 (*expanded).item.offset(__oldSize_1 as isize)
                                                     as *mut u8,
                                                 __count_1 as usize,
@@ -7791,8 +7784,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                         ) as *mut i8;
                     }
                     std::ptr::copy_nonoverlapping(
-                        (*expanded).item.offset(prefix_idx as isize) as *mut i8
-                            as *const u8,
+                        (*expanded).item.offset(prefix_idx as isize) as *mut i8 as *const u8,
                         (*expanded).item.offset(__oldSize_0 as isize) as *mut u8,
                         __count_0 as usize,
                     );
@@ -7968,8 +7960,7 @@ unsafe fn append_expanded_kccgst_value(
                     let c2rust_fresh4 = i;
                     i = i.wrapping_add(1);
                     std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh4 as isize) as *const i8
-                            as *const u8,
+                        str.offset(c2rust_fresh4 as isize) as *const i8 as *const u8,
                         expanded.item.offset(__oldSize as isize) as *mut u8,
                         __count as usize,
                     );
@@ -8026,8 +8017,7 @@ unsafe fn append_expanded_kccgst_value(
                     let c2rust_fresh5 = i;
                     i = i.wrapping_add(1);
                     std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh5 as isize) as *const i8
-                            as *const u8,
+                        str.offset(c2rust_fresh5 as isize) as *const i8 as *const u8,
                         expanded.item.offset(__oldSize_0 as isize) as *mut u8,
                         __count_0 as usize,
                     );
@@ -8060,8 +8050,7 @@ unsafe fn append_expanded_kccgst_value(
                     let c2rust_fresh6 = i;
                     i = i.wrapping_add(1);
                     std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh6 as isize) as *const i8
-                            as *const u8,
+                        str.offset(c2rust_fresh6 as isize) as *const i8 as *const u8,
                         expanded.item.offset(__oldSize_1 as isize) as *mut u8,
                         __count_1 as usize,
                     );

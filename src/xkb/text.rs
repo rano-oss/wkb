@@ -64,13 +64,11 @@ pub mod text_h {
     pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
     #[inline]
     pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-                CONTROL_NAMES_MIN_V1_INDEX as i32
-            } else {
-                CONTROL_NAMES_MIN_V2_INDEX as i32
-            }) as uint8_t;
-        }
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+            CONTROL_NAMES_MIN_V1_INDEX as i32
+        } else {
+            CONTROL_NAMES_MIN_V2_INDEX as i32
+        }) as uint8_t;
     }
     use super::stdint_uintn_h::{u32, uint8_t};
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
@@ -91,13 +89,11 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strempty(mut s: *const i8) -> *const i8 {
-        unsafe {
-            return if !s.is_null() {
-                s
-            } else {
-                b"\0".as_ptr() as *const i8
-            };
-        }
+        return if !s.is_null() {
+            s
+        } else {
+            b"\0".as_ptr() as *const i8
+        };
     }
 
     pub use crate::xkb::utils::istrcmp;
@@ -156,7 +152,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE,
     XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
 };
-use crate::xkb::utils::{cstr_len, cstr_len_safe};
+use crate::xkb::utils::cstr_len_safe;
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,

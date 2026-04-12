@@ -63,8 +63,8 @@ pub mod struct_FILE_h {
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
@@ -262,9 +262,7 @@ pub mod stdlib_h {
         pub fn exit(__status: i32) -> !;
     }
 }
-pub mod string_h {
-    
-}
+pub mod string_h {}
 pub mod unistd_h {
     pub const STDIN_FILENO: i32 = 0 as i32;
 }
@@ -325,7 +323,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_cmp};
+use crate::xkb::utils::cstr_cmp;
 pub const OPT_TEST: options = 3;
 pub const OPT_LOCALE: options = 2;
 pub const OPT_FILE: options = 1;
@@ -484,7 +482,8 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             ::core::ptr::null_mut::<xkb_compose_table>();
         if !path.is_null() {
             let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-            if isempty(path) as i32 != 0 || cstr_cmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32 {
+            if isempty(path) as i32 != 0 || cstr_cmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32
+            {
                 file = tools_read_stdin();
             } else {
                 file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;

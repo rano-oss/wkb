@@ -112,8 +112,8 @@ pub mod struct_FILE_h {
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
-        pub _cur_column: ::core::ffi::c_ushort,
-        pub _vtable_offset: ::core::ffi::c_schar,
+        pub _cur_column: u16,
+        pub _vtable_offset: :i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,
@@ -301,8 +301,8 @@ pub mod tree_h {
         pub properties: *mut _xmlAttr,
         pub nsDef: *mut xmlNs,
         pub psvi: *mut ::core::ffi::c_void,
-        pub line: ::core::ffi::c_ushort,
-        pub extra: ::core::ffi::c_ushort,
+        pub line: u16,
+        pub extra: u16,
     }
     pub type xmlNs = _xmlNs;
     #[derive(Copy, Clone)]
@@ -566,8 +566,8 @@ pub mod parser_h {
         pub input_id: i32,
         pub sizeentcopy: u64,
         pub endCheckState: i32,
-        pub nbErrors: ::core::ffi::c_ushort,
-        pub nbWarnings: ::core::ffi::c_ushort,
+        pub nbErrors: u16,
+        pub nbWarnings: u16,
         pub maxAmpl: u32,
         pub nsdb: *mut xmlParserNsData,
         pub attrHashMax: u32,
@@ -953,7 +953,7 @@ pub mod dirent_h {
     pub struct dirent {
         pub d_ino: __ino64_t,
         pub d_off: __off64_t,
-        pub d_reclen: ::core::ffi::c_ushort,
+        pub d_reclen: u16,
         pub d_type: ::core::ffi::c_uchar,
         pub d_name: [i8; 256],
     }
