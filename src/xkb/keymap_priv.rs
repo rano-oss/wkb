@@ -2,26 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_intern;
@@ -87,23 +67,11 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
-pub mod string_h {}
 pub mod stdlib_h {
 
     extern "C" {
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
     }
-}
-pub mod stdint_h {
-    pub const INT32_MAX: i32 = 2147483647 as i32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
 }
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
@@ -123,11 +91,9 @@ pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_MOD5: [i8; 5] =
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
 }
-pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
@@ -174,12 +140,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::calloc;
-pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::xkbcommon_h::{
     xkb_context_ref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
     xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -197,6 +158,7 @@ pub use self::xkbcommon_names_h::{
     XKB_MOD_NAME_CAPS, XKB_MOD_NAME_CTRL, XKB_MOD_NAME_MOD1, XKB_MOD_NAME_MOD2, XKB_MOD_NAME_MOD3,
     XKB_MOD_NAME_MOD4, XKB_MOD_NAME_MOD5, XKB_MOD_NAME_SHIFT,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
     unsafe {
@@ -335,7 +297,7 @@ pub unsafe fn XkbModNameToIndex(
 pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_syms as i32 != (*b).num_syms as i32 {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if (*a).num_syms as i32 <= 1 as i32 {
             return (*a).s.sym == (*b).s.sym;
@@ -351,10 +313,10 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
 pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
     unsafe {
         if (*a).type_0 as u32 != (*b).type_0 as u32 {
-            return false_0 != 0;
+            return 0 != 0;
         }
         match (*a).type_0 as u32 {
-            0 | 1 => return true_0 != 0,
+            0 | 1 => return 1 != 0,
             2 | 3 | 4 => {
                 return (*a).mods.flags as u32 == (*b).mods.flags as u32
                     && (*a).mods.mods.mask == (*b).mods.mods.mask
@@ -378,7 +340,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
                 return (*a).dflt.flags as u32 == (*b).dflt.flags as u32
                     && (*a).dflt.value as i32 == (*b).dflt.value as i32;
             }
-            12 => return true_0 != 0,
+            12 => return 1 != 0,
             13 => {
                 return (*a).screen.flags as u32 == (*b).screen.flags as u32
                     && (*a).screen.screen as i32 == (*b).screen.screen as i32;
@@ -392,7 +354,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
                     && (*a).redirect.affect == (*b).redirect.affect
                     && (*a).redirect.mods == (*b).redirect.mods;
             }
-            17 | 18 => return true_0 != 0,
+            17 | 18 => return 1 != 0,
             20 => {
                 return (*a).internal.flags as u32 == (*b).internal.flags as u32
                     && (*a).internal.c2rust_unnamed.clear_latched_mods
@@ -401,10 +363,10 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
             _ => {
                 return std::slice::from_raw_parts(
                     &raw const (*a).priv_0.data as *const u8,
-                    ::core::mem::size_of::<[uint8_t; 7]>(),
+                    ::core::mem::size_of::<[u8; 7]>(),
                 ) == std::slice::from_raw_parts(
                     &raw const (*b).priv_0.data as *const u8,
-                    ::core::mem::size_of::<[uint8_t; 7]>(),
+                    ::core::mem::size_of::<[u8; 7]>(),
                 );
             }
         };
@@ -413,7 +375,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
 pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_actions as i32 != (*b).num_actions as i32 {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if (*a).num_actions as i32 <= 1 as i32 {
             return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
@@ -424,11 +386,11 @@ pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_le
                 (*a).a.actions.offset(k as isize) as *mut xkb_action,
                 (*b).a.actions.offset(k as isize) as *mut xkb_action,
             ) {
-                return false_0 != 0;
+                return 0 != 0;
             }
             k = k.wrapping_add(1);
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn XkbWrapGroupIntoRange(

@@ -9,57 +9,35 @@ pub mod internal {
         pub reg_save_area: *mut ::core::ffi::c_void,
     }
 }
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __uint64_t = u64;
-    pub type __dev_t = u64;
-    pub type __uid_t = u32;
-    pub type __gid_t = u32;
-    pub type __ino_t = u64;
-    pub type __ino64_t = u64;
-    pub type __mode_t = u32;
-    pub type __nlink_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-    pub type __time_t = i64;
-    pub type __blksize_t = i64;
-    pub type __blkcnt_t = i64;
-    pub type __syscall_slong_t = i64;
-}
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct timespec {
-        pub tv_sec: __time_t,
-        pub tv_nsec: __syscall_slong_t,
+        pub tv_sec: i64,
+        pub tv_nsec: i64,
     }
-    use super::types_h::{__syscall_slong_t, __time_t};
 }
 pub mod struct_stat_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct stat {
-        pub st_dev: __dev_t,
-        pub st_ino: __ino_t,
-        pub st_nlink: __nlink_t,
-        pub st_mode: __mode_t,
-        pub st_uid: __uid_t,
-        pub st_gid: __gid_t,
+        pub st_dev: u64,
+        pub st_ino: u64,
+        pub st_nlink: u64,
+        pub st_mode: u32,
+        pub st_uid: u32,
+        pub st_gid: u32,
         pub __pad0: i32,
-        pub st_rdev: __dev_t,
-        pub st_size: __off_t,
-        pub st_blksize: __blksize_t,
-        pub st_blocks: __blkcnt_t,
+        pub st_rdev: u64,
+        pub st_size: i64,
+        pub st_blksize: i64,
+        pub st_blocks: i64,
         pub st_atim: timespec,
         pub st_mtim: timespec,
         pub st_ctim: timespec,
-        pub __glibc_reserved: [__syscall_slong_t; 3],
+        pub __glibc_reserved: [i64; 3],
     }
     use super::struct_timespec_h::timespec;
-    use super::types_h::{
-        __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off_t,
-        __syscall_slong_t, __uid_t,
-    };
 }
 
 pub mod stdlib_h {
@@ -79,10 +57,6 @@ pub mod stdlib_h {
             __compar: __compar_fn_t,
         );
     }
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
 }
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
@@ -110,12 +84,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -123,11 +97,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -948,13 +921,12 @@ pub mod dirent_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct dirent {
-        pub d_ino: __ino64_t,
-        pub d_off: __off64_t,
+        pub d_ino: u64,
+        pub d_off: i64,
         pub d_reclen: u16,
         pub d_type: ::core::ffi::c_uchar,
         pub d_name: [i8; 256],
     }
-    use super::types_h::{__ino64_t, __off64_t};
 }
 pub mod include_dirent_h {
     pub type DIR = __dirstream;
@@ -1132,20 +1104,15 @@ pub mod util_mem_h {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = NULL;
+            *original = std::ptr::null_mut::<core::ffi::c_void>();
             return swapped;
         }
     }
-    use super::__stddef_null_h::NULL;
 }
 pub mod xmlversion_h {
     extern "C" {
         pub fn xmlCheckVersion(version: i32);
     }
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod errno_base_h {
     pub const ENOMEM: i32 = 12 as i32;
@@ -1164,36 +1131,12 @@ pub mod errno_h {
         pub fn __errno_location() -> *mut i32;
     }
 }
-pub mod config_h {
-    pub const DEFAULT_XKB_RULES: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
-        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
-    pub const DFLT_XKB_CONFIG_ROOT: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config-2\0")
-    };
-    pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config.d\0")
-    };
-    pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] = unsafe {
-        ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0")
-    };
-    pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
-        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
-}
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
 }
-pub mod stdbool_h {}
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::NULL;
 
 pub use self::bits_stat_h::__S_IFMT;
-pub use self::config_h::{
-    DEFAULT_XKB_RULES, DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT,
-    DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH, DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
-    DFLT_XKB_LEGACY_ROOT,
-};
 pub use self::dict_h::{xmlDict, xmlDictPtr};
 pub use self::dirent_h::dirent;
 pub use self::encoding_h::{
@@ -1287,7 +1230,6 @@ pub use self::parser_h::{
     XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
 };
 use self::stat_h::stat;
-pub use self::stdint_uintn_h::u32;
 pub use self::stdio_h::{stderr, va_list, vsnprintf};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, getenv, qsort, secure_getenv, strtol};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -1311,10 +1253,6 @@ pub use self::tree_h::{
     XML_ELEMENT_DECL, XML_ELEMENT_NODE, XML_ENTITY_DECL, XML_ENTITY_NODE, XML_ENTITY_REF_NODE,
     XML_HTML_DOCUMENT_NODE, XML_NAMESPACE_DECL, XML_NOTATION_NODE, XML_PI_NODE, XML_TEXT_NODE,
     XML_XINCLUDE_END, XML_XINCLUDE_START,
-};
-pub use self::types_h::{
-    __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino64_t, __ino_t, __mode_t, __nlink_t, __off64_t,
-    __off_t, __syscall_slong_t, __time_t, __uid_t, __uint32_t, __uint64_t,
 };
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::util_list_h::{list, list_append, list_empty, list_init, list_is_last, list_remove};
@@ -1349,6 +1287,11 @@ pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
 pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
+use crate::xkb::shared_types::{
+    DEFAULT_XKB_RULES, DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT,
+    DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH, DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
+    DFLT_XKB_LEGACY_ROOT,
+};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 #[derive(Copy, Clone)]
@@ -2358,7 +2301,7 @@ pub unsafe fn rxkb_context_include_path_append(
             err = stat(path, &raw mut stat_buf);
             if err != 0 as i32 {
                 err = *__errno_location();
-            } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
+            } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
                 err = ENOTDIR;
             } else if !check_eaccess(path, R_OK | X_OK) {
                 err = EACCES;
@@ -2463,7 +2406,7 @@ unsafe fn add_direct_subdirectories(
         err = stat(path, &raw mut stat_buf);
         if err != 0 as i32 {
             err = *__errno_location();
-        } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
+        } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
             err = ENOTDIR;
         } else if !check_eaccess(path, R_OK | X_OK) {
             err = EACCES;
@@ -2507,7 +2450,7 @@ unsafe fn add_direct_subdirectories(
                         break;
                     } else {
                         if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
-                            || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t)
+                            || !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32)
                         {
                             continue;
                         }
@@ -3515,7 +3458,7 @@ unsafe fn parse(
             }
             xmlFreeDoc(doc as xmlDocPtr);
         }
-        xmlSetGenericErrorFunc(NULL, None);
+        xmlSetGenericErrorFunc(std::ptr::null_mut::<core::ffi::c_void>(), None);
         xmlFreeParserCtxt(xmlCtxt);
         return success;
     }

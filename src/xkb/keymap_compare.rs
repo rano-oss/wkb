@@ -2,26 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_text;
@@ -92,17 +72,9 @@ pub mod utils_h {
     }
     use crate::xkb::utils::cstr_cmp;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod string_h {}
-pub mod stdbool_h {}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_compare_h::{
     xkb_keymap_compare_property, XKB_KEYMAP_CMP_ALL, XKB_KEYMAP_CMP_KEYCODES, XKB_KEYMAP_CMP_LEDS,
@@ -143,9 +115,6 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::utils_h::{streq, streq_null};
 pub use self::xkbcommon_h::{
     xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t, xkb_layout_index_t,
@@ -160,6 +129,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_LOCKED,
 };
 pub use crate::xkb::keymap_priv::action_equal;
+pub use crate::xkb::shared_types::darray_size_t;
 unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,

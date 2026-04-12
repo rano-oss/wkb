@@ -10,13 +10,6 @@ pub mod internal {
     }
 }
 
-pub mod types_h {
-    pub type __uint32_t = u32;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -88,8 +81,8 @@ pub mod rmlvo_h {
         pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
-    use crate::xkb::shared_types::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
+    use crate::xkb::shared_types::darray_size_t;
 }
 pub mod messages_codes_h {
     pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
@@ -202,21 +195,14 @@ pub mod utils_h {
 
     use crate::xkb::utils::cstr_dup;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod keymap_h {
     pub const XKB_MAX_GROUPS: i32 = 32 as i32;
 }
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 }
-pub mod stdbool_h {}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
@@ -268,9 +254,7 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
-pub use self::stdint_uintn_h::u32;
 use self::stdlib_h::{calloc, free};
-pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -283,6 +267,7 @@ pub use self::xkbcommon_h::{
     xkb_rule_names, XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_cmp;
 use crate::xkb::utils::{darray_append, darray_free};
 pub unsafe fn xkb_rmlvo_builder_new(

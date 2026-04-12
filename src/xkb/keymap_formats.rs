@@ -1,11 +1,3 @@
-pub mod types_h {
-    pub type __uint32_t = u32;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
-
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -296,20 +288,7 @@ pub mod utils_numbers_h {
         }
     }
 
-    use super::stdint_uintn_h::u32;
     use super::utils_h::is_xdigit;
-}
-pub mod stdint_h {
-    pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
-}
-pub mod string_h {}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod utils_h {
     #[inline]
@@ -319,12 +298,7 @@ pub mod utils_h {
             || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
     }
 }
-pub use self::__stddef_null_h::NULL;
 
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::SIZE_MAX;
-pub use self::stdint_uintn_h::u32;
-pub use self::types_h::__uint32_t;
 pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
 pub use self::xkbcommon_h::{
@@ -369,7 +343,7 @@ pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_f
 pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {
         if (format as u32) < keymap_formats[0 as i32 as usize] as u32 {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut k: usize = 0 as usize;
         while k
@@ -377,14 +351,14 @@ pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> b
                 .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize)
         {
             if keymap_formats[k as usize] as u32 == format as u32 {
-                return true_0 != 0;
+                return 1 != 0;
             }
             if keymap_formats[k as usize] as u32 > format as u32 {
-                return false_0 != 0;
+                return 0 != 0;
             }
             k = k.wrapping_add(1);
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
@@ -393,7 +367,7 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
             return 0 as xkb_keymap_format;
         }
         let mut format: u32 = 0 as u32;
-        if parse_hex_to_uint32_t(raw, SIZE_MAX as usize, &raw mut format) > 0 as i32 {
+        if parse_hex_to_uint32_t(raw, usize::MAX as usize, &raw mut format) > 0 as i32 {
             return (if xkb_keymap_is_supported_format(format as xkb_keymap_format) as i32 != 0 {
                 format
             } else {

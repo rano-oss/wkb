@@ -4,32 +4,6 @@ pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    pub type i64 = __int64_t;
-    use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    pub type uint64_t = __uint64_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint64_t, __uint8_t};
-}
 
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -53,12 +27,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -66,11 +40,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -129,7 +102,7 @@ pub mod xkbcommon_h {
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     pub type C2Rust_Unnamed_14 = u32;
     pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
     pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 1;
@@ -366,29 +339,29 @@ pub mod utils_numbers_h {
     pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
-        mut out: *mut uint64_t,
+        mut out: *mut u64,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint64_t = 0 as uint64_t;
+            let mut result: u64 = 0 as u64;
             let mut i: usize = 0;
             i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as u32)
                     < 10 as u32
-                && result <= (18446744073709551615 as uint64_t).wrapping_div(10 as uint64_t)
-                && result.wrapping_mul(10 as uint64_t)
-                    <= (18446744073709551615 as uint64_t).wrapping_sub(
+                && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
+                && result.wrapping_mul(10 as u64)
+                    <= (18446744073709551615 as u64).wrapping_sub(
                         (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as uint64_t,
+                            as ::core::ffi::c_uchar as u64,
                     )
             {
-                result = result.wrapping_mul(10 as uint64_t).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint64_t,
+                result = result.wrapping_mul(10 as u64).wrapping_add(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u64,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint64_t;
+            *out = result as u64;
             return if i >= len
                 || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as u32
@@ -416,7 +389,6 @@ pub mod utils_numbers_h {
     }
 
     use super::limits_h::CHAR_BIT;
-    use super::stdint_uintn_h::{u32, uint64_t};
 }
 pub mod keysym_h {
     pub use crate::xkb::keysym::xkb_keysym_is_keypad;
@@ -438,11 +410,10 @@ pub mod util_mem_h {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = NULL;
+            *original = std::ptr::null_mut::<core::ffi::c_void>();
             return swapped;
         }
     }
-    use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
@@ -450,18 +421,6 @@ pub mod include_h {
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
-pub mod stdint_h {
-    pub const UINT8_MAX: ::core::ffi::c_int = 255 as ::core::ffi::c_int;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::ast_h::{
@@ -574,17 +533,9 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::UINT8_MAX;
-pub use self::stdint_intn_h::{i16, i32, i64, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
 use self::stdlib_h::{abort, atoi, calloc, free, realloc};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int64_t, __int8_t, __off64_t, __off_t, __uint16_t, __uint32_t,
-    __uint64_t, __uint8_t,
-};
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
 pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
@@ -988,13 +939,13 @@ unsafe fn MergeGroups(
             as group_field;
         if (*from).levels.size == 0 as darray_size_t {
             InitGroupInfo(from);
-            return true_0 != 0;
+            return 1 != 0;
         }
         if (*into).levels.size == 0 as darray_size_t {
             (*from).type_0 = (*into).type_0;
             *into = *from;
             InitGroupInfo(from);
-            return true_0 != 0;
+            return 1 != 0;
         }
         let levels_in_both: darray_size_t = if (*into).levels.size < (*from).levels.size {
             (*into).levels.size
@@ -1269,7 +1220,7 @@ unsafe fn MergeGroups(
                 | (*from).defined as u32 & GROUP_FIELD_ACTS as ::core::ffi::c_int as u32)
                 as group_field;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn UseNewKeyField(
@@ -1290,7 +1241,7 @@ unsafe fn UseNewKeyField(
             }
             return clobber;
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn overlays_get(
@@ -1304,12 +1255,12 @@ unsafe fn overlays_get(
                 .wrapping_mul(CHAR_BIT as usize) as xkb_overlay_index_t
                 as ::core::ffi::c_int
         {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mask: xkb_overlay_mask_t =
             ((1 as u32) << bit as ::core::ffi::c_int) as xkb_overlay_mask_t;
         if (*info).overlays as ::core::ffi::c_int & mask as ::core::ffi::c_int == 0 {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if !key_out.is_null() {
             if (*info).overlays_alloc == 0 {
@@ -1322,7 +1273,7 @@ unsafe fn overlays_get(
                 *key_out = *(*info).c2rust_unnamed.overlays_keys.offset(index as isize);
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn overlays_insert(
@@ -1336,7 +1287,7 @@ unsafe fn overlays_insert(
                 .wrapping_mul(CHAR_BIT as usize) as xkb_overlay_index_t
                 as ::core::ffi::c_int
         {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mask: xkb_overlay_mask_t =
             ((1 as u32) << bit as ::core::ffi::c_int) as xkb_overlay_mask_t;
@@ -1346,7 +1297,7 @@ unsafe fn overlays_insert(
             if (*keyi).overlays_alloc == 0 {
                 (*keyi).c2rust_unnamed.overlay_key = key;
                 if key.is_null() {
-                    (*keyi).set_overlays_clear((true_0 != 0) as bool);
+                    (*keyi).set_overlays_clear((1 != 0) as bool);
                 }
             } else {
                 let low: xkb_overlay_mask_t = ((*keyi).overlays as ::core::ffi::c_int
@@ -1358,7 +1309,7 @@ unsafe fn overlays_insert(
                     *(*keyi).c2rust_unnamed.overlays_keys.offset(index as isize);
                 *c2rust_fresh4 = key;
             }
-            return true_0 != 0;
+            return 1 != 0;
         }
         if (*keyi).overlays == 0
             || (*keyi).overlays_clear() as ::core::ffi::c_int != 0 && key.is_null()
@@ -1377,7 +1328,7 @@ unsafe fn overlays_insert(
                 ::core::mem::size_of::<*const xkb_key>() as usize,
             ) as *mut *const xkb_key;
             if tmp.is_null() {
-                return false_0 != 0;
+                return 0 != 0;
             }
             if !(*keyi).overlays_clear() {
                 let low_0: xkb_overlay_mask_t = (overlays as ::core::ffi::c_int
@@ -1397,7 +1348,7 @@ unsafe fn overlays_insert(
             (*keyi).c2rust_unnamed.overlays_keys = tmp;
             (*keyi).overlays_alloc = alloc;
             (*keyi).overlays = overlays;
-            (*keyi).set_overlays_clear((false_0 != 0) as bool);
+            (*keyi).set_overlays_clear((0 != 0) as bool);
         } else {
             let overlays_0: xkb_overlay_mask_t = ((*keyi).overlays as ::core::ffi::c_int
                 | mask as ::core::ffi::c_int)
@@ -1411,7 +1362,7 @@ unsafe fn overlays_insert(
                         .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as usize),
                 ) as *mut *const xkb_key;
                 if tmp_0.is_null() {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 (*keyi).c2rust_unnamed.overlays_keys = tmp_0;
                 (*keyi).overlays_alloc = alloc_0;
@@ -1450,7 +1401,7 @@ unsafe fn overlays_insert(
             *c2rust_fresh7 = key;
             (*keyi).overlays = overlays_0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn merge_overlays(
@@ -1519,7 +1470,7 @@ unsafe fn merge_overlays(
                             )
                                 as *mut *const xkb_key;
                             if tmp.is_null() {
-                                return false_0 != 0;
+                                return 0 != 0;
                             }
                             if !(*dest).c2rust_unnamed.overlay_key.is_null() {
                                 let ref mut c2rust_fresh2 =
@@ -1540,7 +1491,7 @@ unsafe fn merge_overlays(
                                         as usize),
                                 ) as *mut *const xkb_key;
                             if tmp_0.is_null() {
-                                return false_0 != 0;
+                                return 0 != 0;
                             }
                             (*dest).c2rust_unnamed.overlays_keys = tmp_0;
                             (*dest).overlays_alloc = count;
@@ -1597,7 +1548,7 @@ unsafe fn merge_overlays(
                     if (!conflict || clobber as ::core::ffi::c_int != 0)
                         && !overlays_insert(dest, bit, src_key)
                     {
-                        return false_0 != 0;
+                        return 0 != 0;
                     }
                 }
                 if into != dest {
@@ -1622,7 +1573,7 @@ unsafe fn merge_overlays(
                         == (*from).overlays_clear() as ::core::ffi::c_int
                     && (*into).c2rust_unnamed.overlay_key == (*from).c2rust_unnamed.overlay_key
                 {
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
                 if (*into).overlays as ::core::ffi::c_int & (*from).overlays as ::core::ffi::c_int
                     == 0
@@ -1632,9 +1583,9 @@ unsafe fn merge_overlays(
                         (*into).set_overlays_clear((*from).overlays_clear() as bool);
                         (*into).overlays_alloc = (*from).overlays_alloc;
                         (*into).c2rust_unnamed.overlay_key = (*from).c2rust_unnamed.overlay_key;
-                        return true_0 != 0;
+                        return 1 != 0;
                     } else if (*from).overlays_clear() {
-                        return true_0 != 0;
+                        return 1 != 0;
                     }
                 }
                 if report {
@@ -1649,7 +1600,7 @@ unsafe fn merge_overlays(
                 }
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn MergeKeys(
@@ -1673,7 +1624,7 @@ unsafe fn MergeKeys(
             ClearKeyInfo(into);
             *into = *from;
             InitKeyInfo((*info).ctx, from);
-            return true_0 != 0;
+            return 1 != 0;
         }
         groups_in_both = (if (*into).groups.size < (*from).groups.size {
             (*into).groups.size
@@ -1761,7 +1712,7 @@ unsafe fn MergeKeys(
             );
         }
         if !merge_overlays(info, into, from, clobber, report, &raw mut collide) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if collide as u64 != 0 {
             xkb_logf!(
@@ -1780,7 +1731,7 @@ unsafe fn MergeKeys(
         }
         ClearKeyInfo(from);
         InitKeyInfo((*info).ctx, from);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn XkbResolveKeyAlias(mut keymap: *const xkb_keymap, mut name: xkb_atom_t) -> xkb_atom_t {
@@ -1824,7 +1775,7 @@ unsafe fn AddKeySymbols(
             *keyi,
         );
         InitKeyInfo((*info).ctx, keyi);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
@@ -1850,7 +1801,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                     old = old.offset(1);
                 } else {
                     if (*new).modifier == (*old).modifier {
-                        return true_0 != 0;
+                        return 1 != 0;
                     }
                     use_0 = if clobber as ::core::ffi::c_int != 0 {
                         (*new).modifier
@@ -1886,7 +1837,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                         );
                     }
                     (*old).modifier = use_0;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
             }
         }
@@ -1896,7 +1847,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
             &mut (*info).modmaps.alloc,
             *new,
         );
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn MergeIncludedSymbols(
@@ -1969,7 +1920,7 @@ unsafe fn MergeIncludedSymbols(
                 keyi = (*from).keys.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyInfo;
                 while keyi < (*from).keys.item.offset((*from).keys.size as isize) as *mut KeyInfo {
                     (*keyi).set_merge(merge as merge_mode);
-                    if !AddKeySymbols(into, keyi, false_0 != 0) {
+                    if !AddKeySymbols(into, keyi, 0 != 0) {
                         (*into).errorCount += 1;
                     }
                     keyi = keyi.offset(1);
@@ -2061,7 +2012,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
-            return false_0 != 0;
+            return 0 != 0;
         }
         InitSymbolsInfo(
             &raw mut included,
@@ -2140,7 +2091,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
                 ClearSymbolsInfo(&raw mut included);
-                return false_0 != 0;
+                return 0 != 0;
             }
             InitSymbolsInfo(
                 &raw mut next_incl,
@@ -2204,7 +2155,7 @@ unsafe fn GetGroupIndex(
                 while i < (*keyi).groups.size as xkb_layout_index_t {
                     if (*groupi).defined as u32 & field as u32 == 0 {
                         *ndx_rtrn = i;
-                        return true_0 != 0;
+                        return 1 != 0;
                     }
                     i = i.wrapping_add(1);
                     groupi = groupi.offset(1);
@@ -2222,7 +2173,7 @@ unsafe fn GetGroupIndex(
                     (*info).max_groups,
                     crate::xkb::utils::CStrDisplay(name),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             darray_resize_zero(
                 &mut (*keyi).groups.item,
@@ -2231,12 +2182,12 @@ unsafe fn GetGroupIndex(
                 (*keyi).groups.size.wrapping_add(1 as darray_size_t),
             );
             *ndx_rtrn = (*keyi).groups.size.wrapping_sub(1 as darray_size_t) as xkb_layout_index_t;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if ExprResolveGroup(
             (*info).keymap_info,
             arrayNdx,
-            false_0 != 0,
+            0 != 0,
             ndx_rtrn,
             ::core::ptr::null_mut::<bool>(),
         ) as u32
@@ -2251,7 +2202,7 @@ unsafe fn GetGroupIndex(
                 crate::xkb::utils::CStrDisplay(name),
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         *ndx_rtrn = (*ndx_rtrn).wrapping_sub(1);
         if *ndx_rtrn >= (*keyi).groups.size as xkb_layout_index_t {
@@ -2262,7 +2213,7 @@ unsafe fn GetGroupIndex(
                 (*ndx_rtrn).wrapping_add(1 as darray_size_t),
             );
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn AddSymbolsToKey(
@@ -2274,14 +2225,14 @@ unsafe fn AddSymbolsToKey(
     unsafe {
         let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_SYMS, &raw mut ndx) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as ::core::ffi::c_int as u32 {
             (*groupi).defined = ((*groupi).defined as u32
                 | GROUP_FIELD_SYMS as ::core::ffi::c_int as u32)
                 as group_field;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if (*value).common.type_0 as u32 != STMT_EXPR_KEYSYM_LIST as ::core::ffi::c_int as u32 {
             xkb_logf!(
@@ -2294,7 +2245,7 @@ unsafe fn AddSymbolsToKey(
                 ndx.wrapping_add(1 as xkb_layout_index_t),
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         if (*groupi).defined as u32 & GROUP_FIELD_SYMS as ::core::ffi::c_int as u32 != 0 {
             xkb_logf!(
@@ -2306,7 +2257,7 @@ unsafe fn AddSymbolsToKey(
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 ndx.wrapping_add(1 as xkb_layout_index_t),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut nLevels: xkb_level_index_t = 0 as xkb_level_index_t;
         let mut nonEmptyLevels: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -2351,7 +2302,7 @@ unsafe fn AddSymbolsToKey(
                     65535 as ::core::ffi::c_int,
                     (*keysymList_0).syms.size,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*leveli).num_syms = (*keysymList_0).syms.size as xkb_keysym_count_t;
             match (*leveli).num_syms as ::core::ffi::c_int {
@@ -2390,7 +2341,7 @@ unsafe fn AddSymbolsToKey(
             keysymList_0 = (*keysymList_0).common.next as *mut ExprKeysymList;
             level = level.wrapping_add(1);
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn AddActionsToKey(
@@ -2402,14 +2353,14 @@ unsafe fn AddActionsToKey(
     unsafe {
         let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_ACTS, &raw mut ndx) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as ::core::ffi::c_int as u32 {
             (*groupi).defined = ((*groupi).defined as u32
                 | GROUP_FIELD_ACTS as ::core::ffi::c_int as u32)
                 as group_field;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if (*value).common.type_0 as u32 != STMT_EXPR_ACTION_LIST as ::core::ffi::c_int as u32 {
             xkb_logf!(
@@ -2422,7 +2373,7 @@ unsafe fn AddActionsToKey(
                 ndx,
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         if (*groupi).defined as u32 & GROUP_FIELD_ACTS as ::core::ffi::c_int as u32 != 0 {
             xkb_logf!(
@@ -2434,7 +2385,7 @@ unsafe fn AddActionsToKey(
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 ndx,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut nLevels: xkb_level_index_t = 0 as xkb_level_index_t;
         let mut p: *mut ParseCommon = &raw mut (*value).common;
@@ -2478,7 +2429,7 @@ unsafe fn AddActionsToKey(
                     65535 as ::core::ffi::c_int,
                     num_actions,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             let mut actions: C2Rust_Unnamed_25 = C2Rust_Unnamed_25 {
                 size: 0 as darray_size_t,
@@ -2514,7 +2465,7 @@ unsafe fn AddActionsToKey(
                     );
                     if r as u32 == PARSER_FATAL_ERROR as ::core::ffi::c_int as u32 {
                         darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
-                        return false_0 != 0;
+                        return 0 != 0;
                     } else {
                         toAct.type_0 = ACTION_TYPE_NONE;
                     }
@@ -2603,7 +2554,7 @@ unsafe fn AddActionsToKey(
                 );
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 static mut repeatEntries: [LookupEntry; 8] = [
@@ -2663,7 +2614,7 @@ unsafe fn ExprResolveOverlayEntry(
                     (*keyi).name
                 )),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let prefix: usize = (::core::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize);
         let len: usize = cstr_len(field.offset(prefix as isize)) as usize;
@@ -2671,7 +2622,7 @@ unsafe fn ExprResolveOverlayEntry(
         if parse_dec_to_uint64_t(
             field.offset(prefix as isize),
             len,
-            &raw mut raw_overlay as *mut uint64_t,
+            &raw mut raw_overlay as *mut u64,
         ) != len as ::core::ffi::c_int
             || raw_overlay < 1 as i64
             || raw_overlay > (*keymap_info).features.max_overlays as i64
@@ -2687,7 +2638,7 @@ unsafe fn ExprResolveOverlayEntry(
                 (*keymap_info).features.max_overlays as ::core::ffi::c_int,
                 raw_overlay,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         *overlay_rtrn = (raw_overlay as xkb_overlay_index_t as ::core::ffi::c_int
             - 1 as ::core::ffi::c_int) as xkb_overlay_index_t;
@@ -2696,7 +2647,7 @@ unsafe fn ExprResolveOverlayEntry(
                 *key_rtrn = XkbKeyByName(
                     &raw const (*keymap_info).keymap,
                     (*expr).key_name.key_name,
-                    false_0 != 0,
+                    0 != 0,
                 );
                 if (*key_rtrn).is_null() {
                     xkb_logf!(
@@ -2715,9 +2666,9 @@ unsafe fn ExprResolveOverlayEntry(
                             (*keyi).name
                         )),
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             10 => {
                 let id: *const i8 =
@@ -2726,13 +2677,13 @@ unsafe fn ExprResolveOverlayEntry(
                     && istreq(id, b"none\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
                     *key_rtrn = ::core::ptr::null::<xkb_key>();
-                    return true_0 != 0;
+                    return 1 != 0;
                 } else if !id.is_null()
                     && istreq(id, b"any\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
                     *key_rtrn = ::core::ptr::null::<xkb_key>();
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
                 xkb_logf!(
                     (*keymap_info).keymap.ctx,
@@ -2747,7 +2698,7 @@ unsafe fn ExprResolveOverlayEntry(
                         (*keyi).name
                     )),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             _ => {
                 xkb_logf!(
@@ -2764,7 +2715,7 @@ unsafe fn ExprResolveOverlayEntry(
                     )),
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         };
     }
@@ -2789,7 +2740,7 @@ unsafe fn SetSymbolsField(
                     "[XKB-{:03}] The type field of a key symbol map must be a string; Ignoring illegal type definition\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             if arrayNdx.is_null() {
                 (*keyi).default_type = val;
@@ -2799,7 +2750,7 @@ unsafe fn SetSymbolsField(
             } else if ExprResolveGroup(
                 (*info).keymap_info,
                 arrayNdx,
-                false_0 != 0,
+                0 != 0,
                 &raw mut ndx,
                 ::core::ptr::null_mut::<bool>(),
             ) as u32
@@ -2813,7 +2764,7 @@ unsafe fn SetSymbolsField(
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             } else {
                 ndx = ndx.wrapping_sub(1);
                 if ndx >= (*keyi).groups.size as xkb_layout_index_t {
@@ -2855,7 +2806,7 @@ unsafe fn SetSymbolsField(
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*value).common.type_0)),
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*keyi).vmodmap = mask;
             (*keyi).set_defined(
@@ -2915,10 +2866,10 @@ unsafe fn SetSymbolsField(
                 &raw mut overlay,
                 &raw mut key,
             ) {
-                return false_0 != 0;
+                return 0 != 0;
             }
             if overlay as ::core::ffi::c_int == XKB_OVERLAY_INVALID {
-                return true_0 != 0;
+                return 1 != 0;
             } else if !key.is_null() && (*key).name == (*keyi).name {
                 xkb_logf!(
                     (*info).ctx,
@@ -2955,7 +2906,7 @@ unsafe fn SetSymbolsField(
                     }
                 } else if (*(*info).keymap_info).features.overlapping_overlays {
                     if !overlays_insert(keyi, overlay, key) {
-                        return false_0 != 0;
+                        return 0 != 0;
                     }
                     (*keyi).set_defined(
                         (*keyi).defined() | KEY_FIELD_OVERLAY as ::core::ffi::c_int as key_field,
@@ -2967,13 +2918,13 @@ unsafe fn SetSymbolsField(
                     {
                         if !key.is_null() {
                             (*keyi).overlays = mask_0;
-                            (*keyi).set_overlays_clear((false_0 != 0) as bool);
+                            (*keyi).set_overlays_clear((0 != 0) as bool);
                             (*keyi).c2rust_unnamed.overlay_key = key;
                         } else {
                             (*keyi).overlays = ((*keyi).overlays as ::core::ffi::c_int
                                 | mask_0 as ::core::ffi::c_int)
                                 as xkb_overlay_mask_t;
-                            (*keyi).set_overlays_clear((true_0 != 0) as bool);
+                            (*keyi).set_overlays_clear((1 != 0) as bool);
                         }
                         (*keyi).set_defined(
                             (*keyi).defined()
@@ -3022,7 +2973,7 @@ unsafe fn SetSymbolsField(
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*keyi).set_repeat(val_0 as key_repeat as key_repeat);
             (*keyi).set_defined(
@@ -3031,7 +2982,7 @@ unsafe fn SetSymbolsField(
         } else if istreq(field, b"groupswrap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
             || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            let mut set: bool = false_0 != 0;
+            let mut set: bool = 0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
                 xkb_logf!(
                     (*info).ctx,
@@ -3041,7 +2992,7 @@ unsafe fn SetSymbolsField(
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*keyi).set_out_of_range_group_policy(
                 (if set as ::core::ffi::c_int != 0 {
@@ -3057,7 +3008,7 @@ unsafe fn SetSymbolsField(
         } else if istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
             || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            let mut set_0: bool = false_0 != 0;
+            let mut set_0: bool = 0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
                 xkb_logf!(
                     (*info).ctx,
@@ -3067,7 +3018,7 @@ unsafe fn SetSymbolsField(
                     XKB_ERROR_INVALID_VALUE as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*keyi).set_out_of_range_group_policy(
                 (if set_0 as ::core::ffi::c_int != 0 {
@@ -3085,11 +3036,11 @@ unsafe fn SetSymbolsField(
             || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
             let mut grp: xkb_layout_index_t = 0 as xkb_layout_index_t;
-            let mut pending: bool = false_0 != 0;
+            let mut pending: bool = 0 != 0;
             if ExprResolveGroup(
                 (*info).keymap_info,
                 value,
-                false_0 != 0,
+                0 != 0,
                 &raw mut grp,
                 &raw mut pending,
             ) as u32
@@ -3104,10 +3055,10 @@ unsafe fn SetSymbolsField(
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             if pending {
-                (*keyi).set_out_of_range_pending_group((true_0 != 0) as bool);
+                (*keyi).set_out_of_range_pending_group((1 != 0) as bool);
                 let pending_index: darray_size_t =
                     (*(*(*info).keymap_info).pending_computations).size;
                 darray_append(
@@ -3123,7 +3074,7 @@ unsafe fn SetSymbolsField(
                 *value_ptr = ::core::ptr::null_mut::<ExprDef>();
                 (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;
             } else {
-                (*keyi).set_out_of_range_pending_group((false_0 != 0) as bool);
+                (*keyi).set_out_of_range_pending_group((0 != 0) as bool);
                 (*keyi).out_of_range_group_number = grp.wrapping_sub(1 as xkb_layout_index_t);
             }
             (*keyi).set_out_of_range_group_policy(
@@ -3145,7 +3096,7 @@ unsafe fn SetSymbolsField(
                 & PARSER_NO_UNKNOWN_KEY_FIELDS as ::core::ffi::c_int as u32
                 == 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn SetGroupName(
@@ -3163,13 +3114,13 @@ unsafe fn SetGroupName(
                 "[XKB-{:03}] You must specify an index when specifying a group name; Group name definition without array subscript ignored\n",
                 XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX as ::core::ffi::c_int,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
         if ExprResolveGroup(
             (*info).keymap_info,
             arrayNdx,
-            false_0 != 0,
+            0 != 0,
             &raw mut group,
             ::core::ptr::null_mut::<bool>(),
         ) as u32
@@ -3182,7 +3133,7 @@ unsafe fn SetGroupName(
                 "[XKB-{:03}] Illegal index in group name definition; Definition with non-integer array index ignored\n",
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, value, &raw mut name) {
@@ -3194,7 +3145,7 @@ unsafe fn SetGroupName(
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 group,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut group_to_use: xkb_layout_index_t = 0;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -3212,7 +3163,7 @@ unsafe fn SetGroupName(
                 group,
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, name)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         if group_to_use >= (*info).group_names.size as xkb_layout_index_t {
             darray_resize_zero(
@@ -3249,7 +3200,7 @@ unsafe fn SetGroupName(
             }
         }
         *(*info).group_names.item.offset(group_to_use as isize) = name;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
@@ -3265,7 +3216,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             &raw mut field,
             &raw mut arrayNdx,
         ) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if !elem.is_null()
             && istreq(elem, b"key\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
@@ -3305,12 +3256,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 }) as merge_mode as merge_mode,
             );
             ret = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut (*stmt).value);
-            MergeKeys(
-                info,
-                &raw mut (*info).default_key,
-                &raw mut temp,
-                true_0 != 0,
-            );
+            MergeKeys(info, &raw mut (*info).default_key, &raw mut temp, 1 != 0);
         } else if elem.is_null()
             && (istreq(field, b"name\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 || istreq(field, b"groupname\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
@@ -3327,7 +3273,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 "[XKB-{:03}] Global \"groupswrap\" not supported; Ignored\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
-            ret = true_0 != 0;
+            ret = 1 != 0;
         } else if elem.is_null()
             && (istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
@@ -3339,7 +3285,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 "[XKB-{:03}] Global \"groupsclamp\" not supported; Ignored\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
-            ret = true_0 != 0;
+            ret = 1 != 0;
         } else if elem.is_null()
             && (istreq(field, b"groupsredirect\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int
@@ -3352,7 +3298,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 "[XKB-{:03}] Global \"groupsredirect\" not supported; Ignored\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
-            ret = true_0 != 0;
+            ret = 1 != 0;
         } else if elem.is_null()
             && istreq(field, b"allownone\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
@@ -3363,7 +3309,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 "[XKB-{:03}] Radio groups not supported; Ignoring \"allownone\" specification\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as ::core::ffi::c_int,
             );
-            ret = true_0 != 0;
+            ret = 1 != 0;
         } else if !elem.is_null() {
             ret = SetDefaultActionField(
                 (*info).keymap_info,
@@ -3398,11 +3344,11 @@ unsafe fn HandleSymbolsBody(
     mut keyi: *mut KeyInfo,
 ) -> bool {
     unsafe {
-        let mut all_valid_entries: bool = true_0 != 0;
+        let mut all_valid_entries: bool = 1 != 0;
         while !def.is_null() {
             let mut field: *const i8 = ::core::ptr::null::<i8>();
             let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-            let mut ok: bool = true_0 != 0;
+            let mut ok: bool = 1 != 0;
             if (*def).name.is_null() {
                 if (*def).value.is_null() as ::core::ffi::c_int as i64 != 0
                     || (*(*def).value).common.type_0 as u32
@@ -3433,7 +3379,7 @@ unsafe fn HandleSymbolsBody(
                         crate::xkb::utils::CStrDisplay(elem),
                         crate::xkb::utils::CStrDisplay(field),
                     );
-                    ok = false_0 != 0;
+                    ok = 0 != 0;
                 }
             }
             if (*def).value.is_null() as ::core::ffi::c_int as i64 != 0 {
@@ -3445,10 +3391,10 @@ unsafe fn HandleSymbolsBody(
                     XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(field),
                 );
-                ok = false_0 != 0;
+                ok = 0 != 0;
             }
             if !ok || !SetSymbolsField(info, keyi, field, arrayNdx, &raw mut (*def).value) {
-                all_valid_entries = false_0 != 0;
+                all_valid_entries = 0 != 0;
             }
             def = (*def).common.next as *mut VarDef;
         }
@@ -3459,16 +3405,16 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
     unsafe {
         let mut i: xkb_layout_index_t = 0;
         let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
-        let mut warn: bool = false_0 != 0;
+        let mut warn: bool = 0 != 0;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return true_0 != 0;
+            return 1 != 0;
         }
         if !(*keyi).groups.item.is_null() {
             i = 1 as xkb_layout_index_t;
             groupi = (*keyi).groups.item.offset(1 as ::core::ffi::c_int as isize) as *mut GroupInfo;
             while i < (*keyi).groups.size as xkb_layout_index_t {
                 if (*groupi).defined as u64 != 0 {
-                    warn = true_0 != 0;
+                    warn = 1 != 0;
                     ClearGroupInfo(groupi);
                     InitGroupInfo(groupi);
                 }
@@ -3501,7 +3447,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 (*keyi).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut GroupInfo
             );
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef) -> bool {
@@ -3548,13 +3494,13 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
         keyi.name = (*stmt).keyName;
         if HandleSymbolsBody(info, (*stmt).symbols, &raw mut keyi) as ::core::ffi::c_int != 0
             && SetExplicitGroup(info, &raw mut keyi) as ::core::ffi::c_int != 0
-            && AddKeySymbols(info, &raw mut keyi, true_0 != 0) as ::core::ffi::c_int != 0
+            && AddKeySymbols(info, &raw mut keyi, 1 != 0) as ::core::ffi::c_int != 0
         {
-            return true_0 != 0;
+            return 1 != 0;
         }
         ClearKeyInfo(&raw mut keyi);
         (*info).errorCount += 1;
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -> bool {
@@ -3582,10 +3528,10 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                     XKB_ERROR_INVALID_REAL_MODIFIER as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*def).modifier)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         }
-        ok = true_0 != 0;
+        ok = 1 != 0;
         tmp.modifier = ndx;
         tmp.merge = (*def).merge;
         let mut c2rust_current_block_19: u64;
@@ -3593,7 +3539,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         while !key.is_null() {
             if (*key).common.type_0 as u32 == STMT_EXPR_KEYNAME_LITERAL as ::core::ffi::c_int as u32
             {
-                tmp.haveSymbol = false_0 != 0;
+                tmp.haveSymbol = 0 != 0;
                 tmp.u.keyName = (*key).key_name.key_name;
                 c2rust_current_block_19 = 5601891728916014340;
             } else if (*key).common.type_0 as u32
@@ -3602,7 +3548,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                 if (*key).keysym.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
                     c2rust_current_block_19 = 13536709405535804910;
                 } else {
-                    tmp.haveSymbol = true_0 != 0;
+                    tmp.haveSymbol = 1 != 0;
                     tmp.u.keySym = (*key).keysym.keysym;
                     c2rust_current_block_19 = 5601891728916014340;
                 }
@@ -3683,7 +3629,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
-                    ok = false_0 != 0;
+                    ok = 0 != 0;
                 }
             }
             if !ok {
@@ -3711,10 +3657,10 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -
         let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
         loop {
             let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
-            got_one_group = false_0 != 0;
+            got_one_group = 0 != 0;
             let mut got_one_level: bool = false;
             loop {
-                got_one_level = false_0 != 0;
+                got_one_level = 0 != 0;
                 let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
                 key = (*keymap).keys.offset(
                     (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
@@ -3725,7 +3671,7 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -
                 );
                 while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
                     if group < (*key).num_groups() && level < XkbKeyNumLevels(key, group) {
-                        got_one_level = true_0 != 0;
+                        got_one_level = 1 != 0;
                         got_one_group = got_one_level;
                         let num_syms: xkb_keysym_count_t =
                             (*(*(*key).groups.offset(group as isize))
@@ -3983,14 +3929,14 @@ unsafe fn FindTypeForGroup(
         let mut groupi: *mut GroupInfo =
             (*keyi).groups.item.offset(group as isize) as *mut GroupInfo;
         let mut type_name: xkb_atom_t = (*groupi).type_0;
-        *explicit_type = true_0 != 0;
+        *explicit_type = 1 != 0;
         if type_name == XKB_ATOM_NONE as xkb_atom_t {
             if (*keyi).default_type != XKB_ATOM_NONE as xkb_atom_t {
                 type_name = (*keyi).default_type;
             } else {
                 type_name = FindAutomaticType((*keymap).ctx, groupi);
                 if type_name != XKB_ATOM_NONE as xkb_atom_t {
-                    *explicit_type = false_0 != 0;
+                    *explicit_type = 0 != 0;
                 }
             }
         }
@@ -4026,11 +3972,11 @@ unsafe fn FindTypeForGroup(
                     group.wrapping_add(1 as xkb_layout_index_t),
                 );
             } else {
-                (*(*keymap).types.offset(i as isize)).required = true_0 != 0;
+                (*(*keymap).types.offset(i as isize)).required = 1 != 0;
                 return (*keymap).types.offset(i as isize) as *mut xkb_key_type;
             }
         }
-        (*(*keymap).types.offset(0 as ::core::ffi::c_int as isize)).required = true_0 != 0;
+        (*(*keymap).types.offset(0 as ::core::ffi::c_int as isize)).required = 1 != 0;
         return (*keymap).types.offset(0 as ::core::ffi::c_int as isize) as *mut xkb_key_type;
     }
 }
@@ -4351,7 +4297,7 @@ unsafe fn CopyModMapDefToKeymap(
     unsafe {
         let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
         if !(*entry).haveSymbol {
-            key = XkbKeyByName(keymap, (*entry).u.keyName, true_0 != 0);
+            key = XkbKeyByName(keymap, (*entry).u.keyName, 1 != 0);
             if key.is_null() {
                 xkb_logf!(
                     (*info).ctx,
@@ -4362,7 +4308,7 @@ unsafe fn CopyModMapDefToKeymap(
                     crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*entry).u.keyName)),
                     crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         } else {
             key = FindKeyForSymbol(keymap, (*entry).u.keySym);
@@ -4376,14 +4322,14 @@ unsafe fn CopyModMapDefToKeymap(
                     crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*entry).u.keySym)),
                     crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         }
         if (*entry).modifier != XKB_MOD_NONE as xkb_mod_index_t {
             (*key).modmap =
                 ((*key).modmap as u32 | (1 as u32) << (*entry).modifier) as xkb_mod_mask_t;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
@@ -4449,7 +4395,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                 mm = mm.offset(1);
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn CompileSymbols(
@@ -4524,10 +4470,10 @@ pub unsafe fn CompileSymbols(
         if !(info.errorCount != 0 as ::core::ffi::c_int) {
             if CopySymbolsToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearSymbolsInfo(&raw mut info);
-                return true_0 != 0;
+                return 1 != 0;
             }
         }
         ClearSymbolsInfo(&raw mut info);
-        return false_0 != 0;
+        return 0 != 0;
     }
 }

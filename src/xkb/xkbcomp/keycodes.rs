@@ -3,28 +3,6 @@ pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    pub type i64 = __int64_t;
-    use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_text;
@@ -55,13 +33,13 @@ pub mod xkbcommon_h {
     pub type xkb_led_mask_t = u32;
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_KEYCODE_MAX: u32 = (0xffffffff as u32).wrapping_sub(1 as u32);
-    
+
     pub use crate::xkb::context::xkb_context_get_log_verbosity;
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
         .wrapping_mul(CHAR_BIT as usize)
         as xkb_led_index_t;
@@ -169,13 +147,12 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    
-    
+
     pub use crate::xkb::text::{KeyNameText, LookupEntry};
 }
 pub mod xkbcomp_priv_h {
     pub use crate::xkb::shared_ast_types::{
-        false_0, pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
+        pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
         xkb_message_code, xkb_parser_error, xkb_parser_strict_flags, ReportBadType, ReportNotArray,
         XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH,
         PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS,
@@ -219,10 +196,7 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod expr_h {
-    
-    
-    
-    
+
     pub use crate::xkb::xkbcomp::expr::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 }
 pub mod util_mem_h {
@@ -231,27 +205,14 @@ pub mod util_mem_h {
         unsafe {
             let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
             let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = NULL;
+            *original = std::ptr::null_mut::<core::ffi::c_void>();
             return swapped;
         }
     }
-    use super::__stddef_null_h::NULL;
 }
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdint_h {
-    pub const UINT32_MAX: u32 = 4294967295 as u32;
-}
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
@@ -275,7 +236,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::{darray_size_t};
 use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
@@ -354,16 +314,8 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::UINT32_MAX;
-pub use self::stdint_intn_h::{i16, i32, i64, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
-use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
 pub use self::text_h::{KeyNameText, LookupEntry};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
-};
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -392,6 +344,8 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+pub use crate::xkb::shared_types::darray_size_t;
+use crate::xkb::utils::{darray_append, darray_free, darray_growalloc, darray_resize_zero};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct KeyNamesInfo {
@@ -463,9 +417,21 @@ unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
 #[inline]
 unsafe fn keycode_store_free(mut store: *mut KeycodeStore) {
     unsafe {
-        darray_free(&mut (*store).low.item, &mut (*store).low.size, &mut (*store).low.alloc);
-        darray_free(&mut (*store).high.item, &mut (*store).high.size, &mut (*store).high.alloc);
-        darray_free(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc);
+        darray_free(
+            &mut (*store).low.item,
+            &mut (*store).low.size,
+            &mut (*store).low.alloc,
+        );
+        darray_free(
+            &mut (*store).high.item,
+            &mut (*store).high.size,
+            &mut (*store).high.alloc,
+        );
+        darray_free(
+            &mut (*store).names.item,
+            &mut (*store).names.size,
+            &mut (*store).names.alloc,
+        );
     }
 }
 #[inline]
@@ -487,7 +453,12 @@ unsafe fn keycode_store_update_key(
             (*(*store).high.item.offset(match_0.key.index() as isize)).name = name;
         }
         if name >= (*store).names.size {
-            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (name as darray_size_t).wrapping_add(1 as darray_size_t));
+            darray_resize_zero(
+                &mut (*store).names.item,
+                &mut (*store).names.size,
+                &mut (*store).names.alloc,
+                (name as darray_size_t).wrapping_add(1 as darray_size_t),
+            );
         }
         *(*store).names.item.offset(name as isize) = match_0;
     }
@@ -499,11 +470,21 @@ unsafe fn keycode_store_insert_key(
 ) -> bool {
     unsafe {
         if name >= (*store).names.size {
-            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (name as darray_size_t).wrapping_add(1 as darray_size_t));
+            darray_resize_zero(
+                &mut (*store).names.item,
+                &mut (*store).names.size,
+                &mut (*store).names.alloc,
+                (name as darray_size_t).wrapping_add(1 as darray_size_t),
+            );
         }
         if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as xkb_keycode_t {
             if kc >= (*store).low.size as xkb_keycode_t {
-                darray_resize_zero(&mut (*store).low.item, &mut (*store).low.size, &mut (*store).low.alloc, (kc as darray_size_t).wrapping_add(1 as darray_size_t));
+                darray_resize_zero(
+                    &mut (*store).low.item,
+                    &mut (*store).low.size,
+                    &mut (*store).low.alloc,
+                    (kc as darray_size_t).wrapping_add(1 as darray_size_t),
+                );
             }
             *(*store).low.item.offset(kc as isize) = name;
             if kc < (*store).min {
@@ -514,9 +495,9 @@ unsafe fn keycode_store_insert_key(
                     let mut init = C2Rust_Unnamed_7 {
                         found_low_is_alias_index: [0; 4],
                     };
-                    init.set_found(true_0 != 0);
-                    init.set_low(true_0 != 0);
-                    init.set_is_alias(false_0 != 0);
+                    init.set_found(1 != 0);
+                    init.set_low(1 != 0);
+                    init.set_is_alias(0 != 0);
                     init.set_index(kc as darray_size_t);
                     init
                 },
@@ -565,7 +546,11 @@ unsafe fn keycode_store_insert_key(
                 }
                 let mut __index: darray_size_t = lower;
                 (*store).high.size = (*store).high.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(&mut (*store).high.item, &mut (*store).high.alloc, (*store).high.size);
+                darray_growalloc(
+                    &mut (*store).high.item,
+                    &mut (*store).high.alloc,
+                    (*store).high.size,
+                );
                 std::ptr::copy(
                     (*store).high.item.offset(__index as isize),
                     (*store)
@@ -588,23 +573,31 @@ unsafe fn keycode_store_insert_key(
                         let mut init = C2Rust_Unnamed_7 {
                             found_low_is_alias_index: [0; 4],
                         };
-                        init.set_found(true_0 != 0);
-                        init.set_low(false_0 != 0);
-                        init.set_is_alias(false_0 != 0);
+                        init.set_found(1 != 0);
+                        init.set_low(0 != 0);
+                        init.set_is_alias(0 != 0);
                         init.set_index(lower);
                         init
                     },
                 };
             } else {
-                darray_append(&mut (*store).high.item, &mut (*store).high.size, &mut (*store).high.alloc, HighKeycodeEntry { keycode: kc, name: name, });
+                darray_append(
+                    &mut (*store).high.item,
+                    &mut (*store).high.size,
+                    &mut (*store).high.alloc,
+                    HighKeycodeEntry {
+                        keycode: kc,
+                        name: name,
+                    },
+                );
                 *(*store).names.item.offset(name as isize) = KeycodeMatch {
                     key: {
                         let mut init = C2Rust_Unnamed_7 {
                             found_low_is_alias_index: [0; 4],
                         };
-                        init.set_found(true_0 != 0);
-                        init.set_low(false_0 != 0);
-                        init.set_is_alias(false_0 != 0);
+                        init.set_found(1 != 0);
+                        init.set_low(0 != 0);
+                        init.set_is_alias(0 != 0);
                         init.set_index(idx);
                         init
                     },
@@ -615,7 +608,7 @@ unsafe fn keycode_store_insert_key(
                     (*(*store).high.item.offset(0 as ::core::ffi::c_int as isize)).keycode;
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 #[inline]
@@ -626,21 +619,26 @@ unsafe fn keycode_store_insert_alias(
 ) -> bool {
     unsafe {
         if alias >= (*store).names.size {
-            darray_resize_zero(&mut (*store).names.item, &mut (*store).names.size, &mut (*store).names.alloc, (alias as darray_size_t).wrapping_add(1 as darray_size_t));
+            darray_resize_zero(
+                &mut (*store).names.item,
+                &mut (*store).names.size,
+                &mut (*store).names.alloc,
+                (alias as darray_size_t).wrapping_add(1 as darray_size_t),
+            );
         }
         *(*store).names.item.offset(alias as isize) = KeycodeMatch {
             alias: {
                 let mut init = C2Rust_Unnamed_6 {
                     found_c2rust_unnamed_is_alias_real: [0; 4],
                 };
-                init.set_found(true_0 != 0);
-                init.set_c2rust_unnamed(true_0 != 0);
+                init.set_found(1 != 0);
+                init.set_c2rust_unnamed(1 != 0);
                 init.set_is_alias(real != 0);
                 init.set_real(real);
                 init
             },
         };
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 #[inline]
@@ -652,7 +650,7 @@ unsafe fn keycode_store_update_alias(
     unsafe {
         let ref mut c2rust_fresh3 = (*(*store).names.item.offset(alias as isize)).alias;
         (*c2rust_fresh3).set_real(real as xkb_atom_t);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 #[inline]
@@ -660,7 +658,7 @@ unsafe fn keycode_store_delete_name(mut store: *const KeycodeStore, mut name: xk
     unsafe {
         if name < (*store).names.size {
             let ref mut c2rust_fresh5 = (*(*store).names.item.offset(name as isize)).c2rust_unnamed;
-            (*c2rust_fresh5).set_found((false_0 != 0) as bool);
+            (*c2rust_fresh5).set_found((0 != 0) as bool);
         }
     }
 }
@@ -678,7 +676,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                 .item
                 .offset(*(*store).low.item.offset(match_0.key.index() as isize) as isize))
             .c2rust_unnamed;
-            (*c2rust_fresh1).set_found((false_0 != 0) as bool);
+            (*c2rust_fresh1).set_found((0 != 0) as bool);
             if match_0.key.index().wrapping_add(1 as u32) == (*store).low.size {
                 if (*store).min == match_0.key.index() as xkb_keycode_t {
                     (*store).low.size = 0 as darray_size_t;
@@ -708,7 +706,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                 .item
                 .offset((*(*store).high.item.offset(match_0.key.index() as isize)).name as isize))
             .c2rust_unnamed;
-            (*c2rust_fresh2).set_found((false_0 != 0) as bool);
+            (*c2rust_fresh2).set_found((0 != 0) as bool);
             let mut __index: darray_size_t = match_0.key.index();
             if __index < (*store).high.size.wrapping_sub(1 as darray_size_t) {
                 std::ptr::copy(
@@ -810,9 +808,9 @@ unsafe fn keycode_store_lookup_keycode(
                     let mut init = C2Rust_Unnamed_7 {
                         found_low_is_alias_index: [0; 4],
                     };
-                    init.set_found(true_0 != 0);
-                    init.set_low(true_0 != 0);
-                    init.set_is_alias(false_0 != 0);
+                    init.set_found(1 != 0);
+                    init.set_low(1 != 0);
+                    init.set_is_alias(0 != 0);
                     init.set_index(kc as darray_size_t);
                     init
                 },
@@ -823,7 +821,7 @@ unsafe fn keycode_store_lookup_keycode(
                     let mut init = C2Rust_Unnamed_8 {
                         found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
                     };
-                    init.set_found(false_0 != 0);
+                    init.set_found(0 != 0);
                     init.set_c2rust_unnamed(false);
                     init
                 },
@@ -850,9 +848,9 @@ unsafe fn keycode_store_lookup_keycode(
                         let mut init = C2Rust_Unnamed_7 {
                             found_low_is_alias_index: [0; 4],
                         };
-                        init.set_found(true_0 != 0);
-                        init.set_low(false_0 != 0);
-                        init.set_is_alias(false_0 != 0);
+                        init.set_found(1 != 0);
+                        init.set_low(0 != 0);
+                        init.set_is_alias(0 != 0);
                         init.set_index(mid);
                         init
                     },
@@ -864,7 +862,7 @@ unsafe fn keycode_store_lookup_keycode(
                 let mut init = C2Rust_Unnamed_8 {
                     found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
                 };
-                init.set_found(false_0 != 0);
+                init.set_found(0 != 0);
                 init.set_c2rust_unnamed(false);
                 init
             },
@@ -882,8 +880,8 @@ unsafe fn keycode_store_lookup_name(
                     let mut init = C2Rust_Unnamed_8 {
                         found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
                     };
-                    init.set_found(false_0 != 0);
-                    init.set_c2rust_unnamed(false_0 != 0);
+                    init.set_found(0 != 0);
+                    init.set_c2rust_unnamed(0 != 0);
                     init
                 },
             };
@@ -935,7 +933,7 @@ unsafe fn AddLedName(
                         crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                     );
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             if report {
                 let mut use_0: xkb_led_index_t = if replace as ::core::ffi::c_int != 0 {
@@ -961,7 +959,7 @@ unsafe fn AddLedName(
             if replace {
                 (*old).name = XKB_ATOM_NONE as xkb_atom_t;
             } else {
-                return true_0 != 0;
+                return 1 != 0;
             }
         }
         if new_idx >= (*info).num_led_names {
@@ -994,10 +992,10 @@ unsafe fn AddLedName(
             if replace {
                 *old = *new;
             }
-            return true_0 != 0;
+            return 1 != 0;
         }
         *old = *new;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn ClearKeyNamesInfo(mut info: *mut KeyNamesInfo) {
@@ -1054,9 +1052,9 @@ unsafe fn AddKeyName(
                 }
                 if clobber {
                     keycode_store_delete_name(&raw mut (*info).keycodes, name);
-                    match_name.c2rust_unnamed.set_found((false_0 != 0) as bool);
+                    match_name.c2rust_unnamed.set_found((0 != 0) as bool);
                 } else {
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
             } else {
                 let old_kc: xkb_keycode_t =
@@ -1088,7 +1086,7 @@ unsafe fn AddKeyName(
                     if clobber {
                         keycode_store_delete_key(&raw mut (*info).keycodes, match_name);
                     } else {
-                        return true_0 != 0;
+                        return 1 != 0;
                     }
                 }
             }
@@ -1109,7 +1107,7 @@ unsafe fn AddKeyName(
                         kc,
                     );
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             let clobber_0: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
             if report {
@@ -1147,9 +1145,9 @@ unsafe fn AddKeyName(
                 "[XKB-{:03}] Cannot add keycode\n",
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn MergeKeycodeStores(
@@ -1272,7 +1270,7 @@ unsafe fn MergeIncludedKeycodes(
                     as *mut LedNameInfo;
                 if !((*ledi).name == XKB_ATOM_NONE as xkb_atom_t) {
                     (*ledi).merge = merge;
-                    if !AddLedName(into, false_0 != 0, ledi, idx, report) {
+                    if !AddLedName(into, 0 != 0, ledi, idx, report) {
                         (*into).errorCount += 1;
                     }
                 }
@@ -1319,7 +1317,7 @@ unsafe fn HandleIncludeKeycodes(
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
-            return false_0 != 0;
+            return 0 != 0;
         }
         InitKeyNamesInfo(&raw mut included, (*info).keymap_info, 0 as u32);
         included.name =
@@ -1368,7 +1366,7 @@ unsafe fn HandleIncludeKeycodes(
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
                 ClearKeyNamesInfo(&raw mut included);
-                return false_0 != 0;
+                return 0 != 0;
             }
             InitKeyNamesInfo(
                 &raw mut next_incl,
@@ -1401,7 +1399,7 @@ unsafe fn HandleKeycodeDef(
                 (*stmt).value,
                 (0xffffffff as u32).wrapping_sub(1 as u32),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         return AddKeyName(
             info,
@@ -1460,7 +1458,7 @@ unsafe fn HandleAliasDef(
                     }
                     keycode_store_update_alias(&raw mut (*info).keycodes, (*def).alias, use_0);
                 }
-                return true_0 != 0;
+                return 1 != 0;
             } else {
                 if report {
                     xkb_logf!(
@@ -1485,7 +1483,7 @@ unsafe fn HandleAliasDef(
                 if clobber {
                     keycode_store_delete_key(&raw mut (*info).keycodes, match_name);
                 } else {
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
             }
         }
@@ -1504,7 +1502,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
             &raw mut field,
             &raw mut arrayNdx,
         ) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if !elem.is_null() {
             xkb_logf!(
@@ -1550,7 +1548,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
         let mut val: i64 = 0 as i64;
         if !ExprResolveInteger((*info).ctx, (*stmt).value, &raw mut val)
             || val < 0 as i64
-            || val > UINT32_MAX as i64
+            || val > u32::MAX as i64
         {
             ReportBadType(
                 (*info).ctx,
@@ -1564,7 +1562,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
                 == 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn HandleLedNameDef(
@@ -1584,7 +1582,7 @@ unsafe fn HandleLedNameDef(
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, (*def).name, &raw mut name) {
@@ -1610,7 +1608,7 @@ unsafe fn HandleLedNameDef(
         };
         return AddLedName(
             info,
-            true_0 != 0,
+            1 != 0,
             &raw mut ledi,
             ((*def).ndx as xkb_led_index_t).wrapping_sub(1 as xkb_led_index_t),
             report,
@@ -1672,7 +1670,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         "Keycode files may define key and indicator names only; Ignoring {}\n",
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
-                    ok = false_0 != 0;
+                    ok = 0 != 0;
                 }
             }
             if !ok {
@@ -1726,7 +1724,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             (*keymap).num_keys = 0 as xkb_keycode_t;
             (*keymap).max_key_code = XKB_KEYCODE_INVALID as xkb_keycode_t;
             (*keymap).min_key_code = (*keymap).max_key_code;
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut kc: xkb_keycode_t = (*keymap).min_key_code;
         while kc < (*keymap).num_keys_low {
@@ -1762,7 +1760,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             }
         }
         (*keymap).keys = keys;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyNamesInfo) -> bool {
@@ -1797,7 +1795,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                                     (*match_0).alias.real()
                                 )),
                             );
-                            (*match_0).c2rust_unnamed.set_found((false_0 != 0) as bool);
+                            (*match_0).c2rust_unnamed.set_found((0 != 0) as bool);
                         } else {
                         }
                     } else if !(*match_0).key.low() {
@@ -1830,7 +1828,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
         (*info).keycodes.names.item = ::core::ptr::null_mut::<KeycodeMatch>();
         (*info).keycodes.names.size = 0 as darray_size_t;
         (*info).keycodes.names.alloc = 0 as darray_size_t;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn CopyLedNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNamesInfo) -> bool {
@@ -1846,7 +1844,7 @@ unsafe fn CopyLedNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             }
             idx = idx.wrapping_add(1);
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn CopyKeyNamesInfoToKeymap(
@@ -1858,7 +1856,7 @@ unsafe fn CopyKeyNamesInfoToKeymap(
             || !CopyKeycodeNameLUT(keymap, info)
             || !CopyLedNamesToKeymap(keymap, info)
         {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if (*keymap).num_keys == 0 || (*keymap).min_key_code > 0 as xkb_keycode_t {
             (*keymap).redirect_key_auto = 0 as xkb_keycode_t;
@@ -1883,7 +1881,7 @@ unsafe fn CopyKeyNamesInfoToKeymap(
         }
         (*keymap).keycodes_section_name = strdup_safe((*info).name);
         XkbEscapeMapName((*keymap).keycodes_section_name);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn CompileKeycodes(
@@ -1928,10 +1926,10 @@ pub unsafe fn CompileKeycodes(
         if !(info.errorCount != 0 as ::core::ffi::c_int) {
             if CopyKeyNamesInfoToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearKeyNamesInfo(&raw mut info);
-                return true_0 != 0;
+                return 1 != 0;
             }
         }
         ClearKeyNamesInfo(&raw mut info);
-        return false_0 != 0;
+        return 0 != 0;
     }
 }

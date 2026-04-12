@@ -2,16 +2,6 @@
 //!
 //! Fully safe internals. Functions are normal Rust — no FFI wrappers.
 
-pub mod types_h {
-    pub type __uint8_t = u8;
-    pub type __uint32_t = u32;
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint32_t, __uint8_t};
-}
-
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
 
@@ -20,8 +10,6 @@ pub mod atom_h {
 
 pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};
 pub use crate::xkb::shared_types::darray_size_t;
-pub use self::stdint_uintn_h::{u32, uint8_t};
-pub use self::types_h::{__uint32_t, __uint8_t};
 
 use std::ffi::CString;
 

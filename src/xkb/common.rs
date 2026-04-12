@@ -10,67 +10,35 @@ pub mod internal {
     }
 }
 
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __uint64_t = u64;
-    pub type __dev_t = u64;
-    pub type __uid_t = u32;
-    pub type __gid_t = u32;
-    pub type __ino_t = u64;
-    pub type __mode_t = u32;
-    pub type __nlink_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-    pub type __time_t = i64;
-    pub type __blksize_t = i64;
-    pub type __blkcnt_t = i64;
-    pub type __syscall_slong_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct timespec {
-        pub tv_sec: __time_t,
-        pub tv_nsec: __syscall_slong_t,
+        pub tv_sec: i64,
+        pub tv_nsec: i64,
     }
-    use super::types_h::{__syscall_slong_t, __time_t};
 }
 pub mod struct_stat_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct stat {
-        pub st_dev: __dev_t,
-        pub st_ino: __ino_t,
-        pub st_nlink: __nlink_t,
-        pub st_mode: __mode_t,
-        pub st_uid: __uid_t,
-        pub st_gid: __gid_t,
+        pub st_dev: u64,
+        pub st_ino: u64,
+        pub st_nlink: u64,
+        pub st_mode: u32,
+        pub st_uid: u32,
+        pub st_gid: u32,
         pub __pad0: i32,
-        pub st_rdev: __dev_t,
-        pub st_size: __off_t,
-        pub st_blksize: __blksize_t,
-        pub st_blocks: __blkcnt_t,
+        pub st_rdev: u64,
+        pub st_size: i64,
+        pub st_blksize: i64,
+        pub st_blocks: i64,
         pub st_atim: timespec,
         pub st_mtim: timespec,
         pub st_ctim: timespec,
-        pub __glibc_reserved: [__syscall_slong_t; 3],
+        pub __glibc_reserved: [i64; 3],
     }
     use super::struct_timespec_h::timespec;
-    use super::types_h::{
-        __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off_t,
-        __syscall_slong_t, __uid_t,
-    };
 }
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
@@ -98,12 +66,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -111,11 +79,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -156,12 +123,6 @@ pub mod stdio_h {
         pub fn ferror(__stream: *mut FILE) -> i32;
         pub fn fileno(__stream: *mut FILE) -> i32;
     }
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
 }
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -357,8 +318,8 @@ pub mod rmlvo_h {
         pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
-    use crate::xkb::shared_types::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
+    use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_compose_h {
     extern "C" {
@@ -430,10 +391,9 @@ pub mod stdlib_h {
 }
 pub mod stat_h {
     use super::struct_stat_h::stat;
-    use super::types_h::__mode_t;
     extern "C" {
         pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
-        pub fn mkdir(__path: *const i8, __mode: __mode_t) -> i32;
+        pub fn mkdir(__path: *const i8, __mode: u32) -> i32;
     }
 }
 pub mod utils_h {
@@ -484,20 +444,9 @@ pub mod utils_numbers_h {
             }
         }
     }
-
-    use super::stdint_uintn_h::u32;
 }
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-    pub const NULL_0: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdint_h {
-    pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
 }
 pub mod assert_h {
     extern "C" {
@@ -523,17 +472,11 @@ pub mod rules_h {
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::{NULL, NULL_0};
 
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use self::errno_h::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::internal::{__builtin_va_list, __va_list_tag};
@@ -573,10 +516,6 @@ pub use self::rmlvo_h::{
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 use self::stat_h::{fstat, mkdir};
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::SIZE_MAX;
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::{
     fclose, feof, ferror, fileno, fopen, fread, fwrite, setvbuf, stderr, stdout, va_list, _IONBF,
     BUFSIZ,
@@ -593,11 +532,6 @@ pub use self::test_h::{
 pub use self::tools_common_h::{
     print_state_options, tools_print_keycode_state, DEFAULT_PRINT_OPTIONS, PRINT_ALL_FIELDS,
     PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
-};
-pub use self::types_h::{
-    __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __int16_t, __int32_t, __int8_t, __mode_t,
-    __nlink_t, __off64_t, __off_t, __syscall_slong_t, __time_t, __uid_t, __uint16_t, __uint32_t,
-    __uint64_t, __uint8_t,
 };
 pub use self::utils_h::{isempty, streq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
@@ -640,6 +574,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{cstr_dup, darray_append, darray_free, darray_resize_zero};
 pub type events_consume_flags = u32;
@@ -711,7 +646,7 @@ unsafe fn consume_events(
                 1 | 2 | 3 => {
                     *kc = xkb_event_get_keycode(event);
                     if flags as u32 & UNTIL_KEY_EVENT as i32 as u32 != 0 {
-                        return true_0 != 0;
+                        return 1 != 0;
                     }
                 }
                 4 => {
@@ -720,7 +655,7 @@ unsafe fn consume_events(
                 _ => {}
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn test_key_seq_va(
@@ -1068,7 +1003,7 @@ pub unsafe fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i
             crate::xkb::utils::CStrDisplay(path)
         );
         let dirname: *mut i8 = std::ffi::CString::new(dirname_s).unwrap().into_raw();
-        err = mkdir(dirname, 0o777 as __mode_t);
+        err = mkdir(dirname, 0o777 as u32);
         if err == 0 as i32 {
         } else {
             __assert_fail(
@@ -2493,7 +2428,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                 if *o as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
                     o = o.offset(1);
                     let mut count: i32 =
-                        parse_dec_to_uint32_t(o, SIZE_MAX as usize, &raw mut layout);
+                        parse_dec_to_uint32_t(o, usize::MAX as usize, &raw mut layout);
                     if count > 0 as i32
                         && layout > 0 as xkb_layout_index_t
                         && layout <= XKB_MAX_GROUPS as xkb_layout_index_t
@@ -2770,7 +2705,7 @@ pub unsafe fn test_compile_output2(
     mut update_output_files: bool,
 ) -> bool {
     unsafe {
-        let mut success: i32 = true_0;
+        let mut success: i32 = 1;
         if !test_title.is_null() {
             eprintln!("*** {} ***", crate::xkb::utils::CStrDisplay(test_title));
         }
@@ -2806,12 +2741,12 @@ pub unsafe fn test_compile_output2(
         }
         if keymap.is_null() {
             eprintln!("Unexpected keymap compilation failure");
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut got_0: *mut i8 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
         if got_0.is_null() {
             eprintln!("Unexpected keymap serialization failure");
-            return false_0 != 0;
+            return 0 != 0;
         }
         xkb_keymap_unref(keymap);
         let path: *mut i8 = test_get_path(rel_path) as *mut i8;
@@ -2893,17 +2828,17 @@ pub unsafe fn test_compile_output2(
                     );
                     if keymap.is_null() {
                         eprintln!("Unexpected keymap roundtrip compilation failure");
-                        success = false_0;
+                        success = 0;
                         break;
                     } else {
                         free(got_0 as *mut ::core::ffi::c_void);
                         got_0 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
                         if got_0.is_null() {
                             eprintln!("Unexpected keymap roundtrip serialization failure");
-                            success = false_0;
+                            success = 0;
                         }
                         xkb_keymap_unref(keymap);
-                        test_round_trip = false_0 != 0;
+                        test_round_trip = 0 != 0;
                     }
                 } else {
                     eprintln!(
@@ -2921,7 +2856,7 @@ pub unsafe fn test_compile_output2(
                     );
                     eprintln!("Dumped map:");
                     eprintln!("{}", crate::xkb::utils::CStrDisplay(got_0));
-                    success = false_0;
+                    success = 0;
                 }
                 k = k.wrapping_add(1);
             }
@@ -2942,7 +2877,7 @@ pub unsafe fn test_third_pary_compile_output(
     mut update_output_files: bool,
 ) -> bool {
     unsafe {
-        let mut success: i32 = true_0;
+        let mut success: i32 = 1;
         eprintln!("*** {} ***", crate::xkb::utils::CStrDisplay(test_title));
         let mut got: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut got_size: usize = 0 as usize;
@@ -2969,7 +2904,7 @@ pub unsafe fn test_third_pary_compile_output(
                 crate::xkb::utils::CStrDisplay(got)
             );
             free(got as *mut ::core::ffi::c_void);
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut path: *mut i8 = test_get_path(rel_path);
         if !path.is_null() {
@@ -3055,7 +2990,7 @@ pub unsafe fn test_third_pary_compile_output(
                     );
                     eprintln!("Dumped map:");
                     eprintln!("{}", crate::xkb::utils::CStrDisplay(got));
-                    success = false_0;
+                    success = 0;
                 }
                 k = k.wrapping_add(1);
             }

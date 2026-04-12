@@ -2,11 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod stdint_h {
-    pub type intmax_t = ::libc::intmax_t;
-    pub const UINT32_MAX: u32 = 4294967295 as u32;
-    pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -50,7 +45,7 @@ pub mod xkbcommon_h {
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     pub const XKB_LEVEL_MAX_IMPL: i32 = 2048 as i32;
 }
 pub mod ast_h {
@@ -176,9 +171,8 @@ pub mod xkbcomp_priv_h {
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
 }
 pub mod inttypes_h {
-    use super::stdint_h::intmax_t;
     extern "C" {
-        pub fn imaxabs(__n: intmax_t) -> intmax_t;
+        pub fn imaxabs(__n: i64) -> i64;
     }
 }
 pub mod utils_h {
@@ -234,15 +228,6 @@ pub mod utils_numbers_h {
         }
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::ast_h::{
     _ParseCommon, stmt_type, stmt_type_to_operator_char, stmt_type_to_string, C2Rust_Unnamed_13,
@@ -260,7 +245,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 use self::inttypes_h::imaxabs;
 pub use self::keymap_h::{
@@ -337,8 +321,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::{intmax_t, SIZE_MAX, UINT32_MAX};
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
 pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
@@ -373,6 +355,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
+pub use crate::xkb::shared_types::darray_size_t;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LookupModMaskPriv {
@@ -438,12 +421,12 @@ pub unsafe fn ExprResolveLhs(
                 if (*expr).array_ref.element != XKB_ATOM_NONE as xkb_atom_t
                     && (*elem_rtrn).is_null()
                 {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 if (*field_rtrn).is_null() {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             _ => {}
         }
@@ -455,7 +438,7 @@ pub unsafe fn ExprResolveLhs(
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
             (*expr).common.type_0 as u32,
         );
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn SimpleLookup(
@@ -467,18 +450,18 @@ unsafe fn SimpleLookup(
 ) -> bool {
     unsafe {
         if priv_0.is_null() || field == XKB_ATOM_NONE as xkb_atom_t {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut str: *const i8 = xkb_atom_text(ctx, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(*entry).name.is_null() {
             if istreq(str, (*entry).name) {
                 *val_rtrn = (*entry).value;
-                return true_0 != 0;
+                return 1 != 0;
             }
             entry = entry.offset(1);
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn NamedIntegerPatternLookup(
@@ -490,14 +473,14 @@ unsafe fn NamedIntegerPatternLookup(
 ) -> bool {
     unsafe {
         if priv_0.is_null() || field == XKB_ATOM_NONE as xkb_atom_t {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let str: *const i8 = xkb_atom_text(ctx, field) as *const i8;
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
         let count: i32 = if istrneq(str, (*pattern).prefix, (*pattern).prefix_length) as i32 != 0 {
             parse_dec_to_uint32_t(
                 str.offset((*pattern).prefix_length as isize),
-                SIZE_MAX as usize,
+                usize::MAX as usize,
                 val_rtrn as *mut u32,
             ) as i32
         } else {
@@ -521,12 +504,12 @@ unsafe fn NamedIntegerPatternLookup(
                     (*pattern).min,
                     (*pattern).max,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             if (*pattern).is_mask {
                 *val_rtrn = ((1 as u32) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
             }
-            return true_0 != 0;
+            return 1 != 0;
         } else {
             if !(*pattern).entries.is_null()
                 && SimpleLookup(
@@ -538,7 +521,7 @@ unsafe fn NamedIntegerPatternLookup(
                 ) as i32
                     != 0
             {
-                return true_0 != 0;
+                return 1 != 0;
             }
             if !(*pattern).pending_entries.is_null()
                 && !pending_rtrn.is_null()
@@ -551,10 +534,10 @@ unsafe fn NamedIntegerPatternLookup(
                 ) as i32
                     != 0
             {
-                *pending_rtrn = true_0 != 0;
-                return true_0 != 0;
+                *pending_rtrn = 1 != 0;
+                return 1 != 0;
             }
-            return false_0 != 0;
+            return 0 != 0;
         };
     }
 }
@@ -568,25 +551,25 @@ unsafe fn LookupModMask(
     unsafe {
         let mut str: *const i8 = xkb_atom_text(ctx, field);
         if str.is_null() {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if istreq(str, b"all\0".as_ptr() as *const i8) {
             *val_rtrn = MOD_REAL_MASK_ALL;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if istreq(str, b"none\0".as_ptr() as *const i8) {
             *val_rtrn = 0 as xkb_mod_mask_t;
-            return true_0 != 0;
+            return 1 != 0;
         }
         let mut arg: *const LookupModMaskPriv = priv_0 as *const LookupModMaskPriv;
         let mut mods: *const xkb_mod_set = (*arg).mods;
         let mod_type: mod_type = (*arg).mod_type;
         let ndx: xkb_mod_index_t = XkbModNameToIndex(mods, field, mod_type) as xkb_mod_index_t;
         if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
-            return false_0 != 0;
+            return 0 != 0;
         }
         *val_rtrn = ((1 as u32) << ndx) as xkb_mod_mask_t;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn ExprResolveBoolean(
@@ -595,12 +578,12 @@ pub unsafe fn ExprResolveBoolean(
     mut set_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false_0 != 0;
+        let mut ok: bool = 0 != 0;
         let mut ident: *const i8 = ::core::ptr::null::<i8>();
         match (*expr).common.type_0 as u32 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
-                return true_0 != 0;
+                return 1 != 0;
             }
             4 | 5 | 6 | 8 | 9 => {
                 xkb_logf!(
@@ -611,7 +594,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             10 => {
                 ident = xkb_atom_text(ctx, (*expr).ident.ident);
@@ -620,14 +603,14 @@ pub unsafe fn ExprResolveBoolean(
                         || istreq(ident, b"yes\0".as_ptr() as *const i8) as i32 != 0
                         || istreq(ident, b"on\0".as_ptr() as *const i8) as i32 != 0
                     {
-                        *set_rtrn = true_0 != 0;
-                        return true_0 != 0;
+                        *set_rtrn = 1 != 0;
+                        return 1 != 0;
                     } else if istreq(ident, b"false\0".as_ptr() as *const i8) as i32 != 0
                         || istreq(ident, b"no\0".as_ptr() as *const i8) as i32 != 0
                         || istreq(ident, b"off\0".as_ptr() as *const i8) as i32 != 0
                     {
-                        *set_rtrn = false_0 != 0;
-                        return true_0 != 0;
+                        *set_rtrn = 0 != 0;
+                        return 1 != 0;
                     }
                 }
                 xkb_logf!(
@@ -638,7 +621,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
                     crate::xkb::utils::CStrDisplay(ident),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             12 => {
                 xkb_logf!(
@@ -650,7 +633,7 @@ pub unsafe fn ExprResolveBoolean(
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             24 | 22 => {
                 ok = ExprResolveBoolean(ctx, (*expr).unary.child, set_rtrn);
@@ -680,7 +663,7 @@ pub unsafe fn ExprResolveBoolean(
                 );
             }
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn ExprResolveIntegerLookup(
@@ -692,7 +675,7 @@ unsafe fn ExprResolveIntegerLookup(
     mut lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false_0 != 0;
+        let mut ok: bool = 0 != 0;
         let mut l: i64 = 0 as i64;
         let mut r: i64 = 0 as i64;
         let mut u: u32 = 0 as u32;
@@ -701,7 +684,7 @@ unsafe fn ExprResolveIntegerLookup(
         match (*expr).common.type_0 as u32 {
             5 => {
                 *val_rtrn = (*expr).integer.ival;
-                return true_0 != 0;
+                return 1 != 0;
             }
             4 | 6 | 7 | 8 | 9 => {
                 xkb_logf!(
@@ -712,7 +695,7 @@ unsafe fn ExprResolveIntegerLookup(
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             10 => {
                 if lookup.is_some() {
@@ -737,7 +720,7 @@ unsafe fn ExprResolveIntegerLookup(
                     *val_rtrn = u as i64;
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 return ok;
             }
@@ -751,7 +734,7 @@ unsafe fn ExprResolveIntegerLookup(
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             17 | 18 | 19 | 20 => {
                 left = (*expr).binary.left as *mut ExprDef;
@@ -761,7 +744,7 @@ unsafe fn ExprResolveIntegerLookup(
                         ctx, right, &raw mut r, pending, lookup, lookupPriv,
                     )
                 {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 match (*expr).common.type_0 as u32 {
                     17 => {
@@ -778,7 +761,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 r,
                                 *val_rtrn,
                             );
-                            return false_0 != 0;
+                            return 0 != 0;
                         }
                     }
                     18 => {
@@ -795,7 +778,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 r,
                                 *val_rtrn,
                             );
-                            return false_0 != 0;
+                            return 0 != 0;
                         }
                     }
                     19 => {
@@ -812,7 +795,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 r,
                                 *val_rtrn,
                             );
-                            return false_0 != 0;
+                            return 0 != 0;
                         }
                     }
                     20 => {
@@ -826,7 +809,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 l,
                                 r,
                             );
-                            return false_0 != 0;
+                            return 0 != 0;
                         }
                         *val_rtrn = l / r;
                     }
@@ -841,10 +824,10 @@ unsafe fn ExprResolveIntegerLookup(
                                 (*expr).common.type_0
                             )),
                         );
-                        return false_0 != 0;
+                        return 0 != 0;
                     }
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             21 => {
                 xkb_logf!(
@@ -863,19 +846,19 @@ unsafe fn ExprResolveIntegerLookup(
                     "[XKB-{:03}] The ! operator cannot be applied to an integer\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             24 | 23 => {
                 left = (*expr).unary.child as *mut ExprDef;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 *val_rtrn = if (*expr).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
                     -l
                 } else {
                     !l
                 };
-                return true_0 != 0;
+                return 1 != 0;
             }
             25 => {
                 left = (*expr).unary.child as *mut ExprDef;
@@ -892,7 +875,7 @@ unsafe fn ExprResolveIntegerLookup(
                 );
             }
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub unsafe fn ExprResolveInteger(
@@ -936,7 +919,7 @@ pub unsafe fn ExprResolveGroup(
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
             pending_entries: &raw const pendingGroupIndexNames as *const LookupEntry,
-            is_mask: false_0 != 0,
+            is_mask: 0 != 0,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
         let mut result: i64 = 0 as i64;
@@ -1012,7 +995,7 @@ pub unsafe fn ExprResolveLevel(
             ),
             &raw const level_name_pattern as *const ::core::ffi::c_void,
         ) {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if result < 1 as i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
             xkb_logf!(
@@ -1024,10 +1007,10 @@ pub unsafe fn ExprResolveLevel(
                 result,
                 2048 as i32,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         *level_rtrn = (result - 1 as i64) as xkb_level_index_t;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn ExprResolveButton(
@@ -1064,7 +1047,7 @@ pub unsafe fn ExprResolveString(
         match (*expr).common.type_0 as u32 {
             4 => {
                 *val_rtrn = (*expr).string.str;
-                return true_0 != 0;
+                return 1 != 0;
             }
             5 | 6 | 7 | 8 | 9 => {
                 xkb_logf!(
@@ -1075,7 +1058,7 @@ pub unsafe fn ExprResolveString(
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             10 => {
                 xkb_logf!(
@@ -1086,7 +1069,7 @@ pub unsafe fn ExprResolveString(
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             12 => {
                 xkb_logf!(
@@ -1098,7 +1081,7 @@ pub unsafe fn ExprResolveString(
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             17 | 18 | 19 | 20 | 21 | 23 | 24 | 22 | 25 | 14 | 11 | 16 | 15 => {
                 xkb_logf!(
@@ -1109,7 +1092,7 @@ pub unsafe fn ExprResolveString(
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             _ => {
                 xkb_logf!(
@@ -1122,7 +1105,7 @@ pub unsafe fn ExprResolveString(
                 );
             }
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub unsafe fn ExprResolveEnum(
@@ -1141,7 +1124,7 @@ pub unsafe fn ExprResolveEnum(
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         if !SimpleLookup(
             ctx,
@@ -1169,9 +1152,9 @@ pub unsafe fn ExprResolveEnum(
                 );
                 values = values.offset(1);
             }
-            return false_0 != 0;
+            return 0 != 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn ExprResolveMaskLookup(
@@ -1183,7 +1166,7 @@ unsafe fn ExprResolveMaskLookup(
     mut lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false_0 != 0;
+        let mut ok: bool = 0 != 0;
         let mut l: u32 = 0 as u32;
         let mut r: u32 = 0 as u32;
         let mut v: i64 = 0 as i64;
@@ -1193,7 +1176,7 @@ unsafe fn ExprResolveMaskLookup(
         let mut c2rust_current_block_47: u64;
         match (*expr).common.type_0 as u32 {
             5 => {
-                if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > UINT32_MAX as i64 {
+                if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > u32::MAX as i64 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -1204,13 +1187,13 @@ unsafe fn ExprResolveMaskLookup(
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs((*expr).integer.ival as intmax_t),
+                        imaxabs((*expr).integer.ival as i64),
                         4294967295 as u32,
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 *val_rtrn = (*expr).integer.ival as u32;
-                return true_0 != 0;
+                return 1 != 0;
             }
             4 | 6 | 7 | 8 | 9 => {
                 xkb_logf!(
@@ -1221,7 +1204,7 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             10 => {
                 ok = lookup.expect("non-null function pointer")(
@@ -1242,7 +1225,7 @@ unsafe fn ExprResolveMaskLookup(
                     );
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 return ok;
             }
@@ -1256,7 +1239,7 @@ unsafe fn ExprResolveMaskLookup(
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             13 => {
                 bogus = b"array reference\0".as_ptr() as *const i8;
@@ -1271,7 +1254,7 @@ unsafe fn ExprResolveMaskLookup(
                 if !ExprResolveMaskLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
                     || !ExprResolveMaskLookup(ctx, right, &raw mut r, pending, lookup, lookupPriv)
                 {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 match (*expr).common.type_0 as u32 {
                     17 => {
@@ -1295,11 +1278,11 @@ unsafe fn ExprResolveMaskLookup(
                                 }
                             ),
                         );
-                        return false_0 != 0;
+                        return 0 != 0;
                     }
                     _ => {}
                 }
-                return true_0 != 0;
+                return 1 != 0;
             }
             21 => {
                 xkb_logf!(
@@ -1314,9 +1297,9 @@ unsafe fn ExprResolveMaskLookup(
             24 => {
                 left = (*expr).unary.child as *mut ExprDef;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
-                if v < 0 as i64 || v > UINT32_MAX as i64 {
+                if v < 0 as i64 || v > u32::MAX as i64 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -1327,18 +1310,18 @@ unsafe fn ExprResolveMaskLookup(
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs(v as intmax_t),
+                        imaxabs(v as i64),
                         4294967295 as u32,
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 *val_rtrn = !(v as u32);
-                return true_0 != 0;
+                return 1 != 0;
             }
             25 | 23 | 22 => {
                 left = (*expr).unary.child as *mut ExprDef;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 xkb_logf!(
                     ctx,
@@ -1346,9 +1329,9 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    (stmt_type_to_operator_char((*expr).common.type_0) as i32 as u8 as char),
+                    (stmt_type_to_operator_char((*expr).common.type_0) as char),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             _ => {
                 xkb_logf!(
@@ -1376,10 +1359,10 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
                     crate::xkb::utils::CStrDisplay(bogus),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub unsafe fn ExprResolveMask(
@@ -1456,7 +1439,7 @@ pub unsafe fn ExprResolveMod(
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(stmt_type_to_string((*def).common.type_0)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut name: xkb_atom_t = (*def).ident.ident;
         let mut ndx: xkb_mod_index_t = XkbModNameToIndex(mods, name, mod_type);
@@ -1469,10 +1452,10 @@ pub unsafe fn ExprResolveMod(
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
                 crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, name)),
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         *ndx_rtrn = ndx;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn ExprResolveGroupMask(
@@ -1499,7 +1482,7 @@ pub unsafe fn ExprResolveGroupMask(
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
             pending_entries: &raw const pendingGroupMaskNames as *const LookupEntry,
-            is_mask: true_0 != 0,
+            is_mask: 1 != 0,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
         return ExprResolveMaskLookup(
@@ -1530,7 +1513,7 @@ unsafe fn c2rust_run_static_initializers() {
             max: XKB_LEVEL_MAX_IMPL as u32,
             entries: ::core::ptr::null::<LookupEntry>(),
             pending_entries: ::core::ptr::null::<LookupEntry>(),
-            is_mask: false_0 != 0,
+            is_mask: 0 != 0,
             error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
         }
     }

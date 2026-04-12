@@ -1,52 +1,32 @@
-pub mod types_h {
-    pub type __uint64_t = u64;
-    pub type __dev_t = u64;
-    pub type __uid_t = u32;
-    pub type __gid_t = u32;
-    pub type __ino_t = u64;
-    pub type __mode_t = u32;
-    pub type __nlink_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-    pub type __time_t = i64;
-    pub type __blksize_t = i64;
-    pub type __blkcnt_t = i64;
-    pub type __syscall_slong_t = i64;
-}
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct timespec {
-        pub tv_sec: __time_t,
-        pub tv_nsec: __syscall_slong_t,
+        pub tv_sec: i64,
+        pub tv_nsec: i64,
     }
-    use super::types_h::{__syscall_slong_t, __time_t};
 }
 pub mod struct_stat_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct stat {
-        pub st_dev: __dev_t,
-        pub st_ino: __ino_t,
-        pub st_nlink: __nlink_t,
-        pub st_mode: __mode_t,
-        pub st_uid: __uid_t,
-        pub st_gid: __gid_t,
+        pub st_dev: u64,
+        pub st_ino: u64,
+        pub st_nlink: u64,
+        pub st_mode: u32,
+        pub st_uid: u32,
+        pub st_gid: u32,
         pub __pad0: i32,
-        pub st_rdev: __dev_t,
-        pub st_size: __off_t,
-        pub st_blksize: __blksize_t,
-        pub st_blocks: __blkcnt_t,
+        pub st_rdev: u64,
+        pub st_size: i64,
+        pub st_blksize: i64,
+        pub st_blocks: i64,
         pub st_atim: timespec,
         pub st_mtim: timespec,
         pub st_ctim: timespec,
-        pub __glibc_reserved: [__syscall_slong_t; 3],
+        pub __glibc_reserved: [i64; 3],
     }
     use super::struct_timespec_h::timespec;
-    use super::types_h::{
-        __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off_t,
-        __syscall_slong_t, __uid_t,
-    };
 }
 
 pub mod struct_FILE_h {
@@ -71,12 +51,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -84,11 +64,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -115,7 +94,6 @@ pub mod stdio_h {
 pub mod mman_h {
     pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
 
-    use super::types_h::__off64_t;
     extern "C" {
         pub fn mmap(
             __addr: *mut ::core::ffi::c_void,
@@ -123,7 +101,7 @@ pub mod mman_h {
             __prot: i32,
             __flags: i32,
             __fd: i32,
-            __offset: __off64_t,
+            __offset: i64,
         ) -> *mut ::core::ffi::c_void;
         pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
     }
@@ -139,14 +117,6 @@ pub mod fcntl_h {
         pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
     }
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod unistd_h {
     extern "C" {
         pub fn close(__fd: i32) -> i32;
@@ -156,7 +126,6 @@ pub mod mman_linux_h {
     pub const PROT_READ: i32 = 0x1 as i32;
     pub const MAP_SHARED: i32 = 0x1 as i32;
 }
-pub use self::__stddef_null_h::NULL;
 
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
@@ -164,15 +133,10 @@ pub use self::fcntl_linux_h::O_RDONLY;
 pub use self::mman_h::{mmap, munmap, MAP_FAILED};
 pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::stat_h::fstat;
-pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::fdopen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
-pub use self::types_h::{
-    __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off64_t, __off_t,
-    __syscall_slong_t, __time_t, __uid_t, __uint64_t,
-};
 use self::unistd_h::close;
 pub use self::FILE_h::FILE;
 pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
@@ -211,7 +175,7 @@ pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
             __glibc_reserved: [0; 3],
         };
         let mut err: i32 = fstat(fd, &raw mut stat_buf);
-        if err != 0 as i32 || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o100000 as __mode_t) {
+        if err != 0 as i32 || !(stat_buf.st_mode & __S_IFMT as u32 == 0o100000 as u32) {
             close(fd);
             return ::core::ptr::null_mut::<FILE>();
         }

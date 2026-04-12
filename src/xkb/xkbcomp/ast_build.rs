@@ -1,4 +1,9 @@
 use crate::xkb_logf;
+
+extern "C" {
+    fn strndup(__string: *const i8, __n: usize) -> *mut i8;
+}
+
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -168,12 +173,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strndup(__string: *const i8, __n: usize) -> *mut i8;
-    }
-}
 pub mod stdlib_h {
 
     extern "C" {
@@ -197,17 +196,9 @@ pub mod utils_h {
     use crate::xkb::utils::cstr_dup;
 }
 pub mod utf8_decoding_h {
-    pub const INVALID_UTF8_CODE_POINT: u32 = UINT32_MAX;
+    pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
-    use super::stdint_h::UINT32_MAX;
     pub use crate::xkb::utf8_decoding::utf8_next_code_point;
-}
-pub mod stdint_h {
-    pub const UINT32_MAX: u32 = 4294967295 as u32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod keymap_h {}
 pub mod include_h {
@@ -218,7 +209,6 @@ pub mod include_h {
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
-pub use self::__stddef_null_h::NULL;
 
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
@@ -243,7 +233,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
@@ -291,9 +280,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
-pub use self::stdint_h::UINT32_MAX;
 use self::stdlib_h::{calloc, free, malloc};
-use self::string_h::strndup;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -303,6 +290,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{darray_append, darray_free};
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {

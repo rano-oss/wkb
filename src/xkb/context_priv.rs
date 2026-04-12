@@ -140,26 +140,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod string_h {}
-pub mod config_h {
-    pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
-        unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
-    pub const DEFAULT_XKB_MODEL: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
-    pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = NULL;
-    pub const DEFAULT_XKB_RULES: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = NULL;
-    use super::__stddef_null_h::NULL;
-}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod stdlib_h {
     extern "C" {
         pub fn getenv(__name: *const i8) -> *mut i8;
@@ -175,17 +155,11 @@ pub mod utils_h {
     }
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_intern, atom_table, atom_table_size, atom_text, xkb_atom_t};
-pub use self::config_h::{
-    DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
-    DEFAULT_XKB_VARIANT,
-};
 pub use self::context_h::{
     xkb_context, xkb_context_include_path_get_system_path, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -234,10 +208,11 @@ pub use self::messages_codes_h::{
 pub use self::rmlvo_h::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::va_list;
 use self::stdlib_h::{getenv, secure_getenv};
 pub use self::utils_h::isempty;
+pub use crate::xkb::shared_types::darray_size_t;
+use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
 use crate::xkb::utils::cstr_len;
 
 pub use self::xkbcommon_h::{
@@ -284,16 +259,18 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
                         XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_context_include_path_get_system_path(ctx)),
+                        crate::xkb::utils::CStrDisplay(xkb_context_include_path_get_system_path(
+                            ctx
+                        )),
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
-                (*ctx).set_pending_default_includes((false_0 != 0) as bool);
+                (*ctx).set_pending_default_includes((0 != 0) as bool);
             } else {
-                return false_0 != 0;
+                return 0 != 0;
             }
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> darray_size_t {
@@ -324,7 +301,7 @@ pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
 }
 pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, cstr_len(string), false_0 != 0);
+        return atom_intern((*ctx).atom_table, string, cstr_len(string), 0 != 0);
     }
 }
 pub unsafe fn xkb_atom_intern(
@@ -333,7 +310,7 @@ pub unsafe fn xkb_atom_intern(
     mut len: usize,
 ) -> xkb_atom_t {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, len, true_0 != 0);
+        return atom_intern((*ctx).atom_table, string, len, 1 != 0);
     }
 }
 pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> *const i8 {

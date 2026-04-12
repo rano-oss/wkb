@@ -276,10 +276,10 @@ pub mod scanner_utils_h {
                 as ::core::ffi::c_int as i64
                 != 0
             {
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*s).pos = (*s).pos.wrapping_add(1);
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
     #[inline]
@@ -288,12 +288,12 @@ pub mod scanner_utils_h {
             if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[i8; 1024]>() as usize
             {
-                return false_0 != 0;
+                return 0 != 0;
             }
             let c2rust_fresh1 = (*s).buf_pos;
             (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
             (*s).buf[c2rust_fresh1 as usize] = ch;
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
     #[inline]
@@ -305,15 +305,14 @@ pub mod scanner_utils_h {
                 format_args!("{}", crate::xkb::utils::CStrDisplay(str)),
             );
             if trunc {
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*s).buf_pos = (*s).buf_pos.wrapping_add(written);
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
 
     use super::context_h::xkb_context;
-    use super::stdbool_h::{false_0, true_0};
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -322,7 +321,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod string_h {}
 pub mod xkbcomp_priv_h {
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
@@ -341,14 +339,6 @@ pub mod xkbcomp_priv_h {
     }
 
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
-}
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod stdlib_h {
     extern "C" {
@@ -371,7 +361,6 @@ pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::NULL;
 
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
@@ -395,7 +384,6 @@ pub use self::context_h::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
     xkb_context_num_failed_include_paths, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::include_h::{
     INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -449,7 +437,6 @@ pub use self::scanner_utils_h::{
     scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::free;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -461,6 +448,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
 pub unsafe fn ParseIncludeMap(
@@ -501,7 +489,7 @@ pub unsafe fn ParseIncludeMap(
         } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
         {
             free(*extra_data as *mut ::core::ffi::c_void);
-            return false_0 != 0;
+            return 0 != 0;
         } else {
             let c2rust_fresh4 = tmp;
             tmp = tmp.offset(1);
@@ -512,7 +500,7 @@ pub unsafe fn ParseIncludeMap(
             if tmp.is_null() || *tmp.offset(1 as i32 as isize) as i32 != '\0' as i32 {
                 free(*file_rtrn as *mut ::core::ffi::c_void);
                 free(*extra_data as *mut ::core::ffi::c_void);
-                return false_0 != 0;
+                return 0 != 0;
             }
             let c2rust_fresh5 = tmp;
             tmp = tmp.offset(1);
@@ -527,9 +515,9 @@ pub unsafe fn ParseIncludeMap(
         {
             *str_inout = next;
         } else {
-            return false_0 != 0;
+            return 0 != 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 static mut xkb_file_type_include_dirs: [*const i8; 7] = [
@@ -628,7 +616,14 @@ unsafe fn expand_percent(
             ctx: ::core::ptr::null_mut::<xkb_context>(),
             priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
         };
-        scanner_init(&raw mut s, ctx, name, name_len, parent_file_name, NULL);
+        scanner_init(
+            &raw mut s,
+            ctx,
+            name,
+            name_len,
+            parent_file_name,
+            std::ptr::null_mut::<core::ffi::c_void>(),
+        );
         s.buf_pos = 0 as usize;
         while !scanner_eof(&raw mut s) && !scanner_eol(&raw mut s) {
             if scanner_chr(&raw mut s, '%' as i32 as i8) {
@@ -765,7 +760,7 @@ pub unsafe fn expand_path(
     mut type_0: xkb_file_type,
     mut buf: *mut i8,
     mut buf_size: usize,
-) -> ssize_t {
+) -> isize {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut k: usize = 0;
@@ -782,7 +777,7 @@ pub unsafe fn expand_path(
             k = k.wrapping_add(1);
         }
         match c2rust_current_block {
-            17179679302217393232 => return 0 as i64,
+            17179679302217393232 => return 0 as isize,
             _ => {
                 if (k >= buf_size) as ::core::ffi::c_int as i64 != 0 {
                     xkb_logf!(
@@ -795,7 +790,7 @@ pub unsafe fn expand_path(
                         buf_size,
                         crate::xkb::utils::CStrNDisplay(name_len as usize, name),
                     );
-                    return -1 as ::core::ffi::c_int as ssize_t;
+                    return -1 as ::core::ffi::c_int as isize;
                 }
                 std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
                 let mut typeDir: *const i8 = DirectoryForInclude(type_0);
@@ -809,10 +804,10 @@ pub unsafe fn expand_path(
                     name_len.wrapping_sub(k),
                 );
                 if count == 0 {
-                    return -1 as ::core::ffi::c_int as ssize_t;
+                    return -1 as ::core::ffi::c_int as isize;
                 }
                 count = count.wrapping_add(k);
-                return count as ssize_t - 1 as ssize_t;
+                return count as isize - 1 as isize;
             }
         };
     }
@@ -903,9 +898,9 @@ pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_dept
                 XKB_ERROR_RECURSIVE_INCLUDE as ::core::ffi::c_int,
                 15 as ::core::ffi::c_int,
             );
-            return true_0 != 0;
+            return 1 != 0;
         } else {
-            return false_0 != 0;
+            return 0 != 0;
         };
     }
 }
@@ -921,7 +916,7 @@ pub unsafe fn ProcessIncludeFile(
         let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut stmt_file: *const i8 = (*stmt).file;
         let mut stmt_file_len: usize = cstr_len(stmt_file);
-        let expanded: ssize_t = expand_path(
+        let expanded: isize = expand_path(
             ctx,
             b"(unknown)\0".as_ptr() as *const i8,
             stmt_file,
@@ -929,10 +924,10 @@ pub unsafe fn ProcessIncludeFile(
             file_type,
             path,
             path_size,
-        ) as ssize_t;
-        if expanded < 0 as ssize_t {
+        ) as isize;
+        if expanded < 0 as isize {
             return ::core::ptr::null_mut::<XkbFile>();
-        } else if expanded > 0 as ssize_t {
+        } else if expanded > 0 as isize {
             stmt_file = path;
             stmt_file_len = expanded as usize;
         }
@@ -953,7 +948,7 @@ pub unsafe fn ProcessIncludeFile(
                 path,
                 path_size,
                 &raw mut offset,
-                true_0 != 0,
+                1 != 0,
             );
         }
         while !file.is_null() {
@@ -998,7 +993,7 @@ pub unsafe fn ProcessIncludeFile(
                 path,
                 path_size,
                 &raw mut offset,
-                true_0 != 0,
+                1 != 0,
             );
         }
         if xkb_file.is_null() {

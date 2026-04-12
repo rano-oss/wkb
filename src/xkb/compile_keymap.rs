@@ -1,9 +1,4 @@
 // use f128; // f128 is unstable, replaced with f64
-pub mod types_h {
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
 pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -47,12 +42,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -60,11 +55,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -152,18 +146,6 @@ pub mod keymap_formats_h {
         pub fn xkb_keymap_get_format_label(format: xkb_keymap_format) -> *const i8;
     }
 }
-pub mod config_h {
-    pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
-        unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
-    pub const DEFAULT_XKB_MODEL: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
-    pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = NULL;
-    pub const DEFAULT_XKB_RULES: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = NULL;
-    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
-    use super::__stddef_null_h::NULL;
-}
 pub mod fcntl_linux_h {
     pub const O_WRONLY: i32 = 0o1 as i32;
 }
@@ -176,10 +158,6 @@ pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
     }
-}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
 }
 pub mod stdlib_h {
     pub const EXIT_FAILURE: i32 = 1 as i32;
@@ -200,17 +178,8 @@ pub mod unistd_h {
         pub fn dup2(__fd: i32, __fd2: i32) -> i32;
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub use self::__stddef_null_h::NULL;
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
-};
-pub use self::config_h::{
-    DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
-    DEFAULT_XKB_VARIANT, EXIT_INVALID_USAGE,
 };
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_WRONLY;
@@ -219,11 +188,9 @@ pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument
 pub use self::keymap_formats_h::{
     xkb_keymap_get_format_label, xkb_keymap_parse_format, DEFAULT_OUTPUT_KEYMAP_FORMAT,
 };
-pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fclose, fflush, fopen, perror, stderr, stdout};
 pub use self::stdlib_h::{atof, atoi, exit, free, EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::unistd_h::{close, dup, dup2, STDERR_FILENO, STDOUT_FILENO};
 pub use self::xkbcommon_h::{
     xkb_context, xkb_context_flags, xkb_context_new, xkb_context_unref, xkb_keymap,
@@ -236,6 +203,10 @@ pub use self::xkbcommon_h::{
     XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::shared_types::{
+    DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
+    DEFAULT_XKB_VARIANT, EXIT_INVALID_USAGE,
+};
 pub const OPT_STDEV: options = 12;
 pub const OPT_ITERATIONS: options = 11;
 pub const OPT_OPTION: options = 10;
@@ -339,7 +310,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut keymap_input_format: xkb_keymap_format = XKB_KEYMAP_FORMAT_TEXT_V2;
         let mut keymap_output_format: xkb_keymap_format = DEFAULT_OUTPUT_KEYMAP_FORMAT;
         let mut serialize_flags: xkb_keymap_serialize_flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
-        let mut explicit_iterations: bool = false_0 != 0;
+        let mut explicit_iterations: bool = 0 != 0;
         let mut ret: i32 = 0 as i32;
         let mut keymap_path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
@@ -469,7 +440,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                             crate::xkb::utils::CStrDisplay(optarg),
                         );
                         usage(stderr, argv);
-                        exit(EXIT_INVALID_USAGE);
+                        exit(2);
                     }
                 }
                 1 => {
@@ -480,7 +451,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                             crate::xkb::utils::CStrDisplay(optarg),
                         );
                         usage(stderr, argv);
-                        exit(EXIT_INVALID_USAGE);
+                        exit(2);
                     }
                 }
                 2 => {
@@ -519,7 +490,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 11 => {
                     if max_iterations == 0 as u32 {
                         usage(stderr, argv);
-                        exit(EXIT_INVALID_USAGE);
+                        exit(2);
                     }
                     let max_iterations_raw: i32 = atoi(optarg) as i32;
                     if max_iterations_raw <= 0 as i32 {
@@ -527,12 +498,12 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     } else {
                         max_iterations = max_iterations_raw as u32;
                     }
-                    explicit_iterations = true_0 != 0;
+                    explicit_iterations = 1 != 0;
                 }
                 12 => {
                     if explicit_iterations {
                         usage(stderr, argv);
-                        exit(EXIT_INVALID_USAGE);
+                        exit(2);
                     }
                     stdev = atof(optarg) / 100 as i32 as ::core::ffi::c_double;
                     if stdev <= 0 as i32 as ::core::ffi::c_double {
@@ -542,14 +513,14 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 _ => {
                     usage(stderr, argv);
-                    exit(EXIT_INVALID_USAGE);
+                    exit(2);
                 }
             }
         }
         if rmlvo.layout.is_null() || *rmlvo.layout == 0 {
             if !rmlvo.variant.is_null() && *rmlvo.variant as i32 != 0 {
                 eprintln!("Error: a variant requires a layout");
-                return EXIT_INVALID_USAGE;
+                return 2;
             }
             rmlvo.layout = DEFAULT_XKB_LAYOUT.as_ptr();
             rmlvo.variant = ::core::ptr::null::<i8>();

@@ -2,24 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __uint8_t = u8;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i64 = __int64_t;
-    use super::types_h::__int64_t;
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type u32 = __uint32_t;
-    pub type uint64_t = __uint64_t;
-    use super::types_h::{__uint32_t, __uint64_t, __uint8_t};
-}
 
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -43,12 +25,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -56,11 +38,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -290,25 +271,25 @@ pub mod scanner_utils_h {
                 as ::core::ffi::c_int as i64
                 != 0
             {
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*s).pos = (*s).pos.wrapping_add(1);
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
     #[inline]
     pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
         unsafe {
             if (*s).len.wrapping_sub((*s).pos) < len {
-                return false_0 != 0;
+                return 0 != 0;
             }
             if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
                 != std::slice::from_raw_parts(string as *const u8, len)
             {
-                return false_0 != 0;
+                return 0 != 0;
             }
             (*s).pos = (*s).pos.wrapping_add(len);
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
     #[inline]
@@ -317,12 +298,12 @@ pub mod scanner_utils_h {
             if (*s).buf_pos.wrapping_add(1 as usize)
                 >= ::core::mem::size_of::<[i8; 1024]>() as usize
             {
-                return false_0 != 0;
+                return 0 != 0;
             }
             let c2rust_fresh1 = (*s).buf_pos;
             (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
             (*s).buf[c2rust_fresh1 as usize] = ch;
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
     #[inline]
@@ -342,22 +323,22 @@ pub mod scanner_utils_h {
                     );
                 }
                 if count == 0 as ::core::ffi::c_int {
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 (*s).buf_pos = (*s)
                     .buf_pos
                     .wrapping_add((count - 1 as ::core::ffi::c_int) as usize);
-                return true_0 != 0;
+                return 1 != 0;
             } else {
-                return false_0 != 0;
+                return 0 != 0;
             };
         }
     }
     #[inline]
-    pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut uint8_t) -> bool {
+    pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
         unsafe {
-            let mut i: uint8_t = 0 as uint8_t;
-            let mut c: uint8_t = 0 as uint8_t;
+            let mut i: u8 = 0 as u8;
+            let mut c: u8 = 0 as u8;
             while scanner_peek(s) as ::core::ffi::c_int >= '0' as i32
                 && scanner_peek(s) as ::core::ffi::c_int <= '7' as i32
                 && (i as ::core::ffi::c_int) < 4 as ::core::ffi::c_int
@@ -365,11 +346,11 @@ pub mod scanner_utils_h {
                 if (c as ::core::ffi::c_int) < 0o40 as ::core::ffi::c_int {
                     c = (c as ::core::ffi::c_int * 8 as ::core::ffi::c_int
                         + scanner_next(s) as ::core::ffi::c_int
-                        - '0' as i32) as uint8_t;
+                        - '0' as i32) as u8;
                 } else {
                     scanner_next(s);
                     *out = c;
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 i = i.wrapping_add(1);
             }
@@ -380,14 +361,14 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
         unsafe {
-            let mut val: uint64_t = 0 as uint64_t;
+            let mut val: u64 = 0 as u64;
             let count: ::core::ffi::c_int = parse_dec_to_uint64_t(
                 (*s).s.offset((*s).pos as isize),
                 (*s).len.wrapping_sub((*s).pos),
                 &raw mut val,
             ) as ::core::ffi::c_int;
             if count > 0 as ::core::ffi::c_int {
-                if val > INT64_MAX as uint64_t {
+                if val > i64::MAX as u64 {
                     return -1 as ::core::ffi::c_int;
                 }
                 (*s).pos = (*s).pos.wrapping_add(count as usize);
@@ -399,14 +380,14 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
         unsafe {
-            let mut val: uint64_t = 0 as uint64_t;
+            let mut val: u64 = 0 as u64;
             let count: ::core::ffi::c_int = parse_hex_to_uint64_t(
                 (*s).s.offset((*s).pos as isize),
                 (*s).len.wrapping_sub((*s).pos),
                 &raw mut val,
             ) as ::core::ffi::c_int;
             if count > 0 as ::core::ffi::c_int {
-                if val > INT64_MAX as uint64_t {
+                if val > i64::MAX as u64 {
                     return -1 as ::core::ffi::c_int;
                 }
                 (*s).pos = (*s).pos.wrapping_add(count as usize);
@@ -419,7 +400,7 @@ pub mod scanner_utils_h {
     pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32) -> bool {
         unsafe {
             if !scanner_chr(s, '{' as i32 as i8) {
-                return false_0 != 0;
+                return 0 != 0;
             }
             let mut cp: u32 = 0 as u32;
             let count: ::core::ffi::c_int = parse_hex_to_uint32_t(
@@ -445,7 +426,7 @@ pub mod scanner_utils_h {
                     && cp <= 0x10ffff as u32;
             }
             (*s).pos = last_valid;
-            return false_0 != 0;
+            return 0 != 0;
         }
     }
     #[inline]
@@ -456,7 +437,7 @@ pub mod scanner_utils_h {
                 != 0
                 || (*scanner).len < 2 as usize
             {
-                return true_0 != 0;
+                return 1 != 0;
             }
             if *(*scanner).s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
                 == '\0' as i32
@@ -474,7 +455,7 @@ pub mod scanner_utils_h {
                     loc.line,
                     loc.column,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             if !is_ascii(*(*scanner).s.offset(0 as ::core::ffi::c_int as isize)) {
                 let mut loc_0: scanner_loc = scanner_token_location(scanner);
@@ -488,18 +469,14 @@ pub mod scanner_utils_h {
                     loc_0.line,
                     loc_0.column,
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
 
     use super::context_h::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
-    use super::stdbool_h::{false_0, true_0};
-    use super::stdint_h::INT64_MAX;
-    use super::stdint_intn_h::i64;
-    use super::stdint_uintn_h::{u32, uint64_t, uint8_t};
     use super::utf8_h::utf32_to_utf8;
     use super::utils_h::is_ascii;
     use super::utils_numbers_h::{
@@ -659,8 +636,6 @@ pub mod parser_h {
     };
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
-    use super::stdint_intn_h::i64;
-    use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
 }
 pub mod utils_h {
@@ -704,8 +679,6 @@ pub mod utils_h {
         return ch as ::core::ffi::c_int >= '!' as i32 && ch as ::core::ffi::c_int <= '~' as i32;
     }
 
-    use super::stdint_uintn_h::u32;
-
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
@@ -713,29 +686,29 @@ pub mod utils_numbers_h {
     pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
-        mut out: *mut uint64_t,
+        mut out: *mut u64,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint64_t = 0 as uint64_t;
+            let mut result: u64 = 0 as u64;
             let mut i: usize = 0;
             i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as u32)
                     < 10 as u32
-                && result <= (18446744073709551615 as uint64_t).wrapping_div(10 as uint64_t)
-                && result.wrapping_mul(10 as uint64_t)
-                    <= (18446744073709551615 as uint64_t).wrapping_sub(
+                && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
+                && result.wrapping_mul(10 as u64)
+                    <= (18446744073709551615 as u64).wrapping_sub(
                         (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as uint64_t,
+                            as ::core::ffi::c_uchar as u64,
                     )
             {
-                result = result.wrapping_mul(10 as uint64_t).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as uint64_t,
+                result = result.wrapping_mul(10 as u64).wrapping_add(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u64,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint64_t;
+            *out = result as u64;
             return if i >= len
                 || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
                     as ::core::ffi::c_uchar as u32
@@ -1036,22 +1009,22 @@ pub mod utils_numbers_h {
     pub unsafe fn parse_hex_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
-        mut out: *mut uint64_t,
+        mut out: *mut u64,
     ) -> ::core::ffi::c_int {
         unsafe {
-            let mut result: uint64_t = 0 as uint64_t;
+            let mut result: u64 = 0 as u64;
             let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32)
                     < 16 as u32
-                && result <= 18446744073709551615 as uint64_t >> 4 as ::core::ffi::c_int
+                && result <= 18446744073709551615 as u64 >> 4 as ::core::ffi::c_int
             {
-                result = result.wrapping_mul(16 as uint64_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint64_t,
+                result = result.wrapping_mul(16 as u64).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u64,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint64_t;
+            *out = result as u64;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as ::core::ffi::c_int
             } else {
@@ -1060,11 +1033,9 @@ pub mod utils_numbers_h {
         }
     }
 
-    use super::stdint_uintn_h::{u32, uint64_t};
     use super::utils_h::is_xdigit;
 }
 pub mod utf8_h {
-    use super::stdint_uintn_h::u32;
 
     /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
     ///
@@ -1101,23 +1072,11 @@ pub mod parser_priv_h {
 
     pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdint_h {
-    pub const INT64_MAX: i64 = 9223372036854775807 as i64;
-}
 pub mod errno_h {
     extern "C" {
         pub fn __errno_location() -> *mut ::core::ffi::c_int;
     }
 }
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::ast_h::{
     _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
@@ -1206,12 +1165,7 @@ pub use self::scanner_utils_h::{
     scanner_peek, scanner_skip_to_eol, scanner_str, scanner_token_location,
     scanner_unicode_code_point, sval,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::INT64_MAX;
-pub use self::stdint_intn_h::i64;
-pub use self::stdint_uintn_h::{u32, uint64_t, uint8_t};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{
     is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
 };
@@ -1240,24 +1194,24 @@ unsafe fn number(
             match scanner_hex_int64(s, out) {
                 -1 => {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
-                0 => return false_0 != 0,
+                0 => return 0 != 0,
                 _ => {
                     *out_tok = INTEGER as ::core::ffi::c_int;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
             }
         } else {
-            let mut is_digit_0: bool = false_0 != 0;
+            let mut is_digit_0: bool = 0 != 0;
             match scanner_dec_int64(s, out) {
                 -1 => {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
-                0 => return false_0 != 0,
+                0 => return 0 != 0,
                 1 => {
-                    is_digit_0 = true_0 != 0;
+                    is_digit_0 = 1 != 0;
                 }
                 _ => {}
             }
@@ -1265,7 +1219,7 @@ unsafe fn number(
                 let mut dec: i64 = 0;
                 if scanner_dec_int64(s, &raw mut dec) < 0 as ::core::ffi::c_int {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return true_0 != 0;
+                    return 1 != 0;
                 }
                 *out_tok = FLOAT as ::core::ffi::c_int;
             } else if is_digit_0 {
@@ -1273,7 +1227,7 @@ unsafe fn number(
             } else {
                 *out_tok = INTEGER as ::core::ffi::c_int;
             }
-            return true_0 != 0;
+            return 1 != 0;
         };
     }
 }
@@ -1321,7 +1275,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                 && scanner_peek(s) as ::core::ffi::c_int != '"' as i32
             {
                 if scanner_chr(s, '\\' as i32 as i8) {
-                    let mut o: uint8_t = 0;
+                    let mut o: u8 = 0;
                     let start_pos: usize = (*s).pos;
                     if scanner_chr(s, '\\' as i32 as i8) {
                         scanner_buf_append(s, '\\' as i32 as i8);
@@ -1557,7 +1511,14 @@ pub unsafe fn XkbParseStringInit(
     mut map: *const i8,
 ) -> bool {
     unsafe {
-        scanner_init(scanner, ctx, string, len, file_name, NULL);
+        scanner_init(
+            scanner,
+            ctx,
+            string,
+            len,
+            file_name,
+            std::ptr::null_mut::<core::ffi::c_void>(),
+        );
         if !scanner_check_supported_char_encoding(scanner) {
             let mut loc: scanner_loc = scanner_token_location(scanner);
             xkb_logf!(
@@ -1581,9 +1542,9 @@ pub unsafe fn XkbParseStringInit(
                 loc_0.line,
                 loc_0.column,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn XkbParseString(

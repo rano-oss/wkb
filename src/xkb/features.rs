@@ -1,11 +1,3 @@
-pub mod types_h {
-    pub type __uint32_t = u32;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
-
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -114,7 +106,6 @@ pub mod enums_h {
         XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS as i32 as u32,
         XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as i32 as u32,
     ];
-    use super::stdint_uintn_h::u32;
     use super::xkbcommon_errors_h::{
         XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
         XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -140,10 +131,6 @@ pub mod enums_h {
         XKB_LOG_LEVEL_WARNING,
     };
 }
-pub mod stdbool_h {}
-pub mod stdint_h {
-    pub const UINT32_WIDTH: i32 = 32 as i32;
-}
 
 pub use self::enums_h::{
     xkb_error_code_values, xkb_feature_values, xkb_log_level_values, XKB_A11Y_FLAGS_VALUES,
@@ -155,9 +142,6 @@ pub use self::enums_h::{
     XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES,
     XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::stdint_h::UINT32_WIDTH;
-pub use self::stdint_uintn_h::u32;
-pub use self::types_h::__uint32_t;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -182,7 +166,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 fn is_supported_enum_value_mask(mut values: u32, mut value: u32) -> bool {
-    return value < UINT32_WIDTH as u32 && values as u32 & (1 as u32) << value != 0;
+    return value < 32 as u32 && values as u32 & (1 as u32) << value != 0;
 }
 unsafe fn is_supported_enum_value_array(
     mut values: *const u32,

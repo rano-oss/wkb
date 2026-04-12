@@ -29,16 +29,6 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    use super::types_h::__uint32_t;
-}
 
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -62,12 +52,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -75,11 +65,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -169,10 +158,9 @@ pub mod table_h {
         pub _pad_is_leaf: [u8; 4],
     }
     use super::context_h::xkb_context;
-    use crate::xkb::shared_types::{darray_char, darray_size_t};
-    use super::stdint_uintn_h::u32;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
     pub type xkb_compose_compile_flags = u32;
@@ -238,12 +226,6 @@ pub mod getopt_core_h {
         pub static mut optind: i32;
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-    pub const NULL_0: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod stdlib_h {
     pub const EXIT_FAILURE: i32 = 1 as i32;
     pub const EXIT_SUCCESS: i32 = 0 as i32;
@@ -251,7 +233,6 @@ pub mod stdlib_h {
         pub fn exit(__status: i32) -> !;
     }
 }
-pub mod string_h {}
 pub mod unistd_h {
     pub const STDIN_FILENO: i32 = 0 as i32;
 }
@@ -263,30 +244,18 @@ pub mod utils_h {
         }
     }
 }
-pub mod config_h {
-    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
-}
 pub mod locale_h {
     pub const __LC_CTYPE: i32 = 0 as i32;
     pub const __LC_ALL: i32 = 6 as i32;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::{NULL, NULL_0};
 
-pub use self::config_h::EXIT_INVALID_USAGE;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use self::dump_h::xkb_compose_table_dump;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL, LC_CTYPE};
 pub use self::internal::__va_list_tag;
 pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::u32;
 use self::stdio_h::{fclose, fopen, perror, stderr, stdout};
 pub use self::stdlib_h::{exit, EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -297,7 +266,6 @@ pub use self::table_h::{
 use self::tools_common_h::{
     is_pipe_or_regular_file, tools_enable_verbose_logging, tools_read_stdin,
 };
-pub use self::types_h::{__off64_t, __off_t, __uint32_t, __uint64_t};
 pub use self::unistd_h::STDIN_FILENO;
 pub use self::utils_h::isempty;
 pub use self::xkbcommon_compose_h::{
@@ -312,6 +280,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::cstr_cmp;
 pub const OPT_TEST: options = 3;
 pub const OPT_LOCALE: options = 2;
@@ -339,8 +308,8 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut locale: *const i8 = ::core::ptr::null::<i8>();
         let mut path: *const i8 = ::core::ptr::null::<i8>();
         let mut format: xkb_compose_format = XKB_COMPOSE_FORMAT_TEXT_V1;
-        let mut verbose: bool = false_0 != 0;
-        let mut test: bool = false_0 != 0;
+        let mut verbose: bool = 0 != 0;
+        let mut test: bool = 0 != 0;
         static mut opts: [option; 6] = [
             option {
                 name: b"help\0".as_ptr() as *const i8,
@@ -399,7 +368,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             }
             match opt {
                 0 => {
-                    verbose = true_0 != 0;
+                    verbose = 1 != 0;
                 }
                 1 => {
                     path = optarg;
@@ -409,7 +378,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     locale = optarg;
                 }
                 3 => {
-                    test = true_0 != 0;
+                    test = 1 != 0;
                 }
                 104 => {
                     usage(stdout, *argv.offset(0 as i32 as isize));
@@ -417,20 +386,20 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 _ => {
                     usage(stderr, *argv.offset(0 as i32 as isize));
-                    return EXIT_INVALID_USAGE;
+                    return 2;
                 }
             }
         }
         if locale.is_null() {
             eprintln!("ERROR: Cannot determine the locale.");
             usage(stderr, *argv.offset(0 as i32 as isize));
-            return EXIT_INVALID_USAGE;
+            return 2;
         }
         if optind < argc && !isempty(*argv.offset(optind as isize)) {
             if !path.is_null() {
                 eprintln!("ERROR: Path already provided via the flag: --file");
                 usage(stderr, *argv.offset(0 as i32 as isize));
-                exit(EXIT_INVALID_USAGE);
+                exit(2);
             }
             let c2rust_fresh0 = optind;
             optind = optind + 1;
@@ -438,7 +407,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             if optind < argc {
                 eprintln!("ERROR: Too many positional arguments");
                 usage(stderr, *argv.offset(0 as i32 as isize));
-                exit(EXIT_INVALID_USAGE);
+                exit(2);
             }
         } else if is_pipe_or_regular_file(STDIN_FILENO) {
             path = b"-\0".as_ptr() as *const i8;

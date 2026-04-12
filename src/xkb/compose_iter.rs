@@ -89,9 +89,9 @@ pub mod table_h {
     }
 
     use super::context_h::xkb_context;
-    use crate::xkb::shared_types::{darray_char, darray_size_t};
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
     pub type xkb_compose_compile_flags = u32;
@@ -107,7 +107,6 @@ pub mod compose_iter_h {
 
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,
@@ -121,6 +120,7 @@ pub use self::xkbcommon_h::{
     xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 unsafe fn for_each_helper(
     mut table: *mut xkb_compose_table,
     mut iter: xkb_compose_table_iter_t,

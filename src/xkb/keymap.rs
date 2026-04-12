@@ -3,46 +3,8 @@ pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
-pub mod types_h {
-    #[c2rust::src_loc = "37:1"]
-    pub type __int8_t = i8;
-    #[c2rust::src_loc = "38:1"]
-    pub type __uint8_t = u8;
-    #[c2rust::src_loc = "39:1"]
-    pub type __int16_t = i16;
-    #[c2rust::src_loc = "40:1"]
-    pub type __uint16_t = u16;
-    #[c2rust::src_loc = "41:1"]
-    pub type __int32_t = i32;
-    #[c2rust::src_loc = "42:1"]
-    pub type __uint32_t = u32;
-    #[c2rust::src_loc = "45:1"]
-    pub type __uint64_t = u64;
-    #[c2rust::src_loc = "152:1"]
-    pub type __off_t = i64;
-    #[c2rust::src_loc = "153:1"]
-    pub type __off64_t = i64;
-}
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
-pub mod stdint_intn_h {
-    #[c2rust::src_loc = "24:1"]
-    pub type i8 = __int8_t;
-    #[c2rust::src_loc = "25:1"]
-    pub type i16 = __int16_t;
-    #[c2rust::src_loc = "26:1"]
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
-pub mod stdint_uintn_h {
-    #[c2rust::src_loc = "24:1"]
-    pub type uint8_t = __uint8_t;
-    #[c2rust::src_loc = "25:1"]
-    pub type uint16_t = __uint16_t;
-    #[c2rust::src_loc = "26:1"]
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_size_t.h:19"]
 pub mod __stddef_size_t_h {
     #[c2rust::src_loc = "18:1"]
@@ -72,12 +34,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -85,12 +47,11 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     #[c2rust::src_loc = "45:1"]
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         #[c2rust::src_loc = "40:1"]
         pub type _IO_wide_data;
@@ -289,8 +250,8 @@ pub mod rmlvo_h {
     #[c2rust::src_loc = "15:5"]
     pub const RMLVO_RULES: RMLVO = 1;
     use super::context_h::xkb_context;
-    use crate::xkb::shared_types::darray_size_t;
     use super::xkbcommon_h::xkb_layout_index_t;
+    use crate::xkb::shared_types::darray_size_t;
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/messages-codes.h:21"]
 pub mod messages_codes_h {
@@ -540,31 +501,13 @@ pub mod stdlib_h {
     }
 }
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_null.h:17"]
-pub mod __stddef_null_h {
-    #[c2rust::src_loc = "26:9"]
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 #[c2rust::header_src = "/usr/include/stdint.h:17"]
-pub mod stdint_h {
-    #[c2rust::src_loc = "112:10"]
-    pub const INT32_MAX: i32 = 2147483647 as i32;
-}
 #[c2rust::header_src = "/usr/lib/clang/21/include/stdbool.h:22"]
-pub mod stdbool_h {
-    #[c2rust::src_loc = "25:9"]
-    pub const true_0: i32 = 1 as i32;
-    #[c2rust::src_loc = "26:9"]
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::NULL;
-
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
@@ -654,16 +597,8 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, RMLVO, RMLVO_LAYOUT, RMLVO_MODEL,
     RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::INT32_MAX;
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int8_t, __off64_t, __off_t, __uint16_t, __uint32_t, __uint64_t,
-    __uint8_t,
-};
 pub use self::xkbcommon_h::{
     xkb_context_unref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keymap_key_iter_t, xkb_keymap_key_iterator_flags, xkb_keymap_serialize_flags, xkb_keysym_t,
@@ -684,6 +619,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -876,7 +812,9 @@ pub unsafe fn xkb_keymap_new_from_names2(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8),
+                crate::xkb::utils::CStrDisplay(
+                    b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8
+                ),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -948,7 +886,9 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8),
+                crate::xkb::utils::CStrDisplay(
+                    b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
+                ),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -959,7 +899,9 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: no buffer specified\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8),
+                crate::xkb::utils::CStrDisplay(
+                    b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
+                ),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1291,7 +1233,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
         let mut type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
         let mut count: usize = 0 as usize;
         if level == 0 as xkb_level_index_t {
-            let mut empty_mapped: bool = false_0 != 0;
+            let mut empty_mapped: bool = 0 != 0;
             let mut i: darray_size_t = 0 as darray_size_t;
             while i < (*type_0).num_entries && count < masks_size {
                 if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
@@ -1299,7 +1241,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
                     != 0
                     && (*(*type_0).entries.offset(i as isize)).mods.mask == 0 as xkb_mod_mask_t
                 {
-                    empty_mapped = true_0 != 0;
+                    empty_mapped = 1 != 0;
                     break;
                 } else {
                     i = i.wrapping_add(1);

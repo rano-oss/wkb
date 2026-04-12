@@ -48,21 +48,12 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod text_h {
-    
-    
-    
+
     pub use crate::xkb::text::ModMaskText;
 }
 pub mod expr_h {
-    
-    
-    
-    
+
     pub use crate::xkb::xkbcomp::expr::ExprResolveModMask;
-}
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 
 pub use self::ast_h::{
@@ -82,7 +73,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 use self::expr_h::ExprResolveModMask;
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
@@ -94,13 +84,13 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::stdbool_h::{false_0, true_0};
 use self::text_h::ModMaskText;
 pub use self::xkbcommon_h::{
     xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
     XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
     XKB_LOG_LEVEL_WARNING,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set, mut reset: bool) {
     unsafe {
         *info = *mods;
@@ -189,7 +179,7 @@ pub unsafe fn HandleVModDef(
                     "Declaration of {} ignored\n",
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
         }
         let mut vmod: xkb_mod_index_t = 0;
@@ -206,11 +196,11 @@ pub unsafe fn HandleVModDef(
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
                 if (*stmt).value.is_null() {
-                    return true_0 != 0;
+                    return 1 != 0;
                 } else if (*mods).explicit_vmods & mask == 0 {
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
@@ -238,7 +228,7 @@ pub unsafe fn HandleVModDef(
                     (*mod_0).mapping = use_0;
                 }
                 (*mods).explicit_vmods |= mask;
-                return true_0 != 0;
+                return 1 != 0;
             }
             vmod = vmod.wrapping_add(1);
             mod_0 = mod_0.offset(1);
@@ -253,7 +243,7 @@ pub unsafe fn HandleVModDef(
                 (::core::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_mod_index_t,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         (*mods).mods[(*mods).num_mods as usize].name = (*stmt).name;
         (*mods).mods[(*mods).num_mods as usize].type_0 = MOD_VIRT;
@@ -263,6 +253,6 @@ pub unsafe fn HandleVModDef(
             (*mods).explicit_vmods |= mask_0;
         }
         (*mods).num_mods = (*mods).num_mods.wrapping_add(1);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }

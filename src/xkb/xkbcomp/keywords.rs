@@ -718,10 +718,7 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
         return hval;
     }
 }
-pub unsafe fn keyword_to_token(
-    mut string: *const i8,
-    mut len: usize,
-) -> ::core::ffi::c_int {
+pub unsafe fn keyword_to_token(mut string: *const i8, mut len: usize) -> ::core::ffi::c_int {
     unsafe {
         let mut kt: *const keyword_tok = keyword_gperf_lookup(string, len) as *const keyword_tok;
         if kt.is_null() {

@@ -58,7 +58,6 @@ pub mod text_h {
     }
     use super::xkbcommon_h::XKB_KEYMAP_FORMAT_TEXT_V1;
 }
-pub mod string_h {}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -77,24 +76,14 @@ pub mod utils_h {
 
     pub use crate::xkb::utils::istrcmp;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod keysym_h {
     pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31 as i32;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
@@ -113,7 +102,6 @@ pub use self::keymap_h::{
     MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
 pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::text_h::{
     format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
     CONTROL_NAMES_MIN_V2_INDEX,
@@ -128,6 +116,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
     XKB_STATE_MODS_LOCKED,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len_safe;
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
@@ -136,17 +125,17 @@ pub unsafe fn LookupString(
 ) -> bool {
     unsafe {
         if string.is_null() {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
             if istreq((*entry).name, string) {
                 *value_rtrn = (*entry).value as u32;
-                return true_0 != 0;
+                return 1 != 0;
             }
             entry = entry.offset(1);
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const i8 {

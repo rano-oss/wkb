@@ -3,28 +3,6 @@ pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    pub type i64 = __int64_t;
-    use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
@@ -58,7 +36,7 @@ pub mod xkbcommon_h {
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     pub type C2Rust_Unnamed_13 = u32;
     pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 0;
     pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 1;
@@ -71,7 +49,7 @@ pub mod keymap_h {
     pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
         .wrapping_mul(CHAR_BIT as usize)
         as xkb_led_index_t;
-    pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
+    pub const MAX_ACTIONS_PER_LEVEL: i32 = u16::MAX as i32;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
@@ -182,7 +160,7 @@ pub mod text_h {
 }
 pub mod xkbcomp_priv_h {
     pub use crate::xkb::shared_ast_types::{
-        false_0, pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
+        pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
         xkb_message_code, xkb_parser_error, xkb_parser_strict_flags, ReportBadField, ReportBadType,
         ReportNotArray, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR,
         PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
@@ -244,10 +222,9 @@ pub mod util_mem_h {
     pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
         let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
         let mut swapped: *mut ::core::ffi::c_void = *original;
-        *original = NULL_0;
+        *original = std::ptr::null_mut::<core::ffi::c_void>();
         return swapped;
     }
-    use super::__stddef_null_h::NULL_0;
 }
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
@@ -255,20 +232,6 @@ pub mod include_h {
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-    pub const NULL_0: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdint_h {
-    pub const UINT16_MAX: i32 = 65535 as i32;
-}
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::{NULL, NULL_0};
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::ast_h::{
@@ -295,7 +258,6 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
     ExprResolveMod, ExprResolveModMask,
@@ -379,17 +341,10 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::UINT16_MAX;
-pub use self::stdint_intn_h::{i16, i32, i64, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{free, realloc};
 pub use self::text_h::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
-};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
 };
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
@@ -422,6 +377,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::{darray_append, darray_free};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -671,7 +627,7 @@ unsafe fn UseNewInterpField(
             }
             return clobber;
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn MergeInterp(
@@ -696,7 +652,7 @@ unsafe fn MergeInterp(
                 );
             }
             *old = *new;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if UseNewInterpField(
             SI_FIELD_VIRTUAL_MOD,
@@ -771,7 +727,7 @@ unsafe fn MergeInterp(
                 }),
             );
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn AddInterp(
@@ -790,7 +746,7 @@ unsafe fn AddInterp(
             &mut (*info).interps.alloc,
             *new,
         );
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn ResolveStateAndPredicate(
@@ -803,7 +759,7 @@ unsafe fn ResolveStateAndPredicate(
         if expr.is_null() {
             *pred_rtrn = MATCH_ANY_OR_NONE;
             *mods_rtrn = MOD_REAL_MASK_ALL;
-            return true_0 != 0;
+            return 1 != 0;
         }
         *pred_rtrn = MATCH_EXACTLY;
         if (*expr).common.type_0 as u32 == STMT_EXPR_ACTION_DECL as i32 as u32 {
@@ -823,7 +779,7 @@ unsafe fn ResolveStateAndPredicate(
                     "Illegal modifier predicate \"{}\"; Ignored\n",
                     crate::xkb::utils::CStrDisplay(pred_txt),
                 );
-                return false_0 != 0;
+                return 0 != 0;
             }
             *pred_rtrn = pred as xkb_match_operation;
             expr = (*expr).action.args as *mut ExprDef;
@@ -834,7 +790,7 @@ unsafe fn ResolveStateAndPredicate(
             {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
-                return true_0 != 0;
+                return 1 != 0;
             }
         }
         return ExprResolveModMask(
@@ -864,7 +820,7 @@ unsafe fn UseNewLEDField(
             }
             return clobber;
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 unsafe fn MergeLedMap(
@@ -886,7 +842,7 @@ unsafe fn MergeLedMap(
             && (*old).led.which_groups() as i32 == (*new).led.which_groups() as i32
         {
             (*old).defined = ((*old).defined as u32 | (*new).defined as u32) as led_field;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
             if report {
@@ -899,7 +855,7 @@ unsafe fn MergeLedMap(
                 );
             }
             *old = *new;
-            return true_0 != 0;
+            return 1 != 0;
         }
         collide = 0 as led_field;
         if UseNewLEDField(
@@ -956,7 +912,7 @@ unsafe fn MergeLedMap(
                 }),
             );
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn AddLedMap(mut info: *mut CompatInfo, mut new: *mut LedInfo, mut same_file: bool) -> bool {
@@ -980,12 +936,12 @@ unsafe fn AddLedMap(mut info: *mut CompatInfo, mut new: *mut LedInfo, mut same_f
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         let c2rust_fresh1 = (*info).num_leds;
         (*info).num_leds = (*info).num_leds.wrapping_add(1);
         (*info).leds[c2rust_fresh1 as usize] = *new;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn MergeIncludedCompatMaps(
@@ -1022,7 +978,7 @@ unsafe fn MergeIncludedCompatMaps(
                         as *mut SymInterpInfo
                 {
                     (*si).merge = merge;
-                    if !AddInterp(into, si, false_0 != 0) {
+                    if !AddInterp(into, si, 0 != 0) {
                         (*into).errorCount += 1;
                     }
                     si = si.offset(1);
@@ -1043,7 +999,7 @@ unsafe fn MergeIncludedCompatMaps(
                 let mut ledi: *mut LedInfo =
                     (&raw mut (*from).leds as *mut LedInfo).offset(i as isize) as *mut LedInfo;
                 (*ledi).merge = merge;
-                if !AddLedMap(into, ledi, false_0 != 0) {
+                if !AddLedMap(into, ledi, 0 != 0) {
                     (*into).errorCount += 1;
                 }
                 i = i.wrapping_add(1);
@@ -1124,7 +1080,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as i32;
-            return false_0 != 0;
+            return 0 != 0;
         }
         InitCompatInfo(
             &raw mut included,
@@ -1217,7 +1173,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
             if file.is_null() {
                 (*info).errorCount += 10 as i32;
                 ClearCompatInfo(&raw mut included);
-                return false_0 != 0;
+                return 0 != 0;
             }
             InitCompatInfo(
                 &raw mut next_incl,
@@ -1267,7 +1223,7 @@ unsafe fn SetInterpField(
                         65535 as i32,
                         num_actions,
                     );
-                    return false_0 != 0;
+                    return 0 != 0;
                 }
                 (*si).interp.num_actions = 0 as xkb_action_count_t;
                 (*si).interp.a.action.type_0 = ACTION_TYPE_NONE;
@@ -1294,7 +1250,7 @@ unsafe fn SetInterpField(
                         }
                         2 => {
                             darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
-                            return false_0 != 0;
+                            return 0 != 0;
                         }
                         _ => {}
                     }
@@ -1356,7 +1312,7 @@ unsafe fn SetInterpField(
                         (*si).interp.a.action.type_0 = ACTION_TYPE_NONE;
                         (*si).interp.num_actions = 0 as xkb_action_count_t;
                     }
-                    2 => return false_0 != 0,
+                    2 => return 0 != 0,
                     _ => {
                         (*si).interp.num_actions =
                             ((*si).interp.a.action.type_0 as u32 != ACTION_TYPE_NONE as i32 as u32)
@@ -1389,7 +1345,7 @@ unsafe fn SetInterpField(
             (*si).interp.virtual_mod = ndx;
             (*si).defined = ((*si).defined as u32 | SI_FIELD_VIRTUAL_MOD as i32 as u32) as si_field;
         } else if istreq(field, b"repeat\0".as_ptr() as *const i8) {
-            let mut set: bool = false_0 != 0;
+            let mut set: bool = 0 != 0;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
@@ -1439,7 +1395,7 @@ unsafe fn SetInterpField(
                 & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as i32 as u32
                 == 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn SetLedMapField(
@@ -1477,10 +1433,10 @@ unsafe fn SetLedMapField(
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
             }
-            let mut pending: bool = false_0 != 0;
+            let mut pending: bool = 0 != 0;
             if !ExprResolveGroupMask((*info).keymap_info, value, &raw mut mask, &raw mut pending) {
                 if pending {
-                    (*ledi).led.set_pending_groups((true_0 != 0) as bool);
+                    (*ledi).led.set_pending_groups((1 != 0) as bool);
                     let pending_index: darray_size_t =
                         (*(*(*info).keymap_info).pending_computations).size;
                     darray_append(
@@ -1504,7 +1460,7 @@ unsafe fn SetLedMapField(
                     );
                 }
             } else {
-                (*ledi).led.set_pending_groups((false_0 != 0) as bool);
+                (*ledi).led.set_pending_groups((0 != 0) as bool);
             }
             (*ledi).led.groups = mask;
             (*ledi).defined =
@@ -1516,7 +1472,7 @@ unsafe fn SetLedMapField(
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
             }
-            let offset: uint8_t = (*(*info).keymap_info).features.controls_name_offset;
+            let offset: u8 = (*(*info).keymap_info).features.controls_name_offset;
             if !ExprResolveMask(
                 (*info).ctx,
                 value,
@@ -1615,7 +1571,7 @@ unsafe fn SetLedMapField(
                 & PARSER_NO_UNKNOWN_LED_FIELDS as i32 as u32
                 == 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> bool {
@@ -1631,7 +1587,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
             &raw mut field,
             &raw mut ndx,
         ) {
-            ret = false_0 != 0;
+            ret = 0 != 0;
         } else if !elem.is_null() && istreq(elem, b"interpret\0".as_ptr() as *const i8) as i32 != 0
         {
             let mut temp: SymInterpInfo = SymInterpInfo {
@@ -1666,12 +1622,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 (*stmt).value as *mut ExprDef,
             );
             if ret {
-                MergeInterp(
-                    info,
-                    &raw mut (*info).default_interp,
-                    &raw mut temp,
-                    true_0 != 0,
-                );
+                MergeInterp(info, &raw mut (*info).default_interp, &raw mut temp, 1 != 0);
             }
         } else if !elem.is_null() && istreq(elem, b"indicator\0".as_ptr() as *const i8) as i32 != 0
         {
@@ -1695,12 +1646,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
             }) as merge_mode;
             ret = SetLedMapField(info, &raw mut temp_0, field, ndx, &raw mut (*stmt).value);
             if ret {
-                MergeLedMap(
-                    info,
-                    &raw mut (*info).default_led,
-                    &raw mut temp_0,
-                    true_0 != 0,
-                );
+                MergeLedMap(info, &raw mut (*info).default_led, &raw mut temp_0, 1 != 0);
             }
         } else if !elem.is_null() {
             ret = SetDefaultActionField(
@@ -1736,7 +1682,7 @@ unsafe fn HandleInterpBody(
     mut si: *mut SymInterpInfo,
 ) -> bool {
     unsafe {
-        let mut ok: bool = true_0 != 0;
+        let mut ok: bool = 1 != 0;
         let mut elem: *const i8 = ::core::ptr::null::<i8>();
         let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
@@ -1748,7 +1694,7 @@ unsafe fn HandleInterpBody(
                 &raw mut field,
                 &raw mut arrayNdx,
             ) {
-                ok = false_0 != 0;
+                ok = 0 != 0;
             } else if !elem.is_null() {
                 xkb_logf!(
                     (*info).ctx,
@@ -1759,9 +1705,9 @@ unsafe fn HandleInterpBody(
                     crate::xkb::utils::CStrDisplay(elem),
                     crate::xkb::utils::CStrDisplay(field),
                 );
-                ok = false_0 != 0;
+                ok = 0 != 0;
             } else if !SetInterpField(info, si, field, arrayNdx, (*def).value as *mut ExprDef) {
-                ok = false_0 != 0;
+                ok = 0 != 0;
             }
             def = (*def).common.next as *mut VarDef;
         }
@@ -1802,7 +1748,7 @@ unsafe fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut InterpDef) ->
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Couldn't determine matching modifiers; Symbol interpretation ignored\n",
             );
-            return false_0 != 0;
+            return 0 != 0;
         }
         si = (*info).default_interp;
         si.merge = (*def).merge;
@@ -1811,13 +1757,13 @@ unsafe fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut InterpDef) ->
         si.interp.mods = mods;
         if !HandleInterpBody(info, (*def).def, &raw mut si) {
             (*info).errorCount += 1;
-            return false_0 != 0;
+            return 0 != 0;
         }
-        if !AddInterp(info, &raw mut si, true_0 != 0) {
+        if !AddInterp(info, &raw mut si, 1 != 0) {
             (*info).errorCount += 1;
-            return false_0 != 0;
+            return 0 != 0;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) -> bool {
@@ -1825,7 +1771,7 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
         let mut ledi: LedInfo = (*info).default_led;
         ledi.merge = (*def).merge;
         ledi.led.name = (*def).name;
-        let mut ok: bool = true_0 != 0;
+        let mut ok: bool = 1 != 0;
         let mut var: *mut VarDef = (*def).body;
         while !var.is_null() {
             let mut elem: *const i8 = ::core::ptr::null::<i8>();
@@ -1838,7 +1784,7 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
                 &raw mut field,
                 &raw mut arrayNdx,
             ) {
-                ok = false_0 != 0;
+                ok = 0 != 0;
             } else if !elem.is_null() {
                 xkb_logf!(
                     (*info).ctx,
@@ -1850,13 +1796,13 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
                     crate::xkb::utils::CStrDisplay(elem),
                     crate::xkb::utils::CStrDisplay(field),
                 );
-                ok = false_0 != 0;
+                ok = 0 != 0;
             } else if !SetLedMapField(info, &raw mut ledi, field, arrayNdx, &raw mut (*var).value) {
-                ok = false_0 != 0;
+                ok = 0 != 0;
             }
             var = (*var).common.next as *mut VarDef;
         }
-        return ok as i32 != 0 && AddLedMap(info, &raw mut ledi, true_0 != 0) as i32 != 0;
+        return ok as i32 != 0 && AddLedMap(info, &raw mut ledi, 1 != 0) as i32 != 0;
     }
 }
 unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile) {
@@ -1880,7 +1826,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "The \"group\" statement in compat is unsupported; Ignored\n",
                     );
-                    ok = true_0 != 0;
+                    ok = 1 != 0;
                 }
                 33 => {
                     ok = HandleLedMapDef(info, stmt as *mut LedMapDef);
@@ -1919,7 +1865,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         "Compat files may not include other types; Ignoring {}\n",
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
-                    ok = false_0 != 0;
+                    ok = 0 != 0;
                 }
             }
             if !ok {
@@ -2068,16 +2014,16 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             collect.sym_interprets.item = ::core::ptr::null_mut::<xkb_sym_interpret>();
             collect.sym_interprets.size = 0 as darray_size_t;
             collect.sym_interprets.alloc = 0 as darray_size_t;
-            CopyInterps(info, true_0 != 0, MATCH_EXACTLY, &raw mut collect);
-            CopyInterps(info, true_0 != 0, MATCH_ALL, &raw mut collect);
-            CopyInterps(info, true_0 != 0, MATCH_NONE, &raw mut collect);
-            CopyInterps(info, true_0 != 0, MATCH_ANY, &raw mut collect);
-            CopyInterps(info, true_0 != 0, MATCH_ANY_OR_NONE, &raw mut collect);
-            CopyInterps(info, false_0 != 0, MATCH_EXACTLY, &raw mut collect);
-            CopyInterps(info, false_0 != 0, MATCH_ALL, &raw mut collect);
-            CopyInterps(info, false_0 != 0, MATCH_NONE, &raw mut collect);
-            CopyInterps(info, false_0 != 0, MATCH_ANY, &raw mut collect);
-            CopyInterps(info, false_0 != 0, MATCH_ANY_OR_NONE, &raw mut collect);
+            CopyInterps(info, 1 != 0, MATCH_EXACTLY, &raw mut collect);
+            CopyInterps(info, 1 != 0, MATCH_ALL, &raw mut collect);
+            CopyInterps(info, 1 != 0, MATCH_NONE, &raw mut collect);
+            CopyInterps(info, 1 != 0, MATCH_ANY, &raw mut collect);
+            CopyInterps(info, 1 != 0, MATCH_ANY_OR_NONE, &raw mut collect);
+            CopyInterps(info, 0 != 0, MATCH_EXACTLY, &raw mut collect);
+            CopyInterps(info, 0 != 0, MATCH_ALL, &raw mut collect);
+            CopyInterps(info, 0 != 0, MATCH_NONE, &raw mut collect);
+            CopyInterps(info, 0 != 0, MATCH_ANY, &raw mut collect);
+            CopyInterps(info, 0 != 0, MATCH_ANY_OR_NONE, &raw mut collect);
             (*keymap).sym_interprets = collect.sym_interprets.item;
             if !(&raw mut (*keymap).num_sym_interprets).is_null() {
                 *&raw mut (*keymap).num_sym_interprets = collect.sym_interprets.size;
@@ -2087,7 +2033,7 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             collect.sym_interprets.alloc = 0 as darray_size_t;
         }
         CopyLedMapDefsToKeymap(keymap, info);
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 pub unsafe fn CompileCompatMap(
@@ -2176,10 +2122,10 @@ pub unsafe fn CompileCompatMap(
         if !(info.errorCount != 0 as i32) {
             if CopyCompatToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearCompatInfo(&raw mut info);
-                return true_0 != 0;
+                return 1 != 0;
             }
         }
         ClearCompatInfo(&raw mut info);
-        return false_0 != 0;
+        return 0 != 0;
     }
 }

@@ -4,68 +4,46 @@ pub mod internal {
     pub type __builtin_va_list = [__va_list_tag; 1];
 }
 
-pub mod types_h {
-    pub type __uint64_t = u64;
-    pub type __dev_t = u64;
-    pub type __uid_t = u32;
-    pub type __gid_t = u32;
-    pub type __ino_t = u64;
-    pub type __ino64_t = u64;
-    pub type __mode_t = u32;
-    pub type __nlink_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-    pub type __time_t = i64;
-    pub type __blksize_t = i64;
-    pub type __blkcnt_t = i64;
-    pub type __syscall_slong_t = i64;
-}
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct timespec {
-        pub tv_sec: __time_t,
-        pub tv_nsec: __syscall_slong_t,
+        pub tv_sec: i64,
+        pub tv_nsec: i64,
     }
-    use super::types_h::{__syscall_slong_t, __time_t};
 }
 pub mod struct_stat_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct stat {
-        pub st_dev: __dev_t,
-        pub st_ino: __ino_t,
-        pub st_nlink: __nlink_t,
-        pub st_mode: __mode_t,
-        pub st_uid: __uid_t,
-        pub st_gid: __gid_t,
+        pub st_dev: u64,
+        pub st_ino: u64,
+        pub st_nlink: u64,
+        pub st_mode: u32,
+        pub st_uid: u32,
+        pub st_gid: u32,
         pub __pad0: i32,
-        pub st_rdev: __dev_t,
-        pub st_size: __off_t,
-        pub st_blksize: __blksize_t,
-        pub st_blocks: __blkcnt_t,
+        pub st_rdev: u64,
+        pub st_size: i64,
+        pub st_blksize: i64,
+        pub st_blocks: i64,
         pub st_atim: timespec,
         pub st_mtim: timespec,
         pub st_ctim: timespec,
-        pub __glibc_reserved: [__syscall_slong_t; 3],
+        pub __glibc_reserved: [i64; 3],
     }
     use super::struct_timespec_h::timespec;
-    use super::types_h::{
-        __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino_t, __mode_t, __nlink_t, __off_t,
-        __syscall_slong_t, __uid_t,
-    };
 }
 pub mod dirent_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct dirent {
-        pub d_ino: __ino64_t,
-        pub d_off: __off64_t,
+        pub d_ino: u64,
+        pub d_off: i64,
         pub d_reclen: u16,
         pub d_type: ::core::ffi::c_uchar,
         pub d_name: [i8; 256],
     }
-    use super::types_h::{__ino64_t, __off64_t};
 }
 pub mod include_dirent_h {
     pub type DIR = __dirstream;
@@ -103,12 +81,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -116,11 +94,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -190,7 +167,6 @@ pub mod stdlib_h {
         );
     }
 }
-pub mod string_h {}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
@@ -216,13 +192,12 @@ pub mod utils_h {
     pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
         unsafe {
             if eaccess(path, mode) != 0 as i32 {
-                return false_0 != 0;
+                return 0 != 0;
             }
-            return true_0 != 0;
+            return 1 != 0;
         }
     }
 
-    use super::stdbool_h::{false_0, true_0};
     use super::unistd_h::eaccess;
     use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrncmp;
@@ -235,10 +210,6 @@ pub mod errno_h {
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
 pub mod unistd_h {
     pub const R_OK: i32 = 4 as i32;
     pub const X_OK: i32 = 1 as i32;
@@ -246,43 +217,18 @@ pub mod unistd_h {
         pub fn eaccess(__name: *const i8, __type: i32) -> i32;
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod config_h {
-    pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
-        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
-    pub const DFLT_XKB_CONFIG_ROOT: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config-2\0")
-    };
-    pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: [i8; 30] = unsafe {
-        ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config.d\0")
-    };
-    pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] = unsafe {
-        ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0")
-    };
-    pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
-        unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
-}
 pub mod errno_base_h {
     pub const ENOMEM: i32 = 12 as i32;
     pub const EACCES: i32 = 13 as i32;
     pub const ENOTDIR: i32 = 20 as i32;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::NULL;
 
 use self::atom_h::{atom_table_free, atom_table_new};
 pub use self::bits_stat_h::__S_IFMT;
-pub use self::config_h::{
-    DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
-    DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
-};
 pub use self::context_h::{
     xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;
@@ -294,16 +240,11 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
 use self::stat_h::stat;
-pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{stderr, va_list};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, strtol};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
-pub use self::types_h::{
-    __blkcnt_t, __blksize_t, __dev_t, __gid_t, __ino64_t, __ino_t, __mode_t, __nlink_t, __off64_t,
-    __off_t, __syscall_slong_t, __time_t, __uid_t, __uint64_t,
-};
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::utils_h::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -313,6 +254,11 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+pub use crate::xkb::shared_types::{darray_size_t, darray_string};
+use crate::xkb::shared_types::{
+    DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
+    DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
+};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
@@ -375,7 +321,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             err = stat(path, &raw mut stat_buf);
             if err != 0 as i32 {
                 err = *__errno_location();
-            } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
+            } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
                 err = ENOTDIR;
             } else if !check_eaccess(path, R_OK | X_OK) {
                 err = EACCES;
@@ -518,7 +464,7 @@ unsafe fn add_direct_subdirectories(
         err = stat(path, &raw mut stat_buf);
         if err != 0 as i32 {
             err = *__errno_location();
-        } else if !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t) {
+        } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
             err = ENOTDIR;
         } else if !check_eaccess(path, R_OK | X_OK) {
             err = EACCES;
@@ -562,7 +508,7 @@ unsafe fn add_direct_subdirectories(
                         break;
                     } else {
                         if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
-                            || !(stat_buf.st_mode & __S_IFMT as __mode_t == 0o40000 as __mode_t)
+                            || !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32)
                         {
                             continue;
                         }
@@ -769,7 +715,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
             &mut (*ctx).failed_includes.size,
             &mut (*ctx).failed_includes.alloc,
         );
-        (*ctx).set_pending_default_includes((false_0 != 0) as bool);
+        (*ctx).set_pending_default_includes((0 != 0) as bool);
     }
 }
 
@@ -962,7 +908,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
             xkb_context_unref(ctx);
             return ::core::ptr::null_mut::<xkb_context>();
         }
-        (*ctx).x11_atom_cache = NULL;
+        (*ctx).x11_atom_cache = std::ptr::null_mut::<core::ffi::c_void>();
         return ctx;
     }
 }
@@ -1009,7 +955,7 @@ pub unsafe fn xkb_context_get_user_data(mut ctx: *mut xkb_context) -> *mut ::cor
         if !ctx.is_null() {
             return (*ctx).user_data;
         }
-        return NULL;
+        return std::ptr::null_mut::<core::ffi::c_void>();
     }
 }
 

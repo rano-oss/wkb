@@ -109,11 +109,6 @@ pub mod include_locale_h {
         pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
     }
 }
-pub mod config_h {
-    pub const DEFAULT_XKB_RULES: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
-}
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
@@ -123,25 +118,14 @@ pub mod getopt_core_h {
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
 pub mod stdlib_h {
     pub const EXIT_FAILURE: i32 = 1 as i32;
     pub const EXIT_SUCCESS: i32 = 0 as i32;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::NULL;
-pub use self::config_h::{DEFAULT_XKB_RULES, EXIT_INVALID_USAGE};
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
-pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{stderr, stdout};
 pub use self::stdlib_h::{EXIT_FAILURE, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -163,6 +147,7 @@ pub use self::xkbregistry_h::{
     RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO, RXKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::shared_types::DEFAULT_XKB_RULES;
 unsafe fn usage(mut progname: *const i8, mut fp: *mut FILE) {
     unsafe {
         let use_stderr = fp == stderr;
@@ -186,7 +171,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut l: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         let mut g: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut flags: rxkb_context_flags = RXKB_CONTEXT_NO_FLAGS;
-        let mut load_defaults: bool = true_0 != 0;
+        let mut load_defaults: bool = 1 != 0;
         let mut verbosity: i32 = 0 as i32;
         let mut ruleset: *const i8 = DEFAULT_XKB_RULES.as_ptr();
         static mut opts: [option; 6] = [
@@ -247,7 +232,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     return 0 as i32;
                 }
                 100 => {
-                    load_defaults = false_0 != 0;
+                    load_defaults = 0 != 0;
                 }
                 101 => {
                     flags = (flags as u32 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32)
@@ -261,7 +246,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 _ => {
                     usage(*argv.offset(0 as i32 as isize), stderr);
-                    return EXIT_INVALID_USAGE;
+                    return 2;
                 }
             }
         }

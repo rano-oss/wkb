@@ -1,10 +1,4 @@
 // use f128; // f128 is unstable, replaced with f64
-pub mod types_h {
-    pub type __uint32_t = u32;
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
 
 pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
@@ -26,11 +20,6 @@ pub mod getopt_ext_h {
             __longind: *mut i32,
         ) -> i32;
     }
-}
-pub mod stdint_uintn_h {
-    pub type u32 = __uint32_t;
-    pub type uint64_t = __uint64_t;
-    use super::types_h::{__uint32_t, __uint64_t};
 }
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -54,12 +43,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -67,11 +56,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: i32,
         pub _unused3: i32,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -128,34 +116,32 @@ pub mod utils_h {
 }
 pub mod utils_numbers_h {
 
-    use super::stdint_uintn_h::uint64_t;
     use super::utils_h::is_xdigit;
     #[inline]
     pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
-        mut out: *mut uint64_t,
+        mut out: *mut u64,
     ) -> i32 {
         unsafe {
-            let mut result: uint64_t = 0 as uint64_t;
+            let mut result: u64 = 0 as u64;
             let mut i: usize = 0;
             i = 0 as usize;
             while i < len
                 && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
                     < 10 as u32
-                && result <= (18446744073709551615 as uint64_t).wrapping_div(10 as uint64_t)
-                && result.wrapping_mul(10 as uint64_t)
-                    <= (18446744073709551615 as uint64_t).wrapping_sub(
-                        (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar
-                            as uint64_t,
+                && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
+                && result.wrapping_mul(10 as u64)
+                    <= (18446744073709551615 as u64).wrapping_sub(
+                        (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u64,
                     )
             {
                 result = result
-                    .wrapping_mul(10 as uint64_t)
-                    .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as uint64_t);
+                    .wrapping_mul(10 as u64)
+                    .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as u64);
                 i = i.wrapping_add(1);
             }
-            *out = result as uint64_t;
+            *out = result as u64;
             return if i >= len
                 || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
                     >= 10 as u32
@@ -455,22 +441,22 @@ pub mod utils_numbers_h {
     pub unsafe fn parse_hex_to_uint64_t(
         mut s: *const i8,
         mut len: usize,
-        mut out: *mut uint64_t,
+        mut out: *mut u64,
     ) -> i32 {
         unsafe {
-            let mut result: uint64_t = 0 as uint64_t;
+            let mut result: u64 = 0 as u64;
             let mut i: usize = 0 as usize;
             while i < len
                 && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32)
                     < 16 as u32
-                && result <= 18446744073709551615 as uint64_t >> 4 as i32
+                && result <= 18446744073709551615 as u64 >> 4 as i32
             {
-                result = result.wrapping_mul(16 as uint64_t).wrapping_add(
-                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as uint64_t,
+                result = result.wrapping_mul(16 as u64).wrapping_add(
+                    digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u64,
                 );
                 i = i.wrapping_add(1);
             }
-            *out = result as uint64_t;
+            *out = result as u64;
             return if i >= len || !is_xdigit(*s.offset(i as isize)) {
                 i as i32
             } else {
@@ -484,9 +470,6 @@ pub mod getopt_core_h {
         pub static mut optarg: *mut i8;
     }
 }
-pub mod stdbool_h {
-    pub const false_0: i32 = 0 as i32;
-}
 pub mod stdlib_h {
     pub const EXIT_SUCCESS: i32 = 0 as i32;
     extern "C" {
@@ -495,27 +478,15 @@ pub mod stdlib_h {
         pub fn exit(__status: i32) -> !;
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod config_h {
-    pub const EXIT_INVALID_USAGE: i32 = 2 as i32;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
-pub use self::config_h::EXIT_INVALID_USAGE;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-pub use self::stdbool_h::false_0;
-pub use self::stdint_uintn_h::{u32, uint64_t};
 use self::stdio_h::{fclose, fopen};
 pub use self::stdlib_h::{atof, exit, strtol, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __uint32_t, __uint64_t};
 pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
@@ -582,7 +553,7 @@ unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
                 result = result
                     .wrapping_add((10 as i32 + *s.offset(i as isize) as i32 - 'A' as i32) as u32);
             } else {
-                return false_0 != 0;
+                return 0 != 0;
             }
             i = i.wrapping_add(1);
         }
@@ -658,7 +629,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 _ => {
                     usage(argv);
-                    exit(EXIT_INVALID_USAGE);
+                    exit(2);
                 }
             }
         }
@@ -691,7 +662,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let content = mapped.as_ptr();
         let size = mapped.len();
         let mut dummy32: u32 = 0 as u32;
-        let mut dummy64: uint64_t = 0 as uint64_t;
+        let mut dummy64: u64 = 0 as u64;
         let mut max_iterations: u32 = 0;
         print!("*** parse_hex_to_uint32_t ***\n");
         bench_start2(&raw mut bench);
@@ -879,16 +850,15 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         bench_start2(&raw mut _bench_1);
         let mut n_3: usize = 0 as usize;
         while n_3 < size {
-            let mut val_3: uint64_t = 0 as uint64_t;
+            let mut val_3: u64 = 0 as u64;
             parse_dec_to_uint64_t(
                 content.offset(n_3 as isize),
                 size.wrapping_sub(n_3),
                 &raw mut val_3,
             );
             ::core::ptr::write_volatile(
-                &mut dummy64 as *mut uint64_t,
-                ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
-                    .wrapping_add(val_3),
+                &mut dummy64 as *mut u64,
+                ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(val_3),
             );
             n_3 = n_3.wrapping_add(1);
         }
@@ -900,15 +870,15 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             while k_1 < (2 as u32).wrapping_mul(max_iterations) {
                 let mut n_4: usize = 0 as usize;
                 while n_4 < size {
-                    let mut val_4: uint64_t = 0 as uint64_t;
+                    let mut val_4: u64 = 0 as u64;
                     parse_dec_to_uint64_t(
                         content.offset(n_4 as isize),
                         size.wrapping_sub(n_4),
                         &raw mut val_4,
                     );
                     ::core::ptr::write_volatile(
-                        &mut dummy64 as *mut uint64_t,
-                        ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
+                        &mut dummy64 as *mut u64,
+                        ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64)
                             .wrapping_add(val_4),
                     );
                     n_4 = n_4.wrapping_add(1);
@@ -970,14 +940,13 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut n_5: usize = 0 as usize;
         while n_5 < size {
             ::core::ptr::write_volatile(
-                &mut dummy64 as *mut uint64_t,
-                ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t).wrapping_add(
-                    strtol(
-                        content.offset(n_5 as isize),
-                        ::core::ptr::null_mut::<*mut i8>(),
-                        10 as i32,
-                    ) as uint64_t,
-                ),
+                &mut dummy64 as *mut u64,
+                ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(strtol(
+                    content.offset(n_5 as isize),
+                    ::core::ptr::null_mut::<*mut i8>(),
+                    10 as i32,
+                )
+                    as u64),
             );
             n_5 = n_5.wrapping_add(1);
         }
@@ -990,13 +959,14 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 let mut n_6: usize = 0 as usize;
                 while n_6 < size {
                     ::core::ptr::write_volatile(
-                        &mut dummy64 as *mut uint64_t,
-                        ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
-                            .wrapping_add(strtol(
+                        &mut dummy64 as *mut u64,
+                        ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(
+                            strtol(
                                 content.offset(n_6 as isize),
                                 ::core::ptr::null_mut::<*mut i8>(),
                                 10 as i32,
-                            ) as uint64_t),
+                            ) as u64,
+                        ),
                     );
                     n_6 = n_6.wrapping_add(1);
                 }
@@ -1056,16 +1026,15 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         bench_start2(&raw mut _bench_3);
         let mut n_7: usize = 0 as usize;
         while n_7 < size {
-            let mut val_5: uint64_t = 0 as uint64_t;
+            let mut val_5: u64 = 0 as u64;
             parse_hex_to_uint64_t(
                 content.offset(n_7 as isize),
                 size.wrapping_sub(n_7),
                 &raw mut val_5,
             );
             ::core::ptr::write_volatile(
-                &mut dummy64 as *mut uint64_t,
-                ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
-                    .wrapping_add(val_5),
+                &mut dummy64 as *mut u64,
+                ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(val_5),
             );
             n_7 = n_7.wrapping_add(1);
         }
@@ -1077,15 +1046,15 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             while k_3 < (2 as u32).wrapping_mul(max_iterations) {
                 let mut n_8: usize = 0 as usize;
                 while n_8 < size {
-                    let mut val_6: uint64_t = 0 as uint64_t;
+                    let mut val_6: u64 = 0 as u64;
                     parse_hex_to_uint64_t(
                         content.offset(n_8 as isize),
                         size.wrapping_sub(n_8),
                         &raw mut val_6,
                     );
                     ::core::ptr::write_volatile(
-                        &mut dummy64 as *mut uint64_t,
-                        ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
+                        &mut dummy64 as *mut u64,
+                        ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64)
                             .wrapping_add(val_6),
                     );
                     n_8 = n_8.wrapping_add(1);
@@ -1147,14 +1116,13 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut n_9: usize = 0 as usize;
         while n_9 < size {
             ::core::ptr::write_volatile(
-                &mut dummy64 as *mut uint64_t,
-                ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t).wrapping_add(
-                    strtol(
-                        content.offset(n_9 as isize),
-                        ::core::ptr::null_mut::<*mut i8>(),
-                        16 as i32,
-                    ) as uint64_t,
-                ),
+                &mut dummy64 as *mut u64,
+                ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(strtol(
+                    content.offset(n_9 as isize),
+                    ::core::ptr::null_mut::<*mut i8>(),
+                    16 as i32,
+                )
+                    as u64),
             );
             n_9 = n_9.wrapping_add(1);
         }
@@ -1167,13 +1135,14 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 let mut n_10: usize = 0 as usize;
                 while n_10 < size {
                     ::core::ptr::write_volatile(
-                        &mut dummy64 as *mut uint64_t,
-                        ::core::ptr::read_volatile::<uint64_t>(&dummy64 as *const uint64_t)
-                            .wrapping_add(strtol(
+                        &mut dummy64 as *mut u64,
+                        ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(
+                            strtol(
                                 content.offset(n_10 as isize),
                                 ::core::ptr::null_mut::<*mut i8>(),
                                 16 as i32,
-                            ) as uint64_t),
+                            ) as u64,
+                        ),
                     );
                     n_10 = n_10.wrapping_add(1);
                 }

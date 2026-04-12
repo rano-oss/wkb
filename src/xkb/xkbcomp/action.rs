@@ -2,28 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    pub type i64 = __int64_t;
-    use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_text;
@@ -55,7 +33,7 @@ pub mod xkbcommon_h {
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     #[inline]
     pub unsafe fn XkbKeyByName(
         mut keymap: *const xkb_keymap,
@@ -225,21 +203,10 @@ pub mod stdlib_h {
 
     extern "C" {}
 }
-pub mod string_h {}
 pub use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
     ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
 };
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdint_h {
-    pub const INT8_MIN: i32 = -128 as i32;
-    pub const INT16_MIN: i32 = -32767 as i32 - 1 as i32;
-    pub const INT8_MAX: i32 = 127 as i32;
-    pub const INT16_MAX: i32 = 32767 as i32;
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -249,11 +216,6 @@ pub mod utils_h {
     }
     pub use crate::xkb::utils::istrcmp;
 }
-pub mod stdbool_h {
-    pub const true_0: i32 = 1 as i32;
-    pub const false_0: i32 = 0 as i32;
-}
-pub use self::__stddef_null_h::NULL;
 
 pub use self::action_h::ActionsInfo;
 pub use self::ast_h::{
@@ -273,7 +235,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -348,16 +309,9 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::{INT16_MAX, INT16_MIN, INT8_MAX, INT8_MIN};
-pub use self::stdint_intn_h::{i16, i32, i64, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::text_h::{
     actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
     LookupValue,
-};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
 };
 pub use self::utils_h::{istrcmp, istreq};
 pub use self::xkbcommon_h::{
@@ -385,6 +339,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::action_equal;
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::darray_append;
 pub type action_field = u32;
@@ -430,14 +385,14 @@ static mut constTrue: ExprBoolean = ExprBoolean {
         next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: true_0 != 0,
+    set: 1 != 0,
 };
 static mut constFalse: ExprBoolean = ExprBoolean {
     common: _ParseCommon {
         next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: false_0 != 0,
+    set: 0 != 0,
 };
 pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut ActionsInfo) {
     unsafe {
@@ -783,7 +738,7 @@ unsafe fn CheckBooleanFlag(
     mut flags_inout: *mut xkb_action_flags,
 ) -> xkb_parser_error {
     unsafe {
-        let mut set: bool = false_0 != 0;
+        let mut set: bool = 0 != 0;
         if !array_ndx.is_null() {
             return ReportActionNotArray(ctx, action, field, strict);
         }
@@ -1051,7 +1006,7 @@ unsafe fn CheckGroupField(
             spec = value;
         }
         let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0;
-        let mut pending: bool = false_0 != 0;
+        let mut pending: bool = 0 != 0;
         let ret: xkb_parser_error =
             ExprResolveGroup(keymap_info, spec, absolute, &raw mut idx, &raw mut pending)
                 as xkb_parser_error;
@@ -1209,7 +1164,7 @@ unsafe fn HandleMovePtr(
                     (*keymap_info).strict,
                 );
             }
-            if val < INT16_MIN as i64 || val > INT16_MAX as i64 {
+            if val < i16::MIN as i64 || val > i16::MAX as i64 {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -1303,7 +1258,7 @@ unsafe fn HandlePtrBtn(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as xkb_parser_error;
             }
-            (*act).button = btn as uint8_t;
+            (*act).button = btn as u8;
             return PARSER_SUCCESS;
         } else if (*action).type_0 as u32 == ACTION_TYPE_PTR_LOCK as i32 as u32
             && field as u32 == ACTION_FIELD_AFFECT as i32 as u32
@@ -1348,7 +1303,7 @@ unsafe fn HandlePtrBtn(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as xkb_parser_error;
             }
-            (*act).count = val as uint8_t;
+            (*act).count = val as u8;
             return PARSER_SUCCESS;
         }
         return ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1521,7 +1476,7 @@ unsafe fn HandleSwitchScreen(
             } else {
                 val
             };
-            if val < INT8_MIN as i64 || val > INT8_MAX as i64 {
+            if val < i8::MIN as i64 || val > i8::MAX as i64 {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -1574,7 +1529,7 @@ unsafe fn HandleSetLockControls(
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
             let mut mask: u32 = 0 as u32;
-            let offset: uint8_t = (*keymap_info).features.controls_name_offset;
+            let offset: u8 = (*keymap_info).features.controls_name_offset;
             if !ExprResolveMask(
                 ctx,
                 value,
@@ -1642,7 +1597,7 @@ unsafe fn HandleRedirectKey(
                     (*keymap_info).strict,
                 );
             }
-            let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, true_0 != 0);
+            let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, 1 != 0);
             if key.is_null() {
                 xkb_logf!(
                     ctx,
@@ -1786,13 +1741,13 @@ unsafe fn HandlePrivate(
                 }
                 let mut str: *const i8 = xkb_atom_text(ctx, val);
                 let mut len: usize = cstr_len(str);
-                if len < 1 as usize || len > ::core::mem::size_of::<[uint8_t; 7]>() as usize {
+                if len < 1 as usize || len > ::core::mem::size_of::<[u8; 7]>() as usize {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "A private action has {} data bytes, but got: {}; Illegal data ignored\n",
-                        ::core::mem::size_of::<[uint8_t; 7]>(),
+                        ::core::mem::size_of::<[u8; 7]>(),
                         len,
                     );
                     return (if (*keymap_info).strict as u32
@@ -1804,8 +1759,8 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                std::ptr::write_bytes::<[uint8_t; 7]>(
-                    &raw mut (*act).data as *mut uint8_t as *mut [uint8_t; 7],
+                std::ptr::write_bytes::<[u8; 7]>(
+                    &raw mut (*act).data as *mut u8 as *mut [u8; 7],
                     0u8,
                     1,
                 );
@@ -1834,14 +1789,13 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                if ndx < 0 as i64 || ndx as usize >= ::core::mem::size_of::<[uint8_t; 7]>() as usize
-                {
+                if ndx < 0 as i64 || ndx as usize >= ::core::mem::size_of::<[u8; 7]>() as usize {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "The data for a private action is {} bytes long; Attempt to use data[{}] ignored\n",
-                        ::core::mem::size_of::<[uint8_t; 7]>(),
+                        ::core::mem::size_of::<[u8; 7]>(),
                         ndx,
                     );
                     return (if (*keymap_info).strict as u32
@@ -1880,7 +1834,7 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                (*act).data[ndx as usize] = datum as uint8_t;
+                (*act).data[ndx as usize] = datum as u8;
                 return PARSER_SUCCESS;
             }
         }

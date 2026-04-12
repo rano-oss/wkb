@@ -87,7 +87,6 @@ pub mod atom_h {
     }
 }
 
-
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 
@@ -166,7 +165,7 @@ pub mod xkbcommon_h {
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
-    pub type xkb_overlay_index_t = uint8_t;
+    pub type xkb_overlay_index_t = u8;
     pub const XKB_MOD_ALL: C2Rust_Unnamed_23 = 4294967295;
     pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
     pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
@@ -549,8 +548,6 @@ pub mod xkbcommon_features_h {
     pub use crate::xkb::features::xkb_feature_supported;
 }
 
-pub mod string_h {}
-
 pub mod utils_numbers_h {
     #[inline]
 
@@ -629,34 +626,14 @@ pub mod utf8_h {
     }
 }
 
-pub mod stdint_h {
-
-    pub const INT32_MAX: i32 = 2147483647 as i32;
-}
-
-pub mod __stddef_null_h {
-
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-
-pub mod stdbool_h {
-
-    pub const true_0: i32 = 1 as i32;
-
-    pub const false_0: i32 = 0 as i32;
-}
-
 pub mod xkbcommon_keysyms_h {
 
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
@@ -741,8 +718,6 @@ pub use self::state_priv_h::{
     state_components, xkb_event, xkb_layout_policy_update_v1, xkb_state_components_update_v1,
     xkb_state_update_v1, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
 };
-pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_h::INT32_MAX;
 pub use self::stdio_h::va_list;
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort};
 use self::utf8_h::is_valid_utf8;
@@ -800,6 +775,7 @@ pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -1372,12 +1348,12 @@ unsafe fn xkb_action_breaks_latch(
 ) -> bool {
     unsafe {
         match (*action).type_0 as u32 {
-            0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return true_0 != 0,
+            0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return 1 != 0,
             20 => {
                 return (*action).internal.flags as u32 & flag as u32 != 0
                     && (*action).internal.c2rust_unnamed.clear_latched_mods & mask == mask;
             }
-            _ => return false_0 != 0,
+            _ => return 0 != 0,
         };
     }
 }
@@ -1986,7 +1962,7 @@ unsafe fn append_redirect_key_events(
                 },
             );
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 
@@ -2263,7 +2239,7 @@ unsafe fn xkb_filter_apply_all(
     mut direction: xkb_key_direction,
 ) {
     unsafe {
-        let mut consumed: bool = false_0 != 0;
+        let mut consumed: bool = 0 != 0;
         let mut filter: *mut xkb_filter = ::core::ptr::null_mut::<xkb_filter>();
         if !(*state).filters.item.is_null() {
             filter = (*state).filters.item.offset(0 as i32 as isize) as *mut xkb_filter;
@@ -2276,7 +2252,7 @@ unsafe fn xkb_filter_apply_all(
                     ) as i32
                         == XKB_FILTER_CONSUME as i32
                     {
-                        consumed = true_0 != 0;
+                        consumed = 1 != 0;
                     }
                 }
                 filter = filter.offset(1);
@@ -3498,7 +3474,7 @@ unsafe fn match_mod_masks(
         if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as i32 as u32 == 0
             && active & !wanted != 0
         {
-            return false_0 != 0;
+            return 0 != 0;
         }
         if match_0 as u32 & XKB_STATE_MATCH_ANY as i32 as u32 != 0 {
             return active & wanted != 0;
@@ -4117,7 +4093,7 @@ unsafe fn machine_set_mods(
                 mappings: ::core::ptr::null_mut::<machine_mods_mapping>(),
             } as machine_modifiers_config;
         }
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 
@@ -4131,7 +4107,7 @@ unsafe fn machine_set_shortcuts(
                 mask: 0 as xkb_mod_mask_t,
                 targets: ::core::ptr::null_mut::<xkb_layout_index_t>(),
             } as machine_shortcuts_config;
-            return true_0 != 0;
+            return 1 != 0;
         }
         let keymap: *mut xkb_keymap = (*sm).state.keymap;
         let mut count: xkb_layout_index_t =
@@ -4152,7 +4128,7 @@ unsafe fn machine_set_shortcuts(
             count = count.wrapping_sub(1);
         }
         if count == 0 {
-            return true_0 != 0;
+            return 1 != 0;
         }
         let mut mask: xkb_mod_mask_t = (*options).mask;
         if mask != 0 {
@@ -4160,14 +4136,14 @@ unsafe fn machine_set_shortcuts(
                 as xkb_mod_mask_t;
         }
         if mask == 0 {
-            return true_0 != 0;
+            return 1 != 0;
         }
         let targets: *mut xkb_layout_index_t = calloc(
             (*keymap).num_groups as usize,
             ::core::mem::size_of::<xkb_layout_index_t>() as usize,
         ) as *mut xkb_layout_index_t;
         if targets.is_null() {
-            return false_0 != 0;
+            return 0 != 0;
         }
         let mut l: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while l < count {
@@ -4188,7 +4164,7 @@ unsafe fn machine_set_shortcuts(
             mask: mask,
             targets: targets,
         } as machine_shortcuts_config;
-        return true_0 != 0;
+        return 1 != 0;
     }
 }
 
@@ -4693,7 +4669,7 @@ pub unsafe fn xkb_machine_process_key(
             bit <<= 1 as i32;
         }
         xkb_state_update_derived(state);
-        let mut has_key_event: bool = false_0 != 0;
+        let mut has_key_event: bool = 0 != 0;
         let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
         if !(*events).queue.item.is_null() {
             event = (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event;
@@ -4703,7 +4679,7 @@ pub unsafe fn xkb_machine_process_key(
             {
                 match (*event).type_0 as u32 {
                     1 | 2 | 3 => {
-                        has_key_event = true_0 != 0;
+                        has_key_event = 1 != 0;
                     }
                     _ => {}
                 }

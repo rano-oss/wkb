@@ -292,7 +292,7 @@ pub const ACTION_TYPE_NONE: xkb_action_type = 0;
 #[repr(C)]
 pub struct xkb_private_action {
     pub type_0: xkb_action_type,
-    pub data: [uint8_t; 7],
+    pub data: [u8; 7],
 }
 
 #[derive(Copy, Clone)]
@@ -309,8 +309,8 @@ pub struct xkb_redirect_key_action {
 pub struct xkb_pointer_button_action {
     pub type_0: xkb_action_type,
     pub flags: xkb_action_flags,
-    pub count: uint8_t,
-    pub button: uint8_t,
+    pub count: u8,
+    pub button: u8,
 }
 
 pub type xkb_action_flags = u32;
@@ -411,7 +411,7 @@ pub struct xkb_mods {
     pub mask: xkb_mod_mask_t,
 }
 
-pub type xkb_action_count_t = uint16_t;
+pub type xkb_action_count_t = u16;
 
 pub type xkb_match_operation = u32;
 pub const MATCH_EXACTLY: xkb_match_operation = 4;
@@ -589,9 +589,9 @@ pub union C2Rust_Unnamed_12 {
     pub has_upper: bool,
 }
 
-pub type xkb_keysym_count_t = uint16_t;
-pub type xkb_overlay_mask_t = uint8_t;
-pub type xkb_overlay_index_t = uint8_t;
+pub type xkb_keysym_count_t = u16;
+pub type xkb_overlay_mask_t = u8;
+pub type xkb_overlay_index_t = u8;
 
 pub type xkb_explicit_components = u32;
 pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
@@ -635,6 +635,30 @@ pub const UINT16_MAX: i32 = 65535;
 pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
     .wrapping_mul(CHAR_BIT as usize) as xkb_led_index_t;
 pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
+
+// ── config_h constants ──────────────────────────────────────────────
+
+pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
+    unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
+pub const DEFAULT_XKB_MODEL: [i8; 6] =
+    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
+pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = std::ptr::null_mut::<core::ffi::c_void>();
+pub const DEFAULT_XKB_RULES: [i8; 6] =
+    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
+pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = std::ptr::null_mut::<core::ffi::c_void>();
+
+pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
+    unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
+pub const DFLT_XKB_CONFIG_ROOT: [i8; 30] =
+    unsafe { ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config-2\0") };
+pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: [i8; 30] =
+    unsafe { ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config.d\0") };
+pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] =
+    unsafe { ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0") };
+pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
+    unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
+
+pub const EXIT_INVALID_USAGE: i32 = 2;
 
 // ── Inline helpers ──────────────────────────────────────────────────
 

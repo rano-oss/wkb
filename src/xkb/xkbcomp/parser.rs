@@ -321,7 +321,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod string_h {}
 pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -333,13 +332,12 @@ pub mod utils_h {
     pub unsafe fn streq_not_null(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             if s1.is_null() || s2.is_null() {
-                return false_0 != 0;
+                return 0 != 0;
             }
             return streq(s1, s2);
         }
     }
 
-    use super::stdbool_h::false_0;
     use crate::xkb::utils::cstr_cmp;
     pub use crate::xkb::utils::istrncmp;
 }
@@ -406,21 +404,12 @@ pub mod parser_priv_h {
         unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
     }
 }
-pub mod __stddef_null_h {
-    pub const NULL: *mut ::core::ffi::c_void =
-        ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
-}
-pub mod stdbool_h {
-    pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     pub const XKB_KEY_VoidSymbol: ::core::ffi::c_int = 0xffffff as ::core::ffi::c_int;
     pub const XKB_KEY_0: ::core::ffi::c_int = 0x30 as ::core::ffi::c_int;
     pub const XKB_KEY_section: ::core::ffi::c_int = 0xa7 as ::core::ffi::c_int;
 }
-pub use self::__stddef_null_h::NULL;
 
 use self::ast_build_h::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
@@ -454,7 +443,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use crate::xkb::shared_types::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
 pub use self::messages_codes_h::{
@@ -514,7 +502,6 @@ pub use self::parser_h::{
 };
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
-pub use self::stdbool_h::{false_0, true_0};
 use self::stdlib_h::{free, malloc};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
@@ -526,6 +513,7 @@ pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };
 pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
+pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -760,7 +748,7 @@ unsafe fn resolve_keysym(
                 != 0
         {
             *sym_rtrn = XKB_KEY_NoSymbol as xkb_keysym_t;
-            return true_0 != 0;
+            return 1 != 0;
         }
         if isvaleq(
             name,
@@ -780,11 +768,11 @@ unsafe fn resolve_keysym(
                 != 0
         {
             *sym_rtrn = XKB_KEY_VoidSymbol as xkb_keysym_t;
-            return true_0 != 0;
+            return 1 != 0;
         }
         let mut buf: [i8; 31] = [0; 31];
         if name.len >= ::core::mem::size_of::<[i8; 31]>() as usize {
-            return false_0 != 0;
+            return 0 != 0;
         }
         std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
         buf[name.len as usize] = '\0' as i32 as i8;
@@ -827,9 +815,9 @@ unsafe fn resolve_keysym(
                     }
                 }
             }
-            return true_0 != 0;
+            return 1 != 0;
         }
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 pub const YY_NULLPTR: *mut ::core::ffi::c_void =
@@ -4074,7 +4062,7 @@ pub unsafe fn parse(
             ctx: ctx,
             scanner: scanner,
             rtrn: ::core::ptr::null_mut::<XkbFile>(),
-            more_maps: false_0 != 0,
+            more_maps: 0 != 0,
         };
         loop {
             ret = _xkbcommon_parse(&raw mut param);
@@ -4515,12 +4503,12 @@ pub unsafe fn parse_next(
             ctx: ctx,
             scanner: scanner,
             rtrn: ::core::ptr::null_mut::<XkbFile>(),
-            more_maps: false_0 != 0,
+            more_maps: 0 != 0,
         };
         ret = _xkbcommon_parse(&raw mut param);
         if ret == 0 as ::core::ffi::c_int && param.more_maps as ::core::ffi::c_int != 0 {
             *xkb_file = param.rtrn;
-            return true_0 != 0;
+            return 1 != 0;
         } else {
             FreeXkbFile(param.rtrn);
             *xkb_file = ::core::ptr::null_mut::<XkbFile>();
@@ -5566,7 +5554,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         4 => {
                             (*param).rtrn = ::core::ptr::null_mut::<XkbFile>();
                             yyval.file = (*param).rtrn;
-                            (*param).more_maps = false_0 != 0;
+                            (*param).more_maps = 0 != 0;
                             c2rust_current_block = 9699707990742192723;
                         }
                         5 => {
@@ -5911,14 +5899,14 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         49 => {
                             yyval.var = BoolVarCreate(
                                 (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).atom,
-                                true_0 != 0,
+                                1 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         50 => {
                             yyval.var = BoolVarCreate(
                                 (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).atom,
-                                false_0 != 0,
+                                0 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6093,14 +6081,14 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         71 => {
                             yyval.var = BoolVarCreate(
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
-                                true_0 != 0,
+                                1 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         72 => {
                             yyval.var = BoolVarCreate(
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
-                                false_0 != 0,
+                                0 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6259,7 +6247,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             yyval.ledName = LedNameCreate(
                                 (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).num,
                                 (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
-                                false_0 != 0,
+                                0 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6267,7 +6255,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             yyval.ledName = LedNameCreate(
                                 (*yyvsp.offset(-3 as ::core::ffi::c_int as isize)).num,
                                 (*yyvsp.offset(-1 as ::core::ffi::c_int as isize)).expr,
-                                true_0 != 0,
+                                1 != 0,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6303,27 +6291,27 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         93 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         94 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         95 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         96 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         97 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         98 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         99 => {
@@ -6331,11 +6319,11 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var
                                     as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         100 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         101 => {
@@ -6343,23 +6331,23 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).ledMap
                                     as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         102 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         103 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         104 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         105 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         106 => {
@@ -6367,19 +6355,19 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).var
                                     as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         107 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         108 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         109 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         110 => {
@@ -6388,39 +6376,39 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     .exprList
                                     .head as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         111 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         112 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         113 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         114 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         115 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         116 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         117 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         118 => {
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         119 => {
@@ -6428,7 +6416,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr
                                     as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         120 => {
@@ -6449,7 +6437,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     .varList
                                     .head as *mut ParseCommon,
                             );
-                            yyval.geom = NULL;
+                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
                         124 => {

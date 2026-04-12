@@ -5,7 +5,7 @@
 //! can share the same Rust types.
 
 use crate::xkb::shared_types::{
-    darray_size_t, uint8_t, xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t,
+    darray_size_t, xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t,
     xkb_log_level, xkb_overlay_index_t,
 };
 use crate::xkb::text::LookupEntry;
@@ -437,7 +437,7 @@ pub struct XkbcompLookup {
 pub struct XkbcompFeatures {
     pub max_groups: xkb_layout_index_t,
     pub max_overlays: xkb_overlay_index_t,
-    pub controls_name_offset: uint8_t,
+    pub controls_name_offset: u8,
     pub group_lock_on_release: bool,
     pub mods_unlock_on_press: bool,
     pub mods_latch_on_press: bool,
@@ -477,7 +477,7 @@ pub unsafe fn ReportNotArray(
             crate::xkb::utils::CStrDisplay(field),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 
@@ -502,7 +502,7 @@ pub unsafe fn ReportBadType(
             crate::xkb::utils::CStrDisplay(wanted),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 
@@ -524,7 +524,7 @@ pub unsafe fn ReportBadField(
             crate::xkb::utils::CStrDisplay(name),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
 
@@ -546,6 +546,6 @@ pub unsafe fn ReportShouldBeArray(
             crate::xkb::utils::CStrDisplay(field),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return false_0 != 0;
+        return 0 != 0;
     }
 }
