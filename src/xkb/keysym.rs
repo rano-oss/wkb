@@ -21906,17 +21906,17 @@ pub struct xkb_keysym_iterator {
     pub index: i32,
     pub keysym: xkb_keysym_t,
 }
-unsafe fn find_keysym_index(mut ks: xkb_keysym_t) -> isize {
-    unsafe {
-        if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
-            return -1 as i32 as isize;
-        }
-        let mut lo: isize = 0 as isize;
-        let mut hi: isize = (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
-            .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
-            .wrapping_sub(1 as usize) as isize;
-        while hi >= lo {
-            let mut mid: isize = (lo + hi) / 2 as isize;
+fn find_keysym_index(mut ks: u32) -> isize {
+    if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
+        return -1 as i32 as isize;
+    }
+    let mut lo: isize = 0 as isize;
+    let mut hi: isize = (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
+        .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+        .wrapping_sub(1 as usize) as isize;
+    while hi >= lo {
+        let mut mid: isize = (lo + hi) / 2 as isize;
+        unsafe {
             if ks > keysym_to_name[mid as usize].keysym {
                 lo = mid + 1 as isize;
             } else if ks < keysym_to_name[mid as usize].keysym {
@@ -21925,8 +21925,8 @@ unsafe fn find_keysym_index(mut ks: xkb_keysym_t) -> isize {
                 return mid;
             }
         }
-        return -1 as i32 as isize;
     }
+    return -1 as i32 as isize;
 }
 #[inline]
 unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
@@ -21971,11 +21971,9 @@ pub unsafe fn xkb_keysym_get_name(
     }
 }
 
-pub unsafe fn xkb_keysym_is_assigned(mut ks: xkb_keysym_t) -> bool {
-    unsafe {
-        return XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= XKB_KEYSYM_UNICODE_MAX as u32
-            || find_keysym_index(ks) != -1 as i32 as isize;
-    }
+pub fn xkb_keysym_is_assigned(mut ks: u32) -> bool {
+    return XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= XKB_KEYSYM_UNICODE_MAX as u32
+        || find_keysym_index(ks) != -1 as i32 as isize;
 }
 
 pub unsafe fn xkb_keysym_get_explicit_names(
