@@ -176,10 +176,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    extern "C" {
-        #[c2rust::src_loc = "983:1"]
-        pub fn xkb_context_unref(context: *mut xkb_context);
-    }
+    pub use crate::xkb::context::xkb_context_unref;
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 pub mod keymap_h {

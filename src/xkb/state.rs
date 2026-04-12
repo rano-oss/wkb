@@ -223,6 +223,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_LEVEL_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
+    pub use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
     extern "C" {
 
         pub fn xkb_keysym_to_utf8(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
@@ -230,10 +231,6 @@ pub mod xkbcommon_h {
         pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
 
         pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
-
-        pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
-
-        pub fn xkb_context_unref(context: *mut xkb_context);
 
         pub fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap;
 

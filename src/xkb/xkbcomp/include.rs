@@ -185,6 +185,9 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod context_h {
+    pub use crate::xkb::context::{
+        xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
+    };
     pub use crate::xkb::context_priv::{
         xkb_context_failed_include_path_get, xkb_context_getenv,
         xkb_context_num_failed_include_paths,
@@ -194,8 +197,6 @@ pub mod context_h {
         C2Rust_Unnamed_0,
     };
     extern "C" {
-        pub fn xkb_context_include_path_get_extra_path(ctx: *mut xkb_context) -> *const i8;
-        pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
         pub fn xkb_log(
             ctx: *mut xkb_context,
             level: xkb_log_level,
@@ -212,20 +213,15 @@ pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
+    pub use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
     pub use crate::xkb::shared_types::{
         xkb_context, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
         XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
     };
-    extern "C" {
-        pub fn xkb_context_num_include_paths(context: *mut xkb_context) -> u32;
-        pub fn xkb_context_include_path_get(context: *mut xkb_context, index: u32) -> *const i8;
-    }
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
-    extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
 }
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
@@ -409,9 +405,7 @@ pub mod xkbcomp_priv_h {
         }
     }
 
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod stdbool_h {
     pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;

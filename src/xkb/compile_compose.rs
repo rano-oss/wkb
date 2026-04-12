@@ -119,10 +119,7 @@ pub mod xkbcommon_h {
     pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
     pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
     pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-    extern "C" {
-        pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
-        pub fn xkb_context_unref(context: *mut xkb_context);
-    }
+    pub use crate::xkb::context::{xkb_context_new, xkb_context_unref};
 }
 pub mod table_h {
     #[derive(Copy, Clone)]

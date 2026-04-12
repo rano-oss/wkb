@@ -22,9 +22,7 @@ pub mod context_h {
     pub use crate::xkb::shared_types::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 
     use super::xkbcommon_h::xkb_log_level;
-    extern "C" {
-        pub fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8;
-    }
+    pub use crate::xkb::context::xkb_context_include_path_get_system_path;
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -36,13 +34,11 @@ pub mod darray_h {
 }
 pub mod xkbcommon_h {
     use super::context_h::xkb_context;
+    pub use crate::xkb::context::xkb_context_include_path_append_default;
     pub use crate::xkb::shared_types::{
         xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
         XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
     };
-    extern "C" {
-        pub fn xkb_context_include_path_append_default(context: *mut xkb_context) -> i32;
-    }
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;

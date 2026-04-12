@@ -236,9 +236,7 @@ pub mod scanner_utils_h {
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
-    extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
 }
 pub mod keymap_file_iterator_h {
     #[derive(Copy, Clone, BitfieldStruct)]
@@ -449,9 +447,7 @@ pub mod xkbcomp_priv_h {
         }
     }
 
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =

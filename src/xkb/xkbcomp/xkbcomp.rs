@@ -221,9 +221,7 @@ pub mod rmlvo_h {
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
-    extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -382,12 +380,19 @@ pub mod xkbcomp_priv_h {
         }
     }
 
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
+
+    pub unsafe fn XkbFileFromComponents(
+        ctx: *mut xkb_context,
+        kkctgs: *const xkb_component_names,
+    ) -> *mut XkbFile {
+        unsafe {
+            crate::xkb::xkbcomp::ast_build::XkbFileFromComponents(ctx, kkctgs as *const _)
+                as *mut XkbFile
+        }
+    }
+
     extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-        pub fn XkbFileFromComponents(
-            ctx: *mut xkb_context,
-            kkctgs: *const xkb_component_names,
-        ) -> *mut XkbFile;
         pub fn CompileKeymap(file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool;
     }
 }

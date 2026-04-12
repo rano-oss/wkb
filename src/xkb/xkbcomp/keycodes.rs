@@ -82,9 +82,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_KEYCODE_MAX: u32 = (0xffffffff as u32).wrapping_sub(1 as u32);
     use super::context_h::xkb_context;
-    extern "C" {
-        pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::context::xkb_context_get_log_verbosity;
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -194,9 +192,7 @@ pub mod messages_codes_h {
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
     use super::atom_h::xkb_atom_t;
@@ -219,10 +215,7 @@ pub mod xkbcomp_priv_h {
     };
     pub type C2Rust_Unnamed_14 = XkbcompLookup;
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
-    use super::ast_h::XkbFile;
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod stdlib_h {
 

@@ -376,87 +376,51 @@ pub mod keysym_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    #[inline]
-    pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
-        unsafe {
-            return if !(*file).name.is_null() {
-                (*file).name as *const i8
-            } else {
-                b"(unnamed map)\0".as_ptr() as *const i8
-            };
-        }
-    }
-    use super::ast_h::XkbFile;
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::shared_ast_types::safe_map_name;
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod ast_build_h {
 
-    use super::ast_h::{
-        merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, IncludeStmt,
-        InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
-        ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    };
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
+    use super::ast_h::ExprDef;
     use super::scanner_utils_h::{scanner, sval};
     use super::xkbcommon_h::xkb_keysym_t;
-    extern "C" {
-        pub fn ExprCreateString(str: xkb_atom_t) -> *mut ExprDef;
-        pub fn ExprCreateInteger(ival: i64) -> *mut ExprDef;
-        pub fn ExprCreateFloat() -> *mut ExprDef;
-        pub fn ExprCreateKeyName(key_name: xkb_atom_t) -> *mut ExprDef;
-        pub fn ExprCreateKeySym(keysym: xkb_keysym_t) -> *mut ExprDef;
-        pub fn ExprCreateIdent(ident: xkb_atom_t) -> *mut ExprDef;
-        pub fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef;
-        pub fn ExprCreateBinary(
-            op: stmt_type,
-            left: *mut ExprDef,
-            right: *mut ExprDef,
-        ) -> *mut ExprDef;
-        pub fn ExprCreateFieldRef(element: xkb_atom_t, field: xkb_atom_t) -> *mut ExprDef;
-        pub fn ExprCreateArrayRef(
-            element: xkb_atom_t,
-            field: xkb_atom_t,
-            entry: *mut ExprDef,
-        ) -> *mut ExprDef;
-        pub fn ExprEmptyList() -> *mut ExprDef;
-        pub fn ExprCreateAction(name: xkb_atom_t, args: *mut ExprDef) -> *mut ExprDef;
-        pub fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef;
-        pub fn ExprCreateKeySymList(sym: xkb_keysym_t) -> *mut ExprDef;
-        pub fn ExprAppendKeySymList(list: *mut ExprDef, sym: xkb_keysym_t) -> *mut ExprDef;
-        pub fn ExprKeySymListAppendString(
-            param: *mut scanner,
-            expr: *mut ExprDef,
-            string: *const i8,
-        ) -> *mut ExprDef;
-        pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> xkb_keysym_t;
-        pub fn KeycodeCreate(name: xkb_atom_t, value: i64) -> *mut KeycodeDef;
-        pub fn KeyAliasCreate(alias: xkb_atom_t, real: xkb_atom_t) -> *mut KeyAliasDef;
-        pub fn VModCreate(name: xkb_atom_t, value: *mut ExprDef) -> *mut VModDef;
-        pub fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef;
-        pub fn BoolVarCreate(ident: xkb_atom_t, set: bool) -> *mut VarDef;
-        pub fn InterpCreate(sym: xkb_keysym_t, match_0: *mut ExprDef) -> *mut InterpDef;
-        pub fn KeyTypeCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut KeyTypeDef;
-        pub fn SymbolsCreate(keyName: xkb_atom_t, symbols: *mut VarDef) -> *mut SymbolsDef;
-        pub fn GroupCompatCreate(group: i64, def: *mut ExprDef) -> *mut GroupCompatDef;
-        pub fn ModMapCreate(modifier: xkb_atom_t, keys: *mut ExprDef) -> *mut ModMapDef;
-        pub fn LedMapCreate(name: xkb_atom_t, body: *mut VarDef) -> *mut LedMapDef;
-        pub fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef;
-        pub fn UnknownStatementCreate(_: stmt_type, name: sval) -> *mut UnknownStatement;
-        pub fn IncludeCreate(
-            ctx: *mut xkb_context,
-            str: *mut i8,
-            merge: merge_mode,
-        ) -> *mut IncludeStmt;
-        pub fn XkbFileCreate(
-            type_0: xkb_file_type,
-            name: *mut i8,
-            defs: *mut ParseCommon,
-            flags: xkb_map_flags,
-        ) -> *mut XkbFile;
-        pub fn FreeStmt(stmt: *mut ParseCommon);
+    pub use crate::xkb::xkbcomp::ast_build::{
+        BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
+        ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
+        ExprCreateInteger, ExprCreateKeyName, ExprCreateKeySym, ExprCreateKeySymList,
+        ExprCreateString, ExprCreateUnary, ExprEmptyList, FreeStmt, GroupCompatCreate,
+        IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, LedMapCreate,
+        LedNameCreate, ModMapCreate, SymbolsCreate, VModCreate, VarCreate, XkbFileCreate,
+    };
+
+    pub unsafe fn ExprKeySymListAppendString(
+        param: *mut scanner,
+        expr: *mut ExprDef,
+        string: *const i8,
+    ) -> *mut ExprDef {
+        unsafe {
+            crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+                param as *mut _,
+                expr as *mut _,
+                string,
+            ) as *mut ExprDef
+        }
+    }
+
+    pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> xkb_keysym_t {
+        unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
+    }
+
+    pub unsafe fn UnknownStatementCreate(
+        type_0: super::ast_h::stmt_type,
+        name: sval,
+    ) -> *mut super::ast_h::UnknownStatement {
+        unsafe {
+            crate::xkb::xkbcomp::ast_build::UnknownStatementCreate(
+                type_0,
+                *(&name as *const sval as *const _),
+            ) as *mut _
+        }
     }
 }
 pub mod parser_priv_h {

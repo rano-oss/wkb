@@ -80,9 +80,7 @@ pub mod xkbcommon_h {
     };
     pub type xkb_led_mask_t = u32;
     use super::context_h::xkb_context;
-    extern "C" {
-        pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> i32;
-    }
+    pub use crate::xkb::context::xkb_context_get_log_verbosity;
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -201,9 +199,7 @@ pub mod messages_codes_h {
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_15 = DarrayKeysym;
-    extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
     use super::context_h::xkb_context;
@@ -230,10 +226,7 @@ pub mod xkbcomp_priv_h {
     };
     pub type C2Rust_Unnamed_16 = XkbcompLookup;
     pub type C2Rust_Unnamed_17 = XkbcompFeatures;
-    use super::ast_h::XkbFile;
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod action_h {
     #[derive(Copy, Clone)]

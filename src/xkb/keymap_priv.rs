@@ -47,6 +47,7 @@ pub mod darray_h {
 }
 pub mod xkbcommon_h {
     use super::stdint_uintn_h::u32;
+    pub use crate::xkb::context::xkb_context_ref;
     pub use crate::xkb::shared_types::{
         xkb_context, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
         xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -61,9 +62,6 @@ pub mod xkbcommon_h {
         XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
         XKB_STATE_MODS_LOCKED,
     };
-    extern "C" {
-        pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
-    }
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;

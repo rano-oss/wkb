@@ -214,9 +214,7 @@ pub mod messages_codes_h {
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
     use super::atom_h::xkb_atom_t;
@@ -229,18 +227,16 @@ pub mod text_h {
 }
 pub mod xkbcomp_priv_h {
     pub use crate::xkb::shared_ast_types::{
-        pending_computation, pending_computation_array, xkb_keymap_info,
-        xkb_parser_error, xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup,
-        PARSER_FATAL_ERROR, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
-        PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS, PARSER_V1_LAX_FLAGS,
-        PARSER_V1_STRICT_FLAGS, PARSER_NO_ILLEGAL_ACTION_FIELDS,
-        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_ACTION,
-        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
-        PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPE_FIELDS,
-        PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-        PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_FIELD_TYPE_MISMATCH,
-        PARSER_NO_UNKNOWN_STATEMENTS, PARSER_NO_STRICT_FLAGS,
+        pending_computation, pending_computation_array, xkb_keymap_info, xkb_parser_error,
+        xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR,
+        PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
+        PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
+        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
+        PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
+        PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
+        PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
     };
     pub type C2Rust_Unnamed_14 = XkbcompLookup;
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;

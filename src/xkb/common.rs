@@ -223,6 +223,9 @@ pub mod xkbcommon_h {
     use super::rmlvo_h::xkb_rmlvo_builder;
     use super::xkbcommon_errors_h::xkb_error_code;
     use super::FILE_h::FILE;
+    pub use crate::xkb::context::{
+        xkb_context_include_path_append, xkb_context_new, xkb_context_unref,
+    };
     pub use crate::xkb::shared_types::*;
 
     pub type xkb_rmlvo_builder_flags = u32;
@@ -269,9 +272,6 @@ pub mod xkbcommon_h {
         ) -> bool;
         pub fn xkb_rmlvo_builder_unref(rmlvo: *mut xkb_rmlvo_builder);
         pub fn xkb_keysym_get_name(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
-        pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
-        pub fn xkb_context_unref(context: *mut xkb_context);
-        pub fn xkb_context_include_path_append(context: *mut xkb_context, path: *const i8) -> i32;
         pub fn xkb_keymap_new_from_rmlvo(
             rmlvo: *const xkb_rmlvo_builder,
             format: xkb_keymap_format,

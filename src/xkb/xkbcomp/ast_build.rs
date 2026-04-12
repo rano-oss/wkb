@@ -353,8 +353,8 @@ unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateString(mut str: xkb_atom_t) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateString(mut str: xkb_atom_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_STRING_LITERAL);
         if expr.is_null() {
@@ -364,8 +364,8 @@ pub unsafe extern "C" fn ExprCreateString(mut str: xkb_atom_t) -> *mut ExprDef {
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_INTEGER_LITERAL);
         if expr.is_null() {
@@ -375,8 +375,8 @@ pub unsafe extern "C" fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateFloat() -> *mut ExprDef {
+
+pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_FLOAT_LITERAL);
         if expr.is_null() {
@@ -396,8 +396,8 @@ pub unsafe fn ExprCreateBoolean(mut set: bool) -> *mut ExprDef {
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateKeyName(mut key_name: xkb_atom_t) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateKeyName(mut key_name: xkb_atom_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYNAME_LITERAL);
         if expr.is_null() {
@@ -407,8 +407,8 @@ pub unsafe extern "C" fn ExprCreateKeyName(mut key_name: xkb_atom_t) -> *mut Exp
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateKeySym(mut keysym: xkb_keysym_t) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateKeySym(mut keysym: xkb_keysym_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LITERAL);
         if expr.is_null() {
@@ -418,8 +418,8 @@ pub unsafe extern "C" fn ExprCreateKeySym(mut keysym: xkb_keysym_t) -> *mut Expr
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateIdent(mut ident: xkb_atom_t) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateIdent(mut ident: xkb_atom_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_IDENT);
         if expr.is_null() {
@@ -429,8 +429,8 @@ pub unsafe extern "C" fn ExprCreateIdent(mut ident: xkb_atom_t) -> *mut ExprDef 
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateUnary(
+
+pub unsafe fn ExprCreateUnary(
     mut op: stmt_type,
     mut child: *mut ExprDef,
 ) -> *mut ExprDef {
@@ -443,8 +443,8 @@ pub unsafe extern "C" fn ExprCreateUnary(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateBinary(
+
+pub unsafe fn ExprCreateBinary(
     mut op: stmt_type,
     mut left: *mut ExprDef,
     mut right: *mut ExprDef,
@@ -459,8 +459,8 @@ pub unsafe extern "C" fn ExprCreateBinary(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateFieldRef(
+
+pub unsafe fn ExprCreateFieldRef(
     mut element: xkb_atom_t,
     mut field: xkb_atom_t,
 ) -> *mut ExprDef {
@@ -474,8 +474,8 @@ pub unsafe extern "C" fn ExprCreateFieldRef(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateArrayRef(
+
+pub unsafe fn ExprCreateArrayRef(
     mut element: xkb_atom_t,
     mut field: xkb_atom_t,
     mut entry: *mut ExprDef,
@@ -491,14 +491,14 @@ pub unsafe extern "C" fn ExprCreateArrayRef(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprEmptyList() -> *mut ExprDef {
+
+pub unsafe fn ExprEmptyList() -> *mut ExprDef {
     unsafe {
         return ExprCreate(STMT_EXPR_EMPTY_LIST);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateAction(
+
+pub unsafe fn ExprCreateAction(
     mut name: xkb_atom_t,
     mut args: *mut ExprDef,
 ) -> *mut ExprDef {
@@ -512,8 +512,8 @@ pub unsafe extern "C" fn ExprCreateAction(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateActionList(mut actions: *mut ExprDef) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateActionList(mut actions: *mut ExprDef) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_LIST);
         if expr.is_null() {
@@ -523,8 +523,8 @@ pub unsafe extern "C" fn ExprCreateActionList(mut actions: *mut ExprDef) -> *mut
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
+
+pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LIST);
         if expr.is_null() {
@@ -563,8 +563,8 @@ pub unsafe extern "C" fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut Exp
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprAppendKeySymList(
+
+pub unsafe fn ExprAppendKeySymList(
     mut expr: *mut ExprDef,
     mut sym: xkb_keysym_t,
 ) -> *mut ExprDef {
@@ -599,8 +599,8 @@ pub unsafe extern "C" fn ExprAppendKeySymList(
         return expr;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ExprKeySymListAppendString(
+
+pub unsafe fn ExprKeySymListAppendString(
     mut scanner: *mut scanner,
     mut expr: *mut ExprDef,
     mut string: *const i8,
@@ -700,8 +700,8 @@ pub unsafe extern "C" fn ExprKeySymListAppendString(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeysymParseString(
+
+pub unsafe fn KeysymParseString(
     mut scanner: *mut scanner,
     mut string: *const i8,
 ) -> xkb_keysym_t {
@@ -771,8 +771,8 @@ pub unsafe extern "C" fn KeysymParseString(
         return sym;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut KeycodeDef {
+
+pub unsafe fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut KeycodeDef {
     unsafe {
         let mut def: *mut KeycodeDef =
             malloc(::core::mem::size_of::<KeycodeDef>() as usize) as *mut KeycodeDef;
@@ -786,8 +786,8 @@ pub unsafe extern "C" fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> 
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeyAliasCreate(
+
+pub unsafe fn KeyAliasCreate(
     mut alias: xkb_atom_t,
     mut real: xkb_atom_t,
 ) -> *mut KeyAliasDef {
@@ -804,8 +804,8 @@ pub unsafe extern "C" fn KeyAliasCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDef) -> *mut VModDef {
+
+pub unsafe fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDef) -> *mut VModDef {
     unsafe {
         let mut def: *mut VModDef =
             malloc(::core::mem::size_of::<VModDef>() as usize) as *mut VModDef;
@@ -819,8 +819,8 @@ pub unsafe extern "C" fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDe
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut VarDef {
+
+pub unsafe fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut VarDef {
     unsafe {
         let mut def: *mut VarDef = malloc(::core::mem::size_of::<VarDef>() as usize) as *mut VarDef;
         if def.is_null() {
@@ -833,8 +833,8 @@ pub unsafe extern "C" fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprD
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> *mut VarDef {
+
+pub unsafe fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> *mut VarDef {
     unsafe {
         let mut name: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
         let mut value: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
@@ -857,8 +857,8 @@ pub unsafe extern "C" fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> 
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn InterpCreate(
+
+pub unsafe fn InterpCreate(
     mut sym: xkb_keysym_t,
     mut match_0: *mut ExprDef,
 ) -> *mut InterpDef {
@@ -876,8 +876,8 @@ pub unsafe extern "C" fn InterpCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn KeyTypeCreate(
+
+pub unsafe fn KeyTypeCreate(
     mut name: xkb_atom_t,
     mut body: *mut VarDef,
 ) -> *mut KeyTypeDef {
@@ -895,8 +895,8 @@ pub unsafe extern "C" fn KeyTypeCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn SymbolsCreate(
+
+pub unsafe fn SymbolsCreate(
     mut keyName: xkb_atom_t,
     mut symbols: *mut VarDef,
 ) -> *mut SymbolsDef {
@@ -914,8 +914,8 @@ pub unsafe extern "C" fn SymbolsCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn GroupCompatCreate(
+
+pub unsafe fn GroupCompatCreate(
     mut group: i64,
     mut val: *mut ExprDef,
 ) -> *mut GroupCompatDef {
@@ -933,8 +933,8 @@ pub unsafe extern "C" fn GroupCompatCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn ModMapCreate(
+
+pub unsafe fn ModMapCreate(
     mut modifier: xkb_atom_t,
     mut keys: *mut ExprDef,
 ) -> *mut ModMapDef {
@@ -952,8 +952,8 @@ pub unsafe extern "C" fn ModMapCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn LedMapCreate(
+
+pub unsafe fn LedMapCreate(
     mut name: xkb_atom_t,
     mut body: *mut VarDef,
 ) -> *mut LedMapDef {
@@ -971,8 +971,8 @@ pub unsafe extern "C" fn LedMapCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn LedNameCreate(
+
+pub unsafe fn LedNameCreate(
     mut ndx: i64,
     mut name: *mut ExprDef,
     mut virtual_0: bool,
@@ -992,8 +992,8 @@ pub unsafe extern "C" fn LedNameCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn UnknownStatementCreate(
+
+pub unsafe fn UnknownStatementCreate(
     mut type_0: stmt_type,
     mut name: sval,
 ) -> *mut UnknownStatement {
@@ -1013,8 +1013,8 @@ pub unsafe extern "C" fn UnknownStatementCreate(
         return def;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn IncludeCreate(
+
+pub unsafe fn IncludeCreate(
     mut ctx: *mut xkb_context,
     mut str: *mut i8,
     mut merge: merge_mode,
@@ -1117,8 +1117,8 @@ pub unsafe extern "C" fn IncludeCreate(
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbFileCreate(
+
+pub unsafe fn XkbFileCreate(
     mut type_0: xkb_file_type,
     mut name: *mut i8,
     mut defs: *mut ParseCommon,
@@ -1138,8 +1138,8 @@ pub unsafe extern "C" fn XkbFileCreate(
         return file;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn XkbFileFromComponents(
+
+pub unsafe fn XkbFileFromComponents(
     mut ctx: *mut xkb_context,
     mut kkctgs: *const xkb_component_names,
 ) -> *mut XkbFile {
@@ -1220,8 +1220,8 @@ unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
         }
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn FreeStmt(mut stmt: *mut ParseCommon) {
+
+pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
         let mut next: *mut ParseCommon = ::core::ptr::null_mut::<ParseCommon>();
         while !stmt.is_null() {
@@ -1293,8 +1293,8 @@ pub unsafe extern "C" fn FreeStmt(mut stmt: *mut ParseCommon) {
         }
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn FreeXkbFile(mut file: *mut XkbFile) {
+
+pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
     unsafe {
         let mut next: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         while !file.is_null() {
@@ -1323,8 +1323,8 @@ static mut xkb_file_type_strings: [*const i8; 7] = [
     b"xkb_keymap\0".as_ptr() as *const i8,
     b"rules\0".as_ptr() as *const i8,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn xkb_file_type_to_string(mut type_0: xkb_file_type) -> *const i8 {
+
+pub unsafe fn xkb_file_type_to_string(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as i32 as u32 {
             return b"unknown\0".as_ptr() as *const i8;
@@ -1371,8 +1371,8 @@ static mut stmt_type_strings: [*const i8; 37] = [
     b"unknown declaration statement\0".as_ptr() as *const i8,
     b"unknown compound statement\0".as_ptr() as *const i8,
 ];
-#[no_mangle]
-pub unsafe extern "C" fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
+
+pub unsafe fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _STMT_NUM_VALUES as i32 as u32 {
             return ::core::ptr::null::<i8>();
@@ -1380,8 +1380,8 @@ pub unsafe extern "C" fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8
         return stmt_type_strings[type_0 as usize];
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
+
+pub unsafe fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
     unsafe {
         match type_0 as u32 {
             17 => return '+' as i32 as i8,

@@ -85,11 +85,8 @@ pub mod xkbcommon_h {
     pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
     pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
+    pub use crate::xkb::context::{xkb_context_new, xkb_context_unref};
     extern "C" {
-        pub type xkb_context;
-        pub type xkb_keymap;
-        pub fn xkb_context_new(flags: xkb_context_flags) -> *mut xkb_context;
-        pub fn xkb_context_unref(context: *mut xkb_context);
         pub fn xkb_keymap_new_from_names2(
             context: *mut xkb_context,
             names: *const xkb_rule_names,

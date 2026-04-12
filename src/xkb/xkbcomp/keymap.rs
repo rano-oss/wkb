@@ -184,9 +184,7 @@ pub mod keymap_h {
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    extern "C" {
-        pub fn xkb_file_type_to_string(type_0: xkb_file_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -383,10 +381,7 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod ast_build_h {
-    use super::ast_h::ParseCommon;
-    extern "C" {
-        pub fn FreeStmt(stmt: *mut ParseCommon);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
 pub mod expr_h {
     use super::ast_h::ExprDef;

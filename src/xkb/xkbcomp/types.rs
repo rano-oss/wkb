@@ -76,6 +76,7 @@ pub mod darray_h {
     }
 }
 pub mod xkbcommon_h {
+    pub use crate::xkb::context::xkb_context_get_log_verbosity;
     pub use crate::xkb::shared_types::{
         xkb_context, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
         xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -89,9 +90,6 @@ pub mod xkbcommon_h {
         XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
         XKB_STATE_MODS_LOCKED,
     };
-    extern "C" {
-        pub fn xkb_context_get_log_verbosity(context: *mut xkb_context) -> ::core::ffi::c_int;
-    }
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -101,9 +99,7 @@ pub mod keymap_h {
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    extern "C" {
-        pub fn stmt_type_to_string(type_0: stmt_type) -> *const i8;
-    }
+    pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -223,10 +219,7 @@ pub mod xkbcomp_priv_h {
     };
     pub type C2Rust_Unnamed_14 = XkbcompLookup;
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
-    use super::ast_h::XkbFile;
-    extern "C" {
-        pub fn FreeXkbFile(file: *mut XkbFile);
-    }
+    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod stdlib_h {
 
