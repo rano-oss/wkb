@@ -203,12 +203,6 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
-pub mod stdio_h {
-
-    extern "C" {
-        pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
-    }
-}
 pub mod stdlib_h {
 
     extern "C" {
@@ -292,7 +286,6 @@ pub use self::rmlvo_h::{
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use self::stdint_uintn_h::u32;
-use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
@@ -611,21 +604,19 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             layout =
                 (*builder).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
             while k < (*builder).layouts.size {
-                let mut count: i32 = snprintf(
+                let (count, trunc) = crate::xkb::utils::snprintf_args(
                     start,
                     buf_size,
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const i8
-                    } else {
-                        b"\0".as_ptr() as *const i8
-                    },
-                    (*layout).layout,
+                    format_args!(
+                        "{}{}",
+                        if k > 0 as darray_size_t { "," } else { "" },
+                        crate::xkb::utils::CStrDisplay((*layout).layout),
+                    ),
                 );
-                if count < 0 as i32 || count as usize >= buf_size {
+                if trunc || (count == 0 && k > 0) {
                     return false;
                 }
-                buf_size = buf_size.wrapping_sub(count as usize);
+                buf_size = buf_size.wrapping_sub(count);
                 start = start.offset(count as isize);
                 k = k.wrapping_add(1);
                 layout = layout.offset(1);
@@ -643,25 +634,23 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             layout =
                 (*builder).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
             while k < (*builder).layouts.size {
-                let mut count_0: i32 = snprintf(
+                let (count_0, trunc) = crate::xkb::utils::snprintf_args(
                     start,
                     buf_size,
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const i8
-                    } else {
-                        b"\0".as_ptr() as *const i8
-                    },
-                    if !(*layout).variant.is_null() {
-                        (*layout).variant as *const i8
-                    } else {
-                        b"\0".as_ptr() as *const i8
-                    },
+                    format_args!(
+                        "{}{}",
+                        if k > 0 as darray_size_t { "," } else { "" },
+                        crate::xkb::utils::CStrDisplay(if !(*layout).variant.is_null() {
+                            (*layout).variant as *const i8
+                        } else {
+                            b"\0".as_ptr() as *const i8
+                        }),
+                    ),
                 );
-                if count_0 < 0 as i32 || count_0 as usize >= buf_size {
+                if trunc || (count_0 == 0 && k > 0) {
                     return false;
                 }
-                buf_size = buf_size.wrapping_sub(count_0 as usize);
+                buf_size = buf_size.wrapping_sub(count_0);
                 start = start.offset(count_0 as isize);
                 k = k.wrapping_add(1);
                 layout = layout.offset(1);
@@ -681,30 +670,38 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             option =
                 (*builder).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
             while k < (*builder).options.size {
-                let mut count_1: i32 = snprintf(
-                    start,
-                    buf_size,
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if k > 0 as darray_size_t {
-                        b",\0".as_ptr() as *const i8
+                let mut count_1: i32 = {
+                    let (written, trunc) = crate::xkb::utils::snprintf_args(
+                        start,
+                        buf_size,
+                        format_args!(
+                            "{}{}",
+                            if k > 0 as darray_size_t { "," } else { "" },
+                            crate::xkb::utils::CStrDisplay((*option).option),
+                        ),
+                    );
+                    if trunc {
+                        -1
                     } else {
-                        b"\0".as_ptr() as *const i8
-                    },
-                    (*option).option,
-                );
+                        written as i32
+                    }
+                };
                 if count_1 < 0 as i32 || count_1 as usize >= buf_size {
                     return false;
                 }
                 buf_size = buf_size.wrapping_sub(count_1 as usize);
                 start = start.offset(count_1 as isize);
                 if (*option).layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                    count_1 = snprintf(
+                    let (written, trunc) = crate::xkb::utils::snprintf_args(
                         start,
                         buf_size,
-                        b"%c%u\0".as_ptr() as *const i8,
-                        OPTIONS_GROUP_SPECIFIER_PREFIX,
-                        (*option).layout,
+                        format_args!(
+                            "{}{}",
+                            (OPTIONS_GROUP_SPECIFIER_PREFIX as u8 as char),
+                            (*option).layout
+                        ),
                     );
+                    count_1 = if trunc { -1 } else { written as i32 };
                     if count_1 < 0 as i32 || count_1 as usize >= buf_size {
                         return false;
                     }

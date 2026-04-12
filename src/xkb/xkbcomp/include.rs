@@ -75,12 +75,6 @@ pub mod stdio_h {
     extern "C" {
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn snprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
     }
 }
 pub mod messages_codes_h {
@@ -315,28 +309,21 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
         unsafe {
-            let mut ret: ::core::ffi::c_int = 0;
-            ret = snprintf(
+            let (written, trunc) = crate::xkb::utils::snprintf_args(
                 (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
                 (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub((*s).buf_pos),
-                b"%s\0".as_ptr() as *const i8,
-                str,
+                format_args!("{}", crate::xkb::utils::CStrDisplay(str)),
             );
-            if ret < 0 as ::core::ffi::c_int
-                || ret as usize
-                    >= (::core::mem::size_of::<[i8; 1024]>() as usize)
-                        .wrapping_sub((*s).buf_pos as usize)
-            {
+            if trunc {
                 return false_0 != 0;
             }
-            (*s).buf_pos = (*s).buf_pos.wrapping_add(ret as usize);
+            (*s).buf_pos = (*s).buf_pos.wrapping_add(written);
             return true_0 != 0;
         }
     }
 
     use super::context_h::xkb_context;
     use super::stdbool_h::{false_0, true_0};
-    use super::stdio_h::snprintf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -479,7 +466,7 @@ pub use self::scanner_utils_h::{
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list};
+pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::free;
 use self::string_h::{strchr, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};

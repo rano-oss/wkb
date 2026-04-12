@@ -26308,12 +26308,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod stdio_h {
-
-    extern "C" {
-        pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn is_xdigit(mut ch: i8) -> bool {
@@ -26664,7 +26658,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::i32;
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free};
 pub use self::sys_types_h::ssize_t;
 pub use self::types_h::{__int32_t, __uint16_t, __uint32_t, __uint8_t};
@@ -26719,11 +26712,10 @@ unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
 #[inline]
 unsafe fn get_unicode_name(mut ks: xkb_keysym_t, mut buffer: *mut i8, mut size: usize) -> i32 {
     unsafe {
-        return snprintf(
+        return crate::xkb::utils::snprintf_c(
             buffer,
             size,
-            b"U%04X\0".as_ptr() as *const i8,
-            ks & 0xffffff as xkb_keysym_t,
+            format_args!("U{:04X}", ks & 0xffffff as xkb_keysym_t),
         );
     }
 }
@@ -26734,18 +26726,20 @@ pub unsafe fn xkb_keysym_get_name(
 ) -> i32 {
     unsafe {
         if ks > XKB_KEYSYM_MAX as xkb_keysym_t {
-            snprintf(buffer, size, b"Invalid\0".as_ptr() as *const i8);
+            crate::xkb::utils::snprintf_args(buffer, size, format_args!("Invalid"));
             return -1 as i32;
         }
-        let mut index: ssize_t = find_keysym_index(ks);
-        if index != -1 as i32 as ssize_t {
-            return snprintf(
+        let mut index: isize = find_keysym_index(ks);
+        if index != -1 as i32 as isize {
+            return crate::xkb::utils::snprintf_c(
                 buffer,
                 size,
-                b"%s\0".as_ptr() as *const i8,
-                get_name(
-                    (&raw const keysym_to_name as *const name_keysym).offset(index as isize)
-                        as *const name_keysym,
+                format_args!(
+                    "{}",
+                    crate::xkb::utils::CStrDisplay(get_name(
+                        (&raw const keysym_to_name as *const name_keysym).offset(index as isize)
+                            as *const name_keysym,
+                    ))
                 ),
             );
         }
@@ -26754,7 +26748,7 @@ pub unsafe fn xkb_keysym_get_name(
         {
             return get_unicode_name(ks, buffer, size);
         }
-        return snprintf(buffer, size, b"0x%08x\0".as_ptr() as *const i8, ks);
+        return crate::xkb::utils::snprintf_c(buffer, size, format_args!("0x{:08x}", ks));
     }
 }
 
@@ -26872,13 +26866,16 @@ pub unsafe fn xkb_keysym_iterator_get_name(
         if (*iter).explicit as i32 != 0
             || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym
         {
-            return snprintf(
+            return crate::xkb::utils::snprintf_c(
                 buffer,
                 size,
-                b"%s\0".as_ptr() as *const i8,
-                get_name(
-                    (&raw const keysym_to_name as *const name_keysym).offset((*iter).index as isize)
-                        as *const name_keysym,
+                format_args!(
+                    "{}",
+                    crate::xkb::utils::CStrDisplay(get_name(
+                        (&raw const keysym_to_name as *const name_keysym)
+                            .offset((*iter).index as isize)
+                            as *const name_keysym,
+                    ))
                 ),
             );
         }

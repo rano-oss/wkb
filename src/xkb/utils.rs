@@ -510,6 +510,29 @@ pub unsafe fn snprintf_args(
     (pos, truncated)
 }
 
+/// Like C `snprintf`: format into buffer, return the total formatted length
+/// (even if truncated). Always NUL-terminates if size > 0.
+/// Returns -1 on error (never happens with Rust formatting).
+///
+/// Use this when callers need the would-be length (e.g. public API return values).
+/// For internal use where you just need truncation detection, use `snprintf_args`.
+///
+/// # Safety
+/// `buf` must point to `size` writable bytes.
+pub unsafe fn snprintf_c(buf: *mut i8, size: usize, args: core::fmt::Arguments<'_>) -> i32 {
+    use core::fmt::Write;
+    // Format into a String to get the true full length
+    let mut s = String::new();
+    let _ = Write::write_fmt(&mut s, args);
+    let full_len = s.len();
+    if size > 0 {
+        let copy_len = full_len.min(size - 1);
+        std::ptr::copy_nonoverlapping(s.as_ptr(), buf as *mut u8, copy_len);
+        *(buf as *mut u8).add(copy_len) = 0;
+    }
+    full_len as i32
+}
+
 /// Display wrapper for `*const i8` C strings in Rust format strings.
 /// Replaces `%s` format specifier usage. Reads the C string and writes it as UTF-8.
 pub struct CStrDisplay(pub *const i8);

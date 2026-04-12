@@ -73,12 +73,6 @@ pub mod text_h {
     use super::stdint_uintn_h::{u32, uint8_t};
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
 }
-pub mod stdio_h {
-
-    extern "C" {
-        pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
-    }
-}
 pub mod string_h {}
 pub mod utils_h {
     #[inline]
@@ -136,7 +130,6 @@ pub use self::keymap_h::{
 pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::{u32, uint8_t};
-use self::stdio_h::snprintf;
 pub use self::text_h::{
     format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
     CONTROL_NAMES_MIN_V2_INDEX,
@@ -650,7 +643,11 @@ pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *c
         let mut sname: *const i8 = xkb_atom_text(ctx, name);
         let mut len: usize = cstr_len_safe(sname).wrapping_add(3 as usize);
         let mut buf: *mut i8 = xkb_context_get_buffer(ctx, len);
-        snprintf(buf, len, b"<%s>\0".as_ptr() as *const i8, strempty(sname));
+        crate::xkb::utils::snprintf_args(
+            buf,
+            len,
+            format_args!("<{}>", crate::xkb::utils::CStrDisplay(strempty(sname))),
+        );
         return buf;
     }
 }
@@ -1708,13 +1705,12 @@ pub unsafe fn ModMaskText(
                 as i64
                 != 0
         {
-            let ret: i32 = snprintf(
+            let (written, _) = crate::xkb::utils::snprintf_args(
                 &raw mut buf as *mut i8,
                 ::core::mem::size_of::<[i8; 1024]>() as usize,
-                b"0x%x\0".as_ptr() as *const i8,
-                mask,
-            ) as i32;
-            pos = ret as usize;
+                format_args!("{:#x}", mask),
+            );
+            pos = written;
         } else {
             mod_0 = &raw const (*mods).mods as *const xkb_mod;
             while mask != 0
@@ -1722,24 +1718,19 @@ pub unsafe fn ModMaskText(
                     < (&raw const (*mods).mods as *const xkb_mod).offset((*mods).num_mods as isize)
             {
                 if mask & 0x1 as xkb_mod_mask_t != 0 {
-                    let mut ret_0: i32 = snprintf(
+                    let (written, trunc) = crate::xkb::utils::snprintf_args(
                         (&raw mut buf as *mut i8).offset(pos as isize),
                         (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
-                        b"%s%s\0".as_ptr() as *const i8,
-                        if pos == 0 as usize {
-                            b"\0".as_ptr() as *const i8
-                        } else {
-                            b"+\0".as_ptr() as *const i8
-                        },
-                        xkb_atom_text(ctx, (*mod_0).name),
+                        format_args!(
+                            "{}{}",
+                            if pos == 0 as usize { "" } else { "+" },
+                            crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
+                        ),
                     );
-                    if ret_0 <= 0 as i32
-                        || pos.wrapping_add(ret_0 as usize)
-                            >= ::core::mem::size_of::<[i8; 1024]>() as usize
-                    {
+                    if trunc || written == 0 {
                         break;
                     }
-                    pos = pos.wrapping_add(ret_0 as usize);
+                    pos = pos.wrapping_add(written);
                 }
                 mod_0 = mod_0.offset(1);
                 mask >>= 1 as i32;
@@ -1770,17 +1761,16 @@ pub unsafe fn LedStateMaskText(
                 mask = (mask as u32 & !((1 as u32) << i)) as xkb_state_component;
                 let maskText: *const i8 =
                     LookupValue(lookup as *const LookupEntry, (1 as u32) << i) as *const i8;
-                ret = snprintf(
+                let (written, trunc) = crate::xkb::utils::snprintf_args(
                     (&raw mut buf as *mut i8).offset(pos as isize),
                     (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if pos == 0 as usize {
-                        b"\0".as_ptr() as *const i8
-                    } else {
-                        b"+\0".as_ptr() as *const i8
-                    },
-                    maskText,
+                    format_args!(
+                        "{}{}",
+                        if pos == 0 as usize { "" } else { "+" },
+                        crate::xkb::utils::CStrDisplay(maskText),
+                    ),
                 );
+                ret = if trunc { -1 } else { written as i32 };
                 if ret <= 0 as i32
                     || pos.wrapping_add(ret as usize)
                         >= ::core::mem::size_of::<[i8; 1024]>() as usize
@@ -1825,17 +1815,16 @@ pub unsafe fn ControlMaskText(
                         .offset(control_names_offset as i32 as isize),
                     (1 as u32) << i,
                 ) as *const i8;
-                ret = snprintf(
+                let (written, trunc) = crate::xkb::utils::snprintf_args(
                     (&raw mut buf as *mut i8).offset(pos as isize),
                     (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
-                    b"%s%s\0".as_ptr() as *const i8,
-                    if pos == 0 as usize {
-                        b"\0".as_ptr() as *const i8
-                    } else {
-                        b"+\0".as_ptr() as *const i8
-                    },
-                    maskText,
+                    format_args!(
+                        "{}{}",
+                        if pos == 0 as usize { "" } else { "+" },
+                        crate::xkb::utils::CStrDisplay(maskText),
+                    ),
                 );
+                ret = if trunc { -1 } else { written as i32 };
                 if ret <= 0 as i32
                     || pos.wrapping_add(ret as usize)
                         >= ::core::mem::size_of::<[i8; 1024]>() as usize

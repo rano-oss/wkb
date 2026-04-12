@@ -83,12 +83,6 @@ pub mod stdio_h {
     extern "C" {
         pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn snprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
     }
 }
 pub mod xkbcommon_errors_h {
@@ -744,7 +738,7 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
-pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list};
+pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::strchr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -6758,11 +6752,10 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             } else {
                 *i = (*i).wrapping_add(1);
                 let mut index_str: [i8; 12] = [0; 12];
-                let mut count: ::core::ffi::c_int = snprintf(
+                let mut count: i32 = crate::xkb::utils::snprintf_c(
                     &raw mut index_str as *mut i8,
                     ::core::mem::size_of::<[i8; 12]>() as usize,
-                    b"%u\0".as_ptr() as *const i8,
-                    layout_idx.wrapping_add(1 as xkb_layout_index_t),
+                    format_args!("{}", layout_idx.wrapping_add(1 as xkb_layout_index_t)),
                 );
                 let mut __count: darray_size_t = count as darray_size_t;
                 let mut __oldSize: darray_size_t = (*expanded).size;
@@ -7738,11 +7731,10 @@ unsafe fn expand_qualifier_in_kccgst_value(
                         .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) =
                         0 as i8;
                     (*expanded).size = (*expanded).size.wrapping_sub(1);
-                    let mut count: ::core::ffi::c_int = snprintf(
+                    let mut count: i32 = crate::xkb::utils::snprintf_c(
                         &raw mut layout_index as *mut i8,
                         ::core::mem::size_of::<[i8; 12]>() as usize,
-                        b"%u\0".as_ptr() as *const i8,
-                        l.wrapping_add(1 as xkb_layout_index_t),
+                        format_args!("{}", l.wrapping_add(1 as xkb_layout_index_t)),
                     );
                     let mut __count_1: darray_size_t = count as darray_size_t;
                     let mut __oldSize_1: darray_size_t = (*expanded).size;

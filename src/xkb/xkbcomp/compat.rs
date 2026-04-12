@@ -225,12 +225,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod stdio_h {
-
-    extern "C" {
-        pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
-    }
-}
 pub mod stdlib_h {
 
     extern "C" {
@@ -419,7 +413,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT16_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-use self::stdio_h::snprintf;
 use self::stdlib_h::{free, realloc};
 pub use self::text_h::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
@@ -530,17 +523,19 @@ unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *cons
         if si == &raw mut (*info).default_interp {
             return b"default\0".as_ptr() as *const i8;
         }
-        snprintf(
+        crate::xkb::utils::snprintf_args(
             buf,
             128 as usize,
-            b"%s+%s(%s)\0".as_ptr() as *const i8,
-            KeysymText((*info).ctx, (*si).interp.sym),
-            SIMatchText((*si).interp.match_0),
-            ModMaskText(
-                (*info).ctx,
-                MOD_BOTH,
-                &raw mut (*info).mods,
-                (*si).interp.mods,
+            format_args!(
+                "{}+{}({})",
+                crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*si).interp.sym)),
+                crate::xkb::utils::CStrDisplay(SIMatchText((*si).interp.match_0)),
+                crate::xkb::utils::CStrDisplay(ModMaskText(
+                    (*info).ctx,
+                    MOD_BOTH,
+                    &raw mut (*info).mods,
+                    (*si).interp.mods,
+                )),
             ),
         );
         return buf;
@@ -1984,11 +1979,13 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
-                            b"compound\0".as_ptr() as *const i8
-                        } else {
-                            b"declaration\0".as_ptr() as *const i8
-                        }),
+                        crate::xkb::utils::CStrDisplay(
+                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
+                                b"compound\0".as_ptr() as *const i8
+                            } else {
+                                b"declaration\0".as_ptr() as *const i8
+                            }
+                        ),
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
@@ -2114,7 +2111,8 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
                             (::core::mem::size_of::<xkb_led_mask_t>() as usize)
-                                .wrapping_mul(8 as usize) as xkb_led_index_t,
+                                .wrapping_mul(8 as usize)
+                                as xkb_led_index_t,
                             crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
                         );
                         c2rust_current_block_11 = 792017965103506125;

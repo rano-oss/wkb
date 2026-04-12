@@ -217,17 +217,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod stdio_h {
-
-    extern "C" {
-        pub fn snprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            ...
-        ) -> ::core::ffi::c_int;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -387,7 +376,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::types_h::{
@@ -1760,11 +1748,10 @@ unsafe fn HandleLedNameDef(
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, (*def).name, &raw mut name) {
             let mut buf: [i8; 20] = [0; 20];
-            snprintf(
+            crate::xkb::utils::snprintf_args(
                 &raw mut buf as *mut i8,
                 ::core::mem::size_of::<[i8; 20]>() as usize,
-                b"%ld\0".as_ptr() as *const i8,
-                (*def).ndx,
+                format_args!("{}", (*def).ndx),
             );
             (*info).errorCount += 1;
             return ReportBadType(
@@ -1822,14 +1809,14 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32
-                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
-                        {
-                            b"compound\0".as_ptr() as *const i8
-                        } else {
-                            b"declaration\0".as_ptr() as *const i8
-                        }),
+                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
+                        crate::xkb::utils::CStrDisplay(
+                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
+                                b"compound\0".as_ptr() as *const i8
+                            } else {
+                                b"declaration\0".as_ptr() as *const i8
+                            }
+                        ),
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
@@ -1962,9 +1949,12 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
                                 "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
-                                XKB_WARNING_UNDEFINED_KEYCODE as ::core::ffi::c_int,
+                                XKB_WARNING_UNDEFINED_KEYCODE as i32,
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
-                                crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*match_0).alias.real())),
+                                crate::xkb::utils::CStrDisplay(KeyNameText(
+                                    (*info).ctx,
+                                    (*match_0).alias.real()
+                                )),
                             );
                             (*match_0).c2rust_unnamed.set_found((false_0 != 0) as bool);
                         } else {
