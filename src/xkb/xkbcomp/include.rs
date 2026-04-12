@@ -351,8 +351,12 @@ pub mod scanner_utils_h {
     use super::context_h::xkb_context;
     use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::snprintf;
-    extern "C" {
-        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
+        unsafe {
+            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
+                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
+            ))
+        }
     }
 }
 pub mod string_h {

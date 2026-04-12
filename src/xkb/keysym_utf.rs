@@ -179,8 +179,7 @@ pub fn keysym_to_utf8(keysym: Keysym) -> String {
 /// FFI wrapper: Convert keysym to UTF-32 codepoint (C-compatible)
 ///
 /// Returns 0 if conversion fails (matches old C behavior)
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
+pub unsafe fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
     keysym_to_codepoint(keysym).unwrap_or(0)
 }
 
@@ -190,8 +189,7 @@ pub unsafe extern "C" fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
 /// Returns number of bytes written (including null terminator), or:
 /// - 0 if conversion fails
 /// - -1 if buffer too small
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i32 {
+pub unsafe fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i32 {
     const MAX_UTF8_SIZE: usize = 5;
 
     if size < MAX_UTF8_SIZE {
@@ -224,8 +222,7 @@ pub unsafe extern "C" fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: 
 /// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)
 ///
 /// Returns 0 (XKB_KEY_NO_SYMBOL) if conversion fails
-#[no_mangle]
-pub unsafe extern "C" fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
+pub unsafe fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
     codepoint_to_keysym(ucs).unwrap_or(0)
 }
 

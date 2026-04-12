@@ -419,7 +419,7 @@ pub struct LookupModMaskPriv {
     pub mod_type: mod_type,
 }
 pub type IdentLookupFunc = Option<
-    unsafe extern "C" fn(
+    unsafe fn(
         *mut xkb_context,
         *const ::core::ffi::c_void,
         xkb_atom_t,
@@ -497,7 +497,7 @@ pub unsafe fn ExprResolveLhs(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn SimpleLookup(
+unsafe fn SimpleLookup(
     mut ctx: *mut xkb_context,
     mut priv_0: *const ::core::ffi::c_void,
     mut field: xkb_atom_t,
@@ -520,7 +520,7 @@ unsafe extern "C" fn SimpleLookup(
         return false_0 != 0;
     }
 }
-unsafe extern "C" fn NamedIntegerPatternLookup(
+unsafe fn NamedIntegerPatternLookup(
     mut ctx: *mut xkb_context,
     mut priv_0: *const ::core::ffi::c_void,
     mut field: xkb_atom_t,
@@ -597,7 +597,7 @@ unsafe extern "C" fn NamedIntegerPatternLookup(
         };
     }
 }
-unsafe extern "C" fn LookupModMask(
+unsafe fn LookupModMask(
     mut ctx: *mut xkb_context,
     mut priv_0: *const ::core::ffi::c_void,
     mut field: xkb_atom_t,
@@ -993,7 +993,7 @@ pub unsafe fn ExprResolveGroup(
             pending,
             Some(
                 NamedIntegerPatternLookup
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1048,7 +1048,7 @@ pub unsafe fn ExprResolveLevel(
             ::core::ptr::null_mut::<bool>(),
             Some(
                 NamedIntegerPatternLookup
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1089,7 +1089,7 @@ pub unsafe fn ExprResolveButton(
             ::core::ptr::null_mut::<bool>(),
             Some(
                 SimpleLookup
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1448,7 +1448,7 @@ pub unsafe fn ExprResolveMask(
             ::core::ptr::null_mut::<bool>(),
             Some(
                 SimpleLookup
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1479,7 +1479,7 @@ pub unsafe fn ExprResolveModMask(
             ::core::ptr::null_mut::<bool>(),
             Some(
                 LookupModMask
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1563,7 +1563,7 @@ pub unsafe fn ExprResolveGroupMask(
             pending_rtrn,
             Some(
                 NamedIntegerPatternLookup
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_context,
                         *const ::core::ffi::c_void,
                         xkb_atom_t,
@@ -1575,7 +1575,7 @@ pub unsafe fn ExprResolveGroupMask(
         );
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         level_name_pattern = named_integer_pattern {
             prefix: b"Level\0".as_ptr() as *const i8,
@@ -1593,4 +1593,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

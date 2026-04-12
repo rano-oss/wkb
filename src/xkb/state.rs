@@ -59,7 +59,7 @@ pub mod sys_types_h {
 pub mod stdlib_h {
 
     pub type __compar_fn_t =
-        Option<unsafe extern "C" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
+        Option<unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
 
     extern "C" {
 
@@ -224,48 +224,13 @@ pub mod xkbcommon_h {
     pub const XKB_LEVEL_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
     pub use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
-    extern "C" {
-
-        pub fn xkb_keysym_to_utf8(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
-
-        pub fn xkb_keysym_to_utf32(keysym: xkb_keysym_t) -> u32;
-
-        pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
-
-        pub fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap;
-
-        pub fn xkb_keymap_unref(keymap: *mut xkb_keymap);
-
-        pub fn xkb_keymap_num_mods(keymap: *mut xkb_keymap) -> xkb_mod_index_t;
-
-        pub fn xkb_keymap_mod_get_index(
-            keymap: *mut xkb_keymap,
-            name: *const i8,
-        ) -> xkb_mod_index_t;
-
-        pub fn xkb_keymap_layout_get_index(
-            keymap: *mut xkb_keymap,
-            name: *const i8,
-        ) -> xkb_layout_index_t;
-
-        pub fn xkb_keymap_led_get_index(
-            keymap: *mut xkb_keymap,
-            name: *const i8,
-        ) -> xkb_led_index_t;
-
-        pub fn xkb_keymap_num_layouts_for_key(
-            keymap: *mut xkb_keymap,
-            key: xkb_keycode_t,
-        ) -> xkb_layout_index_t;
-
-        pub fn xkb_keymap_key_get_syms_by_level(
-            keymap: *mut xkb_keymap,
-            key: xkb_keycode_t,
-            layout: xkb_layout_index_t,
-            level: xkb_level_index_t,
-            syms_out: *mut *const xkb_keysym_t,
-        ) -> i32;
-    }
+    pub use crate::xkb::keymap::{
+        xkb_keymap_key_get_syms_by_level, xkb_keymap_layout_get_index, xkb_keymap_led_get_index,
+        xkb_keymap_mod_get_index, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods,
+        xkb_keymap_ref, xkb_keymap_unref,
+    };
+    pub use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
+    pub use crate::xkb::keysym_utf::{xkb_keysym_to_utf32, xkb_keysym_to_utf8};
 }
 
 pub mod keymap_h {
@@ -332,15 +297,7 @@ pub mod keymap_h {
                 || (*entry).mods.mask != 0 as xkb_mod_mask_t;
         }
     }
-    extern "C" {
-
-        pub fn xkb_keymap_key_get_level(
-            keymap: *mut xkb_keymap,
-            key: *const xkb_key,
-            layout: xkb_layout_index_t,
-            level: xkb_level_index_t,
-        ) -> *mut xkb_level;
-    }
+    pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 }
 
 pub mod state_priv_h {
@@ -1040,7 +997,7 @@ pub struct xkb_filter {
     pub action: xkb_action,
     pub key: *const xkb_key,
     pub func: Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut xkb_state,
             *mut xkb_events,
             *mut xkb_filter,
@@ -1117,9 +1074,9 @@ pub struct machine_mods_mappings {
 #[repr(C)]
 
 pub struct C2Rust_Unnamed_21 {
-    pub new: Option<unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> ()>,
+    pub new: Option<unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> ()>,
     pub func: Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut xkb_state,
             *mut xkb_events,
             *mut xkb_filter,
@@ -1254,7 +1211,6 @@ unsafe fn state_key_get_level(
         };
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_level(
     mut state: *mut xkb_state,
@@ -1285,7 +1241,6 @@ unsafe fn state_key_get_layout(
         );
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_layout(
     mut state: *mut xkb_state,
@@ -1381,7 +1336,7 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_set_new(
+unsafe fn xkb_filter_group_set_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1396,7 +1351,7 @@ unsafe extern "C" fn xkb_filter_group_set_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_set_func(
+unsafe fn xkb_filter_group_set_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1475,7 +1430,7 @@ unsafe fn get_state_component_changes(
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_lock_new(
+unsafe fn xkb_filter_group_lock_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1491,7 +1446,7 @@ unsafe extern "C" fn xkb_filter_group_lock_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_lock_func(
+unsafe fn xkb_filter_group_lock_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1554,7 +1509,7 @@ unsafe fn xkb_action_breaks_latch(
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_latch_new(
+unsafe fn xkb_filter_group_latch_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1587,7 +1542,7 @@ unsafe extern "C" fn xkb_filter_group_latch_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_group_latch_func(
+unsafe fn xkb_filter_group_latch_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1647,24 +1602,22 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
                             (*filter).func = Some(
                                 xkb_filter_group_lock_func
-                                    as unsafe extern "C" fn(
+                                    as unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                             )
                                 as Option<
-                                    unsafe extern "C" fn(
+                                    unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                                 >;
                             xkb_filter_group_lock_new(state, events, filter);
                             (*state).components.latched_group -=
@@ -1713,7 +1666,7 @@ unsafe extern "C" fn xkb_filter_group_latch_func(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_set_new(
+unsafe fn xkb_filter_mod_set_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1732,7 +1685,7 @@ unsafe extern "C" fn xkb_filter_mod_set_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_set_func(
+unsafe fn xkb_filter_mod_set_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1773,7 +1726,7 @@ unsafe extern "C" fn xkb_filter_mod_set_func(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_lock_new(
+unsafe fn xkb_filter_mod_lock_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1797,7 +1750,7 @@ unsafe extern "C" fn xkb_filter_mod_lock_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_lock_func(
+unsafe fn xkb_filter_mod_lock_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1833,7 +1786,7 @@ unsafe extern "C" fn xkb_filter_mod_lock_func(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_latch_new(
+unsafe fn xkb_filter_mod_latch_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1858,7 +1811,7 @@ unsafe extern "C" fn xkb_filter_mod_latch_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_mod_latch_func(
+unsafe fn xkb_filter_mod_latch_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -1914,48 +1867,44 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
                             (*filter).func = Some(
                                 xkb_filter_mod_lock_func
-                                    as unsafe extern "C" fn(
+                                    as unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                             )
                                 as Option<
-                                    unsafe extern "C" fn(
+                                    unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                                 >;
                             xkb_filter_mod_lock_new(state, events, filter);
                         } else {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_SET;
                             (*filter).func = Some(
                                 xkb_filter_mod_set_func
-                                    as unsafe extern "C" fn(
+                                    as unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                             )
                                 as Option<
-                                    unsafe extern "C" fn(
+                                    unsafe fn(
                                         *mut xkb_state,
                                         *mut xkb_events,
                                         *mut xkb_filter,
                                         *const xkb_key,
                                         xkb_key_direction,
-                                    )
-                                        -> bool,
+                                    ) -> bool,
                                 >;
                             xkb_filter_mod_set_new(state, events, filter);
                         }
@@ -2011,7 +1960,7 @@ unsafe extern "C" fn xkb_filter_mod_latch_func(
     }
 }
 
-unsafe extern "C" fn xkb_filter_ctrls_new(
+unsafe fn xkb_filter_ctrls_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -2034,7 +1983,7 @@ unsafe extern "C" fn xkb_filter_ctrls_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_ctrls_func(
+unsafe fn xkb_filter_ctrls_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -2206,7 +2155,7 @@ unsafe fn append_redirect_key_events(
     }
 }
 
-unsafe extern "C" fn xkb_filter_redirect_key_new(
+unsafe fn xkb_filter_redirect_key_new(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -2227,7 +2176,7 @@ unsafe extern "C" fn xkb_filter_redirect_key_new(
     }
 }
 
-unsafe extern "C" fn xkb_filter_redirect_key_func(
+unsafe fn xkb_filter_redirect_key_func(
     mut state: *mut xkb_state,
     mut events: *mut xkb_events,
     mut filter: *mut xkb_filter,
@@ -2288,11 +2237,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_mod_set_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_mod_set_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2304,11 +2253,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_mod_latch_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_mod_latch_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2320,11 +2269,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_mod_lock_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_mod_lock_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2336,11 +2285,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_group_set_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_group_set_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2352,11 +2301,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_group_latch_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_group_latch_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2368,11 +2317,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_group_lock_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_group_lock_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2408,11 +2357,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_ctrls_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_ctrls_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2424,11 +2373,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_ctrls_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_ctrls_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2440,11 +2389,11 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = unsafe {
         C2Rust_Unnamed_21 {
             new: Some(
                 xkb_filter_redirect_key_new
-                    as unsafe extern "C" fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
+                    as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
             ),
             func: Some(
                 xkb_filter_redirect_key_func
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut xkb_state,
                         *mut xkb_events,
                         *mut xkb_filter,
@@ -2579,8 +2528,6 @@ unsafe fn xkb_state_init(
         xkb_state_update_derived(state);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
         let state: *mut xkb_state =
@@ -2592,7 +2539,6 @@ pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
         return state;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
     unsafe {
@@ -2611,8 +2557,6 @@ unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
         (*state).filters.alloc = 0 as darray_size_t;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
@@ -2625,8 +2569,6 @@ pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
         free(state as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
     unsafe {
         return (*state).keymap;
@@ -2768,8 +2710,6 @@ unsafe fn xkb_state_update_derived(mut state: *mut xkb_state) {
         xkb_state_led_update_all(state);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_update_key(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
@@ -2940,7 +2880,7 @@ unsafe fn update_latch_modifiers(
         (*filter).key = key;
         (*filter).func = Some(
             xkb_filter_mod_latch_func
-                as unsafe extern "C" fn(
+                as unsafe fn(
                     *mut xkb_state,
                     *mut xkb_events,
                     *mut xkb_filter,
@@ -2949,7 +2889,7 @@ unsafe fn update_latch_modifiers(
                 ) -> bool,
         )
             as Option<
-                unsafe extern "C" fn(
+                unsafe fn(
                     *mut xkb_state,
                     *mut xkb_events,
                     *mut xkb_filter,
@@ -2987,7 +2927,7 @@ unsafe fn update_latch_group(
         (*filter).key = key;
         (*filter).func = Some(
             xkb_filter_group_latch_func
-                as unsafe extern "C" fn(
+                as unsafe fn(
                     *mut xkb_state,
                     *mut xkb_events,
                     *mut xkb_filter,
@@ -2996,7 +2936,7 @@ unsafe fn update_latch_group(
                 ) -> bool,
         )
             as Option<
-                unsafe extern "C" fn(
+                unsafe fn(
                     *mut xkb_state,
                     *mut xkb_events,
                     *mut xkb_filter,
@@ -3053,7 +2993,6 @@ unsafe fn state_update_latched_locked(
         }
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_update_latched_locked(
     mut state: *mut xkb_state,
@@ -3284,7 +3223,6 @@ unsafe fn check_state_update_abi_(
         return error;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_update_synthetic(
     mut state: *mut xkb_state,
@@ -3327,7 +3265,6 @@ pub unsafe fn xkb_state_update_synthetic(
         return XKB_SUCCESS;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_update_mask(
     mut state: *mut xkb_state,
@@ -3383,8 +3320,6 @@ unsafe fn should_do_ctrl_transformation(mut state: *mut xkb_state, mut kc: xkb_k
             ) == 0 as i32;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_key_get_syms(
     mut state: *mut xkb_state,
     mut kc: xkb_keycode_t,
@@ -3450,7 +3385,6 @@ unsafe fn XkbToControl(mut ch: i8) -> i8 {
         return c;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_one_sym(
     mut state: *mut xkb_state,
@@ -3512,7 +3446,6 @@ unsafe fn get_one_sym_for_string(mut state: *mut xkb_state, mut kc: xkb_keycode_
         return sym;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_utf8(
     mut state: *mut xkb_state,
@@ -3588,7 +3521,6 @@ pub unsafe fn xkb_state_key_get_utf8(
         return 0 as i32;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_utf32(mut state: *mut xkb_state, mut kc: xkb_keycode_t) -> u32 {
     unsafe {
@@ -3623,8 +3555,6 @@ unsafe fn serialize_mods(
         return ret;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_serialize_mods(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
@@ -3656,8 +3586,6 @@ unsafe fn serialize_layout(
         return ret;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_serialize_layout(
     mut state: *mut xkb_state,
     mut type_0: xkb_state_component,
@@ -3681,7 +3609,6 @@ unsafe fn serialize_controls(
         }) as xkb_keyboard_control_flags;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_serialize_enabled_controls(
     mut state: *const xkb_state,
@@ -3691,8 +3618,6 @@ pub unsafe fn xkb_state_serialize_enabled_controls(
         return serialize_controls(&raw const (*state).components, type_0);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn mod_mask_get_effective(
     mut keymap: *mut xkb_keymap,
     mut mods: xkb_mod_mask_t,
@@ -3714,7 +3639,6 @@ pub unsafe fn mod_mask_get_effective(
         return mask;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_mod_index_is_active(
     mut state: *mut xkb_state,
@@ -3752,7 +3676,6 @@ unsafe fn match_mod_masks(
         return active & wanted == wanted;
     }
 }
-#[no_mangle]
 
 pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
     mut state: *mut xkb_state,
@@ -3790,7 +3713,6 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
         return match_mod_masks(state, type_0, match_0, wanted) as i32;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_mod_name_is_active(
     mut state: *mut xkb_state,
@@ -3806,7 +3728,6 @@ pub unsafe fn xkb_state_mod_name_is_active(
         return xkb_state_mod_index_is_active(state, idx, type_0);
     }
 }
-#[no_mangle]
 
 pub unsafe extern "C" fn xkb_state_mod_names_are_active(
     mut state: *mut xkb_state,
@@ -3845,7 +3766,6 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
         return match_mod_masks(state, type_0, match_0, wanted) as i32;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_layout_index_is_active(
     mut state: *mut xkb_state,
@@ -3872,7 +3792,6 @@ pub unsafe fn xkb_state_layout_index_is_active(
         return ret;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_layout_name_is_active(
     mut state: *mut xkb_state,
@@ -3888,8 +3807,6 @@ pub unsafe fn xkb_state_layout_name_is_active(
         return xkb_state_layout_index_is_active(state, idx, type_0);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_led_index_is_active(
     mut state: *mut xkb_state,
     mut idx: xkb_led_index_t,
@@ -3903,7 +3820,6 @@ pub unsafe fn xkb_state_led_index_is_active(
         return ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_led_name_is_active(mut state: *mut xkb_state, mut name: *const i8) -> i32 {
     unsafe {
@@ -3976,7 +3892,6 @@ unsafe fn key_get_consumed(
         return consumed & !preserve;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_mod_index_is_consumed2(
     mut state: *mut xkb_state,
@@ -3996,7 +3911,6 @@ pub unsafe fn xkb_state_mod_index_is_consumed2(
         return (mapping & key_get_consumed(state, key, mode) == mapping) as i32;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_mod_index_is_consumed(
     mut state: *mut xkb_state,
@@ -4007,7 +3921,6 @@ pub unsafe fn xkb_state_mod_index_is_consumed(
         return xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB);
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_mod_mask_remove_consumed(
     mut state: *mut xkb_state,
@@ -4023,7 +3936,6 @@ pub unsafe fn xkb_state_mod_mask_remove_consumed(
             & !key_get_consumed(state, key, XKB_CONSUMED_MODE_XKB);
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_consumed_mods2(
     mut state: *mut xkb_state,
@@ -4052,7 +3964,6 @@ pub unsafe fn xkb_state_key_get_consumed_mods2(
         return key_get_consumed(state, key, mode);
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_state_key_get_consumed_mods(
     mut state: *mut xkb_state,
@@ -4081,7 +3992,6 @@ static mut default_machine_options: xkb_machine_options = xkb_machine_options {
     },
     ctx: ::core::ptr::null::<xkb_context>() as *mut xkb_context,
 };
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_new(mut context: *mut xkb_context) -> *mut xkb_machine_options {
     unsafe {
@@ -4113,7 +4023,6 @@ pub unsafe fn xkb_machine_options_new(mut context: *mut xkb_context) -> *mut xkb
         return opt;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options) {
     unsafe {
@@ -4132,7 +4041,6 @@ pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options)
         free(options as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_update_a11y_flags(
     mut options: *mut xkb_machine_options,
@@ -4161,7 +4069,6 @@ pub unsafe fn xkb_machine_options_update_a11y_flags(
         return XKB_SUCCESS;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_remap_mods(
     mut options: *mut xkb_machine_options,
@@ -4259,7 +4166,6 @@ pub unsafe fn xkb_machine_options_remap_mods(
         return XKB_SUCCESS;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_update_shortcut_mods(
     mut options: *mut xkb_machine_options,
@@ -4272,7 +4178,6 @@ pub unsafe fn xkb_machine_options_update_shortcut_mods(
         return XKB_SUCCESS;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_options_remap_shortcut_layout(
     mut options: *mut xkb_machine_options,
@@ -4320,7 +4225,7 @@ pub unsafe fn xkb_machine_options_remap_shortcut_layout(
     }
 }
 
-unsafe extern "C" fn cmp_mod_masks(
+unsafe fn cmp_mod_masks(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
 ) -> i32 {
@@ -4416,10 +4321,7 @@ unsafe fn machine_set_mods(
                 ::core::mem::size_of::<machine_mods_mapping>() as usize,
                 Some(
                     cmp_mod_masks
-                        as unsafe extern "C" fn(
-                            *const ::core::ffi::c_void,
-                            *const ::core::ffi::c_void,
-                        ) -> i32,
+                        as unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32,
                 ),
             );
             (*sm).config.modifiers.mappings = mappings.item as *mut machine_mods_mapping;
@@ -4511,7 +4413,6 @@ unsafe fn machine_set_shortcuts(
         return true_0 != 0;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_new(
     mut keymap: *mut xkb_keymap,
@@ -4545,7 +4446,6 @@ pub unsafe fn xkb_machine_new(
         };
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
     unsafe {
@@ -4553,7 +4453,6 @@ pub unsafe fn xkb_machine_ref(mut sm: *mut xkb_machine) -> *mut xkb_machine {
         return sm;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
     unsafe {
@@ -4573,14 +4472,12 @@ pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
         free(sm as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_get_keymap(mut sm: *const xkb_machine) -> *mut xkb_keymap {
     unsafe {
         return (*sm).state.keymap;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_get_state(mut sm: *mut xkb_machine) -> *mut xkb_state {
     unsafe {
@@ -4629,7 +4526,6 @@ unsafe fn machine_update_overlays(mut sm: *mut xkb_machine) {
         (*sm).overlays.enabled = mask;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_machine_process_synthetic(
     mut sm: *mut xkb_machine,
@@ -5020,8 +4916,6 @@ unsafe fn process_overlayable_key(
         return key;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_machine_process_key(
     mut sm: *mut xkb_machine,
     mut kc: xkb_keycode_t,
@@ -5172,7 +5066,6 @@ pub unsafe fn xkb_machine_process_key(
         return XKB_SUCCESS;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_events_new_batch(
     mut context: *mut xkb_context,
@@ -5212,7 +5105,6 @@ pub unsafe fn xkb_events_new_batch(
         return events;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
     unsafe {
@@ -5227,8 +5119,6 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
         free(events as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
     unsafe {
         if (*events).next < (*events).queue.size {
@@ -5241,15 +5131,11 @@ pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
         };
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_event_get_type(mut event: *const xkb_event) -> xkb_event_type {
     unsafe {
         return (*event).type_0;
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_t {
     unsafe {
         match (*event).type_0 as u32 {
@@ -5258,7 +5144,6 @@ pub unsafe fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_
         };
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_event_get_changed_components(mut event: *const xkb_event) -> xkb_state_component {
     unsafe {
@@ -5269,7 +5154,6 @@ pub unsafe fn xkb_event_get_changed_components(mut event: *const xkb_event) -> x
         }) as xkb_state_component;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_event_serialize_enabled_controls(
     mut event: *const xkb_event,
@@ -5286,7 +5170,6 @@ pub unsafe fn xkb_event_serialize_enabled_controls(
         }) as xkb_keyboard_control_flags;
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_event_serialize_mods(
     mut event: *const xkb_event,
@@ -5303,7 +5186,6 @@ pub unsafe fn xkb_event_serialize_mods(
         };
     }
 }
-#[no_mangle]
 
 pub unsafe fn xkb_event_serialize_layout(
     mut event: *const xkb_event,
@@ -5320,8 +5202,6 @@ pub unsafe fn xkb_event_serialize_layout(
         };
     }
 }
-#[no_mangle]
-#[no_mangle]
 pub unsafe fn xkb_state_update_event(
     mut state: *mut xkb_state,
     mut event: *const xkb_event,
@@ -5339,7 +5219,7 @@ pub unsafe fn xkb_state_update_event(
         };
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         synthetic_key_group_break_group_latch = {
             let mut init = xkb_group {
@@ -5406,4 +5286,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

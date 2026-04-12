@@ -522,8 +522,12 @@ pub mod scanner_utils_h {
         parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
     };
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
-    extern "C" {
-        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
+        unsafe {
+            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
+                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
+            ))
+        }
     }
 }
 pub mod ast_h {
@@ -1150,9 +1154,7 @@ pub mod parser_priv_h {
     // Re-export parse functions from parser module
     pub use super::super::parser::{parse, parse_next};
 
-    extern "C" {
-        pub fn keyword_to_token(string: *const i8, len: usize) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =

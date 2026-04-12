@@ -137,18 +137,13 @@ pub mod keymap_h {
     #[repr(C)]
     pub struct xkb_keymap_format_ops {
         pub keymap_new_from_rmlvo:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
+            Option<unsafe fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
         pub keymap_new_from_names:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
-        pub keymap_new_from_string:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const i8, usize) -> bool>,
-        pub keymap_new_from_file: Option<unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool>,
+            Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
+        pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
+        pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut FILE) -> bool>,
         pub keymap_get_as_string: Option<
-            unsafe extern "C" fn(
-                *mut xkb_keymap,
-                xkb_keymap_format,
-                xkb_keymap_serialize_flags,
-            ) -> *mut i8,
+            unsafe fn(*mut xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags) -> *mut i8,
         >,
     }
     pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
@@ -210,13 +205,20 @@ pub mod rmlvo_h {
     use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::xkbcommon_h::{xkb_layout_index_t, xkb_rule_names};
-    extern "C" {
-        pub fn xkb_rmlvo_builder_to_rules_names(
-            builder: *const xkb_rmlvo_builder,
-            rmlvo: *mut xkb_rule_names,
-            buf: *mut i8,
-            buf_size: usize,
-        ) -> bool;
+    pub unsafe fn xkb_rmlvo_builder_to_rules_names(
+        builder: *const xkb_rmlvo_builder,
+        rmlvo: *mut xkb_rule_names,
+        buf: *mut i8,
+        buf_size: usize,
+    ) -> bool {
+        unsafe {
+            crate::xkb::rmlvo::xkb_rmlvo_builder_to_rules_names(
+                builder as *const _,
+                rmlvo,
+                buf,
+                buf_size,
+            )
+        }
     }
 }
 pub mod ast_h {
@@ -323,18 +325,33 @@ pub mod rules_h {
     use super::context_h::xkb_context;
     use super::rmlvo_h::xkb_rmlvo_builder;
     use super::xkbcommon_h::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
-    extern "C" {
-        pub fn xkb_components_from_rmlvo_builder(
-            rmlvo: *const xkb_rmlvo_builder,
-            out: *mut xkb_component_names,
-            explicit_layouts: *mut xkb_layout_index_t,
-        ) -> bool;
-        pub fn xkb_components_from_rules_names(
-            ctx: *mut xkb_context,
-            rmlvo: *const xkb_rule_names,
-            out: *mut xkb_component_names,
-            explicit_layouts: *mut xkb_layout_index_t,
-        ) -> bool;
+    pub unsafe fn xkb_components_from_rmlvo_builder(
+        rmlvo: *const xkb_rmlvo_builder,
+        out: *mut xkb_component_names,
+        explicit_layouts: *mut xkb_layout_index_t,
+    ) -> bool {
+        unsafe {
+            crate::xkb::xkbcomp::rules::xkb_components_from_rmlvo_builder(
+                rmlvo as *const _,
+                out as *mut _,
+                explicit_layouts,
+            )
+        }
+    }
+    pub unsafe fn xkb_components_from_rules_names(
+        ctx: *mut xkb_context,
+        rmlvo: *const xkb_rule_names,
+        out: *mut xkb_component_names,
+        explicit_layouts: *mut xkb_layout_index_t,
+    ) -> bool {
+        unsafe {
+            crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
+                ctx,
+                rmlvo,
+                out as *mut _,
+                explicit_layouts,
+            )
+        }
     }
 }
 pub mod xkbcomp_priv_h {
@@ -346,7 +363,7 @@ pub mod xkbcomp_priv_h {
     use super::FILE_h::FILE;
 
     // Stub implementation for text_v1_keymap_get_as_string (serialization not yet implemented)
-    pub unsafe extern "C" fn text_v1_keymap_get_as_string(
+    pub unsafe fn text_v1_keymap_get_as_string(
         _keymap: *mut xkb_keymap,
         _format: xkb_keymap_format,
         _flags: xkb_keymap_serialize_flags,
@@ -392,8 +409,8 @@ pub mod xkbcomp_priv_h {
         }
     }
 
-    extern "C" {
-        pub fn CompileKeymap(file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool;
+    pub unsafe fn CompileKeymap(file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
+        unsafe { crate::xkb::xkbcomp::keymap::CompileKeymap(file as *mut _, keymap) }
     }
 }
 pub mod __stddef_null_h {
@@ -600,7 +617,7 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
         return true_0 != 0;
     }
 }
-unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
+unsafe fn text_v1_keymap_new_from_rmlvo(
     mut keymap: *mut xkb_keymap,
     mut rmlvo: *const xkb_rmlvo_builder,
 ) -> bool {
@@ -720,7 +737,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_rmlvo(
         return ok;
     }
 }
-unsafe extern "C" fn text_v1_keymap_new_from_names(
+unsafe fn text_v1_keymap_new_from_names(
     mut keymap: *mut xkb_keymap,
     mut rmlvo: *const xkb_rule_names,
 ) -> bool {
@@ -806,7 +823,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_names(
         return ok;
     }
 }
-unsafe extern "C" fn text_v1_keymap_new_from_string(
+unsafe fn text_v1_keymap_new_from_string(
     mut keymap: *mut xkb_keymap,
     mut string: *const i8,
     mut len: usize,
@@ -836,10 +853,7 @@ unsafe extern "C" fn text_v1_keymap_new_from_string(
         return ok;
     }
 }
-unsafe extern "C" fn text_v1_keymap_new_from_file(
-    mut keymap: *mut xkb_keymap,
-    mut file: *mut FILE,
-) -> bool {
+unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *mut FILE) -> bool {
     unsafe {
         let mut ok: bool = false;
         let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
@@ -864,28 +878,25 @@ unsafe extern "C" fn text_v1_keymap_new_from_file(
         return ok;
     }
 }
-#[no_mangle]
 pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = unsafe {
     xkb_keymap_format_ops {
         keymap_new_from_rmlvo: Some(
             text_v1_keymap_new_from_rmlvo
-                as unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool,
+                as unsafe fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool,
         ),
         keymap_new_from_names: Some(
             text_v1_keymap_new_from_names
-                as unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool,
+                as unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool,
         ),
         keymap_new_from_string: Some(
-            text_v1_keymap_new_from_string
-                as unsafe extern "C" fn(*mut xkb_keymap, *const i8, usize) -> bool,
+            text_v1_keymap_new_from_string as unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool,
         ),
         keymap_new_from_file: Some(
-            text_v1_keymap_new_from_file
-                as unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool,
+            text_v1_keymap_new_from_file as unsafe fn(*mut xkb_keymap, *mut FILE) -> bool,
         ),
         keymap_get_as_string: Some(
             text_v1_keymap_get_as_string
-                as unsafe extern "C" fn(
+                as unsafe fn(
                     *mut xkb_keymap,
                     xkb_keymap_format,
                     xkb_keymap_serialize_flags,

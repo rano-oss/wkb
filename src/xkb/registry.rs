@@ -64,7 +64,7 @@ pub mod struct_stat_h {
 
 pub mod stdlib_h {
     pub type __compar_fn_t =
-        Option<unsafe extern "C" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
+        Option<unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
 
     extern "C" {
         pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
@@ -146,7 +146,6 @@ pub mod stdio_h {
     use super::FILE_h::FILE;
 
     extern "C" {
-        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn vfprintf(__s: *mut FILE, __format: *const i8, __arg: ::core::ffi::VaList) -> i32;
@@ -187,7 +186,7 @@ pub mod xmlIO_h {
     }
     pub type xmlInputCloseCallback = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
     pub type xmlInputReadCallback =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
     use super::encoding_h::{xmlCharEncoding, xmlCharEncodingHandlerPtr};
     use super::tree_h::{xmlBufPtr, xmlParserInputBufferPtr};
     extern "C" {
@@ -406,7 +405,7 @@ pub mod encoding_h {
         pub iconv_out: iconv_t,
     }
     pub type xmlCharEncodingOutputFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_uchar,
             *mut i32,
             *const ::core::ffi::c_uchar,
@@ -414,7 +413,7 @@ pub mod encoding_h {
         ) -> i32,
     >;
     pub type xmlCharEncodingInputFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_uchar,
             *mut i32,
             *const ::core::ffi::c_uchar,
@@ -698,25 +697,25 @@ pub mod parser_h {
     pub type warningSAXFunc =
         Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
     pub type commentSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
     pub type processingInstructionSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar) -> (),
+        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar) -> (),
     >;
     pub type ignorableWhitespaceSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
     pub type charactersSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
     pub type referenceSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
     pub type endElementSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
     pub type startElementSAXFunc = Option<
-        unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, *mut *const xmlChar) -> (),
+        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *mut *const xmlChar) -> (),
     >;
     pub type endDocumentSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
     pub type startDocumentSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
     pub type setDocumentLocatorSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, xmlSAXLocatorPtr) -> ()>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, xmlSAXLocatorPtr) -> ()>;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct _xmlSAXLocator {
@@ -726,7 +725,7 @@ pub mod parser_h {
         pub getColumnNumber: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>,
     }
     pub type unparsedEntityDeclSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
@@ -735,7 +734,7 @@ pub mod parser_h {
         ) -> (),
     >;
     pub type elementDeclSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             i32,
@@ -743,7 +742,7 @@ pub mod parser_h {
         ) -> (),
     >;
     pub type attributeDeclSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
@@ -754,7 +753,7 @@ pub mod parser_h {
         ) -> (),
     >;
     pub type notationDeclSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
@@ -762,7 +761,7 @@ pub mod parser_h {
         ) -> (),
     >;
     pub type entityDeclSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             i32,
@@ -772,21 +771,21 @@ pub mod parser_h {
         ) -> (),
     >;
     pub type getEntitySAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> xmlEntityPtr>;
+        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> xmlEntityPtr>;
     pub type resolveEntitySAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
         ) -> xmlParserInputPtr,
     >;
     pub type hasExternalSubsetSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
+        Option<unsafe fn(*mut ::core::ffi::c_void) -> i32>;
     pub type hasInternalSubsetSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
+        Option<unsafe fn(*mut ::core::ffi::c_void) -> i32>;
     pub type isStandaloneSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
     pub type internalSubsetSAXFunc = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut ::core::ffi::c_void,
             *const xmlChar,
             *const xmlChar,
@@ -1457,7 +1456,7 @@ pub struct rxkb_context {
     pub option_groups: list,
     pub includes: C2Rust_Unnamed_0,
     pub log_fn: Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut rxkb_context,
             rxkb_log_level,
             *const i8,
@@ -1581,8 +1580,7 @@ unsafe fn rxkb_iso639_code_destroy(mut code: *mut rxkb_iso639_code) {
         free((*code).code as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_iso639_first(
+pub unsafe fn rxkb_layout_get_iso639_first(
     mut layout: *mut rxkb_layout,
 ) -> *mut rxkb_iso639_code {
     unsafe {
@@ -1594,8 +1592,7 @@ pub unsafe extern "C" fn rxkb_layout_get_iso639_first(
         return code;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_iso639_code_next(
+pub unsafe fn rxkb_iso639_code_next(
     mut code: *mut rxkb_iso639_code,
 ) -> *mut rxkb_iso639_code {
     unsafe {
@@ -1646,8 +1643,7 @@ unsafe fn rxkb_iso639_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_iso639_code_get_code(mut object: *mut rxkb_iso639_code) -> *const i8 {
+pub unsafe fn rxkb_iso639_code_get_code(mut object: *mut rxkb_iso639_code) -> *const i8 {
     unsafe {
         return (*object).code;
     }
@@ -1657,8 +1653,7 @@ unsafe fn rxkb_iso3166_code_destroy(mut code: *mut rxkb_iso3166_code) {
         free((*code).code as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_iso3166_first(
+pub unsafe fn rxkb_layout_get_iso3166_first(
     mut layout: *mut rxkb_layout,
 ) -> *mut rxkb_iso3166_code {
     unsafe {
@@ -1670,8 +1665,7 @@ pub unsafe extern "C" fn rxkb_layout_get_iso3166_first(
         return code;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_iso3166_code_next(
+pub unsafe fn rxkb_iso3166_code_next(
     mut code: *mut rxkb_iso3166_code,
 ) -> *mut rxkb_iso3166_code {
     unsafe {
@@ -1724,8 +1718,7 @@ unsafe fn rxkb_iso3166_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_is
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_iso3166_code_get_code(
+pub unsafe fn rxkb_iso3166_code_get_code(
     mut object: *mut rxkb_iso3166_code,
 ) -> *const i8 {
     unsafe {
@@ -1772,20 +1765,17 @@ unsafe fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_name(mut object: *mut rxkb_option) -> *const i8 {
+pub unsafe fn rxkb_option_get_name(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_brief(mut object: *mut rxkb_option) -> *const i8 {
+pub unsafe fn rxkb_option_get_brief(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).brief;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_get_description(mut object: *mut rxkb_option) -> *const i8 {
+pub unsafe fn rxkb_option_get_description(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).description;
     }
@@ -1796,14 +1786,12 @@ pub unsafe fn rxkb_option_get_popularity(mut object: *mut rxkb_option) -> rxkb_p
         return (*object).popularity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_is_layout_specific(mut object: *mut rxkb_option) -> bool {
+pub unsafe fn rxkb_option_is_layout_specific(mut object: *mut rxkb_option) -> bool {
     unsafe {
         return (*object).layout_specific;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_next(mut o: *mut rxkb_option) -> *mut rxkb_option {
+pub unsafe fn rxkb_option_next(mut o: *mut rxkb_option) -> *mut rxkb_option {
     unsafe {
         let mut parent: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut next: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
@@ -1817,8 +1805,7 @@ pub unsafe extern "C" fn rxkb_option_next(mut o: *mut rxkb_option) -> *mut rxkb_
         return next;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_first(mut parent: *mut rxkb_option_group) -> *mut rxkb_option {
+pub unsafe fn rxkb_option_first(mut parent: *mut rxkb_option_group) -> *mut rxkb_option {
     unsafe {
         let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
         if !list_empty(&raw mut (*parent).options) {
@@ -1897,26 +1884,22 @@ unsafe fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_name(mut object: *mut rxkb_layout) -> *const i8 {
+pub unsafe fn rxkb_layout_get_name(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_brief(mut object: *mut rxkb_layout) -> *const i8 {
+pub unsafe fn rxkb_layout_get_brief(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).brief;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_description(mut object: *mut rxkb_layout) -> *const i8 {
+pub unsafe fn rxkb_layout_get_description(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).description;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -> *const i8 {
+pub unsafe fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -> *const i8 {
     unsafe {
         return (*object).variant;
     }
@@ -1927,8 +1910,7 @@ pub unsafe fn rxkb_layout_get_popularity(mut object: *mut rxkb_layout) -> rxkb_p
         return (*object).popularity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mut rxkb_layout {
+pub unsafe fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mut rxkb_layout {
     unsafe {
         let mut o: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         if !list_empty(&raw mut (*parent).layouts) {
@@ -1938,8 +1920,7 @@ pub unsafe extern "C" fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mu
         return o;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_layout {
+pub unsafe fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_layout {
     unsafe {
         let mut parent: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut next: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
@@ -1993,20 +1974,17 @@ unsafe fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_name(mut object: *mut rxkb_model) -> *const i8 {
+pub unsafe fn rxkb_model_get_name(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_vendor(mut object: *mut rxkb_model) -> *const i8 {
+pub unsafe fn rxkb_model_get_vendor(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).vendor;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_model_get_description(mut object: *mut rxkb_model) -> *const i8 {
+pub unsafe fn rxkb_model_get_description(mut object: *mut rxkb_model) -> *const i8 {
     unsafe {
         return (*object).description;
     }
@@ -2017,8 +1995,7 @@ pub unsafe fn rxkb_model_get_popularity(mut object: *mut rxkb_model) -> rxkb_pop
         return (*object).popularity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_model {
+pub unsafe fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_model {
     unsafe {
         let mut parent: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
         let mut next: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
@@ -2032,8 +2009,7 @@ pub unsafe extern "C" fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_mo
         return next;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut rxkb_model {
+pub unsafe fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut rxkb_model {
     unsafe {
         let mut o: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
         if !list_empty(&raw mut (*parent).models) {
@@ -2063,8 +2039,7 @@ unsafe fn rxkb_option_group_destroy(mut og: *mut rxkb_option_group) {
         }
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_option_group) -> bool {
+pub unsafe fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_option_group) -> bool {
     unsafe {
         return (*g).allow_multiple;
     }
@@ -2106,16 +2081,14 @@ unsafe fn rxkb_option_group_create(mut parent: *mut rxkb_object) -> *mut rxkb_op
         return t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_group_get_name(
+pub unsafe fn rxkb_option_group_get_name(
     mut object: *mut rxkb_option_group,
 ) -> *const i8 {
     unsafe {
         return (*object).name;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_group_get_description(
+pub unsafe fn rxkb_option_group_get_description(
     mut object: *mut rxkb_option_group,
 ) -> *const i8 {
     unsafe {
@@ -2130,8 +2103,7 @@ pub unsafe fn rxkb_option_group_get_popularity(
         return (*object).popularity;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_group_first(
+pub unsafe fn rxkb_option_group_first(
     mut parent: *mut rxkb_context,
 ) -> *mut rxkb_option_group {
     unsafe {
@@ -2143,8 +2115,7 @@ pub unsafe extern "C" fn rxkb_option_group_first(
         return o;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_option_group_next(
+pub unsafe fn rxkb_option_group_next(
     mut o: *mut rxkb_option_group,
 ) -> *mut rxkb_option_group {
     unsafe {
@@ -2226,8 +2197,7 @@ pub unsafe fn rxkb_context_ref(mut object: *mut rxkb_context) -> *mut rxkb_conte
         return object;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_context {
+pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_context {
     unsafe {
         if object.is_null() {
             return ::core::ptr::null_mut::<rxkb_context>();
@@ -2268,8 +2238,7 @@ unsafe fn rxkb_context_getenv(mut ctx: *mut rxkb_context, mut name: *const i8) -
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_set_log_level(
+pub unsafe fn rxkb_context_set_log_level(
     mut ctx: *mut rxkb_context,
     mut level: rxkb_log_level,
 ) {
@@ -2293,7 +2262,7 @@ unsafe fn log_level_to_prefix(mut level: rxkb_log_level) -> *const i8 {
         };
     }
 }
-unsafe extern "C" fn default_log_fn(
+unsafe fn default_log_fn(
     mut ctx: *mut rxkb_context,
     mut level: rxkb_log_level,
     mut fmt: *const i8,
@@ -2365,8 +2334,7 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
         return RXKB_LOG_LEVEL_ERROR;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_context {
+pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_context {
     unsafe {
         let mut ctx: *mut rxkb_context =
             rxkb_context_create(::core::ptr::null_mut::<rxkb_object>());
@@ -2380,7 +2348,7 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
         (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as i32 as u32 == 0;
         (*ctx).log_fn = Some(
             default_log_fn
-                as unsafe extern "C" fn(
+                as unsafe fn(
                     *mut rxkb_context,
                     rxkb_log_level,
                     *const i8,
@@ -2388,7 +2356,7 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
                 ) -> (),
         )
             as Option<
-                unsafe extern "C" fn(
+                unsafe fn(
                     *mut rxkb_context,
                     rxkb_log_level,
                     *const i8,
@@ -2439,7 +2407,7 @@ pub unsafe extern "C" fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut
 pub unsafe fn rxkb_context_set_log_fn(
     mut ctx: *mut rxkb_context,
     mut log_fn: Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut rxkb_context,
             rxkb_log_level,
             *const i8,
@@ -2451,7 +2419,7 @@ pub unsafe fn rxkb_context_set_log_fn(
         (*ctx).log_fn = (if log_fn.is_some() {
             log_fn
                 as Option<
-                    unsafe extern "C" fn(
+                    unsafe fn(
                         *mut rxkb_context,
                         rxkb_log_level,
                         *const i8,
@@ -2461,7 +2429,7 @@ pub unsafe fn rxkb_context_set_log_fn(
         } else {
             Some(
                 default_log_fn
-                    as unsafe extern "C" fn(
+                    as unsafe fn(
                         *mut rxkb_context,
                         rxkb_log_level,
                         *const i8,
@@ -2470,7 +2438,7 @@ pub unsafe fn rxkb_context_set_log_fn(
             )
         })
             as Option<
-                unsafe extern "C" fn(
+                unsafe fn(
                     *mut rxkb_context,
                     rxkb_log_level,
                     *const i8,
@@ -2479,8 +2447,7 @@ pub unsafe fn rxkb_context_set_log_fn(
             >;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_include_path_append(
+pub unsafe fn rxkb_context_include_path_append(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
 ) -> bool {
@@ -2619,7 +2586,7 @@ pub unsafe extern "C" fn rxkb_context_include_path_append(
         return false;
     }
 }
-unsafe extern "C" fn compare_str(
+unsafe fn compare_str(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
 ) -> i32 {
@@ -2767,7 +2734,7 @@ unsafe fn add_direct_subdirectories(
                                 ::core::mem::size_of::<*mut i8>() as usize,
                                 Some(
                                     compare_str
-                                        as unsafe extern "C" fn(
+                                        as unsafe fn(
                                             *const ::core::ffi::c_void,
                                             *const ::core::ffi::c_void,
                                         )
@@ -2806,8 +2773,7 @@ unsafe fn add_direct_subdirectories(
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_include_path_append_default(
+pub unsafe fn rxkb_context_include_path_append_default(
     mut ctx: *mut rxkb_context,
 ) -> bool {
     unsafe {
@@ -2955,8 +2921,7 @@ pub unsafe fn rxkb_context_parse_default_ruleset(mut ctx: *mut rxkb_context) -> 
         return rxkb_context_parse(ctx, DEFAULT_XKB_RULES.as_ptr());
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn rxkb_context_parse(
+pub unsafe fn rxkb_context_parse(
     mut ctx: *mut rxkb_context,
     mut ruleset: *const i8,
 ) -> bool {

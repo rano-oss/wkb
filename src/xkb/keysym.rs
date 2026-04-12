@@ -25,9 +25,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff as i32;
-    extern "C" {
-        pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
-    }
+    pub use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
 }
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
@@ -26742,8 +26740,7 @@ unsafe fn get_unicode_name(mut ks: xkb_keysym_t, mut buffer: *mut i8, mut size: 
         );
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_get_name(
+pub unsafe fn xkb_keysym_get_name(
     mut ks: xkb_keysym_t,
     mut buffer: *mut i8,
     mut size: usize,
@@ -26937,8 +26934,7 @@ unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
         return count > 0 as i32 && *s.offset(count as isize) as i32 == '\0' as i32;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_from_name(
+pub unsafe fn xkb_keysym_from_name(
     mut name: *const i8,
     mut flags: xkb_keysym_flags,
 ) -> xkb_keysym_t {
@@ -27065,8 +27061,7 @@ pub unsafe fn xkb_utf8_to_keysym(mut buffer: *const i8, mut size: usize) -> xkb_
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_keypad(mut keysym: xkb_keysym_t) -> bool {
+pub unsafe fn xkb_keysym_is_keypad(mut keysym: xkb_keysym_t) -> bool {
     return keysym >= XKB_KEY_KP_Space as xkb_keysym_t
         && keysym <= XKB_KEY_KP_Equal as xkb_keysym_t;
 }
@@ -27078,8 +27073,7 @@ pub unsafe fn xkb_keysym_is_modifier(mut keysym: xkb_keysym_t) -> bool {
         || keysym == XKB_KEY_Mode_switch as xkb_keysym_t
         || keysym == XKB_KEY_Num_Lock as xkb_keysym_t;
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_deprecated(
+pub unsafe fn xkb_keysym_is_deprecated(
     mut _keysym: xkb_keysym_t,
     mut _name: *const i8,
     mut reference_name: *mut *const i8,

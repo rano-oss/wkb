@@ -79,10 +79,6 @@ pub mod context_h {
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;

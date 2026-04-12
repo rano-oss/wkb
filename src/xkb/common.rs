@@ -135,9 +135,7 @@ pub mod stdio_h {
     use super::FILE_h::FILE;
 
     extern "C" {
-        #[no_mangle]
         pub static mut stdout: *mut FILE;
-        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
@@ -410,7 +408,7 @@ pub mod test_h {
     pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
     pub const CONTEXT_NO_FLAG: test_context_flags = 0;
     pub type test_compile_buffer_t = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *mut xkb_context,
             xkb_keymap_format,
             *const i8,
@@ -419,7 +417,7 @@ pub mod test_h {
         ) -> *mut xkb_keymap,
     >;
     pub type test_third_party_compile_buffer_t = Option<
-        unsafe extern "C" fn(
+        unsafe fn(
             *const i8,
             usize,
             *mut ::core::ffi::c_void,

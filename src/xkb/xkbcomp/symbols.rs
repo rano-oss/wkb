@@ -134,6 +134,7 @@ pub mod darray_h {
 pub mod xkbcommon_h {
     pub use super::context_h::xkb_context;
     pub use crate::xkb::context::xkb_context_get_log_verbosity;
+    pub use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
     pub use crate::xkb::shared_types::{
         xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
         xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -148,9 +149,6 @@ pub mod xkbcommon_h {
         XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
         XKB_STATE_MODS_LOCKED,
     };
-    extern "C" {
-        pub fn xkb_keysym_to_upper(keysym: xkb_keysym_t) -> xkb_keysym_t;
-    }
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -201,9 +199,7 @@ pub mod keymap_h {
             return ::core::ptr::null_mut::<xkb_key>();
         }
     }
-    extern "C" {
-        pub fn clear_level(leveli: *mut xkb_level);
-    }
+    pub use crate::xkb::keymap::clear_level;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -333,36 +329,10 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod action_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ActionsInfo {
-        pub actions: [xkb_action; 21],
-    }
-    use super::ast_h::{merge_mode, ExprDef};
-    use super::keymap_h::{xkb_action, xkb_keymap, xkb_mod_set};
-
-    use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
-
-    extern "C" {
-        pub fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo);
-        pub fn HandleActionDef(
-            keymap_info: *const xkb_keymap_info,
-            info: *mut ActionsInfo,
-            mods: *const xkb_mod_set,
-            def: *mut ExprDef,
-            action: *mut xkb_action,
-        ) -> xkb_parser_error;
-        pub fn SetDefaultActionField(
-            keymap_info: *const xkb_keymap_info,
-            info: *mut ActionsInfo,
-            mods: *mut xkb_mod_set,
-            elem: *const i8,
-            field: *const i8,
-            array_ndx: *mut ExprDef,
-            value_ptr: *mut *mut ExprDef,
-            merge: merge_mode,
-        ) -> xkb_parser_error;
-    }
+    pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
+    pub use crate::xkb::xkbcomp::action::{
+        HandleActionDef, InitActionsInfo, SetDefaultActionField,
+    };
 }
 pub mod string_h {
 
@@ -389,7 +359,6 @@ pub mod string_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
-        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> ::core::ffi::c_int;
     }
@@ -512,12 +481,8 @@ pub mod utils_numbers_h {
     use super::stdint_uintn_h::{u32, uint64_t};
 }
 pub mod keysym_h {
-    use super::xkbcommon_h::xkb_keysym_t;
-    extern "C" {
-        pub fn xkb_keysym_is_lower(keysym: xkb_keysym_t) -> bool;
-        pub fn xkb_keysym_is_upper_or_title(keysym: xkb_keysym_t) -> bool;
-        pub fn xkb_keysym_is_keypad(keysym: xkb_keysym_t) -> bool;
-    }
+    pub use crate::xkb::keysym::xkb_keysym_is_keypad;
+    pub use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 }
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
@@ -4906,8 +4871,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn CompileSymbols(
+pub unsafe fn CompileSymbols(
     mut file: *mut XkbFile,
     mut keymap_info: *mut xkb_keymap_info,
 ) -> bool {

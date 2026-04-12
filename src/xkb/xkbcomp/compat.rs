@@ -229,37 +229,10 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
 pub mod action_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ActionsInfo {
-        pub actions: [xkb_action; 21],
-    }
-    use super::ast_h::{merge_mode, ExprDef};
-
-    use super::keymap_h::{xkb_action, xkb_keymap, xkb_mod_set};
-
-    use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
-
-    extern "C" {
-        pub fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo);
-        pub fn HandleActionDef(
-            keymap_info: *const xkb_keymap_info,
-            info: *mut ActionsInfo,
-            mods: *const xkb_mod_set,
-            def: *mut ExprDef,
-            action: *mut xkb_action,
-        ) -> xkb_parser_error;
-        pub fn SetDefaultActionField(
-            keymap_info: *const xkb_keymap_info,
-            info: *mut ActionsInfo,
-            mods: *mut xkb_mod_set,
-            elem: *const i8,
-            field: *const i8,
-            array_ndx: *mut ExprDef,
-            value_ptr: *mut *mut ExprDef,
-            merge: merge_mode,
-        ) -> xkb_parser_error;
-    }
+    pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
+    pub use crate::xkb::xkbcomp::action::{
+        HandleActionDef, InitActionsInfo, SetDefaultActionField,
+    };
 }
 pub mod stdio_h {
 
@@ -2274,8 +2247,7 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn CompileCompatMap(
+pub unsafe fn CompileCompatMap(
     mut file: *mut XkbFile,
     mut keymap_info: *mut xkb_keymap_info,
 ) -> bool {

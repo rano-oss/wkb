@@ -86,56 +86,25 @@ pub mod xkbregistry_h {
     pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
     pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
     pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
-    extern "C" {
-        pub type rxkb_context;
-        pub type rxkb_model;
-        pub type rxkb_layout;
-        pub type rxkb_option_group;
-        pub type rxkb_option;
-        pub type rxkb_iso639_code;
-        pub type rxkb_iso3166_code;
-        pub fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context;
-        pub fn rxkb_context_set_log_level(ctx: *mut rxkb_context, level: rxkb_log_level);
-        pub fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> bool;
-        pub fn rxkb_context_unref(ctx: *mut rxkb_context) -> *mut rxkb_context;
-        pub fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *const i8) -> bool;
-        pub fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -> bool;
-        pub fn rxkb_model_first(ctx: *mut rxkb_context) -> *mut rxkb_model;
-        pub fn rxkb_model_next(m: *mut rxkb_model) -> *mut rxkb_model;
-        pub fn rxkb_model_get_name(m: *mut rxkb_model) -> *const i8;
-        pub fn rxkb_model_get_description(m: *mut rxkb_model) -> *const i8;
-        pub fn rxkb_model_get_vendor(m: *mut rxkb_model) -> *const i8;
-        pub fn rxkb_layout_first(ctx: *mut rxkb_context) -> *mut rxkb_layout;
-        pub fn rxkb_layout_next(l: *mut rxkb_layout) -> *mut rxkb_layout;
-        pub fn rxkb_layout_get_name(l: *mut rxkb_layout) -> *const i8;
-        pub fn rxkb_layout_get_variant(l: *mut rxkb_layout) -> *const i8;
-        pub fn rxkb_layout_get_brief(l: *mut rxkb_layout) -> *const i8;
-        pub fn rxkb_layout_get_description(l: *mut rxkb_layout) -> *const i8;
-        pub fn rxkb_option_group_first(ctx: *mut rxkb_context) -> *mut rxkb_option_group;
-        pub fn rxkb_option_group_next(g: *mut rxkb_option_group) -> *mut rxkb_option_group;
-        pub fn rxkb_option_group_get_name(m: *mut rxkb_option_group) -> *const i8;
-        pub fn rxkb_option_group_get_description(m: *mut rxkb_option_group) -> *const i8;
-        pub fn rxkb_option_group_allows_multiple(g: *mut rxkb_option_group) -> bool;
-        pub fn rxkb_option_first(group: *mut rxkb_option_group) -> *mut rxkb_option;
-        pub fn rxkb_option_next(o: *mut rxkb_option) -> *mut rxkb_option;
-        pub fn rxkb_option_get_name(o: *mut rxkb_option) -> *const i8;
-        pub fn rxkb_option_get_brief(o: *mut rxkb_option) -> *const i8;
-        pub fn rxkb_option_get_description(o: *mut rxkb_option) -> *const i8;
-        pub fn rxkb_option_is_layout_specific(o: *mut rxkb_option) -> bool;
-        pub fn rxkb_iso639_code_get_code(iso639: *mut rxkb_iso639_code) -> *const i8;
-        pub fn rxkb_layout_get_iso639_first(layout: *mut rxkb_layout) -> *mut rxkb_iso639_code;
-        pub fn rxkb_iso639_code_next(iso639: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code;
-        pub fn rxkb_iso3166_code_get_code(iso3166: *mut rxkb_iso3166_code) -> *const i8;
-        pub fn rxkb_layout_get_iso3166_first(layout: *mut rxkb_layout) -> *mut rxkb_iso3166_code;
-        pub fn rxkb_iso3166_code_next(iso3166: *mut rxkb_iso3166_code) -> *mut rxkb_iso3166_code;
-    }
+    pub use crate::xkb::registry::{
+        rxkb_context, rxkb_context_include_path_append, rxkb_context_include_path_append_default,
+        rxkb_context_new, rxkb_context_parse, rxkb_context_set_log_level, rxkb_context_unref,
+        rxkb_iso3166_code, rxkb_iso3166_code_get_code, rxkb_iso3166_code_next, rxkb_iso639_code,
+        rxkb_iso639_code_get_code, rxkb_iso639_code_next, rxkb_layout, rxkb_layout_first,
+        rxkb_layout_get_brief, rxkb_layout_get_description, rxkb_layout_get_iso3166_first,
+        rxkb_layout_get_iso639_first, rxkb_layout_get_name, rxkb_layout_get_variant,
+        rxkb_layout_next, rxkb_model, rxkb_model_first, rxkb_model_get_description,
+        rxkb_model_get_name, rxkb_model_get_vendor, rxkb_model_next, rxkb_option,
+        rxkb_option_first, rxkb_option_get_brief, rxkb_option_get_description,
+        rxkb_option_get_name, rxkb_option_group, rxkb_option_group_allows_multiple,
+        rxkb_option_group_first, rxkb_option_group_get_description, rxkb_option_group_get_name,
+        rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
+    };
 }
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
-        #[no_mangle]
         pub static mut stdout: *mut FILE;
-        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn printf(__format: *const i8, ...) -> i32;
@@ -155,9 +124,7 @@ pub mod config_h {
 }
 pub mod getopt_core_h {
     extern "C" {
-        #[no_mangle]
         pub static mut optarg: *mut i8;
-        #[no_mangle]
         pub static mut optind: i32;
     }
 }

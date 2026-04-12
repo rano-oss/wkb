@@ -35,9 +35,7 @@ pub mod xkbcommon_h {
     pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
     pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
     pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
-    extern "C" {
-        pub fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> xkb_keysym_t;
-    }
+    pub use crate::xkb::keysym::xkb_keysym_from_name;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -177,8 +175,12 @@ pub mod scanner_utils_h {
 
     use super::context_h::xkb_context;
     use super::utils_h::istrncmp;
-    extern "C" {
-        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
+        unsafe {
+            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
+                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
+            ))
+        }
     }
 }
 pub mod parser_h {
@@ -366,14 +368,7 @@ pub mod utils_h {
 }
 pub mod keysym_h {
     pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    use super::xkbcommon_h::xkb_keysym_t;
-    extern "C" {
-        pub fn xkb_keysym_is_deprecated(
-            keysym: xkb_keysym_t,
-            name: *const i8,
-            reference_name: *mut *const i8,
-        ) -> bool;
-    }
+    pub use crate::xkb::keysym::xkb_keysym_is_deprecated;
 }
 pub mod xkbcomp_priv_h {
     pub use crate::xkb::shared_ast_types::safe_map_name;

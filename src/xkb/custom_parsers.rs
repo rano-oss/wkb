@@ -111,7 +111,6 @@ pub mod bench_h {
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
-        #[no_mangle]
         pub static mut stderr: *mut FILE;
         pub fn fclose(__stream: *mut FILE) -> i32;
         pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
@@ -486,7 +485,6 @@ pub mod utils_numbers_h {
 }
 pub mod getopt_core_h {
     extern "C" {
-        #[no_mangle]
         pub static mut optarg: *mut i8;
     }
 }

@@ -2121,8 +2121,7 @@ unsafe fn CopyKeyNamesInfoToKeymap(
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn CompileKeycodes(
+pub unsafe fn CompileKeycodes(
     mut file: *mut XkbFile,
     mut keymap_info: *mut xkb_keymap_info,
 ) -> bool {

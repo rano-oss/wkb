@@ -2094,8 +2094,7 @@ pub unsafe fn xkb_keysym_to_lower(mut ks: xkb_keysym_t) -> xkb_keysym_t {
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_to_upper(mut ks: xkb_keysym_t) -> xkb_keysym_t {
+pub unsafe fn xkb_keysym_to_upper(mut ks: xkb_keysym_t) -> xkb_keysym_t {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
@@ -2122,8 +2121,7 @@ pub unsafe extern "C" fn xkb_keysym_to_upper(mut ks: xkb_keysym_t) -> xkb_keysym
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
+pub unsafe fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
@@ -2137,8 +2135,7 @@ pub unsafe extern "C" fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> bool {
+pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> bool {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             return (*get_legacy_keysym_entry(ks)).lower();
@@ -2152,7 +2149,7 @@ pub unsafe extern "C" fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> b
         };
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         unicode_data = [
             {
@@ -11758,4 +11755,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

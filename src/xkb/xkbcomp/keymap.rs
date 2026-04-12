@@ -91,15 +91,7 @@ pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
 
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
-    extern "C" {
-        pub fn xkb_keymap_key_get_syms_by_level(
-            keymap: *mut xkb_keymap,
-            key: xkb_keycode_t,
-            layout: xkb_layout_index_t,
-            level: xkb_level_index_t,
-            syms_out: *mut *const xkb_keysym_t,
-        ) -> ::core::ffi::c_int;
-    }
+    pub use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level;
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -174,12 +166,7 @@ pub mod keymap_h {
             return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
         }
     }
-    extern "C" {
-        pub fn mod_mask_get_effective(
-            keymap: *mut xkb_keymap,
-            mods: xkb_mod_mask_t,
-        ) -> xkb_mod_mask_t;
-    }
+    pub use crate::xkb::state::mod_mask_get_effective;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -321,13 +308,10 @@ pub mod xkbcomp_priv_h {
     };
     pub type C2Rust_Unnamed_17 = XkbcompLookup;
     pub type C2Rust_Unnamed_18 = XkbcompFeatures;
-    use super::ast_h::XkbFile;
-    extern "C" {
-        pub fn CompileKeycodes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool;
-        pub fn CompileKeyTypes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool;
-        pub fn CompileCompatMap(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool;
-        pub fn CompileSymbols(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool;
-    }
+    pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
+    pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
+    pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
+    pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 }
 pub mod string_h {
 
@@ -547,16 +531,19 @@ pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::xkbcomp_priv_h::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
     xkb_parser_error, xkb_parser_strict_flags, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
-    CompileCompatMap, CompileKeyTypes, CompileKeycodes, CompileSymbols, PARSER_FATAL_ERROR,
-    PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS,
-    PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
-    PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
-    PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_KEY_FIELDS,
-    PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
+    PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
+    PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
+    PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
+    PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
+    PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
     PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
+pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
+pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
+pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
+pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_sym_interprets {
@@ -573,7 +560,7 @@ pub struct C2Rust_Unnamed_19 {
 }
 pub const GROUP_MASK_NAME_LAST: C2Rust_Unnamed_21 = 3;
 pub const GROUP_INDEX_NAME_LAST: C2Rust_Unnamed_20 = 1;
-pub type compile_file_fn = Option<unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
+pub type compile_file_fn = Option<unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
 pub type C2Rust_Unnamed_20 = u32;
 pub type C2Rust_Unnamed_21 = u32;
 unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_t) -> bool {
@@ -1680,10 +1667,10 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
 }
 static mut compile_file_fns: [compile_file_fn; 4] = unsafe {
     [
-        Some(CompileKeycodes as unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileKeyTypes as unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileCompatMap as unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileSymbols as unsafe extern "C" fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileKeycodes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileKeyTypes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileCompatMap as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileSymbols as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
     ]
 };
 unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array) {
@@ -1702,11 +1689,7 @@ unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array)
         (*p).alloc = 0 as darray_size_t;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn CompileKeymap(
-    mut file: *mut XkbFile,
-    mut keymap: *mut xkb_keymap,
-) -> bool {
+pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap) -> bool {
     unsafe {
         let mut files: [*mut XkbFile; 4] = [
             ::core::ptr::null_mut::<XkbFile>(),
@@ -1886,7 +1869,7 @@ pub unsafe extern "C" fn CompileKeymap(
         return ok_0;
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         default_interpret = {
             let mut init = xkb_sym_interpret {
@@ -1913,4 +1896,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

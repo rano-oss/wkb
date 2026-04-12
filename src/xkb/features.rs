@@ -183,7 +183,7 @@ pub use self::xkbcommon_h::{
     xkb_log_level, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-unsafe extern "C" fn is_supported_enum_value_mask(
+unsafe fn is_supported_enum_value_mask(
     mut values: xkb_enumerations_values,
     mut value: u32,
 ) -> bool {
@@ -191,7 +191,7 @@ unsafe extern "C" fn is_supported_enum_value_mask(
         return value < UINT32_WIDTH as u32 && values as u32 & (1 as u32) << value != 0;
     }
 }
-unsafe extern "C" fn is_supported_enum_value_array(
+unsafe fn is_supported_enum_value_array(
     mut values: *const u32,
     mut size: usize,
     mut value: u32,
@@ -208,7 +208,7 @@ unsafe extern "C" fn is_supported_enum_value_array(
     }
 }
 #[inline]
-unsafe extern "C" fn is_supported_flag_value(
+unsafe fn is_supported_flag_value(
     mut values: xkb_enumerations_values,
     mut accept_zero: bool,
     mut value: u32,

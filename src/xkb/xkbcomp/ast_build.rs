@@ -119,10 +119,6 @@ pub mod context_h {
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
@@ -155,9 +151,7 @@ pub mod xkbcommon_h {
         pub symbols: *mut i8,
         pub types: *mut i8,
     }
-    extern "C" {
-        pub fn xkb_utf32_to_keysym(codepoint: u32) -> xkb_keysym_t;
-    }
+    pub use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -193,8 +187,12 @@ pub mod scanner_utils_h {
     }
 
     use super::context_h::xkb_context;
-    extern "C" {
-        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
+        unsafe {
+            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
+                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
+            ))
+        }
     }
 }
 pub mod string_h {
@@ -430,10 +428,7 @@ pub unsafe fn ExprCreateIdent(mut ident: xkb_atom_t) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateUnary(
-    mut op: stmt_type,
-    mut child: *mut ExprDef,
-) -> *mut ExprDef {
+pub unsafe fn ExprCreateUnary(mut op: stmt_type, mut child: *mut ExprDef) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(op);
         if expr.is_null() {
@@ -460,10 +455,7 @@ pub unsafe fn ExprCreateBinary(
     }
 }
 
-pub unsafe fn ExprCreateFieldRef(
-    mut element: xkb_atom_t,
-    mut field: xkb_atom_t,
-) -> *mut ExprDef {
+pub unsafe fn ExprCreateFieldRef(mut element: xkb_atom_t, mut field: xkb_atom_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_FIELD_REF);
         if expr.is_null() {
@@ -498,10 +490,7 @@ pub unsafe fn ExprEmptyList() -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateAction(
-    mut name: xkb_atom_t,
-    mut args: *mut ExprDef,
-) -> *mut ExprDef {
+pub unsafe fn ExprCreateAction(mut name: xkb_atom_t, mut args: *mut ExprDef) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_DECL);
         if expr.is_null() {
@@ -564,10 +553,7 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprAppendKeySymList(
-    mut expr: *mut ExprDef,
-    mut sym: xkb_keysym_t,
-) -> *mut ExprDef {
+pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: xkb_keysym_t) -> *mut ExprDef {
     unsafe {
         if !(sym == XKB_KEY_NoSymbol as xkb_keysym_t) {
             (*expr).keysym_list.syms.size = (*expr)
@@ -701,10 +687,7 @@ pub unsafe fn ExprKeySymListAppendString(
     }
 }
 
-pub unsafe fn KeysymParseString(
-    mut scanner: *mut scanner,
-    mut string: *const i8,
-) -> xkb_keysym_t {
+pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8) -> xkb_keysym_t {
     unsafe {
         let len: usize = strlen(string) as usize;
         if len == 0 as usize {
@@ -787,10 +770,7 @@ pub unsafe fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut Keycod
     }
 }
 
-pub unsafe fn KeyAliasCreate(
-    mut alias: xkb_atom_t,
-    mut real: xkb_atom_t,
-) -> *mut KeyAliasDef {
+pub unsafe fn KeyAliasCreate(mut alias: xkb_atom_t, mut real: xkb_atom_t) -> *mut KeyAliasDef {
     unsafe {
         let mut def: *mut KeyAliasDef =
             malloc(::core::mem::size_of::<KeyAliasDef>() as usize) as *mut KeyAliasDef;
@@ -858,10 +838,7 @@ pub unsafe fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> *mut VarDef
     }
 }
 
-pub unsafe fn InterpCreate(
-    mut sym: xkb_keysym_t,
-    mut match_0: *mut ExprDef,
-) -> *mut InterpDef {
+pub unsafe fn InterpCreate(mut sym: xkb_keysym_t, mut match_0: *mut ExprDef) -> *mut InterpDef {
     unsafe {
         let mut def: *mut InterpDef =
             malloc(::core::mem::size_of::<InterpDef>() as usize) as *mut InterpDef;
@@ -877,10 +854,7 @@ pub unsafe fn InterpCreate(
     }
 }
 
-pub unsafe fn KeyTypeCreate(
-    mut name: xkb_atom_t,
-    mut body: *mut VarDef,
-) -> *mut KeyTypeDef {
+pub unsafe fn KeyTypeCreate(mut name: xkb_atom_t, mut body: *mut VarDef) -> *mut KeyTypeDef {
     unsafe {
         let mut def: *mut KeyTypeDef =
             malloc(::core::mem::size_of::<KeyTypeDef>() as usize) as *mut KeyTypeDef;
@@ -896,10 +870,7 @@ pub unsafe fn KeyTypeCreate(
     }
 }
 
-pub unsafe fn SymbolsCreate(
-    mut keyName: xkb_atom_t,
-    mut symbols: *mut VarDef,
-) -> *mut SymbolsDef {
+pub unsafe fn SymbolsCreate(mut keyName: xkb_atom_t, mut symbols: *mut VarDef) -> *mut SymbolsDef {
     unsafe {
         let mut def: *mut SymbolsDef =
             malloc(::core::mem::size_of::<SymbolsDef>() as usize) as *mut SymbolsDef;
@@ -915,10 +886,7 @@ pub unsafe fn SymbolsCreate(
     }
 }
 
-pub unsafe fn GroupCompatCreate(
-    mut group: i64,
-    mut val: *mut ExprDef,
-) -> *mut GroupCompatDef {
+pub unsafe fn GroupCompatCreate(mut group: i64, mut val: *mut ExprDef) -> *mut GroupCompatDef {
     unsafe {
         let mut def: *mut GroupCompatDef =
             malloc(::core::mem::size_of::<GroupCompatDef>() as usize) as *mut GroupCompatDef;
@@ -934,10 +902,7 @@ pub unsafe fn GroupCompatCreate(
     }
 }
 
-pub unsafe fn ModMapCreate(
-    mut modifier: xkb_atom_t,
-    mut keys: *mut ExprDef,
-) -> *mut ModMapDef {
+pub unsafe fn ModMapCreate(mut modifier: xkb_atom_t, mut keys: *mut ExprDef) -> *mut ModMapDef {
     unsafe {
         let mut def: *mut ModMapDef =
             malloc(::core::mem::size_of::<ModMapDef>() as usize) as *mut ModMapDef;
@@ -953,10 +918,7 @@ pub unsafe fn ModMapCreate(
     }
 }
 
-pub unsafe fn LedMapCreate(
-    mut name: xkb_atom_t,
-    mut body: *mut VarDef,
-) -> *mut LedMapDef {
+pub unsafe fn LedMapCreate(mut name: xkb_atom_t, mut body: *mut VarDef) -> *mut LedMapDef {
     unsafe {
         let mut def: *mut LedMapDef =
             malloc(::core::mem::size_of::<LedMapDef>() as usize) as *mut LedMapDef;

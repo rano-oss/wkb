@@ -527,8 +527,12 @@ pub mod scanner_utils_h {
     use super::string_h::{memchr, memcmp};
     use super::utils_h::is_ascii;
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
-    extern "C" {
-        pub fn scanner_token_location(s: *mut scanner) -> scanner_loc;
+    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
+        unsafe {
+            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
+                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
+            ))
+        }
     }
 }
 pub mod stdlib_h {
@@ -9245,8 +9249,7 @@ unsafe fn xkb_resolve_rules(
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_components_from_rmlvo_builder(
+pub unsafe fn xkb_components_from_rmlvo_builder(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut out: *mut xkb_component_names,
     mut explicit_layouts: *mut xkb_layout_index_t,
@@ -9263,8 +9266,7 @@ pub unsafe extern "C" fn xkb_components_from_rmlvo_builder(
         return ret;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_components_from_rules_names(
+pub unsafe fn xkb_components_from_rules_names(
     mut ctx: *mut xkb_context,
     mut rmlvo: *const xkb_rule_names,
     mut out: *mut xkb_component_names,
@@ -9281,7 +9283,7 @@ pub unsafe extern "C" fn xkb_components_from_rules_names(
         return ret;
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         rules_kccgst_svals = [
             sval {
@@ -9329,4 +9331,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

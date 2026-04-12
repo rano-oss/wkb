@@ -393,8 +393,7 @@ pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> b
         return false_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
+pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
     unsafe {
         if raw.is_null() {
             return 0 as xkb_keymap_format;
@@ -421,8 +420,7 @@ pub unsafe extern "C" fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keym
         };
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
+pub unsafe fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
     unsafe {
         if (format as u32) < keymap_formats_labels[0 as i32 as usize].format as u32 {
             return ::core::ptr::null::<i8>();

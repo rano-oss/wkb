@@ -25,6 +25,7 @@ pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
+    pub use crate::xkb::keysym::xkb_keysym_get_name;
     pub use crate::xkb::shared_types::{
         xkb_keymap_format, xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
         xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -34,9 +35,6 @@ pub mod xkbcommon_h {
         XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
         XKB_STATE_MODS_LOCKED,
     };
-    extern "C" {
-        pub fn xkb_keysym_get_name(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
-    }
 }
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -1881,7 +1879,7 @@ pub unsafe fn ControlMaskText(
         ) as *const i8;
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         groupMaskNames = [
             LookupEntry {
@@ -1903,4 +1901,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

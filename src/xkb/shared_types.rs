@@ -102,7 +102,7 @@ use c2rust_bitfields::BitfieldStruct;
 pub struct xkb_context {
     pub refcnt: i32,
     pub log_fn: Option<
-        unsafe extern "C" fn(*mut xkb_context, xkb_log_level, *const i8, ::core::ffi::VaList) -> (),
+        unsafe fn(*mut xkb_context, xkb_log_level, *const i8, ::core::ffi::VaList) -> (),
     >,
     pub log_level: xkb_log_level,
     pub log_verbosity: i32,

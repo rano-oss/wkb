@@ -165,9 +165,8 @@ pub mod xkbcommon_h {
     #[c2rust::src_loc = "1650:5"]
     pub const XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS: xkb_keymap_key_iterator_flags = 0;
     #[c2rust::src_loc = "1739:1"]
-    pub type xkb_keymap_key_iter_t = Option<
-        unsafe extern "C" fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> (),
-    >;
+    pub type xkb_keymap_key_iter_t =
+        Option<unsafe fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> ()>;
     #[c2rust::src_loc = "350:9"]
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "358:9"]
@@ -189,18 +188,13 @@ pub mod keymap_h {
     #[c2rust::src_loc = "943:1"]
     pub struct xkb_keymap_format_ops {
         pub keymap_new_from_rmlvo:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
+            Option<unsafe fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
         pub keymap_new_from_names:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
-        pub keymap_new_from_string:
-            Option<unsafe extern "C" fn(*mut xkb_keymap, *const i8, usize) -> bool>,
-        pub keymap_new_from_file: Option<unsafe extern "C" fn(*mut xkb_keymap, *mut FILE) -> bool>,
+            Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
+        pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
+        pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut FILE) -> bool>,
         pub keymap_get_as_string: Option<
-            unsafe extern "C" fn(
-                *mut xkb_keymap,
-                xkb_keymap_format,
-                xkb_keymap_serialize_flags,
-            ) -> *mut i8,
+            unsafe fn(*mut xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags) -> *mut i8,
         >,
     }
     #[inline]
@@ -242,13 +236,14 @@ pub mod keymap_h {
                 || (*entry).mods.mask != 0 as xkb_mod_mask_t;
         }
     }
-    extern "C" {
-        #[c2rust::src_loc = "902:1"]
-        #[c2rust::src_loc = "910:1"]
-        #[c2rust::src_loc = "923:1"]
-        #[c2rust::src_loc = "956:1"]
-        #[no_mangle]
-        pub static text_v1_keymap_format_ops: xkb_keymap_format_ops;
+}
+
+// text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
+// Both types are #[repr(C)] with identical layout, so pointer cast is safe.
+unsafe fn text_v1_keymap_format_ops_ptr() -> *const keymap_h::xkb_keymap_format_ops {
+    unsafe {
+        &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
+            as *const keymap_h::xkb_keymap_format_ops
     }
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/rmlvo.h:22"]
@@ -604,20 +599,19 @@ pub use self::enums_h::{
 };
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
-    entry_is_active, mod_type, text_v1_keymap_format_ops, xkb_action, xkb_action_controls,
-    xkb_action_count_t, xkb_action_flags, xkb_action_type, xkb_controls_action,
-    xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
-    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
-    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
-    C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
-    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES,
-    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
-    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
+    xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
+    xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,
+    xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t,
+    xkb_led, xkb_level, xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2,
+    C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels,
+    _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
     ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
     ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
@@ -724,18 +718,14 @@ pub struct xkb_keymap_key_iterator {
     pub next: *const xkb_key,
     pub keymap: *mut xkb_keymap,
 }
-#[no_mangle]
 #[c2rust::src_loc = "26:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
         (*keymap).refcnt += 1;
         return keymap;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "34:1"]
-#[no_mangle]
 pub unsafe fn clear_level(mut leveli: *mut xkb_level) {
     unsafe {
         if (*leveli).num_syms as i32 > 1 as i32 {
@@ -754,9 +744,7 @@ unsafe fn clear_interpret(mut interp: *mut xkb_sym_interpret) {
         }
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "50:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
     unsafe {
         if keymap.is_null() || {
@@ -835,13 +823,17 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
 #[c2rust::src_loc = "99:1"]
 unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_keymap_format_ops {
     unsafe {
-        static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] = unsafe {
-            [
-                ::core::ptr::null::<xkb_keymap_format_ops>(),
-                &raw const text_v1_keymap_format_ops,
-                &raw const text_v1_keymap_format_ops,
-            ]
-        };
+        static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] = [
+            ::core::ptr::null::<xkb_keymap_format_ops>(),
+            ::core::ptr::null::<xkb_keymap_format_ops>(),
+            ::core::ptr::null::<xkb_keymap_format_ops>(),
+        ];
+        // Initialize lazily to bridge the type difference with xkbcomp's local type
+        if keymap_format_ops[1].is_null() {
+            let ptr = text_v1_keymap_format_ops_ptr();
+            keymap_format_ops[1] = ptr;
+            keymap_format_ops[2] = ptr;
+        }
         if (format as i32) < 0 as i32
             || format as i32
                 >= (::core::mem::size_of::<[*const xkb_keymap_format_ops; 3]>() as usize)
@@ -853,9 +845,7 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
         return keymap_format_ops[format as i32 as usize];
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "113:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut format: xkb_keymap_format,
@@ -893,9 +883,7 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
         return keymap;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "138:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_names2(
     mut ctx: *mut xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
@@ -945,7 +933,6 @@ pub unsafe fn xkb_keymap_new_from_names2(
         return keymap;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "169:1"]
 pub unsafe fn xkb_keymap_new_from_names(
     mut ctx: *mut xkb_context,
@@ -956,9 +943,7 @@ pub unsafe fn xkb_keymap_new_from_names(
         return xkb_keymap_new_from_names2(ctx, rmlvo_in, XKB_KEYMAP_FORMAT_TEXT_V2, flags);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "178:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_string(
     mut ctx: *mut xkb_context,
     mut string: *const i8,
@@ -969,9 +954,7 @@ pub unsafe fn xkb_keymap_new_from_string(
         return xkb_keymap_new_from_buffer(ctx, string, strlen(string), format, flags);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "188:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_buffer(
     mut ctx: *mut xkb_context,
     mut buffer: *const i8,
@@ -1026,9 +1009,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
         return keymap;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "223:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_new_from_file(
     mut ctx: *mut xkb_context,
     mut file: *mut FILE,
@@ -1077,9 +1058,7 @@ pub unsafe fn xkb_keymap_new_from_file(
         return keymap;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "254:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_get_as_string2(
     mut keymap: *mut xkb_keymap,
     mut format: xkb_keymap_format,
@@ -1120,7 +1099,6 @@ pub unsafe fn xkb_keymap_get_as_string2(
             .expect("non-null function pointer")(keymap, format, flags);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "283:1"]
 pub unsafe fn xkb_keymap_get_as_string(
     mut keymap: *mut xkb_keymap,
@@ -1130,15 +1108,12 @@ pub unsafe fn xkb_keymap_get_as_string(
         return xkb_keymap_get_as_string2(keymap, format, XKB_KEYMAP_SERIALIZE_NO_FLAGS);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "294:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_num_mods(mut keymap: *mut xkb_keymap) -> xkb_mod_index_t {
     unsafe {
         return (*keymap).mods.num_mods;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "303:1"]
 pub unsafe fn xkb_keymap_mod_get_name(
     mut keymap: *mut xkb_keymap,
@@ -1151,9 +1126,7 @@ pub unsafe fn xkb_keymap_mod_get_name(
         return xkb_atom_text((*keymap).ctx, (*keymap).mods.mods[idx as usize].name);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "315:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_mod_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -1167,7 +1140,6 @@ pub unsafe fn xkb_keymap_mod_get_index(
         };
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "327:1"]
 pub unsafe fn xkb_keymap_mod_get_mask(
     mut keymap: *mut xkb_keymap,
@@ -1182,7 +1154,6 @@ pub unsafe fn xkb_keymap_mod_get_mask(
         };
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "339:1"]
 pub unsafe fn xkb_keymap_mod_get_mask2(
     mut keymap: *mut xkb_keymap,
@@ -1196,14 +1167,12 @@ pub unsafe fn xkb_keymap_mod_get_mask2(
         };
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "350:1"]
 pub unsafe fn xkb_keymap_num_layouts(mut keymap: *mut xkb_keymap) -> xkb_layout_index_t {
     unsafe {
         return (*keymap).num_groups;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "359:1"]
 pub unsafe fn xkb_keymap_layout_get_name(
     mut keymap: *mut xkb_keymap,
@@ -1216,9 +1185,7 @@ pub unsafe fn xkb_keymap_layout_get_name(
         return xkb_atom_text((*keymap).ctx, *(*keymap).group_names.offset(idx as isize));
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "371:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_layout_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -1239,9 +1206,7 @@ pub unsafe fn xkb_keymap_layout_get_index(
         return XKB_LAYOUT_INVALID as xkb_layout_index_t;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "390:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_num_layouts_for_key(
     mut keymap: *mut xkb_keymap,
     mut kc: xkb_keycode_t,
@@ -1254,7 +1219,6 @@ pub unsafe fn xkb_keymap_num_layouts_for_key(
         return (*key).num_groups();
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "404:1"]
 pub unsafe fn xkb_keymap_num_levels_for_key(
     mut keymap: *mut xkb_keymap,
@@ -1278,15 +1242,12 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
         return XkbKeyNumLevels(key, layout);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "426:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_num_leds(mut keymap: *mut xkb_keymap) -> xkb_led_index_t {
     unsafe {
         return (*keymap).num_leds;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "435:1"]
 pub unsafe fn xkb_keymap_led_get_name(
     mut keymap: *mut xkb_keymap,
@@ -1299,9 +1260,7 @@ pub unsafe fn xkb_keymap_led_get_name(
         return xkb_atom_text((*keymap).ctx, (*keymap).leds[idx as usize].name);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "447:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_led_get_index(
     mut keymap: *mut xkb_keymap,
     mut name: *const i8,
@@ -1325,7 +1284,6 @@ pub unsafe fn xkb_keymap_led_get_index(
         return XKB_LED_INVALID as xkb_led_index_t;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "464:1"]
 pub unsafe fn xkb_keymap_key_get_mods_for_level(
     mut keymap: *mut xkb_keymap,
@@ -1392,9 +1350,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
         return count;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "525:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_key_get_level(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
@@ -1419,9 +1375,7 @@ pub unsafe fn xkb_keymap_key_get_level(
             .offset(level as isize) as *mut xkb_level;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "545:1"]
-#[no_mangle]
 pub unsafe fn xkb_keymap_key_get_syms_by_level(
     mut keymap: *mut xkb_keymap,
     mut kc: xkb_keycode_t,
@@ -1451,21 +1405,18 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
         return 0 as i32;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "579:1"]
 pub unsafe fn xkb_keymap_min_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode_t {
     unsafe {
         return (*keymap).min_key_code;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "585:1"]
 pub unsafe fn xkb_keymap_max_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode_t {
     unsafe {
         return (*keymap).max_key_code;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "600:1"]
 pub unsafe fn xkb_keymap_key_iterator_new(
     mut keymap: *mut xkb_keymap,
@@ -1534,7 +1485,6 @@ pub unsafe fn xkb_keymap_key_iterator_new(
         return iter;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "649:1"]
 pub unsafe fn xkb_keymap_key_iterator_destroy(mut iter: *mut xkb_keymap_key_iterator) {
     unsafe {
@@ -1545,7 +1495,6 @@ pub unsafe fn xkb_keymap_key_iterator_destroy(mut iter: *mut xkb_keymap_key_iter
         free(iter as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "659:1"]
 pub unsafe fn xkb_keymap_key_iterator_next(
     mut iter: *mut xkb_keymap_key_iterator,
@@ -1574,7 +1523,6 @@ pub unsafe fn xkb_keymap_key_iterator_next(
         return ret;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "686:1"]
 pub unsafe fn xkb_keymap_key_for_each(
     mut keymap: *mut xkb_keymap,
@@ -1596,7 +1544,6 @@ pub unsafe fn xkb_keymap_key_for_each(
         }
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "696:1"]
 pub unsafe fn xkb_keymap_key_get_name(
     mut keymap: *mut xkb_keymap,
@@ -1610,7 +1557,6 @@ pub unsafe fn xkb_keymap_key_get_name(
         return xkb_atom_text((*keymap).ctx, (*key).name);
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "707:1"]
 pub unsafe fn xkb_keymap_key_by_name(
     mut keymap: *mut xkb_keymap,
@@ -1660,7 +1606,6 @@ pub unsafe fn xkb_keymap_key_by_name(
         return XKB_KEYCODE_INVALID as xkb_keycode_t;
     }
 }
-#[no_mangle]
 #[c2rust::src_loc = "733:1"]
 pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> i32 {
     unsafe {

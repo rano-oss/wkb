@@ -1716,8 +1716,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         return true_0 != 0;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn CompileKeyTypes(
+pub unsafe fn CompileKeyTypes(
     mut file: *mut XkbFile,
     mut keymap_info: *mut xkb_keymap_info,
 ) -> bool {

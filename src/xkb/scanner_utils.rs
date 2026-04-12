@@ -70,8 +70,7 @@ pub use self::xkbcommon_h::{
     xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-#[no_mangle]
-pub unsafe extern "C" fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
+pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
     unsafe {
         let mut line: usize = 0;
         let mut column: usize = 0;

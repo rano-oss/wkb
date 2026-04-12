@@ -111,7 +111,7 @@ pub mod xkbcommon_compose_h {
 }
 pub mod compose_iter_h {
     pub type xkb_compose_table_iter_t =
-        Option<unsafe extern "C" fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
+        Option<unsafe fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
     use super::table_h::xkb_compose_table_entry;
 }
 

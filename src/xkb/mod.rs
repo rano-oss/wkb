@@ -898,7 +898,7 @@ fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListCompo
 
     // Define callback function for compose table iteration
     // Note: This MUST be unsafe extern "C" for FFI compatibility
-    unsafe extern "C" fn collect_sequences(
+    unsafe fn collect_sequences(
         entry: *mut compose_iter::xkb_compose_table_entry,
         data: *mut ::core::ffi::c_void,
     ) {

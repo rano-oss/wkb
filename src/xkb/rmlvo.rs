@@ -331,8 +331,7 @@ pub use self::xkbcommon_h::{
     xkb_rule_names, XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
-#[no_mangle]
-pub unsafe extern "C" fn xkb_rmlvo_builder_new(
+pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
     mut model: *const i8,
@@ -382,8 +381,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_new(
         return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
+pub unsafe fn xkb_rmlvo_builder_append_layout(
     mut rmlvo: *mut xkb_rmlvo_builder,
     mut layout: *const i8,
     mut variant: *const i8,
@@ -501,8 +499,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_append_layout(
         return true;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_rmlvo_builder_append_option(
+pub unsafe fn xkb_rmlvo_builder_append_option(
     mut rmlvo: *mut xkb_rmlvo_builder,
     mut option: *const i8,
 ) -> bool {
@@ -571,8 +568,7 @@ pub unsafe fn xkb_rmlvo_builder_ref(mut rmlvo: *mut xkb_rmlvo_builder) -> *mut x
         return rmlvo;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
+pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
     unsafe {
         if rmlvo.is_null() || {
             (*rmlvo).refcnt -= 1;
@@ -623,8 +619,7 @@ pub unsafe extern "C" fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_build
         free(rmlvo as *mut ::core::ffi::c_void);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_rmlvo_builder_to_rules_names(
+pub unsafe fn xkb_rmlvo_builder_to_rules_names(
     mut builder: *const xkb_rmlvo_builder,
     mut rmlvo: *mut xkb_rule_names,
     mut buf: *mut i8,

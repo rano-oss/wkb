@@ -718,8 +718,7 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
         return hval;
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn keyword_to_token(
+pub unsafe fn keyword_to_token(
     mut string: *const i8,
     mut len: usize,
 ) -> ::core::ffi::c_int {
@@ -880,7 +879,7 @@ unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const key
         return ::core::ptr::null::<keyword_tok>();
     }
 }
-unsafe extern "C" fn c2rust_run_static_initializers() {
+unsafe fn c2rust_run_static_initializers() {
     unsafe {
         wordlist = [
             keyword_tok {
@@ -1227,4 +1226,4 @@ unsafe extern "C" fn c2rust_run_static_initializers() {
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
 #[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe extern "C" fn(); 1] = [c2rust_run_static_initializers];
+static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];
