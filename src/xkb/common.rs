@@ -142,7 +142,6 @@ pub mod stdio_h {
         pub fn setvbuf(__stream: *mut FILE, __buf: *mut i8, __modes: i32, __n: usize) -> i32;
         pub fn fprintf(__stream: *mut FILE, __format: *const i8, ...) -> i32;
         pub fn printf(__format: *const i8, ...) -> i32;
-        pub fn vasprintf(__ptr: *mut *mut i8, __f: *const i8, __arg: ::core::ffi::VaList) -> i32;
         pub fn fread(
             __ptr: *mut ::core::ffi::c_void,
             __size: usize,
@@ -484,30 +483,6 @@ pub mod utils_h {
     pub unsafe fn isempty(s: *const i8) -> bool {
         s.is_null() || unsafe { *s == 0 }
     }
-    #[inline]
-    pub unsafe fn vasprintf_safe(mut fmt: *const i8, mut args: ::core::ffi::VaList) -> *mut i8 {
-        unsafe {
-            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-            let mut len: i32 = 0;
-            len = vasprintf(&raw mut str, fmt, args);
-            if len == -1 as i32 {
-                return ::core::ptr::null_mut::<i8>();
-            }
-            return str;
-        }
-    }
-    #[inline]
-    pub unsafe extern "C" fn asprintf_safe(mut fmt: *const i8, mut c2rust_args: ...) -> *mut i8 {
-        unsafe {
-            let mut args: ::core::ffi::VaList;
-            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-            args = c2rust_args.clone();
-            str = vasprintf_safe(fmt, args);
-            return str;
-        }
-    }
-
-    use super::stdio_h::vasprintf;
 }
 pub mod include_locale_h {
     pub const LC_ALL: i32 = __LC_ALL;
@@ -641,7 +616,7 @@ pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::{
     fclose, feof, ferror, fileno, fopen, fprintf, fread, fwrite, printf, setvbuf, stderr, stdout,
-    va_list, vasprintf, _IONBF, BUFSIZ,
+    va_list, _IONBF, BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
 use self::string_h::strerror;
@@ -662,7 +637,7 @@ pub use self::types_h::{
     __nlink_t, __off64_t, __off_t, __syscall_slong_t, __time_t, __uid_t, __uint16_t, __uint32_t,
     __uint64_t, __uint8_t,
 };
-pub use self::utils_h::{asprintf_safe, isempty, streq, vasprintf_safe};
+pub use self::utils_h::{isempty, streq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;
@@ -1142,18 +1117,13 @@ pub unsafe extern "C" fn test_key_seq2(
 }
 pub unsafe fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i8 {
     unsafe {
-        let mut dirname: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut err: i32 = 0;
-        dirname = asprintf_safe(b"%s/%s\0".as_ptr() as *const i8, parent, path);
-        if !dirname.is_null() {
-        } else {
-            __assert_fail(
-                b"dirname\0".as_ptr() as *const i8,
-                b"../test/common.c\0".as_ptr() as *const i8,
-                311 as u32,
-                b"char *test_makedir(const char *, const char *)\0".as_ptr() as *const i8,
-            );
-        };
+        let dirname_s = format!(
+            "{}/{}",
+            crate::xkb::utils::CStrDisplay(parent),
+            crate::xkb::utils::CStrDisplay(path)
+        );
+        let dirname: *mut i8 = std::ffi::CString::new(dirname_s).unwrap().into_raw();
         err = mkdir(dirname, 0o777 as __mode_t);
         if err == 0 as i32 {
         } else {
@@ -1169,16 +1139,8 @@ pub unsafe fn test_makedir(mut parent: *const i8, mut path: *const i8) -> *mut i
 }
 pub unsafe fn test_maketempdir(mut template: *const i8) -> *mut i8 {
     unsafe {
-        let mut tmpdir: *mut i8 = asprintf_safe(b"/tmp/%s\0".as_ptr() as *const i8, template);
-        if !tmpdir.is_null() {
-        } else {
-            __assert_fail(
-                b"tmpdir != NULL\0".as_ptr() as *const i8,
-                b"../test/common.c\0".as_ptr() as *const i8,
-                343 as u32,
-                b"char *test_maketempdir(const char *)\0".as_ptr() as *const i8,
-            );
-        };
+        let tmpdir_s = format!("/tmp/{}", crate::xkb::utils::CStrDisplay(template));
+        let mut tmpdir: *mut i8 = std::ffi::CString::new(tmpdir_s).unwrap().into_raw();
         let mut tmp: *mut i8 = mkdtemp(tmpdir);
         if tmp == tmpdir {
         } else {
@@ -1194,7 +1156,6 @@ pub unsafe fn test_maketempdir(mut template: *const i8) -> *mut i8 {
 }
 pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
-        let mut path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut srcdir: *const i8 = ::core::ptr::null::<i8>();
         srcdir = getenv(b"top_srcdir\0".as_ptr() as *const i8);
         if srcdir.is_null() {
@@ -1203,25 +1164,18 @@ pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
         if is_absolute_path(path_rel) {
             return cstr_dup(path_rel);
         }
-        path = asprintf_safe(
-            b"%s/test/data%s%s\0".as_ptr() as *const i8,
-            srcdir,
-            if *path_rel.offset(0 as i32 as isize) as i32 != 0 {
-                b"/\0".as_ptr() as *const i8
-            } else {
-                b"\0".as_ptr() as *const i8
-            },
-            path_rel,
+        let sep = if *path_rel.offset(0 as i32 as isize) as i32 != 0 {
+            "/"
+        } else {
+            ""
+        };
+        let path_s = format!(
+            "{}/test/data{}{}",
+            crate::xkb::utils::CStrDisplay(srcdir),
+            sep,
+            crate::xkb::utils::CStrDisplay(path_rel)
         );
-        if path.is_null() {
-            fprintf(
-                stderr,
-                b"Failed to allocate path for %s\n\0".as_ptr() as *const i8,
-                path_rel,
-            );
-            return ::core::ptr::null_mut::<i8>();
-        }
-        return path;
+        std::ffi::CString::new(path_s).unwrap().into_raw()
     }
 }
 pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {

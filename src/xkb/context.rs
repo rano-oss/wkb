@@ -147,7 +147,6 @@ pub mod stdio_h {
             __format: *const i8,
             __arg: ::core::ffi::VaList,
         ) -> i32;
-        pub fn vasprintf(__ptr: *mut *mut i8, __f: *const i8, __arg: ::core::ffi::VaList) -> i32;
     }
 }
 pub mod context_h {
@@ -261,31 +260,8 @@ pub mod utils_h {
             return true_0 != 0;
         }
     }
-    #[inline]
-    pub unsafe fn vasprintf_safe(mut fmt: *const i8, mut args: ::core::ffi::VaList) -> *mut i8 {
-        unsafe {
-            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-            let mut len: i32 = 0;
-            len = vasprintf(&raw mut str, fmt, args);
-            if len == -1 as i32 {
-                return ::core::ptr::null_mut::<i8>();
-            }
-            return str;
-        }
-    }
-    #[inline]
-    pub unsafe extern "C" fn asprintf_safe(mut fmt: *const i8, mut c2rust_args: ...) -> *mut i8 {
-        unsafe {
-            let mut args: ::core::ffi::VaList;
-            let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-            args = c2rust_args.clone();
-            str = vasprintf_safe(fmt, args);
-            return str;
-        }
-    }
 
     use super::stdbool_h::{false_0, true_0};
-    use super::stdio_h::vasprintf;
     use super::unistd_h::eaccess;
     use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrncmp;
@@ -358,7 +334,7 @@ pub use self::messages_codes_h::{
 };
 use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdio_h::{fprintf, stderr, va_list, vasprintf, vfprintf, vsnprintf};
+pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc, strtol};
 use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
@@ -369,9 +345,7 @@ pub use self::types_h::{
     __off_t, __syscall_slong_t, __time_t, __uid_t, __uint64_t,
 };
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
-pub use self::utils_h::{
-    asprintf_safe, check_eaccess, is_space, istrncmp, istrneq, strdup_safe, vasprintf_safe,
-};
+pub use self::utils_h::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 pub use self::xkbcommon_h::{
     xkb_context_flags, xkb_log_level, xkb_rule_names, XKB_CONTEXT_NO_DEFAULT_INCLUDES,
     XKB_CONTEXT_NO_ENVIRONMENT_NAMES, XKB_CONTEXT_NO_FLAGS, XKB_CONTEXT_NO_SECURE_GETENV,
@@ -762,29 +736,27 @@ pub unsafe fn xkb_context_include_path_get_system_path(mut ctx: *mut xkb_context
 }
 pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context) -> i32 {
     unsafe {
-        let mut user_path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut ret: i32 = 0 as i32;
         let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
         let xdg: *const i8 = xkb_context_getenv(ctx, b"XDG_CONFIG_HOME\0".as_ptr() as *const i8);
         if !xdg.is_null() {
-            user_path = asprintf_safe(b"%s/xkb\0".as_ptr() as *const i8, xdg);
-            if !user_path.is_null() {
-                ret |= context_include_path_append(ctx, user_path);
-                free(user_path as *mut ::core::ffi::c_void);
-            }
+            let user_path =
+                std::ffi::CString::new(format!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)))
+                    .unwrap();
+            ret |= context_include_path_append(ctx, user_path.as_ptr());
         } else if !home.is_null() {
-            user_path = asprintf_safe(b"%s/.config/xkb\0".as_ptr() as *const i8, home);
-            if !user_path.is_null() {
-                ret |= context_include_path_append(ctx, user_path);
-                free(user_path as *mut ::core::ffi::c_void);
-            }
+            let user_path = std::ffi::CString::new(format!(
+                "{}/.config/xkb",
+                crate::xkb::utils::CStrDisplay(home)
+            ))
+            .unwrap();
+            ret |= context_include_path_append(ctx, user_path.as_ptr());
         }
         if !home.is_null() {
-            user_path = asprintf_safe(b"%s/.xkb\0".as_ptr() as *const i8, home);
-            if !user_path.is_null() {
-                ret |= context_include_path_append(ctx, user_path);
-                free(user_path as *mut ::core::ffi::c_void);
-            }
+            let user_path =
+                std::ffi::CString::new(format!("{}/.xkb", crate::xkb::utils::CStrDisplay(home)))
+                    .unwrap();
+            ret |= context_include_path_append(ctx, user_path.as_ptr());
         }
         let extra: *const i8 = xkb_context_include_path_get_extra_path(ctx) as *const i8;
         ret |= context_include_path_append(ctx, extra);
