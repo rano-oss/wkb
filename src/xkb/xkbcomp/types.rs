@@ -609,11 +609,10 @@ unsafe fn AddKeyType(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Multiple definitions of the %s key type; Earlier definition ignored\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
                             as ::core::ffi::c_int,
-                        xkb_atom_text((*info).ctx, (*new).name),
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                     );
                 }
                 ClearKeyTypeInfo(old);
@@ -631,10 +630,9 @@ unsafe fn AddKeyType(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
-                    b"[XKB-%03d] Multiple definitions of the %s key type; Later definition ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as ::core::ffi::c_int,
-                    xkb_atom_text((*info).ctx, (*new).name),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                 );
             }
             ClearKeyTypeInfo(new);
@@ -813,8 +811,7 @@ unsafe fn SetModifiers(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"The modifiers field of a key type is not an array; Illegal array subscript ignored\n\0"
-                    .as_ptr() as *const i8,
+                "The modifiers field of a key type is not an array; Illegal array subscript ignored\n",
             );
             return false_0 != 0;
         }
@@ -829,8 +826,7 @@ unsafe fn SetModifiers(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Key type mask field must be a modifier mask; Key type definition ignored\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Key type mask field must be a modifier mask; Key type definition ignored\n",
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -840,11 +836,10 @@ unsafe fn SetModifiers(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Multiple modifier mask definitions for key type %s; Using %s, ignoring %s\n\0"
-                    .as_ptr() as *const i8,
-                xkb_atom_text((*info).ctx, (*type_0).name),
-                TypeMaskTxt(info, type_0),
-                ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods),
+                "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
+                crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
+                crate::xkb::utils::CStrDisplay(TypeMaskTxt(info, type_0)),
+                crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
             );
             return false_0 != 0;
         }
@@ -896,11 +891,10 @@ unsafe fn AddMapEntry(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Multiple map entries for %s in %s; Using %u, ignoring %u\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Multiple map entries for {} in {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as ::core::ffi::c_int,
-                    MapEntryTxt(info, new),
-                    TypeTxt(info, type_0),
+                    crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
+                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                     (if clobber as ::core::ffi::c_int != 0 {
                         (*new).level
                     } else {
@@ -919,12 +913,11 @@ unsafe fn AddMapEntry(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
-                    b"[XKB-%03d] Multiple occurrences of map[%s]= %u in %s; Ignored\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Multiple occurrences of map[{}]= {} in {}; Ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as ::core::ffi::c_int,
-                    MapEntryTxt(info, new),
+                    crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
                     (*new).level.wrapping_add(1 as xkb_level_index_t),
-                    TypeTxt(info, type_0),
+                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 );
                 return true_0 != 0;
             }
@@ -995,17 +988,16 @@ unsafe fn SetMapEntry(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                b"[XKB-%03d] Map entry for modifiers not used by type %s; Using %s instead of %s\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Map entry for modifiers not used by type {}; Using {} instead of {}\n",
                 XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as ::core::ffi::c_int,
-                TypeTxt(info, type_0),
-                ModMaskText(
+                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     entry.mods.mods & (*type_0).mods,
-                ),
-                MapEntryTxt(info, &raw mut entry),
+                )),
+                crate::xkb::utils::CStrDisplay(MapEntryTxt(info, &raw mut entry)),
             );
             entry.mods.mods &= (*type_0).mods;
         }
@@ -1014,8 +1006,7 @@ unsafe fn SetMapEntry(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Level specifications in a key type must be integer; Ignoring malformed level specification\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Level specifications in a key type must be integer; Ignoring malformed level specification\n",
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -1062,11 +1053,10 @@ unsafe fn AddPreserve(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
-                            b"[XKB-%03d] Identical definitions for preserve[%s] in %s; Ignored\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
                             XKB_WARNING_DUPLICATE_ENTRY as ::core::ffi::c_int,
-                            ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods),
-                            TypeTxt(info, type_0),
+                            crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                            crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                         );
                         return true_0 != 0;
                     }
@@ -1074,24 +1064,23 @@ unsafe fn AddPreserve(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                        b"[XKB-%03d] Multiple definitions for preserve[%s] in %s; Using %s, ignoring %s\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
                             as ::core::ffi::c_int,
-                        ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods),
-                        TypeTxt(info, type_0),
-                        ModMaskText(
+                        crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                        crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(
                             (*info).ctx,
                             MOD_BOTH,
                             &raw mut (*info).mods,
                             preserve_mods,
-                        ),
-                        ModMaskText(
+                        )),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(
                             (*info).ctx,
                             MOD_BOTH,
                             &raw mut (*info).mods,
                             (*entry).preserve.mods,
-                        ),
+                        )),
                     );
                     (*entry).preserve.mods = preserve_mods;
                     return true_0 != 0;
@@ -1162,12 +1151,11 @@ unsafe fn SetPreserve(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                b"[XKB-%03d] Preserve entry for modifiers not used by the %s type; Index %s converted to %s\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Preserve entry for modifiers not used by the {} type; Index {} converted to {}\n",
                 XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as ::core::ffi::c_int,
-                TypeTxt(info, type_0),
-                before,
-                after,
+                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::CStrDisplay(before),
+                crate::xkb::utils::CStrDisplay(after),
             );
         }
         let mut preserve_mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
@@ -1182,11 +1170,10 @@ unsafe fn SetPreserve(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Preserve value in a key type is not a modifier mask; Ignoring preserve[%s] in type %s\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
-                ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods),
-                TypeTxt(info, type_0),
+                crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
             return false_0 != 0;
         }
@@ -1200,13 +1187,12 @@ unsafe fn SetPreserve(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                b"[XKB-%03d] Illegal value for preserve[%s] in type %s; Converted %s to %s\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Illegal value for preserve[{}] in type {}; Converted {} to {}\n",
                 XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as ::core::ffi::c_int,
-                ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods),
-                TypeTxt(info, type_0),
-                before_0,
-                after_0,
+                crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::CStrDisplay(before_0),
+                crate::xkb::utils::CStrDisplay(after_0),
             );
         }
         return AddPreserve(info, type_0, mods, preserve_mods);
@@ -1253,11 +1239,10 @@ unsafe fn AddLevelName(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
-                    b"[XKB-%03d] Duplicate names for level %u of key type %s; Ignored\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Duplicate names for level {} of key type {}; Ignored\n",
                     XKB_WARNING_DUPLICATE_ENTRY as ::core::ffi::c_int,
                     level.wrapping_add(1 as xkb_level_index_t),
-                    TypeTxt(info, type_0),
+                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 );
                 return true_0 != 0;
             }
@@ -1273,13 +1258,12 @@ unsafe fn AddLevelName(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                    b"[XKB-%03d] Multiple names for level %u of key type %s; Using %s, ignoring %s\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as ::core::ffi::c_int,
                     level.wrapping_add(1 as xkb_level_index_t),
-                    TypeTxt(info, type_0),
-                    if clobber as ::core::ffi::c_int != 0 { new } else { old },
-                    if clobber as ::core::ffi::c_int != 0 { old } else { new },
+                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 { new } else { old }),
+                    crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 { old } else { new }),
                 );
                 if !clobber {
                     return true_0 != 0;
@@ -1316,11 +1300,10 @@ unsafe fn SetLevelName(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Non-string name for level %u in key type %s; Ignoring illegal level name definition\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
                 level.wrapping_add(1 as xkb_level_index_t),
-                xkb_atom_text((*info).ctx, (*type_0).name),
+                crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
             );
             return false_0 != 0;
         }
@@ -1356,11 +1339,10 @@ unsafe fn SetKeyTypeField(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Unknown field \"%s\" in key type \"%s\"; Definition ignored\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Unknown field \"{}\" in key type \"{}\"; Definition ignored\n",
                 XKB_ERROR_UNKNOWN_FIELD as ::core::ffi::c_int,
-                field,
-                TypeTxt(info, type_0),
+                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
             ok = (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_TYPE_FIELDS as ::core::ffi::c_int as u32
@@ -1395,23 +1377,21 @@ unsafe fn HandleKeyTypeBody(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Support for changing the default type has been removed; Statement \"%s.%s\" ignored.\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
                         XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as ::core::ffi::c_int,
-                        elem,
-                        field,
+                        crate::xkb::utils::CStrDisplay(elem),
+                        crate::xkb::utils::CStrDisplay(field),
                     );
                 } else {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Cannot set global defaults for \"%s\" element within a key type statement: move statements to the global file scope. Assignment to \"%s.%s\" ignored.\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
-                        elem,
-                        elem,
-                        field,
+                        crate::xkb::utils::CStrDisplay(elem),
+                        crate::xkb::utils::CStrDisplay(elem),
+                        crate::xkb::utils::CStrDisplay(field),
                     );
                     ok = false_0 != 0;
                 }
@@ -1473,8 +1453,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Support for changing the default type has been removed; Statement ignored\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
                 XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
             );
             return true_0 != 0;
@@ -1483,12 +1462,11 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Default defined for unknown element \"%s\"; Value for field \"%s.%s\" ignored\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Default defined for unknown element \"{}\"; Value for field \"{}.{}\" ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
-                elem,
-                elem,
-                field,
+                crate::xkb::utils::CStrDisplay(elem),
+                crate::xkb::utils::CStrDisplay(elem),
+                crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
@@ -1498,10 +1476,9 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
-                field,
+                crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
@@ -1535,17 +1512,16 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Unsupported types %s statement \"%s\"; Ignoring\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        if (*stmt).type_0 as u32
+                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32
                             == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
                         {
                             b"compound\0".as_ptr() as *const i8
                         } else {
                             b"declaration\0".as_ptr() as *const i8
-                        },
-                        (*(stmt as *mut UnknownStatement)).name,
+                        }),
+                        crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
                         & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
@@ -1556,10 +1532,9 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Key type files may not include other declarations; Ignoring %s\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Key type files may not include other declarations; Ignoring {}\n",
                         XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
-                        stmt_type_to_string((*stmt).type_0),
+                        crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
                     ok = false_0 != 0;
                 }
@@ -1572,9 +1547,9 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Abandoning keytypes file \"%s\"\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Abandoning keytypes file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
-                    safe_map_name(file),
+                    crate::xkb::utils::CStrDisplay(safe_map_name(file)),
                 );
                 break;
             } else {

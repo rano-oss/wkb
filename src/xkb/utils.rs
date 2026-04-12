@@ -451,6 +451,109 @@ pub unsafe fn cstr_ncmp(s1: *const i8, s2: *const i8, n: usize) -> i32 {
     }
 }
 
+/// Stack buffer writer implementing `core::fmt::Write`.
+/// Used by the `xkb_logf!` and `rxkb_logf!` macros and `snprintf_args` to replace C `snprintf`.
+pub struct LogBuf<'a> {
+    buf: &'a mut [u8],
+    pub pos: usize,
+    pub truncated: bool,
+}
+
+impl<'a> LogBuf<'a> {
+    #[inline]
+    pub fn new(buf: &'a mut [u8]) -> Self {
+        Self {
+            buf,
+            pos: 0,
+            truncated: false,
+        }
+    }
+}
+
+impl<'a> core::fmt::Write for LogBuf<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        let bytes = s.as_bytes();
+        let space = self.buf.len() - self.pos;
+        let n = bytes.len().min(space);
+        if n < bytes.len() {
+            self.truncated = true;
+        }
+        self.buf[self.pos..self.pos + n].copy_from_slice(&bytes[..n]);
+        self.pos += n;
+        Ok(())
+    }
+}
+
+/// Write formatted args into a raw C buffer, NUL-terminated.
+/// Returns (bytes_written, truncated). The buffer is always NUL-terminated if size > 0.
+/// On truncation, writes as much as fits and sets truncated=true.
+///
+/// This replaces C `snprintf` and `snprintf_safe`.
+///
+/// # Safety
+/// `buf` must point to at least `size` writable bytes.
+#[inline]
+pub unsafe fn snprintf_args(
+    buf: *mut i8,
+    size: usize,
+    args: core::fmt::Arguments<'_>,
+) -> (usize, bool) {
+    if size == 0 {
+        return (0, true);
+    }
+    let slice = std::slice::from_raw_parts_mut(buf as *mut u8, size);
+    let mut w = LogBuf::new(&mut slice[..size - 1]);
+    let _ = core::fmt::Write::write_fmt(&mut w, args);
+    let pos = w.pos;
+    let truncated = w.truncated;
+    slice[pos] = 0; // NUL terminate
+    (pos, truncated)
+}
+
+/// Display wrapper for `*const i8` C strings in Rust format strings.
+/// Replaces `%s` format specifier usage. Reads the C string and writes it as UTF-8.
+pub struct CStrDisplay(pub *const i8);
+
+impl core::fmt::Display for CStrDisplay {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.0.is_null() {
+            return f.write_str("(null)");
+        }
+        unsafe {
+            let cstr = std::ffi::CStr::from_ptr(self.0);
+            let bytes = cstr.to_bytes();
+            match core::str::from_utf8(bytes) {
+                Ok(s) => f.write_str(s),
+                Err(_) => f.write_str("<invalid utf8>"),
+            }
+        }
+    }
+}
+
+/// Display wrapper for precision-limited C strings (`%.*s` replacement).
+/// Reads at most `len` bytes from the pointer, stopping at NUL.
+pub struct CStrNDisplay(pub usize, pub *const i8);
+
+impl core::fmt::Display for CStrNDisplay {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.1.is_null() {
+            return f.write_str("(null)");
+        }
+        unsafe {
+            let ptr = self.1 as *const u8;
+            let mut len = 0;
+            while len < self.0 && *ptr.add(len) != 0 {
+                len += 1;
+            }
+            let slice = std::slice::from_raw_parts(ptr, len);
+            match core::str::from_utf8(slice) {
+                Ok(s) => f.write_str(s),
+                Err(_) => f.write_str("<invalid utf8>"),
+            }
+        }
+    }
+}
+
 /// Safe replacement for libc `strdup`. Duplicates a C string using Rust's allocator.
 /// Returns a `*mut i8` allocated via `CString::into_raw()`.
 /// Returns null if `s` is null.

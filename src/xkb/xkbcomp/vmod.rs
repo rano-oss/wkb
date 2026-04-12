@@ -161,11 +161,10 @@ pub unsafe fn MergeModSets(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Virtual modifier %s mapping defined multiple times; Using %s, ignoring %s\n\0"
-                            .as_ptr() as *const i8,
-                        xkb_atom_text(ctx, (*mod_0).name),
-                        ModMaskText(ctx, MOD_REAL, from, use_0),
-                        ModMaskText(ctx, MOD_REAL, from, ignore),
+                        "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, ignore)),
                     );
                     (*into).mods[vmod as usize].mapping = use_0;
                 }
@@ -189,8 +188,8 @@ pub unsafe fn HandleVModDef(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Declaration of %s ignored\n\0".as_ptr() as *const i8,
-                    xkb_atom_text(ctx, (*stmt).name),
+                    "Declaration of {} ignored\n",
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 );
                 return false_0 != 0;
             }
@@ -206,9 +205,8 @@ pub unsafe fn HandleVModDef(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Can't add a virtual modifier named \"%s\"; there is already a non-virtual modifier with this name! Ignored\n\0"
-                            .as_ptr() as *const i8,
-                        xkb_atom_text(ctx, (*mod_0).name),
+                        "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
                     );
                     return false_0 != 0;
                 }
@@ -234,11 +232,10 @@ pub unsafe fn HandleVModDef(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Virtual modifier %s mapping defined multiple times; Using %s, ignoring %s\n\0"
-                            .as_ptr() as *const i8,
-                        xkb_atom_text(ctx, (*stmt).name),
-                        ModMaskText(ctx, MOD_REAL, mods, use_0),
-                        ModMaskText(ctx, MOD_REAL, mods, ignore),
+                        "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
+                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, ignore)),
                     );
                     (*mod_0).mapping = use_0;
                 }
@@ -253,9 +250,8 @@ pub unsafe fn HandleVModDef(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Cannot define virtual modifier %s: too many modifiers defined (maximum %u)\n\0"
-                    .as_ptr() as *const i8,
-                xkb_atom_text(ctx, (*stmt).name),
+                "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
+                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 (::core::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_mod_index_t,
             );

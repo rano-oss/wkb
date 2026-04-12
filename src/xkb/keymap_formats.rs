@@ -302,9 +302,7 @@ pub mod utils_numbers_h {
 pub mod stdint_h {
     pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
 }
-pub mod string_h {
-    
-}
+pub mod string_h {}
 pub mod stdbool_h {
     pub const true_0: i32 = 1 as i32;
     pub const false_0: i32 = 0 as i32;
@@ -315,12 +313,10 @@ pub mod __stddef_null_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
-        unsafe {
-            return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-                || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
-                || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
-        }
+    pub fn is_xdigit(mut ch: i8) -> bool {
+        return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
+            || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
+            || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
     }
 }
 pub use self::__stddef_null_h::NULL;
@@ -331,10 +327,10 @@ pub use self::stdint_uintn_h::u32;
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
-use crate::xkb::utils::{cstr_cmp};
 pub use self::xkbcommon_h::{
     xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
+use crate::xkb::utils::cstr_cmp;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct format_label {

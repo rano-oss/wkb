@@ -595,10 +595,9 @@ pub unsafe fn ExprKeySymListAppendString(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position %zu (code point position: %zu).\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    (*scanner).file_name,
+                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc.line,
                     loc.column,
                     idx.wrapping_add(1 as usize),
@@ -614,9 +613,8 @@ pub unsafe fn ExprKeySymListAppendString(
                         (*scanner).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"%s:%zu:%zu: Cannot convert string to keysyms: Unicode code point U+04%X has no keysym equivalent(byte position: %zu, code point position: %zu).\n\0"
-                            .as_ptr() as *const i8,
-                        (*scanner).file_name,
+                        "{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
+                        crate::xkb::utils::CStrDisplay((*scanner).file_name),
                         loc_0.line,
                         loc_0.column,
                         cp,
@@ -678,9 +676,8 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s:%zu:%zu: Cannot convert string to single keysym: empty string.\n\0".as_ptr()
-                    as *const i8,
-                (*scanner).file_name,
+                "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc.line,
                 loc.column,
             );
@@ -694,10 +691,9 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                (*scanner).file_name,
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc_0.line,
                 loc_0.column,
             );
@@ -708,13 +704,12 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] %s:%zu:%zu: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"%s\".\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                (*scanner).file_name,
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc_1.line,
                 loc_1.column,
-                string,
+                crate::xkb::utils::CStrDisplay(string),
             );
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         }
@@ -725,9 +720,8 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s:%zu:%zu: Cannot convert string to single keysym: Unicode code point U+%04X has no keysym equivalent.\n\0"
-                    .as_ptr() as *const i8,
-                (*scanner).file_name,
+                "{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc_2.line,
                 loc_2.column,
                 cp,
@@ -1041,10 +1035,9 @@ pub unsafe fn IncludeCreate(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Illegal include statement \"%s\"; Ignored\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
                     XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                    stmt,
+                    crate::xkb::utils::CStrDisplay(stmt),
                 );
                 FreeInclude(first);
                 free(stmt as *mut ::core::ffi::c_void);

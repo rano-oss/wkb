@@ -669,15 +669,14 @@ pub unsafe fn xkb_resolve_file(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"File of wrong type (expected %s, got %s); file \"%s\" ignored\n\0"
-                            .as_ptr() as *const i8,
-                        xkb_file_type_to_string(file_type),
-                        xkb_file_type_to_string((*xkb_file).file_type),
-                        if absolute_path as ::core::ffi::c_int != 0 {
+                        "File of wrong type (expected {}, got {}); file \"{}\" ignored\n",
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(file_type)),
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*xkb_file).file_type)),
+                        crate::xkb::utils::CStrDisplay(if absolute_path as ::core::ffi::c_int != 0 {
                             path
                         } else {
                             resolved_path as *const i8
-                        },
+                        }),
                     );
                     c2rust_current_block = 6705605813258909411;
                 } else if !map.is_null()
@@ -770,7 +769,7 @@ pub unsafe fn xkb_resolve_file(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] Cannot copy resolved path or section\n\0".as_ptr() as *const i8,
+            "[XKB-{:03}] Cannot copy resolved path or section\n",
             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
         );
         fclose(file);
@@ -1103,21 +1102,21 @@ unsafe fn xkb_file_section_append_includes(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s include failure in: %s%s%s%s\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {} include failure in: {}{}{}{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
-                    xkb_file_type_name(file_type),
-                    section_path,
-                    if (*section).name != 0 {
+                    crate::xkb::utils::CStrDisplay(xkb_file_type_name(file_type)),
+                    crate::xkb::utils::CStrDisplay(section_path),
+                    crate::xkb::utils::CStrDisplay(if (*section).name != 0 {
                         b" (section: \"\0".as_ptr() as *const i8
                     } else {
                         b"\0".as_ptr() as *const i8
-                    },
-                    name,
-                    if (*section).name != 0 {
+                    }),
+                    crate::xkb::utils::CStrDisplay(name),
+                    crate::xkb::utils::CStrDisplay(if (*section).name != 0 {
                         b"\")\0".as_ptr() as *const i8
                     } else {
                         b"\0".as_ptr() as *const i8
-                    },
+                    }),
                 );
                 FreeXkbFile(xkb_file);
                 return false_0 != 0;
@@ -1177,8 +1176,8 @@ pub unsafe fn xkb_file_section_parse(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Cannot open file: %s\n\0".as_ptr() as *const i8,
-                path,
+                "Cannot open file: {}\n",
+                crate::xkb::utils::CStrDisplay(path),
             );
             return false_0 != 0;
         }
@@ -1189,13 +1188,13 @@ pub unsafe fn xkb_file_section_parse(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Cannot parse map \"%s\" in file: %s\n\0".as_ptr() as *const i8,
-                if !map.is_null() {
+                "Cannot parse map \"{}\" in file: {}\n",
+                crate::xkb::utils::CStrDisplay(if !map.is_null() {
                     map
                 } else {
                     b"(no map)\0".as_ptr() as *const i8
-                },
-                path,
+                }),
+                crate::xkb::utils::CStrDisplay(path),
             );
             return false_0 != 0;
         }
@@ -1234,7 +1233,7 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Cannot allocate file iterator\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Cannot allocate file iterator\n",
                 XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
             );
             return ::core::ptr::null_mut::<xkb_file_iterator>();
@@ -1309,8 +1308,8 @@ pub unsafe fn xkb_file_iterator_next(
                             (*iter).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"Error while parsing section in file: %s\n\0".as_ptr() as *const i8,
-                            (*iter).path,
+                            "Error while parsing section in file: {}\n",
+                            crate::xkb::utils::CStrDisplay((*iter).path),
                         );
                         c2rust_current_block = 3132808253564788397;
                         break;
@@ -1343,13 +1342,13 @@ pub unsafe fn xkb_file_iterator_next(
                         (*iter).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"File type mismatch: %s, section: %s\n\0".as_ptr() as *const i8,
-                        (*iter).path,
-                        if !(*xkb_file).name.is_null() {
+                        "File type mismatch: {}, section: {}\n",
+                        crate::xkb::utils::CStrDisplay((*iter).path),
+                        crate::xkb::utils::CStrDisplay(if !(*xkb_file).name.is_null() {
                             (*xkb_file).name as *const i8
                         } else {
                             b"(no name)\0".as_ptr() as *const i8
-                        },
+                        }),
                     );
                     c2rust_current_block = 3132808253564788397;
                     break;

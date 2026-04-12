@@ -3032,8 +3032,7 @@ unsafe fn state_update_layout_policy(
                         (*(*state).keymap).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"[XKB-%03d] Layout policy: unsupported layout index %u > %u\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                         (*update).redirect.wrapping_add(1 as xkb_layout_index_t),
                         (*(*state).keymap).num_groups,
@@ -3048,7 +3047,7 @@ unsafe fn state_update_layout_policy(
                 (*(*state).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Unsupported layout policy: %d\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Unsupported layout policy: {}\n",
                 XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as i32,
                 (*update).policy as u32,
             );
@@ -3065,10 +3064,9 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s: ABI error: unsupported versioned struct\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
                     XKB_ERROR_ABI_INVALID_STRUCT_SIZE as i32,
-                    func,
+                    crate::xkb::utils::CStrDisplay(func),
                 );
             }
             914 => {
@@ -3076,10 +3074,9 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s: ABI version mismatch: missing newer required fields\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
                     XKB_ERROR_ABI_BACKWARD_COMPAT as i32,
-                    func,
+                    crate::xkb::utils::CStrDisplay(func),
                 );
             }
             876 => {
@@ -3087,10 +3084,9 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s: ABI version mismatch: cannot use newer fields\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
                     XKB_ERROR_ABI_FORWARD_COMPAT as i32,
-                    func,
+                    crate::xkb::utils::CStrDisplay(func),
                 );
             }
             _ => {}
@@ -3866,8 +3862,8 @@ pub unsafe fn xkb_state_key_get_consumed_mods2(
                     (*(*state).keymap).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"%s: unrecognized consumed modifiers mode: %d\n\0".as_ptr() as *const i8,
-                    b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const i8,
+                    "{}: unrecognized consumed modifiers mode: {}\n",
+                    crate::xkb::utils::CStrDisplay(b"xkb_state_key_get_consumed_mods2\0".as_ptr() as *const i8),
                     mode as u32,
                 );
                 return 0 as xkb_mod_mask_t;
@@ -3972,8 +3968,8 @@ pub unsafe fn xkb_machine_options_update_a11y_flags(
                 (*options).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unrecognized state flags: %#x\n\0".as_ptr() as *const i8,
-                b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const i8,
+                "{}: unrecognized state flags: {:#x}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_machine_options_update_a11y_flags\0".as_ptr() as *const i8),
                 flags as u32 & !(XKB_A11Y_FLAGS as u32),
             );
             return XKB_ERROR_UNSUPPORTED_A11Y_FLAGS;
@@ -4986,8 +4982,8 @@ pub unsafe fn xkb_events_new_batch(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unrecognized events batch flags: %#x\n\0".as_ptr() as *const i8,
-                b"xkb_events_new_batch\0".as_ptr() as *const i8,
+                "{}: unrecognized events batch flags: {:#x}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_events_new_batch\0".as_ptr() as *const i8),
                 flags as u32 & !(XKB_EVENTS_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_events>();
@@ -4999,9 +4995,9 @@ pub unsafe fn xkb_events_new_batch(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] %s: cannot allocate state events collection\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] {}: cannot allocate state events collection\n",
                 XKB_ERROR_ALLOCATION_ERROR as i32,
-                b"xkb_events_new_batch\0".as_ptr() as *const i8,
+                crate::xkb::utils::CStrDisplay(b"xkb_events_new_batch\0".as_ptr() as *const i8),
             );
             return events;
         }

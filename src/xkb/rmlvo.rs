@@ -321,7 +321,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Unsupported RMLVO flags: 0x%x\n\0".as_ptr() as *const i8,
+                "Unsupported RMLVO flags: 0x{:x}\n",
                 flags as u32 & !(XKB_RMLVO_BUILDER_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
@@ -351,7 +351,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
             context,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Cannot allocate a RMLVO builder.\n\0".as_ptr() as *const i8,
+            "[XKB-{:03}] Cannot allocate a RMLVO builder.\n",
             XKB_ERROR_ALLOCATION_ERROR as i32,
         );
         xkb_rmlvo_builder_unref(builder);
@@ -372,16 +372,15 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Maximum layout count reached: %u; cannot add layout \"%s(%s)\" to the RMLVO builder.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Maximum layout count reached: {}; cannot add layout \"{}({})\" to the RMLVO builder.\n",
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                 32 as i32,
-                layout,
-                if !variant.is_null() {
+                crate::xkb::utils::CStrDisplay(layout),
+                crate::xkb::utils::CStrDisplay(if !variant.is_null() {
                     variant
                 } else {
                     b"\0".as_ptr() as *const i8
-                },
+                }),
             );
             return false;
         }
@@ -396,15 +395,14 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Cannot allocate layout \"%s(%s)\" to the RMLVO builder.\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Cannot allocate layout \"{}({})\" to the RMLVO builder.\n",
                 XKB_ERROR_ALLOCATION_ERROR as i32,
-                layout,
-                if !variant.is_null() {
+                crate::xkb::utils::CStrDisplay(layout),
+                crate::xkb::utils::CStrDisplay(if !variant.is_null() {
                     variant
                 } else {
                     b"\0".as_ptr() as *const i8
-                },
+                }),
             );
             return false;
         }
@@ -440,16 +438,15 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                     (*rmlvo).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Cannot allocate option \"%s\" of layout \"%s(%s)\" to the RMLVO builder.\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Cannot allocate option \"{}\" of layout \"{}({})\" to the RMLVO builder.\n",
                     XKB_ERROR_ALLOCATION_ERROR as i32,
-                    *options.offset(k as isize),
-                    layout,
-                    if !variant.is_null() {
+                    crate::xkb::utils::CStrDisplay(*options.offset(k as isize)),
+                    crate::xkb::utils::CStrDisplay(layout),
+                    crate::xkb::utils::CStrDisplay(if !variant.is_null() {
                         variant
                     } else {
                         b"\0".as_ptr() as *const i8
-                    },
+                    }),
                 );
                 return false;
             }
@@ -510,10 +507,9 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Cannot allocate option \"%s\" to the RMLVO builder.\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Cannot allocate option \"{}\" to the RMLVO builder.\n",
                 XKB_ERROR_ALLOCATION_ERROR as i32,
-                option,
+                crate::xkb::utils::CStrDisplay(option),
             );
             return false;
         }

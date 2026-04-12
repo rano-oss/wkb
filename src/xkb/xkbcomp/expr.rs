@@ -482,7 +482,7 @@ pub unsafe fn ExprResolveLhs(
             ctx,
             XKB_LOG_LEVEL_CRITICAL,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Unexpected operator %d in ResolveLhs\n\0".as_ptr() as *const i8,
+            "[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
             (*expr).common.type_0 as u32,
         );
@@ -545,9 +545,9 @@ unsafe fn NamedIntegerPatternLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s index %u is out of range (%u..%u)\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {} index {} is out of range ({}..{})\n",
                     (*pattern).error_id as u32,
-                    (*pattern).prefix,
+                    crate::xkb::utils::CStrDisplay((*pattern).prefix),
                     *val_rtrn,
                     (*pattern).min,
                     (*pattern).max,
@@ -638,9 +638,9 @@ pub unsafe fn ExprResolveBoolean(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Found %s where boolean was expected\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Found {} where boolean was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
             }
@@ -665,10 +665,9 @@ pub unsafe fn ExprResolveBoolean(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Identifier \"%s\" of type boolean is unknown\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    ident,
+                    crate::xkb::utils::CStrDisplay(ident),
                 );
                 return false_0 != 0;
             }
@@ -677,11 +676,10 @@ pub unsafe fn ExprResolveBoolean(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Default \"%s.%s\" of type boolean is unknown\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(ctx, (*expr).field_ref.element),
-                    xkb_atom_text(ctx, (*expr).field_ref.field),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
                 return false_0 != 0;
             }
@@ -697,9 +695,9 @@ pub unsafe fn ExprResolveBoolean(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s of boolean values not permitted\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {} of boolean values not permitted\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
             }
             _ => {
@@ -707,7 +705,7 @@ pub unsafe fn ExprResolveBoolean(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unknown operator %d in ResolveBoolean\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
                     (*expr).common.type_0 as u32,
                 );
@@ -741,9 +739,9 @@ unsafe fn ExprResolveIntegerLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Found %s where an int was expected\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Found {} where an int was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
             }
@@ -762,10 +760,9 @@ unsafe fn ExprResolveIntegerLookup(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"[XKB-%03d] Identifier \"%s\" of type int is unknown\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(ctx, (*expr).ident.ident),
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
                     );
                 } else {
                     *val_rtrn = u as i64;
@@ -780,11 +777,10 @@ unsafe fn ExprResolveIntegerLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Default \"%s.%s\" of type int is unknown\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(ctx, (*expr).field_ref.element),
-                    xkb_atom_text(ctx, (*expr).field_ref.field),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
                 return false_0 != 0;
             }
@@ -807,8 +803,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                b"[XKB-%03d] Addition %ld + %ld has an invalid mathematical result: %ld\n\0"
-                                    .as_ptr() as *const i8,
+                                "[XKB-{:03}] Addition {} + {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
@@ -825,8 +820,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                b"[XKB-%03d] Substraction %ld - %ld has an invalid mathematical result: %ld\n\0"
-                                    .as_ptr() as *const i8,
+                                "[XKB-{:03}] Substraction {} - {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
@@ -843,8 +837,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                b"[XKB-%03d] Multiplication %ld * %ld has an invalid mathematical result: %ld\n\0"
-                                    .as_ptr() as *const i8,
+                                "[XKB-{:03}] Multiplication {} * {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
@@ -859,8 +852,7 @@ unsafe fn ExprResolveIntegerLookup(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                b"[XKB-%03d] Cannot divide by zero: %ld / %ld\n\0".as_ptr()
-                                    as *const i8,
+                                "[XKB-{:03}] Cannot divide by zero: {} / {}\n",
                                 XKB_ERROR_INVALID_OPERATION as i32,
                                 l,
                                 r,
@@ -874,9 +866,9 @@ unsafe fn ExprResolveIntegerLookup(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            b"[XKB-%03d] %s of integers not permitted\n\0".as_ptr() as *const i8,
+                            "[XKB-{:03}] {} of integers not permitted\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            stmt_type_to_string((*expr).common.type_0),
+                            crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                         );
                         return false_0 != 0;
                     }
@@ -888,7 +880,7 @@ unsafe fn ExprResolveIntegerLookup(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Assignment operator not implemented yet\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Assignment operator not implemented yet\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
                 );
             }
@@ -897,8 +889,7 @@ unsafe fn ExprResolveIntegerLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] The ! operator cannot be applied to an integer\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] The ! operator cannot be applied to an integer\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
                 );
                 return false_0 != 0;
@@ -924,7 +915,7 @@ unsafe fn ExprResolveIntegerLookup(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unknown operator %d in ResolveInteger\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
                     (*expr).common.type_0 as u32,
                 );
@@ -1008,7 +999,7 @@ pub unsafe fn ExprResolveGroup(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Group index %ld is out of range (%u..%u)\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Group index {} is out of range ({}..{})\n",
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                 result,
                 absolute as i32,
@@ -1057,7 +1048,7 @@ pub unsafe fn ExprResolveLevel(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Shift level %ld is out of range (1..%u)\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Shift level {} is out of range (1..{})\n",
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
                 result,
                 2048 as i32,
@@ -1109,9 +1100,9 @@ pub unsafe fn ExprResolveString(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Found %s, expected a string\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Found {}, expected a string\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
             }
@@ -1120,10 +1111,9 @@ pub unsafe fn ExprResolveString(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Identifier \"%s\" of type string not found\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(ctx, (*expr).ident.ident),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
                 );
                 return false_0 != 0;
             }
@@ -1132,11 +1122,10 @@ pub unsafe fn ExprResolveString(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Default \"%s.%s\" of type string not found\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(ctx, (*expr).field_ref.element),
-                    xkb_atom_text(ctx, (*expr).field_ref.field),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
                 return false_0 != 0;
             }
@@ -1145,9 +1134,9 @@ pub unsafe fn ExprResolveString(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] %s of strings not permitted\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {} of strings not permitted\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
             }
@@ -1156,7 +1145,7 @@ pub unsafe fn ExprResolveString(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unknown operator %d in ResolveString\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Unknown operator {} in ResolveString\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
                     (*expr).common.type_0 as u32,
                 );
@@ -1177,10 +1166,9 @@ pub unsafe fn ExprResolveEnum(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Found a %s where an enumerated value was expected\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Found a {} where an enumerated value was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*expr).common.type_0),
+                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
             );
             return false_0 != 0;
         }
@@ -1195,18 +1183,18 @@ pub unsafe fn ExprResolveEnum(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Illegal identifier %s; expected one of:\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                xkb_atom_text(ctx, (*expr).ident.ident),
+                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
             );
             while !values.is_null() && !(*values).name.is_null() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    (*values).name,
+                    crate::xkb::utils::CStrDisplay((*values).name),
                 );
                 values = values.offset(1);
             }
@@ -1239,12 +1227,12 @@ unsafe fn ExprResolveMaskLookup(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Mask %s%#lx is out of range (0..%#x)\n\0".as_ptr() as *const i8,
-                        if (*expr).integer.ival < 0 as i64 {
+                        "Mask {}{:#x} is out of range (0..{:#x})\n",
+                        crate::xkb::utils::CStrDisplay(if (*expr).integer.ival < 0 as i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
-                        },
+                        }),
                         imaxabs((*expr).integer.ival as intmax_t),
                         4294967295 as u32,
                     );
@@ -1258,9 +1246,9 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Found %s where a mask was expected\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Found {} where a mask was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
+                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
                 );
                 return false_0 != 0;
             }
@@ -1277,10 +1265,9 @@ unsafe fn ExprResolveMaskLookup(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"[XKB-%03d] Identifier \"%s\" of type int is unknown\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(ctx, (*expr).ident.ident),
+                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
                     );
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
@@ -1293,11 +1280,10 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Default \"%s.%s\" of type int is unknown\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(ctx, (*expr).field_ref.element),
-                    xkb_atom_text(ctx, (*expr).field_ref.field),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
+                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
                 );
                 return false_0 != 0;
             }
@@ -1328,14 +1314,13 @@ unsafe fn ExprResolveMaskLookup(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            b"[XKB-%03d] Cannot %s masks; Illegal operation ignored\n\0".as_ptr()
-                                as *const i8,
+                            "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
+                            crate::xkb::utils::CStrDisplay(if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
                                 b"divide\0".as_ptr() as *const i8
                             } else {
                                 b"multiply\0".as_ptr() as *const i8
-                            },
+                            }),
                         );
                         return false_0 != 0;
                     }
@@ -1348,7 +1333,7 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Assignment operator not implemented yet\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Assignment operator not implemented yet\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
                 );
                 c2rust_current_block_47 = 11626999923138678822;
@@ -1363,12 +1348,12 @@ unsafe fn ExprResolveMaskLookup(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Mask %s%#lx is out of range (0..%#x)\n\0".as_ptr() as *const i8,
-                        if v < 0 as i64 {
+                        "Mask {}{:#x} is out of range (0..{:#x})\n",
+                        crate::xkb::utils::CStrDisplay(if v < 0 as i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
-                        },
+                        }),
                         imaxabs(v as intmax_t),
                         4294967295 as u32,
                     );
@@ -1386,10 +1371,9 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] The '%c' unary operator cannot be used with a mask\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    stmt_type_to_operator_char((*expr).common.type_0) as i32,
+                    (stmt_type_to_operator_char((*expr).common.type_0) as i32 as u8 as char),
                 );
                 return false_0 != 0;
             }
@@ -1398,7 +1382,7 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unknown operator type %d in ResolveMask\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
                     (*expr).common.type_0 as u32,
                 );
@@ -1415,10 +1399,9 @@ unsafe fn ExprResolveMaskLookup(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unexpected %s in mask expression; Expression Ignored\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    bogus,
+                    crate::xkb::utils::CStrDisplay(bogus),
                 );
                 return false_0 != 0;
             }
@@ -1496,10 +1479,9 @@ pub unsafe fn ExprResolveMod(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Cannot resolve virtual modifier: found %s where a virtual modifier name was expected\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*def).common.type_0),
+                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*def).common.type_0)),
             );
             return false_0 != 0;
         }
@@ -1510,10 +1492,9 @@ pub unsafe fn ExprResolveMod(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Cannot resolve virtual modifier: \"%s\" was not previously declared\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-                xkb_atom_text(ctx, name),
+                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, name)),
             );
             return false_0 != 0;
         }

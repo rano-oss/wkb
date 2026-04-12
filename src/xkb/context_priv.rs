@@ -21,7 +21,6 @@ pub mod stdio_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 
-    use super::xkbcommon_h::xkb_log_level;
     pub use crate::xkb::context::xkb_context_include_path_get_system_path;
 }
 pub mod atom_h {
@@ -33,7 +32,6 @@ pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    use super::context_h::xkb_context;
     pub use crate::xkb::context::xkb_context_include_path_append_default;
     pub use crate::xkb::shared_types::{
         xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
@@ -144,10 +142,7 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod string_h {
-
-    
-}
+pub mod string_h {}
 pub mod config_h {
     pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
         unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
@@ -245,35 +240,29 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::va_list;
 use self::stdlib_h::{getenv, secure_getenv};
 pub use self::utils_h::isempty;
-use crate::xkb::utils::{cstr_len};
-
-extern "C" {
-    pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
-}
+use crate::xkb::utils::cstr_len;
 
 pub use self::xkbcommon_h::{
     xkb_context_include_path_append_default, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL,
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 
-/// Macro that formats a C-style format string into a stack buffer, then calls `xkb_log`.
-/// This replaces the old variadic `xkb_log` function.
-/// Usage: `xkb_logf!(ctx, level, verbosity, fmt, args...)`
+/// Macro that formats a Rust format string into a stack buffer, then calls `xkb_log`.
+/// This uses `core::fmt::Write` instead of C `snprintf`.
+/// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
 #[macro_export]
 macro_rules! xkb_logf {
-    ($ctx:expr, $level:expr, $verb:expr, $fmt:expr $(,)?) => {{
-        // No extra args — pass fmt directly
-        crate::xkb::context_priv::xkb_log($ctx, $level, $verb, $fmt)
-    }};
-    ($ctx:expr, $level:expr, $verb:expr, $fmt:expr, $($arg:expr),+ $(,)?) => {{
-        let mut _xkb_log_buf: [i8; 2048] = [0i8; 2048];
-        crate::xkb::context_priv::snprintf(
-            _xkb_log_buf.as_mut_ptr(),
-            2048,
-            $fmt,
-            $($arg),+
-        );
-        crate::xkb::context_priv::xkb_log($ctx, $level, $verb, _xkb_log_buf.as_ptr())
+    ($ctx:expr, $level:expr, $verb:expr, $($arg:tt)*) => {{
+        let mut _xkb_log_buf = [0u8; 2048];
+        {
+            let mut _w = crate::xkb::utils::LogBuf::new(&mut _xkb_log_buf[..2047]);
+            let _ = core::fmt::Write::write_fmt(&mut _w, format_args!($($arg)*));
+        }
+        // _xkb_log_buf[2047] is always 0 (zero-initialized), so NUL-terminated
+        crate::xkb::context_priv::xkb_log(
+            $ctx, $level, $verb,
+            _xkb_log_buf.as_ptr() as *const i8
+        )
     }};
 }
 
@@ -295,10 +284,9 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"[XKB-%03d] Failed to add any default include path (system path: %s)\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
                         XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                        xkb_context_include_path_get_system_path(ctx),
+                        crate::xkb::utils::CStrDisplay(xkb_context_include_path_get_system_path(ctx)),
                     );
                     return false_0 != 0;
                 }
@@ -475,15 +463,14 @@ pub unsafe fn xkb_context_sanitize_rule_names(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Layout not provided, but variant set to \"%s\": ignoring variant and using defaults for both: layout=\"%s\", variant=\"%s\".\n\0"
-                        .as_ptr() as *const i8,
-                    (*rmlvo).variant,
-                    (*rmlvo).layout,
-                    if !variant.is_null() {
+                    "Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
+                    crate::xkb::utils::CStrDisplay((*rmlvo).variant),
+                    crate::xkb::utils::CStrDisplay((*rmlvo).layout),
+                    crate::xkb::utils::CStrDisplay(if !variant.is_null() {
                         variant
                     } else {
                         b"\0".as_ptr() as *const i8
-                    },
+                    }),
                 );
             }
             (*rmlvo).variant = variant;

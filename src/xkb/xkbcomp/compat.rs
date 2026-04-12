@@ -724,9 +724,8 @@ unsafe fn MergeInterp(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Multiple definitions for \"%s\"; Earlier interpretation ignored\n\0".as_ptr()
-                        as *const i8,
-                    siText(new, info),
+                    "Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
+                    crate::xkb::utils::CStrDisplay(siText(new, info)),
                 );
             }
             *old = *new;
@@ -796,14 +795,13 @@ unsafe fn MergeInterp(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Multiple interpretations of \"%s\"; Using %s definition for duplicate fields\n\0"
-                    .as_ptr() as *const i8,
-                siText(old, info),
-                if clobber as i32 != 0 {
+                "Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
+                crate::xkb::utils::CStrDisplay(siText(old, info)),
+                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                     b"last\0".as_ptr() as *const i8
                 } else {
                     b"first\0".as_ptr() as *const i8
-                },
+                }),
             );
         }
         return true_0 != 0;
@@ -867,8 +865,8 @@ unsafe fn ResolveStateAndPredicate(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Illegal modifier predicate \"%s\"; Ignored\n\0".as_ptr() as *const i8,
-                    pred_txt,
+                    "Illegal modifier predicate \"{}\"; Ignored\n",
+                    crate::xkb::utils::CStrDisplay(pred_txt),
                 );
                 return false_0 != 0;
             }
@@ -941,9 +939,8 @@ unsafe fn MergeLedMap(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Map for indicator %s redefined; Earlier definition ignored\n\0".as_ptr()
-                        as *const i8,
-                    LEDText(info, old),
+                    "Map for indicator {} redefined; Earlier definition ignored\n",
+                    crate::xkb::utils::CStrDisplay(LEDText(info, old)),
                 );
             }
             *old = *new;
@@ -995,14 +992,13 @@ unsafe fn MergeLedMap(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Map for indicator %s redefined; Using %s definition for duplicate fields\n\0"
-                    .as_ptr() as *const i8,
-                LEDText(info, old),
-                if clobber as i32 != 0 {
+                "Map for indicator {} redefined; Using {} definition for duplicate fields\n",
+                crate::xkb::utils::CStrDisplay(LEDText(info, old)),
+                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                     b"last\0".as_ptr() as *const i8
                 } else {
                     b"first\0".as_ptr() as *const i8
-                },
+                }),
             );
         }
         return true_0 != 0;
@@ -1025,7 +1021,7 @@ unsafe fn AddLedMap(mut info: *mut CompatInfo, mut new: *mut LedInfo, mut same_f
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Too many LEDs defined (maximum %u)\n\0".as_ptr() as *const i8,
+                "Too many LEDs defined (maximum {})\n",
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
@@ -1311,9 +1307,8 @@ unsafe fn SetInterpField(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Interpret %s has too many actions; expected max %u, got: %u\n\0".as_ptr()
-                            as *const i8,
-                        siText(si, info),
+                        "Interpret {} has too many actions; expected max {}, got: {}\n",
+                        crate::xkb::utils::CStrDisplay(siText(si, info)),
                         65535 as i32,
                         num_actions,
                     );
@@ -1473,8 +1468,7 @@ unsafe fn SetInterpField(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"The \"locking\" field in symbol interpretation is unsupported; Ignored\n\0"
-                    .as_ptr() as *const i8,
+                "The \"locking\" field in symbol interpretation is unsupported; Ignored\n",
             );
         } else if istreq(field, b"usemodmap\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"usemodmapmods\0".as_ptr() as *const i8) as i32 != 0
@@ -1629,8 +1623,7 @@ unsafe fn SetLedMapField(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n\0"
-                    .as_ptr() as *const i8,
+                "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n",
             );
         } else if istreq(field, b"whichmodstate\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"whichmodifierstate\0".as_ptr() as *const i8) as i32 != 0
@@ -1685,27 +1678,24 @@ unsafe fn SetLedMapField(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"The \"%s\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
-                    as *const i8,
-                field,
+                "The \"{}\" field in indicator statements is unsupported; Ignored\n",
+                crate::xkb::utils::CStrDisplay(field),
             );
         } else if istreq(field, b"index\0".as_ptr() as *const i8) {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"The \"index\" field in indicator statements is unsupported; Ignored\n\0".as_ptr()
-                    as *const i8,
+                "The \"index\" field in indicator statements is unsupported; Ignored\n",
             );
         } else {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Unknown field \"%s\" in map for %s indicator; Definition ignored\n\0".as_ptr()
-                    as *const i8,
-                field,
-                LEDText(info, ledi),
+                "Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
+                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_LED_FIELDS as i32 as u32
@@ -1815,10 +1805,9 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Default defined for unknown field \"%s\"; Ignored\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                field,
+                crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS as i32 as u32
@@ -1851,11 +1840,10 @@ unsafe fn HandleInterpBody(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Cannot set a global default value for \"%s\" element from within an interpret statement; Move assignment to \"%s.%s\" to the global file scope\n\0"
-                        .as_ptr() as *const i8,
-                    elem,
-                    elem,
-                    field,
+                    "Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
+                    crate::xkb::utils::CStrDisplay(elem),
+                    crate::xkb::utils::CStrDisplay(elem),
+                    crate::xkb::utils::CStrDisplay(field),
                 );
                 ok = false_0 != 0;
             } else if !SetInterpField(info, si, field, arrayNdx, (*def).value as *mut ExprDef) {
@@ -1898,8 +1886,7 @@ unsafe fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut InterpDef) ->
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Couldn't determine matching modifiers; Symbol interpretation ignored\n\0".as_ptr()
-                    as *const i8,
+                "Couldn't determine matching modifiers; Symbol interpretation ignored\n",
             );
             return false_0 != 0;
         }
@@ -1943,12 +1930,11 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Cannot set defaults for \"%s\" element in indicator map; Assignment to %s.%s ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    elem,
-                    elem,
-                    field,
+                    crate::xkb::utils::CStrDisplay(elem),
+                    crate::xkb::utils::CStrDisplay(elem),
+                    crate::xkb::utils::CStrDisplay(field),
                 );
                 ok = false_0 != 0;
             } else if !SetLedMapField(info, &raw mut ledi, field, arrayNdx, &raw mut (*var).value) {
@@ -1978,8 +1964,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         (*info).ctx,
                         XKB_LOG_LEVEL_DEBUG,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"The \"group\" statement in compat is unsupported; Ignored\n\0".as_ptr()
-                            as *const i8,
+                        "The \"group\" statement in compat is unsupported; Ignored\n",
                     );
                     ok = true_0 != 0;
                 }
@@ -1997,15 +1982,14 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"[XKB-%03d] Unsupported compatibility %s statement \"%s\"; Ignoring\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
+                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
                             b"compound\0".as_ptr() as *const i8
                         } else {
                             b"declaration\0".as_ptr() as *const i8
-                        },
-                        (*(stmt as *mut UnknownStatement)).name,
+                        }),
+                        crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
                         & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
@@ -2016,9 +2000,8 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Compat files may not include other types; Ignoring %s\n\0".as_ptr()
-                            as *const i8,
-                        stmt_type_to_string((*stmt).type_0),
+                        "Compat files may not include other types; Ignoring {}\n",
+                        crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
                     ok = false_0 != 0;
                 }
@@ -2031,8 +2014,8 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Abandoning compatibility map \"%s\"\n\0".as_ptr() as *const i8,
-                    safe_map_name(file),
+                    "Abandoning compatibility map \"{}\"\n",
+                    crate::xkb::utils::CStrDisplay(safe_map_name(file)),
                 );
                 break;
             } else {
@@ -2111,9 +2094,8 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                     (*keymap).ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Indicator name \"%s\" was not declared in the keycodes section; Adding new indicator\n\0"
-                        .as_ptr() as *const i8,
-                    LEDText(info, ledi),
+                    "Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
+                    crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
                 );
                 i = 0 as xkb_led_index_t;
                 led = &raw mut (*keymap).leds as *mut xkb_led;
@@ -2130,11 +2112,10 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                             (*keymap).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            b"Too many indicators (maximum is %u); Indicator name \"%s\" ignored\n\0"
-                                .as_ptr() as *const i8,
+                            "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
                             (::core::mem::size_of::<xkb_led_mask_t>() as usize)
                                 .wrapping_mul(8 as usize) as xkb_led_index_t,
-                            LEDText(info, ledi),
+                            crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
                         );
                         c2rust_current_block_11 = 792017965103506125;
                     } else {

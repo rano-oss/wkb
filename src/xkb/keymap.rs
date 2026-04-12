@@ -165,7 +165,6 @@ pub mod xkbcommon_h {
     pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
     #[c2rust::src_loc = "1515:9"]
     pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     pub use crate::xkb::context::xkb_context_unref;
 }
@@ -233,10 +232,8 @@ pub mod keymap_h {
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
 unsafe fn text_v1_keymap_format_ops_ptr() -> *const keymap_h::xkb_keymap_format_ops {
-    unsafe {
-        &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
-            as *const keymap_h::xkb_keymap_format_ops
-    }
+    &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
+        as *const keymap_h::xkb_keymap_format_ops
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/rmlvo.h:22"]
 pub mod rmlvo_h {
@@ -491,49 +488,48 @@ pub mod messages_codes_h {
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/features/enums.h:21"]
 pub mod enums_h {
     #[c2rust::src_loc = "98:5"]
-    pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: xkb_enumerations_values = 7;
+    pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
     #[c2rust::src_loc = "76:1"]
-    pub type xkb_enumerations_values = u32;
     #[c2rust::src_loc = "181:5"]
-    pub const XKB_COMPOSE_FEED_RESULT_VALUES: xkb_enumerations_values = 3;
+    pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
     #[c2rust::src_loc = "175:5"]
-    pub const XKB_COMPOSE_STATUS_VALUES: xkb_enumerations_values = 15;
+    pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
     #[c2rust::src_loc = "172:5"]
-    pub const XKB_COMPOSE_STATE_FLAGS_VALUES: xkb_enumerations_values = 0;
+    pub const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
     #[c2rust::src_loc = "169:5"]
-    pub const XKB_COMPOSE_FORMAT_VALUES: xkb_enumerations_values = 2;
+    pub const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
     #[c2rust::src_loc = "166:5"]
-    pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: xkb_enumerations_values = 0;
+    pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
     #[c2rust::src_loc = "162:5"]
-    pub const XKB_CONSUMED_MODE_VALUES: xkb_enumerations_values = 3;
+    pub const XKB_CONSUMED_MODE_VALUES: u32 = 3;
     #[c2rust::src_loc = "157:5"]
-    pub const XKB_STATE_MATCH_VALUES: xkb_enumerations_values = 65539;
+    pub const XKB_STATE_MATCH_VALUES: u32 = 65539;
     #[c2rust::src_loc = "152:5"]
-    pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: xkb_enumerations_values = 7;
+    pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
     #[c2rust::src_loc = "147:5"]
-    pub const XKB_KEY_DIRECTION_VALUES: xkb_enumerations_values = 7;
+    pub const XKB_KEY_DIRECTION_VALUES: u32 = 7;
     #[c2rust::src_loc = "142:5"]
-    pub const XKB_A11Y_FLAGS_VALUES: xkb_enumerations_values = 3;
+    pub const XKB_A11Y_FLAGS_VALUES: u32 = 3;
     #[c2rust::src_loc = "139:5"]
-    pub const XKB_EVENTS_FLAGS_VALUES: xkb_enumerations_values = 0;
+    pub const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
     #[c2rust::src_loc = "127:5"]
-    pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: xkb_enumerations_values = 511;
+    pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
     #[c2rust::src_loc = "115:5"]
-    pub const XKB_STATE_COMPONENT_VALUES: xkb_enumerations_values = 1023;
+    pub const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
     #[c2rust::src_loc = "109:5"]
-    pub const XKB_EVENT_TYPE_VALUES: xkb_enumerations_values = 30;
+    pub const XKB_EVENT_TYPE_VALUES: u32 = 30;
     #[c2rust::src_loc = "104:5"]
-    pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: xkb_enumerations_values = 3;
+    pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
     #[c2rust::src_loc = "94:5"]
-    pub const XKB_KEYMAP_FORMAT_VALUES: xkb_enumerations_values = 6;
+    pub const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
     #[c2rust::src_loc = "90:5"]
-    pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: xkb_enumerations_values = 1;
+    pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
     #[c2rust::src_loc = "84:5"]
-    pub const XKB_CONTEXT_FLAGS_VALUES: xkb_enumerations_values = 7;
+    pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
     #[c2rust::src_loc = "80:5"]
-    pub const XKB_KEYSYM_FLAGS_VALUES: xkb_enumerations_values = 1;
+    pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
     #[c2rust::src_loc = "77:5"]
-    pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: xkb_enumerations_values = 0;
+    pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 }
 #[c2rust::header_src = "/usr/include/stdlib.h:20"]
 pub mod stdlib_h {
@@ -572,14 +568,14 @@ pub use self::context_h::{
 };
 pub use self::darray_h::darray_size_t;
 pub use self::enums_h::{
-    xkb_enumerations_values, XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES,
-    XKB_COMPOSE_FEED_RESULT_VALUES, XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES,
-    XKB_COMPOSE_STATUS_VALUES, XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES,
-    XKB_EVENTS_FLAGS_VALUES, XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES,
-    XKB_KEYMAP_COMPILE_FLAGS_VALUES, XKB_KEYMAP_FORMAT_VALUES,
-    XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, XKB_KEYMAP_SERIALIZE_FLAGS_VALUES,
-    XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES,
-    XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
+    XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
+    XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
+    XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES,
+    XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES,
+    XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
+    XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES,
+    XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
+    XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
@@ -842,8 +838,8 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8,
+                "{}: unsupported keymap format: {}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -881,8 +877,8 @@ pub unsafe fn xkb_keymap_new_from_names2(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8,
+                "{}: unsupported keymap format: {}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -953,8 +949,8 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
+                "{}: unsupported keymap format: {}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -964,8 +960,8 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: no buffer specified\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
+                "{}: no buffer specified\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1007,8 +1003,8 @@ pub unsafe fn xkb_keymap_new_from_file(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
+                "{}: unsupported keymap format: {}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
                 format as u32,
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
@@ -1018,8 +1014,8 @@ pub unsafe fn xkb_keymap_new_from_file(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: no file specified\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
+                "{}: no file specified\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
@@ -1056,8 +1052,8 @@ pub unsafe fn xkb_keymap_get_as_string2(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unrecognized serialization flags: %#x\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8,
+                "{}: unrecognized serialization flags: {:#x}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
                 flags as u32 & !(XKB_KEYMAP_SERIALIZE_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<i8>();
@@ -1072,8 +1068,8 @@ pub unsafe fn xkb_keymap_get_as_string2(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"%s: unsupported keymap format: %d\n\0".as_ptr() as *const i8,
-                b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8,
+                "{}: unsupported keymap format: {}\n",
+                crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
                 format as u32,
             );
             return ::core::ptr::null_mut::<i8>();
@@ -1416,7 +1412,7 @@ pub unsafe fn xkb_keymap_key_iterator_new(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"unrecognized keymap iterator flags: %#x\n\0".as_ptr() as *const i8,
+                "unrecognized keymap iterator flags: {:#x}\n",
                 flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32),
             );
             return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();
@@ -1430,7 +1426,7 @@ pub unsafe fn xkb_keymap_key_iterator_new(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Could not allocate a keymap key iterator.\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Could not allocate a keymap key iterator.\n",
                 XKB_ERROR_ALLOCATION_ERROR as i32,
             );
             return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();

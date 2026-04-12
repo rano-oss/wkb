@@ -2,30 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    use super::types_h::{__int16_t, __int32_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -48,12 +24,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -61,11 +37,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -524,14 +499,8 @@ pub use self::rmlvo_h::{
 };
 use self::rules_h::{xkb_components_from_rmlvo_builder, xkb_components_from_rules_names};
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_intn_h::{i16, i32, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::free;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int8_t, __off64_t, __off_t, __uint16_t, __uint32_t, __uint64_t,
-    __uint8_t,
-};
 pub use self::xkbcommon_h::{
     xkb_component_names, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keymap_serialize_flags, xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t,
@@ -589,10 +558,9 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Cannot compile a %s file alone into a keymap\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
-                xkb_file_type_to_string((*file).file_type),
+                crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
             );
             return false_0 != 0;
         }
@@ -601,7 +569,7 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to compile keymap\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Failed to compile keymap\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -645,13 +613,12 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Compiling from RMLVO builder: rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const i8,
-                names.rules,
-                names.model,
-                names.layout,
-                names.variant,
-                names.options,
+                "Compiling from RMLVO builder: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+                crate::xkb::utils::CStrDisplay(names.rules),
+                crate::xkb::utils::CStrDisplay(names.model),
+                crate::xkb::utils::CStrDisplay(names.layout),
+                crate::xkb::utils::CStrDisplay(names.variant),
+                crate::xkb::utils::CStrDisplay(names.options),
             );
         }
         ok = xkb_components_from_rmlvo_builder(
@@ -680,14 +647,13 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Couldn't look up rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
-                names_0.rules,
-                names_0.model,
-                names_0.layout,
-                names_0.variant,
-                names_0.options,
+                crate::xkb::utils::CStrDisplay(names_0.rules),
+                crate::xkb::utils::CStrDisplay(names_0.model),
+                crate::xkb::utils::CStrDisplay(names_0.layout),
+                crate::xkb::utils::CStrDisplay(names_0.variant),
+                crate::xkb::utils::CStrDisplay(names_0.options),
             );
             return false_0 != 0;
         }
@@ -700,12 +666,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"Compiling from KcCGST: keycodes '%s', types '%s', compat '%s', symbols '%s'\n\0"
-                .as_ptr() as *const i8,
-            kccgst.keycodes,
-            kccgst.types,
-            kccgst.compatibility,
-            kccgst.symbols,
+            "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
+            crate::xkb::utils::CStrDisplay(kccgst.keycodes),
+            crate::xkb::utils::CStrDisplay(kccgst.types),
+            crate::xkb::utils::CStrDisplay(kccgst.compatibility),
+            crate::xkb::utils::CStrDisplay(kccgst.symbols),
         );
         file = XkbFileFromComponents((*keymap).ctx, &raw mut kccgst);
         free(kccgst.keycodes as *mut ::core::ffi::c_void);
@@ -718,8 +683,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to generate parsed XKB file from components\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -747,13 +711,12 @@ unsafe fn text_v1_keymap_new_from_names(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"Compiling from RMLVO: rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                .as_ptr() as *const i8,
-            (*rmlvo).rules,
-            (*rmlvo).model,
-            (*rmlvo).layout,
-            (*rmlvo).variant,
-            (*rmlvo).options,
+            "Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+            crate::xkb::utils::CStrDisplay((*rmlvo).rules),
+            crate::xkb::utils::CStrDisplay((*rmlvo).model),
+            crate::xkb::utils::CStrDisplay((*rmlvo).layout),
+            crate::xkb::utils::CStrDisplay((*rmlvo).variant),
+            crate::xkb::utils::CStrDisplay((*rmlvo).options),
         );
         ok = xkb_components_from_rules_names(
             (*keymap).ctx,
@@ -766,14 +729,13 @@ unsafe fn text_v1_keymap_new_from_names(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Couldn't look up rules '%s', model '%s', layout '%s', variant '%s', options '%s'\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
-                (*rmlvo).rules,
-                (*rmlvo).model,
-                (*rmlvo).layout,
-                (*rmlvo).variant,
-                (*rmlvo).options,
+                crate::xkb::utils::CStrDisplay((*rmlvo).rules),
+                crate::xkb::utils::CStrDisplay((*rmlvo).model),
+                crate::xkb::utils::CStrDisplay((*rmlvo).layout),
+                crate::xkb::utils::CStrDisplay((*rmlvo).variant),
+                crate::xkb::utils::CStrDisplay((*rmlvo).options),
             );
             return false_0 != 0;
         }
@@ -786,12 +748,11 @@ unsafe fn text_v1_keymap_new_from_names(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"Compiling from KcCGST: keycodes '%s', types '%s', compat '%s', symbols '%s'\n\0"
-                .as_ptr() as *const i8,
-            kccgst.keycodes,
-            kccgst.types,
-            kccgst.compatibility,
-            kccgst.symbols,
+            "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
+            crate::xkb::utils::CStrDisplay(kccgst.keycodes),
+            crate::xkb::utils::CStrDisplay(kccgst.types),
+            crate::xkb::utils::CStrDisplay(kccgst.compatibility),
+            crate::xkb::utils::CStrDisplay(kccgst.symbols),
         );
         file = XkbFileFromComponents((*keymap).ctx, &raw mut kccgst);
         free(kccgst.keycodes as *mut ::core::ffi::c_void);
@@ -804,8 +765,7 @@ unsafe fn text_v1_keymap_new_from_names(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to generate parsed XKB file from components\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -835,7 +795,7 @@ unsafe fn text_v1_keymap_new_from_string(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to parse input xkb string\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Failed to parse input xkb string\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -860,7 +820,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Failed to parse input xkb file\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Failed to parse input xkb file\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
             return false_0 != 0;
@@ -870,7 +830,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
         return ok;
     }
 }
-pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = unsafe {
+pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {
     xkb_keymap_format_ops {
         keymap_new_from_rmlvo: Some(
             text_v1_keymap_new_from_rmlvo

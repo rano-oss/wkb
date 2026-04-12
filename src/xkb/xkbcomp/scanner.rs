@@ -470,9 +470,9 @@ pub mod scanner_utils_h {
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected NULL character.\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    (*scanner).file_name,
+                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc.line,
                     loc.column,
                 );
@@ -484,10 +484,9 @@ pub mod scanner_utils_h {
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected non-ASCII character.\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    (*scanner).file_name,
+                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc_0.line,
                     loc_0.column,
                 );
@@ -1263,6 +1262,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
+use crate::xkb::utils::{CStrDisplay};
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,
@@ -1391,17 +1391,14 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                                 (*s).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                b"[XKB-%03d] %s:%zu:%zu: invalid Unicode escape sequence \"%.*s\" in string literal\n\0"
-                                    .as_ptr() as *const i8,
+                                "[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
                                 XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
                                     as ::core::ffi::c_int,
-                                (*s).file_name,
+                                crate::xkb::utils::CStrDisplay((*s).file_name),
                                 loc.line,
                                 loc.column,
-                                (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
-                                    as ::core::ffi::c_int,
-                                (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
-                                    as *const i8,
+                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize), (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
+                                    as *const i8),
                             );
                         }
                     } else if scanner_oct(s, &raw mut o) as ::core::ffi::c_int != 0
@@ -1414,16 +1411,13 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: invalid octal escape sequence \"%.*s\" in string literal\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
                             XKB_WARNING_INVALID_ESCAPE_SEQUENCE as ::core::ffi::c_int,
-                            (*s).file_name,
+                            crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc_0.line,
                             loc_0.column,
-                            (*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize)
-                                as ::core::ffi::c_int,
-                            (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
-                                as *const i8,
+                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize), (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
+                                as *const i8),
                         );
                     } else {
                         let mut loc_1: scanner_loc = scanner_token_location(s);
@@ -1431,14 +1425,13 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: unknown escape sequence \"\\%c\" in string literal\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
                             XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
                                 as ::core::ffi::c_int,
-                            (*s).file_name,
+                            crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc_1.line,
                             loc_1.column,
-                            scanner_peek(s) as ::core::ffi::c_int,
+                            (scanner_peek(s) as ::core::ffi::c_int as u8 as char),
                         );
                     }
                 } else {
@@ -1451,8 +1444,8 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"%s:%zu:%zu: unterminated string literal\n\0".as_ptr() as *const i8,
-                    (*s).file_name,
+                    "{}:{}:{}: unterminated string literal\n",
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_2.line,
                     loc_2.column,
                 );
@@ -1476,8 +1469,8 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"%s:%zu:%zu: unterminated key name literal\n\0".as_ptr() as *const i8,
-                    (*s).file_name,
+                    "{}:{}:{}: unterminated key name literal\n",
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_3.line,
                     loc_3.column,
                 );
@@ -1570,9 +1563,9 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: malformed number literal\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
                     XKB_ERROR_MALFORMED_NUMBER_LITERAL as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_4.line,
                     loc_4.column,
                 );
@@ -1585,8 +1578,8 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"%s:%zu:%zu: unrecognized token\n\0".as_ptr() as *const i8,
-            (*s).file_name,
+            "{}:{}:{}: unrecognized token\n",
+            crate::xkb::utils::CStrDisplay((*s).file_name),
             loc_5.line,
             loc_5.column,
         );
@@ -1609,10 +1602,9 @@ pub unsafe fn XkbParseStringInit(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                (*scanner).file_name,
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc.line,
                 loc.column,
             );
@@ -1621,10 +1613,9 @@ pub unsafe fn XkbParseStringInit(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                (*scanner).file_name,
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
                 loc_0.line,
                 loc_0.column,
             );
@@ -1692,7 +1683,7 @@ pub unsafe fn XkbParseFile(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Invalid file descriptor\n\0".as_ptr() as *const i8,
+                "Invalid file descriptor\n",
             );
             return ::core::ptr::null_mut::<XkbFile>();
         }
@@ -1714,9 +1705,9 @@ pub unsafe fn XkbParseFile(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Couldn't read XKB file %s: %s\n\0".as_ptr() as *const i8,
-                    file_name,
-                    err_msg.as_ptr(),
+                    "Couldn't read XKB file {}: {}\n",
+                    crate::xkb::utils::CStrDisplay(file_name),
+                    crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
                 );
                 std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
                 return ::core::ptr::null_mut::<XkbFile>();

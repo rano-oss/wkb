@@ -120,12 +120,10 @@ pub mod stdio_h {
 }
 pub mod utils_h {
     #[inline]
-    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
-        unsafe {
-            return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-                || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
-                || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
-        }
+    pub fn is_xdigit(mut ch: i8) -> bool {
+        return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
+            || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
+            || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
     }
 
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead

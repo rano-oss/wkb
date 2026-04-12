@@ -81,12 +81,6 @@ pub mod stdio_h {
             __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
-        pub fn vsnprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
     }
 }
 pub mod messages_codes_h {
@@ -358,25 +352,6 @@ pub mod string_h {
         pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe extern "C" fn snprintf_safe(
-        mut buf: *mut i8,
-        mut sz: usize,
-        mut format: *const i8,
-        mut c2rust_args: ...
-    ) -> bool {
-        unsafe {
-            let mut ap: ::core::ffi::VaList;
-            let mut rc: ::core::ffi::c_int = 0;
-            ap = c2rust_args.clone();
-            rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
-        }
-    }
-
-    use super::stdio_h::vsnprintf;
-}
 pub mod xkbcomp_priv_h {
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
@@ -504,12 +479,11 @@ pub use self::scanner_utils_h::{
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
+pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list};
 use self::stdlib_h::free;
 use self::string_h::{strchr, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
-pub use self::utils_h::snprintf_safe;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_h::{
     xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,
@@ -520,6 +494,7 @@ use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::CStrDisplay;
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,
@@ -616,7 +591,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %u include paths searched:\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] {} include paths searched:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                 xkb_context_num_include_paths(ctx),
             );
@@ -626,9 +601,9 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
-                    xkb_context_include_path_get(ctx, i),
+                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
                 );
                 i = i.wrapping_add(1);
             }
@@ -637,7 +612,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] There are no include paths to search\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] There are no include paths to search\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
             );
         }
@@ -646,7 +621,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %u include paths could not be added:\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] {} include paths could not be added:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
                 xkb_context_num_failed_include_paths(ctx),
             );
@@ -656,9 +631,9 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] \t%s\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
-                    xkb_context_failed_include_path_get(ctx, i_0),
+                    crate::xkb::utils::CStrDisplay(xkb_context_failed_include_path_get(ctx, i_0)),
                 );
                 i_0 = i_0.wrapping_add(1);
             }
@@ -703,9 +678,8 @@ unsafe fn expand_percent(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"%s:%zu:%zu: %%H was used in an include statement, but the HOME environment variable is not set\n\0"
-                                .as_ptr() as *const i8,
-                            s.file_name,
+                            "{}:{}:{}: %H was used in an include statement, but the HOME environment variable is not set\n",
+                            crate::xkb::utils::CStrDisplay(s.file_name),
                             loc.line,
                             loc.column,
                         );
@@ -717,10 +691,9 @@ unsafe fn expand_percent(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%H is too long\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                            s.file_name,
+                            crate::xkb::utils::CStrDisplay(s.file_name),
                             loc_0.line,
                             loc_0.column,
                         );
@@ -737,10 +710,9 @@ unsafe fn expand_percent(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%S is too long\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                            s.file_name,
+                            crate::xkb::utils::CStrDisplay(s.file_name),
                             loc_1.line,
                             loc_1.column,
                         );
@@ -758,10 +730,9 @@ unsafe fn expand_percent(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: include path after expanding %%E is too long\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                            s.file_name,
+                            crate::xkb::utils::CStrDisplay(s.file_name),
                             loc_2.line,
                             loc_2.column,
                         );
@@ -773,13 +744,12 @@ unsafe fn expand_percent(
                         s.ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] %s:%zu:%zu: unknown %% format (%c) in include statement\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                        s.file_name,
+                        crate::xkb::utils::CStrDisplay(s.file_name),
                         loc_3.line,
                         loc_3.column,
-                        scanner_peek(&raw mut s) as ::core::ffi::c_int,
+                        (scanner_peek(&raw mut s) as ::core::ffi::c_int as u8 as char),
                     );
                     return 0 as usize;
                 }
@@ -793,10 +763,9 @@ unsafe fn expand_percent(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: include path is too long; max: %zu\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                s.file_name,
+                crate::xkb::utils::CStrDisplay(s.file_name),
                 loc_4.line,
                 loc_4.column,
                 ::core::mem::size_of::<[i8; 1024]>(),
@@ -809,10 +778,9 @@ unsafe fn expand_percent(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: include path is too long: %zu > %zu\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
-                s.file_name,
+                crate::xkb::utils::CStrDisplay(s.file_name),
                 loc_5.line,
                 loc_5.column,
                 s.buf_pos,
@@ -856,13 +824,11 @@ pub unsafe fn expand_path(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Path is too long: %zu > %zu, got raw path: %.*s\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
                         XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
                         k,
                         buf_size,
-                        name_len as u32,
-                        name,
+                        crate::xkb::utils::CStrNDisplay(name_len as usize, name),
                     );
                     return -1 as ::core::ffi::c_int as ssize_t;
                 }
@@ -908,27 +874,27 @@ pub unsafe fn FindFileInXkbPath(
                 c2rust_current_block = 8515828400728868193;
                 break;
             }
-            if !snprintf_safe(
+            let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 buf,
                 buf_size,
-                b"%s/%s/%.*s\0".as_ptr() as *const i8,
-                xkb_context_include_path_get(ctx, i),
-                typeDir,
-                name_len as u32,
-                name,
-            ) {
+                format_args!(
+                    "{}/{}/{}",
+                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
+                    crate::xkb::utils::CStrDisplay(typeDir),
+                    crate::xkb::utils::CStrNDisplay(name_len as usize, name)
+                ),
+            );
+            if _trunc {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Path is too long: expected max length of %zu, got: %s/%s/%.*s\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
                     XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
                     buf_size,
-                    xkb_context_include_path_get(ctx, i),
-                    typeDir,
-                    name_len as u32,
-                    name,
+                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
+                    crate::xkb::utils::CStrDisplay(typeDir),
+                    crate::xkb::utils::CStrNDisplay(name_len as usize, name),
                 );
             } else {
                 file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
@@ -947,12 +913,10 @@ pub unsafe fn FindFileInXkbPath(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Couldn't find file \"%s/%.*s\" in include paths\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
                         XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
-                        typeDir,
-                        name_len as u32,
-                        name,
+                        crate::xkb::utils::CStrDisplay(typeDir),
+                        crate::xkb::utils::CStrNDisplay(name_len as usize, name),
                     );
                     LogIncludePaths(ctx);
                 }
@@ -970,7 +934,7 @@ pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_dept
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Exceeded include depth threshold (%u)\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Exceeded include depth threshold ({})",
                 XKB_ERROR_RECURSIVE_INCLUDE as ::core::ffi::c_int,
                 15 as ::core::ffi::c_int,
             );
@@ -1036,12 +1000,11 @@ pub unsafe fn ProcessIncludeFile(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Include file of wrong type (expected %s, got %s); Include file \"%s\" ignored\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                         XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
-                        xkb_file_type_to_string(file_type),
-                        xkb_file_type_to_string((*xkb_file).file_type),
-                        (*stmt).file,
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(file_type)),
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*xkb_file).file_type)),
+                        crate::xkb::utils::CStrDisplay((*stmt).file),
                     );
                     FreeXkbFile(xkb_file);
                     xkb_file = ::core::ptr::null_mut::<XkbFile>();
@@ -1084,21 +1047,19 @@ pub unsafe fn ProcessIncludeFile(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Couldn't process include statement for '%s(%s)'\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
-                    (*stmt).file,
-                    (*stmt).map,
+                    crate::xkb::utils::CStrDisplay((*stmt).file),
+                    crate::xkb::utils::CStrDisplay((*stmt).map),
                 );
             } else {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Couldn't process include statement for '%s'\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Couldn't process include statement for '{}'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as ::core::ffi::c_int,
-                    (*stmt).file,
+                    crate::xkb::utils::CStrDisplay((*stmt).file),
                 );
             }
         }

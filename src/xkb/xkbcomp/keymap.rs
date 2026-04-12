@@ -686,13 +686,12 @@ unsafe fn FindInterpForKey(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"Repeated interpretation ignored for keysym #%d \"%s\" at level %u/group %u on key %s.\n\0"
-                                            .as_ptr() as *const i8,
+                                        "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key {}.\n",
                                         s + 1 as ::core::ffi::c_int,
-                                        KeysymText((*keymap).ctx, *syms.offset(s as isize)),
+                                        crate::xkb::utils::CStrDisplay(KeysymText((*keymap).ctx, *syms.offset(s as isize))),
                                         level.wrapping_add(1 as xkb_level_index_t),
                                         group.wrapping_add(1 as xkb_layout_index_t),
-                                        KeyNameText((*keymap).ctx, (*key).name),
+                                        crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                     );
                                     c2rust_current_block_34 = 2209838995503123840;
                                     break 's_26;
@@ -903,9 +902,8 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                b"Could not append interpret actions to key %s: maximum is %u, got: %u. Dropping excessive actions\n\0"
-                                    .as_ptr() as *const i8,
-                                KeyNameText((*keymap).ctx, (*key).name),
+                                "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
+                                crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                 65535 as ::core::ffi::c_int,
                                 actions.size,
                             );
@@ -963,9 +961,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"[XKB-%03d] Could not allocate interpret actions\n\0"
-                                            .as_ptr()
-                                            as *const i8,
+                                        "[XKB-{:03}] Could not allocate interpret actions\n",
                                         XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
                                     );
                                     free(actions.item as *mut ::core::ffi::c_void);
@@ -1089,11 +1085,10 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"Cannot use multiple %s actions in the same level. Action #%u for key %s in group %u/level %u ignored.\n\0"
-                                            .as_ptr() as *const i8,
-                                        type_0,
+                                        "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
+                                        crate::xkb::utils::CStrDisplay(type_0),
                                         j as ::core::ffi::c_int + 1 as ::core::ffi::c_int,
-                                        KeyNameText((*keymap).ctx, (*key).name),
+                                        crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                         g.wrapping_add(1 as xkb_layout_index_t),
                                         l.wrapping_add(1 as xkb_level_index_t),
                                     );
@@ -1164,8 +1159,7 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                             (*info).keymap.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] Invalid key redirect group index\n\0".as_ptr()
-                                as *const i8,
+                            "[XKB-{:03}] Invalid key redirect group index\n",
                             XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                         );
                         return (*info).strict as u32
@@ -1217,8 +1211,7 @@ unsafe fn update_pending_action_fields(
                                     (*info).keymap.ctx,
                                     XKB_LOG_LEVEL_ERROR,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                    b"[XKB-%03d] Invalid action group index\n\0".as_ptr()
-                                        as *const i8,
+                                    "[XKB-{:03}] Invalid action group index\n",
                                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                                 );
                                 return false_0 != 0;
@@ -1280,7 +1273,7 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
                         (*info).keymap.ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Invalid LED group mask\n\0".as_ptr() as *const i8,
+                        "[XKB-{:03}] Invalid LED group mask\n",
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     );
                     return false_0 != 0;
@@ -1691,8 +1684,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
-                        b"[XKB-%03d] Geometry sections are not supported; ignoring\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
                         XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as ::core::ffi::c_int,
                     );
                 } else {
@@ -1700,8 +1692,8 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"Cannot define %s in a keymap file\n\0".as_ptr() as *const i8,
-                        xkb_file_type_to_string((*file).file_type),
+                        "Cannot define {} in a keymap file\n",
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
                     );
                 }
             } else if !files[(*file).file_type as usize].is_null() {
@@ -1709,9 +1701,8 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"More than one %s section in keymap file; All sections after the first ignored\n\0"
-                        .as_ptr() as *const i8,
-                    xkb_file_type_to_string((*file).file_type),
+                    "More than one {} section in keymap file; All sections after the first ignored\n",
+                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
                 );
             } else {
                 files[(*file).file_type as usize] = file;
@@ -1814,17 +1805,17 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Component %s not provided in keymap\n\0".as_ptr() as *const i8,
-                    xkb_file_type_to_string(type_0),
+                    "Component {} not provided in keymap\n",
+                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
                 );
             } else {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Compiling %s \"%s\"\n\0".as_ptr() as *const i8,
-                    xkb_file_type_to_string(type_0),
-                    safe_map_name(files[type_0 as usize]),
+                    "Compiling {} \"{}\"\n",
+                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
+                    crate::xkb::utils::CStrDisplay(safe_map_name(files[type_0 as usize])),
                 );
             }
             let ok: bool = compile_file_fns[type_0 as usize].expect("non-null function pointer")(
@@ -1836,8 +1827,8 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Failed to compile %s\n\0".as_ptr() as *const i8,
-                    xkb_file_type_to_string(type_0),
+                    "Failed to compile {}\n",
+                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
                 );
                 *keymap = info.keymap;
                 pending_computations_array_free(&raw mut pending_computations);

@@ -678,12 +678,11 @@ unsafe fn ReportMismatch(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Value of %s field must be of type %s; Action %s definition ignored\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
             code as u32,
-            fieldText(field),
-            type_0,
-            ActionTypeText(action),
+            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::CStrDisplay(type_0),
+            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -706,12 +705,11 @@ unsafe fn ReportFormatVersionMismatch(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Field %s for an action of type %s requires keymap text format %s,  but got: %d; Action definition ignored\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
             XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
-            fieldText(field),
-            ActionTypeText(action),
-            versions,
+            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+            crate::xkb::utils::CStrDisplay(versions),
             format as u32,
         );
         return (if strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32 != 0 {
@@ -733,11 +731,10 @@ unsafe fn ReportIllegal(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Field %s is not defined for an action of type %s; Action definition ignored\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            fieldText(field),
-            ActionTypeText(action),
+            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as i32 as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -758,11 +755,10 @@ unsafe fn ReportActionNotArray(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] The %s field in the %s action is not an array; Action definition ignored\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            fieldText(field),
-            ActionTypeText(action),
+            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -785,11 +781,10 @@ unsafe fn HandleNoAction(
             (*keymap_info).keymap.ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] The \"%s\" action takes no argument, but got \"%s\" field; Action definition ignored\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] The \"{}\" action takes no argument, but got \"{}\" field; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            ActionTypeText((*action).type_0),
-            fieldText(field),
+            crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
+            crate::xkb::utils::CStrDisplay(fieldText(field)),
         );
         return (if (*keymap_info).strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as i32 as u32 != 0
         {
@@ -1257,10 +1252,9 @@ unsafe fn HandleMovePtr(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"The %s field in the %s action must be in range %d..%d, but got %ld. Action definition ignored\n\0"
-                        .as_ptr() as *const i8,
-                    fieldText(field),
-                    ActionTypeText((*action).type_0),
+                    "The {} field in the {} action must be in range {}..{}, but got {}. Action definition ignored\n",
+                    crate::xkb::utils::CStrDisplay(fieldText(field)),
+                    crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
                     -32767 as i32 - 1 as i32,
                     32767 as i32,
                     val,
@@ -1335,8 +1329,7 @@ unsafe fn HandlePtrBtn(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Button must specify default or be in the range 1..5; Illegal button value %ld ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "Button must specify default or be in the range 1..5; Illegal button value {} ignored\n",
                     btn,
                 );
                 return (if (*keymap_info).strict as u32
@@ -1381,8 +1374,7 @@ unsafe fn HandlePtrBtn(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"The count field must have a value in the range 0..255; Illegal count %ld ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "The count field must have a value in the range 0..255; Illegal count {} ignored\n",
                     val,
                 );
                 return (if (*keymap_info).strict as u32
@@ -1485,8 +1477,7 @@ unsafe fn HandleSetPtrDflt(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"New default button value must be in the range 1..5; Illegal default button value %ld ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "New default button value must be in the range 1..5; Illegal default button value {} ignored\n",
                     btn,
                 );
                 return (if (*keymap_info).strict as u32
@@ -1503,8 +1494,7 @@ unsafe fn HandleSetPtrDflt(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Cannot set default pointer button to \"default\"; Illegal default button setting ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "Cannot set default pointer button to \"default\"; Illegal default button setting ignored\n",
                 );
                 return (if (*keymap_info).strict as u32
                     & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
@@ -1574,8 +1564,7 @@ unsafe fn HandleSwitchScreen(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Screen index must be in the range %d..%d; Illegal screen value %ld ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "Screen index must be in the range {}..{}; Illegal screen value {} ignored\n",
                     -128 as i32,
                     127 as i32,
                     val,
@@ -1697,10 +1686,9 @@ unsafe fn HandleRedirectKey(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"RedirectKey field %s cannot resolve %s to a valid key\n\0".as_ptr()
-                        as *const i8,
-                    fieldText(field),
-                    KeyNameText(ctx, (*value).key_name.key_name),
+                    "RedirectKey field {} cannot resolve {} to a valid key\n",
+                    crate::xkb::utils::CStrDisplay(fieldText(field)),
+                    crate::xkb::utils::CStrDisplay(KeyNameText(ctx, (*value).key_name.key_name)),
                 );
                 return (if (*keymap_info).strict as u32
                     & PARSER_NO_FIELD_VALUE_MISMATCH as i32 as u32
@@ -1796,8 +1784,7 @@ unsafe fn HandlePrivate(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Private action type must be in the range 0..255; Illegal type %ld ignored\n\0"
-                        .as_ptr() as *const i8,
+                    "Private action type must be in the range 0..255; Illegal type {} ignored\n",
                     type_0,
                 );
                 return (if (*keymap_info).strict as u32
@@ -1814,9 +1801,8 @@ unsafe fn HandlePrivate(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Private actions of type %s are not supported; Ignored\n\0".as_ptr()
-                        as *const i8,
-                    ActionTypeText(type_0 as xkb_action_type),
+                    "Private actions of type {} are not supported; Ignored\n",
+                    crate::xkb::utils::CStrDisplay(ActionTypeText(type_0 as xkb_action_type)),
                 );
                 (*act).type_0 = ACTION_TYPE_NONE;
             } else {
@@ -1843,8 +1829,7 @@ unsafe fn HandlePrivate(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"A private action has %zu data bytes, but got: %zu; Illegal data ignored\n\0"
-                            .as_ptr() as *const i8,
+                        "A private action has {} data bytes, but got: {}; Illegal data ignored\n",
                         ::core::mem::size_of::<[uint8_t; 7]>(),
                         len,
                     );
@@ -1876,8 +1861,7 @@ unsafe fn HandlePrivate(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Array subscript must be integer; Illegal subscript ignored\n\0".as_ptr()
-                            as *const i8,
+                        "Array subscript must be integer; Illegal subscript ignored\n",
                     );
                     return (if (*keymap_info).strict as u32
                         & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
@@ -1894,8 +1878,7 @@ unsafe fn HandlePrivate(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"The data for a private action is %zu bytes long; Attempt to use data[%ld] ignored\n\0"
-                            .as_ptr() as *const i8,
+                        "The data for a private action is {} bytes long; Attempt to use data[{}] ignored\n",
                         ::core::mem::size_of::<[uint8_t; 7]>(),
                         ndx,
                     );
@@ -1923,8 +1906,7 @@ unsafe fn HandlePrivate(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"All data for a private action must be 0..255; Illegal datum %ld ignored\n\0"
-                            .as_ptr() as *const i8,
+                        "All data for a private action must be 0..255; Illegal datum {} ignored\n",
                         datum,
                     );
                     return (if (*keymap_info).strict as u32
@@ -2202,9 +2184,9 @@ pub unsafe fn HandleActionDef(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Expected an action definition, found %s\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Expected an action definition, found {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*def).common.type_0),
+                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*def).common.type_0)),
             );
             return PARSER_FATAL_ERROR;
         }
@@ -2215,9 +2197,9 @@ pub unsafe fn HandleActionDef(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                action_name,
+                crate::xkb::utils::CStrDisplay(action_name),
             );
             handler_type = ACTION_TYPE_UNKNOWN;
             if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as i32 as u32 != 0 {
@@ -2230,9 +2212,9 @@ pub unsafe fn HandleActionDef(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Unsupported legacy action type \"%s\".\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
                 XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
-                action_name,
+                crate::xkb::utils::CStrDisplay(action_name),
             );
             (*action).type_0 = ACTION_TYPE_NONE;
         }
@@ -2272,11 +2254,10 @@ pub unsafe fn HandleActionDef(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Cannot change defaults in an action definition; Ignoring attempt to change \"%s.%s\".\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    elemRtrn,
-                    fieldRtrn,
+                    crate::xkb::utils::CStrDisplay(elemRtrn),
+                    crate::xkb::utils::CStrDisplay(fieldRtrn),
                 );
                 return PARSER_FATAL_ERROR;
             }
@@ -2286,11 +2267,10 @@ pub unsafe fn HandleActionDef(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"[XKB-%03d] Unknown field name %s for action %s discarded\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                     XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                    fieldRtrn,
-                    ActionTypeText((*action).type_0),
+                    crate::xkb::utils::CStrDisplay(fieldRtrn),
+                    crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
                 );
                 if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32 != 0
                 {
@@ -2341,9 +2321,9 @@ pub unsafe fn SetDefaultActionField(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Unknown action \"%s\"\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                elem,
+                crate::xkb::utils::CStrDisplay(elem),
             );
             return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as i32 as u32 != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -2357,9 +2337,9 @@ pub unsafe fn SetDefaultActionField(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"[XKB-%03d] Unknown action field \"%s\"\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Unknown action field \"{}\"\n",
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                field,
+                crate::xkb::utils::CStrDisplay(field),
             );
             return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32
                 != 0
@@ -2391,20 +2371,19 @@ pub unsafe fn SetDefaultActionField(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_VERBOSE as i32,
-                b"Conflicting field \"%s\" for default action \"%s\"; Using %s, ignore %s\n\0"
-                    .as_ptr() as *const i8,
-                fieldText(action_field),
-                ActionTypeText(action),
-                if replace as i32 != 0 {
+                "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
+                crate::xkb::utils::CStrDisplay(fieldText(action_field)),
+                crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+                crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
                     b"from\0".as_ptr() as *const i8
                 } else {
                     b"into\0".as_ptr() as *const i8
-                },
-                if replace as i32 != 0 {
+                }),
+                crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
                     b"into\0".as_ptr() as *const i8
                 } else {
                     b"from\0".as_ptr() as *const i8
-                },
+                }),
             );
             if replace {
                 *into = from;

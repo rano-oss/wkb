@@ -1157,23 +1157,6 @@ pub mod utils_h {
             return true;
         }
     }
-    #[inline]
-    pub unsafe extern "C" fn snprintf_safe(
-        mut buf: *mut i8,
-        mut sz: usize,
-        mut format: *const i8,
-        mut c2rust_args: ...
-    ) -> bool {
-        unsafe {
-            let mut ap: ::core::ffi::VaList;
-            let mut rc: i32 = 0;
-            ap = c2rust_args.clone();
-            rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as i32 && (rc as usize) < sz;
-        }
-    }
-
-    use super::stdio_h::vsnprintf;
     use super::unistd_h::eaccess;
     use crate::xkb::utils::cstr_cmp;
     use crate::xkb::utils::cstr_dup;
@@ -1377,7 +1360,7 @@ pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::util_list_h::{list, list_append, list_empty, list_init, list_is_last, list_remove};
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{
-    check_eaccess, is_space, istrncmp, istrneq, snprintf_safe, strdup_safe, streq, streq_null,
+    check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
 pub use self::valid_h::{
     _xmlValidCtxt, _xmlValidState, xmlFreeValidCtxt, xmlNewValidCtxt, xmlValidCtxt,
@@ -1505,18 +1488,13 @@ pub struct config_item {
 }
 
 macro_rules! rxkb_logf {
-    ($ctx:expr, $level:expr, $fmt:expr $(,)?) => {{
-        rxkb_log($ctx, $level, $fmt)
-    }};
-    ($ctx:expr, $level:expr, $fmt:expr, $($arg:expr),+ $(,)?) => {{
-        let mut _rxkb_log_buf: [i8; 2048] = [0i8; 2048];
-        crate::xkb::context_priv::snprintf(
-            _rxkb_log_buf.as_mut_ptr(),
-            2048,
-            $fmt,
-            $($arg),+
-        );
-        rxkb_log($ctx, $level, _rxkb_log_buf.as_ptr())
+    ($ctx:expr, $level:expr, $($arg:tt)*) => {{
+        let mut _rxkb_log_buf = [0u8; 2048];
+        {
+            let mut _w = crate::xkb::utils::LogBuf::new(&mut _rxkb_log_buf[..2047]);
+            let _ = core::fmt::Write::write_fmt(&mut _w, format_args!($($arg)*));
+        }
+        rxkb_log($ctx, $level, _rxkb_log_buf.as_ptr() as *const i8)
     }};
 }
 
@@ -2308,8 +2286,8 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"%s: Invalid context flags: 0x%x\n\0".as_ptr() as *const i8,
-                b"rxkb_context_new\0".as_ptr() as *const i8,
+                "{}: Invalid context flags: 0x{:x}\n",
+                crate::xkb::utils::CStrDisplay(b"rxkb_context_new\0".as_ptr() as *const i8),
                 flags as u32 & !(RXKB_CONTEXT_FLAGS as u32),
             );
             free(ctx as *mut ::core::ffi::c_void);
@@ -2324,10 +2302,11 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"[XKB-%03d] Failed to add any default include path (default system path: %s)\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] Failed to add any default include path (default system path: {})\n",
                 XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                b"/usr/share/xkeyboard-config-2\0".as_ptr() as *const i8,
+                crate::xkb::utils::CStrDisplay(
+                    b"/usr/share/xkeyboard-config-2\0".as_ptr() as *const i8
+                ),
             );
             rxkb_context_unref(ctx);
             return ::core::ptr::null_mut::<rxkb_context>();
@@ -2387,7 +2366,7 @@ pub unsafe fn rxkb_context_include_path_append(
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"include paths can only be appended to a new context\n\0".as_ptr() as *const i8,
+                "include paths can only be appended to a new context\n",
             );
         } else {
             stat_buf = stat {
@@ -2425,22 +2404,24 @@ pub unsafe fn rxkb_context_include_path_append(
                 err = EACCES;
             } else {
                 rules = [0; 4096];
-                if !snprintf_safe(
+                let (_, _trunc) = crate::xkb::utils::snprintf_args(
                     &raw mut rules as *mut i8,
                     ::core::mem::size_of::<[i8; 4096]>() as usize,
-                    b"%s/rules/%s.xml\0".as_ptr() as *const i8,
-                    path,
-                    DEFAULT_XKB_RULES.as_ptr(),
-                ) {
+                    format_args!(
+                        "{}/rules/{}.xml",
+                        crate::xkb::utils::CStrDisplay(path),
+                        crate::xkb::utils::CStrDisplay(DEFAULT_XKB_RULES.as_ptr())
+                    ),
+                );
+                if _trunc {
                     rxkb_logf!(
                         ctx,
                         RXKB_LOG_LEVEL_ERROR,
-                        b"[XKB-%03d] Path is too long: expected max length of %zu, got: %s/rules/%s.xml\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/rules/{}.xml\n",
                         XKB_ERROR_INVALID_PATH as i32,
                         ::core::mem::size_of::<[i8; 4096]>(),
-                        path,
-                        b"evdev\0".as_ptr() as *const i8,
+                        crate::xkb::utils::CStrDisplay(path),
+                        crate::xkb::utils::CStrDisplay(b"evdev\0".as_ptr() as *const i8),
                     );
                 } else {
                     tmp = cstr_dup(path);
@@ -2470,8 +2451,8 @@ pub unsafe fn rxkb_context_include_path_append(
                         rxkb_logf!(
                             ctx,
                             RXKB_LOG_LEVEL_INFO,
-                            b"Include path added: %s\n\0".as_ptr() as *const i8,
-                            tmp,
+                            "Include path added: {}\n",
+                            crate::xkb::utils::CStrDisplay(tmp),
                         );
                         return true;
                     }
@@ -2481,9 +2462,9 @@ pub unsafe fn rxkb_context_include_path_append(
         rxkb_logf!(
             ctx,
             RXKB_LOG_LEVEL_INFO,
-            b"Include path failed: \"%s\" (%s)\n\0".as_ptr() as *const i8,
-            path,
-            strerror(err),
+            "Include path failed: \"{}\" ({})\n",
+            crate::xkb::utils::CStrDisplay(path),
+            crate::xkb::utils::CStrDisplay(strerror(err)),
         );
         return false;
     }
@@ -2565,13 +2546,16 @@ unsafe fn add_direct_subdirectories(
                     {
                         continue;
                     }
-                    if !snprintf_safe(
+                    let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut path_buf as *mut i8,
                         ::core::mem::size_of::<[i8; 4096]>() as usize,
-                        b"%s/%s\0".as_ptr() as *const i8,
-                        path,
-                        name,
-                    ) {
+                        format_args!(
+                            "{}/{}",
+                            crate::xkb::utils::CStrDisplay(path),
+                            crate::xkb::utils::CStrDisplay(name)
+                        ),
+                    );
+                    if _trunc {
                         err = ENOMEM;
                         c2rust_current_block = 17009998909239196508;
                         break;
@@ -2662,9 +2646,9 @@ unsafe fn add_direct_subdirectories(
         rxkb_logf!(
             ctx,
             RXKB_LOG_LEVEL_DEBUG,
-            b"Include extensions path failed: %s (%s)\n\0".as_ptr() as *const i8,
-            path,
-            strerror(err),
+            "Include extensions path failed: {} ({})\n",
+            crate::xkb::utils::CStrDisplay(path),
+            crate::xkb::utils::CStrDisplay(strerror(err)),
         );
         if !dir.is_null() {
             closedir(dir);
@@ -2680,40 +2664,40 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"include paths can only be appended to a new context\n\0".as_ptr() as *const i8,
+                "include paths can only be appended to a new context\n",
             );
             return false;
         }
         let home: *const i8 = rxkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
         let xdg: *const i8 = rxkb_context_getenv(ctx, b"XDG_CONFIG_HOME\0".as_ptr() as *const i8);
         if !xdg.is_null() {
-            if snprintf_safe(
+            let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
-                b"%s/xkb\0".as_ptr() as *const i8,
-                xdg,
-            ) {
+                format_args!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)),
+            );
+            if !_trunc {
                 ret = ret as i32
                     | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         } else if !home.is_null() {
-            if snprintf_safe(
+            let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
-                b"%s/.config/xkb\0".as_ptr() as *const i8,
-                home,
-            ) {
+                format_args!("{}/.config/xkb", crate::xkb::utils::CStrDisplay(home)),
+            );
+            if !_trunc {
                 ret = ret as i32
                     | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         }
         if !home.is_null() {
-            if snprintf_safe(
+            let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
-                b"%s/.xkb\0".as_ptr() as *const i8,
-                home,
-            ) {
+                format_args!("{}/.xkb", crate::xkb::utils::CStrDisplay(home)),
+            );
+            if !_trunc {
                 ret = ret as i32
                     | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
@@ -2796,15 +2780,14 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_WARNING,
-                b"Root include path failed; fallback to \"%s\". The setup is probably misconfigured. Please ensure that \"%s\" is available in the environment.\n\0"
-                    .as_ptr() as *const i8,
-                b"/usr/share/X11/xkb\0".as_ptr() as *const i8,
-                if root.is_null() {
+                "Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
+                crate::xkb::utils::CStrDisplay(b"/usr/share/X11/xkb\0".as_ptr() as *const i8),
+                crate::xkb::utils::CStrDisplay(if root.is_null() {
                     b"/usr/share/xkeyboard-config-2\0".as_ptr()
                         as *const i8
                 } else {
                     root
-                },
+                }),
             );
             ret = ret as i32
                 | rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr()) as i32;
@@ -2826,7 +2809,7 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
-                b"parse must only be called on a new context\n\0".as_ptr() as *const i8,
+                "parse must only be called on a new context\n",
             );
             return false;
         }
@@ -2840,41 +2823,46 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
                 && path >= (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8
             {
                 let mut rules: [i8; 4096] = [0; 4096];
-                if snprintf_safe(
+                let (_, _trunc) = crate::xkb::utils::snprintf_args(
                     &raw mut rules as *mut i8,
                     ::core::mem::size_of::<[i8; 4096]>() as usize,
-                    b"%s/rules/%s.xml\0".as_ptr() as *const i8,
-                    *path,
-                    ruleset,
-                ) {
+                    format_args!(
+                        "{}/rules/{}.xml",
+                        crate::xkb::utils::CStrDisplay(*path),
+                        crate::xkb::utils::CStrDisplay(ruleset)
+                    ),
+                );
+                if !_trunc {
                     rxkb_logf!(
                         ctx,
                         RXKB_LOG_LEVEL_DEBUG,
-                        b"Parsing %s\n\0".as_ptr() as *const i8,
-                        &raw mut rules as *mut i8,
+                        "Parsing {}\n",
+                        crate::xkb::utils::CStrDisplay(&raw mut rules as *mut i8),
                     );
                     if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_STANDARD) {
                         success = true;
                     }
                 }
-                if (*ctx).load_extra_rules_files as i32 != 0
-                    && snprintf_safe(
+                if (*ctx).load_extra_rules_files as i32 != 0 {
+                    let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut rules as *mut i8,
                         ::core::mem::size_of::<[i8; 4096]>() as usize,
-                        b"%s/rules/%s.extras.xml\0".as_ptr() as *const i8,
-                        *path,
-                        ruleset,
-                    ) as i32
-                        != 0
-                {
-                    rxkb_logf!(
-                        ctx,
-                        RXKB_LOG_LEVEL_DEBUG,
-                        b"Parsing %s\n\0".as_ptr() as *const i8,
-                        &raw mut rules as *mut i8,
+                        format_args!(
+                            "{}/rules/{}.extras.xml",
+                            crate::xkb::utils::CStrDisplay(*path),
+                            crate::xkb::utils::CStrDisplay(ruleset)
+                        ),
                     );
-                    if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_EXOTIC) {
-                        success = true;
+                    if !_trunc {
+                        rxkb_logf!(
+                            ctx,
+                            RXKB_LOG_LEVEL_DEBUG,
+                            "Parsing {}\n",
+                            crate::xkb::utils::CStrDisplay(&raw mut rules as *mut i8),
+                        );
+                        if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_EXOTIC) {
+                            success = true;
+                        }
                     }
                 }
                 path = path.offset(-1);
@@ -2961,10 +2949,9 @@ unsafe fn parse_config_item(
                         rxkb_logf!(
                             ctx,
                             RXKB_LOG_LEVEL_ERROR,
-                            b"xml:%u: invalid popularity attribute: expected 'standard' or 'exotic', got: '%s'\n\0"
-                                .as_ptr() as *const i8,
+                            "xml:{}: invalid popularity attribute: expected 'standard' or 'exotic', got: '{}'\n",
                             (*ci).line as i32,
-                            raw_popularity,
+                            crate::xkb::utils::CStrDisplay(raw_popularity as *const i8),
                         );
                     }
                 }
@@ -3003,7 +2990,7 @@ unsafe fn parse_config_item(
                     rxkb_logf!(
                         ctx,
                         RXKB_LOG_LEVEL_ERROR,
-                        b"xml:%u: missing required element 'name'\n\0".as_ptr() as *const i8,
+                        "xml:{}: missing required element 'name'\n",
                         (*ci).line as i32,
                     );
                     config_item_free(config);
@@ -3489,8 +3476,7 @@ unsafe extern "C" fn xml_error_func(
             rxkb_logf!(
                 ctx as *mut rxkb_context,
                 RXKB_LOG_LEVEL_ERROR,
-                b"[XKB-%03d] +++ out of cheese error. redo from start +++\n\0".as_ptr()
-                    as *const i8,
+                "[XKB-{:03}] +++ out of cheese error. redo from start +++\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
             );
             slen = 0 as i32;
@@ -3507,8 +3493,8 @@ unsafe extern "C" fn xml_error_func(
             rxkb_logf!(
                 ctx as *mut rxkb_context,
                 RXKB_LOG_LEVEL_ERROR,
-                b"%s\0".as_ptr() as *const i8,
-                &raw mut buf as *mut i8,
+                "{}",
+                crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
             );
             std::ptr::write_bytes::<[i8; 4096]>(&raw mut buf as *mut i8 as *mut [i8; 4096], 0u8, 1);
             slen = 0 as i32;
@@ -3540,11 +3526,7 @@ unsafe fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
                 XML_CHAR_ENCODING_UTF8,
             ) as *mut xmlDtd;
             if dtd.is_null() {
-                rxkb_logf!(
-                    ctx,
-                    RXKB_LOG_LEVEL_ERROR,
-                    b"Failed to load DTD\n\0".as_ptr() as *const i8,
-                );
+                rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n",);
             } else {
                 dtdvalid = xmlNewValidCtxt() as *mut xmlValidCtxt;
                 success = xmlValidateDtd(
@@ -3592,8 +3574,8 @@ unsafe fn parse(
                 rxkb_logf!(
                     ctx,
                     RXKB_LOG_LEVEL_ERROR,
-                    b"XML error: failed to validate document at %s\n\0".as_ptr() as *const i8,
-                    path,
+                    "XML error: failed to validate document at {}\n",
+                    crate::xkb::utils::CStrDisplay(path),
                 );
             } else {
                 root = xmlDocGetRootElement(doc) as *mut xmlNode;

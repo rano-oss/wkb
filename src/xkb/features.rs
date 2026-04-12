@@ -49,28 +49,27 @@ pub mod xkbcommon_features_h {
     pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
 }
 pub mod enums_h {
-    pub type xkb_enumerations_values = u32;
-    pub const XKB_COMPOSE_FEED_RESULT_VALUES: xkb_enumerations_values = 3;
-    pub const XKB_COMPOSE_STATUS_VALUES: xkb_enumerations_values = 15;
-    pub const XKB_COMPOSE_STATE_FLAGS_VALUES: xkb_enumerations_values = 0;
-    pub const XKB_COMPOSE_FORMAT_VALUES: xkb_enumerations_values = 2;
-    pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: xkb_enumerations_values = 0;
-    pub const XKB_CONSUMED_MODE_VALUES: xkb_enumerations_values = 3;
-    pub const XKB_STATE_MATCH_VALUES: xkb_enumerations_values = 65539;
-    pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: xkb_enumerations_values = 7;
-    pub const XKB_KEY_DIRECTION_VALUES: xkb_enumerations_values = 7;
-    pub const XKB_A11Y_FLAGS_VALUES: xkb_enumerations_values = 3;
-    pub const XKB_EVENTS_FLAGS_VALUES: xkb_enumerations_values = 0;
-    pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: xkb_enumerations_values = 511;
-    pub const XKB_STATE_COMPONENT_VALUES: xkb_enumerations_values = 1023;
-    pub const XKB_EVENT_TYPE_VALUES: xkb_enumerations_values = 30;
-    pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: xkb_enumerations_values = 3;
-    pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: xkb_enumerations_values = 7;
-    pub const XKB_KEYMAP_FORMAT_VALUES: xkb_enumerations_values = 6;
-    pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: xkb_enumerations_values = 1;
-    pub const XKB_CONTEXT_FLAGS_VALUES: xkb_enumerations_values = 7;
-    pub const XKB_KEYSYM_FLAGS_VALUES: xkb_enumerations_values = 1;
-    pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: xkb_enumerations_values = 0;
+    pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
+    pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
+    pub const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
+    pub const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
+    pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
+    pub const XKB_CONSUMED_MODE_VALUES: u32 = 3;
+    pub const XKB_STATE_MATCH_VALUES: u32 = 65539;
+    pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
+    pub const XKB_KEY_DIRECTION_VALUES: u32 = 7;
+    pub const XKB_A11Y_FLAGS_VALUES: u32 = 3;
+    pub const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
+    pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
+    pub const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
+    pub const XKB_EVENT_TYPE_VALUES: u32 = 30;
+    pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
+    pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
+    pub const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
+    pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
+    pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
+    pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
+    pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
     pub static mut xkb_log_level_values: [u32; 5] = [
         XKB_LOG_LEVEL_CRITICAL as i32 as u32,
         XKB_LOG_LEVEL_ERROR as i32 as u32,
@@ -147,15 +146,14 @@ pub mod stdint_h {
 }
 
 pub use self::enums_h::{
-    xkb_enumerations_values, xkb_error_code_values, xkb_feature_values, xkb_log_level_values,
-    XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
-    XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
-    XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES,
-    XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES,
-    XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
-    XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES,
-    XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
-    XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
+    xkb_error_code_values, xkb_feature_values, xkb_log_level_values, XKB_A11Y_FLAGS_VALUES,
+    XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES, XKB_COMPOSE_FORMAT_VALUES,
+    XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES, XKB_CONSUMED_MODE_VALUES,
+    XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES, XKB_EVENT_TYPE_VALUES,
+    XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES, XKB_KEYMAP_FORMAT_VALUES,
+    XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, XKB_KEYMAP_SERIALIZE_FLAGS_VALUES,
+    XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES,
+    XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
 pub use self::stdint_h::UINT32_WIDTH;
 pub use self::stdint_uintn_h::u32;
@@ -183,13 +181,8 @@ pub use self::xkbcommon_h::{
     xkb_log_level, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-unsafe fn is_supported_enum_value_mask(
-    mut values: xkb_enumerations_values,
-    mut value: u32,
-) -> bool {
-    unsafe {
-        return value < UINT32_WIDTH as u32 && values as u32 & (1 as u32) << value != 0;
-    }
+fn is_supported_enum_value_mask(mut values: u32, mut value: u32) -> bool {
+    return value < UINT32_WIDTH as u32 && values as u32 & (1 as u32) << value != 0;
 }
 unsafe fn is_supported_enum_value_array(
     mut values: *const u32,
@@ -208,11 +201,7 @@ unsafe fn is_supported_enum_value_array(
     }
 }
 #[inline]
-unsafe fn is_supported_flag_value(
-    mut values: xkb_enumerations_values,
-    mut accept_zero: bool,
-    mut value: u32,
-) -> bool {
+unsafe fn is_supported_flag_value(mut values: u32, mut accept_zero: bool, mut value: u32) -> bool {
     return (accept_zero as i32 != 0 || value != 0) && values as u32 & value == value;
 }
 pub unsafe fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {

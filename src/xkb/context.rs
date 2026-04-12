@@ -249,10 +249,8 @@ pub mod utils_h {
         unsafe { cstr_dup(s) }
     }
     #[inline]
-    pub unsafe fn is_space(mut ch: i8) -> bool {
-        unsafe {
-            return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
-        }
+    pub fn is_space(mut ch: i8) -> bool {
+        return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
     }
     #[inline]
     pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
@@ -261,21 +259,6 @@ pub mod utils_h {
                 return false_0 != 0;
             }
             return true_0 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe extern "C" fn snprintf_safe(
-        mut buf: *mut i8,
-        mut sz: usize,
-        mut format: *const i8,
-        mut c2rust_args: ...
-    ) -> bool {
-        unsafe {
-            let mut ap: ::core::ffi::VaList;
-            let mut rc: i32 = 0;
-            ap = c2rust_args.clone();
-            rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as i32 && (rc as usize) < sz;
         }
     }
     #[inline]
@@ -302,7 +285,7 @@ pub mod utils_h {
     }
 
     use super::stdbool_h::{false_0, true_0};
-    use super::stdio_h::{vasprintf, vsnprintf};
+    use super::stdio_h::vasprintf;
     use super::unistd_h::eaccess;
     use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrncmp;
@@ -387,8 +370,7 @@ pub use self::types_h::{
 };
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::utils_h::{
-    asprintf_safe, check_eaccess, is_space, istrncmp, istrneq, snprintf_safe, strdup_safe,
-    vasprintf_safe,
+    asprintf_safe, check_eaccess, is_space, istrncmp, istrneq, strdup_safe, vasprintf_safe,
 };
 pub use self::xkbcommon_h::{
     xkb_context_flags, xkb_log_level, xkb_rule_names, XKB_CONTEXT_NO_DEFAULT_INCLUDES,
@@ -487,8 +469,8 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
                     ctx,
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Include path added: %s\n\0".as_ptr() as *const i8,
-                    tmp,
+                    "Include path added: {}\n",
+                    crate::xkb::utils::CStrDisplay(tmp),
                 );
                 return 1 as i32;
             }
@@ -519,9 +501,9 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             ctx,
             XKB_LOG_LEVEL_INFO,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"Include path failed: \"%s\" (%s)\n\0".as_ptr() as *const i8,
-            path,
-            strerror(err),
+            "Include path failed: \"{}\" ({})\n",
+            crate::xkb::utils::CStrDisplay(path),
+            crate::xkb::utils::CStrDisplay(strerror(err)),
         );
         return 0 as i32;
     }
@@ -658,13 +640,16 @@ unsafe fn add_direct_subdirectories(
                     {
                         continue;
                     }
-                    if !snprintf_safe(
+                    let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut path_buf as *mut i8,
                         ::core::mem::size_of::<[i8; 4096]>() as usize,
-                        b"%s/%s\0".as_ptr() as *const i8,
-                        path,
-                        name,
-                    ) {
+                        format_args!(
+                            "{}/{}",
+                            crate::xkb::utils::CStrDisplay(path),
+                            crate::xkb::utils::CStrDisplay(name)
+                        ),
+                    );
+                    if _trunc {
                         err = ENOMEM;
                         c2rust_current_block = 9563249396912231495;
                         break;
@@ -755,9 +740,9 @@ unsafe fn add_direct_subdirectories(
             ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"Include extensions path failed: %s (%s)\n\0".as_ptr() as *const i8,
-            path,
-            strerror(err),
+            "Include extensions path failed: {} ({})\n",
+            crate::xkb::utils::CStrDisplay(path),
+            crate::xkb::utils::CStrDisplay(strerror(err)),
         );
         if !dir.is_null() {
             closedir(dir);
@@ -851,10 +836,9 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Root include path failed; fallback to \"%s\". The setup is probably misconfigured. Please ensure that \"%s\" is available in the environment.\n\0"
-                    .as_ptr() as *const i8,
-                b"/usr/share/X11/xkb\0".as_ptr() as *const i8,
-                root,
+                "Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
+                crate::xkb::utils::CStrDisplay(b"/usr/share/X11/xkb\0".as_ptr() as *const i8),
+                crate::xkb::utils::CStrDisplay(root),
             );
             ret |= context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr());
         }
@@ -941,18 +925,16 @@ pub unsafe fn xkb_context_unref(mut ctx: *mut xkb_context) {
     }
 }
 unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
-    unsafe {
-        match level as u32 {
-            50 => return b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
-            40 => return b"xkbcommon: INFO: \0".as_ptr() as *const i8,
-            30 => return b"xkbcommon: WARNING: \0".as_ptr() as *const i8,
-            20 => return b"xkbcommon: ERROR: \0".as_ptr() as *const i8,
-            10 => {
-                return b"xkbcommon: CRITICAL: \0".as_ptr() as *const i8;
-            }
-            _ => return ::core::ptr::null::<i8>(),
-        };
-    }
+    match level as u32 {
+        50 => return b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
+        40 => return b"xkbcommon: INFO: \0".as_ptr() as *const i8,
+        30 => return b"xkbcommon: WARNING: \0".as_ptr() as *const i8,
+        20 => return b"xkbcommon: ERROR: \0".as_ptr() as *const i8,
+        10 => {
+            return b"xkbcommon: CRITICAL: \0".as_ptr() as *const i8;
+        }
+        _ => return ::core::ptr::null::<i8>(),
+    };
 }
 unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mut msg: *const i8) {
     unsafe {
@@ -1054,7 +1036,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Invalid context flags: 0x%x\n\0".as_ptr() as *const i8,
+                "Invalid context flags: 0x{:x}\n",
                 flags as u32 & !(XKB_CONTEXT_FLAGS as u32),
             );
             free(ctx as *mut ::core::ffi::c_void);

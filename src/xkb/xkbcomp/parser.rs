@@ -734,12 +734,12 @@ unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
             (*(*param).scanner).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] %s:%zu:%zu: %s\n\0".as_ptr() as *const i8,
+            "[XKB-{:03}] {}:{}:{}: {}\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
-            (*(*param).scanner).file_name,
+            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
             loc.line,
             loc.column,
-            msg,
+            crate::xkb::utils::CStrDisplay(msg),
         );
     }
 }
@@ -811,13 +811,12 @@ unsafe fn resolve_keysym(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%s\".\n\0".as_ptr()
-                                as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{}\".\n",
                             XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
-                            (*(*param).scanner).file_name,
+                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                             loc.line,
                             loc.column,
-                            &raw mut buf as *mut i8,
+                            crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
                         );
                     } else {
                         let mut loc_0: scanner_loc = scanner_token_location((*param).scanner);
@@ -825,14 +824,13 @@ unsafe fn resolve_keysym(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%s\"; please use \"%s\" instead.\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
                             XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
-                            (*(*param).scanner).file_name,
+                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                             loc_0.line,
                             loc_0.column,
-                            &raw mut buf as *mut i8,
-                            ref_name,
+                            crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
+                            crate::xkb::utils::CStrDisplay(ref_name),
                         );
                     }
                 }
@@ -4118,11 +4116,10 @@ pub unsafe fn parse(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
-                b"[XKB-%03d] No map in include statement, but \"%s\" contains several; Using first defined map, \"%s\"\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
                 XKB_WARNING_MISSING_DEFAULT_SECTION as ::core::ffi::c_int,
-                (*scanner).file_name,
-                safe_map_name(first),
+                crate::xkb::utils::CStrDisplay((*scanner).file_name),
+                crate::xkb::utils::CStrDisplay(safe_map_name(first)),
             );
         }
         return first;
@@ -6615,9 +6612,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 (*(*param).scanner).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                b"%s:%zu:%zu: ignored unsupported legacy merge mode \"alternate\"\n\0"
-                                    .as_ptr() as *const i8,
-                                (*(*param).scanner).file_name,
+                                "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
+                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                 loc.line,
                                 loc.column,
                             );
@@ -7047,15 +7043,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                    b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%.*s\"\n\0"
-                                        .as_ptr() as *const i8,
+                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
                                     XKB_WARNING_UNRECOGNIZED_KEYSYM as ::core::ffi::c_int,
-                                    (*(*param).scanner).file_name,
+                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                     loc_0.line,
                                     loc_0.column,
-                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.len
-                                        as u32,
-                                    (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.start,
+                                    crate::xkb::utils::CStrNDisplay((*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.len
+                                        as usize, (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).sval.start),
                                 );
                                 yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
                             }
@@ -7082,10 +7076,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                    b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"-%#06lx\" (%ld)\n\0"
-                                        .as_ptr() as *const i8,
+                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
                                     XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
-                                    (*(*param).scanner).file_name,
+                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                     loc_1.line,
                                     loc_1.column,
                                     -(*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
@@ -7117,10 +7110,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                                    b"[XKB-%03d] %s:%zu:%zu: deprecated keysym \"%#06x\".\n\0"
-                                                        .as_ptr() as *const i8,
+                                                    "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{:#06x}\".\n",
                                                     XKB_WARNING_DEPRECATED_KEYSYM as ::core::ffi::c_int,
-                                                    (*(*param).scanner).file_name,
+                                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                                     loc_2.line,
                                                     loc_2.column,
                                                     yyval.keysym,
@@ -7132,14 +7124,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                                    b"[XKB-%03d] %s:%zu:%zu: deprecated keysym name \"%#06x\"; please use \"%s\" instead.\n\0"
-                                                        .as_ptr() as *const i8,
+                                                    "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
                                                     XKB_WARNING_DEPRECATED_KEYSYM_NAME as ::core::ffi::c_int,
-                                                    (*(*param).scanner).file_name,
+                                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                                     loc_3.line,
                                                     loc_3.column,
                                                     yyval.keysym,
-                                                    ref_name,
+                                                    crate::xkb::utils::CStrDisplay(ref_name),
                                                 );
                                             }
                                         }
@@ -7151,10 +7142,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                         (*(*param).scanner).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"[XKB-%03d] %s:%zu:%zu: unrecognized keysym \"%#06lx\" (%ld)\n\0"
-                                            .as_ptr() as *const i8,
+                                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
                                         XKB_ERROR_INVALID_NUMERIC_KEYSYM as ::core::ffi::c_int,
-                                        (*(*param).scanner).file_name,
+                                        crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                         loc_4.line,
                                         loc_4.column,
                                         (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,
@@ -7168,10 +7158,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_COMPREHENSIVE as ::core::ffi::c_int,
-                                    b"[XKB-%03d] %s:%zu:%zu: numeric keysym \"%#06lx\" (%ld)\n\0"
-                                        .as_ptr() as *const i8,
+                                    "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
                                     XKB_WARNING_NUMERIC_KEYSYM as ::core::ffi::c_int,
-                                    (*(*param).scanner).file_name,
+                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
                                     loc_5.line,
                                     loc_5.column,
                                     (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).num,

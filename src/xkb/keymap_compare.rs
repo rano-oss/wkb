@@ -98,9 +98,7 @@ pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
-pub mod string_h {
-    
-}
+pub mod string_h {}
 pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
@@ -164,7 +162,6 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_LOCKED,
 };
 pub use crate::xkb::keymap_priv::action_equal;
-use crate::xkb::utils::cstr_cmp;
 unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
@@ -190,10 +187,10 @@ unsafe fn keymap_compare_mods(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Modifier #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                    "Modifier #{} names do not match: \"{}\" != \"{}\"\n",
                     mod_0,
-                    name1,
-                    name2,
+                    crate::xkb::utils::CStrDisplay(name1),
+                    crate::xkb::utils::CStrDisplay(name2),
                 );
                 identical = false;
             }
@@ -202,7 +199,7 @@ unsafe fn keymap_compare_mods(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Modifier #%u types do not match: %d != %d\n\0".as_ptr() as *const i8,
+                    "Modifier #{} types do not match: {} != {}\n",
                     mod_0,
                     (*mod1).type_0 as u32,
                     (*mod2).type_0 as u32,
@@ -214,7 +211,7 @@ unsafe fn keymap_compare_mods(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Modifier #%u mappings do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                    "Modifier #{} mappings do not match: 0x{:x} != 0x{:x}\n",
                     mod_0,
                     (*mod1).mapping,
                     (*mod2).mapping,
@@ -228,7 +225,7 @@ unsafe fn keymap_compare_mods(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Modifiers counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Modifiers counts do not match: {} != {}\n",
                 (*keymap1).mods.num_mods,
                 (*keymap2).mods.num_mods,
             );
@@ -249,7 +246,7 @@ unsafe fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Keycodes counts do not match: {} != {}\n",
                 (*keymap1).num_keys,
                 (*keymap2).num_keys,
             );
@@ -260,7 +257,7 @@ unsafe fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Min keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Min keycodes do not match: {} != {}\n",
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
@@ -271,7 +268,7 @@ unsafe fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Low keycodes counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Low keycodes counts do not match: {} != {}\n",
                 (*keymap1).num_keys_low,
                 (*keymap2).num_keys_low,
             );
@@ -282,7 +279,7 @@ unsafe fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Max keycodes do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Max keycodes do not match: {} != {}\n",
                 (*keymap1).min_key_code,
                 (*keymap2).min_key_code,
             );
@@ -302,7 +299,7 @@ unsafe fn keymap_compare_keycodes(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
+                    "Key #{} keycodes do not match: {:x} != {:x}\n",
                     k,
                     (*key1).keycode,
                     (*key2).keycode,
@@ -317,10 +314,10 @@ unsafe fn keymap_compare_keycodes(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                        "Key 0x{:x} names do not match: \"{}\" != \"{}\"\n",
                         kc,
-                        name1,
-                        name2,
+                        crate::xkb::utils::CStrDisplay(name1),
+                        crate::xkb::utils::CStrDisplay(name2),
                     );
                     identical = false;
                 }
@@ -355,10 +352,10 @@ unsafe fn keymap_compare_keycodes(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Alias #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                    "Alias #{} names do not match: \"{}\" != \"{}\"\n",
                     a,
-                    alias1,
-                    alias2,
+                    crate::xkb::utils::CStrDisplay(alias1),
+                    crate::xkb::utils::CStrDisplay(alias2),
                 );
                 identical = false;
             }
@@ -369,12 +366,11 @@ unsafe fn keymap_compare_keycodes(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Alias #%u \"%s\" target do not match: \"%s\" != \"%s\"\n\0".as_ptr()
-                        as *const i8,
+                    "Alias #{} \"{}\" target do not match: \"{}\" != \"{}\"\n",
                     a,
-                    alias1,
-                    real1,
-                    real2,
+                    crate::xkb::utils::CStrDisplay(alias1),
+                    crate::xkb::utils::CStrDisplay(real1),
+                    crate::xkb::utils::CStrDisplay(real2),
                 );
                 identical = false;
             }
@@ -387,7 +383,7 @@ unsafe fn keymap_compare_keycodes(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Aliases count do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Aliases count do not match: {} != {}\n",
                 (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
                 (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases,
             );
@@ -421,10 +417,10 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                    "LED #{} names do not match: \"{}\" != \"{}\"\n",
                     led,
-                    name1,
-                    name2,
+                    crate::xkb::utils::CStrDisplay(name1),
+                    crate::xkb::utils::CStrDisplay(name2),
                 );
                 identical = false;
             }
@@ -433,10 +429,9 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u \"%s\" `which_groups` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const i8,
+                    "LED #{} \"{}\" `which_groups` do not match: 0x{:x} != 0x{:x}\n",
                     led,
-                    name1,
+                    crate::xkb::utils::CStrDisplay(name1),
                     (*led1).which_groups() as i32,
                     (*led2).which_groups() as i32,
                 );
@@ -447,9 +442,9 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u \"%s\" `groups` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                    "LED #{} \"{}\" `groups` do not match: 0x{:x} != 0x{:x}\n",
                     led,
-                    name1,
+                    crate::xkb::utils::CStrDisplay(name1),
                     (*led1).groups,
                     (*led2).groups,
                 );
@@ -460,10 +455,9 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u \"%s\" `which_mods` do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const i8,
+                    "LED #{} \"{}\" `which_mods` do not match: 0x{:x} != 0x{:x}\n",
                     led,
-                    name1,
+                    crate::xkb::utils::CStrDisplay(name1),
                     (*led1).which_mods as u32,
                     (*led2).which_mods as u32,
                 );
@@ -474,9 +468,9 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u \"%s\" `mods` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                    "LED #{} \"{}\" `mods` do not match: 0x{:x} != 0x{:x}\n",
                     led,
-                    name1,
+                    crate::xkb::utils::CStrDisplay(name1),
                     (*led1).mods.mods,
                     (*led2).mods.mods,
                 );
@@ -487,9 +481,9 @@ unsafe fn keymap_compare_leds(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"LED #%u \"%s\" `ctrls` do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                    "LED #{} \"{}\" `ctrls` do not match: 0x{:x} != 0x{:x}\n",
                     led,
-                    name1,
+                    crate::xkb::utils::CStrDisplay(name1),
                     (*led1).ctrls as u32,
                     (*led2).ctrls as u32,
                 );
@@ -502,7 +496,7 @@ unsafe fn keymap_compare_leds(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"LEDs count do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "LEDs count do not match: {} != {}\n",
                 (*keymap1).num_leds,
                 (*keymap2).num_leds,
             );
@@ -527,9 +521,9 @@ unsafe fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key type names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
-                name1,
-                name2,
+                "Key type names do not match: \"{}\" != \"{}\"\n",
+                crate::xkb::utils::CStrDisplay(name1),
+                crate::xkb::utils::CStrDisplay(name2),
             );
             identical = false;
         }
@@ -538,8 +532,8 @@ unsafe fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key type \"%s\" mods do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
-                name1,
+                "Key type \"{}\" mods do not match: 0x{:x} != 0x{:x}\n",
+                crate::xkb::utils::CStrDisplay(name1),
                 (*type1).mods.mods,
                 (*type2).mods.mods,
             );
@@ -550,8 +544,8 @@ unsafe fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key type \"%s\" levels count do not match: %u != %u\n\0".as_ptr() as *const i8,
-                name1,
+                "Key type \"{}\" levels count do not match: {} != {}\n",
+                crate::xkb::utils::CStrDisplay(name1),
                 (*type1).num_levels,
                 (*type2).num_levels,
             );
@@ -562,9 +556,8 @@ unsafe fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key type \"%s\" level names count do not match: %u != %u\n\0".as_ptr()
-                    as *const i8,
-                name1,
+                "Key type \"{}\" level names count do not match: {} != {}\n",
+                crate::xkb::utils::CStrDisplay(name1),
                 (*type1).num_level_names,
                 (*type2).num_level_names,
             );
@@ -583,12 +576,11 @@ unsafe fn compare_types(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key type \"%s\" level #%u names do not match: \"%s\" != \"%s\"\n\0"
-                            .as_ptr() as *const i8,
-                        name1,
+                        "Key type \"{}\" level #{} names do not match: \"{}\" != \"{}\"\n",
+                        crate::xkb::utils::CStrDisplay(name1),
                         l,
-                        lname1,
-                        lname2,
+                        crate::xkb::utils::CStrDisplay(lname1),
+                        crate::xkb::utils::CStrDisplay(lname2),
                     );
                     identical = false;
                 }
@@ -600,8 +592,8 @@ unsafe fn compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key type \"%s\" entries count do not match: %u != %u\n\0".as_ptr() as *const i8,
-                name1,
+                "Key type \"{}\" entries count do not match: {} != {}\n",
+                crate::xkb::utils::CStrDisplay(name1),
                 (*type1).num_entries,
                 (*type2).num_entries,
             );
@@ -618,9 +610,8 @@ unsafe fn compare_types(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key type \"%s\" entry #%u levels do not match: %u != %u\n\0".as_ptr()
-                            as *const i8,
-                        name1,
+                        "Key type \"{}\" entry #{} levels do not match: {} != {}\n",
+                        crate::xkb::utils::CStrDisplay(name1),
                         e,
                         (*entry1).level,
                         (*entry2).level,
@@ -632,9 +623,8 @@ unsafe fn compare_types(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key type \"%s\" entry #%u mods do not match: 0x%x != 0x%x\n\0".as_ptr()
-                            as *const i8,
-                        name1,
+                        "Key type \"{}\" entry #{} mods do not match: 0x{:x} != 0x{:x}\n",
+                        crate::xkb::utils::CStrDisplay(name1),
                         e,
                         (*entry1).mods.mods,
                         (*entry2).mods.mods,
@@ -646,9 +636,8 @@ unsafe fn compare_types(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key type \"%s\" entry #%u preserve do not match: 0x%x != 0x%x\n\0"
-                            .as_ptr() as *const i8,
-                        name1,
+                        "Key type \"{}\" entry #{} preserve do not match: 0x{:x} != 0x{:x}\n",
+                        crate::xkb::utils::CStrDisplay(name1),
                         e,
                         (*entry1).preserve.mods,
                         (*entry2).preserve.mods,
@@ -691,7 +680,7 @@ unsafe fn keymap_compare_types(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key types counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Key types counts do not match: {} != {}\n",
                 (*keymap1).num_types,
                 (*keymap2).num_types,
             );
@@ -719,11 +708,11 @@ unsafe fn compare_groups(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Key 0x%x/group %u types do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                "Key 0x{:x}/group {} types do not match: \"{}\" != \"{}\"\n",
                 kc,
                 g,
-                name1,
-                name2,
+                crate::xkb::utils::CStrDisplay(name1),
+                crate::xkb::utils::CStrDisplay(name2),
             );
             return false;
         }
@@ -737,8 +726,7 @@ unsafe fn compare_groups(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key 0x%x/group %u/level %u keysyms count do not match: %u != %u\n\0".as_ptr()
-                        as *const i8,
+                    "Key 0x{:x}/group {}/level {} keysyms count do not match: {} != {}\n",
                     kc,
                     g,
                     l,
@@ -756,8 +744,7 @@ unsafe fn compare_groups(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            b"Key 0x%x/group %u/level %u keysyms #%u do not match: 0x%x != 0x%x\n\0"
-                                .as_ptr() as *const i8,
+                            "Key 0x{:x}/group {}/level {} keysyms #{} do not match: 0x{:x} != 0x{:x}\n",
                             kc,
                             g,
                             l,
@@ -774,8 +761,7 @@ unsafe fn compare_groups(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key 0x%x/group %u/level %u keysyms do not match: 0x%x != 0x%x\n\0".as_ptr()
-                        as *const i8,
+                    "Key 0x{:x}/group {}/level {} keysyms do not match: 0x{:x} != 0x{:x}\n",
                     kc,
                     g,
                     l,
@@ -789,8 +775,7 @@ unsafe fn compare_groups(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key 0x%x/group %u/level %u actions count do not match: %u != %u\n\0".as_ptr()
-                        as *const i8,
+                    "Key 0x{:x}/group {}/level {} actions count do not match: {} != {}\n",
                     kc,
                     g,
                     l,
@@ -809,8 +794,7 @@ unsafe fn compare_groups(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            b"Key 0x%x/group %u/level %u actions #%u do not match\n\0".as_ptr()
-                                as *const i8,
+                            "Key 0x{:x}/group {}/level {} actions #{} do not match\n",
                             kc,
                             g,
                             l,
@@ -827,7 +811,7 @@ unsafe fn compare_groups(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key 0x%x/group %u/level %u actions do not match\n\0".as_ptr() as *const i8,
+                    "Key 0x{:x}/group {}/level {} actions do not match\n",
                     kc,
                     g,
                     l,
@@ -851,7 +835,7 @@ unsafe fn keymap_compare_symbols(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Group counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Group counts do not match: {} != {}\n",
                 (*keymap1).num_groups,
                 (*keymap2).num_groups,
             );
@@ -862,7 +846,7 @@ unsafe fn keymap_compare_symbols(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                b"Group name counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                "Group name counts do not match: {} != {}\n",
                 (*keymap1).num_group_names,
                 (*keymap2).num_group_names,
             );
@@ -881,10 +865,10 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Group #%u names do not match: \"%s\" != \"%s\"\n\0".as_ptr() as *const i8,
+                        "Group #{} names do not match: \"{}\" != \"{}\"\n",
                         g,
-                        name1,
-                        name2,
+                        crate::xkb::utils::CStrDisplay(name1),
+                        crate::xkb::utils::CStrDisplay(name2),
                     );
                     identical = false;
                 }
@@ -905,7 +889,7 @@ unsafe fn keymap_compare_symbols(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    b"Key #%u keycodes do not match: %x != %x\n\0".as_ptr() as *const i8,
+                    "Key #{} keycodes do not match: {:x} != {:x}\n",
                     k,
                     (*key1).keycode,
                     (*key2).keycode,
@@ -918,7 +902,7 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x modmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                        "Key 0x{:x} modmap do not match: 0x{:x} != 0x{:x}\n",
                         kc,
                         (*key1).modmap,
                         (*key2).modmap,
@@ -930,7 +914,7 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x vmodmap do not match: 0x%x != 0x%x\n\0".as_ptr() as *const i8,
+                        "Key 0x{:x} vmodmap do not match: 0x{:x} != 0x{:x}\n",
                         kc,
                         (*key1).vmodmap,
                         (*key2).vmodmap,
@@ -942,7 +926,7 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x repeats do not match: %d != %d\n\0".as_ptr() as *const i8,
+                        "Key 0x{:x} repeats do not match: {} != {}\n",
                         kc,
                         (*key1).repeats() as i32,
                         (*key2).repeats() as i32,
@@ -958,8 +942,7 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x out-of-range do not match: %d != %d or %u != %u\n\0".as_ptr()
-                            as *const i8,
+                        "Key 0x{:x} out-of-range do not match: {} != {} or {} != {}\n",
                         kc,
                         (*key1).out_of_range_group_policy() as i32,
                         (*key2).out_of_range_group_policy() as i32,
@@ -973,7 +956,7 @@ unsafe fn keymap_compare_symbols(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        b"Key 0x%x groups counts do not match: %u != %u\n\0".as_ptr() as *const i8,
+                        "Key 0x{:x} groups counts do not match: {} != {}\n",
                         kc,
                         (*key1).num_groups() as i32,
                         (*key2).num_groups() as i32,

@@ -471,12 +471,11 @@ pub unsafe fn ReportNotArray(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] The %s %s field is not an array; Ignoring illegal assignment in %s\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            type_0,
-            field,
-            name,
+            crate::xkb::utils::CStrDisplay(type_0),
+            crate::xkb::utils::CStrDisplay(field),
+            crate::xkb::utils::CStrDisplay(name),
         );
         return false_0 != 0;
     }
@@ -496,13 +495,12 @@ pub unsafe fn ReportBadType(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] The %s %s field must be a %s; Ignoring illegal assignment in %s\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
             code as u32,
-            type_0,
-            field,
-            wanted,
-            name,
+            crate::xkb::utils::CStrDisplay(type_0),
+            crate::xkb::utils::CStrDisplay(field),
+            crate::xkb::utils::CStrDisplay(wanted),
+            crate::xkb::utils::CStrDisplay(name),
         );
         return false_0 != 0;
     }
@@ -520,12 +518,11 @@ pub unsafe fn ReportBadField(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"Unknown %s field \"%s\" in %s; Ignoring assignment to unknown field in %s\n\0"
-                .as_ptr() as *const i8,
-            type_0,
-            field,
-            name,
-            name,
+            "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
+            crate::xkb::utils::CStrDisplay(type_0),
+            crate::xkb::utils::CStrDisplay(field),
+            crate::xkb::utils::CStrDisplay(name),
+            crate::xkb::utils::CStrDisplay(name),
         );
         return false_0 != 0;
     }
@@ -543,12 +540,11 @@ pub unsafe fn ReportShouldBeArray(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
-            b"[XKB-%03d] Missing subscript for %s %s; Ignoring illegal assignment in %s\n\0"
-                .as_ptr() as *const i8,
+            "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
             XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
-            type_0,
-            field,
-            name,
+            crate::xkb::utils::CStrDisplay(type_0),
+            crate::xkb::utils::CStrDisplay(field),
+            crate::xkb::utils::CStrDisplay(name),
         );
         return false_0 != 0;
     }

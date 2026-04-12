@@ -89,12 +89,6 @@ pub mod stdio_h {
             __format: *const i8,
             ...
         ) -> ::core::ffi::c_int;
-        pub fn vsnprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> ::core::ffi::c_int;
     }
 }
 pub mod xkbcommon_errors_h {
@@ -475,9 +469,9 @@ pub mod scanner_utils_h {
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected NULL character.\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    (*scanner).file_name,
+                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc.line,
                     loc.column,
                 );
@@ -489,10 +483,9 @@ pub mod scanner_utils_h {
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected non-ASCII character.\n\0".as_ptr()
-                        as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    (*scanner).file_name,
+                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc_0.line,
                     loc_0.column,
                 );
@@ -569,24 +562,6 @@ pub mod utils_h {
                 && ch as ::core::ffi::c_int <= '~' as i32;
         }
     }
-    #[inline]
-    pub unsafe extern "C" fn snprintf_safe(
-        mut buf: *mut i8,
-        mut sz: usize,
-        mut format: *const i8,
-        mut c2rust_args: ...
-    ) -> bool {
-        unsafe {
-            let mut ap: ::core::ffi::VaList;
-            let mut rc: ::core::ffi::c_int = 0;
-            ap = c2rust_args.clone();
-            rc = vsnprintf(buf, sz, format, ap);
-            return rc >= 0 as ::core::ffi::c_int && (rc as usize) < sz;
-        }
-    }
-
-    use super::stdio_h::vsnprintf;
-    use crate::xkb::utils::cstr_len;
 
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
@@ -769,12 +744,12 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
-pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
+pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list};
 use self::stdlib_h::{calloc, free, realloc};
 use self::string_h::strchr;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
-pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe};
+pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_errors_h::{
@@ -1002,10 +977,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: illegal new line escape; must appear at end of line\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
                     loc.column,
                 );
@@ -1060,10 +1034,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: unexpected character after '$'; expected name\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_0.line,
                     loc_0.column,
                 );
@@ -1092,9 +1065,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] %s:%zu:%zu: unrecognized token\n\0".as_ptr() as *const i8,
+            "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-            (*s).file_name,
+            crate::xkb::utils::CStrDisplay((*s).file_name),
             loc_1.line,
             loc_1.column,
         );
@@ -1209,23 +1182,25 @@ unsafe fn split_comma_separated_mlvo(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] Invalid layout index %u for the RMVLO component: \"%.*s\"\n\0"
-                                .as_ptr() as *const i8,
+                            "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
                             XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                             layout,
-                            val_0.sval.len as u32,
-                            val_0.sval.start,
+                            crate::xkb::utils::CStrNDisplay(
+                                val_0.sval.len as usize,
+                                val_0.sval.start
+                            ),
                         );
                     } else if mlvo as u32 != MLVO_OPTION as ::core::ffi::c_int as u32 {
                         xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"Layout index %u is not supported for the RMLVO component: \"%.*s\"\n\0"
-                                .as_ptr() as *const i8,
+                            "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
                             layout,
-                            val_0.sval.len as u32,
-                            val_0.sval.start,
+                            crate::xkb::utils::CStrNDisplay(
+                                val_0.sval.len as usize,
+                                val_0.sval.start
+                            ),
                         );
                     } else {
                         val_0.set_layout(
@@ -1244,14 +1219,11 @@ unsafe fn split_comma_separated_mlvo(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Invalid layout index \"%.*s\" for the RMLVO component \"%.*s\"; discarding specifier.\n\0"
-                            .as_ptr() as *const i8,
+                        "[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
-                        s.offset_from(layout_start) as i64
-                            as u32,
-                        layout_start,
-                        val_0.sval.len as u32,
-                        val_0.sval.start,
+                        crate::xkb::utils::CStrNDisplay(s.offset_from(layout_start) as i64
+                            as usize, layout_start),
+                        crate::xkb::utils::CStrNDisplay(val_0.sval.len as usize, val_0.sval.start),
                     );
                     val_0.set_layout(
                         OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t,
@@ -1340,17 +1312,17 @@ unsafe fn matcher_new_from_rmlvo(
                         (*m).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"More layouts than variants: \"%s\" vs. \"%s\".\n\0".as_ptr() as *const i8,
-                        if !names.layout.is_null() {
+                        "More layouts than variants: \"{}\" vs. \"{}\".\n",
+                        crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
                             names.layout
                         } else {
                             b"(none)\0".as_ptr() as *const i8
-                        },
-                        if !names.variant.is_null() {
+                        }),
+                        crate::xkb::utils::CStrDisplay(if !names.variant.is_null() {
                             names.variant
                         } else {
                             b"(none)\0".as_ptr() as *const i8
-                        },
+                        }),
                     );
                 }
                 let mut __oldSize: darray_size_t = (*m).rmlvo.variants.size;
@@ -1383,17 +1355,17 @@ unsafe fn matcher_new_from_rmlvo(
                     (*m).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Less layouts than variants: \"%s\" vs. \"%s\".\n\0".as_ptr() as *const i8,
-                    if !names.layout.is_null() {
+                    "Less layouts than variants: \"{}\" vs. \"{}\".\n",
+                    crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
                         names.layout
                     } else {
                         b"(none)\0".as_ptr() as *const i8
-                    },
-                    if !names.variant.is_null() {
+                    }),
+                    crate::xkb::utils::CStrDisplay(if !names.variant.is_null() {
                         names.variant
                     } else {
                         b"(none)\0".as_ptr() as *const i8
-                    },
+                    }),
                 );
                 (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
                 let mut __need_0: darray_size_t = (*m).rmlvo.variants.size;
@@ -1583,17 +1555,17 @@ unsafe fn matcher_new_from_names(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"More layouts than variants: \"%s\" vs. \"%s\".\n\0".as_ptr() as *const i8,
-                    if !(*rmlvo).layout.is_null() {
+                    "More layouts than variants: \"{}\" vs. \"{}\".\n",
+                    crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
                         (*rmlvo).layout
                     } else {
                         b"(none)\0".as_ptr() as *const i8
-                    },
-                    if !(*rmlvo).variant.is_null() {
+                    }),
+                    crate::xkb::utils::CStrDisplay(if !(*rmlvo).variant.is_null() {
                         (*rmlvo).variant
                     } else {
                         b"(none)\0".as_ptr() as *const i8
-                    },
+                    }),
                 );
             }
             let mut __oldSize: darray_size_t = (*m).rmlvo.variants.size;
@@ -1627,17 +1599,17 @@ unsafe fn matcher_new_from_names(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Less layouts than variants: \"%s\" vs. \"%s\".\n\0".as_ptr() as *const i8,
-                if !(*rmlvo).layout.is_null() {
+                "Less layouts than variants: \"{}\" vs. \"{}\".\n",
+                crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
                     (*rmlvo).layout
                 } else {
                     b"(none)\0".as_ptr() as *const i8
-                },
-                if !(*rmlvo).variant.is_null() {
+                }),
+                crate::xkb::utils::CStrDisplay(if !(*rmlvo).variant.is_null() {
                     (*rmlvo).variant
                 } else {
                     b"(none)\0".as_ptr() as *const i8
-                },
+                }),
             );
             (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
             let mut __need_0: darray_size_t = (*m).rmlvo.variants.size;
@@ -1833,9 +1805,8 @@ unsafe fn matcher_include(
                 (*parent_scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"%s:%zu:%zu: maximum include depth (%u) exceeded; maybe there is an include loop?\n\0"
-                    .as_ptr() as *const i8,
-                (*parent_scanner).file_name,
+                "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
+                crate::xkb::utils::CStrDisplay((*parent_scanner).file_name),
                 loc.line,
                 loc.column,
                 MAX_INCLUDE_DEPTH,
@@ -5975,13 +5946,11 @@ unsafe fn matcher_include(
                         (*m).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Path is too long: %zu > %zu, got raw path: %.*s\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
                         XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
                         stmt_file_len,
                         ::core::mem::size_of::<[i8; 4096]>(),
-                        stmt_file_len as u32,
-                        stmt_file,
+                        crate::xkb::utils::CStrNDisplay(stmt_file_len as usize, stmt_file),
                     );
                     return;
                 }
@@ -6019,8 +5988,8 @@ unsafe fn matcher_include(
                 (*m).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"No components returned from included XKB rules \"%s\"\n\0".as_ptr() as *const i8,
-                &raw mut buf as *mut i8,
+                "No components returned from included XKB rules \"{}\"\n",
+                crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
             );
             if absolute_path {
                 break;
@@ -6042,9 +6011,8 @@ unsafe fn matcher_include(
             (*m).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"Failed to open included XKB rules \"%.*s\"\n\0".as_ptr() as *const i8,
-            stmt_file_len as u32,
-            stmt_file,
+            "Failed to open included XKB rules \"{}\"\n",
+            crate::xkb::utils::CStrNDisplay(stmt_file_len as usize, stmt_file),
         );
     }
 }
@@ -6203,14 +6171,12 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" is not a valid value here; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
-                ident.len as u32,
-                ident.start,
+                crate::xkb::utils::CStrNDisplay(ident.len as usize, ident.start),
             );
             (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
             return;
@@ -6221,14 +6187,12 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" appears twice on the same line; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
-                mlvo_sval.len as u32,
-                mlvo_sval.start,
+                crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
             );
             (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
             return;
@@ -6246,14 +6210,12 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" may only be followed by a valid group index; ignoring rule set\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_1.line,
                     loc_1.column,
-                    mlvo_sval.len as u32,
-                    mlvo_sval.start,
+                    crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
                 );
                 (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
                 return;
@@ -6268,14 +6230,12 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" cannot be followed by a group index; ignoring rule set\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_2.line,
                     loc_2.column,
-                    mlvo_sval.len as u32,
-                    mlvo_sval.start,
+                    crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
                 );
                 (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
                 return;
@@ -6299,10 +6259,9 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_3.line,
                 loc_3.column,
             );
@@ -6410,14 +6369,12 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" is not a valid value here; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
-                ident.len as u32,
-                ident.start,
+                crate::xkb::utils::CStrNDisplay(ident.len as usize, ident.start),
             );
             (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
             return;
@@ -6428,14 +6385,12 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: \"%.*s\" appears twice on the same line; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
-                kccgst_sval.len as u32,
-                kccgst_sval.start,
+                crate::xkb::utils::CStrNDisplay(kccgst_sval.len as usize, kccgst_sval.start),
             );
             (*m).mapping.c2rust_unnamed_0.active = false_0 as xkb_layout_mask_t;
             return;
@@ -6456,10 +6411,9 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
@@ -6469,10 +6423,9 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
             );
@@ -6626,10 +6579,9 @@ unsafe fn matcher_rule_set_mlvo_common(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid rule: has more values than the mapping line; ignoring rule\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
@@ -6674,10 +6626,9 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid rule: has more values than the mapping line; ignoring rule\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
@@ -6797,11 +6748,10 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] %s:%zu:%zu: Invalid %%i in %%-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n\0"
-                        .as_ptr() as *const i8,
+                    "[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
                     XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION
                         as ::core::ffi::c_int,
-                    (*s).file_name,
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
                     loc.column,
                 );
@@ -6898,10 +6848,9 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"[XKB-%03d] %s:%zu:%zu: invalid index in %%-expansion; may only index layout or variant\n\0"
-                                            .as_ptr() as *const i8,
+                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                                        (*s).file_name,
+                                        crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -7156,10 +7105,9 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"[XKB-%03d] %s:%zu:%zu: invalid index in %%-expansion; may only index layout or variant\n\0"
-                                            .as_ptr() as *const i8,
+                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                                        (*s).file_name,
+                                        crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -7414,10 +7362,9 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                        b"[XKB-%03d] %s:%zu:%zu: invalid index in %%-expansion; may only index layout or variant\n\0"
-                                            .as_ptr() as *const i8,
+                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                                        (*s).file_name,
+                                        crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -7656,10 +7603,9 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-            b"[XKB-%03d] %s:%zu:%zu: invalid %%-expansion in value; not used\n\0".as_ptr()
-                as *const i8,
+            "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-            (*s).file_name,
+            crate::xkb::utils::CStrDisplay((*s).file_name),
             loc_1.line,
             loc_1.column,
         );
@@ -7697,9 +7643,8 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     (*s).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
-                    b"%s:%zu:%zu: Using :all qualifier with indices range is not recommended.\n\0"
-                        .as_ptr() as *const i8,
-                    (*s).file_name,
+                    "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
+                    crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
                     loc.column,
                 );
@@ -8157,10 +8102,9 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: invalid rule: must have same number of values as mapping line; ignoring rule\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                (*s).file_name,
+                crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
@@ -8676,9 +8620,9 @@ unsafe fn matcher_match(
                             (*s).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                            b"[XKB-%03d] %s:%zu:%zu: unexpected token\n\0".as_ptr() as *const i8,
+                            "[XKB-{:03}] {}:{}:{}: unexpected token\n",
                             XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
-                            (*s).file_name,
+                            crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc.line,
                             loc.column,
                         );
@@ -8723,7 +8667,7 @@ unsafe fn read_rules_file(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"Invalid file descriptor\n\0".as_ptr() as *const i8,
+                "Invalid file descriptor\n",
             );
             return false_0 != 0;
         }
@@ -8738,9 +8682,9 @@ unsafe fn read_rules_file(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"Couldn't read rules file \"%s\": %s\n\0".as_ptr() as *const i8,
-                    path,
-                    err_msg.as_ptr(),
+                    "Couldn't read rules file \"{}\": {}\n",
+                    crate::xkb::utils::CStrDisplay(path),
+                    crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
                 );
                 std::mem::forget(rust_file);
                 return false_0 != 0;
@@ -8761,10 +8705,9 @@ unsafe fn read_rules_file(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                scanner.file_name,
+                crate::xkb::utils::CStrDisplay(scanner.file_name),
                 loc.line,
                 loc.column,
             );
@@ -8773,10 +8716,9 @@ unsafe fn read_rules_file(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] %s:%zu:%zu: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n\0"
-                    .as_ptr() as *const i8,
+                "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                scanner.file_name,
+                crate::xkb::utils::CStrDisplay(scanner.file_name),
                 loc_0.line,
                 loc_0.column,
             );
@@ -8805,23 +8747,24 @@ unsafe fn xkb_resolve_partial_rules(
 ) -> bool {
     unsafe {
         let mut partial_rules: [i8; 60] = [0; 60];
-        if !snprintf_safe(
+        let (_, _trunc) = crate::xkb::utils::snprintf_args(
             &raw mut partial_rules as *mut i8,
             ::core::mem::size_of::<[i8; 60]>() as usize,
-            b"%s%s\0".as_ptr() as *const i8,
-            rules,
-            suffix,
-        ) as ::core::ffi::c_int as i64
-            != 0
-        {
+            format_args!(
+                "{}{}",
+                crate::xkb::utils::CStrDisplay(rules),
+                crate::xkb::utils::CStrDisplay(suffix)
+            ),
+        );
+        if _trunc {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Cannot load XKB rules \"%s%s\"\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                rules,
-                suffix,
+                crate::xkb::utils::CStrDisplay(rules),
+                crate::xkb::utils::CStrDisplay(suffix),
             );
             return false_0 != 0;
         }
@@ -8850,9 +8793,9 @@ unsafe fn xkb_resolve_partial_rules(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    b"[XKB-%03d] Error while parsing XKB rules \"%s\"\n\0".as_ptr() as *const i8,
+                    "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                    path,
+                    crate::xkb::utils::CStrDisplay(path),
                 );
                 return false_0 != 0;
             }
@@ -8889,9 +8832,9 @@ unsafe fn xkb_resolve_rules(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                b"[XKB-%03d] Cannot load XKB rules \"%s\"\n\0".as_ptr() as *const i8,
+                "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                rules,
+                crate::xkb::utils::CStrDisplay(rules),
             );
         } else {
             ret = xkb_resolve_partial_rules(
@@ -8909,10 +8852,9 @@ unsafe fn xkb_resolve_rules(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                        b"[XKB-%03d] Error while parsing XKB rules \"%s\"\n\0".as_ptr()
-                            as *const i8,
+                        "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                         XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                        &raw mut path as *mut i8,
+                        crate::xkb::utils::CStrDisplay(&raw mut path as *mut i8),
                     );
                 } else {
                     ret = xkb_resolve_partial_rules(
@@ -8937,10 +8879,9 @@ unsafe fn xkb_resolve_rules(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                b"[XKB-%03d] No components returned from XKB rules \"%s\"\n\0"
-                                    .as_ptr() as *const i8,
+                                "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                                rules,
+                                crate::xkb::utils::CStrDisplay(rules),
                             );
                             ret = false_0 != 0;
                         } else {
@@ -9024,11 +8965,12 @@ unsafe fn xkb_resolve_rules(
                                     (*matcher).ctx,
                                     XKB_LOG_LEVEL_ERROR,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                    b"[XKB-%03d] Unrecognized RMLVO model \"%.*s\" was ignored\n\0"
-                                        .as_ptr() as *const i8,
+                                    "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                                    (*mval).sval.len as u32,
-                                    (*mval).sval.start,
+                                    crate::xkb::utils::CStrNDisplay(
+                                        (*mval).sval.len as usize,
+                                        (*mval).sval.start
+                                    ),
                                 );
                             }
                             if !(*matcher).rmlvo.layouts.item.is_null() {
@@ -9051,11 +8993,9 @@ unsafe fn xkb_resolve_rules(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                            b"[XKB-%03d] Unrecognized RMLVO layout \"%.*s\" was ignored\n\0"
-                                                .as_ptr() as *const i8,
+                                            "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                                            (*mval).sval.len as u32,
-                                            (*mval).sval.start,
+                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
                                     mval = mval.offset(1);
@@ -9081,11 +9021,9 @@ unsafe fn xkb_resolve_rules(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                            b"[XKB-%03d] Unrecognized RMLVO variant \"%.*s\" was ignored\n\0"
-                                                .as_ptr() as *const i8,
+                                            "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                                            (*mval).sval.len as u32,
-                                            (*mval).sval.start,
+                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
                                     mval = mval.offset(1);
@@ -9111,11 +9049,9 @@ unsafe fn xkb_resolve_rules(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                                            b"[XKB-%03d] Unrecognized RMLVO option \"%.*s\" was ignored\n\0"
-                                                .as_ptr() as *const i8,
+                                            "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
-                                            (*mval).sval.len as u32,
-                                            (*mval).sval.start,
+                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
                                     mval = mval.offset(1);
