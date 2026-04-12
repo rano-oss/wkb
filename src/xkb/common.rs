@@ -195,24 +195,6 @@ pub mod darray_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut i8,
     }
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        need: darray_size_t,
-        itemSize: usize,
-    ) -> darray_size_t {
-        let max_alloc = (u32::MAX as usize) / itemSize / 2;
-        assert!(
-            (need as usize) < max_alloc,
-            "need < darray_max_alloc(itemSize) / 2"
-        );
-        if alloc == 0 {
-            alloc = 4;
-        }
-        while alloc < need {
-            alloc = alloc.wrapping_mul(2);
-        }
-        alloc
-    }
 }
 pub mod xkbcommon_h {
     use super::rmlvo_h::xkb_rmlvo_builder;
@@ -450,7 +432,6 @@ pub mod stdlib_h {
 
     extern "C" {
         pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn getenv(__name: *const i8) -> *mut i8;
         pub fn unsetenv(__name: *const i8) -> i32;
@@ -562,7 +543,7 @@ pub use self::__stddef_null_h::{NULL, NULL_0};
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t, darray_string};
+pub use self::darray_h::{darray_size_t, darray_string};
 use self::errno_h::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::internal::{__builtin_va_list, __va_list_tag};
@@ -610,7 +591,7 @@ pub use self::stdio_h::{
     fclose, feof, ferror, fileno, fopen, fread, fwrite, setvbuf, stderr, stdout, va_list, _IONBF,
     BUFSIZ,
 };
-pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
+pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, unsetenv, EXIT_SUCCESS};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -669,8 +650,8 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_dup, darray_growalloc};
 use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::{cstr_dup, darray_growalloc};
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
@@ -2566,19 +2547,11 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         .wrapping_add(1 as darray_size_t);
                     let mut __need_0: darray_size_t = *c2rust_fresh0;
                     if __need_0 > (*loptions.item.offset(layout as isize)).alloc {
-                        let ref mut c2rust_fresh1 = (*loptions.item.offset(layout as isize)).alloc;
-                        *c2rust_fresh1 = darray_next_alloc(
-                            (*loptions.item.offset(layout as isize)).alloc,
+                        darray_growalloc(
+                            &mut (*loptions.item.offset(layout as isize)).item,
+                            &mut (*loptions.item.offset(layout as isize)).alloc,
                             __need_0,
-                            ::core::mem::size_of::<*mut i8>() as usize,
                         );
-                        let ref mut c2rust_fresh2 = (*loptions.item.offset(layout as isize)).item;
-                        *c2rust_fresh2 = realloc(
-                            (*loptions.item.offset(layout as isize)).item
-                                as *mut ::core::ffi::c_void,
-                            (*c2rust_fresh1 as usize)
-                                .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                        ) as *mut *mut i8;
                     }
                     let ref mut c2rust_fresh3 =
                         *(*loptions.item.offset(layout as isize)).item.offset(

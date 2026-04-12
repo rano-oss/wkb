@@ -42,19 +42,6 @@ pub mod atom_h {
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
 
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        if alloc == 0 as darray_size_t {
-            alloc = 4 as darray_size_t;
-        }
-        while alloc < need {
-            alloc = alloc.wrapping_mul(2 as darray_size_t);
-        }
-        return alloc;
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -207,7 +194,6 @@ pub mod stdlib_h {
 
     extern "C" {
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -233,7 +219,7 @@ pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
@@ -286,7 +272,7 @@ pub use self::rmlvo_h::{
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use self::stdint_uintn_h::u32;
-use self::stdlib_h::{calloc, free, realloc};
+use self::stdlib_h::{calloc, free};
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
 pub use self::xkbcommon_errors_h::{
@@ -301,7 +287,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
 use crate::xkb::utils::cstr_cmp;
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -400,12 +386,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
             );
             return false;
         }
-        (*rmlvo).layouts.size = (*rmlvo).layouts.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.alloc, (*rmlvo).layouts.size);
-        *(*rmlvo)
-            .layouts
-            .item
-            .offset((*rmlvo).layouts.size.wrapping_sub(1 as darray_size_t) as isize) = new;
+        darray_append(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.size, &mut (*rmlvo).layouts.alloc, new);
         if options.is_null() {
             options_len = 0 as usize;
         }
@@ -432,12 +413,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 );
                 return false;
             }
-            (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*rmlvo).options.item, &mut (*rmlvo).options.alloc, (*rmlvo).options.size);
-            *(*rmlvo)
-                .options
-                .item
-                .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = option;
+            darray_append(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc, option);
             k = k.wrapping_add(1);
         }
         return true;
@@ -483,12 +459,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             );
             return false;
         }
-        (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*rmlvo).options.item, &mut (*rmlvo).options.alloc, (*rmlvo).options.size);
-        *(*rmlvo)
-            .options
-            .item
-            .offset((*rmlvo).options.size.wrapping_sub(1 as darray_size_t) as isize) = new;
+        darray_append(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc, new);
         return true;
     }
 }

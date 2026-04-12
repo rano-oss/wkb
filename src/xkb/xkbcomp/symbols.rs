@@ -106,22 +106,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use super::context_h::xkb_context;
@@ -295,10 +279,10 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod text_h {
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{xkb_action_type, xkb_mod_set};
-    use super::xkbcommon_h::{xkb_keysym_t, xkb_mod_index_t};
+    
+    
+    
+    
     pub use crate::xkb::text::{
         ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText,
     };
@@ -449,14 +433,14 @@ pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::stdint_uintn_h::u32;
-    use super::text_h::LookupEntry;
-    use super::xkbcommon_h::{xkb_layout_index_t, xkb_mod_mask_t};
-    use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
+    
+    
+    
+    
+    
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::{
         ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
         ExprResolveString,
@@ -518,7 +502,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
     ExprResolveString,
@@ -656,7 +640,7 @@ pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsInfo {
@@ -839,7 +823,11 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
         (*to).levels.alloc = 0 as darray_size_t;
         let mut __count: darray_size_t = (*from).levels.size;
         (*to).levels.size = __count;
-        darray_growalloc(&mut (*to).levels.item, &mut (*to).levels.alloc, (*to).levels.size);
+        darray_growalloc(
+            &mut (*to).levels.item,
+            &mut (*to).levels.alloc,
+            (*to).levels.size,
+        );
         if __count != 0 as darray_size_t {
             std::ptr::copy_nonoverlapping::<xkb_level>(
                 (*from).levels.item,
@@ -1260,12 +1248,7 @@ unsafe fn MergeGroups(
             level = (*from).levels.item.offset(levels_in_both as isize) as *mut xkb_level;
             while level < (*from).levels.item.offset((*from).levels.size as isize) as *mut xkb_level
             {
-                (*into).levels.size = (*into).levels.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(&mut (*into).levels.item, &mut (*into).levels.alloc, (*into).levels.size);
-                *(*into)
-                    .levels
-                    .item
-                    .offset((*into).levels.size.wrapping_sub(1 as darray_size_t) as isize) = *level;
+                darray_append(&mut (*into).levels.item, &mut (*into).levels.size, &mut (*into).levels.alloc, *level);
                 (*level).num_syms = 0 as xkb_keysym_count_t;
                 (*level).num_actions = 0 as xkb_action_count_t;
                 fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
@@ -1719,13 +1702,7 @@ unsafe fn MergeKeys(
         }
         i = groups_in_both;
         while i < (*from).groups.size as xkb_layout_index_t {
-            (*into).groups.size = (*into).groups.size.wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*into).groups.item, &mut (*into).groups.alloc, (*into).groups.size);
-            *(*into)
-                .groups
-                .item
-                .offset((*into).groups.size.wrapping_sub(1 as darray_size_t) as isize) =
-                *(*from).groups.item.offset(i as isize);
+            darray_append(&mut (*into).groups.item, &mut (*into).groups.size, &mut (*into).groups.alloc, *(*from).groups.item.offset(i as isize));
             InitGroupInfo((*from).groups.item.offset(i as isize) as *mut GroupInfo);
             i = i.wrapping_add(1);
         }
@@ -1842,12 +1819,7 @@ unsafe fn AddKeySymbols(
                 iter = iter.offset(1);
             }
         }
-        (*info).keys.size = (*info).keys.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*info).keys.item, &mut (*info).keys.alloc, (*info).keys.size);
-        *(*info)
-            .keys
-            .item
-            .offset((*info).keys.size.wrapping_sub(1 as darray_size_t) as isize) = *keyi;
+        darray_append(&mut (*info).keys.item, &mut (*info).keys.size, &mut (*info).keys.alloc, *keyi);
         InitKeyInfo((*info).ctx, keyi);
         return true_0 != 0;
     }
@@ -1915,12 +1887,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                 }
             }
         }
-        (*info).modmaps.size = (*info).modmaps.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*info).modmaps.item, &mut (*info).modmaps.alloc, (*info).modmaps.size);
-        *(*info)
-            .modmaps
-            .item
-            .offset((*info).modmaps.size.wrapping_sub(1 as darray_size_t) as isize) = *new;
+        darray_append(&mut (*info).modmaps.item, &mut (*info).modmaps.size, &mut (*info).modmaps.alloc, *new);
         return true_0 != 0;
     }
 }
@@ -1974,27 +1941,7 @@ unsafe fn MergeIncludedSymbols(
                     .item
                     .offset((*from).group_names.size as isize) as *mut xkb_atom_t
             {
-                (*into).group_names.size =
-                    (*into).group_names.size.wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*into).group_names.size;
-                if __need > (*into).group_names.alloc {
-                    (*into).group_names.alloc = darray_next_alloc(
-                        (*into).group_names.alloc,
-                        __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as usize,
-                    );
-                    (*into).group_names.item =
-                        realloc(
-                            (*into).group_names.item as *mut ::core::ffi::c_void,
-                            ((*into).group_names.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
-                        ) as *mut xkb_atom_t;
-                }
-                *(*into)
-                    .group_names
-                    .item
-                    .offset((*into).group_names.size.wrapping_sub(1 as darray_size_t) as isize) =
-                    *group_name;
+                darray_append(&mut (*into).group_names.item, &mut (*into).group_names.size, &mut (*into).group_names.alloc, *group_name);
                 group_name = group_name.offset(1);
             }
         }
@@ -2268,7 +2215,11 @@ unsafe fn GetGroupIndex(
             let mut __newSize: darray_size_t = (*keyi).groups.size.wrapping_add(1 as darray_size_t);
             (*keyi).groups.size = __newSize;
             if __newSize > __oldSize {
-                darray_growalloc(&mut (*keyi).groups.item, &mut (*keyi).groups.alloc, __newSize);
+                darray_growalloc(
+                    &mut (*keyi).groups.item,
+                    &mut (*keyi).groups.alloc,
+                    __newSize,
+                );
                 std::ptr::write_bytes(
                     (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo as *mut u8,
                     0u8,
@@ -2305,7 +2256,11 @@ unsafe fn GetGroupIndex(
             let mut __newSize_0: darray_size_t = (*ndx_rtrn).wrapping_add(1 as darray_size_t);
             (*keyi).groups.size = __newSize_0;
             if __newSize_0 > __oldSize_0 {
-                darray_growalloc(&mut (*keyi).groups.item, &mut (*keyi).groups.alloc, __newSize_0);
+                darray_growalloc(
+                    &mut (*keyi).groups.item,
+                    &mut (*keyi).groups.alloc,
+                    __newSize_0,
+                );
                 std::ptr::write_bytes(
                     (*keyi).groups.item.offset(__oldSize_0 as isize) as *mut GroupInfo as *mut u8,
                     0u8,
@@ -2378,7 +2333,11 @@ unsafe fn AddSymbolsToKey(
             let mut __newSize: darray_size_t = nLevels as darray_size_t;
             (*groupi).levels.size = __newSize;
             if __newSize > __oldSize {
-                darray_growalloc(&mut (*groupi).levels.item, &mut (*groupi).levels.alloc, __newSize);
+                darray_growalloc(
+                    &mut (*groupi).levels.item,
+                    &mut (*groupi).levels.alloc,
+                    __newSize,
+                );
                 std::ptr::write_bytes(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level as *mut u8,
                     0u8,
@@ -2505,7 +2464,11 @@ unsafe fn AddActionsToKey(
             let mut __newSize: darray_size_t = nLevels as darray_size_t;
             (*groupi).levels.size = __newSize;
             if __newSize > __oldSize {
-                darray_growalloc(&mut (*groupi).levels.item, &mut (*groupi).levels.alloc, __newSize);
+                darray_growalloc(
+                    &mut (*groupi).levels.item,
+                    &mut (*groupi).levels.alloc,
+                    __newSize,
+                );
                 std::ptr::write_bytes(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level as *mut u8,
                     0u8,
@@ -2593,11 +2556,7 @@ unsafe fn AddActionsToKey(
                         c2rust_current_block_102 = 1829140360157350833;
                         break;
                     } else {
-                        actions.size = actions.size.wrapping_add(1 as darray_size_t);
-                        darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
-                        *actions
-                            .item
-                            .offset(actions.size.wrapping_sub(1 as darray_size_t) as isize) = toAct;
+                        darray_append(&mut actions.item, &mut actions.size, &mut actions.alloc, toAct);
                     }
                 }
                 act_0 = (*act_0).common.next as *mut ExprDef;
@@ -2890,7 +2849,11 @@ unsafe fn SetSymbolsField(
                         (ndx as darray_size_t).wrapping_add(1 as darray_size_t);
                     (*keyi).groups.size = __newSize;
                     if __newSize > __oldSize {
-                        darray_growalloc(&mut (*keyi).groups.item, &mut (*keyi).groups.alloc, __newSize);
+                        darray_growalloc(
+                            &mut (*keyi).groups.item,
+                            &mut (*keyi).groups.alloc,
+                            __newSize,
+                        );
                         std::ptr::write_bytes(
                             (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
                                 as *mut u8,
@@ -3192,7 +3155,11 @@ unsafe fn SetSymbolsField(
                     .wrapping_add(1 as darray_size_t);
                 let mut __need_0: darray_size_t =
                     (*(*(*info).keymap_info).pending_computations).size;
-                darray_growalloc(&mut (*(*(*info).keymap_info).pending_computations).item, &mut (*(*(*info).keymap_info).pending_computations).alloc, __need_0);
+                darray_growalloc(
+                    &mut (*(*(*info).keymap_info).pending_computations).item,
+                    &mut (*(*(*info).keymap_info).pending_computations).alloc,
+                    __need_0,
+                );
                 *(*(*(*info).keymap_info).pending_computations).item.offset(
                     (*(*(*info).keymap_info).pending_computations)
                         .size
@@ -3304,17 +3271,11 @@ unsafe fn SetGroupName(
             if __newSize > __oldSize {
                 let mut __need: darray_size_t = __newSize;
                 if __need > (*info).group_names.alloc {
-                    (*info).group_names.alloc = darray_next_alloc(
-                        (*info).group_names.alloc,
+                    darray_growalloc(
+                        &mut (*info).group_names.item,
+                        &mut (*info).group_names.alloc,
                         __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as usize,
                     );
-                    (*info).group_names.item =
-                        realloc(
-                            (*info).group_names.item as *mut ::core::ffi::c_void,
-                            ((*info).group_names.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
-                        ) as *mut xkb_atom_t;
                 }
                 std::ptr::write_bytes(
                     (*info).group_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
@@ -3596,7 +3557,11 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
             ((*info).explicit_group as darray_size_t).wrapping_add(1 as darray_size_t);
         (*keyi).groups.size = __newSize;
         if __newSize > __oldSize {
-            darray_growalloc(&mut (*keyi).groups.item, &mut (*keyi).groups.alloc, __newSize);
+            darray_growalloc(
+                &mut (*keyi).groups.item,
+                &mut (*keyi).groups.alloc,
+                __newSize,
+            );
             std::ptr::write_bytes(
                 (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo as *mut u8,
                 0u8,
@@ -3639,7 +3604,11 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
         keyi.groups.alloc = 0 as darray_size_t;
         let mut __count: darray_size_t = (*info).default_key.groups.size;
         keyi.groups.size = __count;
-        darray_growalloc(&mut keyi.groups.item, &mut keyi.groups.alloc, keyi.groups.size);
+        darray_growalloc(
+            &mut keyi.groups.item,
+            &mut keyi.groups.alloc,
+            keyi.groups.size,
+        );
         if __count != 0 as darray_size_t {
             std::ptr::copy_nonoverlapping::<GroupInfo>(
                 (*info).default_key.groups.item,
@@ -4273,17 +4242,11 @@ unsafe fn CopySymbolsDefToKeymap(
                     // Resize levels array to match type
                     let __need_levels: darray_size_t = (*type_0).num_levels;
                     if __need_levels > (*groupi).levels.alloc {
-                        (*groupi).levels.alloc = darray_next_alloc(
-                            (*groupi).levels.alloc,
+                        darray_growalloc(
+                            &mut (*groupi).levels.item,
+                            &mut (*groupi).levels.alloc,
                             __need_levels,
-                            ::core::mem::size_of::<xkb_level>() as usize,
                         );
-                        (*groupi).levels.item =
-                            realloc(
-                                (*groupi).levels.item as *mut ::core::ffi::c_void,
-                                ((*groupi).levels.alloc as usize)
-                                    .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
-                            ) as *mut xkb_level;
                     }
                     if __need_levels > (*groupi).levels.size {
                         // Zero out new elements

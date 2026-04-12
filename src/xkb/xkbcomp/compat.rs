@@ -39,22 +39,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
@@ -193,9 +177,9 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_match_operation, xkb_mod_set};
-    use super::xkbcommon_h::{xkb_keysym_t, xkb_mod_mask_t};
+    
+    
+    
     pub use crate::xkb::text::{
         ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
         useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
@@ -255,13 +239,13 @@ pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::stdint_uintn_h::u32;
-    use super::text_h::LookupEntry;
-    use super::xkbcommon_h::{xkb_layout_mask_t, xkb_mod_index_t, xkb_mod_mask_t};
-    use super::xkbcomp_priv_h::xkb_keymap_info;
+    
+    
+    
+    
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::{
         ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
         ExprResolveMod, ExprResolveModMask,
@@ -325,7 +309,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
     ExprResolveMod, ExprResolveModMask,
@@ -424,7 +408,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 pub use self::xkbcommon_h::{
     xkb_context_get_log_verbosity, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy,
@@ -813,16 +797,7 @@ unsafe fn AddInterp(
         if !old.is_null() {
             return MergeInterp(info, old, new, same_file);
         }
-        (*info).interps.size = (*info).interps.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(
-            &mut (*info).interps.item,
-            &mut (*info).interps.alloc,
-            (*info).interps.size,
-        );
-        *(*info)
-            .interps
-            .item
-            .offset((*info).interps.size.wrapping_sub(1 as darray_size_t) as isize) = *new;
+        darray_append(&mut (*info).interps.item, &mut (*info).interps.size, &mut (*info).interps.alloc, *new);
         return true_0 != 0;
     }
 }
@@ -1339,12 +1314,7 @@ unsafe fn SetInterpField(
                             (*si).interp.num_actions = 1 as xkb_action_count_t;
                             (*si).interp.a.action = toAct;
                         } else {
-                            actions.size = actions.size.wrapping_add(1 as darray_size_t);
-                            darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
-                            *actions
-                                .item
-                                .offset(actions.size.wrapping_sub(1 as darray_size_t) as isize) =
-                                toAct;
+                            darray_append(&mut actions.item, &mut actions.size, &mut actions.alloc, toAct);
                         }
                     }
                     act_0 = (*act_0).common.next as *mut ExprDef;

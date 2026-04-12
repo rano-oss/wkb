@@ -474,7 +474,6 @@ use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::CStrDisplay;
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,

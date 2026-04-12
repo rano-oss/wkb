@@ -728,8 +728,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::{
-    cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
-    darray_free, darray_growalloc, darray_resize_zero,
+    cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul, darray_growalloc, darray_resize_zero,
 };
 #[derive(Copy, Clone)]
 #[repr(C)]

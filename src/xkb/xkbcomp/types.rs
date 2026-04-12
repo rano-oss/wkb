@@ -50,22 +50,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::context::xkb_context_get_log_verbosity;
@@ -190,9 +174,9 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod text_h {
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::xkbcommon_h::xkb_mod_mask_t;
+    
+    
+    
     pub use crate::xkb::text::{LookupEntry, ModMaskText};
 }
 pub mod xkbcomp_priv_h {
@@ -217,7 +201,6 @@ pub mod stdlib_h {
 
     extern "C" {
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -240,11 +223,11 @@ pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::xkbcommon_h::{xkb_level_index_t, xkb_mod_mask_t};
+    
+    
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::{
         ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString,
     };
@@ -298,7 +281,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 use self::expr_h::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use self::internal::__va_list_tag;
@@ -378,7 +361,7 @@ pub use self::messages_codes_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-use self::stdlib_h::{calloc, free, realloc};
+use self::stdlib_h::{calloc, free};
 pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -386,7 +369,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -639,12 +622,7 @@ unsafe fn AddKeyType(
             ClearKeyTypeInfo(new);
             return true_0 != 0;
         }
-        (*info).types.size = (*info).types.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*info).types.item, &mut (*info).types.alloc, (*info).types.size);
-        *(*info)
-            .types
-            .item
-            .offset((*info).types.size.wrapping_sub(1 as darray_size_t) as isize) = *new;
+        darray_append(&mut (*info).types.item, &mut (*info).types.size, &mut (*info).types.alloc, *new);
         return true_0 != 0;
     }
 }
@@ -921,12 +899,7 @@ unsafe fn AddMapEntry(
         if (*new).level >= (*type_0).num_levels {
             (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
         }
-        (*type_0).entries.size = (*type_0).entries.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*type_0).entries.item, &mut (*type_0).entries.alloc, (*type_0).entries.size);
-        *(*type_0)
-            .entries
-            .item
-            .offset((*type_0).entries.size.wrapping_sub(1 as darray_size_t) as isize) = *new;
+        darray_append(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc, *new);
         return true_0 != 0;
     }
 }
@@ -1067,12 +1040,7 @@ unsafe fn AddPreserve(
         new.level = 0 as xkb_level_index_t;
         new.mods.mods = mods;
         new.preserve.mods = preserve_mods;
-        (*type_0).entries.size = (*type_0).entries.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(&mut (*type_0).entries.item, &mut (*type_0).entries.alloc, (*type_0).entries.size);
-        *(*type_0)
-            .entries
-            .item
-            .offset((*type_0).entries.size.wrapping_sub(1 as darray_size_t) as isize) = new;
+        darray_append(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc, new);
         return true_0 != 0;
     }
 }

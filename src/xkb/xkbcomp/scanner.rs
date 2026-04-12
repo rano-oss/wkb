@@ -85,7 +85,7 @@ pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
 pub mod xkbcommon_h {
-    use super::stdint_uintn_h::u32;
+    
     pub use crate::xkb::shared_types::{
         xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
         XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
@@ -1250,7 +1250,6 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::CStrDisplay;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,

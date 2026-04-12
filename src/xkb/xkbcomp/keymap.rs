@@ -1,5 +1,5 @@
+use crate::xkb::utils::{darray_growalloc, darray_append};
 use crate::xkb_logf;
-use crate::xkb::utils::darray_growalloc;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -63,21 +63,6 @@ pub mod atom_h {
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
 
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -278,11 +263,11 @@ pub mod text_h {
             }) as uint8_t;
         }
     }
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::xkb_action_type;
+    
+    
+    
     use super::stdint_uintn_h::uint8_t;
-    use super::xkbcommon_h::{xkb_keymap_format, xkb_keysym_t, XKB_KEYMAP_FORMAT_TEXT_V1};
+    use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
     pub use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText};
 }
 pub mod xkbcomp_priv_h {
@@ -305,10 +290,7 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
     pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 }
-pub mod string_h {
-
-    
-}
+pub mod string_h {}
 pub mod stdlib_h {
 
     extern "C" {
@@ -357,9 +339,9 @@ pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::xkbcommon_h::{xkb_layout_index_t, xkb_layout_mask_t};
-    use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::{ExprResolveGroup, ExprResolveGroupMask};
 }
 pub mod xkbcommon_keysyms_h {
@@ -396,7 +378,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
@@ -703,12 +685,7 @@ unsafe fn FindInterpForKey(
                         }
                     }
                     if found {
-                        (*interprets).size = (*interprets).size.wrapping_add(1 as darray_size_t);
-                        darray_growalloc(&mut (*interprets).item, &mut (*interprets).alloc, (*interprets).size);
-                        let ref mut c2rust_fresh2 = *(*interprets)
-                            .item
-                            .offset((*interprets).size.wrapping_sub(1 as darray_size_t) as isize);
-                        *c2rust_fresh2 = interp;
+                        darray_append(&mut (*interprets).item, &mut (*interprets).size, &mut (*interprets).alloc, interp);
                         (*interp).set_required((true_0 != 0) as bool);
                         c2rust_current_block_34 = 7659304154607701039;
                         break;
@@ -728,26 +705,7 @@ unsafe fn FindInterpForKey(
             }
             match c2rust_current_block_34 {
                 2209838995503123840 => {
-                    (*interprets).size = (*interprets).size.wrapping_add(1 as darray_size_t);
-                    let mut __need_0: darray_size_t = (*interprets).size;
-                    if __need_0 > (*interprets).alloc {
-                        (*interprets).alloc = darray_next_alloc(
-                            (*interprets).alloc,
-                            __need_0,
-                            ::core::mem::size_of::<*const xkb_sym_interpret>() as usize,
-                        );
-                        (*interprets).item =
-                            realloc(
-                                (*interprets).item as *mut ::core::ffi::c_void,
-                                ((*interprets).alloc as usize).wrapping_mul(
-                                    ::core::mem::size_of::<*const xkb_sym_interpret>() as usize,
-                                ),
-                            ) as *mut *const xkb_sym_interpret;
-                    }
-                    let ref mut c2rust_fresh3 = *(*interprets)
-                        .item
-                        .offset((*interprets).size.wrapping_sub(1 as darray_size_t) as isize);
-                    *c2rust_fresh3 = &raw const default_interpret;
+                    darray_append(&mut (*interprets).item, &mut (*interprets).size, &mut (*interprets).alloc, &raw const default_interpret);
                 }
                 _ => {}
             }
@@ -815,19 +773,18 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 match (*interp).num_actions as ::core::ffi::c_int {
                                     0 => {}
                                     1 => {
-                                        actions.size =
-                                            actions.size.wrapping_add(1 as darray_size_t);
-                                        darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
-                                        *actions.item.offset(
-                                            actions.size.wrapping_sub(1 as darray_size_t) as isize,
-                                        ) = (*interp).a.action;
+                                        darray_append(&mut actions.item, &mut actions.size, &mut actions.alloc, (*interp).a.action);
                                     }
                                     _ => {
                                         let mut __count: darray_size_t =
                                             (*interp).num_actions as darray_size_t;
                                         let mut __oldSize: darray_size_t = actions.size;
                                         actions.size = __oldSize.wrapping_add(__count);
-                                        darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
+                                        darray_growalloc(
+                                            &mut actions.item,
+                                            &mut actions.alloc,
+                                            actions.size,
+                                        );
                                         std::ptr::copy_nonoverlapping::<xkb_action>(
                                             (*interp).a.actions,
                                             actions.item.offset(__oldSize as isize),

@@ -114,19 +114,6 @@ pub mod atom_h {
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
 
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        if alloc == 0 as darray_size_t {
-            alloc = 4 as darray_size_t;
-        }
-        while alloc < need {
-            alloc = alloc.wrapping_mul(2 as darray_size_t);
-        }
-        return alloc;
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -195,7 +182,6 @@ pub mod stdlib_h {
     extern "C" {
         pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -260,7 +246,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
@@ -309,7 +295,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdint_h::UINT32_MAX;
-use self::stdlib_h::{calloc, free, malloc, realloc};
+use self::stdlib_h::{calloc, free, malloc};
 use self::string_h::strndup;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};

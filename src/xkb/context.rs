@@ -161,22 +161,6 @@ pub mod darray_h {
         pub alloc: darray_size_t,
         pub item: *mut *mut i8,
     }
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
@@ -206,7 +190,6 @@ pub mod stdlib_h {
     extern "C" {
         pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
         pub fn qsort(
             __base: *mut ::core::ffi::c_void,
@@ -308,7 +291,7 @@ pub use self::config_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_next_alloc, darray_size_t, darray_string};
+pub use self::darray_h::{darray_size_t, darray_string};
 pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;
@@ -322,7 +305,7 @@ pub use self::messages_codes_h::{
 use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{stderr, va_list};
-pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc, strtol};
+pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, strtol};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -340,7 +323,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc, darray_append};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -406,13 +389,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             } else if !check_eaccess(path, R_OK | X_OK) {
                 err = EACCES;
             } else {
-                (*ctx).includes.size = (*ctx).includes.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(&mut (*ctx).includes.item, &mut (*ctx).includes.alloc, (*ctx).includes.size);
-                let ref mut c2rust_fresh0 = *(*ctx)
-                    .includes
-                    .item
-                    .offset((*ctx).includes.size.wrapping_sub(1 as darray_size_t) as isize);
-                *c2rust_fresh0 = tmp;
+                darray_append(&mut (*ctx).includes.item, &mut (*ctx).includes.size, &mut (*ctx).includes.alloc, tmp);
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
@@ -424,14 +401,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             }
         }
         if !tmp.is_null() {
-            (*ctx).failed_includes.size =
-                (*ctx).failed_includes.size.wrapping_add(1 as darray_size_t);
-            darray_growalloc(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.alloc, (*ctx).failed_includes.size);
-            let ref mut c2rust_fresh1 = *(*ctx)
-                .failed_includes
-                .item
-                .offset((*ctx).failed_includes.size.wrapping_sub(1 as darray_size_t) as isize);
-            *c2rust_fresh1 = tmp;
+            darray_append(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.size, &mut (*ctx).failed_includes.alloc, tmp);
         }
         xkb_logf!(
             ctx,
@@ -610,15 +580,7 @@ unsafe fn add_direct_subdirectories(
                             c2rust_current_block = 9563249396912231495;
                             break;
                         } else {
-                            (*extensions).size =
-                                (*extensions).size.wrapping_add(1 as darray_size_t);
-                            darray_growalloc(&mut (*extensions).item, &mut (*extensions).alloc, (*extensions).size);
-                            let ref mut c2rust_fresh2 =
-                                *(*extensions)
-                                    .item
-                                    .offset((*extensions).size.wrapping_sub(1 as darray_size_t)
-                                        as isize);
-                            *c2rust_fresh2 = ext_path;
+                            darray_append(&mut (*extensions).item, &mut (*extensions).size, &mut (*extensions).alloc, ext_path);
                         }
                     }
                 }

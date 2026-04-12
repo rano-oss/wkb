@@ -50,16 +50,16 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod text_h {
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::xkbcommon_h::xkb_mod_mask_t;
+    
+    
+    
     pub use crate::xkb::text::ModMaskText;
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::xkbcommon_h::xkb_mod_mask_t;
+    
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::ExprResolveModMask;
 }
 pub mod stdbool_h {

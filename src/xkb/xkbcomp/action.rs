@@ -38,22 +38,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
@@ -209,9 +193,9 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::xkb_action_type;
+    
+    
+    
     pub use crate::xkb::text::{
         actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
         LookupValue,
@@ -244,7 +228,6 @@ pub mod action_h {
 pub mod stdlib_h {
 
     extern "C" {
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
     }
 }
 pub mod string_h {}
@@ -295,7 +278,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -374,7 +357,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::{INT16_MAX, INT16_MIN, INT8_MAX, INT8_MIN};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
-use self::stdlib_h::realloc;
 pub use self::text_h::{
     actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
     LookupValue,

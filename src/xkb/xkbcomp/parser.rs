@@ -528,7 +528,7 @@ pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };
 pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
-use crate::xkb::utils::{cstr_cmp, cstr_len};
+use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct parser_param {

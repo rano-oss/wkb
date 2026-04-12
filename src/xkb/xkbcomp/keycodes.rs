@@ -39,22 +39,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
@@ -73,7 +57,7 @@ pub mod xkbcommon_h {
     pub type xkb_led_mask_t = u32;
     pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
     pub const XKB_KEYCODE_MAX: u32 = (0xffffffff as u32).wrapping_sub(1 as u32);
-    use super::context_h::xkb_context;
+    
     pub use crate::xkb::context::xkb_context_get_log_verbosity;
 }
 pub mod keymap_h {
@@ -187,8 +171,8 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
+    
+    
     pub use crate::xkb::text::{KeyNameText, LookupEntry};
 }
 pub mod xkbcomp_priv_h {
@@ -237,10 +221,10 @@ pub mod limits_h {
     use super::internal::__CHAR_BIT__;
 }
 pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::stdint_intn_h::i64;
+    
+    
+    
+    
     pub use crate::xkb::xkbcomp::expr::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 }
 pub mod util_mem_h {
@@ -293,7 +277,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_size_t};
 use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
@@ -377,7 +361,7 @@ pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
-use crate::xkb::utils::darray_growalloc;
+use crate::xkb::utils::{darray_growalloc, darray_append};
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -660,16 +644,7 @@ unsafe fn keycode_store_insert_key(
                     },
                 };
             } else {
-                (*store).high.size = (*store).high.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(&mut (*store).high.item, &mut (*store).high.alloc, (*store).high.size);
-                *(*store)
-                    .high
-                    .item
-                    .offset((*store).high.size.wrapping_sub(1 as darray_size_t) as isize) =
-                    HighKeycodeEntry {
-                        keycode: kc,
-                        name: name,
-                    };
+                darray_append(&mut (*store).high.item, &mut (*store).high.size, &mut (*store).high.alloc, HighKeycodeEntry { keycode: kc, name: name, });
                 *(*store).names.item.offset(name as isize) = KeycodeMatch {
                     key: {
                         let mut init = C2Rust_Unnamed_7 {

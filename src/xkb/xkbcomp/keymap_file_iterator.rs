@@ -81,21 +81,6 @@ pub mod darray_h {
         pub alloc: darray_size_t,
         pub item: *mut i8,
     }
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -306,7 +291,6 @@ pub mod stdlib_h {
 
     extern "C" {
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
@@ -457,7 +441,7 @@ pub use self::ast_h::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_char, darray_size_t};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_file_iterator_h::{
@@ -512,7 +496,7 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fclose, fopen};
-use self::stdlib_h::{calloc, free, realloc};
+use self::stdlib_h::{calloc, free};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::utils_h::strcpy_safe;
@@ -525,7 +509,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len, darray_growalloc};
+use crate::xkb::utils::{cstr_len, darray_append, darray_growalloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -792,17 +776,12 @@ pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
         (*section).buffer.item = ::core::ptr::null_mut::<i8>();
         (*section).buffer.size = 0 as darray_size_t;
         (*section).buffer.alloc = 0 as darray_size_t;
-        (*section).buffer.size = (*section).buffer.size.wrapping_add(1 as darray_size_t);
-        darray_growalloc(
+        darray_append(
             &mut (*section).buffer.item,
+            &mut (*section).buffer.size,
             &mut (*section).buffer.alloc,
-            (*section).buffer.size,
+            '\0' as i32 as i8,
         );
-        *(*section)
-            .buffer
-            .item
-            .offset((*section).buffer.size.wrapping_sub(1 as darray_size_t) as isize) =
-            '\0' as i32 as i8;
     }
 }
 unsafe fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
@@ -994,18 +973,12 @@ unsafe fn xkb_file_section_append_includes(
                     init
                 };
                 let idx: darray_size_t = (*section).includes.size;
-                (*section).includes.size =
-                    (*section).includes.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(
+                darray_append(
                     &mut (*section).includes.item,
+                    &mut (*section).includes.size,
                     &mut (*section).includes.alloc,
-                    (*section).includes.size,
+                    inc,
                 );
-                *(*section)
-                    .includes
-                    .item
-                    .offset((*section).includes.size.wrapping_sub(1 as darray_size_t) as isize) =
-                    inc;
                 if group.is_null() {
                     let group_idx: darray_size_t = (*section).include_groups.size;
                     (*section).include_groups.size = (*section)
