@@ -81,16 +81,7 @@ pub mod stdio_h {
         pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
-}
+pub mod string_h {}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -150,7 +141,6 @@ pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::{u32, uint8_t};
 use self::stdio_h::snprintf;
-use self::string_h::memcpy;
 pub use self::text_h::{
     format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
     CONTROL_NAMES_MIN_V2_INDEX,
@@ -1760,11 +1750,9 @@ pub unsafe fn ModMaskText(
             }
         }
         pos = pos.wrapping_add(1);
-        return memcpy(
-            xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
-            pos,
-        ) as *const i8;
+        let dst = xkb_context_get_buffer(ctx, pos);
+        std::ptr::copy_nonoverlapping(&raw mut buf as *const u8, dst as *mut u8, pos);
+        return dst as *const i8;
     }
 }
 
@@ -1808,11 +1796,9 @@ pub unsafe fn LedStateMaskText(
             i = i.wrapping_add(1);
         }
         pos = pos.wrapping_add(1);
-        return memcpy(
-            xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
-            pos,
-        ) as *const i8;
+        let dst = xkb_context_get_buffer(ctx, pos);
+        std::ptr::copy_nonoverlapping(&raw mut buf as *const u8, dst as *mut u8, pos);
+        return dst as *const i8;
     }
 }
 
@@ -1865,11 +1851,9 @@ pub unsafe fn ControlMaskText(
             i = i.wrapping_add(1);
         }
         pos = pos.wrapping_add(1);
-        return memcpy(
-            xkb_context_get_buffer(ctx, pos) as *mut ::core::ffi::c_void,
-            &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
-            pos,
-        ) as *const i8;
+        let dst = xkb_context_get_buffer(ctx, pos);
+        std::ptr::copy_nonoverlapping(&raw mut buf as *const u8, dst as *mut u8, pos);
+        return dst as *const i8;
     }
 }
 unsafe fn c2rust_run_static_initializers() {

@@ -326,11 +326,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn stpcpy(__dest: *mut i8, __src: *const i8) -> *mut i8;
     }
 }
@@ -528,7 +523,7 @@ use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdlib_h::{free, malloc};
-use self::string_h::{memcpy, stpcpy};
+use self::string_h::{stpcpy};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -799,11 +794,7 @@ unsafe fn resolve_keysym(
         if name.len >= ::core::mem::size_of::<[i8; 31]>() as usize {
             return false_0 != 0;
         }
-        memcpy(
-            &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-            name.start as *const ::core::ffi::c_void,
-            name.len,
-        );
+        std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
         buf[name.len as usize] = '\0' as i32 as i8;
         sym = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
         if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
@@ -5396,11 +5387,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                     break;
                 }
                 let mut yynewbytes: i64 = 0;
-                ::libc::memcpy(
-                    &raw mut (*yyptr).yyss_alloc as *mut ::core::ffi::c_void,
-                    yyss as *const ::core::ffi::c_void,
-                    (yysize as usize).wrapping_mul(::core::mem::size_of::<yy_state_t>() as usize)
-                        as usize,
+                std::ptr::copy_nonoverlapping::<yy_state_t>(
+                    yyss,
+                    &raw mut (*yyptr).yyss_alloc,
+                    yysize as usize,
                 );
                 yyss = &raw mut (*yyptr).yyss_alloc;
                 yynewbytes =
@@ -5408,11 +5398,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                 yyptr =
                     yyptr.offset((yynewbytes / ::core::mem::size_of::<yyalloc>() as i64) as isize);
                 let mut yynewbytes_0: i64 = 0;
-                ::libc::memcpy(
-                    &raw mut (*yyptr).yyvs_alloc as *mut ::core::ffi::c_void,
-                    yyvs as *const ::core::ffi::c_void,
-                    (yysize as usize).wrapping_mul(::core::mem::size_of::<YYSTYPE>() as usize)
-                        as usize,
+                std::ptr::copy_nonoverlapping::<YYSTYPE>(
+                    yyvs,
+                    &raw mut (*yyptr).yyvs_alloc,
+                    yysize as usize,
                 );
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
                 yynewbytes_0 =

@@ -345,22 +345,16 @@ pub mod scanner_utils_h {
     pub unsafe fn svaleq(mut s1: sval, mut s2: sval) -> bool {
         unsafe {
             return s1.len == s2.len
-                && memcmp(
-                    s1.start as *const ::core::ffi::c_void,
-                    s2.start as *const ::core::ffi::c_void,
-                    s1.len,
-                ) == 0 as ::core::ffi::c_int;
+                && std::slice::from_raw_parts(s1.start as *const u8, s1.len)
+                    == std::slice::from_raw_parts(s2.start as *const u8, s1.len);
         }
     }
     #[inline]
     pub unsafe fn svaleq_prefix(mut s1: sval, mut s2: sval) -> bool {
         unsafe {
             return s1.len <= s2.len
-                && memcmp(
-                    s1.start as *const ::core::ffi::c_void,
-                    s2.start as *const ::core::ffi::c_void,
-                    s1.len,
-                ) == 0 as ::core::ffi::c_int;
+                && std::slice::from_raw_parts(s1.start as *const u8, s1.len)
+                    == std::slice::from_raw_parts(s2.start as *const u8, s1.len);
         }
     }
     #[inline]
@@ -452,11 +446,8 @@ pub mod scanner_utils_h {
             if (*s).len.wrapping_sub((*s).pos) < len {
                 return false_0 != 0;
             }
-            if memcmp(
-                (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
-                string as *const ::core::ffi::c_void,
-                len,
-            ) != 0 as ::core::ffi::c_int
+            if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
+                != std::slice::from_raw_parts(string as *const u8, len)
             {
                 return false_0 != 0;
             }
@@ -515,7 +506,7 @@ pub mod scanner_utils_h {
     use super::darray_h::darray_size_t;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
-    use super::string_h::{memchr, memcmp};
+    use super::string_h::memchr;
     use super::utils_h::is_ascii;
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
     use crate::xkb_logf;
@@ -538,26 +529,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memmove(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memcmp(
-            __s1: *const ::core::ffi::c_void,
-            __s2: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> ::core::ffi::c_int;
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
             __c: ::core::ffi::c_int,
@@ -800,7 +771,7 @@ pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{memcpy, memmove, memset, strchr};
+use self::string_h::{strchr};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe};
@@ -1399,10 +1370,10 @@ unsafe fn matcher_new_from_rmlvo(
                                 .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                     }
-                    memset(
+                    std::ptr::write_bytes(
                         (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
-                            as *mut ::core::ffi::c_void,
-                        0 as ::core::ffi::c_int,
+                            as *mut u8,
+                        0u8,
                         (__newSize.wrapping_sub(__oldSize) as usize)
                             .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                     );
@@ -1643,10 +1614,10 @@ unsafe fn matcher_new_from_names(
                                 .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                         ) as *mut matched_sval;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
                 );
@@ -5992,9 +5963,9 @@ unsafe fn matcher_include(
         if absolute_path {
             if expanded == 0 {
                 if stmt_file_len < ::core::mem::size_of::<[i8; 4096]>() as usize {
-                    memcpy(
-                        &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                        stmt_file as *const ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
+                        stmt_file as *const u8,
+                        &raw mut buf as *mut i8 as *mut u8,
                         stmt_file_len,
                     );
                     buf[stmt_file_len as usize] = '\0' as i32 as i8;
@@ -6636,10 +6607,10 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
 }
 unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
     unsafe {
-        memset(
-            &raw mut (*m).rule as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<rule>() as usize,
+        std::ptr::write_bytes::<rule>(
+            &raw mut (*m).rule as *mut rule,
+            0u8,
+            1,
         );
         (*m).rule.skip = (*m).mapping.c2rust_unnamed_0.active == 0;
     }
@@ -6865,10 +6836,10 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                     ) as *mut i8;
                 }
-                memcpy(
-                    (*expanded).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
-                    &raw mut index_str as *mut i8 as *const ::core::ffi::c_void,
-                    (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                std::ptr::copy_nonoverlapping(
+                    &raw mut index_str as *mut i8 as *const u8,
+                    (*expanded).item.offset(__oldSize as isize) as *mut u8,
+                    __count as usize,
                 );
                 *(*expanded)
                     .item
@@ -7071,13 +7042,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut pfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_0 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7108,14 +7077,12 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 )
                                                     as *mut i8;
                                             }
-                                            memcpy(
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut ::core::ffi::c_void,
+                                            std::ptr::copy_nonoverlapping(
                                                 (*expanded_value).sval.start
-                                                    as *const ::core::ffi::c_void,
-                                                (__count_1 as usize).wrapping_mul(
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                ),
+                                                    as *const u8,
+                                                (*expanded).item.offset(__oldSize_1 as isize)
+                                                    as *mut u8,
+                                                __count_1 as usize,
                                             );
                                             *(*expanded).item.offset(
                                                 (*expanded).size.wrapping_sub(1 as darray_size_t)
@@ -7147,13 +7114,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut sfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_2 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7336,13 +7301,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut pfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_0 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7373,14 +7336,12 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 )
                                                     as *mut i8;
                                             }
-                                            memcpy(
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut ::core::ffi::c_void,
+                                            std::ptr::copy_nonoverlapping(
                                                 (*expanded_value).sval.start
-                                                    as *const ::core::ffi::c_void,
-                                                (__count_1 as usize).wrapping_mul(
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                ),
+                                                    as *const u8,
+                                                (*expanded).item.offset(__oldSize_1 as isize)
+                                                    as *mut u8,
+                                                __count_1 as usize,
                                             );
                                             *(*expanded).item.offset(
                                                 (*expanded).size.wrapping_sub(1 as darray_size_t)
@@ -7412,13 +7373,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut sfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_2 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7601,13 +7560,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut pfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut pfx as *const ::core::ffi::c_void,
-                                                    (__count_0 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_0 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7638,14 +7595,12 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 )
                                                     as *mut i8;
                                             }
-                                            memcpy(
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut ::core::ffi::c_void,
+                                            std::ptr::copy_nonoverlapping(
                                                 (*expanded_value).sval.start
-                                                    as *const ::core::ffi::c_void,
-                                                (__count_1 as usize).wrapping_mul(
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                ),
+                                                    as *const u8,
+                                                (*expanded).item.offset(__oldSize_1 as isize)
+                                                    as *mut u8,
+                                                __count_1 as usize,
                                             );
                                             *(*expanded).item.offset(
                                                 (*expanded).size.wrapping_sub(1 as darray_size_t)
@@ -7677,13 +7632,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     )
                                                         as *mut i8;
                                                 }
-                                                memcpy(
+                                                std::ptr::copy_nonoverlapping(
+                                                    &raw mut sfx as *const u8,
                                                     (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut ::core::ffi::c_void,
-                                                    &raw mut sfx as *const ::core::ffi::c_void,
-                                                    (__count_2 as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
+                                                        as *mut u8,
+                                                    __count_2 as usize,
                                                 );
                                                 *(*expanded).item.offset(
                                                     (*expanded)
@@ -7776,10 +7729,10 @@ unsafe fn expand_qualifier_in_kccgst_value(
                         .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                 ) as *mut i8;
             }
-            memcpy(
-                (*expanded).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
-                b"1\0".as_ptr() as *const i8 as *const ::core::ffi::c_void,
-                (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+            std::ptr::copy_nonoverlapping(
+                b"1\0".as_ptr() as *const i8 as *const u8,
+                (*expanded).item.offset(__oldSize as isize) as *mut u8,
+                __count as usize,
             );
             *(*expanded)
                 .item
@@ -7837,11 +7790,11 @@ unsafe fn expand_qualifier_in_kccgst_value(
                                 .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                         ) as *mut i8;
                     }
-                    memcpy(
-                        (*expanded).item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
                         (*expanded).item.offset(prefix_idx as isize) as *mut i8
-                            as *const ::core::ffi::c_void,
-                        (__count_0 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                            as *const u8,
+                        (*expanded).item.offset(__oldSize_0 as isize) as *mut u8,
+                        __count_0 as usize,
                     );
                     *(*expanded)
                         .item
@@ -7872,10 +7825,10 @@ unsafe fn expand_qualifier_in_kccgst_value(
                                 .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                         ) as *mut i8;
                     }
-                    memcpy(
-                        (*expanded).item.offset(__oldSize_1 as isize) as *mut ::core::ffi::c_void,
-                        &raw mut layout_index as *mut i8 as *const ::core::ffi::c_void,
-                        (__count_1 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                    std::ptr::copy_nonoverlapping(
+                        &raw mut layout_index as *mut i8 as *const u8,
+                        (*expanded).item.offset(__oldSize_1 as isize) as *mut u8,
+                        __count_1 as usize,
                     );
                     *(*expanded)
                         .item
@@ -7913,10 +7866,10 @@ unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut
                     ((*into).alloc as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
                 ) as *mut i8;
             }
-            memcpy(
-                (*into).item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
-                from as *const ::core::ffi::c_void,
-                (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+            std::ptr::copy_nonoverlapping(
+                from as *const u8,
+                (*into).item.offset(__oldSize as isize) as *mut u8,
+                __count as usize,
             );
             *(*into)
                 .item
@@ -7950,15 +7903,15 @@ unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut
                             .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                     ) as *mut i8;
                 }
-                memmove(
-                    (*into).item.offset(__count_0 as isize) as *mut ::core::ffi::c_void,
-                    (*into).item as *const ::core::ffi::c_void,
-                    (__oldSize_0 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                std::ptr::copy(
+                    (*into).item,
+                    (*into).item.offset(__count_0 as isize),
+                    __oldSize_0 as usize,
                 );
-                memcpy(
-                    (*into).item as *mut ::core::ffi::c_void,
-                    from as *const ::core::ffi::c_void,
-                    (__count_0 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                std::ptr::copy_nonoverlapping(
+                    from as *const u8,
+                    (*into).item as *mut u8,
+                    __count_0 as usize,
                 );
                 *(*into)
                     .item
@@ -8014,11 +7967,11 @@ unsafe fn append_expanded_kccgst_value(
                     }
                     let c2rust_fresh4 = i;
                     i = i.wrapping_add(1);
-                    memcpy(
-                        expanded.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
                         str.offset(c2rust_fresh4 as isize) as *const i8
-                            as *const ::core::ffi::c_void,
-                        (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                            as *const u8,
+                        expanded.item.offset(__oldSize as isize) as *mut u8,
+                        __count as usize,
                     );
                     *expanded
                         .item
@@ -8072,11 +8025,11 @@ unsafe fn append_expanded_kccgst_value(
                     }
                     let c2rust_fresh5 = i;
                     i = i.wrapping_add(1);
-                    memcpy(
-                        expanded.item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
                         str.offset(c2rust_fresh5 as isize) as *const i8
-                            as *const ::core::ffi::c_void,
-                        (__count_0 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                            as *const u8,
+                        expanded.item.offset(__oldSize_0 as isize) as *mut u8,
+                        __count_0 as usize,
                     );
                     *expanded
                         .item
@@ -8106,11 +8059,11 @@ unsafe fn append_expanded_kccgst_value(
                     }
                     let c2rust_fresh6 = i;
                     i = i.wrapping_add(1);
-                    memcpy(
-                        expanded.item.offset(__oldSize_1 as isize) as *mut ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
                         str.offset(c2rust_fresh6 as isize) as *const i8
-                            as *const ::core::ffi::c_void,
-                        (__count_1 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                            as *const u8,
+                        expanded.item.offset(__oldSize_1 as isize) as *mut u8,
+                        __count_1 as usize,
                     );
                     *expanded
                         .item
@@ -8149,10 +8102,10 @@ unsafe fn append_expanded_kccgst_value(
                                 .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                         ) as *mut i8;
                     }
-                    memcpy(
-                        (*to).item.offset(__oldSize_2 as isize) as *mut ::core::ffi::c_void,
-                        expanded.item as *const ::core::ffi::c_void,
-                        (__count_2 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                    std::ptr::copy_nonoverlapping(
+                        expanded.item as *const u8,
+                        (*to).item.offset(__oldSize_2 as isize) as *mut u8,
+                        __count_2 as usize,
                     );
                 }
                 free(expanded.item as *mut ::core::ffi::c_void);

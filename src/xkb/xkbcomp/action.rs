@@ -249,18 +249,7 @@ pub mod stdlib_h {
 }
 pub mod string_h {
 
-    extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
+    
 }
 pub mod expr_h {
     use super::ast_h::ExprDef;
@@ -404,7 +393,6 @@ pub use self::stdint_h::{INT16_MAX, INT16_MIN, INT8_MAX, INT8_MIN};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::realloc;
-use self::string_h::{memcpy, memset};
 pub use self::text_h::{
     actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
     LookupValue,
@@ -438,7 +426,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::action_equal;
-use crate::xkb::utils::{cstr_len};
+use crate::xkb::utils::cstr_len;
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;
@@ -491,10 +479,7 @@ static mut constFalse: ExprBoolean = ExprBoolean {
     },
     set: false_0 != 0,
 };
-pub unsafe fn InitActionsInfo(
-    mut keymap: *const xkb_keymap,
-    mut info: *mut ActionsInfo,
-) {
+pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut ActionsInfo) {
     unsafe {
         let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
         while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES as i32 as u32 {
@@ -1892,14 +1877,14 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                memset(
-                    &raw mut (*act).data as *mut uint8_t as *mut ::core::ffi::c_void,
-                    0 as i32,
-                    ::core::mem::size_of::<[uint8_t; 7]>() as usize,
+                std::ptr::write_bytes::<[uint8_t; 7]>(
+                    &raw mut (*act).data as *mut uint8_t as *mut [uint8_t; 7],
+                    0u8,
+                    1,
                 );
-                memcpy(
-                    &raw mut (*act).data as *mut uint8_t as *mut ::core::ffi::c_void,
-                    str as *const ::core::ffi::c_void,
+                std::ptr::copy_nonoverlapping(
+                    str as *const u8,
+                    &raw mut (*act).data as *mut u8,
                     len,
                 );
                 return PARSER_SUCCESS;

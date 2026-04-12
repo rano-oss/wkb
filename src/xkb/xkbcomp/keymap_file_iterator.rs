@@ -67,7 +67,6 @@ pub mod FILE_h {
 }
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -297,13 +296,7 @@ pub mod keymap_file_iterator_h {
 }
 pub mod string_h {
 
-    extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
+    
 }
 pub mod stdio_h {
     use super::FILE_h::FILE;
@@ -523,7 +516,6 @@ pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fclose, fopen};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{memcpy};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::utils_h::strcpy_safe;
@@ -536,7 +528,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len};
+use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -875,10 +867,10 @@ unsafe fn xkb_file_section_set_meta_data(
                         .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                 ) as *mut i8;
             }
-            memcpy(
-                (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
-                (*xkb_file).name as *const ::core::ffi::c_void,
-                (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+            std::ptr::copy_nonoverlapping(
+                (*xkb_file).name as *const u8,
+                (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
+                __count as usize,
             );
             (*section).name = idx;
         } else {
@@ -932,10 +924,10 @@ unsafe fn xkb_file_section_append_includes(
                             .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                     ) as *mut i8;
                 }
-                memcpy(
-                    (*section).buffer.item.offset(__oldSize as isize) as *mut ::core::ffi::c_void,
-                    &raw mut buf as *mut i8 as *const ::core::ffi::c_void,
-                    (__count as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                std::ptr::copy_nonoverlapping(
+                    &raw mut buf as *const u8,
+                    (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
+                    __count as usize,
                 );
                 let file: darray_size_t = (*section).buffer.size;
                 let mut __count_0: darray_size_t =
@@ -955,10 +947,10 @@ unsafe fn xkb_file_section_append_includes(
                             .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                     ) as *mut i8;
                 }
-                memcpy(
-                    (*section).buffer.item.offset(__oldSize_0 as isize) as *mut ::core::ffi::c_void,
-                    (*stmt).file as *const ::core::ffi::c_void,
-                    (__count_0 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                std::ptr::copy_nonoverlapping(
+                    (*stmt).file as *const u8,
+                    (*section).buffer.item.offset(__oldSize_0 as isize) as *mut u8,
+                    __count_0 as usize,
                 );
                 let section_name: darray_size_t = if !(*stmt).map.is_null()
                     || valid as ::core::ffi::c_int != 0 && !(*xkb_file).name.is_null()
@@ -990,15 +982,14 @@ unsafe fn xkb_file_section_append_includes(
                                 .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                         ) as *mut i8;
                     }
-                    memcpy(
-                        (*section).buffer.item.offset(__oldSize_1 as isize)
-                            as *mut ::core::ffi::c_void,
+                    std::ptr::copy_nonoverlapping(
                         (if !(*stmt).map.is_null() {
                             (*stmt).map
                         } else {
                             (*xkb_file).name
-                        }) as *const ::core::ffi::c_void,
-                        (__count_1 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                        }) as *const u8,
+                        (*section).buffer.item.offset(__oldSize_1 as isize) as *mut u8,
+                        __count_1 as usize,
                     );
                 }
                 let modifier: darray_size_t = if !(*stmt).modifier.is_null() {
@@ -1024,11 +1015,10 @@ unsafe fn xkb_file_section_append_includes(
                                 .wrapping_mul(::core::mem::size_of::<i8>() as usize),
                         ) as *mut i8;
                     }
-                    memcpy(
-                        (*section).buffer.item.offset(__oldSize_2 as isize)
-                            as *mut ::core::ffi::c_void,
-                        (*stmt).modifier as *const ::core::ffi::c_void,
-                        (__count_2 as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
+                    std::ptr::copy_nonoverlapping(
+                        (*stmt).modifier as *const u8,
+                        (*section).buffer.item.offset(__oldSize_2 as isize) as *mut u8,
+                        __count_2 as usize,
                     );
                 }
                 let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {

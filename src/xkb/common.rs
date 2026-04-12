@@ -417,13 +417,7 @@ pub mod test_h {
         ) -> *mut xkb_keymap,
     >;
     pub type test_third_party_compile_buffer_t = Option<
-        unsafe fn(
-            *const i8,
-            usize,
-            *mut ::core::ffi::c_void,
-            *mut *mut i8,
-            *mut usize,
-        ) -> i32,
+        unsafe fn(*const i8, usize, *mut ::core::ffi::c_void, *mut *mut i8, *mut usize) -> i32,
     >;
     pub const EVDEV_OFFSET: i32 = 8 as i32;
 
@@ -469,16 +463,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
@@ -661,7 +645,7 @@ pub use self::stdio_h::{
     va_list, vasprintf, _IONBF, BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
-use self::string_h::{memcpy, memset, strdup, strerror};
+use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -720,7 +704,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len};
+use crate::xkb::utils::cstr_len;
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
@@ -2622,11 +2606,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                     c2rust_current_block = 4427821232739340156;
                     break;
                 }
-                memcpy(
-                    &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                    option as *const ::core::ffi::c_void,
-                    len,
-                );
+                std::ptr::copy_nonoverlapping(option as *const u8, &raw mut buf as *mut u8, len);
                 buf[len as usize] = '\0' as i32 as i8;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                 if *o as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
@@ -2677,10 +2657,10 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                                     as usize),
                             ) as *mut darray_string;
                         }
-                        memset(
+                        std::ptr::write_bytes(
                             loptions.item.offset(__oldSize as isize) as *mut darray_string
-                                as *mut ::core::ffi::c_void,
-                            0 as i32,
+                                as *mut u8,
+                            0u8,
                             (__newSize.wrapping_sub(__oldSize) as usize)
                                 .wrapping_mul(::core::mem::size_of::<darray_string>() as usize),
                         );
@@ -2753,9 +2733,9 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                             c2rust_current_block = 4427821232739340156;
                             break;
                         }
-                        memcpy(
-                            start as *mut ::core::ffi::c_void,
-                            layout_0 as *const ::core::ffi::c_void,
+                        std::ptr::copy_nonoverlapping(
+                            layout_0 as *const u8,
+                            start as *mut u8,
                             len_0,
                         );
                         *start.offset(len_0 as isize) = '\0' as i32 as i8;
@@ -2767,9 +2747,9 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                             break;
                         }
                         start = start.offset(1);
-                        memcpy(
-                            start as *mut ::core::ffi::c_void,
-                            variant as *const ::core::ffi::c_void,
+                        std::ptr::copy_nonoverlapping(
+                            variant as *const u8,
+                            start as *mut u8,
                             len_0,
                         );
                         *start.offset(len_0 as isize) = '\0' as i32 as i8;

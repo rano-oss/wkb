@@ -116,7 +116,6 @@ pub mod xkbcommon_errors_h {
 
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
-
 }
 
 pub mod atom_h {
@@ -616,26 +615,7 @@ pub mod xkbcommon_features_h {
 
 pub mod string_h {
 
-    extern "C" {
-
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-
-        pub fn memmove(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
+    
 }
 
 pub mod utils_numbers_h {
@@ -840,7 +820,6 @@ pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::stdio_h::va_list;
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc};
-use self::string_h::{memcpy, memmove, memset};
 pub use self::sys_types_h::ssize_t;
 pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
 use self::utf8_h::is_valid_utf8;
@@ -1308,10 +1287,10 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
                             .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
                     ) as *mut xkb_filter;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter
-                        as *mut ::core::ffi::c_void,
-                    0 as i32,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
                 );
@@ -3474,9 +3453,9 @@ pub unsafe fn xkb_state_key_get_utf8(
             }
             ret -= 1;
             if (offset as usize).wrapping_add(ret as usize) <= size {
-                memcpy(
-                    buffer.offset(offset as isize) as *mut ::core::ffi::c_void,
-                    &raw mut tmp as *mut i8 as *const ::core::ffi::c_void,
+                std::ptr::copy_nonoverlapping(
+                    &raw mut tmp as *const u8,
+                    buffer.offset(offset as isize) as *mut u8,
                     ret as usize,
                 );
             }
@@ -4099,25 +4078,17 @@ pub unsafe fn xkb_machine_options_remap_mods(
                     if target == 0 {
                         let mut __index: darray_size_t = m;
                         if __index < (*options).mods.size.wrapping_sub(1 as darray_size_t) {
-                            memmove(
-                                (*options).mods.item.offset(__index as isize)
-                                    as *mut machine_mods_mapping
-                                    as *mut ::core::ffi::c_void,
+                            std::ptr::copy(
                                 (*options)
                                     .mods
                                     .item
-                                    .offset(__index.wrapping_add(1 as darray_size_t) as isize)
-                                    as *mut machine_mods_mapping
-                                    as *const ::core::ffi::c_void,
-                                ((*options)
+                                    .offset(__index.wrapping_add(1 as darray_size_t) as isize),
+                                (*options).mods.item.offset(__index as isize),
+                                (*options)
                                     .mods
                                     .size
                                     .wrapping_sub(1 as darray_size_t)
-                                    .wrapping_sub(__index)
-                                    as usize)
-                                    .wrapping_mul(
-                                        ::core::mem::size_of::<machine_mods_mapping>() as usize
-                                    ),
+                                    .wrapping_sub(__index) as usize,
                             );
                         }
                         (*options).mods.size = (*options).mods.size.wrapping_sub(1);

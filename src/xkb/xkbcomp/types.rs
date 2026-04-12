@@ -224,11 +224,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -396,7 +391,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::memset;
 pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -551,10 +545,10 @@ unsafe fn InitKeyTypesInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        memset(
-            info as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyTypesInfo>() as usize,
+        std::ptr::write_bytes::<KeyTypesInfo>(
+            info as *mut KeyTypesInfo,
+            0u8,
+            1,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -1261,10 +1255,10 @@ unsafe fn AddLevelName(
                             .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                     ) as *mut xkb_atom_t;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*type_0).level_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                 );

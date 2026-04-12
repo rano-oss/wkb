@@ -26317,11 +26317,6 @@ pub mod stdio_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memmove(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -26677,13 +26672,12 @@ pub use self::stdint_intn_h::i32;
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free};
-use self::string_h::{memmove, strdup};
+use self::string_h::strdup;
 pub use self::sys_types_h::ssize_t;
 pub use self::types_h::{__int32_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{is_xdigit, istrcmp, istrncmp};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
-use crate::xkb::utils::{cstr_len, cstr_cmp, cstr_ncmp};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_t, xkb_utf32_to_keysym, XKB_KEYSYM_CASE_INSENSITIVE,
     XKB_KEYSYM_MAX, XKB_KEYSYM_NO_FLAGS,
@@ -26692,6 +26686,7 @@ pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,
     XKB_KEY_Mode_switch, XKB_KEY_NoSymbol, XKB_KEY_Num_Lock, XKB_KEY_Shift_L,
 };
+use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keysym_iterator {
@@ -27030,9 +27025,9 @@ pub unsafe fn xkb_keysym_from_name(
             if tmp.is_null() {
                 return XKB_KEY_NoSymbol as xkb_keysym_t;
             }
-            memmove(
-                tmp.offset(4 as i32 as isize) as *mut i8 as *mut ::core::ffi::c_void,
-                tmp.offset(5 as i32 as isize) as *mut i8 as *const ::core::ffi::c_void,
+            std::ptr::copy(
+                tmp.offset(5 as i32 as isize),
+                tmp.offset(4 as i32 as isize),
                 cstr_len(name)
                     .wrapping_sub(5 as usize)
                     .wrapping_add(1 as usize),

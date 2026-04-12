@@ -29,7 +29,6 @@ pub mod context_h {
         atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
         C2Rust_Unnamed_0,
     };
-
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -92,16 +91,7 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn memcmp(
-            __s1: *const ::core::ffi::c_void,
-            __s2: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> i32;
-    }
-}
+pub mod string_h {}
 pub mod stdlib_h {
 
     extern "C" {
@@ -140,9 +130,7 @@ pub mod xkbcommon_names_h {
 pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{
-    xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
+pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::enums_h::{
     xkb_enumerations_values, XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES,
@@ -195,9 +183,7 @@ pub use self::stdint_h::INT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::calloc;
-use self::string_h::{memcmp};
 pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
-use crate::xkb::utils::{cstr_len};
 pub use self::xkbcommon_h::{
     xkb_context_ref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
     xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -215,6 +201,7 @@ pub use self::xkbcommon_names_h::{
     XKB_MOD_NAME_CAPS, XKB_MOD_NAME_CTRL, XKB_MOD_NAME_MOD1, XKB_MOD_NAME_MOD2, XKB_MOD_NAME_MOD3,
     XKB_MOD_NAME_MOD4, XKB_MOD_NAME_MOD5, XKB_MOD_NAME_SHIFT,
 };
+use crate::xkb::utils::cstr_len;
 unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
     unsafe {
         static mut builtin_mods: [*const i8; 8] = [
@@ -357,11 +344,12 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
         if (*a).num_syms as i32 <= 1 as i32 {
             return (*a).s.sym == (*b).s.sym;
         }
-        return memcmp(
-            (*a).s.syms as *const ::core::ffi::c_void,
-            (*b).s.syms as *const ::core::ffi::c_void,
-            (::core::mem::size_of::<xkb_keysym_t>() as usize).wrapping_mul((*a).num_syms as usize),
-        ) == 0 as i32;
+        {
+            let n = (::core::mem::size_of::<xkb_keysym_t>() as usize)
+                .wrapping_mul((*a).num_syms as usize);
+            return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
+                == std::slice::from_raw_parts((*b).s.syms as *const u8, n);
+        }
     }
 }
 pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
@@ -415,11 +403,13 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
                         == (*b).internal.c2rust_unnamed.clear_latched_mods;
             }
             _ => {
-                return memcmp(
-                    &raw const (*a).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
-                    &raw const (*b).priv_0.data as *const uint8_t as *const ::core::ffi::c_void,
-                    ::core::mem::size_of::<[uint8_t; 7]>() as usize,
-                ) == 0 as i32;
+                return std::slice::from_raw_parts(
+                    &raw const (*a).priv_0.data as *const u8,
+                    ::core::mem::size_of::<[uint8_t; 7]>(),
+                ) == std::slice::from_raw_parts(
+                    &raw const (*b).priv_0.data as *const u8,
+                    ::core::mem::size_of::<[uint8_t; 7]>(),
+                );
             }
         };
     }

@@ -329,21 +329,6 @@ pub mod action_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memmove(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -396,14 +381,18 @@ pub mod utils_h {
         unsafe {
             let mut p: *mut ::core::ffi::c_void = calloc(nmemb, size);
             if !p.is_null() {
-                memcpy(p, mem, nmemb.wrapping_mul(size));
+                std::ptr::copy_nonoverlapping(
+                    mem as *const u8,
+                    p as *mut u8,
+                    nmemb.wrapping_mul(size),
+                );
             }
             return p;
         }
     }
 
     use super::stdlib_h::calloc;
-    use super::string_h::{memcpy, strdup};
+    use super::string_h::{strdup};
     pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod limits_h {
@@ -640,7 +629,6 @@ pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
 use self::stdio_h::{fprintf, stderr};
 use self::stdlib_h::{abort, atoi, calloc, free, realloc};
-use self::string_h::{memcpy, memmove, memset};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
 pub use self::types_h::{
@@ -684,10 +672,10 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len};
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
+use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsInfo {
@@ -837,10 +825,10 @@ unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
 }
 unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        memset(
-            groupi as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<GroupInfo>() as usize,
+        std::ptr::write_bytes::<GroupInfo>(
+            groupi as *mut GroupInfo,
+            0u8,
+            1,
         );
     }
 }
@@ -888,10 +876,10 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
             ) as *mut xkb_level;
         }
         if __count != 0 as darray_size_t {
-            memcpy(
-                (*to).levels.item as *mut ::core::ffi::c_void,
-                (*from).levels.item as *const ::core::ffi::c_void,
-                (__count as usize).wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
+            std::ptr::copy_nonoverlapping::<xkb_level>(
+                (*from).levels.item,
+                (*to).levels.item,
+                __count as usize,
             );
         }
         let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -923,10 +911,10 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
 }
 unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
     unsafe {
-        memset(
-            keyi as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyInfo>() as usize,
+        std::ptr::write_bytes::<KeyInfo>(
+            keyi as *mut KeyInfo,
+            0u8,
+            1,
         );
         (*keyi).name = xkb_atom_intern(
             ctx,
@@ -970,10 +958,10 @@ unsafe fn InitSymbolsInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        memset(
-            info as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<SymbolsInfo>() as usize,
+        std::ptr::write_bytes::<SymbolsInfo>(
+            info as *mut SymbolsInfo,
+            0u8,
+            1,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).include_depth = include_depth;
@@ -1526,22 +1514,19 @@ unsafe fn overlays_insert(
                 abort();
             }
             if (index_0 as u32) < (count as u32).wrapping_sub(1 as u32) {
-                memmove(
+                std::ptr::copy(
+                    (*keyi)
+                        .c2rust_unnamed
+                        .overlays_keys
+                        .offset(index_0 as ::core::ffi::c_int as isize),
                     (*keyi)
                         .c2rust_unnamed
                         .overlays_keys
                         .offset(index_0 as ::core::ffi::c_int as isize)
-                        .offset(1 as ::core::ffi::c_int as isize)
-                        as *mut ::core::ffi::c_void,
-                    (*keyi)
-                        .c2rust_unnamed
-                        .overlays_keys
-                        .offset(index_0 as ::core::ffi::c_int as isize)
-                        as *const ::core::ffi::c_void,
-                    ((count as u32)
+                        .offset(1 as ::core::ffi::c_int as isize),
+                    (count as u32)
                         .wrapping_sub(1 as u32)
-                        .wrapping_sub(index_0 as u32) as usize)
-                        .wrapping_mul(::core::mem::size_of::<*const xkb_key>() as usize),
+                        .wrapping_sub(index_0 as u32) as usize,
                 );
             }
             let ref mut c2rust_fresh7 = *(*keyi)
@@ -2405,10 +2390,10 @@ unsafe fn GetGroupIndex(
                             .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                     ) as *mut GroupInfo;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 );
@@ -2456,10 +2441,10 @@ unsafe fn GetGroupIndex(
                             .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                     ) as *mut GroupInfo;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*keyi).groups.item.offset(__oldSize_0 as isize) as *mut GroupInfo
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize_0.wrapping_sub(__oldSize_0) as usize)
                         .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 );
@@ -2544,10 +2529,10 @@ unsafe fn AddSymbolsToKey(
                             .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                 );
@@ -2687,10 +2672,10 @@ unsafe fn AddActionsToKey(
                             .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                     ) as *mut xkb_level;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
                 );
@@ -3094,10 +3079,10 @@ unsafe fn SetSymbolsField(
                                     .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                             ) as *mut GroupInfo;
                         }
-                        memset(
+                        std::ptr::write_bytes(
                             (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
-                                as *mut ::core::ffi::c_void,
-                            0 as ::core::ffi::c_int,
+                                as *mut u8,
+                            0u8,
                             (__newSize.wrapping_sub(__oldSize) as usize)
                                 .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                         );
@@ -3548,10 +3533,10 @@ unsafe fn SetGroupName(
                                 .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                         ) as *mut xkb_atom_t;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*info).group_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                 );
@@ -3850,10 +3835,10 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                         .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
                 ) as *mut GroupInfo;
             }
-            memset(
+            std::ptr::write_bytes(
                 (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
-                    as *mut ::core::ffi::c_void,
-                0 as ::core::ffi::c_int,
+                    as *mut u8,
+                0u8,
                 (__newSize.wrapping_sub(__oldSize) as usize)
                     .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
             );
@@ -3907,10 +3892,10 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
             ) as *mut GroupInfo;
         }
         if __count != 0 as darray_size_t {
-            memcpy(
-                keyi.groups.item as *mut ::core::ffi::c_void,
-                (*info).default_key.groups.item as *const ::core::ffi::c_void,
-                (__count as usize).wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
+            std::ptr::copy_nonoverlapping::<GroupInfo>(
+                (*info).default_key.groups.item,
+                keyi.groups.item,
+                __count as usize,
             );
         }
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;

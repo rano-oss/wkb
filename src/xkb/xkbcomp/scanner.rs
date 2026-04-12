@@ -304,11 +304,8 @@ pub mod scanner_utils_h {
             if (*s).len.wrapping_sub((*s).pos) < len {
                 return false_0 != 0;
             }
-            if memcmp(
-                (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
-                string as *const ::core::ffi::c_void,
-                len,
-            ) != 0 as ::core::ffi::c_int
+            if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
+                != std::slice::from_raw_parts(string as *const u8, len)
             {
                 return false_0 != 0;
             }
@@ -506,7 +503,7 @@ pub mod scanner_utils_h {
     use super::stdint_h::INT64_MAX;
     use super::stdint_intn_h::i64;
     use super::stdint_uintn_h::{u32, uint64_t, uint8_t};
-    use super::string_h::{memchr, memcmp};
+    use super::string_h::memchr;
     use super::utf8_h::utf32_to_utf8;
     use super::utils_h::is_ascii;
     use super::utils_numbers_h::{
@@ -673,11 +670,6 @@ pub mod parser_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcmp(
-            __s1: *const ::core::ffi::c_void,
-            __s2: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> ::core::ffi::c_int;
         pub fn memchr(
             __s: *const ::core::ffi::c_void,
             __c: ::core::ffi::c_int,

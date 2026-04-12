@@ -220,21 +220,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memmove(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -416,7 +401,6 @@ pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{memcpy, memmove, memset};
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -571,10 +555,10 @@ unsafe fn keycode_store_update_key(
                             .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
@@ -608,10 +592,10 @@ unsafe fn keycode_store_insert_key(
                             .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
@@ -640,10 +624,10 @@ unsafe fn keycode_store_insert_key(
                                 as usize),
                         ) as *mut xkb_atom_t;
                     }
-                    memset(
+                    std::ptr::write_bytes(
                         (*store).low.item.offset(__oldSize_0 as isize) as *mut xkb_atom_t
-                            as *mut ::core::ffi::c_void,
-                        0 as ::core::ffi::c_int,
+                            as *mut u8,
+                        0u8,
                         (__newSize_0.wrapping_sub(__oldSize_0) as usize)
                             .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
                     );
@@ -722,20 +706,18 @@ unsafe fn keycode_store_insert_key(
                             .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
                     ) as *mut HighKeycodeEntry;
                 }
-                memmove(
+                std::ptr::copy(
+                    (*store).high.item.offset(__index as isize),
                     (*store)
                         .high
                         .item
                         .offset(__index as isize)
-                        .offset(1 as ::core::ffi::c_int as isize)
-                        as *mut ::core::ffi::c_void,
-                    (*store).high.item.offset(__index as isize) as *const ::core::ffi::c_void,
-                    ((*store)
+                        .offset(1 as ::core::ffi::c_int as isize),
+                    (*store)
                         .high
                         .size
                         .wrapping_sub(__index)
-                        .wrapping_sub(1 as darray_size_t) as usize)
-                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
+                        .wrapping_sub(1 as darray_size_t) as usize,
                 );
                 *(*store).high.item.offset(__index as isize) = HighKeycodeEntry {
                     keycode: kc,
@@ -823,10 +805,10 @@ unsafe fn keycode_store_insert_alias(
                             .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                     ) as *mut KeycodeMatch;
                 }
-                memset(
+                std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut ::core::ffi::c_void,
-                    0 as ::core::ffi::c_int,
+                        as *mut u8,
+                    0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
                 );
@@ -915,20 +897,17 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
             (*c2rust_fresh2).set_found((false_0 != 0) as bool);
             let mut __index: darray_size_t = match_0.key.index();
             if __index < (*store).high.size.wrapping_sub(1 as darray_size_t) {
-                memmove(
-                    (*store).high.item.offset(__index as isize) as *mut HighKeycodeEntry
-                        as *mut ::core::ffi::c_void,
+                std::ptr::copy(
                     (*store)
                         .high
                         .item
-                        .offset(__index.wrapping_add(1 as darray_size_t) as isize)
-                        as *mut HighKeycodeEntry as *const ::core::ffi::c_void,
-                    ((*store)
+                        .offset(__index.wrapping_add(1 as darray_size_t) as isize),
+                    (*store).high.item.offset(__index as isize),
+                    (*store)
                         .high
                         .size
                         .wrapping_sub(1 as darray_size_t)
-                        .wrapping_sub(__index) as usize)
-                        .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
+                        .wrapping_sub(__index) as usize,
                 );
             }
             (*store).high.size = (*store).high.size.wrapping_sub(1);
@@ -1222,10 +1201,10 @@ unsafe fn InitKeyNamesInfo(
     mut include_depth: u32,
 ) {
     unsafe {
-        memset(
-            info as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            ::core::mem::size_of::<KeyNamesInfo>() as usize,
+        std::ptr::write_bytes::<KeyNamesInfo>(
+            info as *mut KeyNamesInfo,
+            0u8,
+            1,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -1475,11 +1454,10 @@ unsafe fn MergeIncludedKeycodes(
         }
         MergeKeycodeStores(into, from, merge, report);
         if (*into).num_led_names == 0 as xkb_led_index_t {
-            memcpy(
-                &raw mut (*into).led_names as *mut LedNameInfo as *mut ::core::ffi::c_void,
-                &raw mut (*from).led_names as *mut LedNameInfo as *const ::core::ffi::c_void,
-                (::core::mem::size_of::<LedNameInfo>() as usize)
-                    .wrapping_mul((*from).num_led_names as usize),
+            std::ptr::copy_nonoverlapping::<LedNameInfo>(
+                &raw mut (*from).led_names as *mut LedNameInfo,
+                &raw mut (*into).led_names as *mut LedNameInfo,
+                (*from).num_led_names as usize,
             );
             (*into).num_led_names = (*from).num_led_names;
             (*from).num_led_names = 0 as xkb_led_index_t;

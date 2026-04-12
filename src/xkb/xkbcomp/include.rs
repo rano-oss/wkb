@@ -354,11 +354,6 @@ pub mod scanner_utils_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
         pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
@@ -512,7 +507,7 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::free;
-use self::string_h::{memcpy, strchr, strdup, strpbrk};
+use self::string_h::{strchr, strdup, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
 pub use self::utils_h::snprintf_safe;
@@ -524,7 +519,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len};
+use crate::xkb::utils::cstr_len;
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,
@@ -825,11 +820,7 @@ unsafe fn expand_percent(
             );
             return 0 as usize;
         }
-        memcpy(
-            buf as *mut ::core::ffi::c_void,
-            &raw mut s.buf as *mut i8 as *const ::core::ffi::c_void,
-            s.buf_pos,
-        );
+        std::ptr::copy_nonoverlapping(&raw mut s.buf as *const u8, buf as *mut u8, s.buf_pos);
         return s.buf_pos;
     }
 }
@@ -875,11 +866,7 @@ pub unsafe fn expand_path(
                     );
                     return -1 as ::core::ffi::c_int as ssize_t;
                 }
-                memcpy(
-                    buf as *mut ::core::ffi::c_void,
-                    name as *const ::core::ffi::c_void,
-                    k,
-                );
+                std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
                 let mut typeDir: *const i8 = DirectoryForInclude(type_0);
                 let mut count: usize = expand_percent(
                     ctx,

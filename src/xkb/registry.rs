@@ -1113,11 +1113,6 @@ pub mod stat_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
@@ -1358,7 +1353,7 @@ pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
 pub use self::stdlib_h::{
     __compar_fn_t, calloc, free, getenv, qsort, realloc, secure_getenv, strtol,
 };
-use self::string_h::{memset, strdup, strerror};
+use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -3505,10 +3500,10 @@ unsafe extern "C" fn xml_error_func(
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
             );
             slen = 0 as i32;
-            memset(
-                &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                0 as i32,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+            std::ptr::write_bytes::<[i8; 4096]>(
+                &raw mut buf as *mut i8 as *mut [i8; 4096],
+                0u8,
+                1,
             );
             return;
         }
@@ -3525,10 +3520,10 @@ unsafe extern "C" fn xml_error_func(
                 b"%s\0".as_ptr() as *const i8,
                 &raw mut buf as *mut i8,
             );
-            memset(
-                &raw mut buf as *mut i8 as *mut ::core::ffi::c_void,
-                0 as i32,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+            std::ptr::write_bytes::<[i8; 4096]>(
+                &raw mut buf as *mut i8 as *mut [i8; 4096],
+                0u8,
+                1,
             );
             slen = 0 as i32;
         }

@@ -242,16 +242,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn memset(
-            __s: *mut ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -444,7 +434,6 @@ pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{free, realloc};
-use self::string_h::{memcpy, memset};
 pub use self::text_h::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
@@ -665,10 +654,10 @@ unsafe fn InitCompatInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        memset(
-            info as *mut ::core::ffi::c_void,
-            0 as i32,
-            ::core::mem::size_of::<CompatInfo>() as usize,
+        std::ptr::write_bytes::<CompatInfo>(
+            info as *mut CompatInfo,
+            0u8,
+            1,
         );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
@@ -1107,11 +1096,10 @@ unsafe fn MergeIncludedCompatMaps(
             }
         }
         if (*into).num_leds == 0 as xkb_led_index_t {
-            memcpy(
-                &raw mut (*into).leds as *mut LedInfo as *mut ::core::ffi::c_void,
-                &raw mut (*from).leds as *mut LedInfo as *const ::core::ffi::c_void,
-                (::core::mem::size_of::<LedInfo>() as usize)
-                    .wrapping_mul((*from).num_leds as usize),
+            std::ptr::copy_nonoverlapping::<LedInfo>(
+                &raw mut (*from).leds as *mut LedInfo,
+                &raw mut (*into).leds as *mut LedInfo,
+                (*from).num_leds as usize,
             );
             (*into).num_leds = (*from).num_leds;
             (*from).num_leds = 0 as xkb_led_index_t;

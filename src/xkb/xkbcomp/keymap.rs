@@ -51,7 +51,6 @@ pub mod xkbcommon_errors_h {
 }
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -307,13 +306,7 @@ pub mod xkbcomp_priv_h {
 }
 pub mod string_h {
 
-    extern "C" {
-        pub fn memcpy(
-            __dest: *mut ::core::ffi::c_void,
-            __src: *const ::core::ffi::c_void,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
+    
 }
 pub mod stdlib_h {
 
@@ -342,7 +335,11 @@ pub mod utils_h {
         unsafe {
             let mut p: *mut ::core::ffi::c_void = calloc(nmemb, size);
             if !p.is_null() {
-                memcpy(p, mem, nmemb.wrapping_mul(size));
+                std::ptr::copy_nonoverlapping(
+                    mem as *const u8,
+                    p as *mut u8,
+                    nmemb.wrapping_mul(size),
+                );
             }
             return p;
         }
@@ -350,7 +347,6 @@ pub mod utils_h {
 
     use super::stdint_h::uintptr_t;
     use super::stdlib_h::calloc;
-    use super::string_h::memcpy;
 }
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
@@ -491,7 +487,6 @@ pub use self::stdint_h::{uintptr_t, UINT16_MAX};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::memcpy;
 pub use self::text_h::{
     format_control_names_offset, ActionTypeText, C2Rust_Unnamed_16, KeyNameText, KeysymText,
     LookupEntry, CONTROL_NAMES_MIN_V1_INDEX, CONTROL_NAMES_MIN_V2_INDEX, GROUP_LAST_INDEX_NAME,
@@ -890,13 +885,10 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                             )
                                                 as *mut xkb_action;
                                         }
-                                        memcpy(
-                                            actions.item.offset(__oldSize as isize)
-                                                as *mut ::core::ffi::c_void,
-                                            (*interp).a.actions as *const ::core::ffi::c_void,
-                                            (__count as usize).wrapping_mul(
-                                                ::core::mem::size_of::<xkb_action>() as usize,
-                                            ),
+                                        std::ptr::copy_nonoverlapping::<xkb_action>(
+                                            (*interp).a.actions,
+                                            actions.item.offset(__oldSize as isize),
+                                            __count as usize,
                                         );
                                     }
                                 }
@@ -1374,12 +1366,10 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     ) as ::core::ffi::c_int as isize)
                     as *mut xkb_key_alias;
                 add_key_aliases(keymap, min_alias, max_alias, aliases);
-                memcpy(
-                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
-                        as *mut ::core::ffi::c_void,
-                    aliases as *const ::core::ffi::c_void,
-                    (num_key_aliases as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_key_alias>() as usize),
+                std::ptr::copy_nonoverlapping::<xkb_key_alias>(
+                    aliases,
+                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases,
+                    num_key_aliases as usize,
                 );
                 let r_0: *mut xkb_key_alias = realloc(
                     (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
