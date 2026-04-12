@@ -651,7 +651,7 @@ pub use self::xkbcommon_h::{
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_dup, darray_growalloc, darray_resize_zero, darray_free};
+use crate::xkb::utils::{cstr_dup, darray_append, darray_free, darray_resize_zero};
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
@@ -2527,27 +2527,18 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         c2rust_current_block = 4427821232739340156;
                         break;
                     }
-                    darray_resize_zero(&mut loptions.item, &mut loptions.size, &mut loptions.alloc, (layout as darray_size_t).wrapping_add(1 as darray_size_t));
-                    let ref mut c2rust_fresh0 = (*loptions.item.offset(layout as isize)).size;
-                    *c2rust_fresh0 = (*loptions.item.offset(layout as isize))
-                        .size
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need_0: darray_size_t = *c2rust_fresh0;
-                    if __need_0 > (*loptions.item.offset(layout as isize)).alloc {
-                        darray_growalloc(
-                            &mut (*loptions.item.offset(layout as isize)).item,
-                            &mut (*loptions.item.offset(layout as isize)).alloc,
-                            __need_0,
-                        );
-                    }
-                    let ref mut c2rust_fresh3 =
-                        *(*loptions.item.offset(layout as isize)).item.offset(
-                            (*loptions.item.offset(layout as isize))
-                                .size
-                                .wrapping_sub(1 as darray_size_t)
-                                as isize,
-                        );
-                    *c2rust_fresh3 = opt;
+                    darray_resize_zero(
+                        &mut loptions.item,
+                        &mut loptions.size,
+                        &mut loptions.alloc,
+                        (layout as darray_size_t).wrapping_add(1 as darray_size_t),
+                    );
+                    darray_append(
+                        &mut (*loptions.item.offset(layout as isize)).item,
+                        &mut (*loptions.item.offset(layout as isize)).size,
+                        &mut (*loptions.item.offset(layout as isize)).alloc,
+                        opt,
+                    );
                 } else if !xkb_rmlvo_builder_append_option(rmlvo, &raw mut buf as *mut i8) {
                     c2rust_current_block = 4427821232739340156;
                     break;
@@ -2664,7 +2655,11 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         opt_0 = opt_0.offset(1);
                     }
                 }
-                darray_free(&mut (*opts_0).item, &mut (*opts_0).size, &mut (*opts_0).alloc);
+                darray_free(
+                    &mut (*opts_0).item,
+                    &mut (*opts_0).size,
+                    &mut (*opts_0).alloc,
+                );
                 opts_0 = opts_0.offset(1);
             }
         }

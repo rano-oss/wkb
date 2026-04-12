@@ -174,9 +174,7 @@ pub mod messages_codes_h {
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
 pub mod text_h {
-    
-    
-    
+
     pub use crate::xkb::text::{LookupEntry, ModMaskText};
 }
 pub mod xkbcomp_priv_h {
@@ -223,11 +221,7 @@ pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
-    
-    
-    
-    
-    
+
     pub use crate::xkb::xkbcomp::expr::{
         ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString,
     };
@@ -281,7 +275,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 use self::expr_h::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use self::internal::__va_list_tag;
@@ -369,7 +363,6 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -402,6 +395,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+use crate::xkb::utils::{darray_append, darray_free, darray_resize_zero};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct KeyTypesInfo {
@@ -526,8 +520,16 @@ unsafe fn InitKeyTypesInfo(
 }
 unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
     unsafe {
-        darray_free(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc);
-        darray_free(&mut (*type_0).level_names.item, &mut (*type_0).level_names.size, &mut (*type_0).level_names.alloc);
+        darray_free(
+            &mut (*type_0).entries.item,
+            &mut (*type_0).entries.size,
+            &mut (*type_0).entries.alloc,
+        );
+        darray_free(
+            &mut (*type_0).level_names.item,
+            &mut (*type_0).level_names.size,
+            &mut (*type_0).level_names.alloc,
+        );
     }
 }
 unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
@@ -544,7 +546,11 @@ unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
                 type_0 = type_0.offset(1);
             }
         }
-        darray_free(&mut (*info).types.item, &mut (*info).types.size, &mut (*info).types.alloc);
+        darray_free(
+            &mut (*info).types.item,
+            &mut (*info).types.size,
+            &mut (*info).types.alloc,
+        );
     }
 }
 unsafe fn FindMatchingKeyType(
@@ -613,7 +619,12 @@ unsafe fn AddKeyType(
             ClearKeyTypeInfo(new);
             return true_0 != 0;
         }
-        darray_append(&mut (*info).types.item, &mut (*info).types.size, &mut (*info).types.alloc, *new);
+        darray_append(
+            &mut (*info).types.item,
+            &mut (*info).types.size,
+            &mut (*info).types.alloc,
+            *new,
+        );
         return true_0 != 0;
     }
 }
@@ -657,7 +668,11 @@ unsafe fn MergeIncludedKeyTypes(
                     type_0 = type_0.offset(1);
                 }
             }
-            darray_free(&mut (*from).types.item, &mut (*from).types.size, &mut (*from).types.alloc);
+            darray_free(
+                &mut (*from).types.item,
+                &mut (*from).types.size,
+                &mut (*from).types.alloc,
+            );
         };
     }
 }
@@ -794,7 +809,12 @@ unsafe fn SetModifiers(
                 "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
                 crate::xkb::utils::CStrDisplay(TypeMaskTxt(info, type_0)),
-                crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                crate::xkb::utils::CStrDisplay(ModMaskText(
+                    (*info).ctx,
+                    MOD_BOTH,
+                    &raw mut (*info).mods,
+                    mods
+                )),
             );
             return false_0 != 0;
         }
@@ -887,7 +907,12 @@ unsafe fn AddMapEntry(
         if (*new).level >= (*type_0).num_levels {
             (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
         }
-        darray_append(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc, *new);
+        darray_append(
+            &mut (*type_0).entries.item,
+            &mut (*type_0).entries.size,
+            &mut (*type_0).entries.alloc,
+            *new,
+        );
         return true_0 != 0;
     }
 }
@@ -993,7 +1018,12 @@ unsafe fn AddPreserve(
                             XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
                             "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
                             XKB_WARNING_DUPLICATE_ENTRY as ::core::ffi::c_int,
-                            crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                            crate::xkb::utils::CStrDisplay(ModMaskText(
+                                (*info).ctx,
+                                MOD_BOTH,
+                                &raw mut (*info).mods,
+                                mods
+                            )),
                             crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                         );
                         return true_0 != 0;
@@ -1028,7 +1058,12 @@ unsafe fn AddPreserve(
         new.level = 0 as xkb_level_index_t;
         new.mods.mods = mods;
         new.preserve.mods = preserve_mods;
-        darray_append(&mut (*type_0).entries.item, &mut (*type_0).entries.size, &mut (*type_0).entries.alloc, new);
+        darray_append(
+            &mut (*type_0).entries.item,
+            &mut (*type_0).entries.size,
+            &mut (*type_0).entries.alloc,
+            new,
+        );
         return true_0 != 0;
     }
 }
@@ -1110,7 +1145,12 @@ unsafe fn SetPreserve(
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
                 "[XKB-{:03}] Illegal value for preserve[{}] in type {}; Converted {} to {}\n",
                 XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as ::core::ffi::c_int,
-                crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                crate::xkb::utils::CStrDisplay(ModMaskText(
+                    (*info).ctx,
+                    MOD_BOTH,
+                    &raw mut (*info).mods,
+                    mods
+                )),
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(before_0),
                 crate::xkb::utils::CStrDisplay(after_0),
@@ -1128,7 +1168,12 @@ unsafe fn AddLevelName(
 ) -> bool {
     unsafe {
         if level >= (*type_0).level_names.size as xkb_level_index_t {
-            darray_resize_zero(&mut (*type_0).level_names.item, &mut (*type_0).level_names.size, &mut (*type_0).level_names.alloc, (level as darray_size_t).wrapping_add(1 as darray_size_t));
+            darray_resize_zero(
+                &mut (*type_0).level_names.item,
+                &mut (*type_0).level_names.size,
+                &mut (*type_0).level_names.alloc,
+                (level as darray_size_t).wrapping_add(1 as darray_size_t),
+            );
         } else {
             if *(*type_0).level_names.item.offset(level as isize) == name {
                 xkb_logf!(
@@ -1410,13 +1455,15 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
-                        crate::xkb::utils::CStrDisplay(if (*stmt).type_0 as u32
-                            == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
-                        {
-                            b"compound\0".as_ptr() as *const i8
-                        } else {
-                            b"declaration\0".as_ptr() as *const i8
-                        }),
+                        crate::xkb::utils::CStrDisplay(
+                            if (*stmt).type_0 as u32
+                                == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
+                            {
+                                b"compound\0".as_ptr() as *const i8
+                            } else {
+                                b"declaration\0".as_ptr() as *const i8
+                            }
+                        ),
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32

@@ -1,4 +1,4 @@
-use crate::xkb::utils::{darray_append, darray_free, darray_growalloc};
+use crate::xkb::utils::{darray_append, darray_appends, darray_free};
 use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
@@ -744,7 +744,6 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                         ::core::ptr::null::<xkb_sym_interpret>();
                     let mut k: usize = 0;
                     interprets.size = 0 as darray_size_t;
-                    darray_growalloc(&mut interprets.item, &mut interprets.alloc, interprets.size);
                     let found: bool =
                         FindInterpForKey(keymap, key, group, level, &raw mut interprets) as bool;
                     if found {
@@ -786,19 +785,12 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         );
                                     }
                                     _ => {
-                                        let mut __count: darray_size_t =
-                                            (*interp).num_actions as darray_size_t;
-                                        let mut __oldSize: darray_size_t = actions.size;
-                                        actions.size = __oldSize.wrapping_add(__count);
-                                        darray_growalloc(
+                                        darray_appends(
                                             &mut actions.item,
+                                            &mut actions.size,
                                             &mut actions.alloc,
-                                            actions.size,
-                                        );
-                                        std::ptr::copy_nonoverlapping::<xkb_action>(
                                             (*interp).a.actions,
-                                            actions.item.offset(__oldSize as isize),
-                                            __count as usize,
+                                            (*interp).num_actions as u32,
                                         );
                                     }
                                 }
@@ -894,7 +886,6 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                             (*c2rust_fresh1).set_implicit_actions((true_0 != 0) as bool);
                         }
                         actions.size = 0 as darray_size_t;
-                        darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
                     }
                     level = level.wrapping_add(1);
                 }

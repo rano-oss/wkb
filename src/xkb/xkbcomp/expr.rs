@@ -2,28 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __int8_t = i8;
-    pub type __uint8_t = u8;
-    pub type __int16_t = i16;
-    pub type __uint16_t = u16;
-    pub type __int32_t = i32;
-    pub type __uint32_t = u32;
-    pub type __int64_t = i64;
-}
-pub mod stdint_intn_h {
-    pub type i8 = __int8_t;
-    pub type i16 = __int16_t;
-    pub type i32 = __int32_t;
-    pub type i64 = __int64_t;
-    use super::types_h::{__int16_t, __int32_t, __int64_t, __int8_t};
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type uint16_t = __uint16_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint16_t, __uint32_t, __uint8_t};
-}
 pub mod stdint_h {
     pub type intmax_t = ::libc::intmax_t;
     pub const UINT32_MAX: u32 = 4294967295 as u32;
@@ -257,8 +235,6 @@ pub mod utils_numbers_h {
             };
         }
     }
-
-    use super::stdint_uintn_h::u32;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -365,12 +341,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::{intmax_t, SIZE_MAX, UINT32_MAX};
-pub use self::stdint_intn_h::{i16, i32, i64, i8};
-pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
-pub use self::types_h::{
-    __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
-};
 pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 pub use self::xkbcommon_errors_h::{
@@ -868,7 +839,9 @@ unsafe fn ExprResolveIntegerLookup(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {} of integers not permitted\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                            crate::xkb::utils::CStrDisplay(stmt_type_to_string(
+                                (*expr).common.type_0
+                            )),
                         );
                         return false_0 != 0;
                     }
@@ -1316,11 +1289,13 @@ unsafe fn ExprResolveMaskLookup(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            crate::xkb::utils::CStrDisplay(if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
-                                b"divide\0".as_ptr() as *const i8
-                            } else {
-                                b"multiply\0".as_ptr() as *const i8
-                            }),
+                            crate::xkb::utils::CStrDisplay(
+                                if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
+                                    b"divide\0".as_ptr() as *const i8
+                                } else {
+                                    b"multiply\0".as_ptr() as *const i8
+                                }
+                            ),
                         );
                         return false_0 != 0;
                     }

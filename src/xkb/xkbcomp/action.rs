@@ -193,9 +193,7 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    
-    
-    
+
     pub use crate::xkb::text::{
         actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
         LookupValue,
@@ -227,8 +225,7 @@ pub mod action_h {
 }
 pub mod stdlib_h {
 
-    extern "C" {
-    }
+    extern "C" {}
 }
 pub mod string_h {}
 pub use crate::xkb::xkbcomp::expr::{
@@ -252,7 +249,7 @@ pub mod utils_h {
             return istrcmp(s1, s2) == 0 as i32;
         }
     }
-    pub use crate::xkb::utils::{istrcmp};
+    pub use crate::xkb::utils::istrcmp;
 }
 pub mod stdbool_h {
     pub const true_0: i32 = 1 as i32;
@@ -278,7 +275,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -391,7 +388,7 @@ pub use self::xkbcomp_priv_h::{
 };
 pub use crate::xkb::keymap_priv::action_equal;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{darray_growalloc, darray_append};
+use crate::xkb::utils::darray_append;
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;
@@ -1074,7 +1071,16 @@ unsafe fn CheckGroupField(
         if pending {
             flags = (flags as u32 | ACTION_PENDING_COMPUTATION as i32 as u32) as xkb_action_flags;
             let pending_index: darray_size_t = (*(*keymap_info).pending_computations).size;
-            darray_append(&mut (*(*keymap_info).pending_computations).item, &mut (*(*keymap_info).pending_computations).size, &mut (*(*keymap_info).pending_computations).alloc, pending_computation { expr: *value_ptr, computed: false, value: 0 as u32, });
+            darray_append(
+                &mut (*(*keymap_info).pending_computations).item,
+                &mut (*(*keymap_info).pending_computations).size,
+                &mut (*(*keymap_info).pending_computations).alloc,
+                pending_computation {
+                    expr: *value_ptr,
+                    computed: false,
+                    value: 0 as u32,
+                },
+            );
             *value_ptr = ::core::ptr::null_mut::<ExprDef>();
             *group_rtrn = pending_index as i32;
         } else {

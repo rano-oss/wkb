@@ -727,7 +727,7 @@ pub use self::xkbcommon_h::{
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
-    darray_growalloc, darray_resize_zero,
+    darray_growalloc, darray_resize, darray_resize_zero,
 };
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1282,12 +1282,12 @@ unsafe fn matcher_new_from_rmlvo(
                         b"(none)\0".as_ptr() as *const i8
                     }),
                 );
-                darray_growalloc(
+                darray_resize(
                     &mut (*m).rmlvo.variants.item,
+                    &mut (*m).rmlvo.variants.size,
                     &mut (*m).rmlvo.variants.alloc,
                     (*m).rmlvo.layouts.size,
                 );
-                (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
             }
         } else {
             let mut layout: *mut xkb_rmlvo_builder_layout =
@@ -1442,12 +1442,12 @@ unsafe fn matcher_new_from_names(
                     b"(none)\0".as_ptr() as *const i8
                 }),
             );
-            darray_growalloc(
+            darray_resize(
                 &mut (*m).rmlvo.variants.item,
+                &mut (*m).rmlvo.variants.size,
                 &mut (*m).rmlvo.variants.alloc,
                 (*m).rmlvo.layouts.size,
             );
-            (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
         }
         return m;
     }

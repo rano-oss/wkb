@@ -1,16 +1,6 @@
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod types_h {
-    pub type __uint8_t = u8;
-    pub type __uint32_t = u32;
-}
-pub mod stdint_uintn_h {
-    pub type uint8_t = __uint8_t;
-    pub type u32 = __uint32_t;
-    use super::types_h::{__uint32_t, __uint8_t};
-}
-
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
     pub use crate::xkb::shared_types::{
@@ -27,8 +17,8 @@ pub mod darray_h {
 pub mod xkbcommon_h {
     pub use crate::xkb::keysym::xkb_keysym_get_name;
     pub use crate::xkb::shared_types::{
-        xkb_keymap_format, xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
-        xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
+        xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
+        xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
         XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
         XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
         XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED,
@@ -42,14 +32,12 @@ pub mod keymap_h {
     pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
     pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
     #[inline]
-    pub unsafe fn format_boolean_controls(mut format: xkb_keymap_format) -> xkb_action_controls {
-        unsafe {
-            return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-                CONTROL_ALL_BOOLEAN_V1 as i32
-            } else {
-                CONTROL_ALL_BOOLEAN as i32
-            }) as xkb_action_controls;
-        }
+    pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
+        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+            CONTROL_ALL_BOOLEAN_V1 as i32
+        } else {
+            CONTROL_ALL_BOOLEAN as i32
+        }) as xkb_action_controls;
     }
 }
 pub mod text_h {
@@ -63,15 +51,14 @@ pub mod text_h {
     pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
     pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
     #[inline]
-    pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> uint8_t {
+    pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
         return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
             CONTROL_NAMES_MIN_V1_INDEX as i32
         } else {
             CONTROL_NAMES_MIN_V2_INDEX as i32
-        }) as uint8_t;
+        }) as u8;
     }
-    use super::stdint_uintn_h::{u32, uint8_t};
-    use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
+    use super::xkbcommon_h::XKB_KEYMAP_FORMAT_TEXT_V1;
 }
 pub mod string_h {}
 pub mod utils_h {
@@ -129,21 +116,19 @@ pub use self::keymap_h::{
 };
 pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
 pub use self::stdbool_h::{false_0, true_0};
-pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::text_h::{
     format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
     CONTROL_NAMES_MIN_V2_INDEX,
 };
-pub use self::types_h::{__uint32_t, __uint8_t};
 pub use self::utils_h::{istrcmp, istreq, strempty};
 pub use self::xkbcommon_h::{
-    xkb_keymap_format, xkb_keysym_get_name, xkb_keysym_t, xkb_log_level, xkb_mod_index_t,
-    xkb_mod_mask_t, xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
-    XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS,
-    XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED,
-    XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE,
-    XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
+    xkb_keysym_get_name, xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
+    xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
+    XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
+    XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
+    XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
+    XKB_STATE_MODS_LOCKED,
 };
 use crate::xkb::utils::cstr_len_safe;
 pub unsafe fn LookupString(
@@ -1790,7 +1775,7 @@ pub unsafe fn LedStateMaskText(
 
 pub unsafe fn ControlMaskText(
     mut ctx: *mut xkb_context,
-    mut format: xkb_keymap_format,
+    mut format: u32,
     mut mask: xkb_action_controls,
 ) -> *const i8 {
     unsafe {
@@ -1804,7 +1789,7 @@ pub unsafe fn ControlMaskText(
         if mask as u32 == all_ctrls as u32 {
             return b"all\0".as_ptr() as *const i8;
         }
-        let control_names_offset: uint8_t = format_control_names_offset(format) as uint8_t;
+        let control_names_offset: u8 = format_control_names_offset(format) as u8;
         let mut i: u32 = 0 as u32;
         while mask as u64 != 0 {
             let mut ret: i32 = 0;

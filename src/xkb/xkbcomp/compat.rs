@@ -177,9 +177,6 @@ pub mod ast_h {
     pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
 }
 pub mod text_h {
-    
-    
-    
     pub use crate::xkb::text::{
         ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
         useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
@@ -210,7 +207,6 @@ pub mod action_h {
     };
 }
 pub mod stdlib_h {
-
     extern "C" {
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
@@ -239,13 +235,7 @@ pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
 pub mod expr_h {
-    
-    
-    
-    
-    
-    
-    
+
     pub use crate::xkb::xkbcomp::expr::{
         ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
         ExprResolveMod, ExprResolveModMask,
@@ -254,12 +244,10 @@ pub mod expr_h {
 pub mod util_mem_h {
     #[inline]
     pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-            let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = NULL_0;
-            return swapped;
-        }
+        let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
+        let mut swapped: *mut ::core::ffi::c_void = *original;
+        *original = NULL_0;
+        return swapped;
     }
     use super::__stddef_null_h::NULL_0;
 }
@@ -309,7 +297,7 @@ pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
     ExprResolveMod, ExprResolveModMask,
@@ -408,7 +396,6 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-use crate::xkb::utils::{darray_growalloc, darray_append, darray_free};
 pub use self::xkbcommon_h::{
     xkb_context_get_log_verbosity, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy,
@@ -437,6 +424,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+use crate::xkb::utils::{darray_append, darray_free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CompatInfo {
@@ -637,7 +625,11 @@ unsafe fn InitCompatInfo(
 unsafe fn ClearCompatInfo(mut info: *mut CompatInfo) {
     unsafe {
         free((*info).name as *mut ::core::ffi::c_void);
-        darray_free(&mut (*info).interps.item, &mut (*info).interps.size, &mut (*info).interps.alloc);
+        darray_free(
+            &mut (*info).interps.item,
+            &mut (*info).interps.size,
+            &mut (*info).interps.alloc,
+        );
     }
 }
 unsafe fn FindMatchingInterp(
@@ -794,7 +786,12 @@ unsafe fn AddInterp(
         if !old.is_null() {
             return MergeInterp(info, old, new, same_file);
         }
-        darray_append(&mut (*info).interps.item, &mut (*info).interps.size, &mut (*info).interps.alloc, *new);
+        darray_append(
+            &mut (*info).interps.item,
+            &mut (*info).interps.size,
+            &mut (*info).interps.alloc,
+            *new,
+        );
         return true_0 != 0;
     }
 }
@@ -1308,7 +1305,12 @@ unsafe fn SetInterpField(
                             (*si).interp.num_actions = 1 as xkb_action_count_t;
                             (*si).interp.a.action = toAct;
                         } else {
-                            darray_append(&mut actions.item, &mut actions.size, &mut actions.alloc, toAct);
+                            darray_append(
+                                &mut actions.item,
+                                &mut actions.size,
+                                &mut actions.alloc,
+                                toAct,
+                            );
                         }
                     }
                     act_0 = (*act_0).common.next as *mut ExprDef;
@@ -1483,26 +1485,16 @@ unsafe fn SetLedMapField(
                     (*ledi).led.set_pending_groups((true_0 != 0) as bool);
                     let pending_index: darray_size_t =
                         (*(*(*info).keymap_info).pending_computations).size;
-                    (*(*(*info).keymap_info).pending_computations).size = (*(*(*info).keymap_info)
-                        .pending_computations)
-                        .size
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need: darray_size_t =
-                        (*(*(*info).keymap_info).pending_computations).size;
-                    darray_growalloc(
+                    darray_append(
                         &mut (*(*(*info).keymap_info).pending_computations).item,
+                        &mut (*(*(*info).keymap_info).pending_computations).size,
                         &mut (*(*(*info).keymap_info).pending_computations).alloc,
-                        __need,
+                        pending_computation {
+                            expr: *value_ptr,
+                            computed: false,
+                            value: 0 as u32,
+                        },
                     );
-                    *(*(*(*info).keymap_info).pending_computations).item.offset(
-                        (*(*(*info).keymap_info).pending_computations)
-                            .size
-                            .wrapping_sub(1 as darray_size_t) as isize,
-                    ) = pending_computation {
-                        expr: *value_ptr,
-                        computed: false,
-                        value: 0 as u32,
-                    };
                     *value_ptr = ::core::ptr::null_mut::<ExprDef>();
                     mask = pending_index as xkb_layout_mask_t;
                 } else {
@@ -1967,7 +1959,12 @@ unsafe fn CopyInterps(
                     && ((*si).interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as i32
                         == needSymbol as i32
                 {
-                    darray_append(&mut (*collect).sym_interprets.item, &mut (*collect).sym_interprets.size, &mut (*collect).sym_interprets.alloc, (*si).interp);
+                    darray_append(
+                        &mut (*collect).sym_interprets.item,
+                        &mut (*collect).sym_interprets.size,
+                        &mut (*collect).sym_interprets.alloc,
+                        (*si).interp,
+                    );
                 }
                 si = si.offset(1);
             }

@@ -1,4 +1,4 @@
-use crate::xkb::utils::{darray_growalloc, darray_append, darray_resize_zero, darray_free};
+use crate::xkb::utils::{darray_append, darray_free, darray_resize, darray_resize_zero};
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -26,7 +26,6 @@ pub mod stdlib_h {
     extern "C" {
 
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-
 
         pub fn free(__ptr: *mut ::core::ffi::c_void);
 
@@ -90,7 +89,6 @@ pub mod atom_h {
 
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
-
 }
 
 pub mod xkbcommon_h {
@@ -665,7 +663,7 @@ pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
@@ -1201,7 +1199,12 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
             }
         }
         if filter.is_null() {
-            darray_resize_zero(&mut (*state).filters.item, &mut (*state).filters.size, &mut (*state).filters.alloc, (*state).filters.size.wrapping_add(1 as darray_size_t));
+            darray_resize_zero(
+                &mut (*state).filters.item,
+                &mut (*state).filters.size,
+                &mut (*state).filters.alloc,
+                (*state).filters.size.wrapping_add(1 as darray_size_t),
+            );
             filter = (*state)
                 .filters
                 .item
@@ -1941,7 +1944,11 @@ unsafe fn append_redirect_key_events(
             new.mods = new.mods & !mask | (*redirect).mods;
             changed = get_state_component_changes(&raw mut last_components, &raw mut new);
             if changed as u64 != 0 {
-                darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+                darray_append(
+                    &mut (*events).queue.item,
+                    &mut (*events).queue.size,
+                    &mut (*events).queue.alloc,
+                    xkb_event {
                         type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                         c2rust_unnamed: C2Rust_Unnamed_17 {
                             components: C2Rust_Unnamed_18 {
@@ -1949,23 +1956,33 @@ unsafe fn append_redirect_key_events(
                                 changed: changed,
                             },
                         },
-                    });
+                    },
+                );
             }
         }
-        darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
-            type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
-                XKB_EVENT_TYPE_KEY_UP as i32
-            } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
-                XKB_EVENT_TYPE_KEY_REPEATED as i32
-            } else {
-                XKB_EVENT_TYPE_KEY_DOWN as i32
-            }) as xkb_event_type,
-            c2rust_unnamed: C2Rust_Unnamed_17 {
-                keycode: (*redirect).keycode,
+        darray_append(
+            &mut (*events).queue.item,
+            &mut (*events).queue.size,
+            &mut (*events).queue.alloc,
+            xkb_event {
+                type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
+                    XKB_EVENT_TYPE_KEY_UP as i32
+                } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                    XKB_EVENT_TYPE_KEY_REPEATED as i32
+                } else {
+                    XKB_EVENT_TYPE_KEY_DOWN as i32
+                }) as xkb_event_type,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    keycode: (*redirect).keycode,
+                },
             },
-        });
+        );
         if mask != 0 && changed as u32 != 0 {
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
@@ -1973,7 +1990,8 @@ unsafe fn append_redirect_key_events(
                             changed: changed,
                         },
                     },
-                });
+                },
+            );
         }
         return true_0 != 0;
     }
@@ -2375,7 +2393,11 @@ pub unsafe fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
 unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
     unsafe {
         xkb_keymap_unref((*state).keymap);
-        darray_free(&mut (*state).filters.item, &mut (*state).filters.size, &mut (*state).filters.alloc);
+        darray_free(
+            &mut (*state).filters.item,
+            &mut (*state).filters.size,
+            &mut (*state).filters.alloc,
+        );
     }
 }
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
@@ -3848,8 +3870,16 @@ pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options)
         if options.is_null() {
             return;
         }
-        darray_free(&mut (*options).shortcuts.targets.item, &mut (*options).shortcuts.targets.size, &mut (*options).shortcuts.targets.alloc);
-        darray_free(&mut (*options).mods.item, &mut (*options).mods.size, &mut (*options).mods.alloc);
+        darray_free(
+            &mut (*options).shortcuts.targets.item,
+            &mut (*options).shortcuts.targets.size,
+            &mut (*options).shortcuts.targets.alloc,
+        );
+        darray_free(
+            &mut (*options).mods.item,
+            &mut (*options).mods.size,
+            &mut (*options).mods.alloc,
+        );
         xkb_context_unref((*options).ctx);
         free(options as *mut ::core::ffi::c_void);
     }
@@ -3894,11 +3924,6 @@ pub unsafe fn xkb_machine_options_remap_mods(
         if source == 0 {
             if target == 0 {
                 (*options).mods.size = 0 as darray_size_t;
-                darray_growalloc(
-                    &mut (*options).mods.item,
-                    &mut (*options).mods.alloc,
-                    (*options).mods.size,
-                );
                 return XKB_SUCCESS;
             } else {
                 return XKB_ERROR_UNSUPPORTED_MODIFIER_MASK;
@@ -3939,7 +3964,15 @@ pub unsafe fn xkb_machine_options_remap_mods(
             }
         }
         if target != 0 {
-            darray_append(&mut (*options).mods.item, &mut (*options).mods.size, &mut (*options).mods.alloc, machine_mods_mapping { source: source, target: target, });
+            darray_append(
+                &mut (*options).mods.item,
+                &mut (*options).mods.size,
+                &mut (*options).mods.alloc,
+                machine_mods_mapping {
+                    source: source,
+                    target: target,
+                },
+            );
         }
         return XKB_SUCCESS;
     }
@@ -3974,11 +4007,11 @@ pub unsafe fn xkb_machine_options_remap_shortcut_layout(
         let mut config: *mut xkb_shortcuts_config_options = &raw mut (*options).shortcuts;
         if source >= (*config).targets.size as xkb_layout_index_t {
             let mut new: xkb_layout_index_t = (*config).targets.size as xkb_layout_index_t;
-            (*config).targets.size = source.wrapping_add(1 as xkb_layout_index_t) as darray_size_t;
-            darray_growalloc(
+            darray_resize(
                 &mut (*config).targets.item,
+                &mut (*config).targets.size,
                 &mut (*config).targets.alloc,
-                (*config).targets.size,
+                source.wrapping_add(1 as xkb_layout_index_t) as u32,
             );
             while new < source {
                 *(*config).targets.item.offset(new as isize) =
@@ -4058,7 +4091,12 @@ unsafe fn machine_set_mods(
                         || (*mapping).source & invalid != 0
                         || (*mapping).target & invalid != 0)
                     {
-                        darray_append(&mut mappings.item, &mut mappings.size, &mut mappings.alloc, *mapping);
+                        darray_append(
+                            &mut mappings.item,
+                            &mut mappings.size,
+                            &mut mappings.alloc,
+                            *mapping,
+                        );
                         mask |= (*mapping).source;
                     }
                     mapping = mapping.offset(1);
@@ -4212,7 +4250,11 @@ pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
             return;
         }
         xkb_state_destroy(&raw mut (*sm).state);
-        darray_free(&mut (*sm).overlays.keys.item, &mut (*sm).overlays.keys.size, &mut (*sm).overlays.keys.alloc);
+        darray_free(
+            &mut (*sm).overlays.keys.item,
+            &mut (*sm).overlays.keys.size,
+            &mut (*sm).overlays.keys.alloc,
+        );
         free((*sm).config.shortcuts.targets as *mut ::core::ffi::c_void);
         free((*sm).config.modifiers.mappings as *mut ::core::ffi::c_void);
         free(sm as *mut ::core::ffi::c_void);
@@ -4314,7 +4356,11 @@ pub unsafe fn xkb_machine_process_synthetic(
             if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
                 machine_update_overlays(sm);
             }
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
@@ -4322,7 +4368,8 @@ pub unsafe fn xkb_machine_process_synthetic(
                             changed: changed,
                         },
                     },
-                });
+                },
+            );
         }
         return XKB_SUCCESS;
     }
@@ -4372,7 +4419,11 @@ unsafe fn do_remap_modifiers(
                 as xkb_state_component;
         if changed as u64 != 0 {
             event_idx = (*events).queue.size as isize;
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
@@ -4380,7 +4431,8 @@ unsafe fn do_remap_modifiers(
                             changed: changed,
                         },
                     },
-                });
+                },
+            );
         }
         (*state).components.mods = new.components.mods;
         return event_idx;
@@ -4403,7 +4455,11 @@ unsafe fn do_shortcuts_tweak(
             let mut new: xkb_state = *state;
             if remap_event < 0 as isize {
                 remap_event = (*events).queue.size as isize;
-                darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+                darray_append(
+                    &mut (*events).queue.item,
+                    &mut (*events).queue.size,
+                    &mut (*events).queue.alloc,
+                    xkb_event {
                         type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                         c2rust_unnamed: C2Rust_Unnamed_17 {
                             components: C2Rust_Unnamed_18 {
@@ -4422,7 +4478,8 @@ unsafe fn do_shortcuts_tweak(
                                 changed: 0 as xkb_state_component,
                             },
                         },
-                    });
+                    },
+                );
             } else {
                 new.components = (*(*events).queue.item.offset(remap_event as isize))
                     .c2rust_unnamed
@@ -4483,7 +4540,11 @@ unsafe fn undo_tweaks(
             &raw const (*event).c2rust_unnamed.components.components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
@@ -4491,7 +4552,8 @@ unsafe fn undo_tweaks(
                             changed: changed,
                         },
                     },
-                });
+                },
+            );
         }
     }
 }
@@ -4565,15 +4627,12 @@ unsafe fn process_overlayable_key(
                 entry = available_entry;
             } else {
                 let idx: darray_size_t = (*sm).overlays.keys.size;
-                (*sm).overlays.keys.size = idx.wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*sm).overlays.keys.size;
-                if __need > (*sm).overlays.keys.alloc {
-                    darray_growalloc(
-                        &mut (*sm).overlays.keys.item,
-                        &mut (*sm).overlays.keys.alloc,
-                        __need,
-                    );
-                }
+                darray_append(
+                    &mut (*sm).overlays.keys.item,
+                    &mut (*sm).overlays.keys.size,
+                    &mut (*sm).overlays.keys.alloc,
+                    core::mem::zeroed::<xkb_overlaid_key>(),
+                );
                 entry = (*sm).overlays.keys.item.offset(idx as isize) as *mut xkb_overlaid_key;
             }
             (*entry).old = key;
@@ -4661,7 +4720,11 @@ pub unsafe fn xkb_machine_process_key(
             }
         }
         if !has_key_event {
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
                         XKB_EVENT_TYPE_KEY_UP as i32
                     } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
@@ -4672,7 +4735,8 @@ pub unsafe fn xkb_machine_process_key(
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         keycode: (*key).keycode,
                     },
-                });
+                },
+            );
         }
         if remap_event >= 0 as isize {
             undo_tweaks(state, &raw const previous_components, events);
@@ -4685,7 +4749,11 @@ pub unsafe fn xkb_machine_process_key(
             if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
                 machine_update_overlays(sm);
             }
-            darray_append(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc, xkb_event {
+            darray_append(
+                &mut (*events).queue.item,
+                &mut (*events).queue.size,
+                &mut (*events).queue.alloc,
+                xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
@@ -4693,7 +4761,8 @@ pub unsafe fn xkb_machine_process_key(
                             changed: changed,
                         },
                     },
-                });
+                },
+            );
         }
         return XKB_SUCCESS;
     }
@@ -4743,7 +4812,11 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
         if events.is_null() {
             return;
         }
-        darray_free(&mut (*events).queue.item, &mut (*events).queue.size, &mut (*events).queue.alloc);
+        darray_free(
+            &mut (*events).queue.item,
+            &mut (*events).queue.size,
+            &mut (*events).queue.alloc,
+        );
         xkb_context_unref((*events).ctx);
         free(events as *mut ::core::ffi::c_void);
     }

@@ -509,7 +509,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len, darray_append, darray_growalloc, darray_free};
+use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -797,9 +797,21 @@ pub unsafe fn xkb_file_section_free(mut section: *mut xkb_file_section) {
         if section.is_null() {
             return;
         }
-        darray_free(&mut (*section).include_groups.item, &mut (*section).include_groups.size, &mut (*section).include_groups.alloc);
-        darray_free(&mut (*section).includes.item, &mut (*section).includes.size, &mut (*section).includes.alloc);
-        darray_free(&mut (*section).buffer.item, &mut (*section).buffer.size, &mut (*section).buffer.alloc);
+        darray_free(
+            &mut (*section).include_groups.item,
+            &mut (*section).include_groups.size,
+            &mut (*section).include_groups.alloc,
+        );
+        darray_free(
+            &mut (*section).includes.item,
+            &mut (*section).includes.size,
+            &mut (*section).includes.alloc,
+        );
+        darray_free(
+            &mut (*section).buffer.item,
+            &mut (*section).buffer.size,
+            &mut (*section).buffer.alloc,
+        );
     }
 }
 unsafe fn xkb_file_section_set_meta_data(
@@ -812,19 +824,12 @@ unsafe fn xkb_file_section_set_meta_data(
         (*section).flags = (*xkb_file).flags;
         if !(*xkb_file).name.is_null() {
             let mut idx: darray_size_t = (*section).buffer.size;
-            let mut __count: darray_size_t =
-                cstr_len((*xkb_file).name).wrapping_add(1 as usize) as darray_size_t;
-            let mut __oldSize: darray_size_t = (*section).buffer.size;
-            (*section).buffer.size = __oldSize.wrapping_add(__count);
-            darray_growalloc(
+            darray_appends(
                 &mut (*section).buffer.item,
+                &mut (*section).buffer.size,
                 &mut (*section).buffer.alloc,
-                (*section).buffer.size,
-            );
-            std::ptr::copy_nonoverlapping(
-                (*xkb_file).name as *const u8,
-                (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
-                __count as usize,
+                (*xkb_file).name,
+                cstr_len((*xkb_file).name).wrapping_add(1) as u32,
             );
             (*section).name = idx;
         } else {
@@ -861,34 +866,21 @@ unsafe fn xkb_file_section_append_includes(
                     == 0
             {
                 let path: darray_size_t = (*section).buffer.size;
-                let mut __count: darray_size_t =
-                    cstr_len(&raw mut buf as *mut i8).wrapping_add(1 as usize) as darray_size_t;
-                let mut __oldSize: darray_size_t = (*section).buffer.size;
-                (*section).buffer.size = __oldSize.wrapping_add(__count);
-                darray_growalloc(
+                let buf_ptr: *const i8 = &raw mut buf as *const i8;
+                darray_appends(
                     &mut (*section).buffer.item,
+                    &mut (*section).buffer.size,
                     &mut (*section).buffer.alloc,
-                    (*section).buffer.size,
-                );
-                std::ptr::copy_nonoverlapping(
-                    &raw mut buf as *const u8,
-                    (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
-                    __count as usize,
+                    buf_ptr,
+                    cstr_len(buf_ptr).wrapping_add(1) as u32,
                 );
                 let file: darray_size_t = (*section).buffer.size;
-                let mut __count_0: darray_size_t =
-                    cstr_len((*stmt).file).wrapping_add(1 as usize) as darray_size_t;
-                let mut __oldSize_0: darray_size_t = (*section).buffer.size;
-                (*section).buffer.size = __oldSize_0.wrapping_add(__count_0);
-                darray_growalloc(
+                darray_appends(
                     &mut (*section).buffer.item,
+                    &mut (*section).buffer.size,
                     &mut (*section).buffer.alloc,
-                    (*section).buffer.size,
-                );
-                std::ptr::copy_nonoverlapping(
-                    (*stmt).file as *const u8,
-                    (*section).buffer.item.offset(__oldSize_0 as isize) as *mut u8,
-                    __count_0 as usize,
+                    (*stmt).file,
+                    cstr_len((*stmt).file).wrapping_add(1) as u32,
                 );
                 let section_name: darray_size_t = if !(*stmt).map.is_null()
                     || valid as ::core::ffi::c_int != 0 && !(*xkb_file).name.is_null()
@@ -898,28 +890,17 @@ unsafe fn xkb_file_section_append_includes(
                     0 as darray_size_t
                 };
                 if section_name != 0 {
-                    let mut __count_1: darray_size_t = cstr_len(if !(*stmt).map.is_null() {
+                    let src = if !(*stmt).map.is_null() {
                         (*stmt).map
                     } else {
                         (*xkb_file).name
-                    })
-                    .wrapping_add(1 as usize)
-                        as darray_size_t;
-                    let mut __oldSize_1: darray_size_t = (*section).buffer.size;
-                    (*section).buffer.size = __oldSize_1.wrapping_add(__count_1);
-                    darray_growalloc(
+                    };
+                    darray_appends(
                         &mut (*section).buffer.item,
+                        &mut (*section).buffer.size,
                         &mut (*section).buffer.alloc,
-                        (*section).buffer.size,
-                    );
-                    std::ptr::copy_nonoverlapping(
-                        (if !(*stmt).map.is_null() {
-                            (*stmt).map
-                        } else {
-                            (*xkb_file).name
-                        }) as *const u8,
-                        (*section).buffer.item.offset(__oldSize_1 as isize) as *mut u8,
-                        __count_1 as usize,
+                        src,
+                        cstr_len(src).wrapping_add(1) as u32,
                     );
                 }
                 let modifier: darray_size_t = if !(*stmt).modifier.is_null() {
@@ -928,19 +909,12 @@ unsafe fn xkb_file_section_append_includes(
                     0 as darray_size_t
                 };
                 if modifier != 0 {
-                    let mut __count_2: darray_size_t =
-                        cstr_len((*stmt).modifier).wrapping_add(1 as usize) as darray_size_t;
-                    let mut __oldSize_2: darray_size_t = (*section).buffer.size;
-                    (*section).buffer.size = __oldSize_2.wrapping_add(__count_2);
-                    darray_growalloc(
+                    darray_appends(
                         &mut (*section).buffer.item,
+                        &mut (*section).buffer.size,
                         &mut (*section).buffer.alloc,
-                        (*section).buffer.size,
-                    );
-                    std::ptr::copy_nonoverlapping(
-                        (*stmt).modifier as *const u8,
-                        (*section).buffer.item.offset(__oldSize_2 as isize) as *mut u8,
-                        __count_2 as usize,
+                        (*stmt).modifier,
+                        cstr_len((*stmt).modifier).wrapping_add(1) as u32,
                     );
                 }
                 let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {
@@ -972,7 +946,15 @@ unsafe fn xkb_file_section_append_includes(
                 );
                 if group.is_null() {
                     let group_idx: darray_size_t = (*section).include_groups.size;
-                    darray_append(&mut (*section).include_groups.item, &mut (*section).include_groups.size, &mut (*section).include_groups.alloc, xkb_file_include_group { start: idx, end: idx, });
+                    darray_append(
+                        &mut (*section).include_groups.item,
+                        &mut (*section).include_groups.size,
+                        &mut (*section).include_groups.alloc,
+                        xkb_file_include_group {
+                            start: idx,
+                            end: idx,
+                        },
+                    );
                     group = (*section).include_groups.item.offset(group_idx as isize)
                         as *mut xkb_file_include_group;
                 } else {

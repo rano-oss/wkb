@@ -41,7 +41,6 @@ pub mod atom_h {
 }
 pub mod darray_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::*;
@@ -219,7 +218,7 @@ pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::darray_h::{darray_size_t};
+pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
@@ -287,7 +286,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
 use crate::xkb::utils::cstr_cmp;
-use crate::xkb::utils::{darray_growalloc, darray_append, darray_free};
+use crate::xkb::utils::{darray_append, darray_free};
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -386,7 +385,12 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
             );
             return false;
         }
-        darray_append(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.size, &mut (*rmlvo).layouts.alloc, new);
+        darray_append(
+            &mut (*rmlvo).layouts.item,
+            &mut (*rmlvo).layouts.size,
+            &mut (*rmlvo).layouts.alloc,
+            new,
+        );
         if options.is_null() {
             options_len = 0 as usize;
         }
@@ -413,7 +417,12 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 );
                 return false;
             }
-            darray_append(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc, option);
+            darray_append(
+                &mut (*rmlvo).options.item,
+                &mut (*rmlvo).options.size,
+                &mut (*rmlvo).options.alloc,
+                option,
+            );
             k = k.wrapping_add(1);
         }
         return true;
@@ -459,7 +468,12 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             );
             return false;
         }
-        darray_append(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc, new);
+        darray_append(
+            &mut (*rmlvo).options.item,
+            &mut (*rmlvo).options.size,
+            &mut (*rmlvo).options.alloc,
+            new,
+        );
         return true;
     }
 }
@@ -495,7 +509,11 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
                 layout = layout.offset(1);
             }
         }
-        darray_free(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.size, &mut (*rmlvo).layouts.alloc);
+        darray_free(
+            &mut (*rmlvo).layouts.item,
+            &mut (*rmlvo).layouts.size,
+            &mut (*rmlvo).layouts.alloc,
+        );
         let mut option: *const xkb_rmlvo_builder_option =
             ::core::ptr::null::<xkb_rmlvo_builder_option>();
         if !(*rmlvo).options.item.is_null() {
@@ -510,7 +528,11 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
                 option = option.offset(1);
             }
         }
-        darray_free(&mut (*rmlvo).options.item, &mut (*rmlvo).options.size, &mut (*rmlvo).options.alloc);
+        darray_free(
+            &mut (*rmlvo).options.item,
+            &mut (*rmlvo).options.size,
+            &mut (*rmlvo).options.alloc,
+        );
         xkb_context_unref((*rmlvo).ctx);
         free(rmlvo as *mut ::core::ffi::c_void);
     }

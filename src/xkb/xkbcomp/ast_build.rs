@@ -306,7 +306,7 @@ pub use self::xkbcommon_h::{
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{darray_append, darray_free, darray_growalloc};
+use crate::xkb::utils::{darray_append, darray_free};
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =

@@ -8,11 +8,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod types_h {
-    pub type __uint64_t = u64;
-    pub type __off_t = i64;
-    pub type __off64_t = i64;
-}
 pub mod struct_FILE_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -35,12 +30,12 @@ pub mod struct_FILE_h {
         #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
         pub _flags2: [u8; 3],
         pub _short_backupbuf: [i8; 1],
-        pub _old_offset: __off_t,
+        pub _old_offset: i64,
         pub _cur_column: u16,
         pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: __off64_t,
+        pub _offset: i64,
         pub _codecvt: *mut _IO_codecvt,
         pub _wide_data: *mut _IO_wide_data,
         pub _freeres_list: *mut _IO_FILE,
@@ -48,11 +43,10 @@ pub mod struct_FILE_h {
         pub _prevchain: *mut *mut _IO_FILE,
         pub _mode: ::core::ffi::c_int,
         pub _unused3: ::core::ffi::c_int,
-        pub _total_written: __uint64_t,
+        pub _total_written: u64,
         pub _unused2: [i8; 8],
     }
     pub type _IO_lock_t = ();
-    use super::types_h::{__off64_t, __off_t, __uint64_t};
     extern "C" {
         pub type _IO_wide_data;
         pub type _IO_codecvt;
@@ -461,7 +455,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
 use self::stdlib_h::free;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
-pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_h::{
     xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,

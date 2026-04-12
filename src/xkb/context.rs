@@ -323,7 +323,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc, darray_append, darray_free};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -389,7 +389,12 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             } else if !check_eaccess(path, R_OK | X_OK) {
                 err = EACCES;
             } else {
-                darray_append(&mut (*ctx).includes.item, &mut (*ctx).includes.size, &mut (*ctx).includes.alloc, tmp);
+                darray_append(
+                    &mut (*ctx).includes.item,
+                    &mut (*ctx).includes.size,
+                    &mut (*ctx).includes.alloc,
+                    tmp,
+                );
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
@@ -401,7 +406,12 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             }
         }
         if !tmp.is_null() {
-            darray_append(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.size, &mut (*ctx).failed_includes.alloc, tmp);
+            darray_append(
+                &mut (*ctx).failed_includes.item,
+                &mut (*ctx).failed_includes.size,
+                &mut (*ctx).failed_includes.alloc,
+                tmp,
+            );
         }
         xkb_logf!(
             ctx,
@@ -580,7 +590,12 @@ unsafe fn add_direct_subdirectories(
                             c2rust_current_block = 9563249396912231495;
                             break;
                         } else {
-                            darray_append(&mut (*extensions).item, &mut (*extensions).size, &mut (*extensions).alloc, ext_path);
+                            darray_append(
+                                &mut (*extensions).item,
+                                &mut (*extensions).size,
+                                &mut (*extensions).alloc,
+                                ext_path,
+                            );
                         }
                     }
                 }
@@ -707,7 +722,11 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ext_path = ext_path.offset(1);
             }
         }
-        darray_free(&mut extensions.item, &mut extensions.size, &mut extensions.alloc);
+        darray_free(
+            &mut extensions.item,
+            &mut extensions.size,
+            &mut extensions.alloc,
+        );
         let root: *const i8 = xkb_context_include_path_get_system_path(ctx) as *const i8;
         let has_root: bool = context_include_path_append(ctx, root) != 0;
         ret |= has_root as i32;
@@ -737,7 +756,11 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
                 path = path.offset(1);
             }
         }
-        darray_free(&mut (*ctx).includes.item, &mut (*ctx).includes.size, &mut (*ctx).includes.alloc);
+        darray_free(
+            &mut (*ctx).includes.item,
+            &mut (*ctx).includes.size,
+            &mut (*ctx).includes.alloc,
+        );
         if !(*ctx).failed_includes.item.is_null() {
             path = (*ctx).failed_includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path
@@ -750,7 +773,11 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
                 path = path.offset(1);
             }
         }
-        darray_free(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.size, &mut (*ctx).failed_includes.alloc);
+        darray_free(
+            &mut (*ctx).failed_includes.item,
+            &mut (*ctx).failed_includes.size,
+            &mut (*ctx).failed_includes.alloc,
+        );
         (*ctx).set_pending_default_includes((false_0 != 0) as bool);
     }
 }

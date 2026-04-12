@@ -630,7 +630,9 @@ pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{darray_append, darray_free, darray_growalloc, darray_resize_zero};
+use crate::xkb::utils::{
+    darray_append, darray_appends, darray_free, darray_growalloc, darray_resize_zero,
+};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsInfo {
@@ -812,18 +814,13 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
         (*to).levels.item = ::core::ptr::null_mut::<xkb_level>();
         (*to).levels.size = 0 as darray_size_t;
         (*to).levels.alloc = 0 as darray_size_t;
-        let mut __count: darray_size_t = (*from).levels.size;
-        (*to).levels.size = __count;
-        darray_growalloc(
-            &mut (*to).levels.item,
-            &mut (*to).levels.alloc,
-            (*to).levels.size,
-        );
-        if __count != 0 as darray_size_t {
-            std::ptr::copy_nonoverlapping::<xkb_level>(
+        if (*from).levels.size != 0 as darray_size_t {
+            darray_appends(
+                &mut (*to).levels.item,
+                &mut (*to).levels.size,
+                &mut (*to).levels.alloc,
                 (*from).levels.item,
-                (*to).levels.item,
-                __count as usize,
+                (*from).levels.size,
             );
         }
         let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -3117,26 +3114,16 @@ unsafe fn SetSymbolsField(
                 (*keyi).set_out_of_range_pending_group((true_0 != 0) as bool);
                 let pending_index: darray_size_t =
                     (*(*(*info).keymap_info).pending_computations).size;
-                (*(*(*info).keymap_info).pending_computations).size = (*(*(*info).keymap_info)
-                    .pending_computations)
-                    .size
-                    .wrapping_add(1 as darray_size_t);
-                let mut __need_0: darray_size_t =
-                    (*(*(*info).keymap_info).pending_computations).size;
-                darray_growalloc(
+                darray_append(
                     &mut (*(*(*info).keymap_info).pending_computations).item,
+                    &mut (*(*(*info).keymap_info).pending_computations).size,
                     &mut (*(*(*info).keymap_info).pending_computations).alloc,
-                    __need_0,
+                    pending_computation {
+                        expr: *value_ptr,
+                        computed: false,
+                        value: 0 as u32,
+                    },
                 );
-                *(*(*(*info).keymap_info).pending_computations).item.offset(
-                    (*(*(*info).keymap_info).pending_computations)
-                        .size
-                        .wrapping_sub(1 as darray_size_t) as isize,
-                ) = pending_computation {
-                    expr: *value_ptr,
-                    computed: false,
-                    value: 0 as u32,
-                };
                 *value_ptr = ::core::ptr::null_mut::<ExprDef>();
                 (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;
             } else {
@@ -3544,18 +3531,13 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
         keyi.groups.item = ::core::ptr::null_mut::<GroupInfo>();
         keyi.groups.size = 0 as darray_size_t;
         keyi.groups.alloc = 0 as darray_size_t;
-        let mut __count: darray_size_t = (*info).default_key.groups.size;
-        keyi.groups.size = __count;
-        darray_growalloc(
-            &mut keyi.groups.item,
-            &mut keyi.groups.alloc,
-            keyi.groups.size,
-        );
-        if __count != 0 as darray_size_t {
-            std::ptr::copy_nonoverlapping::<GroupInfo>(
+        if (*info).default_key.groups.size != 0 as darray_size_t {
+            darray_appends(
+                &mut keyi.groups.item,
+                &mut keyi.groups.size,
+                &mut keyi.groups.alloc,
                 (*info).default_key.groups.item,
-                keyi.groups.item,
-                __count as usize,
+                (*info).default_key.groups.size,
             );
         }
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
@@ -4183,21 +4165,12 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     // Resize levels array to match type
                     let __need_levels: darray_size_t = (*type_0).num_levels;
-                    if __need_levels > (*groupi).levels.alloc {
-                        darray_growalloc(
-                            &mut (*groupi).levels.item,
-                            &mut (*groupi).levels.alloc,
-                            __need_levels,
-                        );
-                    }
-                    if __need_levels > (*groupi).levels.size {
-                        // Zero out new elements
-                        let start_ptr =
-                            (*groupi).levels.item.offset((*groupi).levels.size as isize);
-                        let count = (__need_levels - (*groupi).levels.size) as usize;
-                        ::core::ptr::write_bytes(start_ptr, 0, count);
-                    }
-                    (*groupi).levels.size = __need_levels;
+                    darray_resize_zero(
+                        &mut (*groupi).levels.item,
+                        &mut (*groupi).levels.size,
+                        &mut (*groupi).levels.alloc,
+                        __need_levels,
+                    );
 
                     (*(*key).groups.offset(i as isize)).set_explicit_type(explicit_type);
                     (*(*key).groups.offset(i as isize)).type_0 = type_0;
