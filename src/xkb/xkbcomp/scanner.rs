@@ -675,7 +675,6 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
@@ -1250,7 +1249,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::INT64_MAX;
 pub use self::stdint_intn_h::i64;
 pub use self::stdint_uintn_h::{u32, uint64_t, uint8_t};
-use self::string_h::strdup;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__int64_t, __off64_t, __off_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{
@@ -1264,6 +1262,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::cstr_dup;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,
@@ -1459,7 +1458,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                 );
                 return ERROR_TOK as ::core::ffi::c_int;
             }
-            (*yylval).str = strdup(&raw mut (*s).buf as *mut i8);
+            (*yylval).str = cstr_dup(&raw mut (*s).buf as *mut i8);
             if (*yylval).str.is_null() {
                 return ERROR_TOK as ::core::ffi::c_int;
             }

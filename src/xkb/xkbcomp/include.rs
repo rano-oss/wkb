@@ -354,7 +354,6 @@ pub mod scanner_utils_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
         pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
     }
@@ -507,7 +506,7 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::free;
-use self::string_h::{strchr, strdup, strpbrk};
+use self::string_h::{strchr, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
 pub use self::utils_h::snprintf_safe;
@@ -519,6 +518,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
@@ -547,13 +547,13 @@ pub unsafe fn ParseIncludeMap(
             let c2rust_fresh3 = tmp;
             tmp = tmp.offset(1);
             *c2rust_fresh3 = '\0' as i32 as i8;
-            *extra_data = strdup(tmp);
+            *extra_data = cstr_dup(tmp);
         } else {
             *extra_data = ::core::ptr::null_mut::<i8>();
         }
         tmp = strchr(str, '(' as i32);
         if tmp.is_null() {
-            *file_rtrn = strdup(str);
+            *file_rtrn = cstr_dup(str);
             *map_rtrn = ::core::ptr::null_mut::<i8>();
         } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
         {
@@ -563,7 +563,7 @@ pub unsafe fn ParseIncludeMap(
             let c2rust_fresh4 = tmp;
             tmp = tmp.offset(1);
             *c2rust_fresh4 = '\0' as i32 as i8;
-            *file_rtrn = strdup(str);
+            *file_rtrn = cstr_dup(str);
             str = tmp;
             tmp = strchr(str, ')' as i32);
             if tmp.is_null()
@@ -577,7 +577,7 @@ pub unsafe fn ParseIncludeMap(
             let c2rust_fresh5 = tmp;
             tmp = tmp.offset(1);
             *c2rust_fresh5 = '\0' as i32 as i8;
-            *map_rtrn = strdup(str);
+            *map_rtrn = cstr_dup(str);
         }
         if *nextop_rtrn as ::core::ffi::c_int == '\0' as i32 {
             *str_inout = ::core::ptr::null_mut::<i8>();

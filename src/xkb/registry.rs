@@ -1113,7 +1113,6 @@ pub mod stat_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
@@ -1141,13 +1140,7 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
     #[inline]
     pub unsafe fn is_space(mut ch: i8) -> bool {
@@ -1181,9 +1174,9 @@ pub mod utils_h {
     }
 
     use super::stdio_h::vsnprintf;
-    use super::string_h::strdup;
     use super::unistd_h::eaccess;
     use crate::xkb::utils::cstr_cmp;
+    use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrncmp;
 }
 pub mod util_mem_h {
@@ -1353,7 +1346,7 @@ pub use self::stdio_h::{fprintf, stderr, va_list, vfprintf, vsnprintf};
 pub use self::stdlib_h::{
     __compar_fn_t, calloc, free, getenv, qsort, realloc, secure_getenv, strtol,
 };
-use self::string_h::{strdup, strerror};
+use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -1412,6 +1405,7 @@ pub use self::xmlmemory_h::{xmlFree, xmlFreeFunc};
 pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -2449,7 +2443,7 @@ pub unsafe fn rxkb_context_include_path_append(
                         b"evdev\0".as_ptr() as *const i8,
                     );
                 } else {
-                    tmp = strdup(path) as *mut i8;
+                    tmp = cstr_dup(path);
                     if tmp.is_null() {
                         err = ENOMEM;
                     } else {
@@ -3158,7 +3152,7 @@ unsafe fn parse_variant(
                 v = rxkb_layout_create(&raw mut (*ctx).base);
                 list_init(&raw mut (*v).iso639s);
                 list_init(&raw mut (*v).iso3166s);
-                (*v).name = strdup((*l).name);
+                (*v).name = cstr_dup((*l).name);
                 (*v).variant =
                     _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
                 (*v).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
@@ -3198,7 +3192,7 @@ unsafe fn parse_variant(
                             while &raw mut (*x).base.link != &raw mut (*l).iso639s {
                                 let mut code: *mut rxkb_iso639_code =
                                     rxkb_iso639_code_create(&raw mut (*v).base);
-                                (*code).code = strdup((*x).code);
+                                (*code).code = cstr_dup((*x).code);
                                 list_append(&raw mut (*v).iso639s, &raw mut (*code).base.link);
                                 x = ((*x).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                                     as *mut rxkb_iso639_code
@@ -3215,7 +3209,7 @@ unsafe fn parse_variant(
                             while &raw mut (*x_0).base.link != &raw mut (*l).iso3166s {
                                 let mut code_0: *mut rxkb_iso3166_code =
                                     rxkb_iso3166_code_create(&raw mut (*v).base);
-                                (*code_0).code = strdup((*x_0).code);
+                                (*code_0).code = cstr_dup((*x_0).code);
                                 list_append(&raw mut (*v).iso3166s, &raw mut (*code_0).base.link);
                                 x_0 = ((*x_0).base.link.next as *mut i8)
                                     .offset(-(16 as u64 as isize))
@@ -3500,11 +3494,7 @@ unsafe extern "C" fn xml_error_func(
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
             );
             slen = 0 as i32;
-            std::ptr::write_bytes::<[i8; 4096]>(
-                &raw mut buf as *mut i8 as *mut [i8; 4096],
-                0u8,
-                1,
-            );
+            std::ptr::write_bytes::<[i8; 4096]>(&raw mut buf as *mut i8 as *mut [i8; 4096], 0u8, 1);
             return;
         }
         slen += rc;
@@ -3520,11 +3510,7 @@ unsafe extern "C" fn xml_error_func(
                 b"%s\0".as_ptr() as *const i8,
                 &raw mut buf as *mut i8,
             );
-            std::ptr::write_bytes::<[i8; 4096]>(
-                &raw mut buf as *mut i8 as *mut [i8; 4096],
-                0u8,
-                1,
-            );
+            std::ptr::write_bytes::<[i8; 4096]>(&raw mut buf as *mut i8 as *mut [i8; 4096], 0u8, 1);
             slen = 0 as i32;
         }
     }

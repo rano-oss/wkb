@@ -463,7 +463,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
@@ -645,7 +644,7 @@ pub use self::stdio_h::{
     va_list, vasprintf, _IONBF, BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
-use self::string_h::{strdup, strerror};
+use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -704,6 +703,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
@@ -1201,7 +1201,7 @@ pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
             srcdir = b".\0".as_ptr() as *const i8;
         }
         if is_absolute_path(path_rel) {
-            return strdup(path_rel);
+            return cstr_dup(path_rel);
         }
         path = asprintf_safe(
             b"%s/test/data%s%s\0".as_ptr() as *const i8,
@@ -2631,7 +2631,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                     }
                 }
                 if layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                    let mut opt: *mut i8 = strdup(&raw mut buf as *mut i8);
+                    let mut opt: *mut i8 = cstr_dup(&raw mut buf as *mut i8);
                     if opt.is_null() {
                         c2rust_current_block = 4427821232739340156;
                         break;

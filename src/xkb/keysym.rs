@@ -26314,12 +26314,6 @@ pub mod stdio_h {
         pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn is_xdigit(mut ch: i8) -> bool {
@@ -26672,7 +26666,6 @@ pub use self::stdint_intn_h::i32;
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free};
-use self::string_h::strdup;
 pub use self::sys_types_h::ssize_t;
 pub use self::types_h::{__int32_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
@@ -26686,6 +26679,7 @@ pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,
     XKB_KEY_Mode_switch, XKB_KEY_NoSymbol, XKB_KEY_Num_Lock, XKB_KEY_Shift_L,
 };
+use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -27021,7 +27015,7 @@ pub unsafe fn xkb_keysym_from_name(
                 && istrncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
         {
             let mut ret: xkb_keysym_t = 0;
-            tmp = strdup(name);
+            tmp = cstr_dup(name);
             if tmp.is_null() {
                 return XKB_KEY_NoSymbol as xkb_keysym_t;
             }

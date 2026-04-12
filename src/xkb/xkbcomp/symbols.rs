@@ -326,12 +326,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
-    }
-}
 pub mod stdio_h {
     use super::FILE_h::FILE;
     extern "C" {
@@ -364,13 +358,7 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
     #[inline]
     pub unsafe fn memdup(
@@ -392,7 +380,7 @@ pub mod utils_h {
     }
 
     use super::stdlib_h::calloc;
-    use super::string_h::{strdup};
+    use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod limits_h {
@@ -825,11 +813,7 @@ unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
 }
 unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        std::ptr::write_bytes::<GroupInfo>(
-            groupi as *mut GroupInfo,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<GroupInfo>(groupi as *mut GroupInfo, 0u8, 1);
     }
 }
 unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
@@ -911,11 +895,7 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
 }
 unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
     unsafe {
-        std::ptr::write_bytes::<KeyInfo>(
-            keyi as *mut KeyInfo,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<KeyInfo>(keyi as *mut KeyInfo, 0u8, 1);
         (*keyi).name = xkb_atom_intern(
             ctx,
             b"*\0".as_ptr() as *const i8,
@@ -958,11 +938,7 @@ unsafe fn InitSymbolsInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        std::ptr::write_bytes::<SymbolsInfo>(
-            info as *mut SymbolsInfo,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<SymbolsInfo>(info as *mut SymbolsInfo, 0u8, 1);
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).include_depth = include_depth;
         (*info).keymap_info = keymap_info;
@@ -2391,8 +2367,7 @@ unsafe fn GetGroupIndex(
                     ) as *mut GroupInfo;
                 }
                 std::ptr::write_bytes(
-                    (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
-                        as *mut u8,
+                    (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
@@ -2442,8 +2417,7 @@ unsafe fn GetGroupIndex(
                     ) as *mut GroupInfo;
                 }
                 std::ptr::write_bytes(
-                    (*keyi).groups.item.offset(__oldSize_0 as isize) as *mut GroupInfo
-                        as *mut u8,
+                    (*keyi).groups.item.offset(__oldSize_0 as isize) as *mut GroupInfo as *mut u8,
                     0u8,
                     (__newSize_0.wrapping_sub(__oldSize_0) as usize)
                         .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),
@@ -2530,8 +2504,7 @@ unsafe fn AddSymbolsToKey(
                     ) as *mut xkb_level;
                 }
                 std::ptr::write_bytes(
-                    (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
-                        as *mut u8,
+                    (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
@@ -2673,8 +2646,7 @@ unsafe fn AddActionsToKey(
                     ) as *mut xkb_level;
                 }
                 std::ptr::write_bytes(
-                    (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level
-                        as *mut u8,
+                    (*groupi).levels.item.offset(__oldSize as isize) as *mut xkb_level as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<xkb_level>() as usize),
@@ -3836,8 +3808,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 ) as *mut GroupInfo;
             }
             std::ptr::write_bytes(
-                (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo
-                    as *mut u8,
+                (*keyi).groups.item.offset(__oldSize as isize) as *mut GroupInfo as *mut u8,
                 0u8,
                 (__newSize.wrapping_sub(__oldSize) as usize)
                     .wrapping_mul(::core::mem::size_of::<GroupInfo>() as usize),

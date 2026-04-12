@@ -217,12 +217,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
-    }
-}
 pub mod stdio_h {
 
     extern "C" {
@@ -243,16 +237,10 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
 
-    use super::string_h::strdup;
+    use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrcmp;
 }
 pub mod limits_h {
@@ -556,8 +544,7 @@ unsafe fn keycode_store_update_key(
                     ) as *mut KeycodeMatch;
                 }
                 std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut u8,
+                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
@@ -593,8 +580,7 @@ unsafe fn keycode_store_insert_key(
                     ) as *mut KeycodeMatch;
                 }
                 std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut u8,
+                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
@@ -806,8 +792,7 @@ unsafe fn keycode_store_insert_alias(
                     ) as *mut KeycodeMatch;
                 }
                 std::ptr::write_bytes(
-                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch
-                        as *mut u8,
+                    (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,
                     (__newSize.wrapping_sub(__oldSize) as usize)
                         .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
@@ -1201,11 +1186,7 @@ unsafe fn InitKeyNamesInfo(
     mut include_depth: u32,
 ) {
     unsafe {
-        std::ptr::write_bytes::<KeyNamesInfo>(
-            info as *mut KeyNamesInfo,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<KeyNamesInfo>(info as *mut KeyNamesInfo, 0u8, 1);
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;

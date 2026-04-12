@@ -228,7 +228,6 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
@@ -247,13 +246,7 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
     #[inline]
     pub unsafe fn is_space(mut ch: i8) -> bool {
@@ -310,8 +303,8 @@ pub mod utils_h {
 
     use super::stdbool_h::{false_0, true_0};
     use super::stdio_h::{vasprintf, vsnprintf};
-    use super::string_h::strdup;
     use super::unistd_h::eaccess;
+    use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrncmp;
 }
 pub mod errno_h {
@@ -367,8 +360,7 @@ pub use self::config_h::{
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
 pub use self::context_h::{
-    xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed,
-    C2Rust_Unnamed_0,
+    xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_next_alloc, darray_size_t, darray_string};
 pub use self::dirent_h::dirent;
@@ -385,7 +377,7 @@ use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fprintf, stderr, va_list, vasprintf, vfprintf, vsnprintf};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc, strtol};
-use self::string_h::{strdup, strerror};
+use self::string_h::strerror;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -405,7 +397,8 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len, cstr_cmp};
+use crate::xkb::utils::cstr_dup;
+use crate::xkb::utils::{cstr_cmp, cstr_len};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -435,7 +428,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             __glibc_reserved: [0; 3],
         };
         let mut err: i32 = ENOMEM;
-        let mut tmp: *mut i8 = strdup(path);
+        let mut tmp: *mut i8 = cstr_dup(path);
         if !tmp.is_null() {
             stat_buf = stat {
                 st_dev: 0,

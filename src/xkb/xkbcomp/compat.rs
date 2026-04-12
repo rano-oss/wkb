@@ -239,12 +239,6 @@ pub mod stdlib_h {
         pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -254,16 +248,10 @@ pub mod utils_h {
     }
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
 
-    use super::string_h::strdup;
+    use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::istrcmp;
 }
 pub mod limits_h {
@@ -654,11 +642,7 @@ unsafe fn InitCompatInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        std::ptr::write_bytes::<CompatInfo>(
-            info as *mut CompatInfo,
-            0u8,
-            1,
-        );
+        std::ptr::write_bytes::<CompatInfo>(info as *mut CompatInfo, 0u8, 1);
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;

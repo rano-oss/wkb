@@ -31,7 +31,6 @@ pub mod xkbcommon_errors_h {
 }
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -223,21 +222,10 @@ pub mod stdlib_h {
 pub mod utils_h {
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
 
-    use super::string_h::strdup;
-}
-pub mod string_h {
-    extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
-    }
+    use crate::xkb::utils::cstr_dup;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
@@ -310,7 +298,6 @@ use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
-use crate::xkb::utils::{cstr_cmp};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -322,6 +309,7 @@ pub use self::xkbcommon_h::{
     xkb_rule_names, XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
+use crate::xkb::utils::cstr_cmp;
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,

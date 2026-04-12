@@ -107,7 +107,6 @@ pub mod messages_codes_h {
 }
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
-
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -190,7 +189,6 @@ pub mod scanner_utils_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strndup(__string: *const i8, __n: usize) -> *mut i8;
     }
 }
@@ -206,13 +204,7 @@ pub mod stdlib_h {
 pub mod utils_h {
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe {
-            return if !s.is_null() {
-                strdup(s)
-            } else {
-                ::core::ptr::null_mut::<i8>()
-            };
-        }
+        unsafe { cstr_dup(s) }
     }
     #[inline]
     pub unsafe fn isempty(mut s: *const i8) -> bool {
@@ -221,7 +213,7 @@ pub mod utils_h {
         }
     }
 
-    use super::string_h::strdup;
+    use crate::xkb::utils::cstr_dup;
 }
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = UINT32_MAX;
@@ -320,7 +312,7 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdint_h::UINT32_MAX;
 use self::stdlib_h::{calloc, free, malloc, realloc};
-use self::string_h::{strndup};
+use self::string_h::strndup;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -330,7 +322,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
-use crate::xkb::utils::{cstr_len};
+use crate::xkb::utils::cstr_len;
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
