@@ -45,7 +45,7 @@ pub mod struct_FILE_h {
         pub _short_backupbuf: [i8; 1],
         pub _old_offset: __off_t,
         pub _cur_column: u16,
-        pub _vtable_offset: :i8,
+        pub _vtable_offset: i8,
         pub _shortbuf: [i8; 1],
         pub _lock: *mut ::core::ffi::c_void,
         pub _offset: __off64_t,

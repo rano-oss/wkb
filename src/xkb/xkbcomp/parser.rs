@@ -523,7 +523,7 @@ use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdlib_h::{free, malloc};
-use self::string_h::{stpcpy};
+use self::string_h::stpcpy;
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -697,7 +697,7 @@ pub const YYSYMBOL_YYerror: yysymbol_kind_t = 1;
 pub const YYSYMBOL_YYEOF: yysymbol_kind_t = 0;
 pub const YYSYMBOL_YYEMPTY: yysymbol_kind_t = -2;
 pub type yytype_uint8 = ::core::ffi::c_uchar;
-pub type yytype_int8 = :i8;
+pub type yytype_int8 = i8;
 pub type yy_state_fast_t = ::core::ffi::c_int;
 pub const YYENOMEM: C2Rust_Unnamed_10 = -2;
 #[derive(Copy, Clone)]
