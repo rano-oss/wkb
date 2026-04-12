@@ -1,4 +1,5 @@
 use crate::xkb_logf;
+use crate::xkb::utils::darray_growalloc;
 use c2rust_bitfields;
 
 pub mod internal {
@@ -1221,19 +1222,7 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
                 (*state).filters.size.wrapping_add(1 as darray_size_t);
             (*state).filters.size = __newSize;
             if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*state).filters.alloc {
-                    (*state).filters.alloc = darray_next_alloc(
-                        (*state).filters.alloc,
-                        __need,
-                        ::core::mem::size_of::<xkb_filter>() as usize,
-                    );
-                    (*state).filters.item = realloc(
-                        (*state).filters.item as *mut ::core::ffi::c_void,
-                        ((*state).filters.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<xkb_filter>() as usize),
-                    ) as *mut xkb_filter;
-                }
+                darray_growalloc(&mut (*state).filters.item, &mut (*state).filters.alloc, __newSize);
                 std::ptr::write_bytes(
                     (*state).filters.item.offset(__oldSize as isize) as *mut xkb_filter as *mut u8,
                     0u8,
@@ -1981,19 +1970,7 @@ unsafe fn append_redirect_key_events(
             changed = get_state_component_changes(&raw mut last_components, &raw mut new);
             if changed as u64 != 0 {
                 (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*events).queue.size;
-                if __need > (*events).queue.alloc {
-                    (*events).queue.alloc = darray_next_alloc(
-                        (*events).queue.alloc,
-                        __need,
-                        ::core::mem::size_of::<xkb_event>() as usize,
-                    );
-                    (*events).queue.item = realloc(
-                        (*events).queue.item as *mut ::core::ffi::c_void,
-                        ((*events).queue.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                    ) as *mut xkb_event;
-                }
+                darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
                 *(*events)
                     .queue
                     .item
@@ -2010,19 +1987,7 @@ unsafe fn append_redirect_key_events(
             }
         }
         (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-        let mut __need_0: darray_size_t = (*events).queue.size;
-        if __need_0 > (*events).queue.alloc {
-            (*events).queue.alloc = darray_next_alloc(
-                (*events).queue.alloc,
-                __need_0,
-                ::core::mem::size_of::<xkb_event>() as usize,
-            );
-            (*events).queue.item = realloc(
-                (*events).queue.item as *mut ::core::ffi::c_void,
-                ((*events).queue.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-            ) as *mut xkb_event;
-        }
+        darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
         *(*events)
             .queue
             .item
@@ -2040,19 +2005,7 @@ unsafe fn append_redirect_key_events(
         };
         if mask != 0 && changed as u32 != 0 {
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need_1: darray_size_t = (*events).queue.size;
-            if __need_1 > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need_1,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item
@@ -3991,19 +3944,7 @@ pub unsafe fn xkb_machine_options_remap_mods(
         if source == 0 {
             if target == 0 {
                 (*options).mods.size = 0 as darray_size_t;
-                let mut __need: darray_size_t = (*options).mods.size;
-                if __need > (*options).mods.alloc {
-                    (*options).mods.alloc = darray_next_alloc(
-                        (*options).mods.alloc,
-                        __need,
-                        ::core::mem::size_of::<machine_mods_mapping>() as usize,
-                    );
-                    (*options).mods.item = realloc(
-                        (*options).mods.item as *mut ::core::ffi::c_void,
-                        ((*options).mods.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as usize),
-                    ) as *mut machine_mods_mapping;
-                }
+                darray_growalloc(&mut (*options).mods.item, &mut (*options).mods.alloc, (*options).mods.size);
                 return XKB_SUCCESS;
             } else {
                 return XKB_ERROR_UNSUPPORTED_MODIFIER_MASK;
@@ -4045,19 +3986,7 @@ pub unsafe fn xkb_machine_options_remap_mods(
         }
         if target != 0 {
             (*options).mods.size = (*options).mods.size.wrapping_add(1 as darray_size_t);
-            let mut __need_0: darray_size_t = (*options).mods.size;
-            if __need_0 > (*options).mods.alloc {
-                (*options).mods.alloc = darray_next_alloc(
-                    (*options).mods.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<machine_mods_mapping>() as usize,
-                );
-                (*options).mods.item = realloc(
-                    (*options).mods.item as *mut ::core::ffi::c_void,
-                    ((*options).mods.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<machine_mods_mapping>() as usize),
-                ) as *mut machine_mods_mapping;
-            }
+            darray_growalloc(&mut (*options).mods.item, &mut (*options).mods.alloc, (*options).mods.size);
             *(*options)
                 .mods
                 .item
@@ -4101,19 +4030,7 @@ pub unsafe fn xkb_machine_options_remap_shortcut_layout(
         if source >= (*config).targets.size as xkb_layout_index_t {
             let mut new: xkb_layout_index_t = (*config).targets.size as xkb_layout_index_t;
             (*config).targets.size = source.wrapping_add(1 as xkb_layout_index_t) as darray_size_t;
-            let mut __need: darray_size_t = (*config).targets.size;
-            if __need > (*config).targets.alloc {
-                (*config).targets.alloc = darray_next_alloc(
-                    (*config).targets.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_layout_index_t>() as usize,
-                );
-                (*config).targets.item = realloc(
-                    (*config).targets.item as *mut ::core::ffi::c_void,
-                    ((*config).targets.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_layout_index_t>() as usize),
-                ) as *mut xkb_layout_index_t;
-            }
+            darray_growalloc(&mut (*config).targets.item, &mut (*config).targets.alloc, (*config).targets.size);
             while new < source {
                 *(*config).targets.item.offset(new as isize) =
                     XKB_LAYOUT_INVALID as xkb_layout_index_t;
@@ -4193,23 +4110,7 @@ unsafe fn machine_set_mods(
                         || (*mapping).target & invalid != 0)
                     {
                         mappings.size = mappings.size.wrapping_add(1 as darray_size_t);
-                        let mut __need: darray_size_t = mappings.size;
-                        if __need > mappings.alloc {
-                            mappings.alloc = darray_next_alloc(
-                                mappings.alloc,
-                                __need,
-                                ::core::mem::size_of::<machine_mods_mapping>() as usize,
-                            );
-                            mappings.item = realloc(
-                                mappings.item as *mut ::core::ffi::c_void,
-                                (mappings.alloc as usize).wrapping_mul(::core::mem::size_of::<
-                                    machine_mods_mapping,
-                                >(
-                                )
-                                    as usize),
-                            )
-                                as *mut machine_mods_mapping;
-                        }
+                        darray_growalloc(&mut mappings.item, &mut mappings.alloc, mappings.size);
                         *mappings
                             .item
                             .offset(mappings.size.wrapping_sub(1 as darray_size_t) as isize) =
@@ -4473,19 +4374,7 @@ pub unsafe fn xkb_machine_process_synthetic(
                 machine_update_overlays(sm);
             }
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*events).queue.size;
-            if __need > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item
@@ -4549,19 +4438,7 @@ unsafe fn do_remap_modifiers(
         if changed as u64 != 0 {
             event_idx = (*events).queue.size as isize;
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*events).queue.size;
-            if __need > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item
@@ -4598,19 +4475,7 @@ unsafe fn do_shortcuts_tweak(
             if remap_event < 0 as isize {
                 remap_event = (*events).queue.size as isize;
                 (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*events).queue.size;
-                if __need > (*events).queue.alloc {
-                    (*events).queue.alloc = darray_next_alloc(
-                        (*events).queue.alloc,
-                        __need,
-                        ::core::mem::size_of::<xkb_event>() as usize,
-                    );
-                    (*events).queue.item = realloc(
-                        (*events).queue.item as *mut ::core::ffi::c_void,
-                        ((*events).queue.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                    ) as *mut xkb_event;
-                }
+                darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
                 *(*events)
                     .queue
                     .item
@@ -4696,19 +4561,7 @@ unsafe fn undo_tweaks(
         ) as xkb_state_component;
         if changed as u64 != 0 {
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*events).queue.size;
-            if __need > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item
@@ -4898,19 +4751,7 @@ pub unsafe fn xkb_machine_process_key(
         }
         if !has_key_event {
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*events).queue.size;
-            if __need > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item
@@ -4940,19 +4781,7 @@ pub unsafe fn xkb_machine_process_key(
                 machine_update_overlays(sm);
             }
             (*events).queue.size = (*events).queue.size.wrapping_add(1 as darray_size_t);
-            let mut __need_0: darray_size_t = (*events).queue.size;
-            if __need_0 > (*events).queue.alloc {
-                (*events).queue.alloc = darray_next_alloc(
-                    (*events).queue.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<xkb_event>() as usize,
-                );
-                (*events).queue.item = realloc(
-                    (*events).queue.item as *mut ::core::ffi::c_void,
-                    ((*events).queue.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_event>() as usize),
-                ) as *mut xkb_event;
-            }
+            darray_growalloc(&mut (*events).queue.item, &mut (*events).queue.alloc, (*events).queue.size);
             *(*events)
                 .queue
                 .item

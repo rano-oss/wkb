@@ -377,6 +377,7 @@ pub use self::stdint_h::UINT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free, realloc};
+use crate::xkb::utils::darray_growalloc;
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::types_h::{
     __int16_t, __int32_t, __int64_t, __int8_t, __uint16_t, __uint32_t, __uint8_t,
@@ -518,19 +519,7 @@ unsafe fn keycode_store_update_key(
                 (name as darray_size_t).wrapping_add(1 as darray_size_t);
             (*store).names.size = __newSize;
             if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*store).names.alloc {
-                    (*store).names.alloc = darray_next_alloc(
-                        (*store).names.alloc,
-                        __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as usize,
-                    );
-                    (*store).names.item = realloc(
-                        (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                    ) as *mut KeycodeMatch;
-                }
+                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
                 std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,
@@ -554,19 +543,7 @@ unsafe fn keycode_store_insert_key(
                 (name as darray_size_t).wrapping_add(1 as darray_size_t);
             (*store).names.size = __newSize;
             if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*store).names.alloc {
-                    (*store).names.alloc = darray_next_alloc(
-                        (*store).names.alloc,
-                        __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as usize,
-                    );
-                    (*store).names.item = realloc(
-                        (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                    ) as *mut KeycodeMatch;
-                }
+                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
                 std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,
@@ -582,22 +559,7 @@ unsafe fn keycode_store_insert_key(
                     (kc as darray_size_t).wrapping_add(1 as darray_size_t);
                 (*store).low.size = __newSize_0;
                 if __newSize_0 > __oldSize_0 {
-                    let mut __need_0: darray_size_t = __newSize_0;
-                    if __need_0 > (*store).low.alloc {
-                        (*store).low.alloc = darray_next_alloc(
-                            (*store).low.alloc,
-                            __need_0,
-                            ::core::mem::size_of::<xkb_atom_t>() as usize,
-                        );
-                        (*store).low.item = realloc(
-                            (*store).low.item as *mut ::core::ffi::c_void,
-                            ((*store).low.alloc as usize).wrapping_mul(::core::mem::size_of::<
-                                xkb_atom_t,
-                            >(
-                            )
-                                as usize),
-                        ) as *mut xkb_atom_t;
-                    }
+                    darray_growalloc(&mut (*store).low.item, &mut (*store).low.alloc, __newSize_0);
                     std::ptr::write_bytes(
                         (*store).low.item.offset(__oldSize_0 as isize) as *mut xkb_atom_t
                             as *mut u8,
@@ -667,19 +629,7 @@ unsafe fn keycode_store_insert_key(
                 }
                 let mut __index: darray_size_t = lower;
                 (*store).high.size = (*store).high.size.wrapping_add(1 as darray_size_t);
-                let mut __need_1: darray_size_t = (*store).high.size;
-                if __need_1 > (*store).high.alloc {
-                    (*store).high.alloc = darray_next_alloc(
-                        (*store).high.alloc,
-                        __need_1,
-                        ::core::mem::size_of::<HighKeycodeEntry>() as usize,
-                    );
-                    (*store).high.item = realloc(
-                        (*store).high.item as *mut ::core::ffi::c_void,
-                        ((*store).high.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
-                    ) as *mut HighKeycodeEntry;
-                }
+                darray_growalloc(&mut (*store).high.item, &mut (*store).high.alloc, (*store).high.size);
                 std::ptr::copy(
                     (*store).high.item.offset(__index as isize),
                     (*store)
@@ -711,19 +661,7 @@ unsafe fn keycode_store_insert_key(
                 };
             } else {
                 (*store).high.size = (*store).high.size.wrapping_add(1 as darray_size_t);
-                let mut __need_2: darray_size_t = (*store).high.size;
-                if __need_2 > (*store).high.alloc {
-                    (*store).high.alloc = darray_next_alloc(
-                        (*store).high.alloc,
-                        __need_2,
-                        ::core::mem::size_of::<HighKeycodeEntry>() as usize,
-                    );
-                    (*store).high.item = realloc(
-                        (*store).high.item as *mut ::core::ffi::c_void,
-                        ((*store).high.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<HighKeycodeEntry>() as usize),
-                    ) as *mut HighKeycodeEntry;
-                }
+                darray_growalloc(&mut (*store).high.item, &mut (*store).high.alloc, (*store).high.size);
                 *(*store)
                     .high
                     .item
@@ -766,19 +704,7 @@ unsafe fn keycode_store_insert_alias(
                 (alias as darray_size_t).wrapping_add(1 as darray_size_t);
             (*store).names.size = __newSize;
             if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*store).names.alloc {
-                    (*store).names.alloc = darray_next_alloc(
-                        (*store).names.alloc,
-                        __need,
-                        ::core::mem::size_of::<KeycodeMatch>() as usize,
-                    );
-                    (*store).names.item = realloc(
-                        (*store).names.item as *mut ::core::ffi::c_void,
-                        ((*store).names.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
-                    ) as *mut KeycodeMatch;
-                }
+                darray_growalloc(&mut (*store).names.item, &mut (*store).names.alloc, __newSize);
                 std::ptr::write_bytes(
                     (*store).names.item.offset(__oldSize as isize) as *mut KeycodeMatch as *mut u8,
                     0u8,

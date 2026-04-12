@@ -1380,7 +1380,7 @@ pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_context {
@@ -2421,19 +2421,7 @@ pub unsafe fn rxkb_context_include_path_append(
                     } else {
                         (*ctx).includes.size =
                             (*ctx).includes.size.wrapping_add(1 as darray_size_t);
-                        let mut __need: darray_size_t = (*ctx).includes.size;
-                        if __need > (*ctx).includes.alloc {
-                            (*ctx).includes.alloc = darray_next_alloc(
-                                (*ctx).includes.alloc,
-                                __need,
-                                ::core::mem::size_of::<*mut i8>() as usize,
-                            );
-                            (*ctx).includes.item = realloc(
-                                (*ctx).includes.item as *mut ::core::ffi::c_void,
-                                ((*ctx).includes.alloc as usize)
-                                    .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                            ) as *mut *mut i8;
-                        }
+                        darray_growalloc(&mut (*ctx).includes.item, &mut (*ctx).includes.alloc, (*ctx).includes.size);
                         let ref mut c2rust_fresh0 = *(*ctx)
                             .includes
                             .item
@@ -2573,20 +2561,7 @@ unsafe fn add_direct_subdirectories(
                         } else {
                             (*extensions).size =
                                 (*extensions).size.wrapping_add(1 as darray_size_t);
-                            let mut __need: darray_size_t = (*extensions).size;
-                            if __need > (*extensions).alloc {
-                                (*extensions).alloc = darray_next_alloc(
-                                    (*extensions).alloc,
-                                    __need,
-                                    ::core::mem::size_of::<*mut i8>() as usize,
-                                );
-                                (*extensions).item = realloc(
-                                    (*extensions).item as *mut ::core::ffi::c_void,
-                                    ((*extensions).alloc as usize)
-                                        .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                                )
-                                    as *mut *mut i8;
-                            }
+                            darray_growalloc(&mut (*extensions).item, &mut (*extensions).alloc, (*extensions).size);
                             let ref mut c2rust_fresh1 =
                                 *(*extensions)
                                     .item

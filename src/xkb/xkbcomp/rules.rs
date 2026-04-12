@@ -115,22 +115,6 @@ pub mod darray_h {
         pub alloc: darray_size_t,
         pub item: *mut i8,
     }
-    #[inline]
-    pub unsafe fn darray_next_alloc(
-        mut alloc: darray_size_t,
-        mut need: darray_size_t,
-        mut itemSize: usize,
-    ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
-        }
-    }
 }
 pub mod xkbcommon_h {
     pub use crate::xkb::shared_types::{
@@ -391,11 +375,11 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
         unsafe {
-            let mut nl: *const i8 = memchr(
-                (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
-                '\n' as i32,
+            let mut nl: *const i8 = crate::xkb::utils::byte_memchr(
+                (*s).s.offset((*s).pos as isize),
+                b'\n',
                 (*s).len.wrapping_sub((*s).pos),
-            ) as *const i8;
+            );
             let new_pos: usize = if !nl.is_null() {
                 nl.offset_from((*s).s) as i64 as usize
             } else {
@@ -493,7 +477,6 @@ pub mod scanner_utils_h {
     use super::darray_h::darray_size_t;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
-    use super::string_h::memchr;
     use super::utils_h::is_ascii;
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
     use crate::xkb_logf;
@@ -509,18 +492,7 @@ pub mod stdlib_h {
 
     extern "C" {
         pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
         pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
-pub mod string_h {
-
-    extern "C" {
-        pub fn memchr(
-            __s: *const ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
     }
 }
 pub mod utils_h {
@@ -671,7 +643,7 @@ pub use self::ast_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
+pub use self::darray_h::{darray_char, darray_size_t};
 pub use self::include_h::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -737,7 +709,7 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
-use self::stdlib_h::{calloc, free, realloc};
+use self::stdlib_h::{calloc, free};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
@@ -755,7 +727,10 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp};
+use crate::xkb::utils::{
+    cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
+    darray_free, darray_growalloc, darray_resize_zero,
+};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct matcher {
@@ -1118,22 +1093,7 @@ unsafe fn split_comma_separated_mlvo(
                 init.set_layout(0);
                 init
             };
-            arr.size = arr.size.wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = arr.size;
-            if __need > arr.alloc {
-                arr.alloc = darray_next_alloc(
-                    arr.alloc,
-                    __need,
-                    ::core::mem::size_of::<matched_sval>() as usize,
-                );
-                arr.item = realloc(
-                    arr.item as *mut ::core::ffi::c_void,
-                    (arr.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                ) as *mut matched_sval;
-            }
-            *arr.item
-                .offset(arr.size.wrapping_sub(1 as darray_size_t) as isize) = val;
+            darray_append(&mut arr.item, &mut arr.size, &mut arr.alloc, val);
             return arr;
         }
         loop {
@@ -1221,22 +1181,7 @@ unsafe fn split_comma_separated_mlvo(
                     );
                 }
             }
-            arr.size = arr.size.wrapping_add(1 as darray_size_t);
-            let mut __need_0: darray_size_t = arr.size;
-            if __need_0 > arr.alloc {
-                arr.alloc = darray_next_alloc(
-                    arr.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<matched_sval>() as usize,
-                );
-                arr.item = realloc(
-                    arr.item as *mut ::core::ffi::c_void,
-                    (arr.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                ) as *mut matched_sval;
-            }
-            *arr.item
-                .offset(arr.size.wrapping_sub(1 as darray_size_t) as isize) = val_0;
+            darray_append(&mut arr.item, &mut arr.size, &mut arr.alloc, val_0);
             if *s as ::core::ffi::c_int == '\0' as i32 {
                 break;
             }
@@ -1316,31 +1261,12 @@ unsafe fn matcher_new_from_rmlvo(
                         }),
                     );
                 }
-                let mut __oldSize: darray_size_t = (*m).rmlvo.variants.size;
-                let mut __newSize: darray_size_t = (*m).rmlvo.layouts.size;
-                (*m).rmlvo.variants.size = __newSize;
-                if __newSize > __oldSize {
-                    let mut __need: darray_size_t = __newSize;
-                    if __need > (*m).rmlvo.variants.alloc {
-                        (*m).rmlvo.variants.alloc = darray_next_alloc(
-                            (*m).rmlvo.variants.alloc,
-                            __need,
-                            ::core::mem::size_of::<matched_sval>() as usize,
-                        );
-                        (*m).rmlvo.variants.item = realloc(
-                            (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                    }
-                    std::ptr::write_bytes(
-                        (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
-                            as *mut u8,
-                        0u8,
-                        (__newSize.wrapping_sub(__oldSize) as usize)
-                            .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                    );
-                }
+                darray_resize_zero(
+                    &mut (*m).rmlvo.variants.item,
+                    &mut (*m).rmlvo.variants.size,
+                    &mut (*m).rmlvo.variants.alloc,
+                    (*m).rmlvo.layouts.size,
+                );
             } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
                 xkb_logf!(
                     (*m).ctx,
@@ -1358,30 +1284,12 @@ unsafe fn matcher_new_from_rmlvo(
                         b"(none)\0".as_ptr() as *const i8
                     }),
                 );
+                darray_growalloc(
+                    &mut (*m).rmlvo.variants.item,
+                    &mut (*m).rmlvo.variants.alloc,
+                    (*m).rmlvo.layouts.size,
+                );
                 (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
-                let mut __need_0: darray_size_t = (*m).rmlvo.variants.size;
-                if __need_0 > (*m).rmlvo.variants.alloc {
-                    (*m).rmlvo.variants.alloc = darray_next_alloc(
-                        (*m).rmlvo.variants.alloc,
-                        __need_0,
-                        ::core::mem::size_of::<matched_sval>() as usize,
-                    );
-                    (*m).rmlvo.variants.item =
-                        realloc(
-                            (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                }
-                if (*m).rmlvo.variants.size > 0 as darray_size_t {
-                    (*m).rmlvo.variants.alloc = (*m).rmlvo.variants.size;
-                    (*m).rmlvo.variants.item =
-                        realloc(
-                            (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                }
             }
         } else {
             let mut layout: *mut xkb_rmlvo_builder_layout =
@@ -1409,49 +1317,20 @@ unsafe fn matcher_new_from_rmlvo(
                         init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
                         init
                     };
-                    (*m).rmlvo.layouts.size =
-                        (*m).rmlvo.layouts.size.wrapping_add(1 as darray_size_t);
-                    let mut __need_1: darray_size_t = (*m).rmlvo.layouts.size;
-                    if __need_1 > (*m).rmlvo.layouts.alloc {
-                        (*m).rmlvo.layouts.alloc = darray_next_alloc(
-                            (*m).rmlvo.layouts.alloc,
-                            __need_1,
-                            ::core::mem::size_of::<matched_sval>() as usize,
-                        );
-                        (*m).rmlvo.layouts.item = realloc(
-                            (*m).rmlvo.layouts.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.layouts.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                    }
-                    *(*m)
-                        .rmlvo
-                        .layouts
-                        .item
-                        .offset(
-                            (*m).rmlvo.layouts.size.wrapping_sub(1 as darray_size_t)
-                                as isize,
-                        ) = val;
+                    darray_append(
+                        &mut (*m).rmlvo.layouts.item,
+                        &mut (*m).rmlvo.layouts.size,
+                        &mut (*m).rmlvo.layouts.alloc,
+                        val,
+                    );
                     val.sval.start = (*layout).variant;
                     val.sval.len = cstr_len_safe((*layout).variant);
-                    (*m).rmlvo.variants.size =
-                        (*m).rmlvo.variants.size.wrapping_add(1 as darray_size_t);
-                    let mut __need_2: darray_size_t = (*m).rmlvo.variants.size;
-                    if __need_2 > (*m).rmlvo.variants.alloc {
-                        (*m).rmlvo.variants.alloc = darray_next_alloc(
-                            (*m).rmlvo.variants.alloc,
-                            __need_2,
-                            ::core::mem::size_of::<matched_sval>() as usize,
-                        );
-                        (*m).rmlvo.variants.item = realloc(
-                            (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                    }
-                    *(*m).rmlvo.variants.item.offset(
-                        (*m).rmlvo.variants.size.wrapping_sub(1 as darray_size_t) as isize,
-                    ) = val;
+                    darray_append(
+                        &mut (*m).rmlvo.variants.item,
+                        &mut (*m).rmlvo.variants.size,
+                        &mut (*m).rmlvo.variants.alloc,
+                        val,
+                    );
                     layout = layout.offset(1);
                 }
             }
@@ -1491,29 +1370,12 @@ unsafe fn matcher_new_from_rmlvo(
                         );
                         init
                     };
-                    (*m).rmlvo.options.size =
-                        (*m).rmlvo.options.size.wrapping_add(1 as darray_size_t);
-                    let mut __need_3: darray_size_t = (*m).rmlvo.options.size;
-                    if __need_3 > (*m).rmlvo.options.alloc {
-                        (*m).rmlvo.options.alloc = darray_next_alloc(
-                            (*m).rmlvo.options.alloc,
-                            __need_3,
-                            ::core::mem::size_of::<matched_sval>() as usize,
-                        );
-                        (*m).rmlvo.options.item = realloc(
-                            (*m).rmlvo.options.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.options.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                    }
-                    *(*m)
-                        .rmlvo
-                        .options
-                        .item
-                        .offset(
-                            (*m).rmlvo.options.size.wrapping_sub(1 as darray_size_t)
-                                as isize,
-                        ) = val_0;
+                    darray_append(
+                        &mut (*m).rmlvo.options.item,
+                        &mut (*m).rmlvo.options.size,
+                        &mut (*m).rmlvo.options.alloc,
+                        val_0,
+                    );
                     option = option.offset(1);
                 }
             }
@@ -1559,32 +1421,12 @@ unsafe fn matcher_new_from_names(
                     }),
                 );
             }
-            let mut __oldSize: darray_size_t = (*m).rmlvo.variants.size;
-            let mut __newSize: darray_size_t = (*m).rmlvo.layouts.size;
-            (*m).rmlvo.variants.size = __newSize;
-            if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*m).rmlvo.variants.alloc {
-                    (*m).rmlvo.variants.alloc = darray_next_alloc(
-                        (*m).rmlvo.variants.alloc,
-                        __need,
-                        ::core::mem::size_of::<matched_sval>() as usize,
-                    );
-                    (*m).rmlvo.variants.item =
-                        realloc(
-                            (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                            ((*m).rmlvo.variants.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                        ) as *mut matched_sval;
-                }
-                std::ptr::write_bytes(
-                    (*m).rmlvo.variants.item.offset(__oldSize as isize) as *mut matched_sval
-                        as *mut u8,
-                    0u8,
-                    (__newSize.wrapping_sub(__oldSize) as usize)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                );
-            }
+            darray_resize_zero(
+                &mut (*m).rmlvo.variants.item,
+                &mut (*m).rmlvo.variants.size,
+                &mut (*m).rmlvo.variants.alloc,
+                (*m).rmlvo.layouts.size,
+            );
         } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
             xkb_logf!(
                 ctx,
@@ -1602,28 +1444,12 @@ unsafe fn matcher_new_from_names(
                     b"(none)\0".as_ptr() as *const i8
                 }),
             );
+            darray_growalloc(
+                &mut (*m).rmlvo.variants.item,
+                &mut (*m).rmlvo.variants.alloc,
+                (*m).rmlvo.layouts.size,
+            );
             (*m).rmlvo.variants.size = (*m).rmlvo.layouts.size;
-            let mut __need_0: darray_size_t = (*m).rmlvo.variants.size;
-            if __need_0 > (*m).rmlvo.variants.alloc {
-                (*m).rmlvo.variants.alloc = darray_next_alloc(
-                    (*m).rmlvo.variants.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<matched_sval>() as usize,
-                );
-                (*m).rmlvo.variants.item = realloc(
-                    (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                    ((*m).rmlvo.variants.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                ) as *mut matched_sval;
-            }
-            if (*m).rmlvo.variants.size > 0 as darray_size_t {
-                (*m).rmlvo.variants.alloc = (*m).rmlvo.variants.size;
-                (*m).rmlvo.variants.item = realloc(
-                    (*m).rmlvo.variants.item as *mut ::core::ffi::c_void,
-                    ((*m).rmlvo.variants.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<matched_sval>() as usize),
-                ) as *mut matched_sval;
-            }
         }
         return m;
     }
@@ -1633,51 +1459,59 @@ unsafe fn matcher_free(mut m: *mut matcher) {
         if m.is_null() {
             return;
         }
-        free((*m).rmlvo.layouts.item as *mut ::core::ffi::c_void);
-        (*m).rmlvo.layouts.item = ::core::ptr::null_mut::<matched_sval>();
-        (*m).rmlvo.layouts.size = 0 as darray_size_t;
-        (*m).rmlvo.layouts.alloc = 0 as darray_size_t;
-        free((*m).rmlvo.variants.item as *mut ::core::ffi::c_void);
-        (*m).rmlvo.variants.item = ::core::ptr::null_mut::<matched_sval>();
-        (*m).rmlvo.variants.size = 0 as darray_size_t;
-        (*m).rmlvo.variants.alloc = 0 as darray_size_t;
-        free((*m).rmlvo.options.item as *mut ::core::ffi::c_void);
-        (*m).rmlvo.options.item = ::core::ptr::null_mut::<matched_sval>();
-        (*m).rmlvo.options.size = 0 as darray_size_t;
-        (*m).rmlvo.options.alloc = 0 as darray_size_t;
+        crate::xkb::utils::darray_free(
+            &mut (*m).rmlvo.layouts.item,
+            &mut (*m).rmlvo.layouts.size,
+            &mut (*m).rmlvo.layouts.alloc,
+        );
+        crate::xkb::utils::darray_free(
+            &mut (*m).rmlvo.variants.item,
+            &mut (*m).rmlvo.variants.size,
+            &mut (*m).rmlvo.variants.alloc,
+        );
+        crate::xkb::utils::darray_free(
+            &mut (*m).rmlvo.options.item,
+            &mut (*m).rmlvo.options.size,
+            &mut (*m).rmlvo.options.alloc,
+        );
         let mut group: *mut group = ::core::ptr::null_mut::<group>();
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
-                free((*group).elements.item as *mut ::core::ffi::c_void);
-                (*group).elements.item = ::core::ptr::null_mut::<sval>();
-                (*group).elements.size = 0 as darray_size_t;
-                (*group).elements.alloc = 0 as darray_size_t;
+                crate::xkb::utils::darray_free(
+                    &mut (*group).elements.item,
+                    &mut (*group).elements.size,
+                    &mut (*group).elements.alloc,
+                );
                 group = group.offset(1);
             }
         }
-        free((*m).pending_kccgst.buffer.item as *mut ::core::ffi::c_void);
-        (*m).pending_kccgst.buffer.item = ::core::ptr::null_mut::<i8>();
-        (*m).pending_kccgst.buffer.size = 0 as darray_size_t;
-        (*m).pending_kccgst.buffer.alloc = 0 as darray_size_t;
-        free((*m).pending_kccgst.slices.item as *mut ::core::ffi::c_void);
-        (*m).pending_kccgst.slices.item = ::core::ptr::null_mut::<kccgst_buffer_slice>();
-        (*m).pending_kccgst.slices.size = 0 as darray_size_t;
-        (*m).pending_kccgst.slices.alloc = 0 as darray_size_t;
+        crate::xkb::utils::darray_free(
+            &mut (*m).pending_kccgst.buffer.item,
+            &mut (*m).pending_kccgst.buffer.size,
+            &mut (*m).pending_kccgst.buffer.alloc,
+        );
+        crate::xkb::utils::darray_free(
+            &mut (*m).pending_kccgst.slices.item,
+            &mut (*m).pending_kccgst.slices.size,
+            &mut (*m).pending_kccgst.slices.alloc,
+        );
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
         while (i as ::core::ffi::c_int)
             < _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as kccgst_index_t as ::core::ffi::c_int
         {
-            free((*m).kccgst[i as usize].item as *mut ::core::ffi::c_void);
-            (*m).kccgst[i as usize].item = ::core::ptr::null_mut::<i8>();
-            (*m).kccgst[i as usize].size = 0 as darray_size_t;
-            (*m).kccgst[i as usize].alloc = 0 as darray_size_t;
+            crate::xkb::utils::darray_free(
+                &mut (*m).kccgst[i as usize].item,
+                &mut (*m).kccgst[i as usize].size,
+                &mut (*m).kccgst[i as usize].alloc,
+            );
             i = i.wrapping_add(1);
         }
-        free((*m).groups.item as *mut ::core::ffi::c_void);
-        (*m).groups.item = ::core::ptr::null_mut::<group>();
-        (*m).groups.size = 0 as darray_size_t;
-        (*m).groups.alloc = 0 as darray_size_t;
+        crate::xkb::utils::darray_free(
+            &mut (*m).groups.item,
+            &mut (*m).groups.size,
+            &mut (*m).groups.alloc,
+        );
         free(m as *mut ::core::ffi::c_void);
     }
 }
@@ -1691,96 +1525,26 @@ unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
                 item: ::core::ptr::null_mut::<sval>(),
             },
         };
-        (*m).groups.size = (*m).groups.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*m).groups.size;
-        if __need > (*m).groups.alloc {
-            (*m).groups.alloc = darray_next_alloc(
-                (*m).groups.alloc,
-                __need,
-                ::core::mem::size_of::<group>() as usize,
-            );
-            (*m).groups.item = realloc(
-                (*m).groups.item as *mut ::core::ffi::c_void,
-                ((*m).groups.alloc as usize).wrapping_mul(::core::mem::size_of::<group>() as usize),
-            ) as *mut group;
-        }
-        *(*m)
-            .groups
-            .item
-            .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize) = group;
+        darray_append(
+            &mut (*m).groups.item,
+            &mut (*m).groups.size,
+            &mut (*m).groups.alloc,
+            group,
+        );
     }
 }
 unsafe fn matcher_group_add_element(mut m: *mut matcher, mut s: *mut scanner, mut element: sval) {
     unsafe {
-        let ref mut c2rust_fresh1 = (*(*m)
+        let last_group = &mut *(*m)
             .groups
             .item
-            .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-        .elements
-        .size;
-        *c2rust_fresh1 = (*(*m)
-            .groups
-            .item
-            .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-        .elements
-        .size
-        .wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = *c2rust_fresh1;
-        if __need
-            > (*(*m)
-                .groups
-                .item
-                .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-            .elements
-            .alloc
-        {
-            let ref mut c2rust_fresh2 = (*(*m)
-                .groups
-                .item
-                .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-            .elements
-            .alloc;
-            *c2rust_fresh2 = darray_next_alloc(
-                (*(*m)
-                    .groups
-                    .item
-                    .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-                .elements
-                .alloc,
-                __need,
-                ::core::mem::size_of::<sval>() as usize,
-            );
-            let ref mut c2rust_fresh3 = (*(*m)
-                .groups
-                .item
-                .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-            .elements
-            .item;
-            *c2rust_fresh3 = realloc(
-                (*(*m)
-                    .groups
-                    .item
-                    .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-                .elements
-                .item as *mut ::core::ffi::c_void,
-                (*c2rust_fresh2 as usize).wrapping_mul(::core::mem::size_of::<sval>() as usize),
-            ) as *mut sval;
-        }
-        *(*(*m)
-            .groups
-            .item
-            .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-        .elements
-        .item
-        .offset(
-            (*(*m)
-                .groups
-                .item
-                .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize))
-            .elements
-            .size
-            .wrapping_sub(1 as darray_size_t) as isize,
-        ) = element;
+            .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize);
+        darray_append(
+            &mut last_group.elements.item,
+            &mut last_group.elements.size,
+            &mut last_group.elements.alloc,
+            element,
+        );
     }
 }
 unsafe fn matcher_include(
@@ -6754,32 +6518,13 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                     ::core::mem::size_of::<[i8; 12]>() as usize,
                     format_args!("{}", layout_idx.wrapping_add(1 as xkb_layout_index_t)),
                 );
-                let mut __count: darray_size_t = count as darray_size_t;
-                let mut __oldSize: darray_size_t = (*expanded).size;
-                (*expanded).size = __oldSize
-                    .wrapping_add(__count)
-                    .wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*expanded).size;
-                if __need > (*expanded).alloc {
-                    (*expanded).alloc = darray_next_alloc(
-                        (*expanded).alloc,
-                        __need,
-                        ::core::mem::size_of::<i8>() as usize,
-                    );
-                    (*expanded).item = realloc(
-                        (*expanded).item as *mut ::core::ffi::c_void,
-                        ((*expanded).alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                    ) as *mut i8;
-                }
-                std::ptr::copy_nonoverlapping(
-                    &raw mut index_str as *mut i8 as *const u8,
-                    (*expanded).item.offset(__oldSize as isize) as *mut u8,
-                    __count as usize,
+                darray_appends_nul(
+                    &mut (*expanded).item,
+                    &mut (*expanded).size,
+                    &mut (*expanded).alloc,
+                    &raw mut index_str as *mut i8 as *const i8,
+                    count as u32,
                 );
-                *(*expanded)
-                    .item
-                    .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                 return true_0 != 0;
             }
@@ -6954,112 +6699,32 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_0: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_0: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_0
-                                                    .wrapping_add(__count_0)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_0: darray_size_t = (*expanded).size;
-                                                if __need_0 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_0,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut pfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut u8,
-                                                    __count_0 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const pfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            let mut __count_1: darray_size_t =
-                                                (*expanded_value).sval.len as darray_size_t;
-                                            let mut __oldSize_1: darray_size_t = (*expanded).size;
-                                            (*expanded).size = __oldSize_1
-                                                .wrapping_add(__count_1)
-                                                .wrapping_add(1 as darray_size_t);
-                                            let mut __need_1: darray_size_t = (*expanded).size;
-                                            if __need_1 > (*expanded).alloc {
-                                                (*expanded).alloc = darray_next_alloc(
-                                                    (*expanded).alloc,
-                                                    __need_1,
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                );
-                                                (*expanded).item = realloc(
-                                                    (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
-                                                )
-                                                    as *mut i8;
-                                            }
-                                            std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start as *const u8,
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut u8,
-                                                __count_1 as usize,
+                                            darray_appends_nul(
+                                                &mut (*expanded).item,
+                                                &mut (*expanded).size,
+                                                &mut (*expanded).alloc,
+                                                (*expanded_value).sval.start,
+                                                (*expanded_value).sval.len as u32,
                                             );
-                                            *(*expanded).item.offset(
-                                                (*expanded).size.wrapping_sub(1 as darray_size_t)
-                                                    as isize,
-                                            ) = 0 as i8;
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_2: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_2: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_2
-                                                    .wrapping_add(__count_2)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_2: darray_size_t = (*expanded).size;
-                                                if __need_2 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_2,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut sfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut u8,
-                                                    __count_2 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const sfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
                                             (*expanded_value).set_matched((true_0 != 0) as bool);
@@ -7211,112 +6876,32 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_0: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_0: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_0
-                                                    .wrapping_add(__count_0)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_0: darray_size_t = (*expanded).size;
-                                                if __need_0 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_0,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut pfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut u8,
-                                                    __count_0 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const pfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            let mut __count_1: darray_size_t =
-                                                (*expanded_value).sval.len as darray_size_t;
-                                            let mut __oldSize_1: darray_size_t = (*expanded).size;
-                                            (*expanded).size = __oldSize_1
-                                                .wrapping_add(__count_1)
-                                                .wrapping_add(1 as darray_size_t);
-                                            let mut __need_1: darray_size_t = (*expanded).size;
-                                            if __need_1 > (*expanded).alloc {
-                                                (*expanded).alloc = darray_next_alloc(
-                                                    (*expanded).alloc,
-                                                    __need_1,
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                );
-                                                (*expanded).item = realloc(
-                                                    (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
-                                                )
-                                                    as *mut i8;
-                                            }
-                                            std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start as *const u8,
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut u8,
-                                                __count_1 as usize,
+                                            darray_appends_nul(
+                                                &mut (*expanded).item,
+                                                &mut (*expanded).size,
+                                                &mut (*expanded).alloc,
+                                                (*expanded_value).sval.start,
+                                                (*expanded_value).sval.len as u32,
                                             );
-                                            *(*expanded).item.offset(
-                                                (*expanded).size.wrapping_sub(1 as darray_size_t)
-                                                    as isize,
-                                            ) = 0 as i8;
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_2: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_2: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_2
-                                                    .wrapping_add(__count_2)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_2: darray_size_t = (*expanded).size;
-                                                if __need_2 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_2,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut sfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut u8,
-                                                    __count_2 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const sfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
                                             (*expanded_value).set_matched((true_0 != 0) as bool);
@@ -7468,112 +7053,32 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_0: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_0: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_0
-                                                    .wrapping_add(__count_0)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_0: darray_size_t = (*expanded).size;
-                                                if __need_0 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_0,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut pfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_0 as isize)
-                                                        as *mut u8,
-                                                    __count_0 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const pfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            let mut __count_1: darray_size_t =
-                                                (*expanded_value).sval.len as darray_size_t;
-                                            let mut __oldSize_1: darray_size_t = (*expanded).size;
-                                            (*expanded).size = __oldSize_1
-                                                .wrapping_add(__count_1)
-                                                .wrapping_add(1 as darray_size_t);
-                                            let mut __need_1: darray_size_t = (*expanded).size;
-                                            if __need_1 > (*expanded).alloc {
-                                                (*expanded).alloc = darray_next_alloc(
-                                                    (*expanded).alloc,
-                                                    __need_1,
-                                                    ::core::mem::size_of::<i8>() as usize,
-                                                );
-                                                (*expanded).item = realloc(
-                                                    (*expanded).item as *mut ::core::ffi::c_void,
-                                                    ((*expanded).alloc as usize).wrapping_mul(
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    ),
-                                                )
-                                                    as *mut i8;
-                                            }
-                                            std::ptr::copy_nonoverlapping(
-                                                (*expanded_value).sval.start as *const u8,
-                                                (*expanded).item.offset(__oldSize_1 as isize)
-                                                    as *mut u8,
-                                                __count_1 as usize,
+                                            darray_appends_nul(
+                                                &mut (*expanded).item,
+                                                &mut (*expanded).size,
+                                                &mut (*expanded).alloc,
+                                                (*expanded_value).sval.start,
+                                                (*expanded_value).sval.len as u32,
                                             );
-                                            *(*expanded).item.offset(
-                                                (*expanded).size.wrapping_sub(1 as darray_size_t)
-                                                    as isize,
-                                            ) = 0 as i8;
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
-                                                let mut __count_2: darray_size_t =
-                                                    1 as darray_size_t;
-                                                let mut __oldSize_2: darray_size_t =
-                                                    (*expanded).size;
-                                                (*expanded).size = __oldSize_2
-                                                    .wrapping_add(__count_2)
-                                                    .wrapping_add(1 as darray_size_t);
-                                                let mut __need_2: darray_size_t = (*expanded).size;
-                                                if __need_2 > (*expanded).alloc {
-                                                    (*expanded).alloc = darray_next_alloc(
-                                                        (*expanded).alloc,
-                                                        __need_2,
-                                                        ::core::mem::size_of::<i8>() as usize,
-                                                    );
-                                                    (*expanded).item = realloc(
-                                                        (*expanded).item
-                                                            as *mut ::core::ffi::c_void,
-                                                        ((*expanded).alloc as usize).wrapping_mul(
-                                                            ::core::mem::size_of::<i8>() as usize,
-                                                        ),
-                                                    )
-                                                        as *mut i8;
-                                                }
-                                                std::ptr::copy_nonoverlapping(
-                                                    &raw mut sfx as *const u8,
-                                                    (*expanded).item.offset(__oldSize_2 as isize)
-                                                        as *mut u8,
-                                                    __count_2 as usize,
+                                                darray_appends_nul(
+                                                    &mut (*expanded).item,
+                                                    &mut (*expanded).size,
+                                                    &mut (*expanded).alloc,
+                                                    &raw const sfx as *const i8,
+                                                    1,
                                                 );
-                                                *(*expanded).item.offset(
-                                                    (*expanded)
-                                                        .size
-                                                        .wrapping_sub(1 as darray_size_t)
-                                                        as isize,
-                                                ) = 0 as i8;
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
                                             (*expanded_value).set_matched((true_0 != 0) as bool);
@@ -7639,32 +7144,13 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     loc.column,
                 );
             }
-            let mut __count: darray_size_t = 1 as darray_size_t;
-            let mut __oldSize: darray_size_t = (*expanded).size;
-            (*expanded).size = __oldSize
-                .wrapping_add(__count)
-                .wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*expanded).size;
-            if __need > (*expanded).alloc {
-                (*expanded).alloc = darray_next_alloc(
-                    (*expanded).alloc,
-                    __need,
-                    ::core::mem::size_of::<i8>() as usize,
-                );
-                (*expanded).item = realloc(
-                    (*expanded).item as *mut ::core::ffi::c_void,
-                    ((*expanded).alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                ) as *mut i8;
-            }
-            std::ptr::copy_nonoverlapping(
-                b"1\0".as_ptr() as *const i8 as *const u8,
-                (*expanded).item.offset(__oldSize as isize) as *mut u8,
-                __count as usize,
+            darray_appends_nul(
+                &mut (*expanded).item,
+                &mut (*expanded).size,
+                &mut (*expanded).alloc,
+                b"1\0".as_ptr() as *const i8,
+                1,
             );
-            *(*expanded)
-                .item
-                .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
             (*expanded).size = (*expanded).size.wrapping_sub(1);
             if (*m).rmlvo.layouts.size > 1 as darray_size_t {
                 let mut layout_index: [i8; 12] = [0; 12];
@@ -7681,85 +7167,38 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     })
                 {
                     if !has_separator {
-                        (*expanded).size = (*expanded).size.wrapping_add(1 as darray_size_t);
-                        let mut __need_0: darray_size_t = (*expanded).size;
-                        if __need_0 > (*expanded).alloc {
-                            (*expanded).alloc = darray_next_alloc(
-                                (*expanded).alloc,
-                                __need_0,
-                                ::core::mem::size_of::<i8>() as usize,
-                            );
-                            (*expanded).item = realloc(
-                                (*expanded).item as *mut ::core::ffi::c_void,
-                                ((*expanded).alloc as usize)
-                                    .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                            ) as *mut i8;
-                        }
-                        *(*expanded)
-                            .item
-                            .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) =
-                            '+' as i32 as i8;
-                    }
-                    let mut __count_0: darray_size_t = prefix_length;
-                    let mut __oldSize_0: darray_size_t = (*expanded).size;
-                    (*expanded).size = __oldSize_0
-                        .wrapping_add(__count_0)
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need_1: darray_size_t = (*expanded).size;
-                    if __need_1 > (*expanded).alloc {
-                        (*expanded).alloc = darray_next_alloc(
-                            (*expanded).alloc,
-                            __need_1,
-                            ::core::mem::size_of::<i8>() as usize,
+                        darray_append(
+                            &mut (*expanded).item,
+                            &mut (*expanded).size,
+                            &mut (*expanded).alloc,
+                            '+' as i32 as i8,
                         );
-                        (*expanded).item = realloc(
-                            (*expanded).item as *mut ::core::ffi::c_void,
-                            ((*expanded).alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
                     }
-                    std::ptr::copy_nonoverlapping(
-                        (*expanded).item.offset(prefix_idx as isize) as *mut i8 as *const u8,
-                        (*expanded).item.offset(__oldSize_0 as isize) as *mut u8,
-                        __count_0 as usize,
-                    );
-                    *(*expanded)
-                        .item
-                        .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) =
-                        0 as i8;
-                    (*expanded).size = (*expanded).size.wrapping_sub(1);
+                    {
+                        let old_size = (*expanded).size;
+                        let new_size = old_size.wrapping_add(prefix_length).wrapping_add(1);
+                        darray_growalloc(&mut (*expanded).item, &mut (*expanded).alloc, new_size);
+                        (*expanded).size = new_size;
+                        std::ptr::copy_nonoverlapping(
+                            (*expanded).item.offset(prefix_idx as isize),
+                            (*expanded).item.offset(old_size as isize),
+                            prefix_length as usize,
+                        );
+                        *(*expanded).item.offset(new_size.wrapping_sub(1) as isize) = 0;
+                        (*expanded).size = (*expanded).size.wrapping_sub(1);
+                    }
                     let mut count: i32 = crate::xkb::utils::snprintf_c(
                         &raw mut layout_index as *mut i8,
                         ::core::mem::size_of::<[i8; 12]>() as usize,
                         format_args!("{}", l.wrapping_add(1 as xkb_layout_index_t)),
                     );
-                    let mut __count_1: darray_size_t = count as darray_size_t;
-                    let mut __oldSize_1: darray_size_t = (*expanded).size;
-                    (*expanded).size = __oldSize_1
-                        .wrapping_add(__count_1)
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need_2: darray_size_t = (*expanded).size;
-                    if __need_2 > (*expanded).alloc {
-                        (*expanded).alloc = darray_next_alloc(
-                            (*expanded).alloc,
-                            __need_2,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        (*expanded).item = realloc(
-                            (*expanded).item as *mut ::core::ffi::c_void,
-                            ((*expanded).alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
-                    std::ptr::copy_nonoverlapping(
-                        &raw mut layout_index as *mut i8 as *const u8,
-                        (*expanded).item.offset(__oldSize_1 as isize) as *mut u8,
-                        __count_1 as usize,
+                    darray_appends_nul(
+                        &mut (*expanded).item,
+                        &mut (*expanded).size,
+                        &mut (*expanded).alloc,
+                        &raw mut layout_index as *mut i8 as *const i8,
+                        count as u32,
                     );
-                    *(*expanded)
-                        .item
-                        .offset((*expanded).size.wrapping_sub(1 as darray_size_t) as isize) =
-                        0 as i8;
                     (*expanded).size = (*expanded).size.wrapping_sub(1);
                     l = l.wrapping_add(1);
                 }
@@ -7778,28 +7217,13 @@ unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut
             || *from.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
                 == MERGE_REPLACE_PREFIX;
         if from_plus as ::core::ffi::c_int != 0 || (*into).size == 0 as darray_size_t {
-            let mut __count: darray_size_t = size;
-            let mut __oldSize: darray_size_t = (*into).size;
-            (*into).size = __oldSize
-                .wrapping_add(__count)
-                .wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*into).size;
-            if __need > (*into).alloc {
-                (*into).alloc =
-                    darray_next_alloc((*into).alloc, __need, ::core::mem::size_of::<i8>() as usize);
-                (*into).item = realloc(
-                    (*into).item as *mut ::core::ffi::c_void,
-                    ((*into).alloc as usize).wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                ) as *mut i8;
-            }
-            std::ptr::copy_nonoverlapping(
-                from as *const u8,
-                (*into).item.offset(__oldSize as isize) as *mut u8,
-                __count as usize,
+            darray_appends_nul(
+                &mut (*into).item,
+                &mut (*into).size,
+                &mut (*into).alloc,
+                from,
+                size,
             );
-            *(*into)
-                .item
-                .offset((*into).size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
             (*into).size = (*into).size.wrapping_sub(1);
         } else {
             let ch: i8 = (if (*into).size == 0 as darray_size_t {
@@ -7811,37 +7235,21 @@ unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut
                 || ch as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
                 || ch as ::core::ffi::c_int == MERGE_REPLACE_PREFIX;
             if into_plus {
-                let mut __count_0: darray_size_t = size;
-                let mut __oldSize_0: darray_size_t = (*into).size;
-                (*into).size = __count_0
-                    .wrapping_add(__oldSize_0)
-                    .wrapping_add(1 as darray_size_t);
-                let mut __need_0: darray_size_t = (*into).size;
-                if __need_0 > (*into).alloc {
-                    (*into).alloc = darray_next_alloc(
-                        (*into).alloc,
-                        __need_0,
-                        ::core::mem::size_of::<i8>() as usize,
-                    );
-                    (*into).item = realloc(
-                        (*into).item as *mut ::core::ffi::c_void,
-                        ((*into).alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                    ) as *mut i8;
-                }
+                let old_size = (*into).size;
+                let new_size = size.wrapping_add(old_size).wrapping_add(1);
+                darray_growalloc(&mut (*into).item, &mut (*into).alloc, new_size);
+                (*into).size = new_size;
                 std::ptr::copy(
                     (*into).item,
-                    (*into).item.offset(__count_0 as isize),
-                    __oldSize_0 as usize,
+                    (*into).item.offset(size as isize),
+                    old_size as usize,
                 );
                 std::ptr::copy_nonoverlapping(
                     from as *const u8,
                     (*into).item as *mut u8,
-                    __count_0 as usize,
+                    size as usize,
                 );
-                *(*into)
-                    .item
-                    .offset((*into).size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
+                *(*into).item.offset(new_size.wrapping_sub(1) as isize) = 0 as i8;
                 (*into).size = (*into).size.wrapping_sub(1);
             }
         };
@@ -7873,34 +7281,15 @@ unsafe fn append_expanded_kccgst_value(
             }
             match *str.offset(i as isize) as ::core::ffi::c_int {
                 58 => {
-                    let mut __count: darray_size_t = 1 as darray_size_t;
-                    let mut __oldSize: darray_size_t = expanded.size;
-                    expanded.size = __oldSize
-                        .wrapping_add(__count)
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need: darray_size_t = expanded.size;
-                    if __need > expanded.alloc {
-                        expanded.alloc = darray_next_alloc(
-                            expanded.alloc,
-                            __need,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        expanded.item = realloc(
-                            expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
                     let c2rust_fresh4 = i;
                     i = i.wrapping_add(1);
-                    std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh4 as isize) as *const i8 as *const u8,
-                        expanded.item.offset(__oldSize as isize) as *mut u8,
-                        __count as usize,
+                    darray_appends_nul(
+                        &mut expanded.item,
+                        &mut expanded.size,
+                        &mut expanded.alloc,
+                        str.offset(c2rust_fresh4 as isize),
+                        1,
                     );
-                    *expanded
-                        .item
-                        .offset(expanded.size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
                     expanded.size = expanded.size.wrapping_sub(1);
                     expand_qualifier_in_kccgst_value(
                         m,
@@ -7930,77 +7319,40 @@ unsafe fn append_expanded_kccgst_value(
                     }
                 }
                 MERGE_OVERRIDE_PREFIX | MERGE_AUGMENT_PREFIX | MERGE_REPLACE_PREFIX => {
-                    let mut __count_0: darray_size_t = 1 as darray_size_t;
-                    let mut __oldSize_0: darray_size_t = expanded.size;
-                    expanded.size = __oldSize_0
-                        .wrapping_add(__count_0)
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need_0: darray_size_t = expanded.size;
-                    if __need_0 > expanded.alloc {
-                        expanded.alloc = darray_next_alloc(
-                            expanded.alloc,
-                            __need_0,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        expanded.item = realloc(
-                            expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
                     let c2rust_fresh5 = i;
                     i = i.wrapping_add(1);
-                    std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh5 as isize) as *const i8 as *const u8,
-                        expanded.item.offset(__oldSize_0 as isize) as *mut u8,
-                        __count_0 as usize,
+                    darray_appends_nul(
+                        &mut expanded.item,
+                        &mut expanded.size,
+                        &mut expanded.alloc,
+                        str.offset(c2rust_fresh5 as isize),
+                        1,
                     );
-                    *expanded
-                        .item
-                        .offset(expanded.size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
                     expanded.size = expanded.size.wrapping_sub(1);
                     last_item_idx = expanded.size.wrapping_sub(1 as darray_size_t);
                     has_separator = true_0 != 0;
                 }
                 _ => {
-                    let mut __count_1: darray_size_t = 1 as darray_size_t;
-                    let mut __oldSize_1: darray_size_t = expanded.size;
-                    expanded.size = __oldSize_1
-                        .wrapping_add(__count_1)
-                        .wrapping_add(1 as darray_size_t);
-                    let mut __need_1: darray_size_t = expanded.size;
-                    if __need_1 > expanded.alloc {
-                        expanded.alloc = darray_next_alloc(
-                            expanded.alloc,
-                            __need_1,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        expanded.item = realloc(
-                            expanded.item as *mut ::core::ffi::c_void,
-                            (expanded.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
                     let c2rust_fresh6 = i;
                     i = i.wrapping_add(1);
-                    std::ptr::copy_nonoverlapping(
-                        str.offset(c2rust_fresh6 as isize) as *const i8 as *const u8,
-                        expanded.item.offset(__oldSize_1 as isize) as *mut u8,
-                        __count_1 as usize,
+                    darray_appends_nul(
+                        &mut expanded.item,
+                        &mut expanded.size,
+                        &mut expanded.alloc,
+                        str.offset(c2rust_fresh6 as isize),
+                        1,
                     );
-                    *expanded
-                        .item
-                        .offset(expanded.size.wrapping_sub(1 as darray_size_t) as isize) = 0 as i8;
                     expanded.size = expanded.size.wrapping_sub(1);
                 }
             }
         }
         match c2rust_current_block {
             1032266188497003083 => {
-                free(expanded.item as *mut ::core::ffi::c_void);
-                expanded.item = ::core::ptr::null_mut::<i8>();
-                expanded.size = 0 as darray_size_t;
-                expanded.alloc = 0 as darray_size_t;
+                crate::xkb::utils::darray_free(
+                    &mut expanded.item,
+                    &mut expanded.size,
+                    &mut expanded.alloc,
+                );
                 return false_0 != 0;
             }
             _ => {
@@ -8009,32 +7361,19 @@ unsafe fn append_expanded_kccgst_value(
                         concat_kccgst(to, expanded.size, expanded.item);
                     }
                 } else if expanded.size > 0 as darray_size_t {
-                    let mut __count_2: darray_size_t = expanded.size;
-                    let mut __oldSize_2: darray_size_t = (*to).size;
-                    (*to).size = __oldSize_2.wrapping_add(__count_2);
-                    let mut __need_2: darray_size_t = (*to).size;
-                    if __need_2 > (*to).alloc {
-                        (*to).alloc = darray_next_alloc(
-                            (*to).alloc,
-                            __need_2,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        (*to).item = realloc(
-                            (*to).item as *mut ::core::ffi::c_void,
-                            ((*to).alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
-                    std::ptr::copy_nonoverlapping(
-                        expanded.item as *const u8,
-                        (*to).item.offset(__oldSize_2 as isize) as *mut u8,
-                        __count_2 as usize,
+                    darray_appends(
+                        &mut (*to).item,
+                        &mut (*to).size,
+                        &mut (*to).alloc,
+                        expanded.item as *const i8,
+                        expanded.size,
                     );
                 }
-                free(expanded.item as *mut ::core::ffi::c_void);
-                expanded.item = ::core::ptr::null_mut::<i8>();
-                expanded.size = 0 as darray_size_t;
-                expanded.alloc = 0 as darray_size_t;
+                crate::xkb::utils::darray_free(
+                    &mut expanded.item,
+                    &mut expanded.size,
+                    &mut expanded.alloc,
+                );
                 return true_0 != 0;
             }
         };
@@ -8292,27 +7631,12 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                             init.set_kccgst(kccgst);
                             init
                         };
-                        (*buf).slices.size = (*buf).slices.size.wrapping_add(1 as darray_size_t);
-                        let mut __need: darray_size_t = (*buf).slices.size;
-                        if __need > (*buf).slices.alloc {
-                            (*buf).slices.alloc = darray_next_alloc(
-                                (*buf).slices.alloc,
-                                __need,
-                                ::core::mem::size_of::<kccgst_buffer_slice>() as usize,
-                            );
-                            (*buf).slices.item = realloc(
-                                (*buf).slices.item as *mut ::core::ffi::c_void,
-                                ((*buf).slices.alloc as usize).wrapping_mul(
-                                    ::core::mem::size_of::<kccgst_buffer_slice>() as usize,
-                                ),
-                            )
-                                as *mut kccgst_buffer_slice;
-                        }
-                        *(*buf)
-                            .slices
-                            .item
-                            .offset((*buf).slices.size.wrapping_sub(1 as darray_size_t) as isize) =
-                            slice;
+                        darray_append(
+                            &mut (*buf).slices.item,
+                            &mut (*buf).slices.size,
+                            &mut (*buf).slices.alloc,
+                            slice,
+                        );
                         i_0 = i_0.wrapping_add(1);
                     }
                 }

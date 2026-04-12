@@ -269,7 +269,7 @@ pub mod utils_h {
             return istrcmp(s1, s2) == 0 as i32;
         }
     }
-    pub use crate::xkb::utils::istrcmp;
+    pub use crate::xkb::utils::{istrcmp};
 }
 pub mod stdbool_h {
     pub const true_0: i32 = 1 as i32;
@@ -409,6 +409,7 @@ pub use self::xkbcomp_priv_h::{
 };
 pub use crate::xkb::keymap_priv::action_equal;
 use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::darray_growalloc;
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;
@@ -1094,20 +1095,7 @@ unsafe fn CheckGroupField(
             (*(*keymap_info).pending_computations).size = (*(*keymap_info).pending_computations)
                 .size
                 .wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*(*keymap_info).pending_computations).size;
-            if __need > (*(*keymap_info).pending_computations).alloc {
-                (*(*keymap_info).pending_computations).alloc = darray_next_alloc(
-                    (*(*keymap_info).pending_computations).alloc,
-                    __need,
-                    ::core::mem::size_of::<pending_computation>() as usize,
-                );
-                (*(*keymap_info).pending_computations).item = realloc(
-                    (*(*keymap_info).pending_computations).item as *mut ::core::ffi::c_void,
-                    ((*(*keymap_info).pending_computations).alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<pending_computation>() as usize),
-                )
-                    as *mut pending_computation;
-            }
+            darray_growalloc(&mut (*(*keymap_info).pending_computations).item, &mut (*(*keymap_info).pending_computations).alloc, (*(*keymap_info).pending_computations).size);
             *(*(*keymap_info).pending_computations).item.offset(
                 (*(*keymap_info).pending_computations)
                     .size

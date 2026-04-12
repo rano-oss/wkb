@@ -386,6 +386,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+use crate::xkb::utils::darray_growalloc;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -639,19 +640,7 @@ unsafe fn AddKeyType(
             return true_0 != 0;
         }
         (*info).types.size = (*info).types.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*info).types.size;
-        if __need > (*info).types.alloc {
-            (*info).types.alloc = darray_next_alloc(
-                (*info).types.alloc,
-                __need,
-                ::core::mem::size_of::<KeyTypeInfo>() as usize,
-            );
-            (*info).types.item = realloc(
-                (*info).types.item as *mut ::core::ffi::c_void,
-                ((*info).types.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<KeyTypeInfo>() as usize),
-            ) as *mut KeyTypeInfo;
-        }
+        darray_growalloc(&mut (*info).types.item, &mut (*info).types.alloc, (*info).types.size);
         *(*info)
             .types
             .item
@@ -933,19 +922,7 @@ unsafe fn AddMapEntry(
             (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
         }
         (*type_0).entries.size = (*type_0).entries.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*type_0).entries.size;
-        if __need > (*type_0).entries.alloc {
-            (*type_0).entries.alloc = darray_next_alloc(
-                (*type_0).entries.alloc,
-                __need,
-                ::core::mem::size_of::<xkb_key_type_entry>() as usize,
-            );
-            (*type_0).entries.item = realloc(
-                (*type_0).entries.item as *mut ::core::ffi::c_void,
-                ((*type_0).entries.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as usize),
-            ) as *mut xkb_key_type_entry;
-        }
+        darray_growalloc(&mut (*type_0).entries.item, &mut (*type_0).entries.alloc, (*type_0).entries.size);
         *(*type_0)
             .entries
             .item
@@ -1091,19 +1068,7 @@ unsafe fn AddPreserve(
         new.mods.mods = mods;
         new.preserve.mods = preserve_mods;
         (*type_0).entries.size = (*type_0).entries.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*type_0).entries.size;
-        if __need > (*type_0).entries.alloc {
-            (*type_0).entries.alloc = darray_next_alloc(
-                (*type_0).entries.alloc,
-                __need,
-                ::core::mem::size_of::<xkb_key_type_entry>() as usize,
-            );
-            (*type_0).entries.item = realloc(
-                (*type_0).entries.item as *mut ::core::ffi::c_void,
-                ((*type_0).entries.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<xkb_key_type_entry>() as usize),
-            ) as *mut xkb_key_type_entry;
-        }
+        darray_growalloc(&mut (*type_0).entries.item, &mut (*type_0).entries.alloc, (*type_0).entries.size);
         *(*type_0)
             .entries
             .item
@@ -1212,19 +1177,7 @@ unsafe fn AddLevelName(
                 (level as darray_size_t).wrapping_add(1 as darray_size_t);
             (*type_0).level_names.size = __newSize;
             if __newSize > __oldSize {
-                let mut __need: darray_size_t = __newSize;
-                if __need > (*type_0).level_names.alloc {
-                    (*type_0).level_names.alloc = darray_next_alloc(
-                        (*type_0).level_names.alloc,
-                        __need,
-                        ::core::mem::size_of::<xkb_atom_t>() as usize,
-                    );
-                    (*type_0).level_names.item = realloc(
-                        (*type_0).level_names.item as *mut ::core::ffi::c_void,
-                        ((*type_0).level_names.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<xkb_atom_t>() as usize),
-                    ) as *mut xkb_atom_t;
-                }
+                darray_growalloc(&mut (*type_0).level_names.item, &mut (*type_0).level_names.alloc, __newSize);
                 std::ptr::write_bytes(
                     (*type_0).level_names.item.offset(__oldSize as isize) as *mut xkb_atom_t
                         as *mut u8,

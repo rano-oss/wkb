@@ -340,7 +340,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len};
+use crate::xkb::utils::{cstr_cmp, cstr_len, darray_growalloc};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -407,19 +407,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
                 err = EACCES;
             } else {
                 (*ctx).includes.size = (*ctx).includes.size.wrapping_add(1 as darray_size_t);
-                let mut __need: darray_size_t = (*ctx).includes.size;
-                if __need > (*ctx).includes.alloc {
-                    (*ctx).includes.alloc = darray_next_alloc(
-                        (*ctx).includes.alloc,
-                        __need,
-                        ::core::mem::size_of::<*mut i8>() as usize,
-                    );
-                    (*ctx).includes.item = realloc(
-                        (*ctx).includes.item as *mut ::core::ffi::c_void,
-                        ((*ctx).includes.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                    ) as *mut *mut i8;
-                }
+                darray_growalloc(&mut (*ctx).includes.item, &mut (*ctx).includes.alloc, (*ctx).includes.size);
                 let ref mut c2rust_fresh0 = *(*ctx)
                     .includes
                     .item
@@ -438,19 +426,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
         if !tmp.is_null() {
             (*ctx).failed_includes.size =
                 (*ctx).failed_includes.size.wrapping_add(1 as darray_size_t);
-            let mut __need_0: darray_size_t = (*ctx).failed_includes.size;
-            if __need_0 > (*ctx).failed_includes.alloc {
-                (*ctx).failed_includes.alloc = darray_next_alloc(
-                    (*ctx).failed_includes.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<*mut i8>() as usize,
-                );
-                (*ctx).failed_includes.item = realloc(
-                    (*ctx).failed_includes.item as *mut ::core::ffi::c_void,
-                    ((*ctx).failed_includes.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                ) as *mut *mut i8;
-            }
+            darray_growalloc(&mut (*ctx).failed_includes.item, &mut (*ctx).failed_includes.alloc, (*ctx).failed_includes.size);
             let ref mut c2rust_fresh1 = *(*ctx)
                 .failed_includes
                 .item
@@ -636,20 +612,7 @@ unsafe fn add_direct_subdirectories(
                         } else {
                             (*extensions).size =
                                 (*extensions).size.wrapping_add(1 as darray_size_t);
-                            let mut __need: darray_size_t = (*extensions).size;
-                            if __need > (*extensions).alloc {
-                                (*extensions).alloc = darray_next_alloc(
-                                    (*extensions).alloc,
-                                    __need,
-                                    ::core::mem::size_of::<*mut i8>() as usize,
-                                );
-                                (*extensions).item = realloc(
-                                    (*extensions).item as *mut ::core::ffi::c_void,
-                                    ((*extensions).alloc as usize)
-                                        .wrapping_mul(::core::mem::size_of::<*mut i8>() as usize),
-                                )
-                                    as *mut *mut i8;
-                            }
+                            darray_growalloc(&mut (*extensions).item, &mut (*extensions).alloc, (*extensions).size);
                             let ref mut c2rust_fresh2 =
                                 *(*extensions)
                                     .item

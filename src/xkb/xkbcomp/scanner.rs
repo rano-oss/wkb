@@ -261,11 +261,11 @@ pub mod scanner_utils_h {
     #[inline]
     pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
         unsafe {
-            let mut nl: *const i8 = memchr(
-                (*s).s.offset((*s).pos as isize) as *const ::core::ffi::c_void,
-                '\n' as i32,
+            let mut nl: *const i8 = crate::xkb::utils::byte_memchr(
+                (*s).s.offset((*s).pos as isize),
+                b'\n',
                 (*s).len.wrapping_sub((*s).pos),
-            ) as *const i8;
+            );
             let new_pos: usize = if !nl.is_null() {
                 nl.offset_from((*s).s) as i64 as usize
             } else {
@@ -502,7 +502,6 @@ pub mod scanner_utils_h {
     use super::stdint_h::INT64_MAX;
     use super::stdint_intn_h::i64;
     use super::stdint_uintn_h::{u32, uint64_t, uint8_t};
-    use super::string_h::memchr;
     use super::utf8_h::utf32_to_utf8;
     use super::utils_h::is_ascii;
     use super::utils_numbers_h::{
@@ -665,16 +664,6 @@ pub mod parser_h {
     use super::stdint_intn_h::i64;
     use super::stdint_uintn_h::u32;
     use super::xkbcommon_h::xkb_keysym_t;
-}
-pub mod string_h {
-
-    extern "C" {
-        pub fn memchr(
-            __s: *const ::core::ffi::c_void,
-            __c: ::core::ffi::c_int,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
 }
 pub mod utils_h {
     #[inline]

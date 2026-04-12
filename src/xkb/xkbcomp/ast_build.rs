@@ -321,6 +321,7 @@ pub use self::xkbcommon_h::{
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::darray_growalloc;
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
@@ -510,19 +511,7 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
                 .syms
                 .size
                 .wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*expr).keysym_list.syms.size;
-            if __need > (*expr).keysym_list.syms.alloc {
-                (*expr).keysym_list.syms.alloc = darray_next_alloc(
-                    (*expr).keysym_list.syms.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_keysym_t>() as usize,
-                );
-                (*expr).keysym_list.syms.item = realloc(
-                    (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                    ((*expr).keysym_list.syms.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
-                ) as *mut xkb_keysym_t;
-            }
+            darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
             *(*expr).keysym_list.syms.item.offset(
                 (*expr)
                     .keysym_list
@@ -543,19 +532,7 @@ pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: xkb_keysym_t
                 .syms
                 .size
                 .wrapping_add(1 as darray_size_t);
-            let mut __need: darray_size_t = (*expr).keysym_list.syms.size;
-            if __need > (*expr).keysym_list.syms.alloc {
-                (*expr).keysym_list.syms.alloc = darray_next_alloc(
-                    (*expr).keysym_list.syms.alloc,
-                    __need,
-                    ::core::mem::size_of::<xkb_keysym_t>() as usize,
-                );
-                (*expr).keysym_list.syms.item = realloc(
-                    (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                    ((*expr).keysym_list.syms.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
-                ) as *mut xkb_keysym_t;
-            }
+            darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
             *(*expr).keysym_list.syms.item.offset(
                 (*expr)
                     .keysym_list
@@ -629,20 +606,7 @@ pub unsafe fn ExprKeySymListAppendString(
                         .syms
                         .size
                         .wrapping_add(1 as darray_size_t);
-                    let mut __need: darray_size_t = (*expr).keysym_list.syms.size;
-                    if __need > (*expr).keysym_list.syms.alloc {
-                        (*expr).keysym_list.syms.alloc = darray_next_alloc(
-                            (*expr).keysym_list.syms.alloc,
-                            __need,
-                            ::core::mem::size_of::<xkb_keysym_t>() as usize,
-                        );
-                        (*expr).keysym_list.syms.item = realloc(
-                            (*expr).keysym_list.syms.item as *mut ::core::ffi::c_void,
-                            ((*expr).keysym_list.syms.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<xkb_keysym_t>() as usize),
-                        )
-                            as *mut xkb_keysym_t;
-                    }
+                    darray_growalloc(&mut (*expr).keysym_list.syms.item, &mut (*expr).keysym_list.syms.alloc, (*expr).keysym_list.syms.size);
                     *(*expr).keysym_list.syms.item.offset(
                         (*expr)
                             .keysym_list

@@ -733,3 +733,184 @@ impl core::fmt::Display for StrerrorDisplay {
         }
     }
 }
+
+/// Safe replacement for C `memchr`. Searches `len` bytes starting at `ptr` for byte `c`.
+/// Returns pointer to first occurrence, or null if not found.
+#[inline]
+pub unsafe fn byte_memchr(ptr: *const i8, c: u8, len: usize) -> *const i8 {
+    let slice = unsafe { core::slice::from_raw_parts(ptr as *const u8, len) };
+    match slice.iter().position(|&b| b == c) {
+        Some(i) => unsafe { ptr.add(i) },
+        None => core::ptr::null(),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// darray helpers — replace libc realloc/free for the c2rust darray pattern
+// ---------------------------------------------------------------------------
+
+/// Compute next darray capacity. Replaces the duplicated `darray_next_alloc` in ~29 files.
+/// Same growth strategy as the C original: start at 4, double until >= need.
+#[inline]
+pub fn darray_next_alloc(alloc: u32, need: u32) -> u32 {
+    let mut a = if alloc == 0 { 4 } else { alloc };
+    while a < need {
+        a = a.wrapping_mul(2);
+    }
+    a
+}
+
+/// Grow a darray's backing allocation if `need > *alloc_ref`.
+/// Uses `std::alloc` (which on Linux IS the system allocator, compatible with libc malloc/free).
+///
+/// # Safety
+/// `*item_ptr` must be null (for first alloc) or a pointer previously allocated by
+/// `std::alloc::alloc`/`std::alloc::realloc` or libc `malloc`/`realloc` (same allocator on Linux).
+/// `T` must be a `Copy` type (all darray element types are `#[derive(Copy, Clone)]`).
+#[inline]
+pub unsafe fn darray_growalloc<T>(item_ptr: &mut *mut T, alloc_ref: &mut u32, need: u32) {
+    if need <= *alloc_ref {
+        return;
+    }
+    let new_alloc = darray_next_alloc(*alloc_ref, need);
+    let new_size_bytes = (new_alloc as usize)
+        .checked_mul(core::mem::size_of::<T>())
+        .expect("darray_growalloc: overflow");
+    let align = core::mem::align_of::<T>();
+    let new_ptr = if (*item_ptr).is_null() {
+        let layout = core::alloc::Layout::from_size_align_unchecked(new_size_bytes, align);
+        std::alloc::alloc(layout) as *mut T
+    } else {
+        let old_size_bytes = (*alloc_ref as usize) * core::mem::size_of::<T>();
+        let old_layout = core::alloc::Layout::from_size_align_unchecked(old_size_bytes, align);
+        std::alloc::realloc(*item_ptr as *mut u8, old_layout, new_size_bytes) as *mut T
+    };
+    if new_ptr.is_null() {
+        // Original C code didn't check either — abort like the C version would.
+        std::process::abort();
+    }
+    *item_ptr = new_ptr;
+    *alloc_ref = new_alloc;
+}
+
+/// Append one element to a darray. Replaces the ~8 line "Pattern A" expand.
+///
+/// # Safety
+/// Same requirements as `darray_growalloc`. `val` is copied into the array.
+#[inline]
+pub unsafe fn darray_append<T: Copy>(
+    item_ptr: &mut *mut T,
+    size_ref: &mut u32,
+    alloc_ref: &mut u32,
+    val: T,
+) {
+    *size_ref = size_ref.wrapping_add(1);
+    darray_growalloc(item_ptr, alloc_ref, *size_ref);
+    *(*item_ptr).offset((*size_ref).wrapping_sub(1) as isize) = val;
+}
+
+/// Free a darray's items and reset size/alloc to 0.
+/// Uses `std::alloc::dealloc` (same allocator as libc free on Linux).
+///
+/// # Safety
+/// `*item_ptr` must be null or a pointer from `std::alloc`/libc `malloc`.
+#[inline]
+pub unsafe fn darray_free<T>(item_ptr: &mut *mut T, size_ref: &mut u32, alloc_ref: &mut u32) {
+    if !(*item_ptr).is_null() && *alloc_ref > 0 {
+        let size_bytes = (*alloc_ref as usize) * core::mem::size_of::<T>();
+        let align = core::mem::align_of::<T>();
+        let layout = core::alloc::Layout::from_size_align_unchecked(size_bytes, align);
+        std::alloc::dealloc(*item_ptr as *mut u8, layout);
+    }
+    *item_ptr = core::ptr::null_mut();
+    *size_ref = 0;
+    *alloc_ref = 0;
+}
+
+/// Resize a darray to `new_size`, growing allocation if needed.
+/// Does NOT zero-fill new elements (use `darray_resize_zero` for that).
+///
+/// # Safety
+/// Same requirements as `darray_growalloc`.
+#[inline]
+pub unsafe fn darray_resize<T>(
+    item_ptr: &mut *mut T,
+    size_ref: &mut u32,
+    alloc_ref: &mut u32,
+    new_size: u32,
+) {
+    if new_size > *alloc_ref {
+        darray_growalloc(item_ptr, alloc_ref, new_size);
+    }
+    *size_ref = new_size;
+}
+
+/// Resize a darray to `new_size`, zero-filling any new elements (Pattern C).
+///
+/// # Safety
+/// Same requirements as `darray_growalloc`.
+#[inline]
+pub unsafe fn darray_resize_zero<T>(
+    item_ptr: &mut *mut T,
+    size_ref: &mut u32,
+    alloc_ref: &mut u32,
+    new_size: u32,
+) {
+    let old_size = *size_ref;
+    darray_resize(item_ptr, size_ref, alloc_ref, new_size);
+    if new_size > old_size {
+        core::ptr::write_bytes(
+            (*item_ptr).offset(old_size as isize) as *mut u8,
+            0u8,
+            (new_size - old_size) as usize * core::mem::size_of::<T>(),
+        );
+    }
+}
+
+/// Append `count` items from `src` to a darray. Grows allocation if needed.
+/// After this call, `size` is increased by `count` and items are copied.
+///
+/// # Safety
+/// - `src` must be valid for reading `count` items of type `T`.
+/// - Same requirements as `darray_growalloc` for item_ptr/alloc_ref.
+#[inline]
+pub unsafe fn darray_appends<T: Copy>(
+    item_ptr: &mut *mut T,
+    size_ref: &mut u32,
+    alloc_ref: &mut u32,
+    src: *const T,
+    count: u32,
+) {
+    let old_size = *size_ref;
+    let new_size = old_size.wrapping_add(count);
+    if new_size > *alloc_ref {
+        darray_growalloc(item_ptr, alloc_ref, new_size);
+    }
+    *size_ref = new_size;
+    core::ptr::copy_nonoverlapping(src, (*item_ptr).offset(old_size as isize), count as usize);
+}
+
+/// Append `count` items from `src` to a darray, plus a NUL terminator (zero byte).
+/// Used for char/i8 darray patterns where the C code does `size += count + 1`,
+/// copies `count` bytes, then writes `\0` at the end.
+///
+/// # Safety
+/// - `src` must be valid for reading `count` bytes.
+/// - Same requirements as `darray_growalloc`.
+#[inline]
+pub unsafe fn darray_appends_nul(
+    item_ptr: &mut *mut i8,
+    size_ref: &mut u32,
+    alloc_ref: &mut u32,
+    src: *const i8,
+    count: u32,
+) {
+    let old_size = *size_ref;
+    let new_size = old_size.wrapping_add(count).wrapping_add(1);
+    if new_size > *alloc_ref {
+        darray_growalloc(item_ptr, alloc_ref, new_size);
+    }
+    *size_ref = new_size;
+    core::ptr::copy_nonoverlapping(src, (*item_ptr).offset(old_size as isize), count as usize);
+    *(*item_ptr).offset(new_size.wrapping_sub(1) as isize) = 0;
+}

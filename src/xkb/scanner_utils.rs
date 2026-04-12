@@ -50,22 +50,10 @@ pub mod scanner_utils_h {
 
     use super::context_h::xkb_context;
 }
-pub mod string_h {
-
-    extern "C" {
-        pub fn memchr(
-            __s: *const ::core::ffi::c_void,
-            __c: i32,
-            __n: usize,
-        ) -> *mut ::core::ffi::c_void;
-    }
-}
-
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::scanner_utils_h::{scanner, scanner_loc};
-use self::string_h::memchr;
 pub use self::xkbcommon_h::{
     xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
@@ -84,11 +72,7 @@ pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
         let mut ptr: *const i8 = (*s).s.offset((*s).cached_pos as isize);
         let mut last: *const i8 = (*s).s.offset((*s).token_pos as isize);
         loop {
-            ptr = memchr(
-                ptr as *const ::core::ffi::c_void,
-                '\n' as i32,
-                last.offset_from(ptr) as i64 as usize,
-            ) as *const i8;
+            ptr = crate::xkb::utils::byte_memchr(ptr, b'\n', last.offset_from(ptr) as i64 as usize);
             if ptr.is_null() {
                 break;
             }

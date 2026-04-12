@@ -301,6 +301,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
 use crate::xkb::utils::cstr_cmp;
+use crate::xkb::utils::darray_growalloc;
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -400,19 +401,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
             return false;
         }
         (*rmlvo).layouts.size = (*rmlvo).layouts.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*rmlvo).layouts.size;
-        if __need > (*rmlvo).layouts.alloc {
-            (*rmlvo).layouts.alloc = darray_next_alloc(
-                (*rmlvo).layouts.alloc,
-                __need,
-                ::core::mem::size_of::<xkb_rmlvo_builder_layout>() as usize,
-            );
-            (*rmlvo).layouts.item = realloc(
-                (*rmlvo).layouts.item as *mut ::core::ffi::c_void,
-                ((*rmlvo).layouts.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_layout>() as usize),
-            ) as *mut xkb_rmlvo_builder_layout;
-        }
+        darray_growalloc(&mut (*rmlvo).layouts.item, &mut (*rmlvo).layouts.alloc, (*rmlvo).layouts.size);
         *(*rmlvo)
             .layouts
             .item
@@ -444,19 +433,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 return false;
             }
             (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
-            let mut __need_0: darray_size_t = (*rmlvo).options.size;
-            if __need_0 > (*rmlvo).options.alloc {
-                (*rmlvo).options.alloc = darray_next_alloc(
-                    (*rmlvo).options.alloc,
-                    __need_0,
-                    ::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize,
-                );
-                (*rmlvo).options.item = realloc(
-                    (*rmlvo).options.item as *mut ::core::ffi::c_void,
-                    ((*rmlvo).options.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize),
-                ) as *mut xkb_rmlvo_builder_option;
-            }
+            darray_growalloc(&mut (*rmlvo).options.item, &mut (*rmlvo).options.alloc, (*rmlvo).options.size);
             *(*rmlvo)
                 .options
                 .item
@@ -507,19 +484,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             return false;
         }
         (*rmlvo).options.size = (*rmlvo).options.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*rmlvo).options.size;
-        if __need > (*rmlvo).options.alloc {
-            (*rmlvo).options.alloc = darray_next_alloc(
-                (*rmlvo).options.alloc,
-                __need,
-                ::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize,
-            );
-            (*rmlvo).options.item = realloc(
-                (*rmlvo).options.item as *mut ::core::ffi::c_void,
-                ((*rmlvo).options.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<xkb_rmlvo_builder_option>() as usize),
-            ) as *mut xkb_rmlvo_builder_option;
-        }
+        darray_growalloc(&mut (*rmlvo).options.item, &mut (*rmlvo).options.alloc, (*rmlvo).options.size);
         *(*rmlvo)
             .options
             .item

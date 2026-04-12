@@ -424,6 +424,7 @@ pub use self::types_h::{
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+use crate::xkb::utils::darray_growalloc;
 pub use self::xkbcommon_h::{
     xkb_context_get_log_verbosity, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy,
@@ -813,19 +814,11 @@ unsafe fn AddInterp(
             return MergeInterp(info, old, new, same_file);
         }
         (*info).interps.size = (*info).interps.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*info).interps.size;
-        if __need > (*info).interps.alloc {
-            (*info).interps.alloc = darray_next_alloc(
-                (*info).interps.alloc,
-                __need,
-                ::core::mem::size_of::<SymInterpInfo>() as usize,
-            );
-            (*info).interps.item = realloc(
-                (*info).interps.item as *mut ::core::ffi::c_void,
-                ((*info).interps.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<SymInterpInfo>() as usize),
-            ) as *mut SymInterpInfo;
-        }
+        darray_growalloc(
+            &mut (*info).interps.item,
+            &mut (*info).interps.alloc,
+            (*info).interps.size,
+        );
         *(*info)
             .interps
             .item
@@ -1347,21 +1340,7 @@ unsafe fn SetInterpField(
                             (*si).interp.a.action = toAct;
                         } else {
                             actions.size = actions.size.wrapping_add(1 as darray_size_t);
-                            let mut __need: darray_size_t = actions.size;
-                            if __need > actions.alloc {
-                                actions.alloc = darray_next_alloc(
-                                    actions.alloc,
-                                    __need,
-                                    ::core::mem::size_of::<xkb_action>() as usize,
-                                );
-                                actions.item =
-                                    realloc(
-                                        actions.item as *mut ::core::ffi::c_void,
-                                        (actions.alloc as usize).wrapping_mul(
-                                            ::core::mem::size_of::<xkb_action>() as usize,
-                                        ),
-                                    ) as *mut xkb_action;
-                            }
+                            darray_growalloc(&mut actions.item, &mut actions.alloc, actions.size);
                             *actions
                                 .item
                                 .offset(actions.size.wrapping_sub(1 as darray_size_t) as isize) =
@@ -1549,22 +1528,11 @@ unsafe fn SetLedMapField(
                         .wrapping_add(1 as darray_size_t);
                     let mut __need: darray_size_t =
                         (*(*(*info).keymap_info).pending_computations).size;
-                    if __need > (*(*(*info).keymap_info).pending_computations).alloc {
-                        (*(*(*info).keymap_info).pending_computations).alloc = darray_next_alloc(
-                            (*(*(*info).keymap_info).pending_computations).alloc,
-                            __need,
-                            ::core::mem::size_of::<pending_computation>() as usize,
-                        );
-                        (*(*(*info).keymap_info).pending_computations).item = realloc(
-                            (*(*(*info).keymap_info).pending_computations).item
-                                as *mut ::core::ffi::c_void,
-                            ((*(*(*info).keymap_info).pending_computations).alloc as usize)
-                                .wrapping_mul(
-                                    ::core::mem::size_of::<pending_computation>() as usize
-                                ),
-                        )
-                            as *mut pending_computation;
-                    }
+                    darray_growalloc(
+                        &mut (*(*(*info).keymap_info).pending_computations).item,
+                        &mut (*(*(*info).keymap_info).pending_computations).alloc,
+                        __need,
+                    );
                     *(*(*(*info).keymap_info).pending_computations).item.offset(
                         (*(*(*info).keymap_info).pending_computations)
                             .size
@@ -2042,20 +2010,11 @@ unsafe fn CopyInterps(
                         .sym_interprets
                         .size
                         .wrapping_add(1 as darray_size_t);
-                    let mut __need: darray_size_t = (*collect).sym_interprets.size;
-                    if __need > (*collect).sym_interprets.alloc {
-                        (*collect).sym_interprets.alloc = darray_next_alloc(
-                            (*collect).sym_interprets.alloc,
-                            __need,
-                            ::core::mem::size_of::<xkb_sym_interpret>() as usize,
-                        );
-                        (*collect).sym_interprets.item = realloc(
-                            (*collect).sym_interprets.item as *mut ::core::ffi::c_void,
-                            ((*collect).sym_interprets.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<xkb_sym_interpret>() as usize),
-                        )
-                            as *mut xkb_sym_interpret;
-                    }
+                    darray_growalloc(
+                        &mut (*collect).sym_interprets.item,
+                        &mut (*collect).sym_interprets.alloc,
+                        (*collect).sym_interprets.size,
+                    );
                     *(*collect).sym_interprets.item.offset(
                         (*collect)
                             .sym_interprets

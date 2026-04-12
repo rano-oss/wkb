@@ -525,7 +525,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::{cstr_len, darray_growalloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -671,12 +671,16 @@ pub unsafe fn xkb_resolve_file(
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                         "File of wrong type (expected {}, got {}); file \"{}\" ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(file_type)),
-                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*xkb_file).file_type)),
-                        crate::xkb::utils::CStrDisplay(if absolute_path as ::core::ffi::c_int != 0 {
-                            path
-                        } else {
-                            resolved_path as *const i8
-                        }),
+                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(
+                            (*xkb_file).file_type
+                        )),
+                        crate::xkb::utils::CStrDisplay(
+                            if absolute_path as ::core::ffi::c_int != 0 {
+                                path
+                            } else {
+                                resolved_path as *const i8
+                            }
+                        ),
                     );
                     c2rust_current_block = 6705605813258909411;
                 } else if !map.is_null()
@@ -789,19 +793,11 @@ pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
         (*section).buffer.size = 0 as darray_size_t;
         (*section).buffer.alloc = 0 as darray_size_t;
         (*section).buffer.size = (*section).buffer.size.wrapping_add(1 as darray_size_t);
-        let mut __need: darray_size_t = (*section).buffer.size;
-        if __need > (*section).buffer.alloc {
-            (*section).buffer.alloc = darray_next_alloc(
-                (*section).buffer.alloc,
-                __need,
-                ::core::mem::size_of::<i8>() as usize,
-            );
-            (*section).buffer.item = realloc(
-                (*section).buffer.item as *mut ::core::ffi::c_void,
-                ((*section).buffer.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-            ) as *mut i8;
-        }
+        darray_growalloc(
+            &mut (*section).buffer.item,
+            &mut (*section).buffer.alloc,
+            (*section).buffer.size,
+        );
         *(*section)
             .buffer
             .item
@@ -850,19 +846,11 @@ unsafe fn xkb_file_section_set_meta_data(
                 cstr_len((*xkb_file).name).wrapping_add(1 as usize) as darray_size_t;
             let mut __oldSize: darray_size_t = (*section).buffer.size;
             (*section).buffer.size = __oldSize.wrapping_add(__count);
-            let mut __need: darray_size_t = (*section).buffer.size;
-            if __need > (*section).buffer.alloc {
-                (*section).buffer.alloc = darray_next_alloc(
-                    (*section).buffer.alloc,
-                    __need,
-                    ::core::mem::size_of::<i8>() as usize,
-                );
-                (*section).buffer.item = realloc(
-                    (*section).buffer.item as *mut ::core::ffi::c_void,
-                    ((*section).buffer.alloc as usize)
-                        .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                ) as *mut i8;
-            }
+            darray_growalloc(
+                &mut (*section).buffer.item,
+                &mut (*section).buffer.alloc,
+                (*section).buffer.size,
+            );
             std::ptr::copy_nonoverlapping(
                 (*xkb_file).name as *const u8,
                 (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
@@ -907,19 +895,11 @@ unsafe fn xkb_file_section_append_includes(
                     cstr_len(&raw mut buf as *mut i8).wrapping_add(1 as usize) as darray_size_t;
                 let mut __oldSize: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize.wrapping_add(__count);
-                let mut __need: darray_size_t = (*section).buffer.size;
-                if __need > (*section).buffer.alloc {
-                    (*section).buffer.alloc = darray_next_alloc(
-                        (*section).buffer.alloc,
-                        __need,
-                        ::core::mem::size_of::<i8>() as usize,
-                    );
-                    (*section).buffer.item = realloc(
-                        (*section).buffer.item as *mut ::core::ffi::c_void,
-                        ((*section).buffer.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                    ) as *mut i8;
-                }
+                darray_growalloc(
+                    &mut (*section).buffer.item,
+                    &mut (*section).buffer.alloc,
+                    (*section).buffer.size,
+                );
                 std::ptr::copy_nonoverlapping(
                     &raw mut buf as *const u8,
                     (*section).buffer.item.offset(__oldSize as isize) as *mut u8,
@@ -930,19 +910,11 @@ unsafe fn xkb_file_section_append_includes(
                     cstr_len((*stmt).file).wrapping_add(1 as usize) as darray_size_t;
                 let mut __oldSize_0: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize_0.wrapping_add(__count_0);
-                let mut __need_0: darray_size_t = (*section).buffer.size;
-                if __need_0 > (*section).buffer.alloc {
-                    (*section).buffer.alloc = darray_next_alloc(
-                        (*section).buffer.alloc,
-                        __need_0,
-                        ::core::mem::size_of::<i8>() as usize,
-                    );
-                    (*section).buffer.item = realloc(
-                        (*section).buffer.item as *mut ::core::ffi::c_void,
-                        ((*section).buffer.alloc as usize)
-                            .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                    ) as *mut i8;
-                }
+                darray_growalloc(
+                    &mut (*section).buffer.item,
+                    &mut (*section).buffer.alloc,
+                    (*section).buffer.size,
+                );
                 std::ptr::copy_nonoverlapping(
                     (*stmt).file as *const u8,
                     (*section).buffer.item.offset(__oldSize_0 as isize) as *mut u8,
@@ -965,19 +937,11 @@ unsafe fn xkb_file_section_append_includes(
                         as darray_size_t;
                     let mut __oldSize_1: darray_size_t = (*section).buffer.size;
                     (*section).buffer.size = __oldSize_1.wrapping_add(__count_1);
-                    let mut __need_1: darray_size_t = (*section).buffer.size;
-                    if __need_1 > (*section).buffer.alloc {
-                        (*section).buffer.alloc = darray_next_alloc(
-                            (*section).buffer.alloc,
-                            __need_1,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        (*section).buffer.item = realloc(
-                            (*section).buffer.item as *mut ::core::ffi::c_void,
-                            ((*section).buffer.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
+                    darray_growalloc(
+                        &mut (*section).buffer.item,
+                        &mut (*section).buffer.alloc,
+                        (*section).buffer.size,
+                    );
                     std::ptr::copy_nonoverlapping(
                         (if !(*stmt).map.is_null() {
                             (*stmt).map
@@ -998,19 +962,11 @@ unsafe fn xkb_file_section_append_includes(
                         cstr_len((*stmt).modifier).wrapping_add(1 as usize) as darray_size_t;
                     let mut __oldSize_2: darray_size_t = (*section).buffer.size;
                     (*section).buffer.size = __oldSize_2.wrapping_add(__count_2);
-                    let mut __need_2: darray_size_t = (*section).buffer.size;
-                    if __need_2 > (*section).buffer.alloc {
-                        (*section).buffer.alloc = darray_next_alloc(
-                            (*section).buffer.alloc,
-                            __need_2,
-                            ::core::mem::size_of::<i8>() as usize,
-                        );
-                        (*section).buffer.item = realloc(
-                            (*section).buffer.item as *mut ::core::ffi::c_void,
-                            ((*section).buffer.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<i8>() as usize),
-                        ) as *mut i8;
-                    }
+                    darray_growalloc(
+                        &mut (*section).buffer.item,
+                        &mut (*section).buffer.alloc,
+                        (*section).buffer.size,
+                    );
                     std::ptr::copy_nonoverlapping(
                         (*stmt).modifier as *const u8,
                         (*section).buffer.item.offset(__oldSize_2 as isize) as *mut u8,
@@ -1040,20 +996,11 @@ unsafe fn xkb_file_section_append_includes(
                 let idx: darray_size_t = (*section).includes.size;
                 (*section).includes.size =
                     (*section).includes.size.wrapping_add(1 as darray_size_t);
-                let mut __need_3: darray_size_t = (*section).includes.size;
-                if __need_3 > (*section).includes.alloc {
-                    (*section).includes.alloc = darray_next_alloc(
-                        (*section).includes.alloc,
-                        __need_3,
-                        ::core::mem::size_of::<xkb_file_include>() as usize,
-                    );
-                    (*section).includes.item =
-                        realloc(
-                            (*section).includes.item as *mut ::core::ffi::c_void,
-                            ((*section).includes.alloc as usize)
-                                .wrapping_mul(::core::mem::size_of::<xkb_file_include>() as usize),
-                        ) as *mut xkb_file_include;
-                }
+                darray_growalloc(
+                    &mut (*section).includes.item,
+                    &mut (*section).includes.alloc,
+                    (*section).includes.size,
+                );
                 *(*section)
                     .includes
                     .item
@@ -1065,21 +1012,11 @@ unsafe fn xkb_file_section_append_includes(
                         .include_groups
                         .size
                         .wrapping_add(1 as darray_size_t);
-                    let mut __need_4: darray_size_t = (*section).include_groups.size;
-                    if __need_4 > (*section).include_groups.alloc {
-                        (*section).include_groups.alloc = darray_next_alloc(
-                            (*section).include_groups.alloc,
-                            __need_4,
-                            ::core::mem::size_of::<xkb_file_include_group>() as usize,
-                        );
-                        (*section).include_groups.item = realloc(
-                            (*section).include_groups.item as *mut ::core::ffi::c_void,
-                            ((*section).include_groups.alloc as usize).wrapping_mul(
-                                ::core::mem::size_of::<xkb_file_include_group>() as usize,
-                            ),
-                        )
-                            as *mut xkb_file_include_group;
-                    }
+                    darray_growalloc(
+                        &mut (*section).include_groups.item,
+                        &mut (*section).include_groups.alloc,
+                        (*section).include_groups.size,
+                    );
                     *(*section).include_groups.item.offset(
                         (*section)
                             .include_groups

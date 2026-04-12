@@ -669,7 +669,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
-use crate::xkb::utils::cstr_dup;
+use crate::xkb::utils::{cstr_dup, darray_growalloc};
 use crate::xkb::utils::cstr_len;
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
@@ -2551,22 +2551,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         (layout as darray_size_t).wrapping_add(1 as darray_size_t);
                     loptions.size = __newSize;
                     if __newSize > __oldSize {
-                        let mut __need: darray_size_t = __newSize;
-                        if __need > loptions.alloc {
-                            loptions.alloc = darray_next_alloc(
-                                loptions.alloc,
-                                __need,
-                                ::core::mem::size_of::<darray_string>() as usize,
-                            );
-                            loptions.item = realloc(
-                                loptions.item as *mut ::core::ffi::c_void,
-                                (loptions.alloc as usize).wrapping_mul(::core::mem::size_of::<
-                                    darray_string,
-                                >(
-                                )
-                                    as usize),
-                            ) as *mut darray_string;
-                        }
+                        darray_growalloc(&mut loptions.item, &mut loptions.alloc, __newSize);
                         std::ptr::write_bytes(
                             loptions.item.offset(__oldSize as isize) as *mut darray_string
                                 as *mut u8,
