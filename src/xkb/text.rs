@@ -89,7 +89,6 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod utils_h {
@@ -97,12 +96,6 @@ pub mod utils_h {
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
             return istrcmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn strlen_safe(mut s: *const i8) -> usize {
-        unsafe {
-            return if !s.is_null() { strlen(s) } else { 0 as usize };
         }
     }
     #[inline]
@@ -116,7 +109,6 @@ pub mod utils_h {
         }
     }
 
-    use super::string_h::strlen;
     pub use crate::xkb::utils::istrcmp;
 }
 pub mod __stddef_null_h {
@@ -164,7 +156,7 @@ pub use self::text_h::{
     CONTROL_NAMES_MIN_V2_INDEX,
 };
 pub use self::types_h::{__uint32_t, __uint8_t};
-pub use self::utils_h::{istrcmp, istreq, strempty, strlen_safe};
+pub use self::utils_h::{istrcmp, istreq, strempty};
 pub use self::xkbcommon_h::{
     xkb_keymap_format, xkb_keysym_get_name, xkb_keysym_t, xkb_log_level, xkb_mod_index_t,
     xkb_mod_mask_t, xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1,
@@ -174,6 +166,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE,
     XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
 };
+use crate::xkb::utils::{cstr_len, cstr_len_safe};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,
@@ -669,7 +662,7 @@ pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *c
 pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
     unsafe {
         let mut sname: *const i8 = xkb_atom_text(ctx, name);
-        let mut len: usize = strlen_safe(sname).wrapping_add(3 as usize);
+        let mut len: usize = cstr_len_safe(sname).wrapping_add(3 as usize);
         let mut buf: *mut i8 = xkb_context_get_buffer(ctx, len);
         snprintf(buf, len, b"<%s>\0".as_ptr() as *const i8, strempty(sname));
         return buf;

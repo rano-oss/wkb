@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -47,15 +48,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -293,7 +285,7 @@ pub use self::ast_h::{
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 use self::inttypes_h::imaxabs;
@@ -486,7 +478,7 @@ pub unsafe fn ExprResolveLhs(
             }
             _ => {}
         }
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_CRITICAL,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -549,7 +541,7 @@ unsafe fn NamedIntegerPatternLookup(
                 == '\0' as i32
         {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -642,7 +634,7 @@ pub unsafe fn ExprResolveBoolean(
                 return true_0 != 0;
             }
             4 | 5 | 6 | 8 | 9 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -669,7 +661,7 @@ pub unsafe fn ExprResolveBoolean(
                         return true_0 != 0;
                     }
                 }
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -681,7 +673,7 @@ pub unsafe fn ExprResolveBoolean(
                 return false_0 != 0;
             }
             12 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -701,7 +693,7 @@ pub unsafe fn ExprResolveBoolean(
                 return ok;
             }
             17 | 18 | 19 | 20 | 21 | 23 | 25 | 14 | 11 | 16 | 15 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -711,7 +703,7 @@ pub unsafe fn ExprResolveBoolean(
                 );
             }
             _ => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -745,7 +737,7 @@ unsafe fn ExprResolveIntegerLookup(
                 return true_0 != 0;
             }
             4 | 6 | 7 | 8 | 9 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -766,7 +758,7 @@ unsafe fn ExprResolveIntegerLookup(
                     );
                 }
                 if !ok {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -784,7 +776,7 @@ unsafe fn ExprResolveIntegerLookup(
                 return ok;
             }
             12 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -811,7 +803,7 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh0, c2rust_fresh1) = l.overflowing_add(r);
                         *val_rtrn = c2rust_fresh0;
                         if c2rust_fresh1 {
-                            xkb_log(
+                            xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -829,7 +821,7 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh2, c2rust_fresh3) = l.overflowing_sub(r);
                         *val_rtrn = c2rust_fresh2;
                         if c2rust_fresh3 {
-                            xkb_log(
+                            xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -847,7 +839,7 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh4, c2rust_fresh5) = l.overflowing_mul(r);
                         *val_rtrn = c2rust_fresh4;
                         if c2rust_fresh5 {
-                            xkb_log(
+                            xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -863,7 +855,7 @@ unsafe fn ExprResolveIntegerLookup(
                     }
                     20 => {
                         if r == 0 as i64 {
-                            xkb_log(
+                            xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -878,7 +870,7 @@ unsafe fn ExprResolveIntegerLookup(
                         *val_rtrn = l / r;
                     }
                     _ => {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -892,7 +884,7 @@ unsafe fn ExprResolveIntegerLookup(
                 return true_0 != 0;
             }
             21 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -901,7 +893,7 @@ unsafe fn ExprResolveIntegerLookup(
                 );
             }
             22 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -928,7 +920,7 @@ unsafe fn ExprResolveIntegerLookup(
                 return ExprResolveIntegerLookup(ctx, left, val_rtrn, pending, lookup, lookupPriv);
             }
             _ => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1012,7 +1004,7 @@ pub unsafe fn ExprResolveGroup(
             }) as xkb_parser_error;
         }
         if result < absolute as i32 as i64 || result > (*keymap_info).features.max_groups as i64 {
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1061,7 +1053,7 @@ pub unsafe fn ExprResolveLevel(
             return false_0 != 0;
         }
         if result < 1 as i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1113,7 +1105,7 @@ pub unsafe fn ExprResolveString(
                 return true_0 != 0;
             }
             5 | 6 | 7 | 8 | 9 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1124,7 +1116,7 @@ pub unsafe fn ExprResolveString(
                 return false_0 != 0;
             }
             10 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1136,7 +1128,7 @@ pub unsafe fn ExprResolveString(
                 return false_0 != 0;
             }
             12 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1149,7 +1141,7 @@ pub unsafe fn ExprResolveString(
                 return false_0 != 0;
             }
             17 | 18 | 19 | 20 | 21 | 23 | 24 | 22 | 25 | 14 | 11 | 16 | 15 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1160,7 +1152,7 @@ pub unsafe fn ExprResolveString(
                 return false_0 != 0;
             }
             _ => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1181,7 +1173,7 @@ pub unsafe fn ExprResolveEnum(
 ) -> bool {
     unsafe {
         if (*expr).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1199,7 +1191,7 @@ pub unsafe fn ExprResolveEnum(
             val_rtrn,
             ::core::ptr::null_mut::<bool>(),
         ) {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1208,7 +1200,7 @@ pub unsafe fn ExprResolveEnum(
                 xkb_atom_text(ctx, (*expr).ident.ident),
             );
             while !values.is_null() && !(*values).name.is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1243,7 +1235,7 @@ unsafe fn ExprResolveMaskLookup(
         match (*expr).common.type_0 as u32 {
             5 => {
                 if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > UINT32_MAX as i64 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1262,7 +1254,7 @@ unsafe fn ExprResolveMaskLookup(
                 return true_0 != 0;
             }
             4 | 6 | 7 | 8 | 9 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1281,7 +1273,7 @@ unsafe fn ExprResolveMaskLookup(
                     pending,
                 );
                 if !ok {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1297,7 +1289,7 @@ unsafe fn ExprResolveMaskLookup(
                 return ok;
             }
             12 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1332,7 +1324,7 @@ unsafe fn ExprResolveMaskLookup(
                         *val_rtrn = l & !r;
                     }
                     19 | 20 => {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1352,7 +1344,7 @@ unsafe fn ExprResolveMaskLookup(
                 return true_0 != 0;
             }
             21 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1367,7 +1359,7 @@ unsafe fn ExprResolveMaskLookup(
                     return false_0 != 0;
                 }
                 if v < 0 as i64 || v > UINT32_MAX as i64 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1390,7 +1382,7 @@ unsafe fn ExprResolveMaskLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false_0 != 0;
                 }
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1402,7 +1394,7 @@ unsafe fn ExprResolveMaskLookup(
                 return false_0 != 0;
             }
             _ => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_CRITICAL,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1419,7 +1411,7 @@ unsafe fn ExprResolveMaskLookup(
                 if bogus.is_null() {
                     bogus = b"function use\0".as_ptr() as *const i8;
                 }
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1500,7 +1492,7 @@ pub unsafe fn ExprResolveMod(
 ) -> bool {
     unsafe {
         if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1514,7 +1506,7 @@ pub unsafe fn ExprResolveMod(
         let mut name: xkb_atom_t = (*def).ident.ident;
         let mut ndx: xkb_mod_index_t = XkbModNameToIndex(mods, name, mod_type);
         if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,

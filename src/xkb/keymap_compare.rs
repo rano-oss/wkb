@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -28,15 +29,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -88,7 +80,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return strcmp(s1, s2) == 0 as i32;
+            return cstr_cmp(s1, s2) == 0 as i32;
         }
     }
     #[inline]
@@ -100,22 +92,20 @@ pub mod utils_h {
             return streq(s1, s2);
         }
     }
-    use super::string_h::strcmp;
+    use crate::xkb::utils::cstr_cmp;
 }
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
 }
 pub mod string_h {
-    extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
-    }
+    
 }
 pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keymap_compare_h::{
@@ -174,6 +164,7 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_LOCKED,
 };
 pub use crate::xkb::keymap_priv::action_equal;
+use crate::xkb::utils::cstr_cmp;
 unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,
@@ -195,7 +186,7 @@ unsafe fn keymap_compare_mods(
             let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*mod1).name) as *const i8;
             let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*mod2).name) as *const i8;
             if !streq_null(name1, name2) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -207,7 +198,7 @@ unsafe fn keymap_compare_mods(
                 identical = false;
             }
             if (*mod1).type_0 as u32 != (*mod2).type_0 as u32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -219,7 +210,7 @@ unsafe fn keymap_compare_mods(
                 identical = false;
             }
             if (*mod1).mapping != (*mod2).mapping {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -233,7 +224,7 @@ unsafe fn keymap_compare_mods(
             mod_0 = mod_0.wrapping_add(1);
         }
         if (*keymap1).mods.num_mods != (*keymap2).mods.num_mods {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -254,7 +245,7 @@ unsafe fn keymap_compare_keycodes(
     unsafe {
         let mut identical: bool = true;
         if (*keymap1).num_keys != (*keymap2).num_keys {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -265,7 +256,7 @@ unsafe fn keymap_compare_keycodes(
             identical = false;
         }
         if (*keymap1).min_key_code != (*keymap2).min_key_code {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -276,7 +267,7 @@ unsafe fn keymap_compare_keycodes(
             identical = false;
         }
         if (*keymap1).max_key_code != (*keymap2).max_key_code {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -287,7 +278,7 @@ unsafe fn keymap_compare_keycodes(
             identical = false;
         }
         if (*keymap1).max_key_code != (*keymap2).max_key_code {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -307,7 +298,7 @@ unsafe fn keymap_compare_keycodes(
             let key1: *const xkb_key = (*keymap1).keys.offset(k as isize) as *mut xkb_key;
             let key2: *const xkb_key = (*keymap1).keys.offset(k as isize) as *mut xkb_key;
             if (*key1).keycode != (*key2).keycode {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -322,7 +313,7 @@ unsafe fn keymap_compare_keycodes(
                 let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*key1).name) as *const i8;
                 let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*key2).name) as *const i8;
                 if !streq_null(name1, name2) {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -360,7 +351,7 @@ unsafe fn keymap_compare_keycodes(
             let alias1: *const i8 = xkb_atom_text((*keymap1).ctx, (*entry1).alias) as *const i8;
             let alias2: *const i8 = xkb_atom_text((*keymap2).ctx, (*entry2).alias) as *const i8;
             if !streq_null(alias1, alias2) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -374,7 +365,7 @@ unsafe fn keymap_compare_keycodes(
             let real1: *const i8 = xkb_atom_text((*keymap1).ctx, (*entry1).real) as *const i8;
             let real2: *const i8 = xkb_atom_text((*keymap2).ctx, (*entry2).real) as *const i8;
             if !streq_null(real1, real2) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -392,7 +383,7 @@ unsafe fn keymap_compare_keycodes(
         if (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
             != (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
         {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -426,7 +417,7 @@ unsafe fn keymap_compare_leds(
             let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*led1).name) as *const i8;
             let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*led2).name) as *const i8;
             if !streq_null(name1, name2) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -438,7 +429,7 @@ unsafe fn keymap_compare_leds(
                 identical = false;
             }
             if (*led1).which_groups() as i32 != (*led2).which_groups() as i32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -452,7 +443,7 @@ unsafe fn keymap_compare_leds(
                 identical = false;
             }
             if (*led1).groups != (*led2).groups {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -465,7 +456,7 @@ unsafe fn keymap_compare_leds(
                 identical = false;
             }
             if (*led1).which_mods as u32 != (*led2).which_mods as u32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -479,7 +470,7 @@ unsafe fn keymap_compare_leds(
                 identical = false;
             }
             if (*led1).mods.mods != (*led2).mods.mods {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -492,7 +483,7 @@ unsafe fn keymap_compare_leds(
                 identical = false;
             }
             if (*led1).ctrls as u32 != (*led2).ctrls as u32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -507,7 +498,7 @@ unsafe fn keymap_compare_leds(
             led = led.wrapping_add(1);
         }
         if (*keymap1).num_leds != (*keymap2).num_leds {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -532,7 +523,7 @@ unsafe fn compare_types(
         let name1: *const i8 = xkb_atom_text((*keymap1).ctx, (*type1).name) as *const i8;
         let name2: *const i8 = xkb_atom_text((*keymap2).ctx, (*type2).name) as *const i8;
         if !streq_null(name1, name2) {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -543,7 +534,7 @@ unsafe fn compare_types(
             identical = false;
         }
         if (*type1).mods.mods != (*type2).mods.mods {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -555,7 +546,7 @@ unsafe fn compare_types(
             return false;
         }
         if (*type1).num_levels != (*type2).num_levels {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -567,7 +558,7 @@ unsafe fn compare_types(
             return false;
         }
         if (*type1).num_level_names != (*type2).num_level_names {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -588,7 +579,7 @@ unsafe fn compare_types(
                     xkb_atom_text((*keymap2).ctx, *(*type2).level_names.offset(l as isize))
                         as *const i8;
                 if !streq_null(lname1, lname2) {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -605,7 +596,7 @@ unsafe fn compare_types(
             }
         }
         if (*type1).num_entries != (*type2).num_entries {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -623,7 +614,7 @@ unsafe fn compare_types(
                 let entry2: *const xkb_key_type_entry =
                     (*type2).entries.offset(e as isize) as *mut xkb_key_type_entry;
                 if (*entry1).level != (*entry2).level {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -637,7 +628,7 @@ unsafe fn compare_types(
                     identical = false;
                 }
                 if (*entry1).mods.mods != (*entry2).mods.mods {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -651,7 +642,7 @@ unsafe fn compare_types(
                     identical = false;
                 }
                 if (*entry1).preserve.mods != (*entry2).preserve.mods {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -696,7 +687,7 @@ unsafe fn keymap_compare_types(
             t = t.wrapping_add(1);
         }
         if (*keymap1).num_types != (*keymap2).num_types {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -724,7 +715,7 @@ unsafe fn compare_groups(
                 xkb_atom_text((*keymap1).ctx, (*(*group1).type_0).name) as *const i8;
             let name2: *const i8 =
                 xkb_atom_text((*keymap2).ctx, (*(*group2).type_0).name) as *const i8;
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -742,7 +733,7 @@ unsafe fn compare_groups(
             let level1: *const xkb_level = (*group1).levels.offset(l as isize) as *mut xkb_level;
             let level2: *const xkb_level = (*group2).levels.offset(l as isize) as *mut xkb_level;
             if (*level1).num_syms as i32 != (*level2).num_syms as i32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -761,7 +752,7 @@ unsafe fn compare_groups(
                     if !(*(*level1).s.syms.offset(k as isize)
                         == *(*level2).s.syms.offset(k as isize))
                     {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -779,7 +770,7 @@ unsafe fn compare_groups(
                     k = k.wrapping_add(1);
                 }
             } else if (*level1).s.sym != (*level2).s.sym {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -794,7 +785,7 @@ unsafe fn compare_groups(
                 identical = false;
             }
             if (*level1).num_actions as i32 != (*level2).num_actions as i32 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -814,7 +805,7 @@ unsafe fn compare_groups(
                         (*level1).a.actions.offset(a as isize) as *mut xkb_action,
                         (*level2).a.actions.offset(a as isize) as *mut xkb_action,
                     ) {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -832,7 +823,7 @@ unsafe fn compare_groups(
             } else if (*level1).num_actions as i32 == 1 as i32
                 && !action_equal(&raw const (*level1).a.action, &raw const (*level2).a.action)
             {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -856,7 +847,7 @@ unsafe fn keymap_compare_symbols(
     unsafe {
         let mut identical: bool = true;
         if (*keymap1).num_groups != (*keymap2).num_groups {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -867,7 +858,7 @@ unsafe fn keymap_compare_symbols(
             identical = false;
         }
         if (*keymap1).num_group_names != (*keymap2).num_group_names {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -886,7 +877,7 @@ unsafe fn keymap_compare_symbols(
                     xkb_atom_text((*keymap2).ctx, *(*keymap2).group_names.offset(g as isize))
                         as *const i8;
                 if !streq_null(name1, name2) {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -910,7 +901,7 @@ unsafe fn keymap_compare_symbols(
             let key1: *const xkb_key = (*keymap1).keys.offset(k as isize) as *mut xkb_key;
             let key2: *const xkb_key = (*keymap1).keys.offset(k as isize) as *mut xkb_key;
             if (*key1).keycode != (*key2).keycode {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -923,7 +914,7 @@ unsafe fn keymap_compare_symbols(
             } else {
                 let kc: xkb_keycode_t = (*key1).keycode;
                 if (*key1).modmap != (*key2).modmap {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -935,7 +926,7 @@ unsafe fn keymap_compare_symbols(
                     identical = false;
                 }
                 if (*key1).vmodmap != (*key2).vmodmap {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -947,7 +938,7 @@ unsafe fn keymap_compare_symbols(
                     identical = false;
                 }
                 if (*key1).repeats() as i32 != (*key2).repeats() as i32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -963,7 +954,7 @@ unsafe fn keymap_compare_symbols(
                     || (*key1).out_of_range_group_number() as i32
                         != (*key2).out_of_range_group_number() as i32
                 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -978,7 +969,7 @@ unsafe fn keymap_compare_symbols(
                     identical = false;
                 }
                 if (*key1).num_groups() as i32 != (*key2).num_groups() as i32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,

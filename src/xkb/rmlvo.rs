@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -31,15 +32,6 @@ pub mod xkbcommon_errors_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -244,7 +236,6 @@ pub mod utils_h {
 }
 pub mod string_h {
     extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
     }
 }
@@ -261,7 +252,7 @@ pub mod rules_h {
 pub mod stdbool_h {}
 pub use self::__stddef_null_h::NULL;
 
-pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
@@ -317,9 +308,9 @@ pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use self::stdint_uintn_h::u32;
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::strcmp;
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::strdup_safe;
+use crate::xkb::utils::{cstr_cmp};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
@@ -340,7 +331,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
     unsafe {
         static mut XKB_RMLVO_BUILDER_FLAGS: xkb_rmlvo_builder_flags = XKB_RMLVO_BUILDER_NO_FLAGS;
         if flags as u32 & !(XKB_RMLVO_BUILDER_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -370,7 +361,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
                 }
             }
         }
-        xkb_log(
+        xkb_logf!(
             context,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -391,7 +382,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
     unsafe {
         let idx: xkb_layout_index_t = (*rmlvo).layouts.size as xkb_layout_index_t;
         if idx >= XKB_MAX_GROUPS as xkb_layout_index_t {
-            xkb_log(
+            xkb_logf!(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -415,7 +406,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
         if new.layout.is_null() || new.variant.is_null() && !variant.is_null() {
             free(new.layout as *mut ::core::ffi::c_void);
             free(new.variant as *mut ::core::ffi::c_void);
-            xkb_log(
+            xkb_logf!(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -459,7 +450,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 layout: idx,
             };
             if option.option.is_null() {
-                xkb_log(
+                xkb_logf!(
                     (*rmlvo).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -517,7 +508,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
                     as *const xkb_rmlvo_builder_option
             {
                 if (*prev).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
-                    && strcmp((*prev).option, option) == 0 as i32
+                    && cstr_cmp((*prev).option, option) == 0 as i32
                 {
                     return true;
                 }
@@ -529,7 +520,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             layout: XKB_LAYOUT_INVALID as xkb_layout_index_t,
         };
         if new.option.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,

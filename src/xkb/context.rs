@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub type __builtin_va_list = [__va_list_tag; 1];
@@ -155,15 +156,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::atom::{atom_table_free, atom_table_new};
@@ -236,9 +228,7 @@ pub mod stdlib_h {
 pub mod string_h {
 
     extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
@@ -377,7 +367,7 @@ pub use self::config_h::{
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
 pub use self::context_h::{
-    xkb_context, xkb_context_getenv, xkb_context_init_includes, xkb_log, C2Rust_Unnamed,
+    xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_next_alloc, darray_size_t, darray_string};
@@ -395,7 +385,7 @@ use self::stat_h::stat;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fprintf, stderr, va_list, vasprintf, vfprintf, vsnprintf};
 pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, realloc, strtol};
-use self::string_h::{strcmp, strdup, strerror, strlen};
+use self::string_h::{strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -415,6 +405,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len, cstr_cmp};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -499,7 +490,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
                     .item
                     .offset((*ctx).includes.size.wrapping_sub(1 as darray_size_t) as isize);
                 *c2rust_fresh0 = tmp;
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -531,7 +522,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
                 .offset((*ctx).failed_includes.size.wrapping_sub(1 as darray_size_t) as isize);
             *c2rust_fresh1 = tmp;
         }
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_INFO,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -597,12 +588,9 @@ pub unsafe fn xkb_context_include_path_get_versioned_extensions_path(
         };
     }
 }
-unsafe fn compare_str(
-    mut a: *const ::core::ffi::c_void,
-    mut b: *const ::core::ffi::c_void,
-) -> i32 {
+unsafe fn compare_str(mut a: *const ::core::ffi::c_void, mut b: *const ::core::ffi::c_void) -> i32 {
     unsafe {
-        return strcmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
+        return cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
 }
 unsafe fn add_direct_subdirectories(
@@ -672,8 +660,8 @@ unsafe fn add_direct_subdirectories(
                         break;
                     }
                     let mut name: *const i8 = &raw mut (*entry).d_name as *mut i8;
-                    if strcmp(name, b".\0".as_ptr() as *const i8) == 0 as i32
-                        || strcmp(name, b"..\0".as_ptr() as *const i8) == 0 as i32
+                    if cstr_cmp(name, b".\0".as_ptr() as *const i8) == 0 as i32
+                        || cstr_cmp(name, b"..\0".as_ptr() as *const i8) == 0 as i32
                     {
                         continue;
                     }
@@ -697,7 +685,7 @@ unsafe fn add_direct_subdirectories(
                         while i < versioned_count {
                             let prev_name: *const i8 = (*(*extensions).item.offset(i as isize))
                                 .offset(versioned_path_length as isize);
-                            if strcmp(name, prev_name) == 0 as i32 {
+                            if cstr_cmp(name, prev_name) == 0 as i32 {
                                 continue 's_62;
                             }
                             i = i.wrapping_add(1);
@@ -770,7 +758,7 @@ unsafe fn add_direct_subdirectories(
                 }
             }
         }
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -838,7 +826,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 0 as darray_size_t,
                 0 as usize,
             );
-            versioned_path_length = strlen(extensions_path);
+            versioned_path_length = cstr_len(extensions_path);
         }
         extensions_path = xkb_context_include_path_get_unversioned_extensions_path(ctx);
         if !extensions_path.is_null() {
@@ -866,7 +854,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
         let has_root: bool = context_include_path_append(ctx, root) != 0;
         ret |= has_root as i32;
         if !has_root && *root.offset(0 as i32 as isize) as i32 != '\0' as i32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -931,10 +919,7 @@ pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
         };
     }
 }
-pub unsafe fn xkb_context_include_path_get(
-    mut ctx: *mut xkb_context,
-    mut idx: u32,
-) -> *const i8 {
+pub unsafe fn xkb_context_include_path_get(mut ctx: *mut xkb_context, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
             return ::core::ptr::null::<i8>();
@@ -976,18 +961,13 @@ unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
         };
     }
 }
-unsafe fn default_log_fn(
-    mut ctx: *mut xkb_context,
-    mut level: xkb_log_level,
-    mut fmt: *const i8,
-    mut args: ::core::ffi::VaList,
-) {
+unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mut msg: *const i8) {
     unsafe {
         let mut prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
             fprintf(stderr, b"%s\0".as_ptr() as *const i8, prefix);
         }
-        vfprintf(stderr, fmt, args);
+        fprintf(stderr, b"%s\0".as_ptr() as *const i8, msg);
     }
 }
 unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
@@ -1067,23 +1047,9 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
             return ::core::ptr::null_mut::<xkb_context>();
         }
         (*ctx).refcnt = 1 as i32;
-        (*ctx).log_fn = Some(
-            default_log_fn
-                as unsafe fn(
-                    *mut xkb_context,
-                    xkb_log_level,
-                    *const i8,
-                    ::core::ffi::VaList,
-                ) -> (),
-        )
-            as Option<
-                unsafe fn(
-                    *mut xkb_context,
-                    xkb_log_level,
-                    *const i8,
-                    ::core::ffi::VaList,
-                ) -> (),
-            >;
+        (*ctx).log_fn =
+            Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
+                as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>;
         (*ctx).log_level = XKB_LOG_LEVEL_ERROR;
         (*ctx).log_verbosity = XKB_LOG_VERBOSITY_DEFAULT as i32;
         static mut XKB_CONTEXT_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
@@ -1091,7 +1057,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
             | XKB_CONTEXT_NO_SECURE_GETENV as i32)
             as xkb_context_flags;
         if flags as u32 & !(XKB_CONTEXT_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1136,40 +1102,15 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
 
 pub unsafe fn xkb_context_set_log_fn(
     mut ctx: *mut xkb_context,
-    mut log_fn: Option<
-        unsafe fn(*mut xkb_context, xkb_log_level, *const i8, ::core::ffi::VaList) -> (),
-    >,
+    mut log_fn: Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>,
 ) {
     unsafe {
         (*ctx).log_fn = (if log_fn.is_some() {
-            log_fn
-                as Option<
-                    unsafe fn(
-                        *mut xkb_context,
-                        xkb_log_level,
-                        *const i8,
-                        ::core::ffi::VaList,
-                    ) -> (),
-                >
+            log_fn as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>
         } else {
-            Some(
-                default_log_fn
-                    as unsafe fn(
-                        *mut xkb_context,
-                        xkb_log_level,
-                        *const i8,
-                        ::core::ffi::VaList,
-                    ) -> (),
-            )
+            Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
         })
-            as Option<
-                unsafe fn(
-                    *mut xkb_context,
-                    xkb_log_level,
-                    *const i8,
-                    ::core::ffi::VaList,
-                ) -> (),
-            >;
+            as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>;
     }
 }
 
@@ -1179,10 +1120,7 @@ pub unsafe fn xkb_context_get_log_level(mut ctx: *mut xkb_context) -> xkb_log_le
     }
 }
 
-pub unsafe fn xkb_context_set_log_level(
-    mut ctx: *mut xkb_context,
-    mut level: xkb_log_level,
-) {
+pub unsafe fn xkb_context_set_log_level(mut ctx: *mut xkb_context, mut level: xkb_log_level) {
     unsafe {
         (*ctx).log_level = level;
     }
@@ -1193,18 +1131,13 @@ pub unsafe fn xkb_context_get_log_verbosity(mut ctx: *mut xkb_context) -> i32 {
     }
 }
 
-pub unsafe fn xkb_context_set_log_verbosity(
-    mut ctx: *mut xkb_context,
-    mut verbosity: i32,
-) {
+pub unsafe fn xkb_context_set_log_verbosity(mut ctx: *mut xkb_context, mut verbosity: i32) {
     unsafe {
         (*ctx).log_verbosity = verbosity;
     }
 }
 
-pub unsafe fn xkb_context_get_user_data(
-    mut ctx: *mut xkb_context,
-) -> *mut ::core::ffi::c_void {
+pub unsafe fn xkb_context_get_user_data(mut ctx: *mut xkb_context) -> *mut ::core::ffi::c_void {
     unsafe {
         if !ctx.is_null() {
             return (*ctx).user_data;

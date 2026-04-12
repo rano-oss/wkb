@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -86,15 +87,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -446,7 +438,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
-    xkb_context, xkb_context_get_buffer, xkb_context_sanitize_rule_names, xkb_log, C2Rust_Unnamed,
+    xkb_context, xkb_context_get_buffer, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
 pub use self::darray_h::darray_size_t;
@@ -593,7 +585,7 @@ pub unsafe fn xkb_components_names_from_rules(
 unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFile) -> bool {
     unsafe {
         if (*file).file_type as u32 != FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -605,7 +597,7 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
             return false_0 != 0;
         }
         if !CompileKeymap(file, keymap) {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -649,7 +641,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             if !ok as ::core::ffi::c_int as i64 != 0 {
                 return false_0 != 0;
             }
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -684,7 +676,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             if !ok as ::core::ffi::c_int as i64 != 0 {
                 return false_0 != 0;
             }
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -704,7 +696,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
-        xkb_log(
+        xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -722,7 +714,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
         free(kccgst.symbols as *mut ::core::ffi::c_void);
         free(kccgst.geometry as *mut ::core::ffi::c_void);
         if file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -751,7 +743,7 @@ unsafe fn text_v1_keymap_new_from_names(
             types: ::core::ptr::null_mut::<i8>(),
         };
         let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        xkb_log(
+        xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -770,7 +762,7 @@ unsafe fn text_v1_keymap_new_from_names(
             &raw mut (*keymap).num_groups,
         );
         if !ok {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -790,7 +782,7 @@ unsafe fn text_v1_keymap_new_from_names(
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
-        xkb_log(
+        xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -808,7 +800,7 @@ unsafe fn text_v1_keymap_new_from_names(
         free(kccgst.symbols as *mut ::core::ffi::c_void);
         free(kccgst.geometry as *mut ::core::ffi::c_void);
         if file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -839,7 +831,7 @@ unsafe fn text_v1_keymap_new_from_string(
             ::core::ptr::null::<i8>(),
         );
         if xkb_file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -864,7 +856,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
             ::core::ptr::null::<i8>(),
         );
         if xkb_file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

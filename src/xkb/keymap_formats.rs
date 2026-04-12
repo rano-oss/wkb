@@ -303,9 +303,7 @@ pub mod stdint_h {
     pub const SIZE_MAX: u64 = 18446744073709551615 as u64;
 }
 pub mod string_h {
-    extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
-    }
+    
 }
 pub mod stdbool_h {
     pub const true_0: i32 = 1 as i32;
@@ -330,10 +328,10 @@ pub use self::__stddef_null_h::NULL;
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::u32;
-use self::string_h::strcmp;
 pub use self::types_h::__uint32_t;
 pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
+use crate::xkb::utils::{cstr_cmp};
 pub use self::xkbcommon_h::{
     xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
@@ -411,7 +409,7 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
                 < (::core::mem::size_of::<[format_label; 4]>() as usize)
                     .wrapping_div(::core::mem::size_of::<format_label>() as usize)
             {
-                if strcmp(raw, keymap_formats_labels[k as usize].label) == 0 as i32 {
+                if cstr_cmp(raw, keymap_formats_labels[k as usize].label) == 0 as i32 {
                     return keymap_formats_labels[k as usize].format;
                 }
                 k = k.wrapping_add(1);

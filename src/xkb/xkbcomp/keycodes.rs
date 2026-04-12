@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
@@ -31,15 +32,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -338,7 +330,7 @@ pub use self::ast_h::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
@@ -1142,7 +1134,7 @@ unsafe fn AddLedName(
         if !old.is_null() {
             if old_idx == new_idx {
                 if report {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1164,7 +1156,7 @@ unsafe fn AddLedName(
                 } else {
                     new_idx.wrapping_add(1 as xkb_led_index_t)
                 };
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1198,7 +1190,7 @@ unsafe fn AddLedName(
                 } else {
                     (*new).name
                 };
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1255,7 +1247,7 @@ unsafe fn AddKeyName(
             let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if report {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1297,7 +1289,7 @@ unsafe fn AddKeyName(
                         } else {
                             kc
                         };
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1324,7 +1316,7 @@ unsafe fn AddKeyName(
         if old_name != XKB_ATOM_NONE as xkb_atom_t {
             if old_name == name {
                 if report {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1350,7 +1342,7 @@ unsafe fn AddKeyName(
                 } else {
                     kname
                 };
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1366,7 +1358,7 @@ unsafe fn AddKeyName(
                 keycode_store_update_key(&raw mut (*info).keycodes, match_kc, name);
             }
         } else if !keycode_store_insert_key(&raw mut (*info).keycodes, kc, name) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1620,7 +1612,7 @@ unsafe fn HandleKeycodeDef(
 ) -> bool {
     unsafe {
         if (*stmt).value < 0 as i64 || (*stmt).value > XKB_KEYCODE_MAX as i64 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1653,7 +1645,7 @@ unsafe fn HandleAliasDef(
             if match_name.c2rust_unnamed.is_alias() {
                 if (*def).real == match_name.alias.real() {
                     if report {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1676,7 +1668,7 @@ unsafe fn HandleAliasDef(
                         (*def).real
                     };
                     if report {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1693,7 +1685,7 @@ unsafe fn HandleAliasDef(
                 return true_0 != 0;
             } else {
                 if report {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1738,7 +1730,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
             return false_0 != 0;
         }
         if !elem.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1756,7 +1748,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
         if !istreq(field, b"minimum\0".as_ptr() as *const i8)
             && !istreq(field, b"maximum\0".as_ptr() as *const i8)
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1808,7 +1800,7 @@ unsafe fn HandleLedNameDef(
     unsafe {
         if (*def).ndx < 1 as i64 || (*def).ndx > XKB_MAX_LEDS as i64 {
             (*info).errorCount += 1;
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1880,7 +1872,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                     ok = HandleLedNameDef(info, stmt as *mut LedNameDef, report_same_file);
                 }
                 35 | 36 => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1901,7 +1893,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         == 0;
                 }
                 _ => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1916,7 +1908,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                 (*info).errorCount += 1;
             }
             if (*info).errorCount > 10 as ::core::ffi::c_int {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2022,7 +2014,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                             (*match_0).alias.real(),
                         ) as KeycodeMatch;
                         if !match_real.c2rust_unnamed.found() {
-                            xkb_log(
+                            xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,

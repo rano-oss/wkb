@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -107,15 +108,6 @@ pub mod messages_codes_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -200,7 +192,6 @@ pub mod string_h {
     extern "C" {
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strndup(__string: *const i8, __n: usize) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdlib_h {
@@ -278,7 +269,7 @@ pub use self::ast_h::{
     STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::internal::__va_list_tag;
@@ -329,7 +320,7 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdint_h::UINT32_MAX;
 use self::stdlib_h::{calloc, free, malloc, realloc};
-use self::string_h::{strlen, strndup};
+use self::string_h::{strndup};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -339,6 +330,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+use crate::xkb::utils::{cstr_len};
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =
@@ -593,7 +585,7 @@ pub unsafe fn ExprKeySymListAppendString(
 ) -> *mut ExprDef {
     unsafe {
         let mut c2rust_current_block: u64;
-        let len: usize = strlen(string) as usize;
+        let len: usize = cstr_len(string) as usize;
         let mut idx: usize = 0 as usize;
         let mut idx_cp: usize = 1 as usize;
         loop {
@@ -609,7 +601,7 @@ pub unsafe fn ExprKeySymListAppendString(
             );
             if cp == INVALID_UTF8_CODE_POINT as u32 {
                 let mut loc: scanner_loc = scanner_token_location(scanner);
-                xkb_log(
+                xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -628,7 +620,7 @@ pub unsafe fn ExprKeySymListAppendString(
                 let sym: xkb_keysym_t = xkb_utf32_to_keysym(cp) as xkb_keysym_t;
                 if sym == XKB_KEY_NoSymbol as xkb_keysym_t {
                     let mut loc_0: scanner_loc = scanner_token_location(scanner);
-                    xkb_log(
+                    xkb_logf!(
                         (*scanner).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -689,10 +681,10 @@ pub unsafe fn ExprKeySymListAppendString(
 
 pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8) -> xkb_keysym_t {
     unsafe {
-        let len: usize = strlen(string) as usize;
+        let len: usize = cstr_len(string) as usize;
         if len == 0 as usize {
             let mut loc: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -708,7 +700,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
         if cp == INVALID_UTF8_CODE_POINT as u32 {
             let mut loc_0: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -722,7 +714,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         } else if count != len {
             let mut loc_1: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -739,7 +731,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         let sym: xkb_keysym_t = xkb_utf32_to_keysym(cp) as xkb_keysym_t;
         if sym == XKB_KEY_NoSymbol as xkb_keysym_t {
             let mut loc_2: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1055,7 +1047,7 @@ pub unsafe fn IncludeCreate(
         }
         match c2rust_current_block {
             15017566315148339459 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,

@@ -479,9 +479,7 @@ pub mod string_h {
             __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
         pub fn strerror(__errnum: i32) -> *mut i8;
     }
 }
@@ -663,7 +661,7 @@ pub use self::stdio_h::{
     va_list, vasprintf, _IONBF, BUFSIZ,
 };
 pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, realloc, unsetenv, EXIT_SUCCESS};
-use self::string_h::{memcpy, memset, strdup, strerror, strlen};
+use self::string_h::{memcpy, memset, strdup, strerror};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -722,6 +720,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len};
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
@@ -3042,7 +3041,7 @@ pub unsafe fn test_compile_output2(
             fwrite(
                 got_0 as *const ::core::ffi::c_void,
                 1 as usize,
-                strlen(got_0),
+                cstr_len(got_0),
                 file,
             );
             fclose(file);
@@ -3088,7 +3087,7 @@ pub unsafe fn test_compile_output2(
                         ctx,
                         input_format,
                         expected,
-                        strlen(expected),
+                        cstr_len(expected),
                         compile_buffer_private,
                     );
                     if keymap.is_null() {
@@ -3127,8 +3126,8 @@ pub unsafe fn test_compile_output2(
                     fprintf(
                         stderr,
                         b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
-                        strlen(expected),
-                        strlen(got_0),
+                        cstr_len(expected),
+                        cstr_len(got_0),
                     );
                     fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
                     fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got_0);
@@ -3270,8 +3269,8 @@ pub unsafe fn test_third_pary_compile_output(
                     fprintf(
                         stderr,
                         b"Length: expected %zu, got: %zu\n\0".as_ptr() as *const i8,
-                        strlen(expected),
-                        strlen(got),
+                        cstr_len(expected),
+                        cstr_len(got),
                     );
                     fprintf(stderr, b"Dumped map:\n\0".as_ptr() as *const i8);
                     fprintf(stderr, b"%s\n\0".as_ptr() as *const i8, got);

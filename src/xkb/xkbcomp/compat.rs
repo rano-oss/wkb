@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
@@ -31,15 +32,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -360,7 +352,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
-    xkb_atom_text, xkb_context, xkb_context_get_buffer, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{
@@ -756,7 +748,7 @@ unsafe fn MergeInterp(
         let mut collide: si_field = 0 as si_field;
         if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
             if report {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -828,7 +820,7 @@ unsafe fn MergeInterp(
                 ((*old).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as i32 as u32) as si_field;
         }
         if collide as u64 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -899,7 +891,7 @@ unsafe fn ResolveStateAndPredicate(
             ) || (*expr).action.args.is_null()
                 || !(*(*expr).action.args).common.next.is_null()
             {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -973,7 +965,7 @@ unsafe fn MergeLedMap(
         }
         if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
             if report {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1027,7 +1019,7 @@ unsafe fn MergeLedMap(
             (*old).defined = ((*old).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
         }
         if collide as u64 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1057,7 +1049,7 @@ unsafe fn AddLedMap(mut info: *mut CompatInfo, mut new: *mut LedInfo, mut same_f
             }
         }
         if (*info).num_leds >= XKB_MAX_LEDS {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1344,7 +1336,7 @@ unsafe fn SetInterpField(
                     act = (*act).common.next as *mut ExprDef;
                 }
                 if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1506,7 +1498,7 @@ unsafe fn SetInterpField(
             (*si).interp.set_repeat(set as bool);
             (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as i32 as u32) as si_field;
         } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1662,7 +1654,7 @@ unsafe fn SetLedMapField(
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
         } else if istreq(field, b"allowexplicit\0".as_ptr() as *const i8) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1718,7 +1710,7 @@ unsafe fn SetLedMapField(
             || istreq(field, b"indicatordriveskbd\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"indicatordriveskeyboard\0".as_ptr() as *const i8) as i32 != 0
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1727,7 +1719,7 @@ unsafe fn SetLedMapField(
                 field,
             );
         } else if istreq(field, b"index\0".as_ptr() as *const i8) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1735,7 +1727,7 @@ unsafe fn SetLedMapField(
                     as *const i8,
             );
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1848,7 +1840,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
             ) as u32
                 != PARSER_FATAL_ERROR as i32 as u32;
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1884,7 +1876,7 @@ unsafe fn HandleInterpBody(
             ) {
                 ok = false_0 != 0;
             } else if !elem.is_null() {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1931,7 +1923,7 @@ unsafe fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut InterpDef) ->
             &raw mut mods,
             info,
         ) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1976,7 +1968,7 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
             ) {
                 ok = false_0 != 0;
             } else if !elem.is_null() {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2011,7 +2003,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                     ok = HandleInterpDef(info, stmt as *mut InterpDef);
                 }
                 32 => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_DEBUG,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2030,7 +2022,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                     ok = HandleVModDef((*info).ctx, &raw mut (*info).mods, stmt as *mut VModDef);
                 }
                 35 | 36 => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2049,7 +2041,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         == 0;
                 }
                 _ => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2064,7 +2056,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                 (*info).errorCount += 1;
             }
             if (*info).errorCount > 10 as i32 {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2144,7 +2136,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                 led = led.offset(1);
             }
             if i >= (*keymap).num_leds {
-                xkb_log(
+                xkb_logf!(
                     (*keymap).ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2163,7 +2155,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                 }
                 if i >= (*keymap).num_leds {
                     if i >= XKB_MAX_LEDS {
-                        xkb_log(
+                        xkb_logf!(
                             (*keymap).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,

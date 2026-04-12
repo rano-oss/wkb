@@ -9,11 +9,7 @@ use crate::xkb::shared_types::{
     xkb_log_level, xkb_overlay_index_t,
 };
 use crate::xkb::text::LookupEntry;
-
-// xkb_log is variadic (extern "C"), must be imported via extern block
-extern "C" {
-    fn xkb_log(ctx: *mut xkb_context, level: xkb_log_level, verbosity: i32, fmt: *const i8, ...);
-}
+use crate::xkb_logf;
 
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
@@ -471,7 +467,7 @@ pub unsafe fn ReportNotArray(
     mut name: *const i8,
 ) -> bool {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -496,7 +492,7 @@ pub unsafe fn ReportBadType(
     mut wanted: *const i8,
 ) -> bool {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -520,7 +516,7 @@ pub unsafe fn ReportBadField(
     mut name: *const i8,
 ) -> bool {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -543,7 +539,7 @@ pub unsafe fn ReportShouldBeArray(
     mut name: *const i8,
 ) -> bool {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,

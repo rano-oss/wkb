@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 use c2rust_bitfields;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
@@ -98,15 +99,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -353,7 +345,6 @@ pub mod string_h {
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
         pub fn strdup(__s: *const i8) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdio_h {
@@ -555,7 +546,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
-    xkb_atom_intern, xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{
@@ -649,7 +640,7 @@ pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint64_t, uint8_t};
 use self::stdio_h::{fprintf, stderr};
 use self::stdlib_h::{abort, atoi, calloc, free, realloc};
-use self::string_h::{memcpy, memmove, memset, strlen};
+use self::string_h::{memcpy, memmove, memset};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
 pub use self::types_h::{
@@ -693,6 +684,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len};
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
@@ -1053,7 +1045,7 @@ unsafe fn MergeGroups(
                         (*from).type_0
                     };
                     if report {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1120,7 +1112,7 @@ unsafe fn MergeGroups(
                             && !(intoHasNoKeysym as ::core::ffi::c_int != 0
                                 || fromHasNoKeysym as ::core::ffi::c_int != 0)
                         {
-                            xkb_log(
+                            xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1209,7 +1201,7 @@ unsafe fn MergeGroups(
                                 as ::core::ffi::c_int as i64
                                 != 0
                             {
-                                xkb_log(
+                                xkb_logf!(
                                     (*info).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1242,7 +1234,7 @@ unsafe fn MergeGroups(
                                 } else {
                                     &raw mut (*fromLevel).a.action
                                 };
-                                xkb_log(
+                                xkb_logf!(
                                     (*info).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1892,7 +1884,7 @@ unsafe fn MergeKeys(
             return false_0 != 0;
         }
         if collide as u64 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2004,7 +1996,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                         (*new).modifier
                     };
                     if (*new).haveSymbol {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2016,7 +2008,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                             ModIndexText((*info).ctx, &raw mut (*info).mods, ignore),
                         );
                     } else {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2322,7 +2314,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 next_incl.explicit_group =
                     (atoi((*stmt).modifier) - 1 as ::core::ffi::c_int) as xkb_layout_index_t;
                 if next_incl.explicit_group >= (*info).max_groups {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2382,7 +2374,7 @@ unsafe fn GetGroupIndex(
                 }
             }
             if i >= (*info).max_groups {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2433,7 +2425,7 @@ unsafe fn GetGroupIndex(
         ) as u32
             != PARSER_SUCCESS as ::core::ffi::c_int as u32
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2495,7 +2487,7 @@ unsafe fn AddSymbolsToKey(
             return true_0 != 0;
         }
         if (*value).common.type_0 as u32 != STMT_EXPR_KEYSYM_LIST as ::core::ffi::c_int as u32 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2509,7 +2501,7 @@ unsafe fn AddSymbolsToKey(
             return false_0 != 0;
         }
         if (*groupi).defined as u32 & GROUP_FIELD_SYMS as ::core::ffi::c_int as u32 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2572,7 +2564,7 @@ unsafe fn AddSymbolsToKey(
             if ((*keysymList_0).syms.size > 65535 as darray_size_t) as ::core::ffi::c_int as i64
                 != 0
             {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2645,7 +2637,7 @@ unsafe fn AddActionsToKey(
             return true_0 != 0;
         }
         if (*value).common.type_0 as u32 != STMT_EXPR_ACTION_LIST as ::core::ffi::c_int as u32 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_CRITICAL,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2659,7 +2651,7 @@ unsafe fn AddActionsToKey(
             return false_0 != 0;
         }
         if (*groupi).defined as u32 & GROUP_FIELD_ACTS as ::core::ffi::c_int as u32 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_CRITICAL,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2721,7 +2713,7 @@ unsafe fn AddActionsToKey(
                 act = (*act).common.next as *mut ExprDef;
             }
             if (num_actions > 65535 as u32) as ::core::ffi::c_int as i64 != 0 {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2757,7 +2749,7 @@ unsafe fn AddActionsToKey(
                     &raw mut toAct,
                 ) as xkb_parser_error;
                 if r as u32 != PARSER_SUCCESS as ::core::ffi::c_int as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2926,7 +2918,7 @@ unsafe fn ExprResolveOverlayEntry(
 ) -> bool {
     unsafe {
         if !arrayNdx.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2939,7 +2931,7 @@ unsafe fn ExprResolveOverlayEntry(
             return false_0 != 0;
         }
         let prefix: usize = (::core::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize);
-        let len: usize = strlen(field.offset(prefix as isize)) as usize;
+        let len: usize = cstr_len(field.offset(prefix as isize)) as usize;
         let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
         if parse_dec_to_uint64_t(
             field.offset(prefix as isize),
@@ -2949,7 +2941,7 @@ unsafe fn ExprResolveOverlayEntry(
             || raw_overlay < 1 as i64
             || raw_overlay > (*keymap_info).features.max_overlays as i64
         {
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -2973,7 +2965,7 @@ unsafe fn ExprResolveOverlayEntry(
                     false_0 != 0,
                 );
                 if (*key_rtrn).is_null() {
-                    xkb_log(
+                    xkb_logf!(
                         (*keymap_info).keymap.ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3003,7 +2995,7 @@ unsafe fn ExprResolveOverlayEntry(
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true_0 != 0;
                 }
-                xkb_log(
+                xkb_logf!(
                     (*keymap_info).keymap.ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3017,7 +3009,7 @@ unsafe fn ExprResolveOverlayEntry(
                 return false_0 != 0;
             }
             _ => {
-                xkb_log(
+                xkb_logf!(
                     (*keymap_info).keymap.ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3047,7 +3039,7 @@ unsafe fn SetSymbolsField(
             let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3071,7 +3063,7 @@ unsafe fn SetSymbolsField(
             ) as u32
                 != PARSER_SUCCESS as ::core::ffi::c_int as u32
             {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3133,7 +3125,7 @@ unsafe fn SetSymbolsField(
                 &raw mut (*info).mods,
                 &raw mut mask,
             ) {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3153,7 +3145,7 @@ unsafe fn SetSymbolsField(
             || istreq(field, b"lock\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
             || istreq(field, b"locks\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -3167,7 +3159,7 @@ unsafe fn SetSymbolsField(
                 != 0
             || istreq(field, b"allownone\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -3181,7 +3173,7 @@ unsafe fn SetSymbolsField(
             field,
             (::core::mem::size_of::<[i8; 17]>() as usize).wrapping_sub(1 as usize),
         ) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -3211,7 +3203,7 @@ unsafe fn SetSymbolsField(
             if overlay as ::core::ffi::c_int == XKB_OVERLAY_INVALID {
                 return true_0 != 0;
             } else if !key.is_null() && (*key).name == (*keyi).name {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -3224,7 +3216,7 @@ unsafe fn SetSymbolsField(
                 let mut prev: *const xkb_key = ::core::ptr::null::<xkb_key>();
                 if overlays_get(keyi, overlay, &raw mut prev) {
                     if key != prev {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3274,7 +3266,7 @@ unsafe fn SetSymbolsField(
                         );
                     } else if (*keyi).overlays != 0 {
                         if !key.is_null() {
-                            xkb_log(
+                            xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3308,7 +3300,7 @@ unsafe fn SetSymbolsField(
                 &raw mut val_0,
                 &raw const repeatEntries as *const LookupEntry,
             ) {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3328,7 +3320,7 @@ unsafe fn SetSymbolsField(
         {
             let mut set: bool = false_0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3355,7 +3347,7 @@ unsafe fn SetSymbolsField(
         {
             let mut set_0: bool = false_0 != 0;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3393,7 +3385,7 @@ unsafe fn SetSymbolsField(
                 != PARSER_SUCCESS as ::core::ffi::c_int as u32
                 && !pending
             {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3450,7 +3442,7 @@ unsafe fn SetSymbolsField(
                 (*keyi).defined() | KEY_FIELD_GROUPINFO as ::core::ffi::c_int as key_field,
             );
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3474,7 +3466,7 @@ unsafe fn SetGroupName(
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -3494,7 +3486,7 @@ unsafe fn SetGroupName(
         ) as u32
             != PARSER_SUCCESS as ::core::ffi::c_int as u32
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3506,7 +3498,7 @@ unsafe fn SetGroupName(
         }
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, value, &raw mut name) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3523,7 +3515,7 @@ unsafe fn SetGroupName(
         } else if group.wrapping_sub(1 as xkb_layout_index_t) == 0 as xkb_layout_index_t {
             group_to_use = (*info).explicit_group;
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3578,7 +3570,7 @@ unsafe fn SetGroupName(
                 } else {
                     name
                 };
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3664,7 +3656,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             && (istreq(field, b"groupswrap\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3677,7 +3669,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             && (istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0)
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3691,7 +3683,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as ::core::ffi::c_int
                     != 0)
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3703,7 +3695,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
         } else if elem.is_null()
             && istreq(field, b"allownone\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3725,7 +3717,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             ) as u32
                 != PARSER_FATAL_ERROR as ::core::ffi::c_int as u32;
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3772,7 +3764,7 @@ unsafe fn HandleSymbolsBody(
                     &raw mut arrayNdx,
                 );
                 if ok as ::core::ffi::c_int != 0 && !elem.is_null() {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3787,7 +3779,7 @@ unsafe fn HandleSymbolsBody(
                 }
             }
             if (*def).value.is_null() as ::core::ffi::c_int as i64 != 0 {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3828,7 +3820,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
             }
         }
         if warn {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3959,7 +3951,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);
             if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -3993,7 +3985,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                     c2rust_current_block_19 = 5601891728916014340;
                 }
             } else {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4040,7 +4032,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                     ok = HandleModMapDef(info, stmt as *mut ModMapDef);
                 }
                 35 | 36 => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4061,7 +4053,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         == 0;
                 }
                 _ => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4077,7 +4069,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                 (*info).errorCount += 1;
             }
             if (*info).errorCount > 10 as ::core::ffi::c_int {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4382,7 +4374,7 @@ unsafe fn FindTypeForGroup(
             }
         }
         if type_name == XKB_ATOM_NONE as xkb_atom_t {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4403,7 +4395,7 @@ unsafe fn FindTypeForGroup(
                 i = i.wrapping_add(1);
             }
             if i >= (*keymap).num_types {
-                xkb_log(
+                xkb_logf!(
                     (*keymap).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4437,7 +4429,7 @@ unsafe fn CopySymbolsDefToKeymap(
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
         key = XkbKeyByName(keymap, (*keyi).name, false);
         if key.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -4535,7 +4527,7 @@ unsafe fn CopySymbolsDefToKeymap(
                     // Always have as many levels as the type specifies
                     if (*type_0).num_levels < (*groupi).levels.size {
                         let mut leveli: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -4770,7 +4762,7 @@ unsafe fn CopyModMapDefToKeymap(
         if !(*entry).haveSymbol {
             key = XkbKeyByName(keymap, (*entry).u.keyName, true_0 != 0);
             if key.is_null() {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -4785,7 +4777,7 @@ unsafe fn CopyModMapDefToKeymap(
         } else {
             key = FindKeyForSymbol(keymap, (*entry).u.keySym);
             if key.is_null() {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -4842,7 +4834,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
             while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
                 if !((*key).name == XKB_ATOM_NONE as xkb_atom_t) {
                     if ((*key).num_groups() as ::core::ffi::c_int) < 1 as ::core::ffi::c_int {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_INFO,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub type __builtin_va_list = [__va_list_tag; 1];
@@ -196,15 +197,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
         C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
@@ -370,7 +362,6 @@ pub mod string_h {
         pub fn strdup(__s: *const i8) -> *mut i8;
         pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
         pub fn strpbrk(__s: *const i8, __accept: *const i8) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod utils_h {
@@ -462,7 +453,7 @@ pub use self::ast_h::{
 pub use self::context_h::{
     xkb_context, xkb_context_failed_include_path_get, xkb_context_getenv,
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-    xkb_context_num_failed_include_paths, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_context_num_failed_include_paths, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::darray_size_t;
 pub use self::include_h::{
@@ -521,7 +512,7 @@ pub use self::scanner_utils_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::free;
-use self::string_h::{memcpy, strchr, strdup, strlen, strpbrk};
+use self::string_h::{memcpy, strchr, strdup, strpbrk};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint64_t};
 pub use self::utils_h::snprintf_safe;
@@ -533,6 +524,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len};
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,
@@ -625,7 +617,7 @@ unsafe fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
 unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
     unsafe {
         if xkb_context_num_include_paths(ctx) > 0 as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -635,7 +627,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
             );
             let mut i: u32 = 0 as u32;
             while i < xkb_context_num_include_paths(ctx) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -646,7 +638,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 i = i.wrapping_add(1);
             }
         } else {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -655,7 +647,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
             );
         }
         if xkb_context_num_failed_include_paths(ctx) > 0 as darray_size_t {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -665,7 +657,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
             );
             let mut i_0: darray_size_t = 0 as darray_size_t;
             while i_0 < xkb_context_num_failed_include_paths(ctx) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -712,7 +704,7 @@ unsafe fn expand_percent(
                         xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
                     if home.is_null() {
                         let mut loc: scanner_loc = scanner_token_location(&raw mut s);
-                        xkb_log(
+                        xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -726,7 +718,7 @@ unsafe fn expand_percent(
                     }
                     if !scanner_buf_appends(&raw mut s, home) {
                         let mut loc_0: scanner_loc = scanner_token_location(&raw mut s);
-                        xkb_log(
+                        xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -746,7 +738,7 @@ unsafe fn expand_percent(
                         || !scanner_buf_appends(&raw mut s, typeDir)
                     {
                         let mut loc_1: scanner_loc = scanner_token_location(&raw mut s);
-                        xkb_log(
+                        xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -767,7 +759,7 @@ unsafe fn expand_percent(
                         || !scanner_buf_appends(&raw mut s, typeDir)
                     {
                         let mut loc_2: scanner_loc = scanner_token_location(&raw mut s);
-                        xkb_log(
+                        xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -782,7 +774,7 @@ unsafe fn expand_percent(
                     }
                 } else {
                     let mut loc_3: scanner_loc = scanner_token_location(&raw mut s);
-                    xkb_log(
+                    xkb_logf!(
                         s.ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -802,7 +794,7 @@ unsafe fn expand_percent(
         }
         if !scanner_buf_append(&raw mut s, '\0' as i32 as i8) {
             let mut loc_4: scanner_loc = scanner_token_location(&raw mut s);
-            xkb_log(
+            xkb_logf!(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -818,7 +810,7 @@ unsafe fn expand_percent(
         }
         if (s.buf_pos > buf_size) as ::core::ffi::c_int as i64 != 0 {
             let mut loc_5: scanner_loc = scanner_token_location(&raw mut s);
-            xkb_log(
+            xkb_logf!(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -869,7 +861,7 @@ pub unsafe fn expand_path(
             17179679302217393232 => return 0 as ssize_t,
             _ => {
                 if (k >= buf_size) as ::core::ffi::c_int as i64 != 0 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -938,7 +930,7 @@ pub unsafe fn FindFileInXkbPath(
                 name_len as u32,
                 name,
             ) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -964,7 +956,7 @@ pub unsafe fn FindFileInXkbPath(
         match c2rust_current_block {
             8515828400728868193 => {
                 if required as ::core::ffi::c_int != 0 && *offset == 0 as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -987,7 +979,7 @@ pub unsafe fn FindFileInXkbPath(
 pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_depth: u32) -> bool {
     unsafe {
         if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1012,7 +1004,7 @@ pub unsafe fn ProcessIncludeFile(
         let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
         let mut stmt_file: *const i8 = (*stmt).file;
-        let mut stmt_file_len: usize = strlen(stmt_file);
+        let mut stmt_file_len: usize = cstr_len(stmt_file);
         let expanded: ssize_t = expand_path(
             ctx,
             b"(unknown)\0".as_ptr() as *const i8,
@@ -1053,7 +1045,7 @@ pub unsafe fn ProcessIncludeFile(
             fclose(file);
             if !xkb_file.is_null() {
                 if (*xkb_file).file_type as u32 != file_type as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1101,7 +1093,7 @@ pub unsafe fn ProcessIncludeFile(
         }
         if xkb_file.is_null() {
             if !(*stmt).map.is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1112,7 +1104,7 @@ pub unsafe fn ProcessIncludeFile(
                     (*stmt).map,
                 );
             } else {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

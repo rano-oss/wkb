@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -30,15 +31,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -268,7 +260,6 @@ pub mod string_h {
             __c: i32,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod expr_h {
@@ -328,7 +319,7 @@ pub use self::ast_h::{
     STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
@@ -413,7 +404,7 @@ pub use self::stdint_h::{INT16_MAX, INT16_MIN, INT8_MAX, INT8_MIN};
 pub use self::stdint_intn_h::{i16, i32, i64, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::realloc;
-use self::string_h::{memcpy, memset, strlen};
+use self::string_h::{memcpy, memset};
 pub use self::text_h::{
     actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
     LookupValue,
@@ -447,6 +438,7 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::keymap_priv::action_equal;
+use crate::xkb::utils::{cstr_len};
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;
@@ -715,7 +707,7 @@ unsafe fn ReportMismatch(
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -743,7 +735,7 @@ unsafe fn ReportFormatVersionMismatch(
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -770,7 +762,7 @@ unsafe fn ReportIllegal(
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -795,7 +787,7 @@ unsafe fn ReportActionNotArray(
     mut strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -822,7 +814,7 @@ unsafe fn HandleNoAction(
     mut value_ptr: *mut *mut ExprDef,
 ) -> xkb_parser_error {
     unsafe {
-        xkb_log(
+        xkb_logf!(
             (*keymap_info).keymap.ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1294,7 +1286,7 @@ unsafe fn HandleMovePtr(
                 );
             }
             if val < INT16_MIN as i64 || val > INT16_MAX as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1372,7 +1364,7 @@ unsafe fn HandlePtrBtn(
                 );
             }
             if btn < 0 as i64 || btn > 5 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1418,7 +1410,7 @@ unsafe fn HandlePtrBtn(
                 );
             }
             if val < 0 as i64 || val > 255 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1522,7 +1514,7 @@ unsafe fn HandleSetPtrDflt(
                 );
             }
             if btn < 0 as i64 || btn > 5 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1540,7 +1532,7 @@ unsafe fn HandleSetPtrDflt(
                 }) as xkb_parser_error;
             }
             if btn == 0 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1611,7 +1603,7 @@ unsafe fn HandleSwitchScreen(
                 val
             };
             if val < INT8_MIN as i64 || val > INT8_MAX as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1734,7 +1726,7 @@ unsafe fn HandleRedirectKey(
             }
             let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, true_0 != 0);
             if key.is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1835,7 +1827,7 @@ unsafe fn HandlePrivate(
                 );
             }
             if type_0 < 0 as i64 || type_0 > 255 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1853,7 +1845,7 @@ unsafe fn HandlePrivate(
                 }) as xkb_parser_error;
             }
             if type_0 < ACTION_TYPE_PRIVATE as i32 as i64 {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1880,9 +1872,9 @@ unsafe fn HandlePrivate(
                     );
                 }
                 let mut str: *const i8 = xkb_atom_text(ctx, val);
-                let mut len: usize = strlen(str);
+                let mut len: usize = cstr_len(str);
                 if len < 1 as usize || len > ::core::mem::size_of::<[uint8_t; 7]>() as usize {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1915,7 +1907,7 @@ unsafe fn HandlePrivate(
                 let mut ndx: i64 = 0 as i64;
                 let mut datum: i64 = 0 as i64;
                 if !ExprResolveInteger(ctx, array_ndx, &raw mut ndx) {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1933,7 +1925,7 @@ unsafe fn HandlePrivate(
                 }
                 if ndx < 0 as i64 || ndx as usize >= ::core::mem::size_of::<[uint8_t; 7]>() as usize
                 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1962,7 +1954,7 @@ unsafe fn HandlePrivate(
                     );
                 }
                 if datum < 0 as i64 || datum > 255 as i64 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2241,7 +2233,7 @@ pub unsafe fn HandleActionDef(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         if (*def).common.type_0 as u32 != STMT_EXPR_ACTION_DECL as i32 as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2254,7 +2246,7 @@ pub unsafe fn HandleActionDef(
         let mut action_name: *const i8 = xkb_atom_text(ctx, (*def).action.name);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2269,7 +2261,7 @@ pub unsafe fn HandleActionDef(
         }
         *action = (*info).actions[handler_type as usize];
         if handler_type as u32 == ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2311,7 +2303,7 @@ pub unsafe fn HandleActionDef(
                 return PARSER_FATAL_ERROR;
             }
             if !elemRtrn.is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2325,7 +2317,7 @@ pub unsafe fn HandleActionDef(
             }
             let mut fieldNdx: action_field = ACTION_FIELD_CLEAR_LOCKS;
             if !stringToField(fieldRtrn, &raw mut fieldNdx) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2380,7 +2372,7 @@ pub unsafe fn SetDefaultActionField(
         let value: *const ExprDef = *value_ptr;
         let mut action: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(elem, &raw mut action) {
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2396,7 +2388,7 @@ pub unsafe fn SetDefaultActionField(
         }
         let mut action_field: action_field = ACTION_FIELD_CLEAR_LOCKS;
         if !stringToField(field, &raw mut action_field) {
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -2430,7 +2422,7 @@ pub unsafe fn SetDefaultActionField(
         }
         if !action_equal(into, &raw mut from) {
             let replace: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
-            xkb_log(
+            xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_VERBOSE as i32,

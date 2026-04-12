@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -51,15 +52,6 @@ pub mod xkbcommon_errors_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -406,7 +398,7 @@ pub use self::ast_h::{
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
@@ -695,7 +687,7 @@ unsafe fn FindInterpForKey(
                             {
                                 if *previous_interp == interp as *const xkb_sym_interpret {
                                     found = false_0 != 0;
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -915,7 +907,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                         if (actions.size != 0) as ::core::ffi::c_int as i64
                             > MAX_ACTIONS_PER_LEVEL as i64
                         {
-                            xkb_log(
+                            xkb_logf!(
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -975,7 +967,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 .actions
                                 .is_null()
                                 {
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1101,7 +1093,7 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                                     } else {
                                         ActionTypeText((*action1).type_0) as *const i8
                                     };
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1176,7 +1168,7 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                         (*pc).value = group.wrapping_sub(1 as xkb_layout_index_t) as u32;
                     }
                     2 => {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).keymap.ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1229,7 +1221,7 @@ unsafe fn update_pending_action_fields(
                         ) as u32
                         {
                             2 => {
-                                xkb_log(
+                                xkb_logf!(
                                     (*info).keymap.ctx,
                                     XKB_LOG_LEVEL_ERROR,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1292,7 +1284,7 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
                     &raw mut mask,
                     ::core::ptr::null_mut::<bool>(),
                 ) {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).keymap.ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1705,7 +1697,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 || (*file).file_type as u32 > LAST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as u32
             {
                 if (*file).file_type as u32 == FILE_TYPE_GEOMETRY as ::core::ffi::c_int as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1714,7 +1706,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as ::core::ffi::c_int,
                     );
                 } else {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1723,7 +1715,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                     );
                 }
             } else if !files[(*file).file_type as usize].is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1828,7 +1820,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         while type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as u32 {
             if files[type_0 as usize].is_null() {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1836,7 +1828,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                     xkb_file_type_to_string(type_0),
                 );
             } else {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1850,7 +1842,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 &raw mut info,
             ) as bool;
             if !ok {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

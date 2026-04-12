@@ -26322,10 +26322,7 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
-        pub fn strncmp(__s1: *const i8, __s2: *const i8, __n: usize) -> i32;
         pub fn strdup(__s: *const i8) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod utils_h {
@@ -26680,12 +26677,13 @@ pub use self::stdint_intn_h::i32;
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdio_h::snprintf;
 use self::stdlib_h::{calloc, free};
-use self::string_h::{memmove, strcmp, strdup, strlen, strncmp};
+use self::string_h::{memmove, strdup};
 pub use self::sys_types_h::ssize_t;
 pub use self::types_h::{__int32_t, __uint16_t, __uint32_t, __uint8_t};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{is_xdigit, istrcmp, istrncmp};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
+use crate::xkb::utils::{cstr_len, cstr_cmp, cstr_ncmp};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_t, xkb_utf32_to_keysym, XKB_KEYSYM_CASE_INSENSITIVE,
     XKB_KEYSYM_MAX, XKB_KEYSYM_NO_FLAGS,
@@ -26957,7 +26955,7 @@ pub unsafe fn xkb_keysym_from_name(
                     (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
                         as *const name_keysym,
                 );
-                if strcmp(name, s) == 0 as i32 {
+                if cstr_cmp(name, s) == 0 as i32 {
                     return name_to_keysym[pos as usize].keysym;
                 }
             }
@@ -27023,7 +27021,7 @@ pub unsafe fn xkb_keysym_from_name(
             }
             return val;
         }
-        if strncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
+        if cstr_ncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
             || icase as i32 != 0
                 && istrncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
         {
@@ -27035,7 +27033,7 @@ pub unsafe fn xkb_keysym_from_name(
             memmove(
                 tmp.offset(4 as i32 as isize) as *mut i8 as *mut ::core::ffi::c_void,
                 tmp.offset(5 as i32 as isize) as *mut i8 as *const ::core::ffi::c_void,
-                strlen(name)
+                cstr_len(name)
                     .wrapping_sub(5 as usize)
                     .wrapping_add(1 as usize),
             );

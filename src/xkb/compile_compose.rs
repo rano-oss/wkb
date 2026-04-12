@@ -263,9 +263,7 @@ pub mod stdlib_h {
     }
 }
 pub mod string_h {
-    extern "C" {
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> i32;
-    }
+    
 }
 pub mod unistd_h {
     pub const STDIN_FILENO: i32 = 0 as i32;
@@ -304,7 +302,6 @@ pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdint_uintn_h::u32;
 use self::stdio_h::{fclose, fopen, fprintf, perror, stderr, stdout};
 pub use self::stdlib_h::{exit, EXIT_FAILURE, EXIT_SUCCESS};
-use self::string_h::strcmp;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::table_h::{
     compose_node, xkb_compose_table, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
@@ -328,6 +325,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_cmp};
 pub const OPT_TEST: options = 3;
 pub const OPT_LOCALE: options = 2;
 pub const OPT_FILE: options = 1;
@@ -486,7 +484,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             ::core::ptr::null_mut::<xkb_compose_table>();
         if !path.is_null() {
             let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-            if isempty(path) as i32 != 0 || strcmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32 {
+            if isempty(path) as i32 != 0 || cstr_cmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32 {
                 file = tools_read_stdin();
             } else {
                 file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;

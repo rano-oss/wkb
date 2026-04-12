@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -42,15 +43,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -321,7 +313,7 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
-    xkb_atom_intern, xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 use self::expr_h::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
@@ -635,7 +627,7 @@ unsafe fn AddKeyType(
                 if same_file as ::core::ffi::c_int != 0 && verbosity > 0 as ::core::ffi::c_int
                     || verbosity > 9 as ::core::ffi::c_int
                 {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -657,7 +649,7 @@ unsafe fn AddKeyType(
                 return true_0 != 0;
             }
             if same_file {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -839,7 +831,7 @@ unsafe fn SetModifiers(
     unsafe {
         let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         if !arrayNdx.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -855,7 +847,7 @@ unsafe fn SetModifiers(
             &raw mut (*info).mods,
             &raw mut mods,
         ) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -866,7 +858,7 @@ unsafe fn SetModifiers(
             return false_0 != 0;
         }
         if (*type_0).defined as u32 & TYPE_FIELD_MASK as ::core::ffi::c_int as u32 != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -922,7 +914,7 @@ unsafe fn AddMapEntry(
         old = FindMatchingMapEntry(type_0, (*new).mods.mods);
         if !old.is_null() {
             if report as ::core::ffi::c_int != 0 && (*old).level != (*new).level {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -945,7 +937,7 @@ unsafe fn AddMapEntry(
                     .wrapping_add(1 as xkb_level_index_t),
                 );
             } else {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
@@ -1021,7 +1013,7 @@ unsafe fn SetMapEntry(
             );
         }
         if entry.mods.mods & !(*type_0).mods != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1040,7 +1032,7 @@ unsafe fn SetMapEntry(
             entry.mods.mods &= (*type_0).mods;
         }
         if !ExprResolveLevel((*info).ctx, value, &raw mut entry.level) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1088,7 +1080,7 @@ unsafe fn AddPreserve(
                         return true_0 != 0;
                     }
                     if (*entry).preserve.mods == preserve_mods {
-                        xkb_log(
+                        xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
@@ -1100,7 +1092,7 @@ unsafe fn AddPreserve(
                         );
                         return true_0 != 0;
                     }
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1188,7 +1180,7 @@ unsafe fn SetPreserve(
             before = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
             mods &= (*type_0).mods;
             after = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1208,7 +1200,7 @@ unsafe fn SetPreserve(
             &raw mut (*info).mods,
             &raw mut preserve_mods,
         ) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1226,7 +1218,7 @@ unsafe fn SetPreserve(
             before_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
             preserve_mods &= mods;
             after_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1279,7 +1271,7 @@ unsafe fn AddLevelName(
             }
         } else {
             if *(*type_0).level_names.item.offset(level as isize) == name {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
@@ -1299,7 +1291,7 @@ unsafe fn AddLevelName(
                     *(*type_0).level_names.item.offset(level as isize),
                 );
                 new = xkb_atom_text((*info).ctx, name);
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
@@ -1342,7 +1334,7 @@ unsafe fn SetLevelName(
         }
         let mut level_name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, value, &raw mut level_name) {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1382,7 +1374,7 @@ unsafe fn SetKeyTypeField(
             type_field = TYPE_FIELD_LEVEL_NAME;
             ok = SetLevelName(info, type_0, arrayNdx, value);
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1421,7 +1413,7 @@ unsafe fn HandleKeyTypeBody(
                 ok = false_0 != 0;
             } else if !elem.is_null() {
                 if istreq(elem, b"type\0".as_ptr() as *const i8) {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1432,7 +1424,7 @@ unsafe fn HandleKeyTypeBody(
                         field,
                     );
                 } else {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1499,7 +1491,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
         } else if !elem.is_null()
             && istreq(elem, b"type\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1509,7 +1501,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
             );
             return true_0 != 0;
         } else if !elem.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1524,7 +1516,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
                 == 0;
         } else if !field.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1561,7 +1553,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                     ok = HandleVModDef((*info).ctx, &raw mut (*info).mods, stmt as *mut VModDef);
                 }
                 35 | 36 => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1582,7 +1574,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         == 0;
                 }
                 _ => {
-                    xkb_log(
+                    xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1598,7 +1590,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                 (*info).errorCount += 1;
             }
             if (*info).errorCount > 10 as ::core::ffi::c_int {
-                xkb_log(
+                xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

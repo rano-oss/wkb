@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -76,16 +77,6 @@ pub mod context_h {
         atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
         C2Rust_Unnamed_0,
     };
-
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -478,7 +469,7 @@ pub mod scanner_utils_h {
                     == '\0' as i32
             {
                 let mut loc: scanner_loc = scanner_token_location(scanner);
-                xkb_log(
+                xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -492,7 +483,7 @@ pub mod scanner_utils_h {
             }
             if !is_ascii(*(*scanner).s.offset(0 as ::core::ffi::c_int as isize)) {
                 let mut loc_0: scanner_loc = scanner_token_location(scanner);
-                xkb_log(
+                xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -509,7 +500,7 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::{xkb_context, xkb_log};
+    use super::context_h::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
     use super::stdint_h::INT64_MAX;
@@ -522,6 +513,7 @@ pub mod scanner_utils_h {
         parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
     };
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
+    use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -1196,9 +1188,7 @@ pub use self::ast_h::{
     STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{
-    xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
+pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
@@ -1406,7 +1396,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                             scanner_buf_appends_code_point(s, cp);
                         } else {
                             let mut loc: scanner_loc = scanner_token_location(s);
-                            xkb_log(
+                            xkb_logf!(
                                 (*s).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1429,7 +1419,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                         scanner_buf_append(s, o as i8);
                     } else if (*s).pos > start_pos {
                         let mut loc_0: scanner_loc = scanner_token_location(s);
-                        xkb_log(
+                        xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1446,7 +1436,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
                         );
                     } else {
                         let mut loc_1: scanner_loc = scanner_token_location(s);
-                        xkb_log(
+                        xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1466,7 +1456,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
             }
             if !scanner_buf_append(s, '\0' as i32 as i8) || !scanner_chr(s, '"' as i32 as i8) {
                 let mut loc_2: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1491,7 +1481,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
             }
             if !scanner_chr(s, '>' as i32 as i8) {
                 let mut loc_3: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1585,7 +1575,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
         if number(s, &raw mut (*yylval).num, &raw mut tok) {
             if tok == ERROR_TOK as ::core::ffi::c_int {
                 let mut loc_4: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1600,7 +1590,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> :
             return tok;
         }
         let mut loc_5: scanner_loc = scanner_token_location(s);
-        xkb_log(
+        xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1624,7 +1614,7 @@ pub unsafe fn XkbParseStringInit(
         scanner_init(scanner, ctx, string, len, file_name, NULL);
         if !scanner_check_supported_char_encoding(scanner) {
             let mut loc: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1636,7 +1626,7 @@ pub unsafe fn XkbParseStringInit(
                 loc.column,
             );
             let mut loc_0: scanner_loc = scanner_token_location(scanner);
-            xkb_log(
+            xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1707,7 +1697,7 @@ pub unsafe fn XkbParseFile(
         // Get file descriptor from FILE*
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1729,7 +1719,7 @@ pub unsafe fn XkbParseFile(
             Err(e) => {
                 let err_msg = std::ffi::CString::new(e.to_string())
                     .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

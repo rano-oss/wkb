@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -29,15 +30,6 @@ pub mod context_h {
         C2Rust_Unnamed_0,
     };
 
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -108,7 +100,6 @@ pub mod string_h {
             __s2: *const ::core::ffi::c_void,
             __n: usize,
         ) -> i32;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdlib_h {
@@ -150,7 +141,7 @@ pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
-    xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::darray_size_t;
 pub use self::enums_h::{
@@ -204,8 +195,9 @@ pub use self::stdint_h::INT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::calloc;
-use self::string_h::{memcmp, strlen};
+use self::string_h::{memcmp};
 pub use self::types_h::{__int16_t, __int32_t, __int8_t, __uint16_t, __uint32_t, __uint8_t};
+use crate::xkb::utils::{cstr_len};
 pub use self::xkbcommon_h::{
     xkb_context_ref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
     xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -243,7 +235,7 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
             (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
                 (*keymap).ctx,
                 builtin_mods[i as usize],
-                strlen(builtin_mods[i as usize]),
+                cstr_len(builtin_mods[i as usize]),
             );
             (*keymap).mods.mods[i as usize].type_0 = MOD_REAL;
             (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as xkb_mod_mask_t;
@@ -265,7 +257,7 @@ pub unsafe fn xkb_keymap_new(
         static mut XKB_KEYMAP_COMPILE_FLAGS: xkb_keymap_compile_flags =
             XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as xkb_keymap_compile_flags;
         if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,

@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 use c2rust_bitfields;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
@@ -113,16 +114,6 @@ pub mod context_h {
     pub use crate::xkb::shared_types::{
         xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
@@ -489,7 +480,7 @@ pub mod scanner_utils_h {
                     == '\0' as i32
             {
                 let mut loc: scanner_loc = scanner_token_location(scanner);
-                xkb_log(
+                xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -503,7 +494,7 @@ pub mod scanner_utils_h {
             }
             if !is_ascii(*(*scanner).s.offset(0 as ::core::ffi::c_int as isize)) {
                 let mut loc_0: scanner_loc = scanner_token_location(scanner);
-                xkb_log(
+                xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -520,13 +511,14 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::{xkb_context, xkb_log};
+    use super::context_h::xkb_context;
     use super::darray_h::darray_size_t;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::stdbool_h::{false_0, true_0};
     use super::string_h::{memchr, memcmp};
     use super::utils_h::is_ascii;
     use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
+    use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -571,19 +563,11 @@ pub mod string_h {
             __c: ::core::ffi::c_int,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strncmp(__s1: *const i8, __s2: *const i8, __n: usize) -> ::core::ffi::c_int;
         pub fn strchr(__s: *const i8, __c: ::core::ffi::c_int) -> *mut i8;
-        pub fn strlen(__s: *const i8) -> usize;
         pub fn strerror(__errnum: ::core::ffi::c_int) -> *mut i8;
     }
 }
 pub mod utils_h {
-    #[inline]
-    pub unsafe fn strlen_safe(mut s: *const i8) -> usize {
-        unsafe {
-            return if !s.is_null() { strlen(s) } else { 0 as usize };
-        }
-    }
     #[inline]
     pub unsafe fn isempty(mut s: *const i8) -> bool {
         unsafe {
@@ -631,7 +615,7 @@ pub mod utils_h {
     }
 
     use super::stdio_h::vsnprintf;
-    use super::string_h::strlen;
+    use crate::xkb::utils::cstr_len;
 
     // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
@@ -747,7 +731,7 @@ pub use self::ast_h::{
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
 };
 pub use self::context_h::{
-    xkb_context, xkb_context_sanitize_rule_names, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
 pub use self::include_h::{
@@ -816,10 +800,10 @@ pub use self::stdint_h::SIZE_MAX;
 pub use self::stdint_uintn_h::{u32, uint8_t};
 pub use self::stdio_h::{fclose, fopen, snprintf, ssize_t, va_list, vsnprintf};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{memcpy, memmove, memset, strchr, strlen, strncmp};
+use self::string_h::{memcpy, memmove, memset, strchr};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __ssize_t, __uint32_t, __uint64_t, __uint8_t};
-pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe, strlen_safe};
+pub use self::utils_h::{is_ascii, is_graph, is_space, isempty, snprintf_safe};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_errors_h::{
@@ -834,6 +818,7 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct matcher {
@@ -1042,7 +1027,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             scanner_chr(s, '\r' as i32 as i8);
             if !scanner_eol(s) {
                 let mut loc: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1100,7 +1085,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             }
             if (*val).string.len == 0 as usize {
                 let mut loc_0: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1132,7 +1117,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             return TOK_IDENTIFIER;
         }
         let mut loc_1: scanner_loc = scanner_token_location(s);
-        xkb_log(
+        xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1249,7 +1234,7 @@ unsafe fn split_comma_separated_mlvo(
                     if layout == 0 as xkb_layout_index_t
                         || layout > XKB_MAX_GROUPS as xkb_layout_index_t
                     {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1261,7 +1246,7 @@ unsafe fn split_comma_separated_mlvo(
                             val_0.sval.start,
                         );
                     } else if mlvo as u32 != MLVO_OPTION as ::core::ffi::c_int as u32 {
-                        xkb_log(
+                        xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1284,7 +1269,7 @@ unsafe fn split_comma_separated_mlvo(
                     s = s.offset(1);
                 }
                 if count <= 0 as ::core::ffi::c_int || layout_index_end != s {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1369,7 +1354,7 @@ unsafe fn matcher_new_from_rmlvo(
         } else {
             (*m).rmlvo.model.sval.start = (*rmlvo).model;
         }
-        (*m).rmlvo.model.sval.len = strlen_safe((*rmlvo).model);
+        (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
         (*m).rmlvo
             .model
             .set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t);
@@ -1380,7 +1365,7 @@ unsafe fn matcher_new_from_rmlvo(
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_VARIANT, names.variant);
             if (*m).rmlvo.layouts.size > (*m).rmlvo.variants.size {
                 if !isempty(names.variant) {
-                    xkb_log(
+                    xkb_logf!(
                         (*m).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1423,7 +1408,7 @@ unsafe fn matcher_new_from_rmlvo(
                     );
                 }
             } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
-                xkb_log(
+                xkb_logf!(
                     (*m).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1482,7 +1467,7 @@ unsafe fn matcher_new_from_rmlvo(
                             matched_layout: [0; 4],
                             c2rust_padding: [0; 4],
                             sval: sval {
-                                len: strlen_safe((*layout).layout),
+                                len: cstr_len_safe((*layout).layout),
                                 start: (*layout).layout,
                             },
                         };
@@ -1514,7 +1499,7 @@ unsafe fn matcher_new_from_rmlvo(
                                 as isize,
                         ) = val;
                     val.sval.start = (*layout).variant;
-                    val.sval.len = strlen_safe((*layout).variant);
+                    val.sval.len = cstr_len_safe((*layout).variant);
                     (*m).rmlvo.variants.size =
                         (*m).rmlvo.variants.size.wrapping_add(1 as darray_size_t);
                     let mut __need_2: darray_size_t = (*m).rmlvo.variants.size;
@@ -1558,7 +1543,7 @@ unsafe fn matcher_new_from_rmlvo(
                             matched_layout: [0; 4],
                             c2rust_padding: [0; 4],
                             sval: sval {
-                                len: strlen_safe((*option).option),
+                                len: cstr_len_safe((*option).option),
                                 start: (*option).option,
                             },
                         };
@@ -1614,7 +1599,7 @@ unsafe fn matcher_new_from_names(
         }
         (*m).ctx = ctx;
         (*m).rmlvo.model.sval.start = (*rmlvo).model;
-        (*m).rmlvo.model.sval.len = strlen_safe((*rmlvo).model);
+        (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
         (*m).rmlvo
             .model
             .set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t);
@@ -1623,7 +1608,7 @@ unsafe fn matcher_new_from_names(
         (*m).rmlvo.options = split_comma_separated_mlvo(ctx, MLVO_OPTION, (*rmlvo).options);
         if (*m).rmlvo.layouts.size > (*m).rmlvo.variants.size {
             if !isempty((*rmlvo).variant) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1667,7 +1652,7 @@ unsafe fn matcher_new_from_names(
                 );
             }
         } else if (*m).rmlvo.layouts.size < (*m).rmlvo.variants.size {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1873,7 +1858,7 @@ unsafe fn matcher_include(
     unsafe {
         if include_depth >= MAX_INCLUDE_DEPTH as u32 {
             let mut loc: scanner_loc = scanner_token_location(parent_scanner);
-            xkb_log(
+            xkb_logf!(
                 (*parent_scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6015,7 +6000,7 @@ unsafe fn matcher_include(
                     buf[stmt_file_len as usize] = '\0' as i32 as i8;
                     stmt_file = &raw mut buf as *mut i8;
                 } else {
-                    xkb_log(
+                    xkb_logf!(
                         (*m).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6059,7 +6044,7 @@ unsafe fn matcher_include(
             if ret {
                 return;
             }
-            xkb_log(
+            xkb_logf!(
                 (*m).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6082,7 +6067,7 @@ unsafe fn matcher_include(
                 true_0 != 0,
             );
         }
-        xkb_log(
+        xkb_logf!(
             (*m).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6205,7 +6190,7 @@ unsafe fn extract_mapping_layout_index(
             < (::core::mem::size_of::<[C2Rust_Unnamed_7; 4]>() as usize)
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_7>() as usize)
         {
-            if strncmp(
+            if cstr_ncmp(
                 s.offset(1 as ::core::ffi::c_int as isize) as *const i8,
                 names[k as usize].name,
                 names[k as usize].length as usize,
@@ -6243,7 +6228,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         }
         if mlvo as u32 >= _MLVO_NUM_ENTRIES as ::core::ffi::c_int as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6261,7 +6246,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         }
         if is_mlvo_mask_defined(m, mlvo) {
             let mut loc_0: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6286,7 +6271,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             );
             if ident.len.wrapping_sub(mlvo_sval.len) as ::core::ffi::c_int != consumed {
                 let mut loc_1: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6308,7 +6293,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = idx;
             } else {
                 let mut loc_2: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6339,7 +6324,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 != (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
         {
             let mut loc_3: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6450,7 +6435,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
         }
         if kccgst as u32 >= _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6468,7 +6453,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
         }
         if (*m).mapping.defined_kccgst_mask as u32 & (1 as u32) << kccgst as u32 != 0 {
             let mut loc_0: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6496,7 +6481,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6509,7 +6494,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
             );
         } else if (*m).mapping.num_kccgst as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             let mut loc_0: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6670,7 +6655,7 @@ unsafe fn matcher_rule_set_mlvo_common(
             >= (*m).mapping.num_mlvo as ::core::ffi::c_int
         {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6718,7 +6703,7 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
             >= (*m).mapping.num_kccgst as ::core::ffi::c_int
         {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6841,7 +6826,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         {
             if layout_idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                 let mut loc: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -6942,7 +6927,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7207,7 +7192,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7472,7 +7457,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7721,7 +7706,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             }
         }
         let mut loc_1: scanner_loc = scanner_token_location(s);
-        xkb_log(
+        xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7762,7 +7747,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
         {
             if has_layout_idx_range {
                 let mut loc: scanner_loc = scanner_token_location(s);
-                xkb_log(
+                xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -8226,7 +8211,7 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
                 != (*m).mapping.num_kccgst as ::core::ffi::c_int
         {
             let mut loc: scanner_loc = scanner_token_location(s);
-            xkb_log(
+            xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8745,7 +8730,7 @@ unsafe fn matcher_match(
                     11 => {}
                     _ => {
                         let mut loc: scanner_loc = scanner_token_location(s);
-                        xkb_log(
+                        xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8792,7 +8777,7 @@ unsafe fn read_rules_file(
 
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8807,7 +8792,7 @@ unsafe fn read_rules_file(
             Err(e) => {
                 let err_msg = std::ffi::CString::new(e.to_string())
                     .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8830,7 +8815,7 @@ unsafe fn read_rules_file(
         );
         if !scanner_check_supported_char_encoding(&raw mut scanner) {
             let mut loc: scanner_loc = scanner_token_location(&raw mut scanner);
-            xkb_log(
+            xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8842,7 +8827,7 @@ unsafe fn read_rules_file(
                 loc.column,
             );
             let mut loc_0: scanner_loc = scanner_token_location(&raw mut scanner);
-            xkb_log(
+            xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8887,7 +8872,7 @@ unsafe fn xkb_resolve_partial_rules(
         ) as ::core::ffi::c_int as i64
             != 0
         {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8900,7 +8885,7 @@ unsafe fn xkb_resolve_partial_rules(
         }
         let mut offset: u32 = 0 as u32;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let len: usize = strlen(&raw mut partial_rules as *mut i8) as usize;
+        let len: usize = cstr_len(&raw mut partial_rules as *mut i8) as usize;
         loop {
             file = FindFileInXkbPath(
                 ctx,
@@ -8919,7 +8904,7 @@ unsafe fn xkb_resolve_partial_rules(
             let ok: bool = read_rules_file(ctx, matcher, 0 as u32, file, path) as bool;
             fclose(file);
             if !ok {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8950,7 +8935,7 @@ unsafe fn xkb_resolve_rules(
             ctx,
             b"(unknown)\0".as_ptr() as *const i8,
             rules,
-            strlen(rules),
+            cstr_len(rules),
             FILE_TYPE_RULES,
             &raw mut path as *mut i8,
             ::core::mem::size_of::<[i8; 4096]>() as usize,
@@ -8958,7 +8943,7 @@ unsafe fn xkb_resolve_rules(
             true_0 != 0,
         ) as *mut FILE;
         if file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -8978,7 +8963,7 @@ unsafe fn xkb_resolve_rules(
             if ret {
                 ret = read_rules_file(ctx, matcher, 0 as u32, file, &raw mut path as *mut i8);
                 if !ret {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -9006,7 +8991,7 @@ unsafe fn xkb_resolve_rules(
                             || (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].size
                                 == 0 as darray_size_t
                         {
-                            xkb_log(
+                            xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -9093,7 +9078,7 @@ unsafe fn xkb_resolve_rules(
                                 .alloc = 0 as darray_size_t;
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched() && (*mval).sval.len > 0 as usize {
-                                xkb_log(
+                                xkb_logf!(
                                     (*matcher).ctx,
                                     XKB_LOG_LEVEL_ERROR,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -9120,7 +9105,7 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched() && (*mval).sval.len > 0 as usize {
-                                        xkb_log(
+                                        xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -9150,7 +9135,7 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched() && (*mval).sval.len > 0 as usize {
-                                        xkb_log(
+                                        xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -9180,7 +9165,7 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched() && (*mval).sval.len > 0 as usize {
-                                        xkb_log(
+                                        xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
                                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
@@ -9,15 +10,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -91,7 +83,7 @@ pub use self::ast_h::{
     STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_atom_text, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 use self::expr_h::ExprResolveModMask;
 pub use self::internal::{__va_list_tag, __CHAR_BIT__};
@@ -165,7 +157,7 @@ pub unsafe fn MergeModSets(
                     } else {
                         (*mod_0).mapping
                     };
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -193,7 +185,7 @@ pub unsafe fn HandleVModDef(
         let mut mapping: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         if !(*stmt).value.is_null() {
             if !ExprResolveModMask(ctx, (*stmt).value, MOD_REAL, mods, &raw mut mapping) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -210,7 +202,7 @@ pub unsafe fn HandleVModDef(
         while vmod < (*mods).num_mods {
             if (*mod_0).name == (*stmt).name {
                 if (*mod_0).type_0 as u32 != MOD_VIRT as ::core::ffi::c_int as u32 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -238,7 +230,7 @@ pub unsafe fn HandleVModDef(
                     } else {
                         mapping
                     };
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -257,7 +249,7 @@ pub unsafe fn HandleVModDef(
             mod_0 = mod_0.offset(1);
         }
         if (*mods).num_mods >= XKB_MAX_MODS {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

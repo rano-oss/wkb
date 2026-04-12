@@ -146,9 +146,7 @@ pub mod rmlvo_h {
 }
 pub mod string_h {
 
-    extern "C" {
-        pub fn strlen(__s: *const i8) -> usize;
-    }
+    
 }
 pub mod config_h {
     pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
@@ -246,12 +244,39 @@ pub use self::rmlvo_h::{
 pub use self::stdbool_h::{false_0, true_0};
 pub use self::stdio_h::va_list;
 use self::stdlib_h::{getenv, secure_getenv};
-use self::string_h::strlen;
 pub use self::utils_h::isempty;
+use crate::xkb::utils::{cstr_len};
+
+extern "C" {
+    pub fn snprintf(__s: *mut i8, __maxlen: usize, __format: *const i8, ...) -> i32;
+}
+
 pub use self::xkbcommon_h::{
     xkb_context_include_path_append_default, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL,
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
+
+/// Macro that formats a C-style format string into a stack buffer, then calls `xkb_log`.
+/// This replaces the old variadic `xkb_log` function.
+/// Usage: `xkb_logf!(ctx, level, verbosity, fmt, args...)`
+#[macro_export]
+macro_rules! xkb_logf {
+    ($ctx:expr, $level:expr, $verb:expr, $fmt:expr $(,)?) => {{
+        // No extra args — pass fmt directly
+        crate::xkb::context_priv::xkb_log($ctx, $level, $verb, $fmt)
+    }};
+    ($ctx:expr, $level:expr, $verb:expr, $fmt:expr, $($arg:expr),+ $(,)?) => {{
+        let mut _xkb_log_buf: [i8; 2048] = [0i8; 2048];
+        crate::xkb::context_priv::snprintf(
+            _xkb_log_buf.as_mut_ptr(),
+            2048,
+            $fmt,
+            $($arg),+
+        );
+        crate::xkb::context_priv::xkb_log($ctx, $level, $verb, _xkb_log_buf.as_ptr())
+    }};
+}
+
 pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv() {
@@ -266,7 +291,7 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
         if (*ctx).pending_default_includes() {
             if (*ctx).failed_includes.size == 0 as darray_size_t {
                 if xkb_context_include_path_append_default(ctx) == 0 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -313,7 +338,7 @@ pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
 }
 pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, strlen(string), false_0 != 0);
+        return atom_intern((*ctx).atom_table, string, cstr_len(string), false_0 != 0);
     }
 }
 pub unsafe fn xkb_atom_intern(
@@ -330,21 +355,17 @@ pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> 
         return atom_text((*ctx).atom_table, atom);
     }
 }
-#[no_mangle]
-pub unsafe extern "C" fn xkb_log(
+pub unsafe fn xkb_log(
     mut ctx: *mut xkb_context,
     mut level: xkb_log_level,
     mut verbosity: i32,
-    mut fmt: *const i8,
-    mut c2rust_args: ...
+    mut msg: *const i8,
 ) {
     unsafe {
-        let mut args: ::core::ffi::VaList;
         if ((*ctx).log_level as u32) < level as u32 || (*ctx).log_verbosity < verbosity {
             return;
         }
-        args = c2rust_args.clone();
-        (*ctx).log_fn.expect("non-null function pointer")(ctx, level, fmt, args);
+        (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
     }
 }
 pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
@@ -450,7 +471,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
             modified = (modified as u32 | RMLVO_LAYOUT as i32 as u32) as RMLVO;
             let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
             if !isempty((*rmlvo).variant) {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,

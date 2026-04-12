@@ -397,6 +397,62 @@ pub fn str_case_neq(a: &str, b: &str, n: usize) -> bool {
     str_case_ncmp(a, b, n) == 0
 }
 
+// --- libc replacement helpers ---
+
+/// Safe replacement for libc `strlen`. Returns the length of a C string.
+/// # Safety: `s` must point to a valid null-terminated C string.
+#[inline]
+pub unsafe fn cstr_len(s: *const i8) -> usize {
+    unsafe { std::ffi::CStr::from_ptr(s).to_bytes().len() }
+}
+
+/// Null-safe version of `cstr_len`. Returns 0 if `s` is null.
+/// # Safety: if non-null, `s` must point to a valid null-terminated C string.
+#[inline]
+pub unsafe fn cstr_len_safe(s: *const i8) -> usize {
+    unsafe {
+        if s.is_null() {
+            0
+        } else {
+            std::ffi::CStr::from_ptr(s).to_bytes().len()
+        }
+    }
+}
+
+/// Safe replacement for libc `strcmp`. Returns <0, 0, or >0.
+/// # Safety: both pointers must point to valid null-terminated C strings.
+#[inline]
+pub unsafe fn cstr_cmp(s1: *const i8, s2: *const i8) -> i32 {
+    unsafe {
+        let a = std::ffi::CStr::from_ptr(s1);
+        let b = std::ffi::CStr::from_ptr(s2);
+        a.cmp(&b) as i32
+    }
+}
+
+/// Safe replacement for libc `strncmp`. Compares at most `n` bytes.
+/// # Safety: both pointers must point to valid C strings (or at least `n` readable bytes).
+#[inline]
+pub unsafe fn cstr_ncmp(s1: *const i8, s2: *const i8, n: usize) -> i32 {
+    unsafe {
+        let a = std::slice::from_raw_parts(s1 as *const u8, n);
+        let b = std::slice::from_raw_parts(s2 as *const u8, n);
+        // Compare byte-by-byte, stopping at null like C strncmp
+        for i in 0..n {
+            if a[i] == 0 && b[i] == 0 {
+                return 0;
+            }
+            if a[i] != b[i] {
+                return a[i] as i32 - b[i] as i32;
+            }
+            if a[i] == 0 || b[i] == 0 {
+                return a[i] as i32 - b[i] as i32;
+            }
+        }
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

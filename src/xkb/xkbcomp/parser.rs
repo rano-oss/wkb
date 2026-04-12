@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -8,16 +9,6 @@ pub mod context_h {
         atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
         C2Rust_Unnamed_0,
     };
-
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -340,8 +331,6 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strcmp(__s1: *const i8, __s2: *const i8) -> ::core::ffi::c_int;
-        pub fn strlen(__s: *const i8) -> usize;
         pub fn stpcpy(__dest: *mut i8, __src: *const i8) -> *mut i8;
     }
 }
@@ -349,7 +338,7 @@ pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
-            return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
+            return cstr_cmp(s1, s2) == 0 as ::core::ffi::c_int;
         }
     }
     #[inline]
@@ -363,7 +352,7 @@ pub mod utils_h {
     }
 
     use super::stdbool_h::false_0;
-    use super::string_h::strcmp;
+    use crate::xkb::utils::cstr_cmp;
     pub use crate::xkb::utils::istrncmp;
 }
 pub mod keysym_h {
@@ -476,9 +465,7 @@ pub use self::ast_h::{
     STMT_VAR, STMT_VMOD,
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{
-    xkb_atom_intern, xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
+pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::darray_size_t;
 pub use self::internal::__va_list_tag;
 pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
@@ -541,7 +528,7 @@ use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdlib_h::{free, malloc};
-use self::string_h::{memcpy, stpcpy, strlen};
+use self::string_h::{memcpy, stpcpy};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -552,6 +539,7 @@ pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };
 pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
+use crate::xkb::utils::{cstr_cmp, cstr_len};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct parser_param {
@@ -747,7 +735,7 @@ pub type C2Rust_Unnamed_10 = ::core::ffi::c_int;
 unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
     unsafe {
         let mut loc: scanner_loc = scanner_token_location((*param).scanner);
-        xkb_log(
+        xkb_logf!(
             (*(*param).scanner).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -828,7 +816,7 @@ unsafe fn resolve_keysym(
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
                     if ref_name.is_null() {
                         let mut loc: scanner_loc = scanner_token_location((*param).scanner);
-                        xkb_log(
+                        xkb_logf!(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -842,7 +830,7 @@ unsafe fn resolve_keysym(
                         );
                     } else {
                         let mut loc_0: scanner_loc = scanner_token_location((*param).scanner);
-                        xkb_log(
+                        xkb_logf!(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -4135,7 +4123,7 @@ pub unsafe fn parse(
             return ::core::ptr::null_mut::<XkbFile>();
         }
         if !first.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
@@ -5127,11 +5115,11 @@ unsafe fn yysyntax_error(
                 yyformat = b"syntax error\0".as_ptr() as *const i8;
             }
         }
-        yysize = strlen(yyformat) as i64 - (2 as ::core::ffi::c_int * yycount) as i64 + 1 as i64;
+        yysize = cstr_len(yyformat) as i64 - (2 as ::core::ffi::c_int * yycount) as i64 + 1 as i64;
         let mut yyi: ::core::ffi::c_int = 0;
         yyi = 0 as ::core::ffi::c_int;
         while yyi < yycount {
-            let mut yysize1: i64 = yysize + strlen(yysymbol_name(yyarg[yyi as usize])) as i64;
+            let mut yysize1: i64 = yysize + cstr_len(yysymbol_name(yyarg[yyi as usize])) as i64;
             if yysize <= yysize1
                 && yysize1
                     <= (if (9223372036854775807 as i64 as u64) < -1 as ::core::ffi::c_int as u64 {
@@ -6634,7 +6622,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         }
                         147 => {
                             let mut loc: scanner_loc = scanner_token_location((*param).scanner);
-                            xkb_log(
+                            xkb_logf!(
                                 (*(*param).scanner).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7066,7 +7054,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             ) {
                                 let mut loc_0: scanner_loc =
                                     scanner_token_location((*param).scanner);
-                                xkb_log(
+                                xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7101,7 +7089,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             {
                                 let mut loc_1: scanner_loc =
                                     scanner_token_location((*param).scanner);
-                                xkb_log(
+                                xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7136,7 +7124,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                             if ref_name.is_null() {
                                                 let mut loc_2: scanner_loc =
                                                     scanner_token_location((*param).scanner);
-                                                xkb_log(
+                                                xkb_logf!(
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7151,7 +7139,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                             } else {
                                                 let mut loc_3: scanner_loc =
                                                     scanner_token_location((*param).scanner);
-                                                xkb_log(
+                                                xkb_logf!(
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
                                                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7170,7 +7158,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 } else {
                                     let mut loc_4: scanner_loc =
                                         scanner_token_location((*param).scanner);
-                                    xkb_log(
+                                    xkb_logf!(
                                         (*(*param).scanner).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -7187,7 +7175,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                 }
                                 let mut loc_5: scanner_loc =
                                     scanner_token_location((*param).scanner);
-                                xkb_log(
+                                xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_COMPREHENSIVE as ::core::ffi::c_int,
@@ -7264,7 +7252,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str,
-                                strlen((*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str),
+                                cstr_len((*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str),
                             );
                             free(
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).str

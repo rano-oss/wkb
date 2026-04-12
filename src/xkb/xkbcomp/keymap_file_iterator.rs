@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -67,15 +68,6 @@ pub mod FILE_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: ::core::ffi::c_int,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::*;
@@ -311,7 +303,6 @@ pub mod string_h {
             __src: *const ::core::ffi::c_void,
             __n: usize,
         ) -> *mut ::core::ffi::c_void;
-        pub fn strlen(__s: *const i8) -> usize;
     }
 }
 pub mod stdio_h {
@@ -475,7 +466,7 @@ pub use self::ast_h::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_char, darray_next_alloc, darray_size_t};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::internal::__va_list_tag;
@@ -532,7 +523,7 @@ pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::stdbool_h::{false_0, true_0};
 use self::stdio_h::{fclose, fopen};
 use self::stdlib_h::{calloc, free, realloc};
-use self::string_h::{memcpy, strlen};
+use self::string_h::{memcpy};
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{__off64_t, __off_t, __uint64_t};
 pub use self::utils_h::strcpy_safe;
@@ -545,6 +536,7 @@ pub use self::xkbcommon_h::{
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use self::FILE_h::FILE;
+use crate::xkb::utils::{cstr_len};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -657,7 +649,7 @@ pub unsafe fn xkb_resolve_file(
         let mut offset: u32 = 0 as u32;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
         let mut candidate: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let path_len: usize = strlen(path) as usize;
+        let path_len: usize = cstr_len(path) as usize;
         let absolute_path: bool = is_absolute_path(path) as bool;
         if absolute_path {
             file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
@@ -684,7 +676,7 @@ pub unsafe fn xkb_resolve_file(
                 if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as u32
                     && (*xkb_file).file_type as u32 != file_type as u32
                 {
-                    xkb_log(
+                    xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -785,7 +777,7 @@ pub unsafe fn xkb_resolve_file(
             }
             _ => {}
         }
-        xkb_log(
+        xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -867,7 +859,7 @@ unsafe fn xkb_file_section_set_meta_data(
         if !(*xkb_file).name.is_null() {
             let mut idx: darray_size_t = (*section).buffer.size;
             let mut __count: darray_size_t =
-                strlen((*xkb_file).name).wrapping_add(1 as usize) as darray_size_t;
+                cstr_len((*xkb_file).name).wrapping_add(1 as usize) as darray_size_t;
             let mut __oldSize: darray_size_t = (*section).buffer.size;
             (*section).buffer.size = __oldSize.wrapping_add(__count);
             let mut __need: darray_size_t = (*section).buffer.size;
@@ -924,7 +916,7 @@ unsafe fn xkb_file_section_append_includes(
             {
                 let path: darray_size_t = (*section).buffer.size;
                 let mut __count: darray_size_t =
-                    strlen(&raw mut buf as *mut i8).wrapping_add(1 as usize) as darray_size_t;
+                    cstr_len(&raw mut buf as *mut i8).wrapping_add(1 as usize) as darray_size_t;
                 let mut __oldSize: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize.wrapping_add(__count);
                 let mut __need: darray_size_t = (*section).buffer.size;
@@ -947,7 +939,7 @@ unsafe fn xkb_file_section_append_includes(
                 );
                 let file: darray_size_t = (*section).buffer.size;
                 let mut __count_0: darray_size_t =
-                    strlen((*stmt).file).wrapping_add(1 as usize) as darray_size_t;
+                    cstr_len((*stmt).file).wrapping_add(1 as usize) as darray_size_t;
                 let mut __oldSize_0: darray_size_t = (*section).buffer.size;
                 (*section).buffer.size = __oldSize_0.wrapping_add(__count_0);
                 let mut __need_0: darray_size_t = (*section).buffer.size;
@@ -976,7 +968,7 @@ unsafe fn xkb_file_section_append_includes(
                     0 as darray_size_t
                 };
                 if section_name != 0 {
-                    let mut __count_1: darray_size_t = strlen(if !(*stmt).map.is_null() {
+                    let mut __count_1: darray_size_t = cstr_len(if !(*stmt).map.is_null() {
                         (*stmt).map
                     } else {
                         (*xkb_file).name
@@ -1016,7 +1008,7 @@ unsafe fn xkb_file_section_append_includes(
                 };
                 if modifier != 0 {
                     let mut __count_2: darray_size_t =
-                        strlen((*stmt).modifier).wrapping_add(1 as usize) as darray_size_t;
+                        cstr_len((*stmt).modifier).wrapping_add(1 as usize) as darray_size_t;
                     let mut __oldSize_2: darray_size_t = (*section).buffer.size;
                     (*section).buffer.size = __oldSize_2.wrapping_add(__count_2);
                     let mut __need_2: darray_size_t = (*section).buffer.size;
@@ -1120,7 +1112,7 @@ unsafe fn xkb_file_section_append_includes(
             } else {
                 let name: *const i8 =
                     xkb_file_section_get_string(section, (*section).name) as *const i8;
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1194,7 +1186,7 @@ pub unsafe fn xkb_file_section_parse(
         }
         let mut file: *mut FILE = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         if file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1206,7 +1198,7 @@ pub unsafe fn xkb_file_section_parse(
         let mut xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map);
         fclose(file);
         if xkb_file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1251,7 +1243,7 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
             ::core::mem::size_of::<xkb_file_iterator>() as usize,
         ) as *mut xkb_file_iterator;
         if iter.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1326,7 +1318,7 @@ pub unsafe fn xkb_file_iterator_next(
                         (*iter).map,
                         &raw mut xkb_file,
                     ) {
-                        xkb_log(
+                        xkb_logf!(
                             (*iter).ctx,
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
@@ -1360,7 +1352,7 @@ pub unsafe fn xkb_file_iterator_next(
                 if !(*iter).pending_xkb_file.is_null() {
                     (*iter).pending_section = (*xkb_file).common.next as *mut XkbFile;
                 } else {
-                    xkb_log(
+                    xkb_logf!(
                         (*iter).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,

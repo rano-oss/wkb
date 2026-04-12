@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
@@ -113,15 +114,6 @@ pub mod context_h {
         atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
         C2Rust_Unnamed, C2Rust_Unnamed_0,
     };
-    extern "C" {
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
@@ -543,14 +535,6 @@ pub mod enums_h {
     #[c2rust::src_loc = "77:5"]
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: xkb_enumerations_values = 0;
 }
-#[c2rust::header_src = "/usr/include/string.h:20"]
-pub mod string_h {
-
-    extern "C" {
-        #[c2rust::src_loc = "407:1"]
-        pub fn strlen(__s: *const i8) -> usize;
-    }
-}
 #[c2rust::header_src = "/usr/include/stdlib.h:20"]
 pub mod stdlib_h {
 
@@ -583,8 +567,8 @@ pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{
-    xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, xkb_log,
-    C2Rust_Unnamed, C2Rust_Unnamed_0,
+    xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
+    C2Rust_Unnamed_0,
 };
 pub use self::darray_h::darray_size_t;
 pub use self::enums_h::{
@@ -681,7 +665,6 @@ pub use self::stdint_h::INT32_MAX;
 pub use self::stdint_intn_h::{i16, i32, i8};
 pub use self::stdint_uintn_h::{u32, uint16_t, uint8_t};
 use self::stdlib_h::{calloc, free};
-use self::string_h::strlen;
 pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::types_h::{
     __int16_t, __int32_t, __int8_t, __off64_t, __off_t, __uint16_t, __uint32_t, __uint64_t,
@@ -707,6 +690,7 @@ pub use self::xkbcommon_h::{
 };
 pub use self::FILE_h::FILE;
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
+use crate::xkb::utils::cstr_len;
 #[derive(Copy, Clone)]
 #[repr(C)]
 #[c2rust::src_loc = "591:1"]
@@ -854,7 +838,7 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_rmlvo.is_none() {
-            xkb_log(
+            xkb_logf!(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -893,7 +877,7 @@ pub unsafe fn xkb_keymap_new_from_names2(
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_names.is_none() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -951,7 +935,7 @@ pub unsafe fn xkb_keymap_new_from_string(
     mut flags: xkb_keymap_compile_flags,
 ) -> *mut xkb_keymap {
     unsafe {
-        return xkb_keymap_new_from_buffer(ctx, string, strlen(string), format, flags);
+        return xkb_keymap_new_from_buffer(ctx, string, cstr_len(string), format, flags);
     }
 }
 #[c2rust::src_loc = "188:1"]
@@ -965,7 +949,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_string.is_none() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -976,7 +960,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         if buffer.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1019,7 +1003,7 @@ pub unsafe fn xkb_keymap_new_from_file(
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1030,7 +1014,7 @@ pub unsafe fn xkb_keymap_new_from_file(
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
         if file.is_null() {
-            xkb_log(
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1068,7 +1052,7 @@ pub unsafe fn xkb_keymap_get_as_string2(
         static mut XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
             XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
         if flags as u32 & !(XKB_KEYMAP_SERIALIZE_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1084,7 +1068,7 @@ pub unsafe fn xkb_keymap_get_as_string2(
         let ops: *const xkb_keymap_format_ops =
             get_keymap_format_ops(format) as *const xkb_keymap_format_ops;
         if ops.is_null() || (*ops).keymap_get_as_string.is_none() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1428,7 +1412,7 @@ pub unsafe fn xkb_keymap_key_iterator_new(
                 | XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as i32)
                 as xkb_keymap_key_iterator_flags;
         if flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -1442,7 +1426,7 @@ pub unsafe fn xkb_keymap_key_iterator_new(
             ::core::mem::size_of::<xkb_keymap_key_iterator>() as usize,
         ) as *mut xkb_keymap_key_iterator;
         if iter.is_null() {
-            xkb_log(
+            xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,

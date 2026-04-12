@@ -1,3 +1,4 @@
+use crate::xkb_logf;
 use c2rust_bitfields;
 
 pub mod internal {
@@ -116,16 +117,6 @@ pub mod xkbcommon_errors_h {
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 
-    extern "C" {
-
-        pub fn xkb_log(
-            ctx: *mut xkb_context,
-            level: xkb_log_level,
-            verbosity: i32,
-            fmt: *const i8,
-            ...
-        );
-    }
 }
 
 pub mod atom_h {
@@ -757,7 +748,7 @@ pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 pub use self::__stddef_null_h::NULL;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_context, xkb_log, C2Rust_Unnamed, C2Rust_Unnamed_0};
+pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
 pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
@@ -3112,7 +3103,7 @@ unsafe fn state_update_layout_policy(
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_group.redirect_group = (*update).redirect;
                 } else {
-                    xkb_log(
+                    xkb_logf!(
                         (*(*state).keymap).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -3128,7 +3119,7 @@ unsafe fn state_update_layout_policy(
             (*state).controls.out_of_range_group.policy = (*update).policy;
             return XKB_SUCCESS;
         } else {
-            xkb_log(
+            xkb_logf!(
                 (*(*state).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -3145,7 +3136,7 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
     unsafe {
         match error as i32 {
             450 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -3156,7 +3147,7 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
                 );
             }
             914 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -3167,7 +3158,7 @@ unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut erro
                 );
             }
             876 => {
-                xkb_log(
+                xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -3946,7 +3937,7 @@ pub unsafe fn xkb_state_key_get_consumed_mods2(
         match mode as u32 {
             0 | 1 => {}
             _ => {
-                xkb_log(
+                xkb_logf!(
                     (*(*state).keymap).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -4052,7 +4043,7 @@ pub unsafe fn xkb_machine_options_update_a11y_flags(
             | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32)
             as xkb_a11y_flags;
         if affect as u32 & !(XKB_A11Y_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 (*options).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -5074,7 +5065,7 @@ pub unsafe fn xkb_events_new_batch(
     unsafe {
         static mut XKB_EVENTS_FLAGS: xkb_events_flags = XKB_EVENTS_NO_FLAGS;
         if flags as u32 & !(XKB_EVENTS_FLAGS as u32) != 0 {
-            xkb_log(
+            xkb_logf!(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
@@ -5087,7 +5078,7 @@ pub unsafe fn xkb_events_new_batch(
         let mut events: *mut xkb_events =
             calloc(1 as usize, ::core::mem::size_of::<xkb_events>() as usize) as *mut xkb_events;
         if events.is_null() {
-            xkb_log(
+            xkb_logf!(
                 context,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
