@@ -237,10 +237,8 @@ static LOWER_MAP: [u8; 256] = [
     226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
     245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 ];
-pub unsafe fn to_lower(mut c: i8) -> i8 {
-    unsafe {
-        return LOWER_MAP[c as ::core::ffi::c_uchar as usize] as i8;
-    }
+pub fn to_lower(mut c: i8) -> i8 {
+    return LOWER_MAP[c as usize] as i8;
 }
 pub unsafe fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
     unsafe {

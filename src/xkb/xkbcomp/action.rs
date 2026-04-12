@@ -247,25 +247,11 @@ pub mod stdlib_h {
         pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
     }
 }
-pub mod string_h {
-
-    
-}
-pub mod expr_h {
-    use super::ast_h::ExprDef;
-    use super::atom_h::xkb_atom_t;
-    use super::context_h::xkb_context;
-    use super::keymap_h::{mod_type, xkb_mod_set};
-    use super::stdint_intn_h::i64;
-    use super::stdint_uintn_h::u32;
-    use super::text_h::LookupEntry;
-    use super::xkbcommon_h::{xkb_layout_index_t, xkb_mod_mask_t};
-    use super::xkbcomp_priv_h::{xkb_keymap_info, xkb_parser_error};
-    pub use crate::xkb::xkbcomp::expr::{
-        ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup,
-        ExprResolveInteger, ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
-    };
-}
+pub mod string_h {}
+pub use crate::xkb::xkbcomp::expr::{
+    ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
+    ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
+};
 pub mod __stddef_null_h {
     pub const NULL: *mut ::core::ffi::c_void =
         ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
@@ -310,10 +296,6 @@ pub use self::ast_h::{
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::darray_h::{darray_next_alloc, darray_size_t};
-use self::expr_h::{
-    ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
-    ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
-};
 pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -1780,9 +1762,7 @@ unsafe fn HandleUnsupported(
     mut value: *const ExprDef,
     mut value_ptr: *mut *mut ExprDef,
 ) -> xkb_parser_error {
-    unsafe {
-        return PARSER_SUCCESS;
-    }
+    return PARSER_SUCCESS;
 }
 unsafe fn HandlePrivate(
     mut keymap_info: *const xkb_keymap_info,
@@ -1963,7 +1943,7 @@ unsafe fn HandlePrivate(
         return ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict);
     }
 }
-static mut handleAction: [actionHandler; 21] = unsafe {
+static mut handleAction: [actionHandler; 21] = {
     [
         Some(
             HandleNoAction

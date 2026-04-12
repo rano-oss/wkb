@@ -119,15 +119,13 @@ pub mod darray_h {
         mut need: darray_size_t,
         mut itemSize: usize,
     ) -> darray_size_t {
-        unsafe {
-            if alloc == 0 as darray_size_t {
-                alloc = 4 as darray_size_t;
-            }
-            while alloc < need {
-                alloc = alloc.wrapping_mul(2 as darray_size_t);
-            }
-            return alloc;
+        if alloc == 0 as darray_size_t {
+            alloc = 4 as darray_size_t;
         }
+        while alloc < need {
+            alloc = alloc.wrapping_mul(2 as darray_size_t);
+        }
+        return alloc;
     }
 }
 pub mod xkbcommon_h {
@@ -1328,17 +1326,15 @@ pub unsafe fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
 }
 
 pub unsafe fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
-    unsafe {
-        match type_0 as u32 {
-            17 => return '+' as i32 as i8,
-            18 => return '-' as i32 as i8,
-            19 => return '*' as i32 as i8,
-            20 => return '/' as i32 as i8,
-            22 => return '!' as i32 as i8,
-            23 => return '-' as i32 as i8,
-            24 => return '~' as i32 as i8,
-            25 => return '+' as i32 as i8,
-            _ => return '\0' as i32 as i8,
-        };
-    }
+    match type_0 as u32 {
+        17 => return '+' as i32 as i8,
+        18 => return '-' as i32 as i8,
+        19 => return '*' as i32 as i8,
+        20 => return '/' as i32 as i8,
+        22 => return '!' as i32 as i8,
+        23 => return '-' as i32 as i8,
+        24 => return '~' as i32 as i8,
+        25 => return '+' as i32 as i8,
+        _ => return '\0' as i32 as i8,
+    };
 }

@@ -71,7 +71,6 @@ pub mod xkbcommon_h {
         XKB_STATE_MODS_LOCKED,
     };
     pub type xkb_led_mask_t = u32;
-    use super::context_h::xkb_context;
     pub use crate::xkb::context::xkb_context_get_log_verbosity;
 }
 pub mod keymap_h {

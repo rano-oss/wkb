@@ -1,9 +1,6 @@
 //! Native Rust keysym to UTF-8/UTF-32 conversion
 //!
 //! Converted from C FFI to idiomatic Rust.
-
-use super::utf8::is_surrogate;
-
 // Re-export type alias
 pub type Keysym = u32;
 
@@ -147,7 +144,7 @@ fn codepoint_to_keysym(ucs: u32) -> Option<Keysym> {
     }
 
     // Invalid codepoints
-    if ucs == 0 || is_surrogate(ucs) || ucs > 0x10FFFF {
+    if ucs == 0 || (0xD800..=0xDFFF).contains(&ucs) || ucs > 0x10FFFF {
         return None;
     }
 

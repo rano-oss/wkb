@@ -1,7 +1,4 @@
 //! UTF-8 decoding utilities - fully rustified
-
-use crate::xkb::utf8::is_surrogate;
-
 /// Invalid UTF-8 code point marker
 pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
@@ -53,7 +50,7 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     }
 
     // Reject surrogate pairs
-    if is_surrogate(cp) {
+    if (0xD800..=0xDFFF).contains(&cp) {
         return (INVALID_UTF8_CODE_POINT, 0);
     }
 

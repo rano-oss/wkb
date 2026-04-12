@@ -48,7 +48,6 @@ pub mod scanner_utils;
 pub mod text;
 
 // Utilities
-pub mod utf8;
 pub mod utf8_decoding;
 pub mod util_list;
 pub mod utils;
