@@ -1329,7 +1329,7 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    (stmt_type_to_operator_char((*expr).common.type_0) as char),
+                    (stmt_type_to_operator_char((*expr).common.type_0) as u8 as char),
                 );
                 return 0 != 0;
             }
