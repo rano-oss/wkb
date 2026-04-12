@@ -59,65 +59,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-
-    use super::FILE_h::FILE;
-
-    extern "C" {
-        pub static mut stderr: *mut FILE;
-    }
-}
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_context_getenv, xkb_context_init_includes};
     pub use crate::xkb::shared_types::{
@@ -150,22 +91,6 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
     pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-}
-pub mod stdlib_h {
-    pub type __compar_fn_t =
-        Option<unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
-
-    extern "C" {
-        pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn qsort(
-            __base: *mut ::core::ffi::c_void,
-            __nmemb: usize,
-            __size: usize,
-            __compar: __compar_fn_t,
-        );
-    }
 }
 pub mod stat_h {
     use super::struct_stat_h::stat;
@@ -240,9 +165,6 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
 use self::stat_h::stat;
-pub use self::stdio_h::{stderr, va_list};
-pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort, strtol};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
@@ -253,7 +175,6 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
     XKB_LOG_LEVEL_WARNING,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
@@ -261,6 +182,7 @@ use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
+use libc::{calloc, free, qsort, strtol};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -416,7 +338,10 @@ pub unsafe fn xkb_context_include_path_get_versioned_extensions_path(
         };
     }
 }
-unsafe fn compare_str(mut a: *const ::core::ffi::c_void, mut b: *const ::core::ffi::c_void) -> i32 {
+unsafe extern "C" fn compare_str(
+    mut a: *const ::core::ffi::c_void,
+    mut b: *const ::core::ffi::c_void,
+) -> i32 {
     unsafe {
         return cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
@@ -548,7 +473,7 @@ unsafe fn add_direct_subdirectories(
                                 ::core::mem::size_of::<*mut i8>() as usize,
                                 Some(
                                     compare_str
-                                        as unsafe fn(
+                                        as unsafe extern "C" fn(
                                             *const ::core::ffi::c_void,
                                             *const ::core::ffi::c_void,
                                         )

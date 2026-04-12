@@ -5,55 +5,6 @@ pub mod internal {
     pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
 }
 
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -280,17 +231,8 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn atoi(__nptr: *const i8) -> ::core::ffi::c_int;
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn abort() -> !;
-    }
-}
 pub mod utils_h {
+    use libc::{calloc};
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
@@ -326,7 +268,6 @@ pub mod utils_h {
         }
     }
 
-    use super::stdlib_h::calloc;
     use crate::xkb::utils::cstr_dup;
     pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
@@ -533,8 +474,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-use self::stdlib_h::{abort, atoi, calloc, free, realloc};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
@@ -572,11 +511,11 @@ pub use self::xkbcomp_priv_h::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
 use crate::xkb::utils::cstr_len;
+use libc::{abort, atoi, calloc, free, realloc};
 use crate::xkb::utils::{
     darray_append, darray_appends, darray_free, darray_growalloc, darray_resize_zero,
 };

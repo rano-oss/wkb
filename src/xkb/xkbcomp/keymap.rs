@@ -244,15 +244,8 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
     pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
+    use libc::{calloc};
     #[inline]
     pub unsafe fn is_aligned(
         mut pointer: *const ::core::ffi::c_void,
@@ -279,7 +272,6 @@ pub mod utils_h {
         }
     }
 
-    use super::stdlib_h::calloc;
 }
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
@@ -403,7 +395,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-use self::stdlib_h::{calloc, free, realloc};
 pub use self::text_h::{
     format_control_names_offset, ActionTypeText, C2Rust_Unnamed_16, KeyNameText, KeysymText,
     LookupEntry, CONTROL_NAMES_MIN_V1_INDEX, CONTROL_NAMES_MIN_V2_INDEX, GROUP_LAST_INDEX_NAME,
@@ -446,6 +437,7 @@ pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
 pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
+use libc::{calloc, free, realloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_sym_interprets {

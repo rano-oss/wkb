@@ -67,12 +67,6 @@ pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-    }
-}
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
         unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
@@ -140,7 +134,6 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-use self::stdlib_h::calloc;
 pub use self::xkbcommon_h::{
     xkb_context_ref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
     xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
@@ -160,6 +153,7 @@ pub use self::xkbcommon_names_h::{
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
+use libc::{calloc};
 unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
     unsafe {
         static mut builtin_mods: [*const i8; 8] = [
@@ -227,39 +221,9 @@ pub unsafe fn xkb_keymap_new(
 }
 pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
     unsafe {
-        static mut legal: [::core::ffi::c_uchar; 32] = [
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0xa7 as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0x83 as i32 as ::core::ffi::c_uchar,
-            0xfe as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0x87 as i32 as ::core::ffi::c_uchar,
-            0xfe as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0x7 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0 as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0x7f as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
-            0x7f as i32 as ::core::ffi::c_uchar,
-            0xff as i32 as ::core::ffi::c_uchar,
+        static mut legal: [u8; 32] = [
+            0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0,
+            0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
         ];
         if name.is_null() {
             return;

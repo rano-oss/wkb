@@ -182,12 +182,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod stdlib_h {
-    extern "C" {
-        pub fn realloc(__ptr: *mut ::core::ffi::c_void, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -341,7 +335,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-use self::stdlib_h::{free, realloc};
 pub use self::text_h::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
@@ -379,6 +372,7 @@ pub use self::xkbcomp_priv_h::{
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::{darray_append, darray_free};
+use libc::{free, realloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CompatInfo {

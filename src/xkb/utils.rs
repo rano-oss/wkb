@@ -29,66 +29,10 @@ pub mod struct_stat_h {
     use super::struct_timespec_h::timespec;
 }
 
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
         pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
-    }
-}
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub fn fdopen(__fd: i32, __modes: *const i8) -> *mut FILE;
-        pub fn fileno(__stream: *mut FILE) -> i32;
     }
 }
 pub mod mman_h {
@@ -133,12 +77,9 @@ pub use self::fcntl_linux_h::O_RDONLY;
 pub use self::mman_h::{mmap, munmap, MAP_FAILED};
 pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::stat_h::fstat;
-use self::stdio_h::fdopen;
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 use self::unistd_h::close;
-pub use self::FILE_h::FILE;
 pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
@@ -242,6 +183,7 @@ use memmap2::Mmap;
 use std::fs::File;
 use std::io;
 use std::path::Path;
+use libc::{FILE, fdopen};
 
 /// Memory-mapped file wrapper with automatic cleanup
 pub struct MappedFile {

@@ -173,14 +173,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
@@ -280,7 +272,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
-use self::stdlib_h::{calloc, free, malloc};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
 pub use self::xkbcommon_h::{
@@ -293,6 +284,7 @@ pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{darray_append, darray_free};
+use libc::{calloc, free, malloc};
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef =

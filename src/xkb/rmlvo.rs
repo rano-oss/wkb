@@ -180,13 +180,6 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
@@ -254,7 +247,6 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
-use self::stdlib_h::{calloc, free};
 pub use self::utils_h::strdup_safe;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -270,6 +262,7 @@ pub use self::xkbcommon_h::{
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_cmp;
 use crate::xkb::utils::{darray_append, darray_free};
+use libc::{calloc, free};
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,

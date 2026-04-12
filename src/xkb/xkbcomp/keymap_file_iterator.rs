@@ -10,55 +10,6 @@ pub mod internal {
     }
 }
 
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -263,20 +214,6 @@ pub mod keymap_file_iterator_h {
     use super::scanner_utils_h::scanner;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-    }
-}
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn strcpy_safe(mut dest: *mut i8, mut size: usize, mut src: *const i8) -> *mut i8 {
@@ -304,11 +241,11 @@ pub mod utils_h {
     }
 }
 pub mod include_h {
+    use libc::{FILE};
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
     use super::ast_h::xkb_file_type;
     use super::context_h::xkb_context;
-    use super::FILE_h::FILE;
 
     pub unsafe fn FindFileInXkbPath(
         ctx: *mut xkb_context,
@@ -337,11 +274,11 @@ pub mod include_h {
     }
 }
 pub mod xkbcomp_priv_h {
+    use libc::{FILE};
 
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::scanner_utils_h::scanner;
-    use super::FILE_h::FILE;
 
     pub unsafe fn XkbParseFile(
         ctx: *mut xkb_context,
@@ -467,9 +404,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc};
-use self::stdio_h::{fclose, fopen};
-use self::stdlib_h::{calloc, free};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::utils_h::strcpy_safe;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_h::{
@@ -479,9 +413,9 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
+use libc::{FILE, calloc, fclose, fopen, free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {

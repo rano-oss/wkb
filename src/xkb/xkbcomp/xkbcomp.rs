@@ -2,55 +2,6 @@ use crate::xkb_logf;
 pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::{
@@ -94,8 +45,8 @@ pub mod xkbcommon_h {
     pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
 }
 pub mod keymap_h {
+    use libc::{FILE};
     use super::rmlvo_h::xkb_rmlvo_builder;
-    use super::FILE_h::FILE;
     pub use crate::xkb::shared_types::*;
 
     #[derive(Copy, Clone)]
@@ -318,12 +269,12 @@ pub mod rules_h {
     }
 }
 pub mod xkbcomp_priv_h {
+    use libc::{FILE};
 
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
     use super::xkbcommon_h::{xkb_component_names, xkb_keymap_format, xkb_keymap_serialize_flags};
-    use super::FILE_h::FILE;
 
     // Stub implementation for text_v1_keymap_get_as_string (serialization not yet implemented)
     pub unsafe fn text_v1_keymap_get_as_string(
@@ -374,11 +325,6 @@ pub mod xkbcomp_priv_h {
 
     pub unsafe fn CompileKeymap(file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
         unsafe { crate::xkb::xkbcomp::keymap::CompileKeymap(file as *mut _, keymap) }
-    }
-}
-pub mod stdlib_h {
-    extern "C" {
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
     }
 }
 
@@ -484,8 +430,6 @@ pub use self::rmlvo_h::{
     RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 use self::rules_h::{xkb_components_from_rmlvo_builder, xkb_components_from_rules_names};
-use self::stdlib_h::free;
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::xkbcommon_h::{
     xkb_component_names, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keymap_serialize_flags, xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t,
@@ -504,8 +448,8 @@ use self::xkbcomp_priv_h::{
     text_v1_keymap_get_as_string, CompileKeymap, FreeXkbFile, XkbFileFromComponents, XkbParseFile,
     XkbParseString,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::darray_size_t;
+use libc::{FILE, free};
 
 pub unsafe fn xkb_components_names_from_rules(
     mut ctx: *mut xkb_context,

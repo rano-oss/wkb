@@ -199,10 +199,6 @@ pub mod action_h {
     }
     use super::keymap_h::xkb_action;
 }
-pub mod stdlib_h {
-
-    extern "C" {}
-}
 pub use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
     ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,

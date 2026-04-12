@@ -14,10 +14,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-}
 pub mod context_h {
     pub use crate::xkb::shared_types::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 
@@ -140,12 +136,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod stdlib_h {
-    extern "C" {
-        pub fn getenv(__name: *const i8) -> *mut i8;
-        pub fn secure_getenv(__name: *const i8) -> *mut i8;
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn isempty(mut s: *const i8) -> bool {
@@ -208,12 +198,14 @@ pub use self::messages_codes_h::{
 pub use self::rmlvo_h::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use self::stdio_h::va_list;
-use self::stdlib_h::{getenv, secure_getenv};
 pub use self::utils_h::isempty;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
 use crate::xkb::utils::cstr_len;
+use libc::{getenv};
+extern "C" {
+    pub fn secure_getenv(name: *const i8) -> *mut i8;
+}
 
 pub use self::xkbcommon_h::{
     xkb_context_include_path_append_default, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL,

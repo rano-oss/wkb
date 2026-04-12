@@ -20,57 +20,8 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod xkbcommon_h {
-    use super::FILE_h::FILE;
+    use libc::{FILE};
     pub use crate::xkb::shared_types::*;
 
     pub type xkb_context_flags = u32;
@@ -127,17 +78,6 @@ pub mod bench_h {
         pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
     }
 }
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub static mut stdout: *mut FILE;
-        pub static mut stderr: *mut FILE;
-        pub fn fclose(__stream: *mut FILE) -> i32;
-        pub fn fflush(__stream: *mut FILE) -> i32;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn perror(__s: *const i8);
-    }
-}
 pub mod keymap_formats_h {
     pub const DEFAULT_OUTPUT_KEYMAP_FORMAT: xkb_keymap_format = XKB_KEYMAP_USE_ORIGINAL_FORMAT;
     use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_USE_ORIGINAL_FORMAT};
@@ -159,16 +99,6 @@ pub mod getopt_core_h {
         pub static mut optarg: *mut i8;
     }
 }
-pub mod stdlib_h {
-    pub const EXIT_FAILURE: i32 = 1 as i32;
-    pub const EXIT_SUCCESS: i32 = 0 as i32;
-    extern "C" {
-        pub fn atof(__nptr: *const i8) -> ::core::ffi::c_double;
-        pub fn atoi(__nptr: *const i8) -> i32;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn exit(__status: i32) -> !;
-    }
-}
 pub mod unistd_h {
     pub const STDOUT_FILENO: i32 = 1 as i32;
     pub const STDERR_FILENO: i32 = 2 as i32;
@@ -188,10 +118,12 @@ pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument
 pub use self::keymap_formats_h::{
     xkb_keymap_get_format_label, xkb_keymap_parse_format, DEFAULT_OUTPUT_KEYMAP_FORMAT,
 };
-use self::stdio_h::{fclose, fflush, fopen, perror, stderr, stdout};
-pub use self::stdlib_h::{atof, atoi, exit, free, EXIT_FAILURE, EXIT_SUCCESS};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::unistd_h::{close, dup, dup2, STDERR_FILENO, STDOUT_FILENO};
+use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE, atof, atoi, exit, fclose, fflush, fopen, free, perror};
+extern "C" {
+    pub static stderr: *mut libc::FILE;
+    pub static stdout: *mut libc::FILE;
+}
 pub use self::xkbcommon_h::{
     xkb_context, xkb_context_flags, xkb_context_new, xkb_context_unref, xkb_keymap,
     xkb_keymap_compile_flags, xkb_keymap_format, xkb_keymap_get_as_string2,
@@ -202,7 +134,6 @@ pub use self::xkbcommon_h::{
     XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEYMAP_SERIALIZE_EXPLICIT, XKB_KEYMAP_SERIALIZE_KEEP_UNUSED,
     XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT,
 };
-pub use self::FILE_h::FILE;
 use crate::xkb::shared_types::{
     DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
     DEFAULT_XKB_VARIANT, EXIT_INVALID_USAGE,

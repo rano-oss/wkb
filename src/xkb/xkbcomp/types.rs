@@ -171,13 +171,6 @@ pub mod xkbcomp_priv_h {
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -317,7 +310,6 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-use self::stdlib_h::{calloc, free};
 pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::util_mem_h::_steal;
 pub use self::utils_h::{istrcmp, istreq, strdup_safe};
@@ -356,6 +348,7 @@ pub use self::xkbcomp_priv_h::{
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::{darray_append, darray_free, darray_resize_zero};
+use libc::{calloc, free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct KeyTypesInfo {

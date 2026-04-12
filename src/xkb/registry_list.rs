@@ -19,55 +19,6 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod xkbregistry_h {
     pub type rxkb_context_flags = u32;
     pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
@@ -95,13 +46,6 @@ pub mod xkbregistry_h {
         rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
     };
 }
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub static mut stdout: *mut FILE;
-        pub static mut stderr: *mut FILE;
-    }
-}
 pub mod include_locale_h {
     pub const LC_ALL: i32 = __LC_ALL;
     use super::locale_h::__LC_ALL;
@@ -118,17 +62,10 @@ pub mod getopt_core_h {
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
-pub mod stdlib_h {
-    pub const EXIT_FAILURE: i32 = 1 as i32;
-    pub const EXIT_SUCCESS: i32 = 0 as i32;
-}
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
-use self::stdio_h::{stderr, stdout};
-pub use self::stdlib_h::{EXIT_FAILURE, EXIT_SUCCESS};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::xkbregistry_h::{
     rxkb_context, rxkb_context_flags, rxkb_context_include_path_append,
     rxkb_context_include_path_append_default, rxkb_context_new, rxkb_context_parse,
@@ -146,8 +83,12 @@ pub use self::xkbregistry_h::{
     RXKB_CONTEXT_NO_SECURE_GETENV, RXKB_LOG_LEVEL_CRITICAL, RXKB_LOG_LEVEL_DEBUG,
     RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO, RXKB_LOG_LEVEL_WARNING,
 };
-pub use self::FILE_h::FILE;
 use crate::xkb::shared_types::DEFAULT_XKB_RULES;
+use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE};
+extern "C" {
+    pub static stderr: *mut libc::FILE;
+    pub static stdout: *mut libc::FILE;
+}
 unsafe fn usage(mut progname: *const i8, mut fp: *mut FILE) {
     unsafe {
         let use_stderr = fp == stderr;

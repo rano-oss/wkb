@@ -18,36 +18,10 @@ pub mod internal {
     pub const __CHAR_BIT__: i32 = 8 as i32;
 }
 
-pub mod stdlib_h {
-
-    pub type __compar_fn_t =
-        Option<unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
-
-    extern "C" {
-
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-
-        pub fn qsort(
-            __base: *mut ::core::ffi::c_void,
-            __nmemb: usize,
-            __size: usize,
-            __compar: __compar_fn_t,
-        );
-    }
-}
-
 pub mod __stdarg___gnuc_va_list_h {
 
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
-}
-
-pub mod stdio_h {
-
-    pub type va_list = __gnuc_va_list;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 }
 
 pub mod xkbcommon_errors_h {
@@ -718,8 +692,6 @@ pub use self::state_priv_h::{
     state_components, xkb_event, xkb_layout_policy_update_v1, xkb_state_components_update_v1,
     xkb_state_update_v1, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
 };
-pub use self::stdio_h::va_list;
-pub use self::stdlib_h::{__compar_fn_t, calloc, free, qsort};
 use self::utf8_h::is_valid_utf8;
 pub use self::util_mem_h::xkb_check_versioned_struct_size_;
 pub use self::utils_h::one_bit_set;
@@ -776,6 +748,7 @@ pub use crate::xkb::keymap_priv::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
 pub use crate::xkb::shared_types::darray_size_t;
+use libc::{calloc, free, qsort};
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -3995,7 +3968,7 @@ pub unsafe fn xkb_machine_options_remap_shortcut_layout(
     }
 }
 
-unsafe fn cmp_mod_masks(
+unsafe extern "C" fn cmp_mod_masks(
     mut a: *const ::core::ffi::c_void,
     mut b: *const ::core::ffi::c_void,
 ) -> i32 {
@@ -4075,7 +4048,10 @@ unsafe fn machine_set_mods(
                 ::core::mem::size_of::<machine_mods_mapping>() as usize,
                 Some(
                     cmp_mod_masks
-                        as unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32,
+                        as unsafe extern "C" fn(
+                            *const ::core::ffi::c_void,
+                            *const ::core::ffi::c_void,
+                        ) -> i32,
                 ),
             );
             (*sm).config.modifiers.mappings = mappings.item as *mut machine_mods_mapping;

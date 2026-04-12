@@ -40,92 +40,9 @@ pub mod struct_stat_h {
     use super::struct_timespec_h::timespec;
 }
 
-pub mod stdlib_h {
-    pub type __compar_fn_t =
-        Option<unsafe fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> i32>;
-
-    extern "C" {
-        pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn getenv(__name: *const i8) -> *mut i8;
-        pub fn secure_getenv(__name: *const i8) -> *mut i8;
-        pub fn qsort(
-            __base: *mut ::core::ffi::c_void,
-            __nmemb: usize,
-            __size: usize,
-            __compar: __compar_fn_t,
-        );
-    }
-}
 pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
-}
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-
-    use super::FILE_h::FILE;
-
-    extern "C" {
-        pub static mut stderr: *mut FILE;
-        pub fn vsnprintf(
-            __s: *mut i8,
-            __maxlen: usize,
-            __format: *const i8,
-            __arg: ::core::ffi::VaList,
-        ) -> i32;
-    }
 }
 pub mod xmlstring_h {
     pub type xmlChar = ::core::ffi::c_uchar;
@@ -1230,9 +1147,6 @@ pub use self::parser_h::{
     XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
 };
 use self::stat_h::stat;
-pub use self::stdio_h::{stderr, va_list, vsnprintf};
-pub use self::stdlib_h::{__compar_fn_t, calloc, free, getenv, qsort, secure_getenv, strtol};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 pub use self::tree_h::{
@@ -1285,7 +1199,6 @@ pub use self::xmlerror_h::{
 pub use self::xmlmemory_h::{xmlFree, xmlFreeFunc};
 pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
 use self::xmlversion_h::xmlCheckVersion;
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DEFAULT_XKB_RULES, DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT,
@@ -1294,6 +1207,13 @@ use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
+use libc::{calloc, free, getenv, qsort, strtol};
+extern "C" {
+    fn vsnprintf(s: *mut i8, maxlen: usize, format: *const i8, ...) -> i32;
+}
+extern "C" {
+    pub fn secure_getenv(name: *const i8) -> *mut i8;
+}
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_context {
@@ -2358,7 +2278,10 @@ pub unsafe fn rxkb_context_include_path_append(
         return false;
     }
 }
-unsafe fn compare_str(mut a: *const ::core::ffi::c_void, mut b: *const ::core::ffi::c_void) -> i32 {
+unsafe extern "C" fn compare_str(
+    mut a: *const ::core::ffi::c_void,
+    mut b: *const ::core::ffi::c_void,
+) -> i32 {
     unsafe {
         return cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
     }
@@ -2490,7 +2413,7 @@ unsafe fn add_direct_subdirectories(
                                 ::core::mem::size_of::<*mut i8>() as usize,
                                 Some(
                                     compare_str
-                                        as unsafe fn(
+                                        as unsafe extern "C" fn(
                                             *const ::core::ffi::c_void,
                                             *const ::core::ffi::c_void,
                                         )

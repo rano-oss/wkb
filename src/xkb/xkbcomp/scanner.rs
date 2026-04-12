@@ -3,55 +3,6 @@ pub mod internal {
     pub use crate::xkb::shared_types::__va_list_tag;
 }
 
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_intern;
     pub use crate::xkb::shared_types::{
@@ -1165,7 +1116,6 @@ pub use self::scanner_utils_h::{
     scanner_peek, scanner_skip_to_eol, scanner_str, scanner_token_location,
     scanner_unicode_code_point, sval,
 };
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::utils_h::{
     is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
 };
@@ -1176,9 +1126,9 @@ pub use self::xkbcommon_h::{
     xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
     XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
+use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(
     mut s: *mut scanner,

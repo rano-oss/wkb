@@ -11,62 +11,7 @@ pub mod __stddef_size_t_h {
     pub type size_t = usize;
 }
 #[c2rust::header_src = "/usr/include/bits/types/struct_FILE.h:19"]
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    #[c2rust::src_loc = "51:1"]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    #[c2rust::src_loc = "45:1"]
-    pub type _IO_lock_t = ();
-    extern "C" {
-        #[c2rust::src_loc = "40:1"]
-        pub type _IO_wide_data;
-        #[c2rust::src_loc = "39:1"]
-        pub type _IO_codecvt;
-        #[c2rust::src_loc = "38:1"]
-        pub type _IO_marker;
-    }
-}
 #[c2rust::header_src = "/usr/include/bits/types/FILE.h:19"]
-pub mod FILE_h {
-    #[c2rust::src_loc = "7:1"]
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod context_h {
     pub use crate::xkb::context_priv::{
         xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names,
@@ -129,8 +74,8 @@ pub mod xkbcommon_h {
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 pub mod keymap_h {
+    use libc::{FILE};
     use super::rmlvo_h::xkb_rmlvo_builder;
-    use super::FILE_h::FILE;
     pub use crate::xkb::shared_types::*;
 
     #[derive(Copy, Clone)]
@@ -491,15 +436,6 @@ pub mod enums_h {
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 }
 #[c2rust::header_src = "/usr/include/stdlib.h:20"]
-pub mod stdlib_h {
-
-    extern "C" {
-        #[c2rust::src_loc = "675:1"]
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        #[c2rust::src_loc = "687:1"]
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_null.h:17"]
 #[c2rust::header_src = "/usr/include/stdint.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/stdbool.h:22"]
@@ -597,8 +533,6 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, RMLVO, RMLVO_LAYOUT, RMLVO_MODEL,
     RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use self::stdlib_h::{calloc, free};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::xkbcommon_h::{
     xkb_context_unref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
     xkb_keymap_key_iter_t, xkb_keymap_key_iterator_flags, xkb_keymap_serialize_flags, xkb_keysym_t,
@@ -617,10 +551,10 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
     XKB_STATE_MODS_LOCKED,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
+use libc::{FILE, calloc, free};
 #[derive(Copy, Clone)]
 #[repr(C)]
 #[c2rust::src_loc = "591:1"]

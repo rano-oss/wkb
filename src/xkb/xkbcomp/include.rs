@@ -8,67 +8,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    pub type ssize_t = i64;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-
-    use super::FILE_h::FILE;
-
-    extern "C" {
-        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-    }
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -322,9 +261,9 @@ pub mod scanner_utils_h {
     }
 }
 pub mod xkbcomp_priv_h {
+    use libc::{FILE};
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
-    use super::FILE_h::FILE;
 
     pub unsafe fn XkbParseFile(
         ctx: *mut xkb_context,
@@ -339,11 +278,6 @@ pub mod xkbcomp_priv_h {
     }
 
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
-}
-pub mod stdlib_h {
-    extern "C" {
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
 }
 pub mod include_h {
     pub const INCLUDE_MAX_DEPTH: ::core::ffi::c_int = 15 as ::core::ffi::c_int;
@@ -437,9 +371,6 @@ pub use self::scanner_utils_h::{
     scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
-pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
-use self::stdlib_h::free;
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_h::{
     xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,
@@ -447,10 +378,10 @@ pub use self::xkbcommon_h::{
     XKB_LOG_LEVEL_WARNING,
 };
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
+use libc::{FILE, fclose, fopen, free};
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,

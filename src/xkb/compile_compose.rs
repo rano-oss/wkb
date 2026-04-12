@@ -30,55 +30,6 @@ pub mod getopt_ext_h {
     }
 }
 
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -163,13 +114,13 @@ pub mod table_h {
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
+    use libc::{FILE};
     pub type xkb_compose_compile_flags = u32;
     pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
     pub type xkb_compose_format = u32;
     pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
     use super::context_h::xkb_context;
     use super::table_h::xkb_compose_table;
-    use super::FILE_h::FILE;
     extern "C" {
         pub fn xkb_compose_table_new_from_locale(
             context: *mut xkb_context,
@@ -186,26 +137,16 @@ pub mod xkbcommon_compose_h {
         pub fn xkb_compose_table_unref(table: *mut xkb_compose_table);
     }
 }
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub static mut stdout: *mut FILE;
-        pub static mut stderr: *mut FILE;
-        pub fn fclose(__stream: *mut FILE) -> i32;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn perror(__s: *const i8);
-    }
-}
 pub mod dump_h {
+    use libc::{FILE};
     use super::table_h::xkb_compose_table;
-    use super::FILE_h::FILE;
     extern "C" {
         pub fn xkb_compose_table_dump(file: *mut FILE, table: *mut xkb_compose_table) -> bool;
     }
 }
 pub mod tools_common_h {
+    use libc::{FILE};
     use super::context_h::xkb_context;
-    use super::FILE_h::FILE;
     extern "C" {
         pub fn tools_enable_verbose_logging(ctx: *mut xkb_context);
         pub fn is_pipe_or_regular_file(fd: i32) -> bool;
@@ -224,13 +165,6 @@ pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
         pub static mut optind: i32;
-    }
-}
-pub mod stdlib_h {
-    pub const EXIT_FAILURE: i32 = 1 as i32;
-    pub const EXIT_SUCCESS: i32 = 0 as i32;
-    extern "C" {
-        pub fn exit(__status: i32) -> !;
     }
 }
 pub mod unistd_h {
@@ -256,9 +190,6 @@ pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument
 pub use self::include_locale_h::{setlocale, LC_ALL, LC_CTYPE};
 pub use self::internal::__va_list_tag;
 pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
-use self::stdio_h::{fclose, fopen, perror, stderr, stdout};
-pub use self::stdlib_h::{exit, EXIT_FAILURE, EXIT_SUCCESS};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::table_h::{
     compose_node, xkb_compose_table, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
     C2Rust_Unnamed_4, C2Rust_Unnamed_5,
@@ -279,9 +210,13 @@ pub use self::xkbcommon_h::{
     XKB_CONTEXT_NO_FLAGS, XKB_CONTEXT_NO_SECURE_GETENV, XKB_LOG_LEVEL_CRITICAL,
     XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::cstr_cmp;
+use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE, exit, fclose, fopen, perror};
+extern "C" {
+    pub static stderr: *mut libc::FILE;
+    pub static stdout: *mut libc::FILE;
+}
 pub const OPT_TEST: options = 3;
 pub const OPT_LOCALE: options = 2;
 pub const OPT_FILE: options = 1;

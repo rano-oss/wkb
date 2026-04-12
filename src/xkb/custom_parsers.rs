@@ -21,55 +21,6 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
 pub mod bench_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -94,14 +45,6 @@ pub mod bench_h {
         pub fn bench_stop2(bench: *mut bench);
         pub fn bench_elapsed(bench: *const bench, result: *mut bench_time);
         pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
-    }
-}
-pub mod stdio_h {
-    use super::FILE_h::FILE;
-    extern "C" {
-        pub static mut stderr: *mut FILE;
-        pub fn fclose(__stream: *mut FILE) -> i32;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
     }
 }
 pub mod utils_h {
@@ -470,28 +413,17 @@ pub mod getopt_core_h {
         pub static mut optarg: *mut i8;
     }
 }
-pub mod stdlib_h {
-    pub const EXIT_SUCCESS: i32 = 0 as i32;
-    extern "C" {
-        pub fn atof(__nptr: *const i8) -> ::core::ffi::c_double;
-        pub fn strtol(__nptr: *const i8, __endptr: *mut *mut i8, __base: i32) -> i64;
-        pub fn exit(__status: i32) -> !;
-    }
-}
 
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-use self::stdio_h::{fclose, fopen};
-pub use self::stdlib_h::{atof, exit, strtol, EXIT_SUCCESS};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::utils_h::is_xdigit;
+use libc::{EXIT_SUCCESS, FILE, atof, exit, fclose, fopen, strtol};
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
 };
-pub use self::FILE_h::FILE;
 pub const OPT_STDEV: options = 0;
 pub type options = u32;
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;

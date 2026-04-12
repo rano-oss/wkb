@@ -44,86 +44,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: i32,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: i32,
-        #[bitfield(name = "_flags2", ty = "i32", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: i32,
-        pub _unused3: i32,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    pub const _IONBF: i32 = 2 as i32;
-    pub const BUFSIZ: i32 = 8192 as i32;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-
-    use super::FILE_h::FILE;
-
-    extern "C" {
-        pub static mut stdout: *mut FILE;
-        pub static mut stderr: *mut FILE;
-        pub fn fclose(__stream: *mut FILE) -> i32;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-        pub fn setvbuf(__stream: *mut FILE, __buf: *mut i8, __modes: i32, __n: usize) -> i32;
-        pub fn fread(
-            __ptr: *mut ::core::ffi::c_void,
-            __size: usize,
-            __n: usize,
-            __stream: *mut FILE,
-        ) -> u64;
-        pub fn fwrite(
-            __ptr: *const ::core::ffi::c_void,
-            __size: usize,
-            __n: usize,
-            __s: *mut FILE,
-        ) -> u64;
-        pub fn feof(__stream: *mut FILE) -> i32;
-        pub fn ferror(__stream: *mut FILE) -> i32;
-        pub fn fileno(__stream: *mut FILE) -> i32;
-    }
-}
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -148,9 +68,9 @@ pub mod atom_h {
 }
 
 pub mod xkbcommon_h {
+    use libc::{FILE};
     use super::rmlvo_h::xkb_rmlvo_builder;
     use super::xkbcommon_errors_h::xkb_error_code;
-    use super::FILE_h::FILE;
     pub use crate::xkb::context::{
         xkb_context_include_path_append, xkb_context_new, xkb_context_unref,
     };
@@ -378,17 +298,6 @@ pub mod tools_common_h {
         );
     }
 }
-pub mod stdlib_h {
-    pub const EXIT_SUCCESS: i32 = 0 as i32;
-
-    extern "C" {
-        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-        pub fn getenv(__name: *const i8) -> *mut i8;
-        pub fn unsetenv(__name: *const i8) -> i32;
-        pub fn mkdtemp(__template: *mut i8) -> *mut i8;
-    }
-}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
@@ -516,12 +425,6 @@ pub use self::rmlvo_h::{
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 use self::stat_h::{fstat, mkdir};
-pub use self::stdio_h::{
-    fclose, feof, ferror, fileno, fopen, fread, fwrite, setvbuf, stderr, stdout, va_list, _IONBF,
-    BUFSIZ,
-};
-pub use self::stdlib_h::{free, getenv, malloc, mkdtemp, unsetenv, EXIT_SUCCESS};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 pub use self::test_h::{
@@ -573,10 +476,13 @@ pub use self::xkbcommon_h::{
     XKB_STATE_MODS_LOCKED,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{cstr_dup, darray_append, darray_free, darray_resize_zero};
+use libc::{BUFSIZ, EXIT_SUCCESS, FILE, _IONBF, fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf, unsetenv};
+extern "C" {
+    pub static stdout: *mut libc::FILE;
+}
 pub type events_consume_flags = u32;
 pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;

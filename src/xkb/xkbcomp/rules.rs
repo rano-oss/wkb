@@ -9,67 +9,6 @@ pub mod __stdarg___gnuc_va_list_h {
     pub type __gnuc_va_list = __builtin_va_list;
     use super::internal::__builtin_va_list;
 }
-pub mod struct_FILE_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct _IO_FILE {
-        pub _flags: ::core::ffi::c_int,
-        pub _IO_read_ptr: *mut i8,
-        pub _IO_read_end: *mut i8,
-        pub _IO_read_base: *mut i8,
-        pub _IO_write_base: *mut i8,
-        pub _IO_write_ptr: *mut i8,
-        pub _IO_write_end: *mut i8,
-        pub _IO_buf_base: *mut i8,
-        pub _IO_buf_end: *mut i8,
-        pub _IO_save_base: *mut i8,
-        pub _IO_backup_base: *mut i8,
-        pub _IO_save_end: *mut i8,
-        pub _markers: *mut _IO_marker,
-        pub _chain: *mut _IO_FILE,
-        pub _fileno: ::core::ffi::c_int,
-        #[bitfield(name = "_flags2", ty = "::core::ffi::c_int", bits = "0..=23")]
-        pub _flags2: [u8; 3],
-        pub _short_backupbuf: [i8; 1],
-        pub _old_offset: i64,
-        pub _cur_column: u16,
-        pub _vtable_offset: i8,
-        pub _shortbuf: [i8; 1],
-        pub _lock: *mut ::core::ffi::c_void,
-        pub _offset: i64,
-        pub _codecvt: *mut _IO_codecvt,
-        pub _wide_data: *mut _IO_wide_data,
-        pub _freeres_list: *mut _IO_FILE,
-        pub _freeres_buf: *mut ::core::ffi::c_void,
-        pub _prevchain: *mut *mut _IO_FILE,
-        pub _mode: ::core::ffi::c_int,
-        pub _unused3: ::core::ffi::c_int,
-        pub _total_written: u64,
-        pub _unused2: [i8; 8],
-    }
-    pub type _IO_lock_t = ();
-    extern "C" {
-        pub type _IO_wide_data;
-        pub type _IO_codecvt;
-        pub type _IO_marker;
-    }
-}
-pub mod FILE_h {
-    pub type FILE = _IO_FILE;
-    use super::struct_FILE_h::_IO_FILE;
-}
-pub mod stdio_h {
-    pub type va_list = __gnuc_va_list;
-    pub type ssize_t = i64;
-    use super::__stdarg___gnuc_va_list_h::__gnuc_va_list;
-
-    use super::FILE_h::FILE;
-
-    extern "C" {
-        pub fn fclose(__stream: *mut FILE) -> ::core::ffi::c_int;
-        pub fn fopen(__filename: *const i8, __modes: *const i8) -> *mut FILE;
-    }
-}
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -463,13 +402,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn calloc(__nmemb: usize, __size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn isempty(mut s: *const i8) -> bool {
@@ -536,6 +468,7 @@ pub mod utils_numbers_h {
     }
 }
 pub mod include_h {
+    use libc::{FILE};
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
     pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
@@ -543,7 +476,6 @@ pub mod include_h {
 
     use super::ast_h::xkb_file_type;
     use super::context_h::xkb_context;
-    use super::FILE_h::FILE;
 
     pub unsafe fn FindFileInXkbPath(
         ctx: *mut xkb_context,
@@ -656,9 +588,6 @@ pub use self::scanner_utils_h::{
     scanner_eol, scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol,
     scanner_str, scanner_token_location, sval, svaleq, svaleq_prefix,
 };
-pub use self::stdio_h::{fclose, fopen, ssize_t, va_list};
-use self::stdlib_h::{calloc, free};
-pub use self::struct_FILE_h::{_IO_codecvt, _IO_lock_t, _IO_marker, _IO_wide_data, _IO_FILE};
 pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
@@ -673,8 +602,8 @@ pub use self::xkbcommon_h::{
     XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
     XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
-pub use self::FILE_h::FILE;
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
+use libc::{FILE, calloc, fclose, fopen, free};
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
     darray_growalloc, darray_resize, darray_resize_zero,

@@ -314,13 +314,6 @@ pub mod parser_h {
     use super::scanner_utils_h::sval;
     use super::xkbcommon_h::xkb_keysym_t;
 }
-pub mod stdlib_h {
-
-    extern "C" {
-        pub fn malloc(__size: usize) -> *mut ::core::ffi::c_void;
-        pub fn free(__ptr: *mut ::core::ffi::c_void);
-    }
-}
 pub mod utils_h {
     #[inline]
     pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
@@ -502,7 +495,6 @@ pub use self::parser_h::{
 };
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
-use self::stdlib_h::{free, malloc};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_h::{
     xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
@@ -515,6 +507,7 @@ pub use self::xkbcommon_keysyms_h::{
 pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
+use libc::{free, malloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct parser_param {
