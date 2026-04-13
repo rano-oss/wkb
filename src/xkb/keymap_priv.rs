@@ -24,16 +24,6 @@ pub mod enums_h {
     pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 }
-pub mod messages_codes_h {
-    pub type xkb_log_verbosity = i32;
-    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
-    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
-    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
-    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
-    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-}
 pub mod xkbcommon_names_h {
     pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
         unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
@@ -93,7 +83,7 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
     XKB_MAX_GROUPS,
 };
-pub use self::messages_codes_h::{
+pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,

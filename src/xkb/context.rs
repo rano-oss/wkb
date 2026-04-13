@@ -53,16 +53,6 @@ pub mod include_dirent_h {
         pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
     }
 }
-pub mod messages_codes_h {
-    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-    pub type xkb_log_verbosity = i32;
-    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
-    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
-    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
-    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
-    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-}
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
@@ -95,7 +85,7 @@ pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
-pub use self::messages_codes_h::{
+pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,

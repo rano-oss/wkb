@@ -1,16 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod messages_codes_h {
-    pub type xkb_log_verbosity = i32;
-    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
-    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
-    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
-    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
-    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-}
 pub mod keymap_compare_h {
     pub type xkb_keymap_compare_property = u32;
     pub const XKB_KEYMAP_CMP_POSSIBLY_DROPPED: xkb_keymap_compare_property = 4;
@@ -56,7 +46,7 @@ pub use crate::xkb::shared_types::{
     EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
 };
-pub use self::messages_codes_h::{
+pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,

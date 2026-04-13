@@ -1,16 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod messages_codes_h {
-    pub type xkb_log_verbosity = ::core::ffi::c_int;
-    pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: xkb_log_verbosity = 11;
-    pub const XKB_LOG_VERBOSITY_VERBOSE: xkb_log_verbosity = 10;
-    pub const XKB_LOG_VERBOSITY_DETAILED: xkb_log_verbosity = 5;
-    pub const XKB_LOG_VERBOSITY_BRIEF: xkb_log_verbosity = 1;
-    pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-    pub const XKB_LOG_VERBOSITY_SILENT: xkb_log_verbosity = -1;
-}
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_1 = DarrayKeysym;
@@ -46,7 +36,7 @@ pub use crate::xkb::shared_types::{
     mod_type, xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };
 pub use self::limits_h::CHAR_BIT;
-pub use self::messages_codes_h::{
+pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
