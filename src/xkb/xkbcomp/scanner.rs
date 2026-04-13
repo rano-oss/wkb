@@ -862,11 +862,6 @@ pub mod parser_priv_h {
 
     pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 }
-pub mod errno_h {
-    extern "C" {
-        pub fn __errno_location() -> *mut ::core::ffi::c_int;
-    }
-}
 
 pub use crate::xkb::shared_ast_types::{
     _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,

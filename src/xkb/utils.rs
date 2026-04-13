@@ -180,6 +180,10 @@ pub unsafe fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 
 }
 
 // New Rust file utilities
+extern "C" {
+    pub fn __errno_location() -> *mut i32;
+}
+
 use libc::{fdopen, FILE};
 use memmap2::Mmap;
 use std::fs::File;

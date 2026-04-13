@@ -1,5 +1,5 @@
-use crate::xkb::shared_types::*;
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
+use crate::xkb::shared_types::*;
 pub mod sys_types_h {
     pub type ssize_t = isize;
 }
@@ -21852,24 +21852,18 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
     pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
 }
-pub mod keysym_h {
-    pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8 as i32;
-    pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000 as i32;
-    pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100 as i32;
-    pub const XKB_KEYSYM_UNICODE_MAX: i32 = 0x110ffff as i32;
-}
 
-pub use self::keysym_h::{
-    XKB_KEYSYM_MAX_EXPLICIT, XKB_KEYSYM_UNICODE_MAX, XKB_KEYSYM_UNICODE_MIN,
-    XKB_KEYSYM_UNICODE_OFFSET,
-};
+pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
+pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
+pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
+pub const XKB_KEYSYM_UNICODE_MAX: i32 = 0x110ffff;
+
 pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
 pub use self::sys_types_h::ssize_t;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
-pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,
@@ -21877,6 +21871,7 @@ pub use self::xkbcommon_keysyms_h::{
 };
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
+pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
 use libc::{calloc, free};
 #[derive(Copy, Clone)]
 #[repr(C)]

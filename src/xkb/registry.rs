@@ -896,11 +896,6 @@ pub mod unistd_h {
         pub fn eaccess(__name: *const i8, __type: i32) -> i32;
     }
 }
-pub mod errno_h {
-    extern "C" {
-        pub fn __errno_location() -> *mut i32;
-    }
-}
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
 }
@@ -926,7 +921,7 @@ pub use self::entities_h::{
     XML_INTERNAL_GENERAL_ENTITY, XML_INTERNAL_PARAMETER_ENTITY, XML_INTERNAL_PREDEFINED_ENTITY,
 };
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
-use self::errno_h::__errno_location;
+use crate::xkb::utils::__errno_location;
 pub use self::hash_h::{_xmlHashTable, xmlHashTable, xmlHashTablePtr};
 pub use self::iconv_h::iconv_t;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};

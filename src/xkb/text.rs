@@ -1,7 +1,4 @@
 use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
-pub mod keysym_h {
-    pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31 as i32;
-}
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
@@ -25,8 +22,8 @@ pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
 }
 use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 
-pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
-pub use crate::xkb::shared_types::darray_size_t;
+pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
+
 pub use crate::xkb::shared_types::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
     xkb_mod, xkb_mod_set, _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,

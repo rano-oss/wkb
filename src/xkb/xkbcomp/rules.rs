@@ -296,11 +296,6 @@ pub mod include_h {
         }
     }
 }
-pub mod errno_h {
-    extern "C" {
-        pub fn __errno_location() -> *mut ::core::ffi::c_int;
-    }
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }

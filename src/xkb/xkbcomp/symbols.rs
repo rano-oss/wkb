@@ -1,4 +1,6 @@
 use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
+use crate::xkb::keysym::xkb_keysym_is_keypad;
+use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -70,10 +72,6 @@ pub mod utils_numbers_h {
                 .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize);
     }
 }
-pub mod keysym_h {
-    pub use crate::xkb::keysym::xkb_keysym_is_keypad;
-    pub use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-}
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
@@ -98,7 +96,6 @@ pub mod xkbcommon_keysyms_h {
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::darray_h::darray_size_t;
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-use self::keysym_h::{xkb_keysym_is_keypad, xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 pub use self::util_mem_h::_steal;
 pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};

@@ -1,6 +1,8 @@
-use crate::xkb::keysym::xkb_keysym_from_name;
-use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+use crate::xkb_logf;
+
+pub const XKB_KEYSYM_MIN: i32 = 0;
 
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
@@ -181,23 +183,19 @@ pub mod parser_h {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
+    use super::scanner_utils_h::sval;
     use crate::xkb::shared_ast_types::{
         merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
     };
     use crate::xkb::shared_types::xkb_atom_t;
-    use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
-}
-pub mod keysym_h {
-    pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    pub use crate::xkb::keysym::xkb_keysym_is_deprecated;
 }
 pub mod ast_build_h {
 
-    use crate::xkb::shared_ast_types::ExprDef;
     use super::scanner_utils_h::{scanner, sval};
+    use crate::xkb::shared_ast_types::ExprDef;
     use crate::xkb::shared_types::xkb_keysym_t;
     pub use crate::xkb::xkbcomp::ast_build::{
         BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
@@ -265,28 +263,22 @@ use self::ast_build_h::{
     LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate,
     VarCreate, XkbFileCreate,
 };
-pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
-    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
+pub use self::parser_h::{
+    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
+    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
+    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
+    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
+    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
+    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
+    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
+    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
+    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
-pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
+use self::parser_priv_h::_xkbcommon_lex;
+pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
+pub use self::xkbcommon_keysyms_h::{
+    XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
+};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -331,26 +323,31 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::parser_h::{
-    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
-    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
-    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
-    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
-    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
-    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
-    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
-    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
-    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
-};
-use self::parser_priv_h::_xkbcommon_lex;
-pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
-pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
-pub use self::xkbcommon_keysyms_h::{
-    XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
+pub use crate::xkb::shared_ast_types::{
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
+    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
+    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
+    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
+    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
+pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
 use libc::{free, malloc};
 #[derive(Copy, Clone)]
 #[repr(C)]

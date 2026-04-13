@@ -147,11 +147,6 @@ pub mod assert_h {
         ) -> !;
     }
 }
-pub mod errno_h {
-    extern "C" {
-        pub fn __errno_location() -> *mut i32;
-    }
-}
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
@@ -163,7 +158,7 @@ pub mod locale_h {
 }
 
 use self::assert_h::__assert_fail;
-use self::errno_h::__errno_location;
+use crate::xkb::utils::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
 pub use self::rmlvo_h::{

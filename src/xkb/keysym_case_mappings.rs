@@ -1,10 +1,9 @@
 use crate::xkb::shared_types::*;
 use c2rust_bitfields;
-pub mod keysym_h {
-    pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000 as i32;
-    pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100 as i32;
-}
-pub use self::keysym_h::{XKB_KEYSYM_UNICODE_MIN, XKB_KEYSYM_UNICODE_OFFSET};
+
+pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
+pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
+
 #[derive(Copy, Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct CaseMappings {

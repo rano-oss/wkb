@@ -59,11 +59,6 @@ pub mod stat_h {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod errno_h {
-    extern "C" {
-        pub fn __errno_location() -> *mut i32;
-    }
-}
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
 }
@@ -83,7 +78,7 @@ pub mod errno_base_h {
 pub use self::bits_stat_h::__S_IFMT;
 pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
-use self::errno_h::__errno_location;
+use crate::xkb::utils::__errno_location;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
