@@ -1019,3 +1019,165 @@ pub unsafe fn xkb_check_versioned_struct_size_(
         return XKB_SUCCESS;
     }
 }
+
+// === Number parsing utilities (consolidated from utils_numbers_h) ===
+
+#[inline]
+pub unsafe fn popcount32(mut x: u32) -> u32 {
+    (x as u64).count_ones() as i32 as u32
+}
+
+#[inline]
+pub unsafe fn next_pow2(mut x: u32) -> u32 {
+    if x <= 1 as u32 {
+        return 1 as u32;
+    }
+    (1 as u32)
+        << (::core::mem::size_of::<u32>() as usize)
+            .wrapping_mul(8 as usize)
+            .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize)
+}
+
+#[inline]
+pub unsafe fn parse_dec_to_uint32_t(mut s: *const i8, mut len: usize, mut out: *mut u32) -> i32 {
+    unsafe {
+        let mut result: u32 = 0 as u32;
+        let mut i: usize = 0;
+        i = 0 as usize;
+        while i < len
+            && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
+                < 10 as u32
+            && result <= (4294967295 as u32).wrapping_div(10 as u32)
+            && result.wrapping_mul(10 as u32)
+                <= (4294967295 as u32).wrapping_sub(
+                    (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32,
+                )
+        {
+            result = result
+                .wrapping_mul(10 as u32)
+                .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as u32);
+            i = i.wrapping_add(1);
+        }
+        *out = result as u32;
+        return if i >= len
+            || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
+                >= 10 as u32
+        {
+            i as i32
+        } else {
+            -1 as i32
+        };
+    }
+}
+
+#[inline]
+pub unsafe fn parse_dec_to_uint64_t(
+    mut s: *const i8,
+    mut len: usize,
+    mut out: *mut u64,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut result: u64 = 0 as u64;
+        let mut i: usize = 0;
+        i = 0 as usize;
+        while i < len
+            && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_uchar
+                as u32)
+                < 10 as u32
+            && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
+            && result.wrapping_mul(10 as u64)
+                <= (18446744073709551615 as u64).wrapping_sub(
+                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
+                        as ::core::ffi::c_uchar as u64,
+                )
+        {
+            result = result
+                .wrapping_mul(10 as u64)
+                .wrapping_add((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u64);
+            i = i.wrapping_add(1);
+        }
+        *out = result as u64;
+        return if i >= len
+            || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_uchar
+                as u32
+                >= 10 as u32
+        {
+            i as ::core::ffi::c_int
+        } else {
+            -1 as ::core::ffi::c_int
+        };
+    }
+}
+
+pub static mut digits__: [::core::ffi::c_uchar; 256] = [
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 10, 11, 12, 13, 14, 15,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 10, 11, 12, 13, 14, 15, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+];
+
+#[inline]
+pub unsafe fn parse_hex_to_uint32_t(
+    mut s: *const i8,
+    mut len: usize,
+    mut out: *mut u32,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut result: u32 = 0 as u32;
+        let mut i: usize = 0 as usize;
+        while i < len
+            && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32) < 16 as u32
+            && result <= 4294967295 as u32 >> 4 as ::core::ffi::c_int
+        {
+            result = result.wrapping_mul(16 as u32).wrapping_add(
+                digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32,
+            );
+            i = i.wrapping_add(1);
+        }
+        *out = result as u32;
+        return if i >= len || !is_xdigit(*s.offset(i as isize)) {
+            i as ::core::ffi::c_int
+        } else {
+            -1 as ::core::ffi::c_int
+        };
+    }
+}
+
+#[inline]
+pub unsafe fn parse_hex_to_uint64_t(
+    mut s: *const i8,
+    mut len: usize,
+    mut out: *mut u64,
+) -> ::core::ffi::c_int {
+    unsafe {
+        let mut result: u64 = 0 as u64;
+        let mut i: usize = 0 as usize;
+        while i < len
+            && (digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u32) < 16 as u32
+            && result <= 18446744073709551615 as u64 >> 4 as ::core::ffi::c_int
+        {
+            result = result.wrapping_mul(16 as u64).wrapping_add(
+                digits__[*s.offset(i as isize) as ::core::ffi::c_uchar as usize] as u64,
+            );
+            i = i.wrapping_add(1);
+        }
+        *out = result as u64;
+        return if i >= len || !is_xdigit(*s.offset(i as isize)) {
+            i as ::core::ffi::c_int
+        } else {
+            -1 as ::core::ffi::c_int
+        };
+    }
+}

@@ -18,60 +18,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod utils_numbers_h {
-    #[inline]
-    pub unsafe fn parse_dec_to_uint64_t(
-        mut s: *const i8,
-        mut len: usize,
-        mut out: *mut u64,
-    ) -> ::core::ffi::c_int {
-        unsafe {
-            let mut result: u64 = 0 as u64;
-            let mut i: usize = 0;
-            i = 0 as usize;
-            while i < len
-                && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as u32)
-                    < 10 as u32
-                && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
-                && result.wrapping_mul(10 as u64)
-                    <= (18446744073709551615 as u64).wrapping_sub(
-                        (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as u64,
-                    )
-            {
-                result = result.wrapping_mul(10 as u64).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u64,
-                );
-                i = i.wrapping_add(1);
-            }
-            *out = result as u64;
-            return if i >= len
-                || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as u32
-                    >= 10 as u32
-            {
-                i as ::core::ffi::c_int
-            } else {
-                -1 as ::core::ffi::c_int
-            };
-        }
-    }
-    #[inline]
-    pub unsafe fn popcount32(mut x: u32) -> u32 {
-        return (x as u64).count_ones() as i32 as u32;
-    }
-    #[inline]
-    pub unsafe fn next_pow2(mut x: u32) -> u32 {
-        if x <= 1 as u32 {
-            return 1 as u32;
-        }
-        return (1 as u32)
-            << (::core::mem::size_of::<u32>() as usize)
-                .wrapping_mul(8 as usize)
-                .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize);
-    }
-}
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
@@ -83,7 +29,7 @@ pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefau
 pub use self::darray_h::darray_size_t;
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::utils::_steal;
-pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
+pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
 pub use crate::xkb::keymap::clear_level;
 pub use crate::xkb::keymap_priv::{

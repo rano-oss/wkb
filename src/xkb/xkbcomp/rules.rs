@@ -220,46 +220,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod utils_numbers_h {
-    #[inline]
-    pub unsafe fn parse_dec_to_uint32_t(
-        mut s: *const i8,
-        mut len: usize,
-        mut out: *mut u32,
-    ) -> ::core::ffi::c_int {
-        unsafe {
-            let mut result: u32 = 0 as u32;
-            let mut i: usize = 0;
-            i = 0 as usize;
-            while i < len
-                && ((*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as u32)
-                    < 10 as u32
-                && result <= (4294967295 as u32).wrapping_div(10 as u32)
-                && result.wrapping_mul(10 as u32)
-                    <= (4294967295 as u32).wrapping_sub(
-                        (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                            as ::core::ffi::c_uchar as u32,
-                    )
-            {
-                result = result.wrapping_mul(10 as u32).wrapping_add(
-                    (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32) as u32,
-                );
-                i = i.wrapping_add(1);
-            }
-            *out = result as u32;
-            return if i >= len
-                || (*s.offset(i as isize) as ::core::ffi::c_int - '0' as i32)
-                    as ::core::ffi::c_uchar as u32
-                    >= 10 as u32
-            {
-                i as ::core::ffi::c_int
-            } else {
-                -1 as ::core::ffi::c_int
-            };
-        }
-    }
-}
 pub mod include_h {
     use libc::FILE;
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
@@ -368,7 +328,7 @@ pub use self::scanner_utils_h::{
     scanner_str, scanner_token_location, sval, svaleq, svaleq_prefix,
 };
 pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
-pub use self::utils_numbers_h::parse_dec_to_uint32_t;
+pub use crate::xkb::utils::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,

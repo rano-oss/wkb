@@ -133,13 +133,6 @@ pub mod xkbcommon_features_h {
     pub use crate::xkb::features::xkb_feature_supported;
 }
 
-pub mod utils_numbers_h {
-    #[inline]
-
-    pub unsafe fn popcount32(mut x: u32) -> u32 {
-        return (x as u64).count_ones() as i32 as u32;
-    }
-}
 
 
 
@@ -211,7 +204,7 @@ pub use self::state_priv_h::{
 use self::utf8_h::is_valid_utf8;
 pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 pub use crate::xkb::utils::one_bit_set;
-pub use self::utils_numbers_h::popcount32;
+pub use crate::xkb::utils::popcount32;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,

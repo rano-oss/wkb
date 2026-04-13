@@ -103,37 +103,6 @@ pub mod include_locale_h {
         pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
     }
 }
-pub mod utils_numbers_h {
-    #[inline]
-    pub unsafe fn parse_dec_to_uint32_t(s: *const i8, len: usize, out: *mut u32) -> i32 {
-        unsafe {
-            let bytes = std::slice::from_raw_parts(s as *const u8, len);
-            let mut result: u32 = 0;
-            let mut i: usize = 0;
-            while i < bytes.len() {
-                let digit = bytes[i].wrapping_sub(b'0');
-                if digit >= 10 {
-                    break;
-                }
-                if result > u32::MAX / 10 {
-                    break;
-                }
-                let next = result.wrapping_mul(10);
-                if next > u32::MAX - digit as u32 {
-                    break;
-                }
-                result = next + digit as u32;
-                i += 1;
-            }
-            *out = result;
-            if i >= len || bytes.get(i).map_or(true, |&b| b.wrapping_sub(b'0') >= 10) {
-                i as i32
-            } else {
-                -1
-            }
-        }
-    }
-}
 pub mod assert_h {
     extern "C" {
         pub fn __assert_fail(
@@ -176,7 +145,7 @@ pub use self::tools_common_h::{
     PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
 };
 pub use crate::xkb::utils::{isempty, streq};
-pub use self::utils_numbers_h::parse_dec_to_uint32_t;
+pub use crate::xkb::utils::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;
 pub use crate::xkb::shared_types::{

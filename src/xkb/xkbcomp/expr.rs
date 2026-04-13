@@ -7,46 +7,9 @@ pub mod inttypes_h {
         pub fn imaxabs(__n: i64) -> i64;
     }
 }
-pub mod utils_numbers_h {
-    #[inline]
-    pub unsafe fn parse_dec_to_uint32_t(
-        mut s: *const i8,
-        mut len: usize,
-        mut out: *mut u32,
-    ) -> i32 {
-        unsafe {
-            let mut result: u32 = 0 as u32;
-            let mut i: usize = 0;
-            i = 0 as usize;
-            while i < len
-                && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
-                    < 10 as u32
-                && result <= (4294967295 as u32).wrapping_div(10 as u32)
-                && result.wrapping_mul(10 as u32)
-                    <= (4294967295 as u32).wrapping_sub(
-                        (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32,
-                    )
-            {
-                result = result
-                    .wrapping_mul(10 as u32)
-                    .wrapping_add((*s.offset(i as isize) as i32 - '0' as i32) as u32);
-                i = i.wrapping_add(1);
-            }
-            *out = result as u32;
-            return if i >= len
-                || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
-                    >= 10 as u32
-            {
-                i as i32
-            } else {
-                -1 as i32
-            };
-        }
-    }
-}
 
 use self::inttypes_h::imaxabs;
-pub use self::utils_numbers_h::parse_dec_to_uint32_t;
+pub use crate::xkb::utils::parse_dec_to_uint32_t;
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
