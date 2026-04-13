@@ -21,24 +21,6 @@ pub mod keymap_compare_h {
     pub const XKB_KEYMAP_CMP_LEDS: xkb_keymap_compare_property = 2;
     pub const XKB_KEYMAP_CMP_MODS: xkb_keymap_compare_property = 1;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return cstr_cmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            if s1.is_null() || s2.is_null() {
-                return s1 == s2;
-            }
-            return streq(s1, s2);
-        }
-    }
-    use crate::xkb::utils::cstr_cmp;
-}
 
 pub use self::keymap_compare_h::{
     xkb_keymap_compare_property, XKB_KEYMAP_CMP_ALL, XKB_KEYMAP_CMP_KEYCODES, XKB_KEYMAP_CMP_LEDS,
@@ -79,7 +61,7 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use self::utils_h::{streq, streq_null};
+pub use crate::xkb::utils::{streq, streq_null};
 pub use crate::xkb::keymap_priv::action_equal;
 pub use crate::xkb::shared_types::darray_size_t;
 unsafe fn keymap_compare_mods(

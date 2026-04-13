@@ -153,34 +153,6 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
     pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 }
-pub mod utils_h {
-    use libc::calloc;
-    #[inline]
-    pub unsafe fn is_aligned(
-        mut pointer: *const ::core::ffi::c_void,
-        mut byte_count: usize,
-    ) -> bool {
-        return (pointer as usize).wrapping_rem(byte_count as usize) == 0 as usize;
-    }
-    #[inline]
-    pub unsafe fn memdup(
-        mut mem: *const ::core::ffi::c_void,
-        mut nmemb: usize,
-        mut size: usize,
-    ) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut p: *mut ::core::ffi::c_void = calloc(nmemb, size);
-            if !p.is_null() {
-                std::ptr::copy_nonoverlapping(
-                    mem as *const u8,
-                    p as *mut u8,
-                    nmemb.wrapping_mul(size),
-                );
-            }
-            return p;
-        }
-    }
-}
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = 8;
 }
@@ -264,7 +236,7 @@ pub use self::text_h::{
     format_control_names_offset, ActionTypeText, C2Rust_Unnamed_16, KeyNameText, KeysymText,
     LookupEntry, CONTROL_NAMES_MIN_V1_INDEX, CONTROL_NAMES_MIN_V2_INDEX, GROUP_LAST_INDEX_NAME,
 };
-pub use self::utils_h::{is_aligned, memdup};
+pub use crate::xkb::utils::{is_aligned, memdup};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,

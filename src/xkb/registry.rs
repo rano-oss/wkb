@@ -956,50 +956,6 @@ pub mod stat_h {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return cstr_cmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn streq_null(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            if s1.is_null() || s2.is_null() {
-                return s1 == s2;
-            }
-            return streq(s1, s2);
-        }
-    }
-    #[inline]
-    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
-        unsafe {
-            return istrncmp(s1, s2, len) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-    #[inline]
-    pub unsafe fn is_space(mut ch: i8) -> bool {
-        return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
-    }
-    #[inline]
-    pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
-        unsafe {
-            if eaccess(path, mode) != 0 as i32 {
-                return false;
-            }
-            return true;
-        }
-    }
-    use super::unistd_h::eaccess;
-    use crate::xkb::utils::cstr_cmp;
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::istrncmp;
-}
 pub mod util_mem_h {
     #[inline]
     pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
@@ -1154,7 +1110,7 @@ pub use self::tree_h::{
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::util_list_h::{list, list_append, list_empty, list_init, list_is_last, list_remove};
 pub use self::util_mem_h::_steal;
-pub use self::utils_h::{
+pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
 pub use self::valid_h::{

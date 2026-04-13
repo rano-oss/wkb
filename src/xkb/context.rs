@@ -69,35 +69,6 @@ pub mod stat_h {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
-        unsafe {
-            return istrncmp(s1, s2, len) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-    #[inline]
-    pub fn is_space(mut ch: i8) -> bool {
-        return ch as i32 == ' ' as i32 || ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32;
-    }
-    #[inline]
-    pub unsafe fn check_eaccess(mut path: *const i8, mut mode: i32) -> bool {
-        unsafe {
-            if eaccess(path, mode) != 0 as i32 {
-                return 0 != 0;
-            }
-            return 1 != 0;
-        }
-    }
-
-    use super::unistd_h::eaccess;
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::istrncmp;
-}
 pub mod errno_h {
     extern "C" {
         pub fn __errno_location() -> *mut i32;
@@ -133,7 +104,7 @@ use self::stat_h::stat;
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
-pub use self::utils_h::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
+pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,

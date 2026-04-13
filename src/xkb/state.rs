@@ -399,13 +399,6 @@ pub mod util_mem_h {
     };
 }
 
-pub mod utils_h {
-    #[inline]
-
-    pub unsafe fn one_bit_set(mut x: u32) -> i32 {
-        return (x != 0 && x & x.wrapping_sub(1 as u32) == 0 as u32) as i32;
-    }
-}
 
 pub mod utf8_h {
 
@@ -478,7 +471,7 @@ pub use self::state_priv_h::{
 };
 use self::utf8_h::is_valid_utf8;
 pub use self::util_mem_h::xkb_check_versioned_struct_size_;
-pub use self::utils_h::one_bit_set;
+pub use crate::xkb::utils::one_bit_set;
 pub use self::utils_numbers_h::popcount32;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,

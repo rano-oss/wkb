@@ -21786,16 +21786,6 @@ pub mod keysym_names_h {
 
     use crate::xkb::shared_types::xkb_keysym_t;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
-        return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-            || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
-            || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
-    }
-
-    pub use crate::xkb::utils::{istrcmp, istrncmp};
-}
 pub mod utils_numbers_h {
     pub static mut digits__: [u8; 256] = [
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -21844,7 +21834,7 @@ pub mod utils_numbers_h {
         }
     }
 
-    use super::utils_h::is_xdigit;
+    use crate::xkb::utils::is_xdigit;
 }
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
@@ -21879,7 +21869,7 @@ pub use self::keysym_names_h::{
 };
 pub use self::sys_types_h::ssize_t;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
-pub use self::utils_h::{is_xdigit, istrcmp, istrncmp};
+pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,

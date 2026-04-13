@@ -194,32 +194,6 @@ pub mod keymap_file_iterator_h {
     use super::scanner_utils_h::scanner;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn strcpy_safe(mut dest: *mut i8, mut size: usize, mut src: *const i8) -> *mut i8 {
-        unsafe {
-            if dest.is_null() || size == 0 || src.is_null() {
-                return ::core::ptr::null_mut::<i8>();
-            }
-            let limit: *const i8 = dest
-                .offset(size as isize)
-                .offset(-(1 as ::core::ffi::c_int as isize));
-            while dest < limit as *mut i8 && *src as ::core::ffi::c_int != 0 {
-                let c2rust_fresh0 = src;
-                src = src.offset(1);
-                let c2rust_fresh1 = dest;
-                dest = dest.offset(1);
-                *c2rust_fresh1 = *c2rust_fresh0;
-            }
-            *dest = '\0' as i32 as i8;
-            return if *src as ::core::ffi::c_int != 0 {
-                ::core::ptr::null_mut::<i8>()
-            } else {
-                dest
-            };
-        }
-    }
-}
 pub mod include_h {
     use libc::{FILE};
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
@@ -382,7 +356,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc};
-pub use self::utils_h::strcpy_safe;
+pub use crate::xkb::utils::strcpy_safe;
 use self::utils_paths_h::is_absolute_path;
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};

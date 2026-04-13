@@ -71,7 +71,6 @@ pub mod mman_linux_h {
     pub const MAP_SHARED: i32 = 0x1 as i32;
 }
 
-use crate::xkb::shared_types::*;
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_RDONLY;
@@ -81,6 +80,7 @@ use self::stat_h::fstat;
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 use self::unistd_h::close;
+use crate::xkb::shared_types::*;
 pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
@@ -180,11 +180,11 @@ pub unsafe fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 
 }
 
 // New Rust file utilities
+use libc::{fdopen, FILE};
 use memmap2::Mmap;
 use std::fs::File;
 use std::io;
 use std::path::Path;
-use libc::{FILE, fdopen};
 
 /// Memory-mapped file wrapper with automatic cleanup
 pub struct MappedFile {
@@ -820,4 +820,152 @@ pub unsafe fn darray_appends_nul(
     *size_ref = new_size;
     core::ptr::copy_nonoverlapping(src, (*item_ptr).offset(old_size as isize), count as usize);
     *(*item_ptr).offset(new_size.wrapping_sub(1) as isize) = 0;
+}
+
+// ── utils_h functions (moved from duplicated pub mod utils_h blocks) ─
+
+#[inline]
+pub unsafe fn istreq(s1: *const i8, s2: *const i8) -> bool {
+    istrcmp(s1, s2) == 0
+}
+
+#[inline]
+pub unsafe fn istrneq(s1: *const i8, s2: *const i8, len: usize) -> bool {
+    istrncmp(s1, s2, len) == 0
+}
+
+#[inline]
+pub unsafe fn strdup_safe(s: *const i8) -> *mut i8 {
+    cstr_dup(s)
+}
+
+#[inline]
+pub unsafe fn isempty(s: *const i8) -> bool {
+    s.is_null() || *s == 0
+}
+
+#[inline]
+pub unsafe fn streq(s1: *const i8, s2: *const i8) -> bool {
+    assert!(!s1.is_null() && !s2.is_null(), "s1 && s2");
+    std::ffi::CStr::from_ptr(s1) == std::ffi::CStr::from_ptr(s2)
+}
+
+#[inline]
+pub unsafe fn streq_null(s1: *const i8, s2: *const i8) -> bool {
+    if s1.is_null() || s2.is_null() {
+        return s1 == s2;
+    }
+    streq(s1, s2)
+}
+
+#[inline]
+pub unsafe fn streq_not_null(s1: *const i8, s2: *const i8) -> bool {
+    if s1.is_null() || s2.is_null() {
+        return false;
+    }
+    streq(s1, s2)
+}
+
+#[inline]
+pub unsafe fn strempty(s: *const i8) -> *const i8 {
+    if !s.is_null() {
+        s
+    } else {
+        b"\0".as_ptr() as *const i8
+    }
+}
+
+#[inline]
+pub fn is_space(ch: i8) -> bool {
+    ch as i32 == ' ' as i32 || (ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32)
+}
+
+#[inline]
+pub fn is_ascii(ch: i8) -> bool {
+    ch as i32 & !(0x7f) == 0
+}
+
+#[inline]
+pub fn is_graph(ch: i8) -> bool {
+    ch as i32 > ' ' as i32 && (ch as i32) < 0x7f
+}
+
+#[inline]
+pub fn is_alpha(ch: i8) -> bool {
+    (ch as i32 >= 'a' as i32 && ch as i32 <= 'z' as i32)
+        || (ch as i32 >= 'A' as i32 && ch as i32 <= 'Z' as i32)
+}
+
+#[inline]
+pub fn is_digit(ch: i8) -> bool {
+    ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
+}
+
+#[inline]
+pub fn is_alnum(ch: i8) -> bool {
+    is_alpha(ch) || is_digit(ch)
+}
+
+#[inline]
+pub fn is_xdigit(ch: i8) -> bool {
+    (ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32)
+        || (ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32)
+        || (ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32)
+}
+
+#[inline]
+pub fn is_valid_char(cp: u32) -> bool {
+    cp != 0
+}
+
+#[inline]
+pub fn is_aligned(pointer: *const ::core::ffi::c_void, byte_count: usize) -> bool {
+    (pointer as usize).wrapping_rem(byte_count) == 0
+}
+
+#[inline]
+pub fn one_bit_set(x: u32) -> i32 {
+    (x != 0 && x & x.wrapping_sub(1) == 0) as i32
+}
+
+#[inline]
+pub unsafe fn memdup(
+    mem: *const ::core::ffi::c_void,
+    nmemb: usize,
+    size: usize,
+) -> *mut ::core::ffi::c_void {
+    let p: *mut ::core::ffi::c_void = libc::calloc(nmemb, size);
+    if !p.is_null() {
+        std::ptr::copy_nonoverlapping(mem as *const u8, p as *mut u8, nmemb.wrapping_mul(size));
+    }
+    p
+}
+
+#[inline]
+pub unsafe fn strcpy_safe(mut dest: *mut i8, size: usize, src: *const i8) -> *mut i8 {
+    if dest.is_null() || size == 0 || src.is_null() {
+        return ::core::ptr::null_mut::<i8>();
+    }
+    let limit: *const i8 = dest.offset(size as isize).offset(-1);
+    let mut s = src;
+    while dest < limit as *mut i8 && *s != 0 {
+        let c = *s;
+        s = s.offset(1);
+        *dest = c;
+        dest = dest.offset(1);
+    }
+    *dest = 0;
+    if *s != 0 {
+        ::core::ptr::null_mut::<i8>()
+    } else {
+        dest
+    }
+}
+
+#[inline]
+pub unsafe fn check_eaccess(path: *const i8, mode: i32) -> bool {
+    extern "C" {
+        fn eaccess(__name: *const i8, __type: i32) -> i32;
+    }
+    unsafe { eaccess(path, mode) == 0 }
 }

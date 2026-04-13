@@ -410,7 +410,7 @@ pub mod scanner_utils_h {
     use crate::xkb::shared_types::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::utf8_h::utf32_to_utf8;
-    use super::utils_h::is_ascii;
+    use crate::xkb::utils::is_ascii;
     use super::utils_numbers_h::{
         parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
     };
@@ -569,49 +569,6 @@ pub mod parser_h {
     use crate::xkb::shared_types::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
-}
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn is_valid_char(mut cp: u32) -> bool {
-        return cp != 0 as u32;
-    }
-    #[inline]
-    pub unsafe fn is_ascii(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int) == 0 as ::core::ffi::c_int;
-    }
-    #[inline]
-    pub unsafe fn is_space(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int == ' ' as i32
-            || ch as ::core::ffi::c_int >= '\t' as i32 && ch as ::core::ffi::c_int <= '\r' as i32;
-    }
-    #[inline]
-    pub unsafe fn is_alpha(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'z' as i32
-            || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'Z' as i32;
-    }
-    #[inline]
-    pub unsafe fn is_digit(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int >= '0' as i32 && ch as ::core::ffi::c_int <= '9' as i32;
-    }
-    #[inline]
-    pub unsafe fn is_alnum(mut ch: i8) -> bool {
-        unsafe {
-            return is_alpha(ch) as ::core::ffi::c_int != 0
-                || is_digit(ch) as ::core::ffi::c_int != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn is_xdigit(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int >= '0' as i32 && ch as ::core::ffi::c_int <= '9' as i32
-            || ch as ::core::ffi::c_int >= 'a' as i32 && ch as ::core::ffi::c_int <= 'f' as i32
-            || ch as ::core::ffi::c_int >= 'A' as i32 && ch as ::core::ffi::c_int <= 'F' as i32;
-    }
-    #[inline]
-    pub unsafe fn is_graph(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int >= '!' as i32 && ch as ::core::ffi::c_int <= '~' as i32;
-    }
-
-    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
     #[inline]
@@ -965,7 +922,7 @@ pub mod utils_numbers_h {
         }
     }
 
-    use super::utils_h::is_xdigit;
+    use crate::xkb::utils::is_xdigit;
 }
 pub mod utf8_h {
 
@@ -1094,7 +1051,7 @@ pub use self::scanner_utils_h::{
     scanner_peek, scanner_skip_to_eol, scanner_str, scanner_token_location,
     scanner_unicode_code_point, sval,
 };
-pub use self::utils_h::{
+pub use crate::xkb::utils::{
     is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
 };
 pub use self::utils_numbers_h::{

@@ -108,17 +108,6 @@ pub mod stat_h {
         pub fn mkdir(__path: *const i8, __mode: u32) -> i32;
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn streq(s1: *const i8, s2: *const i8) -> bool {
-        assert!(!s1.is_null() && !s2.is_null(), "s1 && s2");
-        unsafe { std::ffi::CStr::from_ptr(s1) == std::ffi::CStr::from_ptr(s2) }
-    }
-    #[inline]
-    pub unsafe fn isempty(s: *const i8) -> bool {
-        s.is_null() || unsafe { *s == 0 }
-    }
-}
 pub mod include_locale_h {
     pub const LC_ALL: i32 = __LC_ALL;
     use super::locale_h::__LC_ALL;
@@ -206,7 +195,7 @@ pub use self::tools_common_h::{
     print_state_options, tools_print_keycode_state, DEFAULT_PRINT_OPTIONS, PRINT_ALL_FIELDS,
     PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
 };
-pub use self::utils_h::{isempty, streq};
+pub use crate::xkb::utils::{isempty, streq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;

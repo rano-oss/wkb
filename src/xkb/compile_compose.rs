@@ -139,14 +139,6 @@ pub mod getopt_core_h {
 pub mod unistd_h {
     pub const STDIN_FILENO: i32 = 0 as i32;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn isempty(mut s: *const i8) -> bool {
-        unsafe {
-            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
-        }
-    }
-}
 pub mod locale_h {
     pub const __LC_CTYPE: i32 = 0 as i32;
     pub const __LC_ALL: i32 = 6 as i32;
@@ -165,7 +157,7 @@ use self::tools_common_h::{
     is_pipe_or_regular_file, tools_enable_verbose_logging, tools_read_stdin,
 };
 pub use self::unistd_h::STDIN_FILENO;
-pub use self::utils_h::isempty;
+pub use crate::xkb::utils::isempty;
 pub use self::xkbcommon_compose_h::{
     xkb_compose_compile_flags, xkb_compose_format, xkb_compose_table_new_from_file,
     xkb_compose_table_new_from_locale, xkb_compose_table_unref, XKB_COMPOSE_COMPILE_NO_FLAGS,

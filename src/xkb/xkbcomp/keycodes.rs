@@ -124,21 +124,6 @@ pub mod xkbcomp_priv_h {
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::istrcmp;
-}
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = 8;}
 pub mod expr_h {
@@ -259,7 +244,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::util_mem_h::_steal;
-pub use self::utils_h::{istrcmp, istreq, strdup_safe};
+pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 pub use self::xkbcomp_priv_h::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
     xkb_parser_strict_flags, C2Rust_Unnamed_14, C2Rust_Unnamed_15, FreeXkbFile, ReportBadType,

@@ -318,7 +318,7 @@ pub mod scanner_utils_h {
     }
 
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
-    use super::utils_h::is_ascii;
+    use crate::xkb::utils::is_ascii;
     use crate::xkb::shared_types::darray_size_t;
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::XKB_LOG_LEVEL_ERROR;
@@ -330,31 +330,6 @@ pub mod scanner_utils_h {
             ))
         }
     }
-}
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn isempty(mut s: *const i8) -> bool {
-        unsafe {
-            return s.is_null()
-                || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn is_ascii(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int & !(0x7f as ::core::ffi::c_int) == 0 as ::core::ffi::c_int;
-    }
-    #[inline]
-    pub unsafe fn is_space(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int == ' ' as i32
-            || ch as ::core::ffi::c_int >= '\t' as i32 && ch as ::core::ffi::c_int <= '\r' as i32;
-    }
-    #[inline]
-    pub unsafe fn is_graph(mut ch: i8) -> bool {
-        return ch as ::core::ffi::c_int >= '!' as i32 && ch as ::core::ffi::c_int <= '~' as i32;
-    }
-
-    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
 }
 pub mod utils_numbers_h {
     #[inline]
@@ -508,7 +483,7 @@ pub use self::scanner_utils_h::{
     scanner_eol, scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol,
     scanner_str, scanner_token_location, sval, svaleq, svaleq_prefix,
 };
-pub use self::utils_h::{is_ascii, is_graph, is_space, isempty};
+pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 pub use self::xkbcommon_errors_h::{

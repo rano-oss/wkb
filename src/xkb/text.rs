@@ -19,24 +19,6 @@ pub mod text_h {
     }
     use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn strempty(mut s: *const i8) -> *const i8 {
-        return if !s.is_null() {
-            s
-        } else {
-            b"\0".as_ptr() as *const i8
-        };
-    }
-
-    pub use crate::xkb::utils::istrcmp;
-}
 pub mod keysym_h {
     pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31 as i32;
 }
@@ -62,7 +44,7 @@ pub use self::text_h::{
     format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
     CONTROL_NAMES_MIN_V2_INDEX,
 };
-pub use self::utils_h::{istrcmp, istreq, strempty};
+pub use crate::xkb::utils::{istrcmp, istreq, strempty};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len_safe;
 pub unsafe fn LookupString(

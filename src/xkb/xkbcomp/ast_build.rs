@@ -142,20 +142,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-    #[inline]
-    pub unsafe fn isempty(mut s: *const i8) -> bool {
-        unsafe {
-            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
-        }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-}
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
@@ -238,7 +224,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
-pub use self::utils_h::{isempty, strdup_safe};
+pub use crate::xkb::utils::{isempty, strdup_safe};
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;

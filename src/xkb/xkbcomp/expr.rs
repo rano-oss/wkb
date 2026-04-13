@@ -140,22 +140,6 @@ pub mod inttypes_h {
         pub fn imaxabs(__n: i64) -> i64;
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
-        unsafe {
-            return istrncmp(s1, s2, len) == 0 as i32;
-        }
-    }
-
-    pub use crate::xkb::utils::{istrcmp, istrncmp};
-}
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe fn parse_dec_to_uint32_t(
@@ -284,7 +268,7 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
-pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq};
+pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,

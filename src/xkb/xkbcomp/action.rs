@@ -137,15 +137,6 @@ pub use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
     ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
 };
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as i32;
-        }
-    }
-    pub use crate::xkb::utils::istrcmp;
-}
 
 pub use self::action_h::ActionsInfo;
 pub use self::ast_h::{
@@ -211,7 +202,7 @@ pub use self::text_h::{
     actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
     LookupValue,
 };
-pub use self::utils_h::{istrcmp, istreq};
+pub use crate::xkb::utils::{istrcmp, istreq};
 pub use self::xkbcomp_priv_h::{
     pending_computation, pending_computation_array, xkb_keymap_info, xkb_parser_error,
     xkb_parser_strict_flags, C2Rust_Unnamed_14, C2Rust_Unnamed_15, PARSER_FATAL_ERROR,

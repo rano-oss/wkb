@@ -139,7 +139,7 @@ pub mod scanner_utils_h {
     }
 
     use crate::xkb::shared_types::xkb_context;
-    use super::utils_h::istrncmp;
+    use crate::xkb::utils::istrncmp;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -289,26 +289,6 @@ pub mod parser_h {
     use crate::xkb::shared_types::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
-}
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn streq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return cstr_cmp(s1, s2) == 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn streq_not_null(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            if s1.is_null() || s2.is_null() {
-                return 0 != 0;
-            }
-            return streq(s1, s2);
-        }
-    }
-
-    use crate::xkb::utils::cstr_cmp;
-    pub use crate::xkb::utils::istrncmp;
 }
 pub mod keysym_h {
     pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -468,7 +448,7 @@ pub use self::parser_h::{
 };
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
-pub use self::utils_h::{istrncmp, streq, streq_not_null};
+pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };

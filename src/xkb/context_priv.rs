@@ -104,14 +104,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn isempty(mut s: *const i8) -> bool {
-        unsafe {
-            return s.is_null() || *s.offset(0 as i32 as isize) as i32 == '\0' as i32;
-        }
-    }
-}
 
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -160,7 +152,7 @@ pub use self::messages_codes_h::{
 pub use self::rmlvo_h::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use self::utils_h::isempty;
+pub use crate::xkb::utils::isempty;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
 use crate::xkb::utils::cstr_len;

@@ -136,21 +136,6 @@ pub mod xkbcomp_priv_h {
     pub type C2Rust_Unnamed_15 = XkbcompFeatures;
     pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::istrcmp;
-}
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
@@ -272,7 +257,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::util_mem_h::_steal;
-pub use self::utils_h::{istrcmp, istreq, strdup_safe};
+pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,

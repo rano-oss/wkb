@@ -47,19 +47,9 @@ pub mod bench_h {
         pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
     }
 }
-pub mod utils_h {
-    #[inline]
-    pub fn is_xdigit(mut ch: i8) -> bool {
-        return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-            || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
-            || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
-    }
-
-    // map_file/unmap_file removed - use crate::xkb::utils::MappedFile instead
-}
 pub mod utils_numbers_h {
 
-    use super::utils_h::is_xdigit;
+    use crate::xkb::utils::is_xdigit;
     #[inline]
     pub unsafe fn parse_dec_to_uint64_t(
         mut s: *const i8,
@@ -420,7 +410,7 @@ pub use self::bench_h::{
 use crate::xkb::shared_types::*;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-pub use self::utils_h::is_xdigit;
+pub use crate::xkb::utils::is_xdigit;
 use libc::{EXIT_SUCCESS, FILE, atof, exit, fclose, fopen, strtol};
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,

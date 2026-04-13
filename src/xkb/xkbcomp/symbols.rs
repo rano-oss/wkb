@@ -147,46 +147,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod utils_h {
-    use libc::calloc;
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn istrneq(mut s1: *const i8, mut s2: *const i8, mut len: usize) -> bool {
-        unsafe {
-            return istrncmp(s1, s2, len) == 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-    #[inline]
-    pub unsafe fn memdup(
-        mut mem: *const ::core::ffi::c_void,
-        mut nmemb: usize,
-        mut size: usize,
-    ) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut p: *mut ::core::ffi::c_void = calloc(nmemb, size);
-            if !p.is_null() {
-                std::ptr::copy_nonoverlapping(
-                    mem as *const u8,
-                    p as *mut u8,
-                    nmemb.wrapping_mul(size),
-                );
-            }
-            return p;
-        }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::{istrcmp, istrncmp};
-}
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = 8;
 }
@@ -353,7 +313,7 @@ pub use self::messages_codes_h::{
 };
 pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
 pub use self::util_mem_h::_steal;
-pub use self::utils_h::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
+pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
 pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
 pub use self::xkbcommon_errors_h::{

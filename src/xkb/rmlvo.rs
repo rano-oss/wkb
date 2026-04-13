@@ -149,14 +149,6 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 }
@@ -210,7 +202,7 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
-pub use self::utils_h::strdup_safe;
+pub use crate::xkb::utils::strdup_safe;
 pub use self::xkbcommon_errors_h::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,

@@ -132,21 +132,6 @@ pub mod action_h {
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod utils_h {
-    #[inline]
-    pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
-        unsafe {
-            return istrcmp(s1, s2) == 0 as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn strdup_safe(mut s: *const i8) -> *mut i8 {
-        unsafe { cstr_dup(s) }
-    }
-
-    use crate::xkb::utils::cstr_dup;
-    pub use crate::xkb::utils::istrcmp;
-}
 pub mod limits_h {
     pub const CHAR_BIT: i32 = 8;}
 pub mod vmod_h {
@@ -283,7 +268,7 @@ pub use self::text_h::{
     useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
 };
 pub use self::util_mem_h::_steal;
-pub use self::utils_h::{istrcmp, istreq, strdup_safe};
+pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use self::xkbcomp_priv_h::{

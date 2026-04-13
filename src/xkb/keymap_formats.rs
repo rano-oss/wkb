@@ -285,18 +285,10 @@ pub mod utils_numbers_h {
         }
     }
 
-    use super::utils_h::is_xdigit;
-}
-pub mod utils_h {
-    #[inline]
-    pub fn is_xdigit(mut ch: i8) -> bool {
-        return ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-            || ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32
-            || ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32;
-    }
+    use crate::xkb::utils::is_xdigit;
 }
 
-pub use self::utils_h::is_xdigit;
+pub use crate::xkb::utils::is_xdigit;
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::cstr_cmp;
