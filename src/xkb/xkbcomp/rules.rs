@@ -23,9 +23,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-}
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -282,7 +279,7 @@ pub mod include_h {
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
     pub use crate::xkb::xkbcomp::include::expand_path;
 
-    use super::ast_h::xkb_file_type;
+    use crate::xkb::shared_ast_types::xkb_file_type;
     use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn FindFileInXkbPath(
@@ -323,7 +320,7 @@ pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,

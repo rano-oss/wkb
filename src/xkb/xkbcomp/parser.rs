@@ -2,10 +2,6 @@ use crate::xkb::keysym::xkb_keysym_from_name;
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_intern;
 
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_1 = DarrayKeysym;
-}
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -185,7 +181,7 @@ pub mod parser_h {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
-    use super::ast_h::{
+    use crate::xkb::shared_ast_types::{
         merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
@@ -204,7 +200,7 @@ pub mod xkbcomp_priv_h {
 }
 pub mod ast_build_h {
 
-    use super::ast_h::ExprDef;
+    use crate::xkb::shared_ast_types::ExprDef;
     use super::scanner_utils_h::{scanner, sval};
     use crate::xkb::shared_types::xkb_keysym_t;
     pub use crate::xkb::xkbcomp::ast_build::{
@@ -235,9 +231,9 @@ pub mod ast_build_h {
     }
 
     pub unsafe fn UnknownStatementCreate(
-        type_0: super::ast_h::stmt_type,
+        type_0: crate::xkb::shared_ast_types::stmt_type,
         name: sval,
-    ) -> *mut super::ast_h::UnknownStatement {
+    ) -> *mut crate::xkb::shared_ast_types::UnknownStatement {
         unsafe {
             crate::xkb::xkbcomp::ast_build::UnknownStatementCreate(
                 type_0,
@@ -273,7 +269,7 @@ use self::ast_build_h::{
     LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate,
     VarCreate, XkbFileCreate,
 };
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
     C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
     ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,

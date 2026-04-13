@@ -13,11 +13,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
-}
 pub mod text_h {
     pub use crate::xkb::text::LookupEntry;
     pub type C2Rust_Unnamed_16 = u32;
@@ -72,7 +67,7 @@ pub mod xkbcommon_keysyms_h {
 }
 
 use self::ast_build_h::FreeStmt;
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags,
     C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
     ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,

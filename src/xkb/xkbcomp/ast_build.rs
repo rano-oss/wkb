@@ -4,10 +4,6 @@ extern "C" {
     fn strndup(__string: *const i8, __n: usize) -> *mut i8;
 }
 
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_1 = DarrayKeysym;
-}
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -60,7 +56,7 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
     C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
     ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,

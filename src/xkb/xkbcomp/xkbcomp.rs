@@ -27,10 +27,6 @@ pub mod rmlvo_h {
         }
     }
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
-}
 pub mod rules_h {
     use super::rmlvo_h::xkb_rmlvo_builder;
     use crate::xkb::shared_types::xkb_context;
@@ -67,7 +63,7 @@ pub mod rules_h {
 pub mod xkbcomp_priv_h {
     use libc::FILE;
 
-    use super::ast_h::XkbFile;
+    use crate::xkb::shared_ast_types::XkbFile;
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::{
         xkb_component_names, xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags,
@@ -125,7 +121,7 @@ pub mod xkbcomp_priv_h {
     }
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon,
     XkbFile, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,

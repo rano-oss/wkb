@@ -13,11 +13,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    pub use crate::xkb::xkbcomp::ast_build::{stmt_type_to_operator_char, stmt_type_to_string};
-}
 pub mod text_h {
     pub use crate::xkb::text::{buttonNames, LookupEntry};
     pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
@@ -82,7 +77,7 @@ pub mod utils_numbers_h {
     }
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _ParseCommon, stmt_type, stmt_type_to_operator_char, stmt_type_to_string, C2Rust_Unnamed_13,
     ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
     ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,

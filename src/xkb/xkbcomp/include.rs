@@ -3,10 +3,6 @@ use crate::xkb_logf;
 use crate::xkb::context_priv::{xkb_context_num_failed_include_paths, xkb_context_failed_include_path_get, xkb_context_getenv};
 use crate::xkb::context::{xkb_context_include_path_get_system_path, xkb_context_include_path_get_extra_path};
 
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
-}
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -137,7 +133,7 @@ pub mod scanner_utils_h {
 }
 pub mod xkbcomp_priv_h {
     use libc::{FILE};
-    use super::ast_h::XkbFile;
+    use crate::xkb::shared_ast_types::XkbFile;
     use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn XkbParseFile(
@@ -170,7 +166,7 @@ pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
     xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
     _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,

@@ -148,6 +148,14 @@ pub struct DarrayKeysym {
     pub item: *mut xkb_keysym_t,
 }
 
+// Type aliases for C2Rust_Unnamed variants that map to DarrayKeysym
+pub type C2Rust_Unnamed_1 = DarrayKeysym;
+pub type C2Rust_Unnamed_13 = DarrayKeysym;
+pub type C2Rust_Unnamed_15 = DarrayKeysym;
+
+// Re-export ast_build functions used by consumers via ast_h
+pub use crate::xkb::xkbcomp::ast_build::{stmt_type_to_string, xkb_file_type_to_string, stmt_type_to_operator_char};
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct ExprActionList {

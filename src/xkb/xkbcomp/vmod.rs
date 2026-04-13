@@ -1,10 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_1 = DarrayKeysym;
-}
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = 8;}
 pub mod text_h {
@@ -16,7 +12,7 @@ pub mod expr_h {
     pub use crate::xkb::xkbcomp::expr::ExprResolveModMask;
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _ParseCommon, merge_mode, stmt_type, C2Rust_Unnamed_1, ExprAction, ExprActionList,
     ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
     ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, ParseCommon, VModDef,

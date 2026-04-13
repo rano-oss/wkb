@@ -25,10 +25,6 @@ pub mod scanner_utils_h {
 
     use crate::xkb::shared_types::xkb_context;
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
-}
 pub mod keymap_file_iterator_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -93,7 +89,7 @@ pub mod keymap_file_iterator_h {
         pub pending_section: *mut XkbFile,
         pub ctx: *mut xkb_context,
     }
-    use super::ast_h::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
+    use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
     use crate::xkb::shared_types::xkb_context;
     use super::scanner_utils_h::scanner;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
@@ -102,7 +98,7 @@ pub mod include_h {
     use libc::{FILE};
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
-    use super::ast_h::xkb_file_type;
+    use crate::xkb::shared_ast_types::xkb_file_type;
     use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn FindFileInXkbPath(
@@ -134,7 +130,7 @@ pub mod include_h {
 pub mod xkbcomp_priv_h {
     use libc::{FILE};
 
-    use super::ast_h::XkbFile;
+    use crate::xkb::shared_ast_types::XkbFile;
     use crate::xkb::shared_types::xkb_context;
     use super::scanner_utils_h::scanner;
 
@@ -192,7 +188,7 @@ pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
     xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
     _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,

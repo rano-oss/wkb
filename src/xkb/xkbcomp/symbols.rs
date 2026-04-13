@@ -17,11 +17,6 @@ pub mod xkbcommon_errors_h {
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_13 = DarrayKeysym;
-    pub use crate::xkb::xkbcomp::ast_build::stmt_type_to_string;
-}
 pub mod text_h {
 
     pub use crate::xkb::text::{
@@ -143,7 +138,7 @@ pub mod xkbcommon_keysyms_h {
 }
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
     ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,

@@ -328,10 +328,6 @@ pub mod scanner_utils_h {
         }
     }
 }
-pub mod ast_h {
-    pub use crate::xkb::shared_ast_types::*;
-    pub type C2Rust_Unnamed_1 = DarrayKeysym;
-}
 pub mod parser_h {
     pub type yytokentype = ::core::ffi::c_int;
     pub const ALTERNATE_GROUP: yytokentype = 77;
@@ -465,7 +461,7 @@ pub mod parser_h {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
-    use super::ast_h::{
+    use crate::xkb::shared_ast_types::{
         merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
@@ -871,7 +867,7 @@ pub mod errno_h {
     }
 }
 
-pub use self::ast_h::{
+pub use crate::xkb::shared_ast_types::{
     _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
     ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
     ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
