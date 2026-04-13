@@ -1,48 +1,41 @@
+use crate::xkb::shared_types::{darray_size_t, xkb_context, xkb_layout_index_t};
 use crate::xkb_logf;
 
-pub mod rmlvo_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder {
-        pub rules: *mut i8,
-        pub model: *mut i8,
-        pub layouts: xkb_rmlvo_builder_layouts,
-        pub options: xkb_rmlvo_builder_options,
-        pub refcnt: i32,
-        pub ctx: *mut xkb_context,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_options {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_option,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_option {
-        pub option: *mut i8,
-        pub layout: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layouts {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_layout,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut i8,
-        pub variant: *mut i8,
-    }
-    use crate::xkb::shared_types::darray_size_t;
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::shared_types::xkb_layout_index_t;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_rmlvo_builder {
+    pub rules: *mut i8,
+    pub model: *mut i8,
+    pub layouts: xkb_rmlvo_builder_layouts,
+    pub options: xkb_rmlvo_builder_options,
+    pub refcnt: i32,
+    pub ctx: *mut xkb_context,
 }
-pub mod rules_h {
-    pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_rmlvo_builder_options {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_rmlvo_builder_option,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_rmlvo_builder_option {
+    pub option: *mut i8,
+    pub layout: xkb_layout_index_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_rmlvo_builder_layouts {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_rmlvo_builder_layout,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_rmlvo_builder_layout {
+    pub layout: *mut i8,
+    pub variant: *mut i8,
 }
 
 pub use crate::xkb::messages::{
@@ -89,21 +82,15 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::rmlvo_h::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
-};
-pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
-pub use crate::xkb::utils::strdup_safe;
+pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
-pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 use crate::xkb::utils::cstr_cmp;
+pub use crate::xkb::utils::strdup_safe;
 use crate::xkb::utils::{darray_append, darray_free};
 use libc::{calloc, free};
 pub unsafe fn xkb_rmlvo_builder_new(

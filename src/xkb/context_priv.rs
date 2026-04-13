@@ -1,13 +1,5 @@
 use crate::xkb::context::xkb_context_include_path_get_system_path;
 use crate::xkb::atom::{atom_table_size, atom_intern, atom_text};
-pub mod rmlvo_h {
-    pub type RMLVO = u32;
-    pub const RMLVO_OPTIONS: RMLVO = 16;
-    pub const RMLVO_VARIANT: RMLVO = 8;
-    pub const RMLVO_LAYOUT: RMLVO = 4;
-    pub const RMLVO_MODEL: RMLVO = 2;
-    pub const RMLVO_RULES: RMLVO = 1;
-}
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -53,9 +45,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::rmlvo_h::{
-    RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
+pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
 pub use crate::xkb::utils::isempty;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
@@ -64,7 +54,6 @@ use libc::{getenv};
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
-
 
 /// Macro that formats a Rust format string into a stack buffer, then calls `xkb_log`.
 /// This uses `core::fmt::Write` instead of C `snprintf`.

@@ -15,82 +15,13 @@ unsafe fn text_v1_keymap_format_ops_ptr() -> *const xkb_keymap_format_ops {
         as *const xkb_keymap_format_ops
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/rmlvo.h:22"]
-pub mod rmlvo_h {
-    pub use crate::xkb::rmlvo::rmlvo_h::*;
-    #[c2rust::src_loc = "14:1"]
-    pub type RMLVO = u32;
-    #[c2rust::src_loc = "19:5"]
-    pub const RMLVO_OPTIONS: RMLVO = 16;
-    #[c2rust::src_loc = "18:5"]
-    pub const RMLVO_VARIANT: RMLVO = 8;
-    #[c2rust::src_loc = "17:5"]
-    pub const RMLVO_LAYOUT: RMLVO = 4;
-    #[c2rust::src_loc = "16:5"]
-    pub const RMLVO_MODEL: RMLVO = 2;
-    #[c2rust::src_loc = "15:5"]
-    pub const RMLVO_RULES: RMLVO = 1;
-}
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/messages-codes.h:21"]
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/features/enums.h:21"]
-pub mod enums_h {
-    #[c2rust::src_loc = "98:5"]
-    pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
-    #[c2rust::src_loc = "76:1"]
-    #[c2rust::src_loc = "181:5"]
-    pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
-    #[c2rust::src_loc = "175:5"]
-    pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
-    #[c2rust::src_loc = "172:5"]
-    pub const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
-    #[c2rust::src_loc = "169:5"]
-    pub const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
-    #[c2rust::src_loc = "166:5"]
-    pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
-    #[c2rust::src_loc = "162:5"]
-    pub const XKB_CONSUMED_MODE_VALUES: u32 = 3;
-    #[c2rust::src_loc = "157:5"]
-    pub const XKB_STATE_MATCH_VALUES: u32 = 65539;
-    #[c2rust::src_loc = "152:5"]
-    pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
-    #[c2rust::src_loc = "147:5"]
-    pub const XKB_KEY_DIRECTION_VALUES: u32 = 7;
-    #[c2rust::src_loc = "142:5"]
-    pub const XKB_A11Y_FLAGS_VALUES: u32 = 3;
-    #[c2rust::src_loc = "139:5"]
-    pub const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
-    #[c2rust::src_loc = "127:5"]
-    pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
-    #[c2rust::src_loc = "115:5"]
-    pub const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
-    #[c2rust::src_loc = "109:5"]
-    pub const XKB_EVENT_TYPE_VALUES: u32 = 30;
-    #[c2rust::src_loc = "104:5"]
-    pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
-    #[c2rust::src_loc = "94:5"]
-    pub const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
-    #[c2rust::src_loc = "90:5"]
-    pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
-    #[c2rust::src_loc = "84:5"]
-    pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
-    #[c2rust::src_loc = "80:5"]
-    pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
-    #[c2rust::src_loc = "77:5"]
-    pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
-}
 #[c2rust::header_src = "/usr/include/stdlib.h:20"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_null.h:17"]
 #[c2rust::header_src = "/usr/include/stdint.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/stdbool.h:22"]
-pub use self::enums_h::{
-    XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
-    XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
-    XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES,
-    XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES,
-    XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
-    XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES,
-    XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
-    XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
-};
+pub use crate::xkb::shared_types::{XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES, XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES, XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES, XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES, XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES};
 pub use crate::xkb::shared_types::{
     entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
@@ -164,11 +95,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::rmlvo_h::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, RMLVO, RMLVO_LAYOUT, RMLVO_MODEL,
-    RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
+pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options};
+pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;

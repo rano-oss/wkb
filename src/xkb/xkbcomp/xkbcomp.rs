@@ -1,34 +1,8 @@
 use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_context_sanitize_rule_names};
 use crate::xkb_logf;
 
-pub mod rmlvo_h {
-    pub use crate::xkb::rmlvo::rmlvo_h::*;
-    pub type RMLVO = u32;
-    pub const RMLVO_OPTIONS: RMLVO = 16;
-    pub const RMLVO_VARIANT: RMLVO = 8;
-    pub const RMLVO_LAYOUT: RMLVO = 4;
-    pub const RMLVO_MODEL: RMLVO = 2;
-    pub const RMLVO_RULES: RMLVO = 1;
-
-    use crate::xkb::shared_types::xkb_rule_names;
-    pub unsafe fn xkb_rmlvo_builder_to_rules_names(
-        builder: *const xkb_rmlvo_builder,
-        rmlvo: *mut xkb_rule_names,
-        buf: *mut i8,
-        buf_size: usize,
-    ) -> bool {
-        unsafe {
-            crate::xkb::rmlvo::xkb_rmlvo_builder_to_rules_names(
-                builder as *const _,
-                rmlvo,
-                buf,
-                buf_size,
-            )
-        }
-    }
-}
 pub mod rules_h {
-    use super::rmlvo_h::xkb_rmlvo_builder;
+    use crate::xkb::rmlvo::xkb_rmlvo_builder;
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
     pub unsafe fn xkb_components_from_rmlvo_builder(
@@ -61,11 +35,8 @@ pub mod rules_h {
     }
 }
 
-pub use self::rmlvo_h::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, xkb_rmlvo_builder_to_rules_names, RMLVO,
-    RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
+pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, xkb_rmlvo_builder_to_rules_names};
+pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
 use self::rules_h::{xkb_components_from_rmlvo_builder, xkb_components_from_rules_names};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

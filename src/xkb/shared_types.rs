@@ -822,9 +822,8 @@ pub const XKB_MAX_MODS: xkb_mod_index_t = (::core::mem::size_of::<xkb_mod_mask_t
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keymap_format_ops {
-    pub keymap_new_from_rmlvo: Option<
-        unsafe fn(*mut xkb_keymap, *const crate::xkb::rmlvo::rmlvo_h::xkb_rmlvo_builder) -> bool,
-    >,
+    pub keymap_new_from_rmlvo:
+        Option<unsafe fn(*mut xkb_keymap, *const crate::xkb::rmlvo::xkb_rmlvo_builder) -> bool>,
     pub keymap_new_from_names: Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
     pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
     pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,
@@ -1047,3 +1046,49 @@ pub struct dirent {
 
 // NOTE: DIR type alias and __dirstream extern type are in utils.rs
 // (because __dirstream is an extern type that must be declared alongside its extern block)
+
+// ── enums_h ───────────────────────────────────────────────────────────
+pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
+pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
+pub const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
+pub const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
+pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
+pub const XKB_CONSUMED_MODE_VALUES: u32 = 3;
+pub const XKB_STATE_MATCH_VALUES: u32 = 65539;
+pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
+pub const XKB_KEY_DIRECTION_VALUES: u32 = 7;
+pub const XKB_A11Y_FLAGS_VALUES: u32 = 3;
+pub const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
+pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
+pub const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
+pub const XKB_EVENT_TYPE_VALUES: u32 = 30;
+pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
+pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
+pub const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
+pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
+pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
+pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
+pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
+
+// ── getopt_ext_h ──────────────────────────────────────────────────────
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct option {
+    pub name: *const i8,
+    pub has_arg: i32,
+    pub flag: *mut i32,
+    pub val: i32,
+}
+pub const no_argument: i32 = 0;
+pub const required_argument: i32 = 1;
+
+// ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
+pub type RMLVO = u32;
+pub const RMLVO_OPTIONS: RMLVO = 16;
+pub const RMLVO_VARIANT: RMLVO = 8;
+pub const RMLVO_LAYOUT: RMLVO = 4;
+pub const RMLVO_MODEL: RMLVO = 2;
+pub const RMLVO_RULES: RMLVO = 1;
+
+// ── rules_h ───────────────────────────────────────────────────────────
+pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;

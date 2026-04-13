@@ -1161,3 +1161,21 @@ extern "C" {
     pub fn opendir(__name: *const i8) -> *mut DIR;
     pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
 }
+
+// getopt_core_h
+extern "C" {
+    pub static mut optarg: *mut i8;
+    pub static mut optind: i32;
+}
+
+// getopt_ext_h
+use crate::xkb::shared_types::option;
+extern "C" {
+    pub fn getopt_long(
+        ___argc: i32,
+        ___argv: *const *mut i8,
+        __shortopts: *const i8,
+        __longopts: *const option,
+        __longind: *mut i32,
+    ) -> i32;
+}

@@ -1,26 +1,5 @@
 // use f128; // f128 is unstable, replaced with f64
 
-pub mod getopt_ext_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct option {
-        pub name: *const i8,
-        pub has_arg: i32,
-        pub flag: *mut i32,
-        pub val: i32,
-    }
-    pub const no_argument: i32 = 0 as i32;
-    pub const required_argument: i32 = 1 as i32;
-    extern "C" {
-        pub fn getopt_long(
-            ___argc: i32,
-            ___argv: *const *mut i8,
-            __shortopts: *const i8,
-            __longopts: *const option,
-            __longind: *mut i32,
-        ) -> i32;
-    }
-}
 pub mod bench_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -47,18 +26,14 @@ pub mod bench_h {
         pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
     }
 }
-pub mod getopt_core_h {
-    extern "C" {
-        pub static mut optarg: *mut i8;
-    }
-}
 
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
 use crate::xkb::shared_types::*;
-use self::getopt_core_h::optarg;
-pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
+use crate::xkb::utils::optarg;
+pub use crate::xkb::utils::getopt_long;
+pub use crate::xkb::shared_types::{no_argument, option, required_argument};
 pub use crate::xkb::utils::is_xdigit;
 use libc::{EXIT_SUCCESS, FILE, atof, exit, fclose, fopen, strtol};
 pub use crate::xkb::utils::{

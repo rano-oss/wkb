@@ -2,15 +2,6 @@ use crate::xkb::context_priv::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-pub mod rmlvo_h {
-    pub use crate::xkb::rmlvo::rmlvo_h::*;
-    pub type RMLVO = u32;
-    pub const RMLVO_OPTIONS: RMLVO = 16;
-    pub const RMLVO_VARIANT: RMLVO = 8;
-    pub const RMLVO_LAYOUT: RMLVO = 4;
-    pub const RMLVO_MODEL: RMLVO = 2;
-    pub const RMLVO_RULES: RMLVO = 1;
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
@@ -69,11 +60,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::rmlvo_h::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, RMLVO, RMLVO_LAYOUT, RMLVO_MODEL,
-    RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
+pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options};
+pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
 pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use crate::xkb::scanner_utils::{
     darray_sval, scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof,

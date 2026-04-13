@@ -1,24 +1,3 @@
-pub mod getopt_ext_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct option {
-        pub name: *const i8,
-        pub has_arg: i32,
-        pub flag: *mut i32,
-        pub val: i32,
-    }
-    pub const no_argument: i32 = 0 as i32;
-    pub const required_argument: i32 = 1 as i32;
-    extern "C" {
-        pub fn getopt_long(
-            ___argc: i32,
-            ___argv: *const *mut i8,
-            __shortopts: *const i8,
-            __longopts: *const option,
-            __longind: *mut i32,
-        ) -> i32;
-    }
-}
 
 pub mod table_h {
     #[derive(Copy, Clone)]
@@ -120,15 +99,10 @@ pub mod tools_common_h {
         pub fn tools_read_stdin() -> *mut FILE;
     }
 }
-pub mod getopt_core_h {
-    extern "C" {
-        pub static mut optarg: *mut i8;
-        pub static mut optind: i32;
-    }
-}
 
-use self::getopt_core_h::{optarg, optind};
-pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
+use crate::xkb::utils::{optarg, optind};
+pub use crate::xkb::utils::getopt_long;
+pub use crate::xkb::shared_types::{no_argument, option, required_argument};
 pub use crate::xkb::utils::setlocale;
 pub use crate::xkb::shared_types::{LC_ALL, LC_CTYPE};
 pub use crate::xkb::shared_types::{__LC_ALL, __LC_CTYPE};
