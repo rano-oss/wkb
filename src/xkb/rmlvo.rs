@@ -109,7 +109,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
                 "Unsupported RMLVO flags: 0x{:x}\n",
                 flags as u32 & !(XKB_RMLVO_BUILDER_FLAGS as u32),
             );
-            return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+            return std::ptr::null_mut();
         }
         let builder: *mut xkb_rmlvo_builder =
             Box::into_raw(Box::new(std::mem::zeroed::<xkb_rmlvo_builder>()));
@@ -120,10 +120,10 @@ pub unsafe fn xkb_rmlvo_builder_new(
             if !((*builder).rules.is_null() && !rules.is_null()) {
                 (*builder).model = strdup_safe(model);
                 if !((*builder).model.is_null() && !model.is_null()) {
-                    (*builder).layouts.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_layout>();
+                    (*builder).layouts.item = std::ptr::null_mut();
                     (*builder).layouts.size = 0 as darray_size_t;
                     (*builder).layouts.alloc = 0 as darray_size_t;
-                    (*builder).options.item = ::core::ptr::null_mut::<xkb_rmlvo_builder_option>();
+                    (*builder).options.item = std::ptr::null_mut();
                     (*builder).options.size = 0 as darray_size_t;
                     (*builder).options.alloc = 0 as darray_size_t;
                     return builder;
@@ -138,7 +138,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
             XKB_ERROR_ALLOCATION_ERROR as i32,
         );
         xkb_rmlvo_builder_unref(builder);
-        return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+        return std::ptr::null_mut();
     }
 }
 pub unsafe fn xkb_rmlvo_builder_append_layout(
@@ -241,7 +241,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             return false;
         }
         let mut prev: *const xkb_rmlvo_builder_option =
-            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+            std::ptr::null();
         if !(*rmlvo).options.item.is_null() {
             prev = (*rmlvo).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
             while prev
@@ -299,7 +299,7 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
         free((*rmlvo).rules as *mut ::core::ffi::c_void);
         free((*rmlvo).model as *mut ::core::ffi::c_void);
         let mut layout: *const xkb_rmlvo_builder_layout =
-            ::core::ptr::null::<xkb_rmlvo_builder_layout>();
+            std::ptr::null();
         if !(*rmlvo).layouts.item.is_null() {
             layout =
                 (*rmlvo).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
@@ -319,7 +319,7 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
             &mut (*rmlvo).layouts.alloc,
         );
         let mut option: *const xkb_rmlvo_builder_option =
-            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+            std::ptr::null();
         if !(*rmlvo).options.item.is_null() {
             option =
                 (*rmlvo).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
@@ -354,7 +354,7 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         (*rmlvo).layout = start;
         let mut k: darray_size_t = 0;
         let mut layout: *const xkb_rmlvo_builder_layout =
-            ::core::ptr::null::<xkb_rmlvo_builder_layout>();
+            std::ptr::null();
         if !(*builder).layouts.item.is_null() {
             k = 0 as darray_size_t;
             layout =
@@ -420,7 +420,7 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         buf_size = buf_size.wrapping_sub(1);
         (*rmlvo).options = start;
         let mut option: *const xkb_rmlvo_builder_option =
-            ::core::ptr::null::<xkb_rmlvo_builder_option>();
+            std::ptr::null();
         if !(*builder).options.item.is_null() {
             k = 0 as darray_size_t;
             option =

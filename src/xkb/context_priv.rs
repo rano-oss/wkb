@@ -123,7 +123,7 @@ pub unsafe fn xkb_context_failed_include_path_get(
 ) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_failed_include_paths(ctx) {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return *(*ctx).failed_includes.item.offset(idx as isize);
     }
@@ -168,9 +168,9 @@ pub unsafe fn xkb_log(
 }
 pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
     unsafe {
-        let mut rtrn: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut rtrn: *mut i8 = std::ptr::null_mut();
         if size >= ::core::mem::size_of::<[i8; 2048]>() as usize {
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         if (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub((*ctx).text_next as usize)
             <= size
@@ -185,7 +185,7 @@ pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize)
 }
 unsafe fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         if (*ctx).use_environment_names() {
             env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
         }
@@ -198,7 +198,7 @@ unsafe fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 
 }
 unsafe fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         if (*ctx).use_environment_names() {
             env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
         }
@@ -211,7 +211,7 @@ unsafe fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 
 }
 unsafe fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         if (*ctx).use_environment_names() {
             env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
         }
@@ -224,7 +224,7 @@ unsafe fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8
 }
 unsafe fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         let mut layout: *const i8 =
             xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
         if !layout.is_null() && (*ctx).use_environment_names() as i32 != 0 {
@@ -233,20 +233,20 @@ unsafe fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i
         return if !env.is_null() {
             env
         } else {
-            ::core::ptr::null::<i8>()
+            std::ptr::null()
         };
     }
 }
 unsafe fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         if (*ctx).use_environment_names() {
             env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
         }
         return if !env.is_null() {
             env
         } else {
-            ::core::ptr::null::<i8>()
+            std::ptr::null()
         };
     }
 }

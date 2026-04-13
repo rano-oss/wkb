@@ -295,7 +295,7 @@ unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
 }
 unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        let mut leveli: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
+        let mut leveli: *mut xkb_level = std::ptr::null_mut();
         if !(*groupi).levels.item.is_null() {
             leveli = (*groupi)
                 .levels
@@ -319,7 +319,7 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
     unsafe {
         (*to).defined = (*from).defined;
         (*to).type_0 = (*from).type_0;
-        (*to).levels.item = ::core::ptr::null_mut::<xkb_level>();
+        (*to).levels.item = std::ptr::null_mut();
         (*to).levels.size = 0 as darray_size_t;
         (*to).levels.alloc = 0 as darray_size_t;
         if (*from).levels.size != 0 as darray_size_t {
@@ -369,15 +369,15 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
         (*keyi).set_out_of_range_group_policy(
             XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy,
         );
-        (*keyi).groups.item = ::core::ptr::null_mut::<GroupInfo>();
+        (*keyi).groups.item = std::ptr::null_mut();
         (*keyi).groups.size = 0 as darray_size_t;
         (*keyi).groups.alloc = 0 as darray_size_t;
-        (*keyi).c2rust_unnamed.overlay_key = ::core::ptr::null::<xkb_key>();
+        (*keyi).c2rust_unnamed.overlay_key = std::ptr::null();
     }
 }
 unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
     unsafe {
-        let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
+        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
         if !(*keyi).groups.item.is_null() {
             groupi = (*keyi).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut GroupInfo;
             while groupi
@@ -420,7 +420,7 @@ unsafe fn InitSymbolsInfo(
 }
 unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
     unsafe {
-        let mut keyi: *mut KeyInfo = ::core::ptr::null_mut::<KeyInfo>();
+        let mut keyi: *mut KeyInfo = std::ptr::null_mut();
         free((*info).name as *mut ::core::ffi::c_void);
         if !(*info).keys.item.is_null() {
             keyi = (*info).keys.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyInfo;
@@ -651,9 +651,9 @@ unsafe fn MergeGroups(
                                 );
                             } else {
                                 let mut use_1: *mut xkb_action =
-                                    ::core::ptr::null_mut::<xkb_action>();
+                                    std::ptr::null_mut();
                                 let mut ignore_0: *mut xkb_action =
-                                    ::core::ptr::null_mut::<xkb_action>();
+                                    std::ptr::null_mut();
                                 use_1 = if clobber as ::core::ffi::c_int != 0 {
                                     &raw mut (*fromLevel).a.action
                                 } else {
@@ -743,7 +743,7 @@ unsafe fn MergeGroups(
             }
             i = i.wrapping_add(1);
         }
-        let mut level: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
+        let mut level: *mut xkb_level = std::ptr::null_mut();
         if !(*from).levels.item.is_null() {
             level = (*from).levels.item.offset(levels_in_both as isize) as *mut xkb_level;
             while level < (*from).levels.item.offset((*from).levels.size as isize) as *mut xkb_level
@@ -979,7 +979,7 @@ unsafe fn merge_overlays(
             {
                 (*into).overlays = (*from).overlays;
                 (*into).c2rust_unnamed.overlays_keys = (*from).c2rust_unnamed.overlays_keys;
-                (*from).c2rust_unnamed.overlays_keys = ::core::ptr::null_mut::<*const xkb_key>();
+                (*from).c2rust_unnamed.overlays_keys = std::ptr::null_mut();
                 (*into).overlays_alloc = (*from).overlays_alloc;
                 (*from).overlays_alloc = 0 as xkb_overlay_index_t;
                 (*into).set_defined(
@@ -1060,7 +1060,7 @@ unsafe fn merge_overlays(
                 let mut remaining: xkb_overlay_mask_t = (*src).overlays;
                 let mut src_keys: *mut *const xkb_key =
                     if (*src).overlays_clear() as ::core::ffi::c_int != 0 {
-                        ::core::ptr::null_mut::<*const xkb_key>()
+                        std::ptr::null_mut()
                     } else if (*src).overlays_alloc as ::core::ffi::c_int != 0 {
                         (*src).c2rust_unnamed.overlays_keys
                     } else {
@@ -1090,9 +1090,9 @@ unsafe fn merge_overlays(
                         src_keys = src_keys.offset(1);
                         *c2rust_fresh3
                     } else {
-                        ::core::ptr::null::<xkb_key>()
+                        std::ptr::null()
                     };
-                    let mut dest_key: *const xkb_key = ::core::ptr::null::<xkb_key>();
+                    let mut dest_key: *const xkb_key = std::ptr::null();
                     let conflict: bool = overlays_get(dest, bit, &raw mut dest_key) as bool;
                     if conflict {
                         if dest_key == src_key {
@@ -1120,7 +1120,7 @@ unsafe fn merge_overlays(
                     if (*from).overlays_alloc != 0 {
                         (*into).c2rust_unnamed.overlays_keys = (*from).c2rust_unnamed.overlays_keys;
                         (*from).c2rust_unnamed.overlays_keys =
-                            ::core::ptr::null_mut::<*const xkb_key>();
+                            std::ptr::null_mut();
                         (*from).overlays_alloc = 0 as xkb_overlay_index_t;
                     } else {
                         (*into).c2rust_unnamed.overlay_key = (*from).c2rust_unnamed.overlay_key;
@@ -1317,7 +1317,7 @@ unsafe fn AddKeySymbols(
 ) -> bool {
     unsafe {
         (*keyi).name = XkbResolveKeyAlias(&raw const (*(*info).keymap_info).keymap, (*keyi).name);
-        let mut iter: *mut KeyInfo = ::core::ptr::null_mut::<KeyInfo>();
+        let mut iter: *mut KeyInfo = std::ptr::null_mut();
         if !(*info).keys.item.is_null() {
             iter = (*info).keys.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyInfo;
             while iter < (*info).keys.item.offset((*info).keys.size as isize) as *mut KeyInfo {
@@ -1339,7 +1339,7 @@ unsafe fn AddKeySymbols(
 }
 unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
     unsafe {
-        let mut old: *mut ModMapEntry = ::core::ptr::null_mut::<ModMapEntry>();
+        let mut old: *mut ModMapEntry = std::ptr::null_mut();
         let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
         if !(*info).modmaps.item.is_null() {
             old = (*info)
@@ -1415,7 +1415,7 @@ unsafe fn MergeIncludedSymbols(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let mut group_name: *mut xkb_atom_t = ::core::ptr::null_mut::<xkb_atom_t>();
+        let mut group_name: *mut xkb_atom_t = std::ptr::null_mut();
         let mut group_names_in_both: xkb_layout_index_t = 0;
         if (*from).errorCount > 0 as ::core::ffi::c_int {
             (*into).errorCount += (*from).errorCount;
@@ -1470,11 +1470,11 @@ unsafe fn MergeIncludedSymbols(
         }
         if (*into).keys.size == 0 as darray_size_t {
             (*into).keys = (*from).keys;
-            (*from).keys.item = ::core::ptr::null_mut::<KeyInfo>();
+            (*from).keys.item = std::ptr::null_mut();
             (*from).keys.size = 0 as darray_size_t;
             (*from).keys.alloc = 0 as darray_size_t;
         } else {
-            let mut keyi: *mut KeyInfo = ::core::ptr::null_mut::<KeyInfo>();
+            let mut keyi: *mut KeyInfo = std::ptr::null_mut();
             if !(*from).keys.item.is_null() {
                 keyi = (*from).keys.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyInfo;
                 while keyi < (*from).keys.item.offset((*from).keys.size as isize) as *mut KeyInfo {
@@ -1488,11 +1488,11 @@ unsafe fn MergeIncludedSymbols(
         }
         if (*into).modmaps.size == 0 as darray_size_t {
             (*into).modmaps = (*from).modmaps;
-            (*from).modmaps.item = ::core::ptr::null_mut::<ModMapEntry>();
+            (*from).modmaps.item = std::ptr::null_mut();
             (*from).modmaps.size = 0 as darray_size_t;
             (*from).modmaps.alloc = 0 as darray_size_t;
         } else {
-            let mut mm: *mut ModMapEntry = ::core::ptr::null_mut::<ModMapEntry>();
+            let mut mm: *mut ModMapEntry = std::ptr::null_mut();
             if !(*from).modmaps.item.is_null() {
                 mm = (*from)
                     .modmaps
@@ -1515,7 +1515,7 @@ unsafe fn MergeIncludedSymbols(
 unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut IncludeStmt) -> bool {
     unsafe {
         let mut included: SymbolsInfo = SymbolsInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             explicit_group: 0,
@@ -1523,7 +1523,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             keys: C2Rust_Unnamed_24 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<KeyInfo>(),
+                item: std::ptr::null_mut(),
             },
             default_key: KeyInfo {
                 name: 0,
@@ -1533,13 +1533,13 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 groups: C2Rust_Unnamed_22 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<GroupInfo>(),
+                    item: std::ptr::null_mut(),
                 },
                 out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                 overlays_alloc: 0,
                 overlays: 0,
                 c2rust_unnamed: C2Rust_Unnamed_21 {
-                    overlay_key: ::core::ptr::null::<xkb_key>(),
+                    overlay_key: std::ptr::null(),
                 },
             },
             default_actions: ActionsInfo {
@@ -1550,12 +1550,12 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             group_names: C2Rust_Unnamed_20 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                item: std::ptr::null_mut(),
             },
             modmaps: C2Rust_Unnamed_18 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<ModMapEntry>(),
+                item: std::ptr::null_mut(),
             },
             mods: xkb_mod_set {
                 mods: [xkb_mod {
@@ -1566,8 +1566,8 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -1584,7 +1584,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: SymbolsInfo = SymbolsInfo {
-                name: ::core::ptr::null_mut::<i8>(),
+                name: std::ptr::null_mut(),
                 errorCount: 0,
                 include_depth: 0,
                 explicit_group: 0,
@@ -1592,7 +1592,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 keys: C2Rust_Unnamed_24 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<KeyInfo>(),
+                    item: std::ptr::null_mut(),
                 },
                 default_key: KeyInfo {
                     name: 0,
@@ -1602,13 +1602,13 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                     groups: C2Rust_Unnamed_22 {
                         size: 0,
                         alloc: 0,
-                        item: ::core::ptr::null_mut::<GroupInfo>(),
+                        item: std::ptr::null_mut(),
                     },
                     out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                     overlays_alloc: 0,
                     overlays: 0,
                     c2rust_unnamed: C2Rust_Unnamed_21 {
-                        overlay_key: ::core::ptr::null::<xkb_key>(),
+                        overlay_key: std::ptr::null(),
                     },
                 },
                 default_actions: ActionsInfo {
@@ -1619,12 +1619,12 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 group_names: C2Rust_Unnamed_20 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                    item: std::ptr::null_mut(),
                 },
                 modmaps: C2Rust_Unnamed_18 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<ModMapEntry>(),
+                    item: std::ptr::null_mut(),
                 },
                 mods: xkb_mod_set {
                     mods: [xkb_mod {
@@ -1635,10 +1635,10 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                     num_mods: 0,
                     explicit_vmods: 0,
                 },
-                ctx: ::core::ptr::null_mut::<xkb_context>(),
-                keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+                ctx: std::ptr::null_mut(),
+                keymap_info: std::ptr::null(),
             };
-            let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+            let mut file: *mut XkbFile = std::ptr::null_mut();
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -1706,7 +1706,7 @@ unsafe fn GetGroupIndex(
         };
         if arrayNdx.is_null() {
             let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
-            let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
+            let mut groupi: *mut GroupInfo = std::ptr::null_mut();
             if !(*keyi).groups.item.is_null() {
                 i = 0 as xkb_layout_index_t;
                 groupi =
@@ -1748,7 +1748,7 @@ unsafe fn GetGroupIndex(
             arrayNdx,
             false,
             ndx_rtrn,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
         ) as u32
             != PARSER_SUCCESS as ::core::ffi::c_int as u32
         {
@@ -1884,11 +1884,11 @@ unsafe fn AddSymbolsToKey(
                         ) as *mut xkb_keysym_t;
                     }
                     (*leveli).s.syms = (*keysymList_0).syms.item;
-                    if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                        *(::core::ptr::null_mut::<::core::ffi::c_void>() as *mut darray_size_t) =
+                    if !std::ptr::null_mut::<u8>().is_null() {
+                        *(std::ptr::null_mut() as *mut darray_size_t) =
                             (*keysymList_0).syms.size;
                     }
-                    (*keysymList_0).syms.item = ::core::ptr::null_mut::<xkb_keysym_t>();
+                    (*keysymList_0).syms.item = std::ptr::null_mut();
                     (*keysymList_0).syms.size = 0 as darray_size_t;
                     (*keysymList_0).syms.alloc = 0 as darray_size_t;
                     let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
@@ -1993,7 +1993,7 @@ unsafe fn AddActionsToKey(
             let mut actions: C2Rust_Unnamed_25 = C2Rust_Unnamed_25 {
                 size: 0 as darray_size_t,
                 alloc: 0 as darray_size_t,
-                item: ::core::ptr::null_mut::<xkb_action>(),
+                item: std::ptr::null_mut(),
             };
             let mut act_0: *mut ExprDef = (*actionList).actions as *mut ExprDef;
             loop {
@@ -2065,11 +2065,11 @@ unsafe fn AddActionsToKey(
                             ) as *mut xkb_action;
                         }
                         (*leveli).a.actions = actions.item;
-                        if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                            *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                        if !std::ptr::null_mut::<u8>().is_null() {
+                            *(std::ptr::null_mut()
                                 as *mut darray_size_t) = actions.size;
                         }
-                        actions.item = ::core::ptr::null_mut::<xkb_action>();
+                        actions.item = std::ptr::null_mut();
                         actions.size = 0 as darray_size_t;
                         actions.alloc = 0 as darray_size_t;
                         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
@@ -2146,7 +2146,7 @@ static mut repeatEntries: [LookupEntry; 8] = [
         value: KEY_REPEAT_UNDEFINED as ::core::ffi::c_int as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -2235,12 +2235,12 @@ unsafe fn ExprResolveOverlayEntry(
                 if !id.is_null()
                     && istreq(id, b"none\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
-                    *key_rtrn = ::core::ptr::null::<xkb_key>();
+                    *key_rtrn = std::ptr::null();
                     return true;
                 } else if !id.is_null()
                     && istreq(id, b"any\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
                 {
-                    *key_rtrn = ::core::ptr::null::<xkb_key>();
+                    *key_rtrn = std::ptr::null();
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
                 }
@@ -2311,7 +2311,7 @@ unsafe fn SetSymbolsField(
                 arrayNdx,
                 false,
                 &raw mut ndx,
-                ::core::ptr::null_mut::<bool>(),
+                std::ptr::null_mut(),
             ) as u32
                 != PARSER_SUCCESS as ::core::ffi::c_int as u32
             {
@@ -2415,7 +2415,7 @@ unsafe fn SetSymbolsField(
             (::core::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
-            let mut key: *const xkb_key = ::core::ptr::null::<xkb_key>();
+            let mut key: *const xkb_key = std::ptr::null();
             if !ExprResolveOverlayEntry(
                 (*info).keymap_info,
                 field,
@@ -2439,7 +2439,7 @@ unsafe fn SetSymbolsField(
                     crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                 );
             } else {
-                let mut prev: *const xkb_key = ::core::ptr::null::<xkb_key>();
+                let mut prev: *const xkb_key = std::ptr::null();
                 if overlays_get(keyi, overlay, &raw mut prev) {
                     if key != prev {
                         xkb_logf!(
@@ -2630,7 +2630,7 @@ unsafe fn SetSymbolsField(
                         value: 0 as u32,
                     },
                 );
-                *value_ptr = ::core::ptr::null_mut::<ExprDef>();
+                *value_ptr = std::ptr::null_mut();
                 (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;
             } else {
                 (*keyi).set_out_of_range_pending_group((false) as bool);
@@ -2681,7 +2681,7 @@ unsafe fn SetGroupName(
             arrayNdx,
             false,
             &raw mut group,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
         ) as u32
             != PARSER_SUCCESS as ::core::ffi::c_int as u32
         {
@@ -2764,9 +2764,9 @@ unsafe fn SetGroupName(
 }
 unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         let mut ret: bool = false;
         if !ExprResolveLhs(
             (*info).ctx,
@@ -2790,12 +2790,12 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                     groups: C2Rust_Unnamed_22 {
                         size: 0,
                         alloc: 0,
-                        item: ::core::ptr::null_mut::<GroupInfo>(),
+                        item: std::ptr::null_mut(),
                     },
                     overlays_alloc: 0,
                     overlays: 0,
                     c2rust_unnamed: C2Rust_Unnamed_21 {
-                        overlay_key: ::core::ptr::null::<xkb_key>(),
+                        overlay_key: std::ptr::null(),
                     },
                 };
                 init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
@@ -2905,8 +2905,8 @@ unsafe fn HandleSymbolsBody(
     unsafe {
         let mut all_valid_entries: bool = true;
         while !def.is_null() {
-            let mut field: *const i8 = ::core::ptr::null::<i8>();
-            let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+            let mut field: *const i8 = std::ptr::null();
+            let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
             if (*def).name.is_null() {
                 if (*def).value.is_null() as ::core::ffi::c_int as i64 != 0
@@ -2917,9 +2917,9 @@ unsafe fn HandleSymbolsBody(
                 } else {
                     field = b"actions\0".as_ptr() as *const i8;
                 }
-                arrayNdx = ::core::ptr::null_mut::<ExprDef>();
+                arrayNdx = std::ptr::null_mut();
             } else {
-                let mut elem: *const i8 = ::core::ptr::null::<i8>();
+                let mut elem: *const i8 = std::ptr::null();
                 ok = ExprResolveLhs(
                     (*info).ctx,
                     (*def).name,
@@ -2963,7 +2963,7 @@ unsafe fn HandleSymbolsBody(
 unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> bool {
     unsafe {
         let mut i: xkb_layout_index_t = 0;
-        let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
+        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
         let mut warn: bool = false;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
             return true;
@@ -3019,17 +3019,17 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
             groups: C2Rust_Unnamed_22 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<GroupInfo>(),
+                item: std::ptr::null_mut(),
             },
             out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
             overlays_alloc: 0,
             overlays: 0,
             c2rust_unnamed: C2Rust_Unnamed_21 {
-                overlay_key: ::core::ptr::null::<xkb_key>(),
+                overlay_key: std::ptr::null(),
             },
         };
         keyi = (*info).default_key;
-        keyi.groups.item = ::core::ptr::null_mut::<GroupInfo>();
+        keyi.groups.item = std::ptr::null_mut();
         keyi.groups.size = 0 as darray_size_t;
         keyi.groups.alloc = 0 as darray_size_t;
         if (*info).default_key.groups.size != 0 as darray_size_t {
@@ -3220,7 +3220,7 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -
             let mut got_one_level: bool = false;
             loop {
                 got_one_level = false;
-                let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+                let mut key: *mut xkb_key = std::ptr::null_mut();
                 key = (*keymap).keys.offset(
                     (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                         0 as xkb_keycode_t
@@ -3274,7 +3274,7 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -
                 break;
             }
         }
-        return ::core::ptr::null_mut::<xkb_key>();
+        return std::ptr::null_mut();
     }
 }
 unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInfo) -> xkb_atom_t {
@@ -3545,9 +3545,9 @@ unsafe fn CopySymbolsDefToKeymap(
     mut keyi: *mut KeyInfo,
 ) -> bool {
     unsafe {
-        let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
-        let mut groupi: *mut GroupInfo = ::core::ptr::null_mut::<GroupInfo>();
-        let mut group0: *const GroupInfo = ::core::ptr::null::<GroupInfo>();
+        let mut key: *mut xkb_key = std::ptr::null_mut();
+        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
+        let mut group0: *const GroupInfo = std::ptr::null();
         let mut i: xkb_layout_index_t = 0;
 
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
@@ -3638,7 +3638,7 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     // Always have as many levels as the type specifies
                     if (*type_0).num_levels < (*groupi).levels.size {
-                        let mut leveli: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
+                        let mut leveli: *mut xkb_level = std::ptr::null_mut();
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -3687,7 +3687,7 @@ unsafe fn CopySymbolsDefToKeymap(
                 groupi = (*keyi).groups.item.offset(0) as *mut GroupInfo;
                 while i < (*keyi).groups.size as xkb_layout_index_t {
                     // Compute the capitalization transformation of the keysyms
-                    let mut leveli: *mut xkb_level = ::core::ptr::null_mut::<xkb_level>();
+                    let mut leveli: *mut xkb_level = std::ptr::null_mut();
                     if !(*groupi).levels.item.is_null() {
                         leveli = (*groupi).levels.item.offset(0) as *mut xkb_level;
                         while leveli
@@ -3749,11 +3749,11 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     // Copy the level (darray_steal)
                     (*(*key).groups.offset(i as isize)).levels = (*groupi).levels.item;
-                    if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                        *(::core::ptr::null_mut::<::core::ffi::c_void>() as *mut darray_size_t) =
+                    if !std::ptr::null_mut::<u8>().is_null() {
+                        *(std::ptr::null_mut() as *mut darray_size_t) =
                             (*groupi).levels.size;
                     }
-                    (*groupi).levels.item = ::core::ptr::null_mut::<xkb_level>();
+                    (*groupi).levels.item = std::ptr::null_mut();
                     (*groupi).levels.size = 0;
                     (*groupi).levels.alloc = 0;
 
@@ -3854,7 +3854,7 @@ unsafe fn CopyModMapDefToKeymap(
     mut entry: *mut ModMapEntry,
 ) -> bool {
     unsafe {
-        let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+        let mut key: *mut xkb_key = std::ptr::null_mut();
         if !(*entry).haveSymbol {
             key = XkbKeyByName(keymap, (*entry).u.keyName, true);
             if key.is_null() {
@@ -3893,18 +3893,18 @@ unsafe fn CopyModMapDefToKeymap(
 }
 unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
     unsafe {
-        let mut keyi: *mut KeyInfo = ::core::ptr::null_mut::<KeyInfo>();
-        let mut mm: *mut ModMapEntry = ::core::ptr::null_mut::<ModMapEntry>();
+        let mut keyi: *mut KeyInfo = std::ptr::null_mut();
+        let mut mm: *mut ModMapEntry = std::ptr::null_mut();
         (*keymap).symbols_section_name = strdup_safe((*info).name);
         XkbEscapeMapName((*keymap).symbols_section_name);
         (*keymap).mods = (*info).mods;
         (*keymap).num_group_names = (*info).group_names.size as xkb_layout_index_t;
         (*keymap).group_names = (*info).group_names.item;
-        if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-            *(::core::ptr::null_mut::<::core::ffi::c_void>() as *mut darray_size_t) =
+        if !std::ptr::null_mut::<u8>().is_null() {
+            *(std::ptr::null_mut() as *mut darray_size_t) =
                 (*info).group_names.size;
         }
-        (*info).group_names.item = ::core::ptr::null_mut::<xkb_atom_t>();
+        (*info).group_names.item = std::ptr::null_mut();
         (*info).group_names.size = 0 as darray_size_t;
         (*info).group_names.alloc = 0 as darray_size_t;
         if !(*info).keys.item.is_null() {
@@ -3917,7 +3917,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
             }
         }
         if xkb_context_get_log_verbosity((*keymap).ctx) > 3 as ::core::ffi::c_int {
-            let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+            let mut key: *mut xkb_key = std::ptr::null_mut();
             key = (*keymap).keys.offset(
                 (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                     0 as xkb_keycode_t
@@ -3963,7 +3963,7 @@ pub unsafe fn CompileSymbols(
 ) -> bool {
     unsafe {
         let mut info: SymbolsInfo = SymbolsInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             explicit_group: 0,
@@ -3971,7 +3971,7 @@ pub unsafe fn CompileSymbols(
             keys: C2Rust_Unnamed_24 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<KeyInfo>(),
+                item: std::ptr::null_mut(),
             },
             default_key: KeyInfo {
                 name: 0,
@@ -3981,13 +3981,13 @@ pub unsafe fn CompileSymbols(
                 groups: C2Rust_Unnamed_22 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<GroupInfo>(),
+                    item: std::ptr::null_mut(),
                 },
                 out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                 overlays_alloc: 0,
                 overlays: 0,
                 c2rust_unnamed: C2Rust_Unnamed_21 {
-                    overlay_key: ::core::ptr::null::<xkb_key>(),
+                    overlay_key: std::ptr::null(),
                 },
             },
             default_actions: ActionsInfo {
@@ -3998,12 +3998,12 @@ pub unsafe fn CompileSymbols(
             group_names: C2Rust_Unnamed_20 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                item: std::ptr::null_mut(),
             },
             modmaps: C2Rust_Unnamed_18 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<ModMapEntry>(),
+                item: std::ptr::null_mut(),
             },
             mods: xkb_mod_set {
                 mods: [xkb_mod {
@@ -4014,8 +4014,8 @@ pub unsafe fn CompileSymbols(
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         InitSymbolsInfo(
             &raw mut info,

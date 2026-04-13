@@ -652,18 +652,18 @@ pub unsafe fn XkbParseString(
         let mut scanner: scanner = scanner {
             pos: 0,
             len: 0,
-            s: ::core::ptr::null::<i8>(),
+            s: std::ptr::null(),
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: ::core::ptr::null::<i8>(),
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
+            file_name: std::ptr::null(),
+            ctx: std::ptr::null_mut(),
+            priv_0: std::ptr::null_mut(),
         };
         if !XkbParseStringInit(ctx, &raw mut scanner, string, len, file_name, map) {
-            return ::core::ptr::null_mut::<XkbFile>();
+            return std::ptr::null_mut();
         }
         // Cast types between parser and scanner modules (same C struct, different Rust types)
         return parse(ctx as *mut _, &raw mut scanner as *mut _, map) as *mut XkbFile;
@@ -702,7 +702,7 @@ pub unsafe fn XkbParseFile(
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 "Invalid file descriptor\n",
             );
-            return ::core::ptr::null_mut::<XkbFile>();
+            return std::ptr::null_mut();
         }
 
         // Create Rust File from file descriptor
@@ -727,7 +727,7 @@ pub unsafe fn XkbParseFile(
                     crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
                 );
                 std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
-                return ::core::ptr::null_mut::<XkbFile>();
+                return std::ptr::null_mut();
             }
         };
 

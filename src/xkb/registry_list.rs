@@ -54,10 +54,10 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut rc: i32 = 1 as i32;
-        let mut ctx: *mut rxkb_context = ::core::ptr::null_mut::<rxkb_context>();
-        let mut m: *mut rxkb_model = ::core::ptr::null_mut::<rxkb_model>();
-        let mut l: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
-        let mut g: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
+        let mut ctx: *mut rxkb_context = std::ptr::null_mut();
+        let mut m: *mut rxkb_model = std::ptr::null_mut();
+        let mut l: *mut rxkb_layout = std::ptr::null_mut();
+        let mut g: *mut rxkb_option_group = std::ptr::null_mut();
         let mut flags: rxkb_context_flags = RXKB_CONTEXT_NO_FLAGS;
         let mut load_defaults: bool = true;
         let mut verbosity: i32 = 0 as i32;
@@ -66,37 +66,37 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             option {
                 name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'h' as i32,
             },
             option {
                 name: b"verbose\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'v' as i32,
             },
             option {
                 name: b"load-exotic\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'e' as i32,
             },
             option {
                 name: b"skip-default-paths\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'd' as i32,
             },
             option {
                 name: b"ruleset\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'r' as i32,
             },
             option {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 has_arg: 0 as i32,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 0 as i32,
             },
         ];
@@ -221,9 +221,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                         l = rxkb_layout_first(ctx);
                         while !l.is_null() {
                             let mut iso639: *mut rxkb_iso639_code =
-                                ::core::ptr::null_mut::<rxkb_iso639_code>();
+                                std::ptr::null_mut();
                             let mut iso3166: *mut rxkb_iso3166_code =
-                                ::core::ptr::null_mut::<rxkb_iso3166_code>();
+                                std::ptr::null_mut();
                             let mut variant: *const i8 = rxkb_layout_get_variant(l);
                             let mut brief: *const i8 = rxkb_layout_get_brief(l);
                             print!(
@@ -281,7 +281,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                         print!("option_groups:\n");
                         g = rxkb_option_group_first(ctx);
                         while !g.is_null() {
-                            let mut o: *mut rxkb_option = ::core::ptr::null_mut::<rxkb_option>();
+                            let mut o: *mut rxkb_option = std::ptr::null_mut();
                             print!(
                                 "- name: '{}'\n  description: {}\n  allows_multiple: {}\n  options:\n",
                                 crate::xkb::utils::CStrDisplay(rxkb_option_group_get_name(g)),

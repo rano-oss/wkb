@@ -116,7 +116,7 @@ pub unsafe fn xkb_keymap_new(
                 crate::xkb::utils::CStrDisplay(func),
                 flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32),
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let keymap: *mut xkb_keymap = Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap>()));
         (*keymap).refcnt = 1 as i32;
@@ -153,7 +153,7 @@ pub unsafe fn XkbModNameToIndex(
 ) -> xkb_mod_index_t {
     unsafe {
         let mut i: xkb_mod_index_t = 0;
-        let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
+        let mut mod_0: *const xkb_mod = std::ptr::null();
         i = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*mods).mods as *const xkb_mod;
         while i < (*mods).num_mods {
@@ -370,7 +370,7 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
                 }
             }
         }
-        *actions = ::core::ptr::null::<xkb_action>();
+        *actions = std::ptr::null();
         return 0 as xkb_action_count_t;
     }
 }

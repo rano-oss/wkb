@@ -848,7 +848,7 @@ pub unsafe fn XkbKeyNumLevels(
 pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
     unsafe {
         if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
-            return ::core::ptr::null::<xkb_key>();
+            return std::ptr::null();
         } else if kc < (*keymap).num_keys_low {
             return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
         } else {
@@ -870,7 +870,7 @@ pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *con
                     return key;
                 }
             }
-            return ::core::ptr::null::<xkb_key>();
+            return std::ptr::null();
         };
     }
 }
@@ -904,7 +904,7 @@ pub unsafe fn XkbKeyByName(
                 }
             }
         }
-        return ::core::ptr::null_mut::<xkb_key>();
+        return std::ptr::null_mut();
     }
 }
 

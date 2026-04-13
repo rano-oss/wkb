@@ -99,9 +99,9 @@ pub unsafe fn ParseIncludeMap(
     mut extra_data: *mut *mut i8,
 ) -> bool {
     unsafe {
-        let mut tmp: *mut i8 = ::core::ptr::null_mut::<i8>();
-        let mut str: *mut i8 = ::core::ptr::null_mut::<i8>();
-        let mut next: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut tmp: *mut i8 = std::ptr::null_mut();
+        let mut str: *mut i8 = std::ptr::null_mut();
+        let mut next: *mut i8 = std::ptr::null_mut();
         str = *str_inout;
         next = crate::xkb::utils::cstr_pbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
         if !next.is_null() {
@@ -111,7 +111,7 @@ pub unsafe fn ParseIncludeMap(
             *c2rust_fresh2 = '\0' as i32 as i8;
         } else {
             *nextop_rtrn = '\0' as i32 as i8;
-            next = ::core::ptr::null_mut::<i8>();
+            next = std::ptr::null_mut();
         }
         tmp = crate::xkb::utils::cstr_chr(str, ':' as i32);
         if !tmp.is_null() {
@@ -120,12 +120,12 @@ pub unsafe fn ParseIncludeMap(
             *c2rust_fresh3 = '\0' as i32 as i8;
             *extra_data = cstr_dup(tmp);
         } else {
-            *extra_data = ::core::ptr::null_mut::<i8>();
+            *extra_data = std::ptr::null_mut();
         }
         tmp = crate::xkb::utils::cstr_chr(str, '(' as i32);
         if tmp.is_null() {
             *file_rtrn = cstr_dup(str);
-            *map_rtrn = ::core::ptr::null_mut::<i8>();
+            *map_rtrn = std::ptr::null_mut();
         } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
         {
             free(*extra_data as *mut ::core::ffi::c_void);
@@ -148,7 +148,7 @@ pub unsafe fn ParseIncludeMap(
             *map_rtrn = cstr_dup(str);
         }
         if *nextop_rtrn as ::core::ffi::c_int == '\0' as i32 {
-            *str_inout = ::core::ptr::null_mut::<i8>();
+            *str_inout = std::ptr::null_mut();
         } else if *nextop_rtrn as ::core::ffi::c_int == MERGE_OVERRIDE_PREFIX
             || *nextop_rtrn as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
             || *nextop_rtrn as ::core::ffi::c_int == MERGE_REPLACE_PREFIX
@@ -246,15 +246,15 @@ unsafe fn expand_percent(
         let mut s: scanner = scanner {
             pos: 0,
             len: 0,
-            s: ::core::ptr::null::<i8>(),
+            s: std::ptr::null(),
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: ::core::ptr::null::<i8>(),
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
+            file_name: std::ptr::null(),
+            ctx: std::ptr::null_mut(),
+            priv_0: std::ptr::null_mut(),
         };
         scanner_init(
             &raw mut s,
@@ -465,8 +465,8 @@ pub unsafe fn FindFileInXkbPath(
 ) -> *mut FILE {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let mut name_buffer: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut name_buffer: *mut i8 = std::ptr::null_mut();
         let mut typeDir: *const i8 = DirectoryForInclude(type_0);
         let mut i: u32 = *offset;
         loop {
@@ -552,8 +552,8 @@ pub unsafe fn ProcessIncludeFile(
     mut path_size: usize,
 ) -> *mut XkbFile {
     unsafe {
-        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        let mut candidate: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
+        let mut candidate: *mut XkbFile = std::ptr::null_mut();
         let mut stmt_file: *const i8 = (*stmt).file;
         let mut stmt_file_len: usize = cstr_len(stmt_file);
         let expanded: isize = expand_path(
@@ -566,18 +566,18 @@ pub unsafe fn ProcessIncludeFile(
             path_size,
         ) as isize;
         if expanded < 0 as isize {
-            return ::core::ptr::null_mut::<XkbFile>();
+            return std::ptr::null_mut();
         } else if expanded > 0 as isize {
             stmt_file = path;
             stmt_file_len = expanded as usize;
         }
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut file: *mut FILE = std::ptr::null_mut();
         let mut offset: u32 = 0 as u32;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         } else if (expanded != 0) as ::core::ffi::c_int as i64 != 0 {
-            file = ::core::ptr::null_mut::<FILE>();
+            file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
                 ctx,
@@ -607,17 +607,17 @@ pub unsafe fn ProcessIncludeFile(
                         crate::xkb::utils::CStrDisplay((*stmt).file),
                     );
                     FreeXkbFile(xkb_file);
-                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                    xkb_file = std::ptr::null_mut();
                 } else if !(*stmt).map.is_null()
                     || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
                 {
                     break;
                 } else if candidate.is_null() {
                     candidate = xkb_file;
-                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                    xkb_file = std::ptr::null_mut();
                 } else {
                     FreeXkbFile(xkb_file);
-                    xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                    xkb_file = std::ptr::null_mut();
                 }
             }
             if absolute_path {

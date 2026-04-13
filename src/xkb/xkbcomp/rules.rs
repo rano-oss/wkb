@@ -396,11 +396,11 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
 }
 static mut rules_mlvo_svals: [sval; 4] = [sval {
     len: 0,
-    start: ::core::ptr::null::<i8>(),
+    start: std::ptr::null(),
 }; 4];
 static mut rules_kccgst_svals: [sval; 5] = [sval {
     len: 0,
-    start: ::core::ptr::null::<i8>(),
+    start: std::ptr::null(),
 }; 5];
 pub const OPTIONS_MATCH_ALL_GROUPS: ::core::ffi::c_int = XKB_MAX_GROUPS;
 unsafe fn strip_spaces(mut v: sval) -> sval {
@@ -431,7 +431,7 @@ unsafe fn split_comma_separated_mlvo(
         let mut arr: darray_matched_sval = darray_matched_sval {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<matched_sval>(),
+            item: std::ptr::null_mut(),
         };
         if s.is_null() {
             let mut val: matched_sval = {
@@ -440,7 +440,7 @@ unsafe fn split_comma_separated_mlvo(
                     c2rust_padding: [0; 4],
                     sval: sval {
                         len: 0 as usize,
-                        start: ::core::ptr::null::<i8>(),
+                        start: std::ptr::null(),
                     },
                 };
                 init.set_matched(false);
@@ -557,17 +557,17 @@ unsafe fn matcher_new_from_rmlvo(
             rules: (*rmlvo).rules,
             model: (*rmlvo).model,
             layout: if (*rmlvo).layouts.size == 0 as darray_size_t {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
             },
             variant: if (*rmlvo).layouts.size == 0 as darray_size_t {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
             },
             options: if (*rmlvo).options.size == 0 as darray_size_t {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
             },
@@ -643,7 +643,7 @@ unsafe fn matcher_new_from_rmlvo(
             }
         } else {
             let mut layout: *mut xkb_rmlvo_builder_layout =
-                ::core::ptr::null_mut::<xkb_rmlvo_builder_layout>();
+                std::ptr::null_mut();
             if !(*rmlvo).layouts.item.is_null() {
                 layout = (*rmlvo)
                     .layouts
@@ -690,7 +690,7 @@ unsafe fn matcher_new_from_rmlvo(
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_OPTION, names.options);
         } else {
             let mut option: *mut xkb_rmlvo_builder_option =
-                ::core::ptr::null_mut::<xkb_rmlvo_builder_option>();
+                std::ptr::null_mut();
             if !(*rmlvo).options.item.is_null() {
                 option = (*rmlvo)
                     .options
@@ -820,7 +820,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
             &mut (*m).rmlvo.options.size,
             &mut (*m).rmlvo.options.alloc,
         );
-        let mut group: *mut group = ::core::ptr::null_mut::<group>();
+        let mut group: *mut group = std::ptr::null_mut();
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
@@ -868,7 +868,7 @@ unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
             elements: darray_sval {
                 size: 0 as darray_size_t,
                 alloc: 0 as darray_size_t,
-                item: ::core::ptr::null_mut::<sval>(),
+                item: std::ptr::null_mut(),
             },
         };
         darray_append(
@@ -5029,7 +5029,7 @@ unsafe fn matcher_include(
             stmt_file = &raw mut buf as *mut i8;
             stmt_file_len = expanded as usize;
         }
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut file: *mut FILE = std::ptr::null_mut();
         let mut offset: u32 = 0 as u32;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
@@ -5059,7 +5059,7 @@ unsafe fn matcher_include(
             }
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         } else if (expanded != 0) as ::core::ffi::c_int as i64 != 0 {
-            file = ::core::ptr::null_mut::<FILE>();
+            file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
                 (*m).ctx,
@@ -5256,7 +5256,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         let mut mlvo: rules_mlvo = MLVO_MODEL;
         let mut mlvo_sval: sval = sval {
             len: 0,
-            start: ::core::ptr::null::<i8>(),
+            start: std::ptr::null(),
         };
         mlvo = MLVO_MODEL;
         while (mlvo as u32) < _MLVO_NUM_ENTRIES as ::core::ffi::c_int as u32 {
@@ -5454,7 +5454,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
         let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
         let mut kccgst_sval: sval = sval {
             len: 0,
-            start: ::core::ptr::null::<i8>(),
+            start: std::ptr::null(),
         };
         kccgst = KCCGST_KEYCODES;
         while (kccgst as u32) < _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as u32 {
@@ -5702,7 +5702,7 @@ unsafe fn matcher_rule_set_mlvo_wildcard(
     unsafe {
         let mut dummy: sval = sval {
             len: 0 as usize,
-            start: ::core::ptr::null::<i8>(),
+            start: std::ptr::null(),
         };
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
     }
@@ -5742,8 +5742,8 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
 }
 unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
     unsafe {
-        let mut group: *mut group = ::core::ptr::null_mut::<group>();
-        let mut element: *mut sval = ::core::ptr::null_mut::<sval>();
+        let mut group: *mut group = std::ptr::null_mut();
+        let mut element: *mut sval = std::ptr::null_mut();
         let mut found: bool = false;
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
@@ -5833,7 +5833,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         let mut idx: xkb_layout_index_t = 0;
         let mut pfx: i8 = 0;
         let mut sfx: i8 = 0;
-        let mut expanded_value: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
+        let mut expanded_value: *mut matched_sval = std::ptr::null_mut();
         if *str.offset(*i as isize) as ::core::ffi::c_int == 'i' as i32
             && ((*i).wrapping_add(1 as usize) == value.len
                 || (*str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
@@ -5981,7 +5981,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         14165246690716487359 => {}
                                         _ => {
                                             expanded_value =
-                                                ::core::ptr::null_mut::<matched_sval>();
+                                                std::ptr::null_mut();
                                             if mlv as u32
                                                 == MLVO_LAYOUT as ::core::ffi::c_int as u32
                                             {
@@ -6158,7 +6158,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         14165246690716487359 => {}
                                         _ => {
                                             expanded_value =
-                                                ::core::ptr::null_mut::<matched_sval>();
+                                                std::ptr::null_mut();
                                             if mlv as u32
                                                 == MLVO_LAYOUT as ::core::ffi::c_int as u32
                                             {
@@ -6335,7 +6335,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         14165246690716487359 => {}
                                         _ => {
                                             expanded_value =
-                                                ::core::ptr::null_mut::<matched_sval>();
+                                                std::ptr::null_mut();
                                             if mlv as u32
                                                 == MLVO_LAYOUT as ::core::ffi::c_int as u32
                                             {
@@ -6615,7 +6615,7 @@ unsafe fn append_expanded_kccgst_value(
         let mut expanded: darray_char = darray_char {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<i8>(),
+            item: std::ptr::null_mut(),
         };
         let mut last_item_idx: darray_size_t = 0 as darray_size_t;
         let mut has_separator: bool = false;
@@ -6796,7 +6796,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             let mut mlvo: rules_mlvo = (*m).mapping.mlvo_at_pos[i as usize];
             let mut value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
             let mut match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
-            let mut to: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
+            let mut to: *mut matched_sval = std::ptr::null_mut();
             let mut matched: bool = false;
             if mlvo as u32 == MLVO_MODEL as ::core::ffi::c_int as u32 {
                 to = &raw mut (*m).rmlvo.model;
@@ -7304,15 +7304,15 @@ unsafe fn read_rules_file(
         let mut scanner: scanner = scanner {
             pos: 0,
             len: 0,
-            s: ::core::ptr::null::<i8>(),
+            s: std::ptr::null(),
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: ::core::ptr::null::<i8>(),
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            priv_0: ::core::ptr::null_mut::<::core::ffi::c_void>(),
+            file_name: std::ptr::null(),
+            ctx: std::ptr::null_mut(),
+            priv_0: std::ptr::null_mut(),
         };
 
         // Convert FILE* to Rust File and map it
@@ -7428,7 +7428,7 @@ unsafe fn xkb_resolve_partial_rules(
             return false;
         }
         let mut offset: u32 = 0 as u32;
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut file: *mut FILE = std::ptr::null_mut();
         let len: usize = cstr_len(&raw mut partial_rules as *mut i8) as usize;
         loop {
             file = FindFileInXkbPath(
@@ -7471,7 +7471,7 @@ unsafe fn xkb_resolve_rules(
     mut explicit_layouts: *mut xkb_layout_index_t,
 ) -> bool {
     unsafe {
-        let mut mval: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
+        let mut mval: *mut matched_sval = std::ptr::null_mut();
         let mut ret: bool = false;
         let mut offset: u32 = 0 as u32;
         let mut path: [i8; 4096] = [0; 4096];
@@ -7547,28 +7547,28 @@ unsafe fn xkb_resolve_rules(
                             (*out).keycodes = (*matcher).kccgst
                                 [KCCGST_KEYCODES as ::core::ffi::c_int as usize]
                                 .item;
-                            if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                                *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                            if !std::ptr::null_mut::<u8>().is_null() {
+                                *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
                                     [KCCGST_KEYCODES as ::core::ffi::c_int as usize]
                                     .size;
                             }
                             (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
-                                .item = ::core::ptr::null_mut::<i8>();
+                                .item = std::ptr::null_mut();
                             (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
                                 .size = 0 as darray_size_t;
                             (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
                                 .alloc = 0 as darray_size_t;
                             (*out).types =
                                 (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].item;
-                            if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                                *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                            if !std::ptr::null_mut::<u8>().is_null() {
+                                *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
                                     [KCCGST_TYPES as ::core::ffi::c_int as usize]
                                     .size;
                             }
                             (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].item =
-                                ::core::ptr::null_mut::<i8>();
+                                std::ptr::null_mut();
                             (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].size =
                                 0 as darray_size_t;
                             (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].alloc =
@@ -7576,14 +7576,14 @@ unsafe fn xkb_resolve_rules(
                             (*out).compatibility = (*matcher).kccgst
                                 [KCCGST_COMPAT as ::core::ffi::c_int as usize]
                                 .item;
-                            if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                                *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                            if !std::ptr::null_mut::<u8>().is_null() {
+                                *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
                                     [KCCGST_COMPAT as ::core::ffi::c_int as usize]
                                     .size;
                             }
                             (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].item =
-                                ::core::ptr::null_mut::<i8>();
+                                std::ptr::null_mut();
                             (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].size =
                                 0 as darray_size_t;
                             (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].alloc =
@@ -7591,14 +7591,14 @@ unsafe fn xkb_resolve_rules(
                             (*out).symbols = (*matcher).kccgst
                                 [KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
                                 .item;
-                            if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                                *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                            if !std::ptr::null_mut::<u8>().is_null() {
+                                *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
                                     [KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
                                     .size;
                             }
                             (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].item =
-                                ::core::ptr::null_mut::<i8>();
+                                std::ptr::null_mut();
                             (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].size =
                                 0 as darray_size_t;
                             (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
@@ -7606,14 +7606,14 @@ unsafe fn xkb_resolve_rules(
                             (*out).geometry = (*matcher).kccgst
                                 [KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
                                 .item;
-                            if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                                *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                            if !std::ptr::null_mut::<u8>().is_null() {
+                                *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
                                     [KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
                                     .size;
                             }
                             (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
-                                .item = ::core::ptr::null_mut::<i8>();
+                                .item = std::ptr::null_mut();
                             (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
                                 .size = 0 as darray_size_t;
                             (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]

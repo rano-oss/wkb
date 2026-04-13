@@ -804,7 +804,7 @@ unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const key
                 }
             }
         }
-        return ::core::ptr::null::<keyword_tok>();
+        return std::ptr::null();
     }
 }
 unsafe fn c2rust_run_static_initializers() {
@@ -823,12 +823,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str3 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str3 as usize
                     as ::core::ffi::c_int,
                 tok: KEY as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str4 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str4 as usize
                     as ::core::ffi::c_int,
                 tok: KEYS as ::core::ffi::c_int,
             },
@@ -841,7 +841,7 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str7 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str7 as usize
                     as ::core::ffi::c_int,
                 tok: AUGMENT as ::core::ffi::c_int,
             },
@@ -850,37 +850,37 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str9 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str9 as usize
                     as ::core::ffi::c_int,
                 tok: TEXT as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str10 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str10 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_KEYMAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str11 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str11 as usize
                     as ::core::ffi::c_int,
                 tok: KEYPAD_KEYS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str12 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str12 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_KEYCODES as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str13 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str13 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_GEOMETRY as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str14 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str14 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_TYPES as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str15 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str15 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_COMPATMAP as ::core::ffi::c_int,
             },
@@ -889,7 +889,7 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str17 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str17 as usize
                     as ::core::ffi::c_int,
                 tok: REPLACE as ::core::ffi::c_int,
             },
@@ -898,97 +898,97 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str19 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str19 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_COMPATMAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str20 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str20 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_LAYOUT as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str21 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str21 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_SYMBOLS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str22 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str22 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_COMPATMAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str23 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str23 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_SEMANTICS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str24 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str24 as usize
                     as ::core::ffi::c_int,
                 tok: TYPE as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str25 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str25 as usize
                     as ::core::ffi::c_int,
                 tok: ALIAS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str26 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str26 as usize
                     as ::core::ffi::c_int,
                 tok: XKB_COMPATMAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str27 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str27 as usize
                     as ::core::ffi::c_int,
                 tok: ALPHANUMERIC_KEYS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str28 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str28 as usize
                     as ::core::ffi::c_int,
                 tok: FUNCTION_KEYS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str29 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str29 as usize
                     as ::core::ffi::c_int,
                 tok: ALTERNATE as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str30 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str30 as usize
                     as ::core::ffi::c_int,
                 tok: SHAPE as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str31 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str31 as usize
                     as ::core::ffi::c_int,
                 tok: ACTION_TOK as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str32 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str32 as usize
                     as ::core::ffi::c_int,
                 tok: SECTION as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str33 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str33 as usize
                     as ::core::ffi::c_int,
                 tok: ROW as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str34 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str34 as usize
                     as ::core::ffi::c_int,
                 tok: LOGO as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str35 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str35 as usize
                     as ::core::ffi::c_int,
                 tok: ALTERNATE_GROUP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str36 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str36 as usize
                     as ::core::ffi::c_int,
                 tok: HIDDEN as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str37 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str37 as usize
                     as ::core::ffi::c_int,
                 tok: VIRTUAL as ::core::ffi::c_int,
             },
@@ -1009,12 +1009,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str42 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str42 as usize
                     as ::core::ffi::c_int,
                 tok: OUTLINE as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str43 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str43 as usize
                     as ::core::ffi::c_int,
                 tok: DEFAULT as ::core::ffi::c_int,
             },
@@ -1027,12 +1027,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str46 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str46 as usize
                     as ::core::ffi::c_int,
                 tok: MODIFIER_MAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str47 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str47 as usize
                     as ::core::ffi::c_int,
                 tok: VIRTUAL_MODS as ::core::ffi::c_int,
             },
@@ -1053,12 +1053,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str52 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str52 as usize
                     as ::core::ffi::c_int,
                 tok: OVERLAY as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str53 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str53 as usize
                     as ::core::ffi::c_int,
                 tok: OVERRIDE as ::core::ffi::c_int,
             },
@@ -1075,7 +1075,7 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str57 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str57 as usize
                     as ::core::ffi::c_int,
                 tok: INCLUDE as ::core::ffi::c_int,
             },
@@ -1096,17 +1096,17 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str62 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str62 as usize
                     as ::core::ffi::c_int,
                 tok: MODIFIER_MAP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str63 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str63 as usize
                     as ::core::ffi::c_int,
                 tok: MODIFIER_KEYS as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str64 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str64 as usize
                     as ::core::ffi::c_int,
                 tok: INDICATOR as ::core::ffi::c_int,
             },
@@ -1115,12 +1115,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str66 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str66 as usize
                     as ::core::ffi::c_int,
                 tok: GROUP as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str67 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str67 as usize
                     as ::core::ffi::c_int,
                 tok: MODIFIER_MAP as ::core::ffi::c_int,
             },
@@ -1129,7 +1129,7 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str69 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str69 as usize
                     as ::core::ffi::c_int,
                 tok: INTERPRET as ::core::ffi::c_int,
             },
@@ -1138,12 +1138,12 @@ unsafe fn c2rust_run_static_initializers() {
                 tok: 0,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str71 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str71 as usize
                     as ::core::ffi::c_int,
                 tok: SOLID as ::core::ffi::c_int,
             },
             keyword_tok {
-                name: &raw mut (*::core::ptr::null_mut::<stringpool_t>()).stringpool_str72 as usize
+                name: &raw mut (*std::ptr::null_mut::<stringpool_t>()).stringpool_str72 as usize
                     as ::core::ffi::c_int,
                 tok: PARTIAL as ::core::ffi::c_int,
             },

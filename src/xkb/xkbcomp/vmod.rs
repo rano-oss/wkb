@@ -34,7 +34,7 @@ pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set
         if !reset {
             return;
         }
-        let mut mod_0: *mut xkb_mod = ::core::ptr::null_mut::<xkb_mod>();
+        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
         let mut vmod: xkb_mod_index_t = 0 as xkb_mod_index_t;
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw mut (*info).mods as *mut xkb_mod;
@@ -55,7 +55,7 @@ pub unsafe fn MergeModSets(
     unsafe {
         let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
         let mut vmod: xkb_mod_index_t = 0;
-        let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
+        let mut mod_0: *const xkb_mod = std::ptr::null();
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
@@ -120,7 +120,7 @@ pub unsafe fn HandleVModDef(
             }
         }
         let mut vmod: xkb_mod_index_t = 0;
-        let mut mod_0: *mut xkb_mod = ::core::ptr::null_mut::<xkb_mod>();
+        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
         while vmod < (*mods).num_mods {

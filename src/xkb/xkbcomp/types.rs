@@ -262,7 +262,7 @@ unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
 unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
     unsafe {
         free((*info).name as *mut ::core::ffi::c_void);
-        let mut type_0: *mut KeyTypeInfo = ::core::ptr::null_mut::<KeyTypeInfo>();
+        let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
         if !(*info).types.item.is_null() {
             type_0 =
                 (*info).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
@@ -285,7 +285,7 @@ unsafe fn FindMatchingKeyType(
     mut name: xkb_atom_t,
 ) -> *mut KeyTypeInfo {
     unsafe {
-        let mut old: *mut KeyTypeInfo = ::core::ptr::null_mut::<KeyTypeInfo>();
+        let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         if !(*info).types.item.is_null() {
             old = (*info).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
             while old < (*info).types.item.offset((*info).types.size as isize) as *mut KeyTypeInfo {
@@ -295,7 +295,7 @@ unsafe fn FindMatchingKeyType(
                 old = old.offset(1);
             }
         }
-        return ::core::ptr::null_mut::<KeyTypeInfo>();
+        return std::ptr::null_mut();
     }
 }
 unsafe fn AddKeyType(
@@ -304,7 +304,7 @@ unsafe fn AddKeyType(
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        let mut old: *mut KeyTypeInfo = ::core::ptr::null_mut::<KeyTypeInfo>();
+        let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         let verbosity: ::core::ffi::c_int =
             xkb_context_get_log_verbosity((*info).ctx) as ::core::ffi::c_int;
         old = FindMatchingKeyType(info, (*new).name);
@@ -325,10 +325,10 @@ unsafe fn AddKeyType(
                 }
                 ClearKeyTypeInfo(old);
                 *old = *new;
-                (*new).entries.item = ::core::ptr::null_mut::<xkb_key_type_entry>();
+                (*new).entries.item = std::ptr::null_mut();
                 (*new).entries.size = 0 as darray_size_t;
                 (*new).entries.alloc = 0 as darray_size_t;
-                (*new).level_names.item = ::core::ptr::null_mut::<xkb_atom_t>();
+                (*new).level_names.item = std::ptr::null_mut();
                 (*new).level_names.size = 0 as darray_size_t;
                 (*new).level_names.alloc = 0 as darray_size_t;
                 return true;
@@ -377,11 +377,11 @@ unsafe fn MergeIncludedKeyTypes(
         }
         if (*into).types.size == 0 as darray_size_t {
             (*into).types = (*from).types;
-            (*from).types.item = ::core::ptr::null_mut::<KeyTypeInfo>();
+            (*from).types.item = std::ptr::null_mut();
             (*from).types.size = 0 as darray_size_t;
             (*from).types.alloc = 0 as darray_size_t;
         } else {
-            let mut type_0: *mut KeyTypeInfo = ::core::ptr::null_mut::<KeyTypeInfo>();
+            let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
             if !(*from).types.item.is_null() {
                 type_0 =
                     (*from).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
@@ -409,13 +409,13 @@ unsafe fn HandleIncludeKeyTypes(
 ) -> bool {
     unsafe {
         let mut included: KeyTypesInfo = KeyTypesInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             types: C2Rust_Unnamed_16 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<KeyTypeInfo>(),
+                item: std::ptr::null_mut(),
             },
             mods: xkb_mod_set {
                 mods: [xkb_mod {
@@ -426,8 +426,8 @@ unsafe fn HandleIncludeKeyTypes(
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -444,13 +444,13 @@ unsafe fn HandleIncludeKeyTypes(
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyTypesInfo = KeyTypesInfo {
-                name: ::core::ptr::null_mut::<i8>(),
+                name: std::ptr::null_mut(),
                 errorCount: 0,
                 include_depth: 0,
                 types: C2Rust_Unnamed_16 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<KeyTypeInfo>(),
+                    item: std::ptr::null_mut(),
                 },
                 mods: xkb_mod_set {
                     mods: [xkb_mod {
@@ -461,10 +461,10 @@ unsafe fn HandleIncludeKeyTypes(
                     num_mods: 0,
                     explicit_vmods: 0,
                 },
-                ctx: ::core::ptr::null_mut::<xkb_context>(),
-                keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+                ctx: std::ptr::null_mut(),
+                keymap_info: std::ptr::null(),
             };
-            let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+            let mut file: *mut XkbFile = std::ptr::null_mut();
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -554,7 +554,7 @@ unsafe fn FindMatchingMapEntry(
     mut mods: xkb_mod_mask_t,
 ) -> *mut xkb_key_type_entry {
     unsafe {
-        let mut entry: *mut xkb_key_type_entry = ::core::ptr::null_mut::<xkb_key_type_entry>();
+        let mut entry: *mut xkb_key_type_entry = std::ptr::null_mut();
         if !(*type_0).entries.item.is_null() {
             entry = (*type_0)
                 .entries
@@ -574,7 +574,7 @@ unsafe fn FindMatchingMapEntry(
                 entry = entry.offset(1);
             }
         }
-        return ::core::ptr::null_mut::<xkb_key_type_entry>();
+        return std::ptr::null_mut();
     }
 }
 unsafe fn AddMapEntry(
@@ -585,7 +585,7 @@ unsafe fn AddMapEntry(
     mut report: bool,
 ) -> bool {
     unsafe {
-        let mut old: *mut xkb_key_type_entry = ::core::ptr::null_mut::<xkb_key_type_entry>();
+        let mut old: *mut xkb_key_type_entry = std::ptr::null_mut();
         old = FindMatchingMapEntry(type_0, (*new).mods.mods);
         if !old.is_null() {
             if report as ::core::ffi::c_int != 0 && (*old).level != (*new).level {
@@ -712,7 +712,7 @@ unsafe fn AddPreserve(
     mut preserve_mods: xkb_mod_mask_t,
 ) -> bool {
     unsafe {
-        let mut entry: *mut xkb_key_type_entry = ::core::ptr::null_mut::<xkb_key_type_entry>();
+        let mut entry: *mut xkb_key_type_entry = std::ptr::null_mut();
         let mut new: xkb_key_type_entry = xkb_key_type_entry {
             level: 0,
             mods: xkb_mods { mods: 0, mask: 0 },
@@ -825,8 +825,8 @@ unsafe fn SetPreserve(
             );
         }
         if mods & !(*type_0).mods != 0 {
-            let mut before: *const i8 = ::core::ptr::null::<i8>();
-            let mut after: *const i8 = ::core::ptr::null::<i8>();
+            let mut before: *const i8 = std::ptr::null();
+            let mut after: *const i8 = std::ptr::null();
             before = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
             mods &= (*type_0).mods;
             after = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
@@ -861,8 +861,8 @@ unsafe fn SetPreserve(
             return false;
         }
         if preserve_mods & !mods != 0 {
-            let mut before_0: *const i8 = ::core::ptr::null::<i8>();
-            let mut after_0: *const i8 = ::core::ptr::null::<i8>();
+            let mut before_0: *const i8 = std::ptr::null();
+            let mut after_0: *const i8 = std::ptr::null();
             before_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
             preserve_mods &= mods;
             after_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
@@ -915,8 +915,8 @@ unsafe fn AddLevelName(
                 return true;
             }
             if *(*type_0).level_names.item.offset(level as isize) != XKB_ATOM_NONE as xkb_atom_t {
-                let mut old: *const i8 = ::core::ptr::null::<i8>();
-                let mut new: *const i8 = ::core::ptr::null::<i8>();
+                let mut old: *const i8 = std::ptr::null();
+                let mut new: *const i8 = std::ptr::null();
                 old = xkb_atom_text(
                     (*info).ctx,
                     *(*type_0).level_names.item.offset(level as isize),
@@ -1027,9 +1027,9 @@ unsafe fn HandleKeyTypeBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         while !def.is_null() {
             if !ExprResolveLhs(
                 (*info).ctx,
@@ -1083,12 +1083,12 @@ unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef
             entries: C2Rust_Unnamed_18 {
                 size: 0 as darray_size_t,
                 alloc: 0 as darray_size_t,
-                item: ::core::ptr::null_mut::<xkb_key_type_entry>(),
+                item: std::ptr::null_mut(),
             },
             level_names: C2Rust_Unnamed_17 {
                 size: 0 as darray_size_t,
                 alloc: 0 as darray_size_t,
-                item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                item: std::ptr::null_mut(),
             },
         };
         if !HandleKeyTypeBody(info, (*def).body, &raw mut type_0)
@@ -1103,9 +1103,9 @@ unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef
 }
 unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
@@ -1247,14 +1247,14 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 types.offset(0 as ::core::ffi::c_int as isize) as *mut xkb_key_type;
             (*type_0).mods.mods = 0 as xkb_mod_mask_t;
             (*type_0).num_levels = 1 as xkb_level_index_t;
-            (*type_0).entries = ::core::ptr::null_mut::<xkb_key_type_entry>();
+            (*type_0).entries = std::ptr::null_mut();
             (*type_0).num_entries = 0 as darray_size_t;
             (*type_0).name = xkb_atom_intern(
                 (*keymap).ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
                 (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
             );
-            (*type_0).level_names = ::core::ptr::null_mut::<xkb_atom_t>();
+            (*type_0).level_names = std::ptr::null_mut();
             (*type_0).num_level_names = 0 as xkb_level_index_t;
             (*type_0).required = true;
         } else {
@@ -1290,18 +1290,18 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 (*type_1).num_levels = (*def).num_levels;
                 (*type_1).num_level_names = (*def).level_names.size as xkb_level_index_t;
                 (*type_1).level_names = (*def).level_names.item;
-                if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                    *(::core::ptr::null_mut::<::core::ffi::c_void>() as *mut darray_size_t) =
+                if !std::ptr::null_mut::<u8>().is_null() {
+                    *(std::ptr::null_mut() as *mut darray_size_t) =
                         (*def).level_names.size;
                 }
-                (*def).level_names.item = ::core::ptr::null_mut::<xkb_atom_t>();
+                (*def).level_names.item = std::ptr::null_mut();
                 (*def).level_names.size = 0 as darray_size_t;
                 (*def).level_names.alloc = 0 as darray_size_t;
                 (*type_1).entries = (*def).entries.item;
                 if !(&raw mut (*type_1).num_entries).is_null() {
                     *&raw mut (*type_1).num_entries = (*def).entries.size;
                 }
-                (*def).entries.item = ::core::ptr::null_mut::<xkb_key_type_entry>();
+                (*def).entries.item = std::ptr::null_mut();
                 (*def).entries.size = 0 as darray_size_t;
                 (*def).entries.alloc = 0 as darray_size_t;
                 (*type_1).required = false;
@@ -1337,13 +1337,13 @@ pub unsafe fn CompileKeyTypes(
 ) -> bool {
     unsafe {
         let mut info: KeyTypesInfo = KeyTypesInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             types: C2Rust_Unnamed_16 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<KeyTypeInfo>(),
+                item: std::ptr::null_mut(),
             },
             mods: xkb_mod_set {
                 mods: [xkb_mod {
@@ -1354,8 +1354,8 @@ pub unsafe fn CompileKeyTypes(
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         InitKeyTypesInfo(
             &raw mut info,

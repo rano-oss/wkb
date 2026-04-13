@@ -197,12 +197,12 @@ unsafe fn add_direct_subdirectories(
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
-        let mut entry: *mut dirent = ::core::ptr::null_mut::<dirent>();
+        let mut entry: *mut dirent = std::ptr::null_mut();
         let mut path_buf: [i8; 4096] = [0; 4096];
         let mut c2rust_current_block: u64;
         let mut ret: i32 = 0 as i32;
         let mut err: i32 = ENOMEM;
-        let mut dir: *mut DIR = ::core::ptr::null_mut::<DIR>();
+        let mut dir: *mut DIR = std::ptr::null_mut();
         let mut stat_buf: stat = stat {
             st_dev: 0,
             st_ino: 0,
@@ -241,7 +241,7 @@ unsafe fn add_direct_subdirectories(
             if dir.is_null() {
                 err = EACCES;
             } else {
-                entry = ::core::ptr::null_mut::<dirent>();
+                entry = std::ptr::null_mut();
                 path_buf = ::core::mem::transmute::<
                     [u8; 4096],
                     [i8; 4096],
@@ -323,7 +323,7 @@ unsafe fn add_direct_subdirectories(
                                             -> i32,
                                 ),
                             );
-                            let mut ext_path_0: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
+                            let mut ext_path_0: *mut *mut i8 = std::ptr::null_mut();
                             if !(*extensions).item.is_null() {
                                 ext_path_0 = (*extensions).item.offset(versioned_count as isize)
                                     as *mut *mut i8;
@@ -394,7 +394,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
         let mut extensions: darray_string = darray_string {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<*mut i8>(),
+            item: std::ptr::null_mut(),
         };
         let mut extensions_path: *const i8 =
             xkb_context_include_path_get_versioned_extensions_path(ctx);
@@ -419,7 +419,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 versioned_path_length,
             );
         }
-        let mut ext_path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
+        let mut ext_path: *mut *mut i8 = std::ptr::null_mut();
         if !extensions.item.is_null() {
             ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
             while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
@@ -452,7 +452,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
 
 pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
     unsafe {
-        let mut path: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
+        let mut path: *mut *mut i8 = std::ptr::null_mut();
         if !(*ctx).includes.item.is_null() {
             path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
@@ -505,7 +505,7 @@ pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
 pub unsafe fn xkb_context_include_path_get(mut ctx: *mut xkb_context, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return *(*ctx).includes.item.offset(idx as isize);
     }
@@ -539,7 +539,7 @@ unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
         10 => {
             return b"xkbcommon: CRITICAL: \0".as_ptr() as *const i8;
         }
-        _ => return ::core::ptr::null::<i8>(),
+        _ => return std::ptr::null(),
     };
 }
 unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mut msg: *const i8) {
@@ -553,7 +553,7 @@ unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mu
 }
 unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
     unsafe {
-        let mut endptr: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut endptr: *mut i8 = std::ptr::null_mut();
         let mut lvl: xkb_log_level = 0 as xkb_log_level;
         *__errno_location() = 0 as i32;
         lvl = strtol(level, &raw mut endptr, 10 as i32) as xkb_log_level;
@@ -612,7 +612,7 @@ unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
 unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
     unsafe {
         *__errno_location() = 0 as i32;
-        let v: i64 = strtol(verbosity, ::core::ptr::null_mut::<*mut i8>(), 10 as i32) as i64;
+        let v: i64 = strtol(verbosity, std::ptr::null_mut(), 10 as i32) as i64;
         if *__errno_location() == 0 as i32 {
             return v as i32;
         }
@@ -621,7 +621,7 @@ unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
 }
 pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context {
     unsafe {
-        let mut env: *const i8 = ::core::ptr::null::<i8>();
+        let mut env: *const i8 = std::ptr::null();
         let mut ctx: *mut xkb_context = Box::into_raw(Box::new(std::mem::zeroed::<xkb_context>()));
         (*ctx).refcnt = 1 as i32;
         (*ctx).log_fn =
@@ -642,7 +642,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
                 flags as u32 & !(XKB_CONTEXT_FLAGS as u32),
             );
             drop(Box::from_raw(ctx));
-            return ::core::ptr::null_mut::<xkb_context>();
+            return std::ptr::null_mut();
         }
         (*ctx).set_use_environment_names(
             (flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32 as u32 == 0) as bool,
@@ -653,10 +653,10 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
         (*ctx).set_pending_default_includes(
             (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32 == 0) as bool,
         );
-        (*ctx).includes.item = ::core::ptr::null_mut::<*mut i8>();
+        (*ctx).includes.item = std::ptr::null_mut();
         (*ctx).includes.size = 0 as darray_size_t;
         (*ctx).includes.alloc = 0 as darray_size_t;
-        (*ctx).failed_includes.item = ::core::ptr::null_mut::<*mut i8>();
+        (*ctx).failed_includes.item = std::ptr::null_mut();
         (*ctx).failed_includes.size = 0 as darray_size_t;
         (*ctx).failed_includes.alloc = 0 as darray_size_t;
         env = xkb_context_getenv(ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
@@ -670,7 +670,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
         (*ctx).atom_table = atom_table_new();
         if (*ctx).atom_table.is_null() {
             xkb_context_unref(ctx);
-            return ::core::ptr::null_mut::<xkb_context>();
+            return std::ptr::null_mut();
         }
         (*ctx).x11_atom_cache = std::ptr::null_mut::<core::ffi::c_void>();
         return ctx;

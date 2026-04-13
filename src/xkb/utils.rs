@@ -20,11 +20,11 @@ pub use crate::xkb::shared_types::__S_IFMT;
 pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
-            return ::core::ptr::null_mut::<FILE>();
+            return std::ptr::null_mut();
         }
         let mut fd: i32 = open(path, O_RDONLY);
         if fd < 0 as i32 {
-            return ::core::ptr::null_mut::<FILE>();
+            return std::ptr::null_mut();
         }
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -55,7 +55,7 @@ pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
         let mut err: i32 = fstat(fd, &raw mut stat_buf);
         if err != 0 as i32 || !(stat_buf.st_mode & __S_IFMT as u32 == 0o100000 as u32) {
             close(fd);
-            return ::core::ptr::null_mut::<FILE>();
+            return std::ptr::null_mut();
         }
         let mut fp: *mut FILE = fdopen(fd, b"rb\0".as_ptr() as *const i8);
         if fp.is_null() {
@@ -894,7 +894,7 @@ pub unsafe fn memdup(
 #[inline]
 pub unsafe fn strcpy_safe(mut dest: *mut i8, size: usize, src: *const i8) -> *mut i8 {
     if dest.is_null() || size == 0 || src.is_null() {
-        return ::core::ptr::null_mut::<i8>();
+        return std::ptr::null_mut();
     }
     let limit: *const i8 = dest.offset(size as isize).offset(-1);
     let mut s = src;
@@ -906,7 +906,7 @@ pub unsafe fn strcpy_safe(mut dest: *mut i8, size: usize, src: *const i8) -> *mu
     }
     *dest = 0;
     if *s != 0 {
-        ::core::ptr::null_mut::<i8>()
+        std::ptr::null_mut()
     } else {
         dest
     }

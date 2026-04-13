@@ -162,17 +162,17 @@ pub unsafe fn xkb_components_names_from_rules(
             return !rmlvo_out.is_null();
         }
         *components_out = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<i8>(),
-            compatibility: ::core::ptr::null_mut::<i8>(),
-            geometry: ::core::ptr::null_mut::<i8>(),
-            symbols: ::core::ptr::null_mut::<i8>(),
-            types: ::core::ptr::null_mut::<i8>(),
+            keycodes: std::ptr::null_mut(),
+            compatibility: std::ptr::null_mut(),
+            geometry: std::ptr::null_mut(),
+            symbols: std::ptr::null_mut(),
+            types: std::ptr::null_mut(),
         };
         return xkb_components_from_rules_names(
             ctx,
             &raw mut rmlvo,
             components_out,
-            ::core::ptr::null_mut::<xkb_layout_index_t>(),
+            std::ptr::null_mut(),
         );
     }
 }
@@ -209,20 +209,20 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
     unsafe {
         let mut ok: bool = false;
         let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<i8>(),
-            compatibility: ::core::ptr::null_mut::<i8>(),
-            geometry: ::core::ptr::null_mut::<i8>(),
-            symbols: ::core::ptr::null_mut::<i8>(),
-            types: ::core::ptr::null_mut::<i8>(),
+            keycodes: std::ptr::null_mut(),
+            compatibility: std::ptr::null_mut(),
+            geometry: std::ptr::null_mut(),
+            symbols: std::ptr::null_mut(),
+            types: std::ptr::null_mut(),
         };
-        let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut file: *mut XkbFile = std::ptr::null_mut();
         if (*(*keymap).ctx).log_level as u32 >= XKB_LOG_LEVEL_DEBUG as ::core::ffi::c_int as u32 {
             let mut names: xkb_rule_names = xkb_rule_names {
-                rules: ::core::ptr::null::<i8>(),
-                model: ::core::ptr::null::<i8>(),
-                layout: ::core::ptr::null::<i8>(),
-                variant: ::core::ptr::null::<i8>(),
-                options: ::core::ptr::null::<i8>(),
+                rules: std::ptr::null(),
+                model: std::ptr::null(),
+                layout: std::ptr::null(),
+                variant: std::ptr::null(),
+                options: std::ptr::null(),
             };
             let buf_size: usize =
                 (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub(1 as usize);
@@ -253,11 +253,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
         );
         if !ok {
             let mut names_0: xkb_rule_names = xkb_rule_names {
-                rules: ::core::ptr::null::<i8>(),
-                model: ::core::ptr::null::<i8>(),
-                layout: ::core::ptr::null::<i8>(),
-                variant: ::core::ptr::null::<i8>(),
-                options: ::core::ptr::null::<i8>(),
+                rules: std::ptr::null(),
+                model: std::ptr::null(),
+                layout: std::ptr::null(),
+                variant: std::ptr::null(),
+                options: std::ptr::null(),
             };
             let buf_size_0: usize = ::core::mem::size_of::<[i8; 2048]>() as usize;
             let mut buf_0: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
@@ -325,13 +325,13 @@ unsafe fn text_v1_keymap_new_from_names(
     unsafe {
         let mut ok: bool = false;
         let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: ::core::ptr::null_mut::<i8>(),
-            compatibility: ::core::ptr::null_mut::<i8>(),
-            geometry: ::core::ptr::null_mut::<i8>(),
-            symbols: ::core::ptr::null_mut::<i8>(),
-            types: ::core::ptr::null_mut::<i8>(),
+            keycodes: std::ptr::null_mut(),
+            compatibility: std::ptr::null_mut(),
+            geometry: std::ptr::null_mut(),
+            symbols: std::ptr::null_mut(),
+            types: std::ptr::null_mut(),
         };
-        let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut file: *mut XkbFile = std::ptr::null_mut();
         xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
@@ -407,13 +407,13 @@ unsafe fn text_v1_keymap_new_from_string(
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         xkb_file = XkbParseString(
             (*keymap).ctx,
             string,
             len,
             b"(input string)\0".as_ptr() as *const i8,
-            ::core::ptr::null::<i8>(),
+            std::ptr::null(),
         );
         if xkb_file.is_null() {
             xkb_logf!(
@@ -433,12 +433,12 @@ unsafe fn text_v1_keymap_new_from_string(
 unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *mut FILE) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         xkb_file = XkbParseFile(
             (*keymap).ctx,
             file,
             b"(unknown file)\0".as_ptr() as *const i8,
-            ::core::ptr::null::<i8>(),
+            std::ptr::null(),
         );
         if xkb_file.is_null() {
             xkb_logf!(

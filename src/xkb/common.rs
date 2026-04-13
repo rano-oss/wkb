@@ -151,7 +151,7 @@ pub unsafe fn test_init() {
     unsafe {
         setvbuf(
             stdout,
-            ::core::ptr::null_mut::<i8>(),
+            std::ptr::null_mut(),
             _IONBF,
             BUFSIZ as usize,
         );
@@ -194,7 +194,7 @@ unsafe fn consume_events(
     mut kc: *mut xkb_keycode_t,
 ) -> bool {
     unsafe {
-        let mut event: *const xkb_event = ::core::ptr::null::<xkb_event>();
+        let mut event: *const xkb_event = std::ptr::null();
         loop {
             event = xkb_events_next(events);
             if event.is_null() {
@@ -251,7 +251,7 @@ pub unsafe fn test_key_seq_va(
         's_21: loop {
             let kc: xkb_keycode_t = (ap.arg::<i32>() + EVDEV_OFFSET) as xkb_keycode_t;
             let op: i32 = ap.arg::<i32>();
-            let mut opstr: *const i8 = ::core::ptr::null::<i8>();
+            let mut opstr: *const i8 = std::ptr::null();
             match op {
                 0 => {
                     opstr = b"DOWN\0".as_ptr() as *const i8;
@@ -359,7 +359,7 @@ pub unsafe fn test_key_seq_va(
                     };
                 }
             }
-            let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+            let mut syms: *const xkb_keysym_t = std::ptr::null();
             let nsyms: i32 = xkb_state_key_get_syms(state, kc_new, &raw mut syms) as i32;
             if !events.is_null() {
                 if consume_events(sm, events, state, ALL_EVENTS, &raw mut kc_new) as i32 != 0 {
@@ -399,7 +399,7 @@ pub unsafe fn test_key_seq_va(
             tools_print_keycode_state(
                 b"\0".as_ptr() as *const i8,
                 state,
-                ::core::ptr::null_mut::<xkb_compose_state>(),
+                std::ptr::null_mut(),
                 kc,
                 direction,
                 XKB_CONSUMED_MODE_XKB,
@@ -531,8 +531,8 @@ pub unsafe extern "C" fn test_key_seq(mut keymap: *mut xkb_keymap, mut c2rust_ar
         ap = c2rust_args.clone();
         ret = test_key_seq_va(
             keymap,
-            ::core::ptr::null_mut::<xkb_machine>(),
-            ::core::ptr::null_mut::<xkb_events>(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
             ap,
         );
         return ret;
@@ -593,7 +593,7 @@ pub unsafe fn test_maketempdir(mut template: *const i8) -> *mut i8 {
 }
 pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
-        let mut srcdir: *const i8 = ::core::ptr::null::<i8>();
+        let mut srcdir: *const i8 = std::ptr::null();
         srcdir = getenv(b"top_srcdir\0".as_ptr() as *const i8);
         if srcdir.is_null() {
             srcdir = b".\0".as_ptr() as *const i8;
@@ -618,7 +618,7 @@ pub unsafe fn test_get_path(mut path_rel: *const i8) -> *mut i8 {
 pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
     unsafe {
         if file.is_null() {
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         *__errno_location() = 0 as i32;
         let fd: i32 = fileno(file) as i32;
@@ -628,7 +628,7 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
                 crate::xkb::utils::CStrDisplay(path),
                 crate::xkb::utils::StrerrorDisplay(*__errno_location()),
             );
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         *__errno_location() = 0 as i32;
         let mut info: stat = stat {
@@ -663,7 +663,7 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
                 crate::xkb::utils::CStrDisplay(path),
                 crate::xkb::utils::StrerrorDisplay(*__errno_location()),
             );
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         let size: usize = info.st_size as usize;
         if size > MAX_FILE_SIZE as i32 as usize {
@@ -671,11 +671,11 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
                 "Error: file {} exceeds maximum size",
                 crate::xkb::utils::CStrDisplay(path)
             );
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         let mut ret: *mut i8 = malloc(size.wrapping_add(1 as usize)) as *mut i8;
         if ret.is_null() {
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         *ret.offset(size as isize) = '\0' as i32 as i8;
         *__errno_location() = 0 as i32;
@@ -699,7 +699,7 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
                 );
             }
             free(ret as *mut ::core::ffi::c_void);
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         return ret;
     }
@@ -708,10 +708,10 @@ pub unsafe fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
     unsafe {
         let mut path: *mut i8 = test_get_path(path_rel);
         if path.is_null() {
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         let mut file: *mut FILE = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        let mut ret: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut ret: *mut i8 = std::ptr::null_mut();
         if !file.is_null() {
             ret = read_file(path, file);
         }
@@ -737,12 +737,12 @@ pub unsafe fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_c
         }
         let ctx: *mut xkb_context = xkb_context_new(ctx_flags) as *mut xkb_context;
         if ctx.is_null() {
-            return ::core::ptr::null_mut::<xkb_context>();
+            return std::ptr::null_mut();
         }
         let path: *mut i8 = test_get_path(b"\0".as_ptr() as *const i8) as *mut i8;
         if path.is_null() {
             xkb_context_unref(ctx);
-            return ::core::ptr::null_mut::<xkb_context>();
+            return std::ptr::null_mut();
         }
         xkb_context_include_path_append(ctx, path);
         free(path as *mut ::core::ffi::c_void);
@@ -755,12 +755,12 @@ pub unsafe fn test_compile_file(
     mut path_rel: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
-        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let mut path: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut keymap: *mut xkb_keymap = std::ptr::null_mut();
+        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut path: *mut i8 = std::ptr::null_mut();
         path = test_get_path(path_rel);
         if path.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         file = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         if file.is_null() {
@@ -769,7 +769,7 @@ pub unsafe fn test_compile_file(
                 crate::xkb::utils::CStrDisplay(path)
             );
             free(path as *mut ::core::ffi::c_void);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if !file.is_null() {
         } else {
@@ -789,7 +789,7 @@ pub unsafe fn test_compile_file(
                 crate::xkb::utils::CStrDisplay(path)
             );
             free(path as *mut ::core::ffi::c_void);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         eprintln!(
             "Successfully compiled path: {}",
@@ -805,12 +805,12 @@ pub unsafe fn test_compile_string(
     mut string: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
-        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut keymap: *mut xkb_keymap = std::ptr::null_mut();
         keymap =
             xkb_keymap_new_from_string(context, string, format, XKB_KEYMAP_COMPILE_STRICT_MODE);
         if keymap.is_null() {
             eprintln!("Failed to compile string");
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -833,11 +833,11 @@ pub unsafe fn test_compile_buffer2(
     mut len: usize,
 ) -> *mut xkb_keymap {
     unsafe {
-        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut keymap: *mut xkb_keymap = std::ptr::null_mut();
         keymap = xkb_keymap_new_from_buffer(context, buf, len, format, flags);
         if keymap.is_null() {
             eprintln!("Failed to compile keymap from memory buffer");
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -852,30 +852,30 @@ pub unsafe fn test_compile_rules(
     mut options: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
-        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut keymap: *mut xkb_keymap = std::ptr::null_mut();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: if isempty(rules) as i32 != 0 {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 rules
             },
             model: if isempty(model) as i32 != 0 {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 model
             },
             layout: if isempty(layout) as i32 != 0 {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 layout
             },
             variant: if isempty(variant) as i32 != 0 {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 variant
             },
             options: if isempty(options) as i32 != 0 {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 options
             },
@@ -888,7 +888,7 @@ pub unsafe fn test_compile_rules(
         {
             keymap = xkb_keymap_new_from_names2(
                 context,
-                ::core::ptr::null::<xkb_rule_names>(),
+                std::ptr::null(),
                 format,
                 XKB_KEYMAP_COMPILE_STRICT_MODE,
             );
@@ -909,7 +909,7 @@ pub unsafe fn test_compile_rules(
                 crate::xkb::utils::CStrDisplay(variant),
                 crate::xkb::utils::CStrDisplay(options),
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -928,7 +928,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
         );
         if rmlvo.is_null() {
             eprintln!("ERROR: xkb_rmlvo_builder_new() failed");
-            return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+            return std::ptr::null_mut();
         }
         let mut buf: [i8; 1024] = [
             0 as i32 as i8,
@@ -1959,7 +1959,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
         let mut loptions: C2Rust_Unnamed_15 = C2Rust_Unnamed_15 {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<darray_string>(),
+            item: std::ptr::null_mut(),
         };
         if !isempty((*names).options) {
             let mut o: *const i8 = (*names).options;
@@ -2082,7 +2082,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                             len_0,
                         );
                         *start.offset(len_0 as isize) = '\0' as i32 as i8;
-                        let mut opts: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
+                        let mut opts: *mut *mut i8 = std::ptr::null_mut();
                         let mut opts_count: usize = 0 as usize;
                         if layout_count < loptions.size as xkb_layout_index_t {
                             opts = (*loptions.item.offset(layout_count as isize)).item;
@@ -2122,15 +2122,15 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                     ),
                 );
                 xkb_rmlvo_builder_unref(rmlvo);
-                rmlvo = ::core::ptr::null_mut::<xkb_rmlvo_builder>();
+                rmlvo = std::ptr::null_mut();
             }
             _ => {}
         }
-        let mut opts_0: *mut darray_string = ::core::ptr::null_mut::<darray_string>();
+        let mut opts_0: *mut darray_string = std::ptr::null_mut();
         if !loptions.item.is_null() {
             opts_0 = loptions.item.offset(0 as i32 as isize) as *mut darray_string;
             while opts_0 < loptions.item.offset(loptions.size as isize) as *mut darray_string {
-                let mut opt_0: *mut *mut i8 = ::core::ptr::null_mut::<*mut i8>();
+                let mut opt_0: *mut *mut i8 = std::ptr::null_mut();
                 if !(*opts_0).item.is_null() {
                     opt_0 = (*opts_0).item.offset(0 as i32 as isize) as *mut *mut i8;
                     while opt_0 < (*opts_0).item.offset((*opts_0).size as isize) as *mut *mut i8 {
@@ -2160,7 +2160,7 @@ pub unsafe fn test_compile_rmlvo(
     mut options: *const i8,
 ) -> *mut xkb_keymap {
     unsafe {
-        let mut keymap: *mut xkb_keymap = ::core::ptr::null_mut::<xkb_keymap>();
+        let mut keymap: *mut xkb_keymap = std::ptr::null_mut();
         let names: xkb_rule_names = xkb_rule_names {
             rules: rules,
             model: model,
@@ -2179,7 +2179,7 @@ pub unsafe fn test_compile_rmlvo(
                 crate::xkb::utils::CStrDisplay(variant),
                 crate::xkb::utils::CStrDisplay(options),
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if xkb_keymap_new_from_rmlvo(rmlvo, format, 4294967295 as xkb_keymap_compile_flags)
             .is_null()
@@ -2437,7 +2437,7 @@ pub unsafe fn test_third_pary_compile_output(
     unsafe {
         let mut success: i32 = 1;
         eprintln!("*** {} ***", crate::xkb::utils::CStrDisplay(test_title));
-        let mut got: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut got: *mut i8 = std::ptr::null_mut();
         let mut got_size: usize = 0 as usize;
         let mut ret: i32 = compile_buffer.expect("non-null function pointer")(
             keymap_in,

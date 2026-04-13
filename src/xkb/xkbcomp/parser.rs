@@ -401,7 +401,7 @@ unsafe fn resolve_keysym(
                 as i64
                 != 0
             {
-                let mut ref_name: *const i8 = ::core::ptr::null::<i8>();
+                let mut ref_name: *const i8 = std::ptr::null();
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
                     if ref_name.is_null() {
                         let mut loc: scanner_loc = scanner_token_location((*param).scanner);
@@ -439,7 +439,7 @@ unsafe fn resolve_keysym(
     }
 }
 pub const YY_NULLPTR: *mut ::core::ffi::c_void =
-    ::core::ptr::null::<::core::ffi::c_void>() as *mut ::core::ffi::c_void;
+    std::ptr::null_mut();
 pub const YYSTACK_GAP_MAXIMUM: i64 = ::core::mem::size_of::<yyalloc>() as i64 - 1 as i64;
 pub const YYFINAL: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 pub const YYLAST: ::core::ffi::c_int = 928 as ::core::ffi::c_int;
@@ -857,7 +857,7 @@ unsafe fn yysymbol_name(mut yysymbol: yysymbol_kind_t) -> *const i8 {
             b"String\0".as_ptr() as *const i8,
             b"OptMapName\0".as_ptr() as *const i8,
             b"MapName\0".as_ptr() as *const i8,
-            ::core::ptr::null::<i8>(),
+            std::ptr::null(),
         ];
         return yy_sname[yysymbol as usize];
     }
@@ -3675,11 +3675,11 @@ pub unsafe fn parse(
 ) -> *mut XkbFile {
     unsafe {
         let mut ret: ::core::ffi::c_int = 0;
-        let mut first: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut first: *mut XkbFile = std::ptr::null_mut();
         let mut param: parser_param = parser_param {
             ctx: ctx,
             scanner: scanner,
-            rtrn: ::core::ptr::null_mut::<XkbFile>(),
+            rtrn: std::ptr::null_mut(),
             more_maps: false,
         };
         loop {
@@ -3702,12 +3702,12 @@ pub unsafe fn parse(
             } else {
                 FreeXkbFile(param.rtrn);
             }
-            param.rtrn = ::core::ptr::null_mut::<XkbFile>();
+            param.rtrn = std::ptr::null_mut();
         }
         if ret != 0 as ::core::ffi::c_int {
             FreeXkbFile(first);
             FreeXkbFile(param.rtrn);
-            return ::core::ptr::null_mut::<XkbFile>();
+            return std::ptr::null_mut();
         }
         if !first.is_null() {
             xkb_logf!(
@@ -4120,7 +4120,7 @@ pub unsafe fn parse_next(
         let mut param: parser_param = parser_param {
             ctx: ctx,
             scanner: scanner,
-            rtrn: ::core::ptr::null_mut::<XkbFile>(),
+            rtrn: std::ptr::null_mut(),
             more_maps: false,
         };
         ret = _xkbcommon_parse(&raw mut param);
@@ -4129,7 +4129,7 @@ pub unsafe fn parse_next(
             return true;
         } else {
             FreeXkbFile(param.rtrn);
-            *xkb_file = ::core::ptr::null_mut::<XkbFile>();
+            *xkb_file = std::ptr::null_mut();
             return ret == 0 as ::core::ffi::c_int;
         };
     }
@@ -4667,7 +4667,7 @@ unsafe fn yysyntax_error(
     mut yyctx: *const yypcontext_t,
 ) -> ::core::ffi::c_int {
     unsafe {
-        let mut yyformat: *const i8 = ::core::ptr::null::<i8>();
+        let mut yyformat: *const i8 = std::ptr::null();
         let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
         let mut yysize: i64 = 0 as i64;
         let mut yycount: ::core::ffi::c_int = yy_syntax_error_arguments(
@@ -5170,7 +5170,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             break;
                         }
                         4 => {
-                            (*param).rtrn = ::core::ptr::null_mut::<XkbFile>();
+                            (*param).rtrn = std::ptr::null_mut();
                             yyval.file = (*param).rtrn;
                             (*param).more_maps = false;
                             c2rust_current_block = 9699707990742192723;
@@ -5228,7 +5228,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         10 => {
-                            yyval.fileList.last = ::core::ptr::null_mut::<XkbFile>();
+                            yyval.fileList.last = std::ptr::null_mut();
                             yyval.fileList.head = yyval.fileList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5398,7 +5398,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         31 => {
-                            yyval.anyList.last = ::core::ptr::null_mut::<ParseCommon>();
+                            yyval.anyList.last = std::ptr::null_mut();
                             yyval.anyList.head = yyval.anyList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5474,15 +5474,15 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         42 => {
-                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            yyval.any = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         43 => {
-                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            yyval.any = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         44 => {
-                            yyval.any = ::core::ptr::null_mut::<ParseCommon>();
+                            yyval.any = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         45 => {
@@ -5568,7 +5568,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         56 => {
                             yyval.vmod = VModCreate(
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).atom,
-                                ::core::ptr::null_mut::<ExprDef>(),
+                                std::ptr::null_mut(),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5599,7 +5599,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         60 => {
                             yyval.interp = InterpCreate(
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).keysym,
-                                ::core::ptr::null_mut::<ExprDef>(),
+                                std::ptr::null_mut(),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5633,7 +5633,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         62 => {
-                            yyval.varList.last = ::core::ptr::null_mut::<VarDef>();
+                            yyval.varList.last = std::ptr::null_mut();
                             yyval.varList.head = yyval.varList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5661,7 +5661,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         66 => {
-                            yyval.varList.last = ::core::ptr::null_mut::<VarDef>();
+                            yyval.varList.last = std::ptr::null_mut();
                             yyval.varList.head = yyval.varList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5712,7 +5712,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                         }
                         73 => {
                             yyval.var = VarCreate(
-                                ::core::ptr::null_mut::<ExprDef>(),
+                                std::ptr::null_mut(),
                                 (*yyvsp.offset(0 as ::core::ffi::c_int as isize)).expr,
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -5773,7 +5773,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                     .noSymbolOrActionList
                             {
                                 let acts: *mut ExprDef =
-                                    ExprCreateActionList(::core::ptr::null_mut::<ExprDef>())
+                                    ExprCreateActionList(std::ptr::null_mut())
                                         as *mut ExprDef;
                                 if acts.is_null() {
                                     c2rust_current_block = 7267896227379959561;
@@ -6038,15 +6038,15 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         120 => {
-                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.expr = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         121 => {
-                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.expr = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         122 => {
-                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.expr = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         123 => {
@@ -6255,7 +6255,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         150 => {
-                            yyval.exprList.last = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.exprList.last = std::ptr::null_mut();
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6419,7 +6419,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         174 => {
-                            yyval.expr = ExprCreateActionList(::core::ptr::null_mut::<ExprDef>());
+                            yyval.expr = ExprCreateActionList(std::ptr::null_mut());
                             c2rust_current_block = 9699707990742192723;
                         }
                         175 => {
@@ -6465,7 +6465,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         181 => {
-                            yyval.expr = ::core::ptr::null_mut::<ExprDef>();
+                            yyval.expr = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         182 => {
@@ -6698,10 +6698,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                                         as i64
                                         != 0
                                     {
-                                        let mut ref_name: *const i8 = ::core::ptr::null::<i8>();
+                                        let mut ref_name: *const i8 = std::ptr::null();
                                         if xkb_keysym_is_deprecated(
                                             yyval.keysym,
-                                            ::core::ptr::null::<i8>(),
+                                            std::ptr::null(),
                                             &raw mut ref_name,
                                         ) {
                                             if ref_name.is_null() {
@@ -6844,7 +6844,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
                             c2rust_current_block = 9699707990742192723;
                         }
                         218 => {
-                            yyval.str = ::core::ptr::null_mut::<i8>();
+                            yyval.str = std::ptr::null_mut();
                             c2rust_current_block = 9699707990742192723;
                         }
                         219 => {

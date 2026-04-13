@@ -158,7 +158,7 @@ pub type C2Rust_Unnamed_21 = u32;
 unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_t) -> bool {
     unsafe {
         let mut k: xkb_mod_index_t = 0;
-        let mut mod_0: *mut xkb_mod = ::core::ptr::null_mut::<xkb_mod>();
+        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
         k = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
             .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
@@ -222,7 +222,7 @@ unsafe fn FindInterpForKey(
     mut interprets: *mut xkb_sym_interprets,
 ) -> bool {
     unsafe {
-        let mut syms: *const xkb_keysym_t = ::core::ptr::null::<xkb_keysym_t>();
+        let mut syms: *const xkb_keysym_t = std::ptr::null();
         let mut num_syms: ::core::ffi::c_int = 0;
         num_syms =
             xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
@@ -276,7 +276,7 @@ unsafe fn FindInterpForKey(
                         && (*interp).sym == XKB_KEY_NoSymbol as xkb_keysym_t
                     {
                         let mut previous_interp: *mut *const xkb_sym_interpret =
-                            ::core::ptr::null_mut::<*const xkb_sym_interpret>();
+                            std::ptr::null_mut();
                         if !(*interprets).item.is_null() {
                             previous_interp =
                                 (*interprets).item.offset(0 as ::core::ffi::c_int as isize)
@@ -353,12 +353,12 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
         let mut interprets: xkb_sym_interprets = xkb_sym_interprets {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<*const xkb_sym_interpret>(),
+            item: std::ptr::null_mut(),
         };
         let mut actions: C2Rust_Unnamed_19 = C2Rust_Unnamed_19 {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<xkb_action>(),
+            item: std::ptr::null_mut(),
         };
         let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while group < (*key).num_groups() {
@@ -366,9 +366,9 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                 level = 0 as xkb_level_index_t;
                 while level < XkbKeyNumLevels(key, group) {
                     let mut interp_iter: *mut *const xkb_sym_interpret =
-                        ::core::ptr::null_mut::<*const xkb_sym_interpret>();
+                        std::ptr::null_mut();
                     let mut interp: *const xkb_sym_interpret =
-                        ::core::ptr::null::<xkb_sym_interpret>();
+                        std::ptr::null();
                     let mut k: usize = 0;
                     interprets.size = 0 as darray_size_t;
                     let found: bool =
@@ -660,7 +660,7 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                     (*pc).expr,
                     true,
                     &raw mut group,
-                    ::core::ptr::null_mut::<bool>(),
+                    std::ptr::null_mut(),
                 ) as u32
                 {
                     0 => {
@@ -716,7 +716,7 @@ unsafe fn update_pending_action_fields(
                             (*pc).expr,
                             absolute,
                             &raw mut group,
-                            ::core::ptr::null_mut::<bool>(),
+                            std::ptr::null_mut(),
                         ) as u32
                         {
                             2 => {
@@ -780,7 +780,7 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
                     info,
                     (*pc).expr,
                     &raw mut mask,
-                    ::core::ptr::null_mut::<bool>(),
+                    std::ptr::null_mut(),
                 ) {
                     xkb_logf!(
                         (*info).keymap.ctx,
@@ -901,7 +901,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }
         }
         (*keymap).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases = num_key_aliases;
-        let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+        let mut key: *mut xkb_key = std::ptr::null_mut();
         key = (*keymap).keys.offset(
             (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                 0 as xkb_keycode_t
@@ -981,7 +981,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             key = key.offset(1);
         }
         let mut idx: xkb_mod_index_t = 0;
-        let mut mod_0: *mut xkb_mod = ::core::ptr::null_mut::<xkb_mod>();
+        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
         key = (*keymap).keys.offset(
             (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                 0 as xkb_keycode_t
@@ -1139,7 +1139,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }
             key = key.offset(1);
         }
-        let mut led: *mut xkb_led = ::core::ptr::null_mut::<xkb_led>();
+        let mut led: *mut xkb_led = std::ptr::null_mut();
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while led < (&raw mut (*keymap).leds as *mut xkb_led).offset((*keymap).num_leds as isize) {
             ComputeEffectiveMask(keymap, &raw mut (*led).mods);
@@ -1163,7 +1163,7 @@ static mut compile_file_fns: [compile_file_fn; 4] = {
 };
 unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array) {
     unsafe {
-        let mut pc: *mut pending_computation = ::core::ptr::null_mut::<pending_computation>();
+        let mut pc: *mut pending_computation = std::ptr::null_mut();
         if !(*p).item.is_null() {
             pc = (*p).item.offset(0 as ::core::ffi::c_int as isize) as *mut pending_computation;
             while pc < (*p).item.offset((*p).size as isize) as *mut pending_computation {
@@ -1177,10 +1177,10 @@ unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array)
 pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap) -> bool {
     unsafe {
         let mut files: [*mut XkbFile; 4] = [
-            ::core::ptr::null_mut::<XkbFile>(),
-            ::core::ptr::null_mut::<XkbFile>(),
-            ::core::ptr::null_mut::<XkbFile>(),
-            ::core::ptr::null_mut::<XkbFile>(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
         ];
         let mut type_0: xkb_file_type = FILE_TYPE_KEYCODES;
         let mut ctx: *mut xkb_context = (*keymap).ctx;
@@ -1222,7 +1222,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
         let mut pending_computations: pending_computation_array = pending_computation_array {
             size: 0 as darray_size_t,
             alloc: 0 as darray_size_t,
-            item: ::core::ptr::null_mut::<pending_computation>(),
+            item: std::ptr::null_mut(),
         };
         let mut info: xkb_keymap_info = xkb_keymap_info {
             keymap: *keymap,
@@ -1264,12 +1264,12 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         name: if (*keymap).num_groups != 0 {
                             GROUP_LAST_INDEX_NAME.as_ptr()
                         } else {
-                            ::core::ptr::null::<i8>()
+                            std::ptr::null()
                         },
                         value: (*keymap).num_groups as u32,
                     },
                     LookupEntry {
-                        name: ::core::ptr::null::<i8>(),
+                        name: std::ptr::null(),
                         value: 0 as u32,
                     },
                 ],
@@ -1290,7 +1290,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         name: if (*keymap).num_groups != 0 {
                             GROUP_LAST_INDEX_NAME.as_ptr()
                         } else {
-                            ::core::ptr::null::<i8>()
+                            std::ptr::null()
                         },
                         value: if (*keymap).num_groups != 0
                             && (*keymap).num_groups <= XKB_MAX_GROUPS as xkb_layout_index_t
@@ -1301,7 +1301,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         },
                     },
                     LookupEntry {
-                        name: ::core::ptr::null::<i8>(),
+                        name: std::ptr::null(),
                         value: 0 as u32,
                     },
                 ],

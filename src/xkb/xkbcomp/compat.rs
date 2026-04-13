@@ -334,7 +334,7 @@ unsafe fn FindMatchingInterp(
     mut new: *mut SymInterpInfo,
 ) -> *mut SymInterpInfo {
     unsafe {
-        let mut old: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
+        let mut old: *mut SymInterpInfo = std::ptr::null_mut();
         if !(*info).interps.item.is_null() {
             old = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
             while old
@@ -349,7 +349,7 @@ unsafe fn FindMatchingInterp(
                 old = old.offset(1);
             }
         }
-        return ::core::ptr::null_mut::<SymInterpInfo>();
+        return std::ptr::null_mut();
     }
 }
 unsafe fn UseNewInterpField(
@@ -709,11 +709,11 @@ unsafe fn MergeIncludedCompatMaps(
         }
         if (*into).interps.size == 0 as darray_size_t {
             (*into).interps = (*from).interps;
-            (*from).interps.item = ::core::ptr::null_mut::<SymInterpInfo>();
+            (*from).interps.item = std::ptr::null_mut();
             (*from).interps.size = 0 as darray_size_t;
             (*from).interps.alloc = 0 as darray_size_t;
         } else {
-            let mut si: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
+            let mut si: *mut SymInterpInfo = std::ptr::null_mut();
             if !(*from).interps.item.is_null() {
                 si = (*from).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
                 while si
@@ -753,7 +753,7 @@ unsafe fn MergeIncludedCompatMaps(
 unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut IncludeStmt) -> bool {
     unsafe {
         let mut included: CompatInfo = CompatInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
@@ -777,7 +777,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
             interps: C2Rust_Unnamed_18 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<SymInterpInfo>(),
+                item: std::ptr::null_mut(),
             },
             default_led: LedInfo {
                 defined: 0 as led_field,
@@ -818,8 +818,8 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
+            keymap_info: std::ptr::null(),
+            ctx: std::ptr::null_mut(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as i32;
@@ -836,7 +836,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: CompatInfo = CompatInfo {
-                name: ::core::ptr::null_mut::<i8>(),
+                name: std::ptr::null_mut(),
                 errorCount: 0,
                 include_depth: 0,
                 default_interp: SymInterpInfo {
@@ -860,7 +860,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                 interps: C2Rust_Unnamed_18 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<SymInterpInfo>(),
+                    item: std::ptr::null_mut(),
                 },
                 default_led: LedInfo {
                     defined: 0 as led_field,
@@ -901,10 +901,10 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                     num_mods: 0,
                     explicit_vmods: 0,
                 },
-                keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
-                ctx: ::core::ptr::null_mut::<xkb_context>(),
+                keymap_info: std::ptr::null(),
+                ctx: std::ptr::null_mut(),
             };
-            let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+            let mut file: *mut XkbFile = std::ptr::null_mut();
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -973,7 +973,7 @@ unsafe fn SetInterpField(
                 let mut actions: C2Rust_Unnamed_20 = C2Rust_Unnamed_20 {
                     size: 0 as darray_size_t,
                     alloc: 0 as darray_size_t,
-                    item: ::core::ptr::null_mut::<xkb_action>(),
+                    item: std::ptr::null_mut(),
                 };
                 let mut act_0: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
                 while !act_0.is_null() {
@@ -1033,11 +1033,11 @@ unsafe fn SetInterpField(
                         }
                         (*si).interp.num_actions = actions.size as xkb_action_count_t;
                         (*si).interp.a.actions = actions.item;
-                        if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-                            *(::core::ptr::null_mut::<::core::ffi::c_void>()
+                        if !std::ptr::null_mut::<u8>().is_null() {
+                            *(std::ptr::null_mut()
                                 as *mut darray_size_t) = actions.size;
                         }
-                        actions.item = ::core::ptr::null_mut::<xkb_action>();
+                        actions.item = std::ptr::null_mut();
                         actions.size = 0 as darray_size_t;
                         actions.alloc = 0 as darray_size_t;
                     }
@@ -1192,7 +1192,7 @@ unsafe fn SetLedMapField(
                             value: 0 as u32,
                         },
                     );
-                    *value_ptr = ::core::ptr::null_mut::<ExprDef>();
+                    *value_ptr = std::ptr::null_mut();
                     mask = pending_index as xkb_layout_mask_t;
                 } else {
                     return ReportLedBadType(
@@ -1319,9 +1319,9 @@ unsafe fn SetLedMapField(
 }
 unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut ndx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut ndx: *mut ExprDef = std::ptr::null_mut();
         let mut ret: bool = false;
         if !ExprResolveLhs(
             (*info).ctx,
@@ -1426,9 +1426,9 @@ unsafe fn HandleInterpBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         while !def.is_null() {
             if !ExprResolveLhs(
                 (*info).ctx,
@@ -1517,9 +1517,9 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
         let mut ok: bool = true;
         let mut var: *mut VarDef = (*def).body;
         while !var.is_null() {
-            let mut elem: *const i8 = ::core::ptr::null::<i8>();
-            let mut field: *const i8 = ::core::ptr::null::<i8>();
-            let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+            let mut elem: *const i8 = std::ptr::null();
+            let mut field: *const i8 = std::ptr::null();
+            let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             if !ExprResolveLhs(
                 (*info).ctx,
                 (*var).name,
@@ -1636,7 +1636,7 @@ unsafe fn CopyInterps(
     mut collect: *mut collect,
 ) {
     unsafe {
-        let mut si: *mut SymInterpInfo = ::core::ptr::null_mut::<SymInterpInfo>();
+        let mut si: *mut SymInterpInfo = std::ptr::null_mut();
         if !(*info).interps.item.is_null() {
             si = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
             while si
@@ -1666,7 +1666,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
             let mut ledi: *mut LedInfo =
                 (&raw mut (*info).leds as *mut LedInfo).offset(idx as isize) as *mut LedInfo;
             let mut i: xkb_led_index_t = 0;
-            let mut led: *mut xkb_led = ::core::ptr::null_mut::<xkb_led>();
+            let mut led: *mut xkb_led = std::ptr::null_mut();
             i = 0 as xkb_led_index_t;
             led = &raw mut (*keymap).leds as *mut xkb_led;
             while i < (*keymap).num_leds {
@@ -1751,10 +1751,10 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
                 sym_interprets: C2Rust_Unnamed_19 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<xkb_sym_interpret>(),
+                    item: std::ptr::null_mut(),
                 },
             };
-            collect.sym_interprets.item = ::core::ptr::null_mut::<xkb_sym_interpret>();
+            collect.sym_interprets.item = std::ptr::null_mut();
             collect.sym_interprets.size = 0 as darray_size_t;
             collect.sym_interprets.alloc = 0 as darray_size_t;
             CopyInterps(info, true, MATCH_EXACTLY, &raw mut collect);
@@ -1771,7 +1771,7 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             if !(&raw mut (*keymap).num_sym_interprets).is_null() {
                 *&raw mut (*keymap).num_sym_interprets = collect.sym_interprets.size;
             }
-            collect.sym_interprets.item = ::core::ptr::null_mut::<xkb_sym_interpret>();
+            collect.sym_interprets.item = std::ptr::null_mut();
             collect.sym_interprets.size = 0 as darray_size_t;
             collect.sym_interprets.alloc = 0 as darray_size_t;
         }
@@ -1785,7 +1785,7 @@ pub unsafe fn CompileCompatMap(
 ) -> bool {
     unsafe {
         let mut info: CompatInfo = CompatInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
@@ -1809,7 +1809,7 @@ pub unsafe fn CompileCompatMap(
             interps: C2Rust_Unnamed_18 {
                 size: 0,
                 alloc: 0,
-                item: ::core::ptr::null_mut::<SymInterpInfo>(),
+                item: std::ptr::null_mut(),
             },
             default_led: LedInfo {
                 defined: 0 as led_field,
@@ -1850,8 +1850,8 @@ pub unsafe fn CompileCompatMap(
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
+            keymap_info: std::ptr::null(),
+            ctx: std::ptr::null_mut(),
         };
         InitCompatInfo(
             &raw mut info,

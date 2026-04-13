@@ -144,12 +144,12 @@ pub struct named_integer_pattern {
     pub error_id: xkb_message_code,
 }
 static mut level_name_pattern: named_integer_pattern = named_integer_pattern {
-    prefix: ::core::ptr::null::<i8>(),
+    prefix: std::ptr::null(),
     prefix_length: 0,
     min: 0,
     max: 0,
-    entries: ::core::ptr::null::<LookupEntry>(),
-    pending_entries: ::core::ptr::null::<LookupEntry>(),
+    entries: std::ptr::null(),
+    pending_entries: std::ptr::null(),
     is_mask: false,
     error_id: 0 as xkb_message_code,
 };
@@ -163,15 +163,15 @@ pub unsafe fn ExprResolveLhs(
     unsafe {
         match (*expr).common.type_0 as u32 {
             10 => {
-                *elem_rtrn = ::core::ptr::null::<i8>();
+                *elem_rtrn = std::ptr::null();
                 *field_rtrn = xkb_atom_text(ctx, (*expr).ident.ident);
-                *index_rtrn = ::core::ptr::null_mut::<ExprDef>();
+                *index_rtrn = std::ptr::null_mut();
                 return !(*field_rtrn).is_null();
             }
             12 => {
                 *elem_rtrn = xkb_atom_text(ctx, (*expr).field_ref.element);
                 *field_rtrn = xkb_atom_text(ctx, (*expr).field_ref.field);
-                *index_rtrn = ::core::ptr::null_mut::<ExprDef>();
+                *index_rtrn = std::ptr::null_mut();
                 return !(*elem_rtrn).is_null() && !(*field_rtrn).is_null();
             }
             13 => {
@@ -277,7 +277,7 @@ unsafe fn NamedIntegerPatternLookup(
                     (*pattern).entries as *const ::core::ffi::c_void,
                     field,
                     val_rtrn,
-                    ::core::ptr::null_mut::<bool>(),
+                    std::ptr::null_mut(),
                 ) as i32
                     != 0
             {
@@ -290,7 +290,7 @@ unsafe fn NamedIntegerPatternLookup(
                     (*pattern).pending_entries as *const ::core::ffi::c_void,
                     field,
                     val_rtrn,
-                    ::core::ptr::null_mut::<bool>(),
+                    std::ptr::null_mut(),
                 ) as i32
                     != 0
             {
@@ -339,7 +339,7 @@ pub unsafe fn ExprResolveBoolean(
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut ident: *const i8 = ::core::ptr::null::<i8>();
+        let mut ident: *const i8 = std::ptr::null();
         match (*expr).common.type_0 as u32 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
@@ -439,8 +439,8 @@ unsafe fn ExprResolveIntegerLookup(
         let mut l: i64 = 0 as i64;
         let mut r: i64 = 0 as i64;
         let mut u: u32 = 0 as u32;
-        let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-        let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut left: *mut ExprDef = std::ptr::null_mut();
+        let mut right: *mut ExprDef = std::ptr::null_mut();
         match (*expr).common.type_0 as u32 {
             5 => {
                 *val_rtrn = (*expr).integer.ival;
@@ -648,9 +648,9 @@ pub unsafe fn ExprResolveInteger(
             ctx,
             expr,
             val_rtrn,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
             None,
-            ::core::ptr::null::<::core::ffi::c_void>(),
+            std::ptr::null(),
         );
     }
 }
@@ -668,7 +668,7 @@ pub unsafe fn ExprResolveGroup(
                 value: 0 as u32,
             },
             LookupEntry {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 value: 0 as u32,
             },
         ];
@@ -742,7 +742,7 @@ pub unsafe fn ExprResolveLevel(
             ctx,
             expr,
             &raw mut result,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
             Some(
                 NamedIntegerPatternLookup
                     as unsafe fn(
@@ -783,7 +783,7 @@ pub unsafe fn ExprResolveButton(
             ctx,
             expr,
             btn_rtrn,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
             Some(
                 SimpleLookup
                     as unsafe fn(
@@ -891,7 +891,7 @@ pub unsafe fn ExprResolveEnum(
             values as *const ::core::ffi::c_void,
             (*expr).ident.ident,
             val_rtrn,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
         ) {
             xkb_logf!(
                 ctx,
@@ -930,9 +930,9 @@ unsafe fn ExprResolveMaskLookup(
         let mut l: u32 = 0 as u32;
         let mut r: u32 = 0 as u32;
         let mut v: i64 = 0 as i64;
-        let mut left: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-        let mut right: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-        let mut bogus: *const i8 = ::core::ptr::null::<i8>();
+        let mut left: *mut ExprDef = std::ptr::null_mut();
+        let mut right: *mut ExprDef = std::ptr::null_mut();
+        let mut bogus: *const i8 = std::ptr::null();
         let mut c2rust_current_block_47: u64;
         match (*expr).common.type_0 as u32 {
             5 => {
@@ -1136,7 +1136,7 @@ pub unsafe fn ExprResolveMask(
             ctx,
             expr,
             mask_rtrn,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
             Some(
                 SimpleLookup
                     as unsafe fn(
@@ -1167,7 +1167,7 @@ pub unsafe fn ExprResolveModMask(
             ctx,
             expr,
             mask_rtrn as *mut u32,
-            ::core::ptr::null_mut::<bool>(),
+            std::ptr::null_mut(),
             Some(
                 LookupModMask
                     as unsafe fn(
@@ -1231,7 +1231,7 @@ pub unsafe fn ExprResolveGroupMask(
                 value: 0 as u32,
             },
             LookupEntry {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 value: 0 as u32,
             },
         ];
@@ -1271,8 +1271,8 @@ unsafe fn c2rust_run_static_initializers() {
             prefix_length: (::core::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
             min: 1 as u32,
             max: XKB_LEVEL_MAX_IMPL as u32,
-            entries: ::core::ptr::null::<LookupEntry>(),
-            pending_entries: ::core::ptr::null::<LookupEntry>(),
+            entries: std::ptr::null(),
+            pending_entries: std::ptr::null(),
             is_mask: false,
             error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
         }

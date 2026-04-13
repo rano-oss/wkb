@@ -123,8 +123,8 @@ unsafe fn usage(mut fp: *mut FILE, mut progname: *mut i8) {
 unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut locale: *const i8 = ::core::ptr::null::<i8>();
-        let mut path: *const i8 = ::core::ptr::null::<i8>();
+        let mut locale: *const i8 = std::ptr::null();
+        let mut path: *const i8 = std::ptr::null();
         let mut format: xkb_compose_format = XKB_COMPOSE_FORMAT_TEXT_V1;
         let mut verbose: bool = false;
         let mut test: bool = false;
@@ -132,42 +132,42 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             option {
                 name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'h' as i32,
             },
             option {
                 name: b"verbose\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_VERBOSE as i32,
             },
             option {
                 name: b"file\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_FILE as i32,
             },
             option {
                 name: b"locale\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_LOCALE as i32,
             },
             option {
                 name: b"test\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_TEST as i32,
             },
             option {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 has_arg: 0 as i32,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 0 as i32,
             },
         ];
         setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
-        locale = setlocale(LC_CTYPE, ::core::ptr::null::<i8>());
+        locale = setlocale(LC_CTYPE, std::ptr::null());
         if locale.is_null() {
             locale = b"C\0".as_ptr() as *const i8;
         }
@@ -240,9 +240,9 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         }
         let mut ret: i32 = EXIT_FAILURE;
         let mut compose_table: *mut xkb_compose_table =
-            ::core::ptr::null_mut::<xkb_compose_table>();
+            std::ptr::null_mut();
         if !path.is_null() {
-            let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
+            let mut file: *mut FILE = std::ptr::null_mut();
             if isempty(path) as i32 != 0 || cstr_cmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32
             {
                 file = tools_read_stdin();

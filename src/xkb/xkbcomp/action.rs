@@ -161,14 +161,14 @@ pub type actionHandler = Option<
 >;
 static mut constTrue: ExprBoolean = ExprBoolean {
     common: _ParseCommon {
-        next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
+        next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
     set: true,
 };
 static mut constFalse: ExprBoolean = ExprBoolean {
     common: _ParseCommon {
-        next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
+        next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
     set: false,
@@ -343,7 +343,7 @@ static mut fieldStrings: [LookupEntry; 37] = [
         value: ACTION_FIELD_LATCH_ON_PRESS as i32 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -554,7 +554,7 @@ unsafe fn CheckModifierField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
         if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as i32 as u32 {
-            let mut valStr: *const i8 = ::core::ptr::null::<i8>();
+            let mut valStr: *const i8 = std::ptr::null();
             valStr = xkb_atom_text(ctx, (*value).ident.ident);
             if !valStr.is_null()
                 && (istreq(valStr, b"usemodmapmods\0".as_ptr() as *const i8) as i32 != 0
@@ -599,7 +599,7 @@ static mut lockWhich: [LookupEntry; 5] = [
         value: ACTION_LOCK_NO_LOCK as i32 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -763,7 +763,7 @@ unsafe fn CheckGroupField(
     mut group_rtrn: *mut i32,
 ) -> xkb_parser_error {
     unsafe {
-        let mut spec: *const ExprDef = ::core::ptr::null::<ExprDef>();
+        let mut spec: *const ExprDef = std::ptr::null();
         let mut idx: xkb_layout_index_t = 0 as xkb_layout_index_t;
         let mut flags: xkb_action_flags = *flags_inout;
         if !array_ndx.is_null() {
@@ -813,7 +813,7 @@ unsafe fn CheckGroupField(
                     value: 0 as u32,
                 },
             );
-            *value_ptr = ::core::ptr::null_mut::<ExprDef>();
+            *value_ptr = std::ptr::null_mut();
             *group_rtrn = pending_index as i32;
         } else {
             flags =
@@ -1102,7 +1102,7 @@ static mut ptrDflts: [LookupEntry; 4] = [
         value: 1 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -1142,7 +1142,7 @@ unsafe fn HandleSetPtrDflt(
         } else if field as u32 == ACTION_FIELD_BUTTON as i32 as u32
             || field as u32 == ACTION_FIELD_VALUE as i32 as u32
         {
-            let mut button: *const ExprDef = ::core::ptr::null::<ExprDef>();
+            let mut button: *const ExprDef = std::ptr::null();
             let mut btn: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1224,7 +1224,7 @@ unsafe fn HandleSwitchScreen(
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_switch_screen_action = &raw mut (*action).screen;
         if field as u32 == ACTION_FIELD_SCREEN as i32 as u32 {
-            let mut scrn: *const ExprDef = ::core::ptr::null::<ExprDef>();
+            let mut scrn: *const ExprDef = std::ptr::null();
             let mut val: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1916,12 +1916,12 @@ pub unsafe fn HandleActionDef(
         let mut ret: xkb_parser_error = PARSER_SUCCESS;
         let mut arg: *mut ExprDef = (*def).action.args as *mut ExprDef;
         while !arg.is_null() {
-            let mut value: *const ExprDef = ::core::ptr::null::<ExprDef>();
-            let mut value_ptr: *mut *mut ExprDef = ::core::ptr::null_mut::<*mut ExprDef>();
-            let mut field: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-            let mut arrayRtrn: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
-            let mut elemRtrn: *const i8 = ::core::ptr::null::<i8>();
-            let mut fieldRtrn: *const i8 = ::core::ptr::null::<i8>();
+            let mut value: *const ExprDef = std::ptr::null();
+            let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
+            let mut field: *mut ExprDef = std::ptr::null_mut();
+            let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
+            let mut elemRtrn: *const i8 = std::ptr::null();
+            let mut fieldRtrn: *const i8 = std::ptr::null();
             if (*arg).common.type_0 as u32 == STMT_EXPR_ASSIGN as i32 as u32 {
                 field = (*arg).binary.left as *mut ExprDef;
                 value = (*arg).binary.right;

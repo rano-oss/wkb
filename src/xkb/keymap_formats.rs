@@ -89,7 +89,7 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
 pub unsafe fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
     unsafe {
         if (format as u32) < keymap_formats_labels[0 as i32 as usize].format as u32 {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         let mut k: usize = 0 as usize;
         while k
@@ -100,10 +100,10 @@ pub unsafe fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *con
                 return keymap_formats_labels[k as usize].label;
             }
             if keymap_formats_labels[k as usize].format as u32 > format as u32 {
-                return ::core::ptr::null::<i8>();
+                return std::ptr::null();
             }
             k = k.wrapping_add(1);
         }
-        return ::core::ptr::null::<i8>();
+        return std::ptr::null();
     }
 }

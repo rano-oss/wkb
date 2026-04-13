@@ -21955,7 +21955,7 @@ pub unsafe fn xkb_keysym_iterator_unref(
         if !iter.is_null() {
             drop(Box::from_raw(iter));
         }
-        return ::core::ptr::null_mut::<xkb_keysym_iterator>();
+        return std::ptr::null_mut();
     }
 }
 
@@ -22052,8 +22052,8 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
         if flags as u32 & !(XKB_KEYSYM_FLAGS as u32) != 0 {
             return XKB_KEY_NoSymbol as u32;
         }
-        let mut entry: *const name_keysym = ::core::ptr::null::<name_keysym>();
-        let mut tmp: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut entry: *const name_keysym = std::ptr::null();
+        let mut tmp: *mut i8 = std::ptr::null_mut();
         let mut val: u32 = 0;
         let mut icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as i32 as u32 != 0;
         if !icase {
@@ -22095,7 +22095,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                 }
             }
             if !entry.is_null() {
-                let mut last: *const name_keysym = ::core::ptr::null::<name_keysym>();
+                let mut last: *const name_keysym = std::ptr::null();
                 last = (&raw const name_to_keysym as *const name_keysym)
                     .offset(
                         (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
@@ -22188,7 +22188,7 @@ pub unsafe fn xkb_keysym_is_deprecated(
     unsafe {
         // Stub implementation: For Wayland-only usage, we don't need to track deprecated keysym names
         // This function is used by the parser to warn about deprecated keysym names
-        *reference_name = ::core::ptr::null::<i8>();
+        *reference_name = std::ptr::null();
         return false;
     }
 }

@@ -156,7 +156,7 @@ pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
             b"symbols\0".as_ptr() as *const i8,
             b"geometry\0".as_ptr() as *const i8,
             b"keymap\0".as_ptr() as *const i8,
-            ::core::ptr::null::<i8>(),
+            std::ptr::null(),
         ];
         return xkb_file_type_strings[type_0 as usize];
     }
@@ -183,7 +183,7 @@ pub unsafe fn xkb_map_flags_string_iter(
 ) -> *const i8 {
     unsafe {
         if flags as u64 == 0 {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         static mut names: [C2Rust_Unnamed_1; 8] = [
             C2Rust_Unnamed_1 {
@@ -230,7 +230,7 @@ pub unsafe fn xkb_map_flags_string_iter(
             }
             *index = (*index).wrapping_add(1);
         }
-        return ::core::ptr::null::<i8>();
+        return std::ptr::null();
     }
 }
 
@@ -247,8 +247,8 @@ pub unsafe fn xkb_resolve_file(
     unsafe {
         let mut c2rust_current_block: u64;
         let mut offset: u32 = 0 as u32;
-        let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
-        let mut candidate: *mut FILE = ::core::ptr::null_mut::<FILE>();
+        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut candidate: *mut FILE = std::ptr::null_mut();
         let path_len: usize = cstr_len(path) as usize;
         let absolute_path: bool = is_absolute_path(path) as bool;
         if absolute_path {
@@ -342,7 +342,7 @@ pub unsafe fn xkb_resolve_file(
             match c2rust_current_block {
                 6705605813258909411 => {
                     fclose(file);
-                    file = ::core::ptr::null_mut::<FILE>();
+                    file = std::ptr::null_mut();
                 }
                 _ => {}
             }
@@ -388,19 +388,19 @@ pub unsafe fn xkb_resolve_file(
             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
         );
         fclose(file);
-        return ::core::ptr::null_mut::<FILE>();
+        return std::ptr::null_mut();
     }
 }
 
 pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
     unsafe {
-        (*section).include_groups.item = ::core::ptr::null_mut::<xkb_file_include_group>();
+        (*section).include_groups.item = std::ptr::null_mut();
         (*section).include_groups.size = 0 as darray_size_t;
         (*section).include_groups.alloc = 0 as darray_size_t;
-        (*section).includes.item = ::core::ptr::null_mut::<xkb_file_include>();
+        (*section).includes.item = std::ptr::null_mut();
         (*section).includes.size = 0 as darray_size_t;
         (*section).includes.alloc = 0 as darray_size_t;
-        (*section).buffer.item = ::core::ptr::null_mut::<i8>();
+        (*section).buffer.item = std::ptr::null_mut();
         (*section).buffer.size = 0 as darray_size_t;
         (*section).buffer.alloc = 0 as darray_size_t;
         darray_append(
@@ -475,7 +475,7 @@ unsafe fn xkb_file_section_append_includes(
 ) -> bool {
     unsafe {
         let mut group: *mut xkb_file_include_group =
-            ::core::ptr::null_mut::<xkb_file_include_group>();
+            std::ptr::null_mut();
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut buf: [i8; 4096] = [0; 4096];
@@ -731,10 +731,10 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
             string,
             length,
             path,
-            ::core::ptr::null::<i8>(),
+            std::ptr::null(),
         ) {
             xkb_file_iterator_free(iter);
-            return ::core::ptr::null_mut::<xkb_file_iterator>();
+            return std::ptr::null_mut();
         }
         return iter;
     }
@@ -756,22 +756,22 @@ pub unsafe fn xkb_file_iterator_next(
     mut section: *mut *const xkb_file_section,
 ) -> bool {
     unsafe {
-        let mut xkb_file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         let mut process_includes: bool = false;
         let mut c2rust_current_block: u64;
         if (*iter).finished {
-            *section = ::core::ptr::null::<xkb_file_section>();
+            *section = std::ptr::null();
             return true;
         }
         loop {
-            xkb_file = ::core::ptr::null_mut::<XkbFile>();
+            xkb_file = std::ptr::null_mut();
             if !(*iter).pending_xkb_file.is_null() {
                 if !(*iter).pending_section.is_null() {
                     xkb_file = (*iter).pending_section;
                     c2rust_current_block = 4521797313793381377;
                 } else {
                     FreeXkbFile((*iter).pending_xkb_file);
-                    (*iter).pending_xkb_file = ::core::ptr::null_mut::<XkbFile>();
+                    (*iter).pending_xkb_file = std::ptr::null_mut();
                     c2rust_current_block = 1394248824506584008;
                 }
             } else {
@@ -796,7 +796,7 @@ pub unsafe fn xkb_file_iterator_next(
                         break;
                     } else if xkb_file.is_null() {
                         (*iter).finished = true;
-                        *section = ::core::ptr::null::<xkb_file_section>();
+                        *section = std::ptr::null();
                         return true;
                     }
                 }
@@ -811,7 +811,7 @@ pub unsafe fn xkb_file_iterator_next(
             if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
                 (*iter).pending_xkb_file = xkb_file;
                 (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
-                (*iter).map = ::core::ptr::null::<i8>();
+                (*iter).map = std::ptr::null();
                 return true;
             } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as ::core::ffi::c_int as u32
                 && (*xkb_file).file_type as u32 != (*iter).type_0 as u32
@@ -861,7 +861,7 @@ pub unsafe fn xkb_file_iterator_next(
         match c2rust_current_block {
             3132808253564788397 => {
                 FreeXkbFile(xkb_file);
-                *section = ::core::ptr::null::<xkb_file_section>();
+                *section = std::ptr::null();
                 return false;
             }
             _ => {

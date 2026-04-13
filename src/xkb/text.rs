@@ -71,7 +71,7 @@ pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const
             }
             entry = entry.offset(1);
         }
-        return ::core::ptr::null::<i8>();
+        return std::ptr::null();
     }
 }
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
@@ -172,7 +172,7 @@ pub static mut ctrlMaskNames: [LookupEntry; 25] = [
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -206,7 +206,7 @@ pub static mut modComponentMaskNames: [LookupEntry; 8] = [
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -236,12 +236,12 @@ pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
 pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
-    name: ::core::ptr::null::<i8>(),
+    name: std::ptr::null(),
     value: 0,
 }; 3];
 pub static mut buttonNames: [LookupEntry; 7] = [
@@ -270,7 +270,7 @@ pub static mut buttonNames: [LookupEntry; 7] = [
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -292,7 +292,7 @@ pub static mut useModMapValueNames: [LookupEntry; 5] = [
         value: 0 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -466,7 +466,7 @@ pub static mut actionTypeNames: [LookupEntry; 43] = [
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -492,7 +492,7 @@ pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
         value: MATCH_EXACTLY as i32 as u32,
     },
     LookupEntry {
-        name: ::core::ptr::null::<i8>(),
+        name: std::ptr::null(),
         value: 0 as u32,
     },
 ];
@@ -509,7 +509,7 @@ pub unsafe fn ModIndexText(
             return b"None\0".as_ptr() as *const i8;
         }
         if ndx >= (*mods).num_mods {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return xkb_atom_text(ctx, (*mods).mods[ndx as usize].name);
     }
@@ -1589,7 +1589,7 @@ pub unsafe fn ModMaskText(
             0,
         ];
         let mut pos: usize = 0 as usize;
-        let mut mod_0: *const xkb_mod = ::core::ptr::null::<xkb_mod>();
+        let mut mod_0: *const xkb_mod = std::ptr::null();
         if mask == 0 as xkb_mod_mask_t {
             return b"none\0".as_ptr() as *const i8;
         }
@@ -1749,7 +1749,7 @@ unsafe fn c2rust_run_static_initializers() {
                 value: XKB_ALL_GROUPS as u32,
             },
             LookupEntry {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 value: 0 as u32,
             },
         ]

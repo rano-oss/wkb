@@ -173,13 +173,13 @@ pub struct C2Rust_Unnamed_18 {
 #[inline]
 unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
     unsafe {
-        (*store).low.item = ::core::ptr::null_mut::<xkb_atom_t>();
+        (*store).low.item = std::ptr::null_mut();
         (*store).low.size = 0 as darray_size_t;
         (*store).low.alloc = 0 as darray_size_t;
-        (*store).high.item = ::core::ptr::null_mut::<HighKeycodeEntry>();
+        (*store).high.item = std::ptr::null_mut();
         (*store).high.size = 0 as darray_size_t;
         (*store).high.alloc = 0 as darray_size_t;
-        (*store).names.item = ::core::ptr::null_mut::<KeycodeMatch>();
+        (*store).names.item = std::ptr::null_mut();
         (*store).names.size = 0 as darray_size_t;
         (*store).names.alloc = 0 as darray_size_t;
         (*store).min = XKB_KEYCODE_INVALID as xkb_keycode_t;
@@ -302,7 +302,7 @@ unsafe fn keycode_store_insert_key(
                     }
                 }
                 let mut entry_0: *mut HighKeycodeEntry =
-                    ::core::ptr::null_mut::<HighKeycodeEntry>();
+                    std::ptr::null_mut();
                 if !(*store).high.item.is_null() {
                     entry_0 = (*store).high.item.offset(lower as isize) as *mut HighKeycodeEntry;
                     while entry_0
@@ -494,7 +494,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                 );
             }
             (*store).high.size = (*store).high.size.wrapping_sub(1);
-            let mut entry: *mut KeycodeMatch = ::core::ptr::null_mut::<KeycodeMatch>();
+            let mut entry: *mut KeycodeMatch = std::ptr::null_mut();
             if !(*store).names.item.is_null() {
                 entry = (*store).names.item.offset(0 as ::core::ffi::c_int as isize)
                     as *mut KeycodeMatch;
@@ -678,7 +678,7 @@ unsafe fn FindLedByName(
             }
             idx = idx.wrapping_add(1);
         }
-        return ::core::ptr::null_mut::<LedNameInfo>();
+        return std::ptr::null_mut();
     }
 }
 unsafe fn AddLedName(
@@ -690,7 +690,7 @@ unsafe fn AddLedName(
 ) -> bool {
     unsafe {
         let mut old_idx: xkb_led_index_t = 0;
-        let mut old: *mut LedNameInfo = ::core::ptr::null_mut::<LedNameInfo>();
+        let mut old: *mut LedNameInfo = std::ptr::null_mut();
         let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
         old = FindLedByName(info, (*new).name, &raw mut old_idx);
         if !old.is_null() {
@@ -933,13 +933,13 @@ unsafe fn MergeKeycodeStores(
             && (*into).keycodes.names.size == 0 as darray_size_t
         {
             (*into).keycodes = (*from).keycodes;
-            (*from).keycodes.low.item = ::core::ptr::null_mut::<xkb_atom_t>();
+            (*from).keycodes.low.item = std::ptr::null_mut();
             (*from).keycodes.low.size = 0 as darray_size_t;
             (*from).keycodes.low.alloc = 0 as darray_size_t;
-            (*from).keycodes.high.item = ::core::ptr::null_mut::<HighKeycodeEntry>();
+            (*from).keycodes.high.item = std::ptr::null_mut();
             (*from).keycodes.high.size = 0 as darray_size_t;
             (*from).keycodes.high.alloc = 0 as darray_size_t;
-            (*from).keycodes.names.item = ::core::ptr::null_mut::<KeycodeMatch>();
+            (*from).keycodes.names.item = std::ptr::null_mut();
             (*from).keycodes.names.size = 0 as darray_size_t;
             (*from).keycodes.names.alloc = 0 as darray_size_t;
         } else {
@@ -953,7 +953,7 @@ unsafe fn MergeKeycodeStores(
                 }
                 kc = kc.wrapping_add(1);
             }
-            let mut new: *const HighKeycodeEntry = ::core::ptr::null::<HighKeycodeEntry>();
+            let mut new: *const HighKeycodeEntry = std::ptr::null();
             if !(*from).keycodes.high.item.is_null() {
                 new = (*from)
                     .keycodes
@@ -975,7 +975,7 @@ unsafe fn MergeKeycodeStores(
                     new = new.offset(1);
                 }
             }
-            let mut match_0: *mut KeycodeMatch = ::core::ptr::null_mut::<KeycodeMatch>();
+            let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
             let mut alias: xkb_atom_t = 0;
             if !(*from).keycodes.names.item.is_null() {
                 alias = 0 as xkb_atom_t;
@@ -991,7 +991,7 @@ unsafe fn MergeKeycodeStores(
                     {
                         let def: KeyAliasDef = KeyAliasDef {
                             common: _ParseCommon {
-                                next: ::core::ptr::null_mut::<_ParseCommon>(),
+                                next: std::ptr::null_mut(),
                                 type_0: STMT_UNKNOWN,
                             },
                             merge: merge,
@@ -1057,7 +1057,7 @@ unsafe fn HandleIncludeKeycodes(
 ) -> bool {
     unsafe {
         let mut included: KeyNamesInfo = KeyNamesInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
@@ -1065,17 +1065,17 @@ unsafe fn HandleIncludeKeycodes(
                 low: C2Rust_Unnamed_18 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                    item: std::ptr::null_mut(),
                 },
                 high: C2Rust_Unnamed_17 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<HighKeycodeEntry>(),
+                    item: std::ptr::null_mut(),
                 },
                 names: C2Rust_Unnamed_16 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<KeycodeMatch>(),
+                    item: std::ptr::null_mut(),
                 },
             },
             led_names: [LedNameInfo {
@@ -1083,8 +1083,8 @@ unsafe fn HandleIncludeKeycodes(
                 name: 0,
             }; 32],
             num_led_names: 0,
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
@@ -1096,7 +1096,7 @@ unsafe fn HandleIncludeKeycodes(
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyNamesInfo = KeyNamesInfo {
-                name: ::core::ptr::null_mut::<i8>(),
+                name: std::ptr::null_mut(),
                 errorCount: 0,
                 include_depth: 0,
                 keycodes: KeycodeStore {
@@ -1104,17 +1104,17 @@ unsafe fn HandleIncludeKeycodes(
                     low: C2Rust_Unnamed_18 {
                         size: 0,
                         alloc: 0,
-                        item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                        item: std::ptr::null_mut(),
                     },
                     high: C2Rust_Unnamed_17 {
                         size: 0,
                         alloc: 0,
-                        item: ::core::ptr::null_mut::<HighKeycodeEntry>(),
+                        item: std::ptr::null_mut(),
                     },
                     names: C2Rust_Unnamed_16 {
                         size: 0,
                         alloc: 0,
-                        item: ::core::ptr::null_mut::<KeycodeMatch>(),
+                        item: std::ptr::null_mut(),
                     },
                 },
                 led_names: [LedNameInfo {
@@ -1122,10 +1122,10 @@ unsafe fn HandleIncludeKeycodes(
                     name: 0,
                 }; 32],
                 num_led_names: 0,
-                ctx: ::core::ptr::null_mut::<xkb_context>(),
-                keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+                ctx: std::ptr::null_mut(),
+                keymap_info: std::ptr::null(),
             };
-            let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
+            let mut file: *mut XkbFile = std::ptr::null_mut();
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -1263,9 +1263,9 @@ unsafe fn HandleAliasDef(
 }
 unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = ::core::ptr::null::<i8>();
-        let mut field: *const i8 = ::core::ptr::null::<i8>();
-        let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
+        let mut elem: *const i8 = std::ptr::null();
+        let mut field: *const i8 = std::ptr::null();
+        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
@@ -1508,7 +1508,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             kc_0 = kc_0.wrapping_add(1);
         }
         let mut idx: xkb_keycode_t = (*keymap).num_keys_low;
-        let mut entry: *const HighKeycodeEntry = ::core::ptr::null::<HighKeycodeEntry>();
+        let mut entry: *const HighKeycodeEntry = std::ptr::null();
         if !(*info).keycodes.high.item.is_null() {
             entry = (*info)
                 .keycodes
@@ -1536,7 +1536,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
 }
 unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyNamesInfo) -> bool {
     unsafe {
-        let mut match_0: *mut KeycodeMatch = ::core::ptr::null_mut::<KeycodeMatch>();
+        let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
         let mut name: xkb_atom_t = 0;
         if !(*info).keycodes.names.item.is_null() {
             name = 0 as xkb_atom_t;
@@ -1589,14 +1589,14 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
         }
         (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = (*info).keycodes.names.size;
         (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = (*info).keycodes.names.item;
-        if !::core::ptr::null_mut::<::core::ffi::c_void>().is_null() {
-            *(::core::ptr::null_mut::<::core::ffi::c_void>() as *mut darray_size_t) =
+        if !std::ptr::null_mut::<u8>().is_null() {
+            *(std::ptr::null_mut() as *mut darray_size_t) =
                 (*info).keycodes.names.size;
         }
-        (*info).keycodes.names.item = ::core::ptr::null_mut::<KeycodeMatch>();
+        (*info).keycodes.names.item = std::ptr::null_mut();
         (*info).keycodes.names.size = 0 as darray_size_t;
         (*info).keycodes.names.alloc = 0 as darray_size_t;
-        (*info).keycodes.names.item = ::core::ptr::null_mut::<KeycodeMatch>();
+        (*info).keycodes.names.item = std::ptr::null_mut();
         (*info).keycodes.names.size = 0 as darray_size_t;
         (*info).keycodes.names.alloc = 0 as darray_size_t;
         return true;
@@ -1661,7 +1661,7 @@ pub unsafe fn CompileKeycodes(
 ) -> bool {
     unsafe {
         let mut info: KeyNamesInfo = KeyNamesInfo {
-            name: ::core::ptr::null_mut::<i8>(),
+            name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
@@ -1669,17 +1669,17 @@ pub unsafe fn CompileKeycodes(
                 low: C2Rust_Unnamed_18 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<xkb_atom_t>(),
+                    item: std::ptr::null_mut(),
                 },
                 high: C2Rust_Unnamed_17 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<HighKeycodeEntry>(),
+                    item: std::ptr::null_mut(),
                 },
                 names: C2Rust_Unnamed_16 {
                     size: 0,
                     alloc: 0,
-                    item: ::core::ptr::null_mut::<KeycodeMatch>(),
+                    item: std::ptr::null_mut(),
                 },
             },
             led_names: [LedNameInfo {
@@ -1687,8 +1687,8 @@ pub unsafe fn CompileKeycodes(
                 name: 0,
             }; 32],
             num_led_names: 0,
-            ctx: ::core::ptr::null_mut::<xkb_context>(),
-            keymap_info: ::core::ptr::null::<xkb_keymap_info>(),
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
         };
         InitKeyNamesInfo(&raw mut info, keymap_info, 0 as u32);
         if !file.is_null() {

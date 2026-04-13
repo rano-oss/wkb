@@ -162,7 +162,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             return;
         }
         if !(*keymap).keys.is_null() {
-            let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+            let mut key: *mut xkb_key = std::ptr::null_mut();
             key = (*keymap).keys.offset(
                 (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                     0 as xkb_keycode_t
@@ -232,9 +232,9 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
 unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_keymap_format_ops {
     unsafe {
         static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] = [
-            ::core::ptr::null::<xkb_keymap_format_ops>(),
-            ::core::ptr::null::<xkb_keymap_format_ops>(),
-            ::core::ptr::null::<xkb_keymap_format_ops>(),
+            std::ptr::null(),
+            std::ptr::null(),
+            std::ptr::null(),
         ];
         // Initialize lazily to bridge the type difference with xkbcomp's local type
         if keymap_format_ops[1].is_null() {
@@ -248,7 +248,7 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
                     .wrapping_div(::core::mem::size_of::<*const xkb_keymap_format_ops>() as usize)
                     as i32
         {
-            return ::core::ptr::null::<xkb_keymap_format_ops>();
+            return std::ptr::null();
         }
         return keymap_format_ops[format as i32 as usize];
     }
@@ -270,7 +270,7 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8),
                 format as u32,
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let mut keymap: *mut xkb_keymap = xkb_keymap_new(
             (*rmlvo).ctx,
@@ -279,14 +279,14 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
             flags,
         );
         if keymap.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if !(*ops)
             .keymap_new_from_rmlvo
             .expect("non-null function pointer")(keymap, rmlvo)
         {
             xkb_keymap_unref(keymap);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -311,7 +311,7 @@ pub unsafe fn xkb_keymap_new_from_names2(
                 ),
                 format as u32,
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let mut keymap: *mut xkb_keymap = xkb_keymap_new(
             ctx,
@@ -320,14 +320,14 @@ pub unsafe fn xkb_keymap_new_from_names2(
             flags,
         );
         if keymap.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
-            rules: ::core::ptr::null::<i8>(),
-            model: ::core::ptr::null::<i8>(),
-            layout: ::core::ptr::null::<i8>(),
-            variant: ::core::ptr::null::<i8>(),
-            options: ::core::ptr::null::<i8>(),
+            rules: std::ptr::null(),
+            model: std::ptr::null(),
+            layout: std::ptr::null(),
+            variant: std::ptr::null(),
+            options: std::ptr::null(),
         };
         if !rmlvo_in.is_null() {
             rmlvo = *rmlvo_in;
@@ -338,7 +338,7 @@ pub unsafe fn xkb_keymap_new_from_names2(
             .expect("non-null function pointer")(keymap, &raw mut rmlvo)
         {
             xkb_keymap_unref(keymap);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -385,7 +385,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 ),
                 format as u32,
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if buffer.is_null() {
             xkb_logf!(
@@ -397,7 +397,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                     b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
                 ),
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let mut keymap: *mut xkb_keymap = xkb_keymap_new(
             ctx,
@@ -406,7 +406,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
             flags,
         );
         if keymap.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if length > 0 as usize
             && *buffer.offset(length.wrapping_sub(1 as usize) as isize) as i32 == '\0' as i32
@@ -418,7 +418,7 @@ pub unsafe fn xkb_keymap_new_from_buffer(
             .expect("non-null function pointer")(keymap, buffer, length)
         {
             xkb_keymap_unref(keymap);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -441,7 +441,7 @@ pub unsafe fn xkb_keymap_new_from_file(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
                 format as u32,
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if file.is_null() {
             xkb_logf!(
@@ -451,7 +451,7 @@ pub unsafe fn xkb_keymap_new_from_file(
                 "{}: no file specified\n",
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
             );
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         let mut keymap: *mut xkb_keymap = xkb_keymap_new(
             ctx,
@@ -460,14 +460,14 @@ pub unsafe fn xkb_keymap_new_from_file(
             flags,
         );
         if keymap.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         if !(*ops)
             .keymap_new_from_file
             .expect("non-null function pointer")(keymap, file)
         {
             xkb_keymap_unref(keymap);
-            return ::core::ptr::null_mut::<xkb_keymap>();
+            return std::ptr::null_mut();
         }
         return keymap;
     }
@@ -490,7 +490,7 @@ pub unsafe fn xkb_keymap_get_as_string2(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
                 flags as u32 & !(XKB_KEYMAP_SERIALIZE_FLAGS as u32),
             );
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         if format as u32 == XKB_KEYMAP_USE_ORIGINAL_FORMAT as u32 {
             format = (*keymap).format;
@@ -506,7 +506,7 @@ pub unsafe fn xkb_keymap_get_as_string2(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
                 format as u32,
             );
-            return ::core::ptr::null_mut::<i8>();
+            return std::ptr::null_mut();
         }
         return (*ops)
             .keymap_get_as_string
@@ -535,7 +535,7 @@ pub unsafe fn xkb_keymap_mod_get_name(
 ) -> *const i8 {
     unsafe {
         if idx >= (*keymap).mods.num_mods {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return xkb_atom_text((*keymap).ctx, (*keymap).mods.mods[idx as usize].name);
     }
@@ -594,7 +594,7 @@ pub unsafe fn xkb_keymap_layout_get_name(
 ) -> *const i8 {
     unsafe {
         if idx >= (*keymap).num_group_names {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return xkb_atom_text((*keymap).ctx, *(*keymap).group_names.offset(idx as isize));
     }
@@ -669,7 +669,7 @@ pub unsafe fn xkb_keymap_led_get_name(
 ) -> *const i8 {
     unsafe {
         if idx >= (*keymap).num_leds {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return xkb_atom_text((*keymap).ctx, (*keymap).leds[idx as usize].name);
     }
@@ -682,7 +682,7 @@ pub unsafe fn xkb_keymap_led_get_index(
     unsafe {
         let mut atom: xkb_atom_t = xkb_atom_lookup((*keymap).ctx, name);
         let mut i: xkb_led_index_t = 0;
-        let mut led: *const xkb_led = ::core::ptr::null::<xkb_led>();
+        let mut led: *const xkb_led = std::ptr::null();
         if atom == XKB_ATOM_NONE as xkb_atom_t {
             return XKB_LED_INVALID as xkb_led_index_t;
         }
@@ -779,10 +779,10 @@ pub unsafe fn xkb_keymap_key_get_level(
             (*key).out_of_range_group_number(),
         );
         if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return ::core::ptr::null_mut::<xkb_level>();
+            return std::ptr::null_mut();
         }
         if level >= XkbKeyNumLevels(key, layout) {
-            return ::core::ptr::null_mut::<xkb_level>();
+            return std::ptr::null_mut();
         }
         return (*(*key).groups.offset(layout as isize))
             .levels
@@ -798,7 +798,7 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
     mut syms_out: *mut *const xkb_keysym_t,
 ) -> i32 {
     unsafe {
-        let mut leveli: *const xkb_level = ::core::ptr::null::<xkb_level>();
+        let mut leveli: *const xkb_level = std::ptr::null();
         let mut num_syms: xkb_keysym_count_t = 0;
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if !key.is_null() {
@@ -815,7 +815,7 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
                 }
             }
         }
-        *syms_out = ::core::ptr::null::<xkb_keysym_t>();
+        *syms_out = std::ptr::null();
         return 0 as i32;
     }
 }
@@ -849,15 +849,15 @@ pub unsafe fn xkb_keymap_key_iterator_new(
                 "unrecognized keymap iterator flags: {:#x}\n",
                 flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32),
             );
-            return ::core::ptr::null_mut::<xkb_keymap_key_iterator>();
+            return std::ptr::null_mut();
         }
         let iter: *mut xkb_keymap_key_iterator =
             Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap_key_iterator>()));
         (*iter).keymap = xkb_keymap_ref(keymap);
         if (*keymap).num_keys == 0 as xkb_keycode_t {
-            (*iter).next = ::core::ptr::null::<xkb_key>();
-            (*iter).min = ::core::ptr::null::<xkb_key>();
-            (*iter).max = ::core::ptr::null::<xkb_key>();
+            (*iter).next = std::ptr::null();
+            (*iter).min = std::ptr::null();
+            (*iter).max = std::ptr::null();
             return iter;
         }
         (*iter).skip_unbound =
@@ -911,14 +911,14 @@ pub unsafe fn xkb_keymap_key_iterator_next(
         {
             next = next.offset((*iter).increment as i32 as isize);
             if next < (*iter).min || next > (*iter).max {
-                (*iter).next = ::core::ptr::null::<xkb_key>();
+                (*iter).next = std::ptr::null();
                 return XKB_KEYCODE_INVALID as xkb_keycode_t;
             }
         }
         let ret: xkb_keycode_t = (*next).keycode;
         next = next.offset((*iter).increment as i32 as isize);
         (*iter).next = if next < (*iter).min || next > (*iter).max {
-            ::core::ptr::null::<xkb_key>()
+            std::ptr::null()
         } else {
             next
         };
@@ -932,7 +932,7 @@ pub unsafe fn xkb_keymap_key_for_each(
     mut data: *mut ::core::ffi::c_void,
 ) {
     unsafe {
-        let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+        let mut key: *mut xkb_key = std::ptr::null_mut();
         key = (*keymap).keys.offset(
             (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
                 0 as xkb_keycode_t
@@ -954,7 +954,7 @@ pub unsafe fn xkb_keymap_key_get_name(
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
-            return ::core::ptr::null::<i8>();
+            return std::ptr::null();
         }
         return xkb_atom_text((*keymap).ctx, (*key).name);
     }
@@ -965,7 +965,7 @@ pub unsafe fn xkb_keymap_key_by_name(
     mut name: *const i8,
 ) -> xkb_keycode_t {
     unsafe {
-        let mut key: *mut xkb_key = ::core::ptr::null_mut::<xkb_key>();
+        let mut key: *mut xkb_key = std::ptr::null_mut();
         let mut atom: xkb_atom_t = 0;
         atom = xkb_atom_lookup((*keymap).ctx, name);
         if atom != 0 {

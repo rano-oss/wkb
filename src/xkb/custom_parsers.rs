@@ -129,19 +129,19 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             option {
                 name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'h' as i32,
             },
             option {
                 name: b"stdev\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_STDEV as i32,
             },
             option {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 has_arg: 0 as i32,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 0 as i32,
             },
         ];
@@ -485,7 +485,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 &mut dummy64 as *mut u64,
                 ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(strtol(
                     content.offset(n_5 as isize),
-                    ::core::ptr::null_mut::<*mut i8>(),
+                    std::ptr::null_mut(),
                     10 as i32,
                 )
                     as u64),
@@ -505,7 +505,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                         ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(
                             strtol(
                                 content.offset(n_6 as isize),
-                                ::core::ptr::null_mut::<*mut i8>(),
+                                std::ptr::null_mut(),
                                 10 as i32,
                             ) as u64,
                         ),
@@ -661,7 +661,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 &mut dummy64 as *mut u64,
                 ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(strtol(
                     content.offset(n_9 as isize),
-                    ::core::ptr::null_mut::<*mut i8>(),
+                    std::ptr::null_mut(),
                     16 as i32,
                 )
                     as u64),
@@ -681,7 +681,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                         ::core::ptr::read_volatile::<u64>(&dummy64 as *const u64).wrapping_add(
                             strtol(
                                 content.offset(n_10 as isize),
-                                ::core::ptr::null_mut::<*mut i8>(),
+                                std::ptr::null_mut(),
                                 16 as i32,
                             ) as u64,
                         ),

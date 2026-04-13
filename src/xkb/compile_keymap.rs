@@ -80,12 +80,12 @@ unsafe fn usage(mut fp: *mut FILE, mut argv: *mut *mut i8) {
             crate::xkb::utils::CStrDisplay(DEFAULT_XKB_MODEL.as_ptr()),
             crate::xkb::utils::CStrDisplay(DEFAULT_XKB_LAYOUT.as_ptr()),
             crate::xkb::utils::CStrDisplay(if !DEFAULT_XKB_VARIANT.is_null() {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 b"<none>\0".as_ptr() as *const i8
             }),
             crate::xkb::utils::CStrDisplay(if !DEFAULT_XKB_OPTIONS.is_null() {
-                ::core::ptr::null::<i8>()
+                std::ptr::null()
             } else {
                 b"<none>\0".as_ptr() as *const i8
             }),
@@ -112,7 +112,7 @@ unsafe fn load_keymap(
                     "ERROR: cannot open file: {}",
                     crate::xkb::utils::CStrDisplay(keymap_path),
                 );
-                return ::core::ptr::null_mut::<xkb_keymap>();
+                return std::ptr::null_mut();
             }
             let mut keymap: *mut xkb_keymap =
                 xkb_keymap_new_from_file(ctx, file, format, XKB_KEYMAP_COMPILE_NO_FLAGS);
@@ -133,7 +133,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             seconds: 0,
             nanoseconds: 0,
         };
-        let mut context: *mut xkb_context = ::core::ptr::null_mut::<xkb_context>();
+        let mut context: *mut xkb_context = std::ptr::null_mut();
         let mut bench: bench = bench {
             start: bench_time {
                 seconds: 0,
@@ -157,13 +157,13 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut serialize_flags: xkb_keymap_serialize_flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
         let mut explicit_iterations: bool = false;
         let mut ret: i32 = 0 as i32;
-        let mut keymap_path: *mut i8 = ::core::ptr::null_mut::<i8>();
+        let mut keymap_path: *mut i8 = std::ptr::null_mut();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: DEFAULT_XKB_RULES.as_ptr(),
             model: DEFAULT_XKB_MODEL.as_ptr(),
-            layout: ::core::ptr::null::<i8>(),
-            variant: ::core::ptr::null::<i8>(),
-            options: ::core::ptr::null::<i8>(),
+            layout: std::ptr::null(),
+            variant: std::ptr::null(),
+            options: std::ptr::null(),
         };
         let mut max_iterations: u32 = DEFAULT_ITERATIONS as u32;
         let mut stdev: ::core::ffi::c_double = DEFAULT_STDEV;
@@ -171,91 +171,91 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             option {
                 name: b"help\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 'h' as i32,
             },
             option {
                 name: b"input-format\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP_INPUT_FORMAT as i32,
             },
             option {
                 name: b"output-format\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP_OUTPUT_FORMAT as i32,
             },
             option {
                 name: b"pretty\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP_PRETTY as i32,
             },
             option {
                 name: b"keep-unused\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP_KEEP_UNUSED as i32,
             },
             option {
                 name: b"explicit-values\0".as_ptr() as *const i8,
                 has_arg: no_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP_EXPLICIT_VALUES as i32,
             },
             option {
                 name: b"keymap\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_KEYMAP as i32,
             },
             option {
                 name: b"rules\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_RULES as i32,
             },
             option {
                 name: b"model\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_MODEL as i32,
             },
             option {
                 name: b"layout\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_LAYOUT as i32,
             },
             option {
                 name: b"variant\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_VARIANT as i32,
             },
             option {
                 name: b"options\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_OPTION as i32,
             },
             option {
                 name: b"iter\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_ITERATIONS as i32,
             },
             option {
                 name: b"stdev\0".as_ptr() as *const i8,
                 has_arg: required_argument,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: OPT_STDEV as i32,
             },
             option {
-                name: ::core::ptr::null::<i8>(),
+                name: std::ptr::null(),
                 has_arg: 0 as i32,
-                flag: ::core::ptr::null::<i32>() as *mut i32,
+                flag: std::ptr::null_mut(),
                 val: 0 as i32,
             },
         ];
@@ -368,7 +368,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 return 2;
             }
             rmlvo.layout = DEFAULT_XKB_LAYOUT.as_ptr();
-            rmlvo.variant = ::core::ptr::null::<i8>();
+            rmlvo.variant = std::ptr::null();
         }
         context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         if context.is_null() {
