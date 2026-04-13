@@ -10,28 +10,8 @@ pub mod utf8_decoding_h {
     pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
 
-pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
-    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
-};
-pub use crate::xkb::xkbcomp::include::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
+pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
+pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -77,20 +57,38 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, scanner_token_location, sval};
-pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
-pub use crate::xkb::utils::{isempty, strdup_safe};
-pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+pub use crate::xkb::shared_ast_types::{
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
+    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
+    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
+    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
+    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
+};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{darray_append, darray_free};
-use libc::{calloc, free, malloc};
+pub use crate::xkb::utils::{isempty, strdup_safe};
+pub use crate::xkb::xkbcomp::include::{
+    ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
+};
+use libc::free;
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef =
-            malloc(::core::mem::size_of::<ExprDef>() as usize) as *mut ExprDef;
-        if expr.is_null() {
-            return ::core::ptr::null_mut::<ExprDef>();
-        }
+        let mut expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
         (*expr).common.type_0 = op;
         (*expr).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         return expr;
@@ -438,11 +436,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
 
 pub unsafe fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut KeycodeDef {
     unsafe {
-        let mut def: *mut KeycodeDef =
-            malloc(::core::mem::size_of::<KeycodeDef>() as usize) as *mut KeycodeDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<KeycodeDef>();
-        }
+        let mut def: *mut KeycodeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeycodeDef>()));
         (*def).common.type_0 = STMT_KEYCODE;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).name = name;
@@ -453,11 +447,7 @@ pub unsafe fn KeycodeCreate(mut name: xkb_atom_t, mut value: i64) -> *mut Keycod
 
 pub unsafe fn KeyAliasCreate(mut alias: xkb_atom_t, mut real: xkb_atom_t) -> *mut KeyAliasDef {
     unsafe {
-        let mut def: *mut KeyAliasDef =
-            malloc(::core::mem::size_of::<KeyAliasDef>() as usize) as *mut KeyAliasDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<KeyAliasDef>();
-        }
+        let mut def: *mut KeyAliasDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyAliasDef>()));
         (*def).common.type_0 = STMT_ALIAS;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).alias = alias;
@@ -468,11 +458,7 @@ pub unsafe fn KeyAliasCreate(mut alias: xkb_atom_t, mut real: xkb_atom_t) -> *mu
 
 pub unsafe fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDef) -> *mut VModDef {
     unsafe {
-        let mut def: *mut VModDef =
-            malloc(::core::mem::size_of::<VModDef>() as usize) as *mut VModDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<VModDef>();
-        }
+        let mut def: *mut VModDef = Box::into_raw(Box::new(std::mem::zeroed::<VModDef>()));
         (*def).common.type_0 = STMT_VMOD;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).name = name;
@@ -483,10 +469,7 @@ pub unsafe fn VModCreate(mut name: xkb_atom_t, mut value: *mut ExprDef) -> *mut 
 
 pub unsafe fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut VarDef {
     unsafe {
-        let mut def: *mut VarDef = malloc(::core::mem::size_of::<VarDef>() as usize) as *mut VarDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<VarDef>();
-        }
+        let mut def: *mut VarDef = Box::into_raw(Box::new(std::mem::zeroed::<VarDef>()));
         (*def).common.type_0 = STMT_VAR;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).name = name as *mut ExprDef;
@@ -521,11 +504,7 @@ pub unsafe fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> *mut VarDef
 
 pub unsafe fn InterpCreate(mut sym: xkb_keysym_t, mut match_0: *mut ExprDef) -> *mut InterpDef {
     unsafe {
-        let mut def: *mut InterpDef =
-            malloc(::core::mem::size_of::<InterpDef>() as usize) as *mut InterpDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<InterpDef>();
-        }
+        let mut def: *mut InterpDef = Box::into_raw(Box::new(std::mem::zeroed::<InterpDef>()));
         (*def).common.type_0 = STMT_INTERP;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).sym = sym;
@@ -537,11 +516,7 @@ pub unsafe fn InterpCreate(mut sym: xkb_keysym_t, mut match_0: *mut ExprDef) -> 
 
 pub unsafe fn KeyTypeCreate(mut name: xkb_atom_t, mut body: *mut VarDef) -> *mut KeyTypeDef {
     unsafe {
-        let mut def: *mut KeyTypeDef =
-            malloc(::core::mem::size_of::<KeyTypeDef>() as usize) as *mut KeyTypeDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<KeyTypeDef>();
-        }
+        let mut def: *mut KeyTypeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyTypeDef>()));
         (*def).common.type_0 = STMT_TYPE;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -553,11 +528,7 @@ pub unsafe fn KeyTypeCreate(mut name: xkb_atom_t, mut body: *mut VarDef) -> *mut
 
 pub unsafe fn SymbolsCreate(mut keyName: xkb_atom_t, mut symbols: *mut VarDef) -> *mut SymbolsDef {
     unsafe {
-        let mut def: *mut SymbolsDef =
-            malloc(::core::mem::size_of::<SymbolsDef>() as usize) as *mut SymbolsDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<SymbolsDef>();
-        }
+        let mut def: *mut SymbolsDef = Box::into_raw(Box::new(std::mem::zeroed::<SymbolsDef>()));
         (*def).common.type_0 = STMT_SYMBOLS;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -570,10 +541,7 @@ pub unsafe fn SymbolsCreate(mut keyName: xkb_atom_t, mut symbols: *mut VarDef) -
 pub unsafe fn GroupCompatCreate(mut group: i64, mut val: *mut ExprDef) -> *mut GroupCompatDef {
     unsafe {
         let mut def: *mut GroupCompatDef =
-            malloc(::core::mem::size_of::<GroupCompatDef>() as usize) as *mut GroupCompatDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<GroupCompatDef>();
-        }
+            Box::into_raw(Box::new(std::mem::zeroed::<GroupCompatDef>()));
         (*def).common.type_0 = STMT_GROUP_COMPAT;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -585,11 +553,7 @@ pub unsafe fn GroupCompatCreate(mut group: i64, mut val: *mut ExprDef) -> *mut G
 
 pub unsafe fn ModMapCreate(mut modifier: xkb_atom_t, mut keys: *mut ExprDef) -> *mut ModMapDef {
     unsafe {
-        let mut def: *mut ModMapDef =
-            malloc(::core::mem::size_of::<ModMapDef>() as usize) as *mut ModMapDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<ModMapDef>();
-        }
+        let mut def: *mut ModMapDef = Box::into_raw(Box::new(std::mem::zeroed::<ModMapDef>()));
         (*def).common.type_0 = STMT_MODMAP;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -601,11 +565,7 @@ pub unsafe fn ModMapCreate(mut modifier: xkb_atom_t, mut keys: *mut ExprDef) -> 
 
 pub unsafe fn LedMapCreate(mut name: xkb_atom_t, mut body: *mut VarDef) -> *mut LedMapDef {
     unsafe {
-        let mut def: *mut LedMapDef =
-            malloc(::core::mem::size_of::<LedMapDef>() as usize) as *mut LedMapDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<LedMapDef>();
-        }
+        let mut def: *mut LedMapDef = Box::into_raw(Box::new(std::mem::zeroed::<LedMapDef>()));
         (*def).common.type_0 = STMT_LED_MAP;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -621,11 +581,7 @@ pub unsafe fn LedNameCreate(
     mut virtual_0: bool,
 ) -> *mut LedNameDef {
     unsafe {
-        let mut def: *mut LedNameDef =
-            malloc(::core::mem::size_of::<LedNameDef>() as usize) as *mut LedNameDef;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<LedNameDef>();
-        }
+        let mut def: *mut LedNameDef = Box::into_raw(Box::new(std::mem::zeroed::<LedNameDef>()));
         (*def).common.type_0 = STMT_LED_NAME;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).merge = MERGE_DEFAULT;
@@ -642,15 +598,12 @@ pub unsafe fn UnknownStatementCreate(
 ) -> *mut UnknownStatement {
     unsafe {
         let mut def: *mut UnknownStatement =
-            malloc(::core::mem::size_of::<UnknownStatement>() as usize) as *mut UnknownStatement;
-        if def.is_null() {
-            return ::core::ptr::null_mut::<UnknownStatement>();
-        }
+            Box::into_raw(Box::new(std::mem::zeroed::<UnknownStatement>()));
         (*def).common.type_0 = type_0;
         (*def).common.next = ::core::ptr::null_mut::<_ParseCommon>();
         (*def).name = strndup(name.start, name.len);
         if (*def).name.is_null() {
-            free(def as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(def));
             return ::core::ptr::null_mut::<UnknownStatement>();
         }
         return def;
@@ -697,12 +650,11 @@ pub unsafe fn IncludeCreate(
                 free(extra_data as *mut ::core::ffi::c_void);
             } else {
                 if first.is_null() {
-                    incl =
-                        malloc(::core::mem::size_of::<IncludeStmt>() as usize) as *mut IncludeStmt;
+                    incl = Box::into_raw(Box::new(std::mem::zeroed::<IncludeStmt>()));
                     first = incl;
                 } else {
-                    (*incl).next_incl =
-                        malloc(::core::mem::size_of::<IncludeStmt>() as usize) as *mut _IncludeStmt;
+                    (*incl).next_incl = Box::into_raw(Box::new(std::mem::zeroed::<IncludeStmt>()))
+                        as *mut _IncludeStmt;
                     incl = (*incl).next_incl as *mut IncludeStmt;
                 }
                 if incl.is_null() {
@@ -768,10 +720,7 @@ pub unsafe fn XkbFileCreate(
 ) -> *mut XkbFile {
     unsafe {
         let mut file: *mut XkbFile = ::core::ptr::null_mut::<XkbFile>();
-        file = calloc(1 as usize, ::core::mem::size_of::<XkbFile>() as usize) as *mut XkbFile;
-        if file.is_null() {
-            return ::core::ptr::null_mut::<XkbFile>();
-        }
+        file = Box::into_raw(Box::new(std::mem::zeroed::<XkbFile>()));
         XkbEscapeMapName(name);
         (*file).file_type = type_0;
         (*file).name = name;
@@ -857,7 +806,7 @@ unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
             free((*incl).map as *mut ::core::ffi::c_void);
             free((*incl).modifier as *mut ::core::ffi::c_void);
             free((*incl).stmt as *mut ::core::ffi::c_void);
-            free(incl as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(incl));
             incl = next;
         }
     }
@@ -930,7 +879,24 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                 }
                 _ => {}
             }
-            free(stmt as *mut ::core::ffi::c_void);
+            // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type)
+            if !stmt.is_null() {
+                match (*stmt).type_0 as u32 {
+                    2 => drop(Box::from_raw(stmt as *mut KeycodeDef)),
+                    3 => drop(Box::from_raw(stmt as *mut KeyAliasDef)),
+                    26 => drop(Box::from_raw(stmt as *mut VarDef)),
+                    27 => drop(Box::from_raw(stmt as *mut KeyTypeDef)),
+                    28 => drop(Box::from_raw(stmt as *mut InterpDef)),
+                    29 => drop(Box::from_raw(stmt as *mut VModDef)),
+                    30 => drop(Box::from_raw(stmt as *mut SymbolsDef)),
+                    31 => drop(Box::from_raw(stmt as *mut ModMapDef)),
+                    32 => drop(Box::from_raw(stmt as *mut GroupCompatDef)),
+                    33 => drop(Box::from_raw(stmt as *mut LedMapDef)),
+                    34 => drop(Box::from_raw(stmt as *mut LedNameDef)),
+                    35 | 36 => drop(Box::from_raw(stmt as *mut UnknownStatement)),
+                    _ => drop(Box::from_raw(stmt as *mut ExprDef)), // all STMT_EXPR_* types
+                }
+            }
             stmt = next;
         }
     }
@@ -951,7 +917,7 @@ pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
                 _ => {}
             }
             free((*file).name as *mut ::core::ffi::c_void);
-            free(file as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(file));
             file = next;
         }
     }
@@ -1036,5 +1002,5 @@ pub unsafe fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
         _ => return '\0' as i32 as i8,
     };
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
+use crate::xkb::shared_types::*;
