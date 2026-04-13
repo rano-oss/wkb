@@ -1,14 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
 
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
@@ -353,7 +343,6 @@ pub use self::ast_h::{
 };
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
-pub use self::internal::__va_list_tag;
 pub use self::keymap_file_iterator_h::{
     xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,
     xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,

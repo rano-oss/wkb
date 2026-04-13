@@ -1,6 +1,3 @@
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
     pub use crate::xkb::shared_types::{
@@ -84,7 +81,6 @@ pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{
     xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
     xkb_mod, xkb_mod_set, _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,

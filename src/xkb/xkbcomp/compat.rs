@@ -1,8 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
@@ -198,9 +194,7 @@ pub mod utils_h {
     pub use crate::xkb::utils::istrcmp;
 }
 pub mod limits_h {
-    pub const CHAR_BIT: i32 = __CHAR_BIT__;
-    use super::internal::__CHAR_BIT__;
-}
+    pub const CHAR_BIT: i32 = 8;}
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
@@ -257,7 +251,6 @@ use self::expr_h::{
     ExprResolveMod, ExprResolveModMask,
 };
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,

@@ -1,16 +1,5 @@
 use crate::xkb::utils::{darray_append, darray_appends, darray_free};
 use crate::xkb_logf;
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
@@ -274,9 +263,7 @@ pub mod utils_h {
 
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
-    use super::internal::__CHAR_BIT__;
-}
+    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
 pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
@@ -310,7 +297,6 @@ pub use self::ast_h::{
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
-pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
     isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,

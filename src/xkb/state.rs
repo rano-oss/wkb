@@ -2,27 +2,7 @@ use crate::xkb::utils::{darray_append, darray_free, darray_resize, darray_resize
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-pub mod internal {
 
-    pub type __builtin_va_list = [__va_list_tag; 1];
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-
-    pub const __CHAR_BIT__: i32 = 8 as i32;
-}
-
-pub mod __stdarg___gnuc_va_list_h {
-
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
-}
 
 pub mod xkbcommon_errors_h {
 
@@ -532,9 +512,7 @@ pub mod utils_numbers_h {
 
 pub mod limits_h {
 
-    pub const CHAR_BIT: i32 = __CHAR_BIT__;
-    use super::internal::__CHAR_BIT__;
-}
+    pub const CHAR_BIT: i32 = 8;}
 
 pub mod util_mem_h {
     #[inline]
@@ -604,11 +582,9 @@ pub mod xkbcommon_keysyms_h {
 
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::{__builtin_va_list, __va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
     xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,

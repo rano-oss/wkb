@@ -1,15 +1,3 @@
-pub mod internal {
-    pub type __builtin_va_list = [__va_list_tag; 1];
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
-
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -39,10 +27,6 @@ pub mod struct_stat_h {
         pub __glibc_reserved: [i64; 3],
     }
     use super::struct_timespec_h::timespec;
-}
-pub mod __stdarg___gnuc_va_list_h {
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
 }
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -381,14 +365,12 @@ pub mod rules_h {
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 use self::assert_h::__assert_fail;
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::errno_h::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
-pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,

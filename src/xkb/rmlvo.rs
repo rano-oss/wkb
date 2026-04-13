@@ -1,14 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -196,7 +186,6 @@ pub mod rules_h {
 }
 
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

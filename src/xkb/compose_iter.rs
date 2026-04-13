@@ -1,14 +1,3 @@
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
-
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -107,7 +96,6 @@ pub mod compose_iter_h {
 
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,

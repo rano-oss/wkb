@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_intern;
@@ -98,7 +95,6 @@ pub use self::enums_h::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,

@@ -1,9 +1,5 @@
 use crate::xkb_logf;
 use c2rust_bitfields;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
@@ -272,9 +268,7 @@ pub mod utils_h {
     pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
-    use super::internal::__CHAR_BIT__;
-}
+    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe fn parse_dec_to_uint64_t(
@@ -394,7 +388,6 @@ use self::expr_h::{
     ExprResolveString,
 };
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     clear_level, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,

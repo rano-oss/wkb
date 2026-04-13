@@ -4,16 +4,6 @@ extern "C" {
     fn strndup(__string: *const i8, __n: usize) -> *mut i8;
 }
 
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -226,7 +216,6 @@ pub use self::ast_h::{
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
-pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

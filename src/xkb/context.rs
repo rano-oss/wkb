@@ -1,8 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub type __builtin_va_list = [__va_list_tag; 1];
-}
 
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
@@ -54,10 +50,6 @@ pub mod include_dirent_h {
         pub fn opendir(__name: *const i8) -> *mut DIR;
         pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
     }
-}
-pub mod __stdarg___gnuc_va_list_h {
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
 }
 pub mod context_h {
     pub use crate::xkb::context_priv::{xkb_context_getenv, xkb_context_init_includes};
@@ -147,7 +139,6 @@ pub mod errno_base_h {
     pub const EACCES: i32 = 13 as i32;
     pub const ENOTDIR: i32 = 20 as i32;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 use self::atom_h::{atom_table_free, atom_table_new};
 pub use self::bits_stat_h::__S_IFMT;
@@ -158,7 +149,6 @@ pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
-pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,

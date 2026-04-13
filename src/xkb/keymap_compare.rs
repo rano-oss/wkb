@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_text;
@@ -75,7 +72,6 @@ pub mod utils_h {
 
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 pub use self::keymap_compare_h::{
     xkb_keymap_compare_property, XKB_KEYMAP_CMP_ALL, XKB_KEYMAP_CMP_KEYCODES, XKB_KEYMAP_CMP_LEDS,
     XKB_KEYMAP_CMP_MODS, XKB_KEYMAP_CMP_POSSIBLY_DROPPED, XKB_KEYMAP_CMP_SYMBOLS,

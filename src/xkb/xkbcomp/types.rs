@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
@@ -236,7 +233,6 @@ pub use self::context_h::{
 };
 use self::expr_h::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,

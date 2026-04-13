@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_intern;
@@ -1052,7 +1049,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

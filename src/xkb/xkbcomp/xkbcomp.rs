@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::{
@@ -349,7 +346,6 @@ pub use self::context_h::{
     xkb_context, xkb_context_get_buffer, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
     C2Rust_Unnamed_0,
 };
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     format_max_groups, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,

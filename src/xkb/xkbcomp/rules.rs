@@ -1,14 +1,6 @@
 use crate::xkb_logf;
 use c2rust_bitfields;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub type __builtin_va_list = [__va_list_tag; 1];
-}
 
-pub mod __stdarg___gnuc_va_list_h {
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
-}
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = ::core::ffi::c_int;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -517,7 +509,6 @@ pub mod rules_h {
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 pub use self::ast_h::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
@@ -531,7 +522,6 @@ pub use self::include_h::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
-pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

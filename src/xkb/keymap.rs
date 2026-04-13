@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
@@ -454,7 +451,6 @@ pub use self::enums_h::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::internal::__va_list_tag;
 pub use self::keymap_h::{
     entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,

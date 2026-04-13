@@ -1,14 +1,3 @@
-pub mod internal {
-    pub type __builtin_va_list = [__va_list_tag; 1];
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -40,10 +29,6 @@ pub mod struct_stat_h {
     use super::struct_timespec_h::timespec;
 }
 
-pub mod __stdarg___gnuc_va_list_h {
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
-}
 pub mod xmlstring_h {
     pub type xmlChar = ::core::ffi::c_uchar;
     extern "C" {
@@ -1051,7 +1036,6 @@ pub mod errno_h {
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 pub use self::bits_stat_h::__S_IFMT;
 pub use self::dict_h::{xmlDict, xmlDictPtr};
@@ -1078,7 +1062,6 @@ use self::errno_h::__errno_location;
 pub use self::hash_h::{_xmlHashTable, xmlHashTable, xmlHashTablePtr};
 pub use self::iconv_h::iconv_t;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
-pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
     xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

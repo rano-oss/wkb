@@ -1,13 +1,3 @@
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
 pub mod getopt_ext_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -188,7 +178,6 @@ use self::dump_h::xkb_compose_table_dump;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL, LC_CTYPE};
-pub use self::internal::__va_list_tag;
 pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
 pub use self::table_h::{
     compose_node, xkb_compose_table, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3,

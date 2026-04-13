@@ -1,13 +1,5 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub type __builtin_va_list = [__va_list_tag; 1];
-}
 
-pub mod __stdarg___gnuc_va_list_h {
-    pub type __gnuc_va_list = __builtin_va_list;
-    use super::internal::__builtin_va_list;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -294,7 +286,6 @@ pub mod include_h {
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
-pub use self::__stdarg___gnuc_va_list_h::__gnuc_va_list;
 
 pub use self::ast_h::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
@@ -322,7 +313,6 @@ pub use self::include_h::{
     INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
-pub use self::internal::{__builtin_va_list, __va_list_tag};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

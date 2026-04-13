@@ -1,8 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-    pub const __CHAR_BIT__: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-}
 
 pub mod context_h {
     pub use crate::xkb::context_priv::xkb_atom_text;
@@ -44,9 +40,7 @@ pub mod ast_h {
     pub type C2Rust_Unnamed_1 = DarrayKeysym;
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = __CHAR_BIT__;
-    use super::internal::__CHAR_BIT__;
-}
+    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
 pub mod text_h {
 
     pub use crate::xkb::text::ModMaskText;
@@ -74,7 +68,6 @@ pub use self::ast_h::{
 pub use self::atom_h::{atom_table, xkb_atom_t};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::expr_h::ExprResolveModMask;
-pub use self::internal::{__va_list_tag, __CHAR_BIT__};
 pub use self::keymap_h::{
     mod_type, xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };

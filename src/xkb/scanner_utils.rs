@@ -1,14 +1,3 @@
-pub mod internal {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct __va_list_tag {
-        pub gp_offset: u32,
-        pub fp_offset: u32,
-        pub overflow_arg_area: *mut ::core::ffi::c_void,
-        pub reg_save_area: *mut ::core::ffi::c_void,
-    }
-}
-
 pub mod context_h {
     pub use crate::xkb::shared_types::*;
 }
@@ -49,7 +38,6 @@ pub mod scanner_utils_h {
     use super::context_h::xkb_context;
 }
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::xkbcommon_h::{
     xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,

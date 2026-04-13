@@ -1,7 +1,4 @@
 use crate::xkb_logf;
-pub mod internal {
-    pub use crate::xkb::shared_types::__va_list_tag;
-}
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -245,7 +242,6 @@ pub use self::ast_h::{
 };
 pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
 pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::internal::__va_list_tag;
 use self::inttypes_h::imaxabs;
 pub use self::keymap_h::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
