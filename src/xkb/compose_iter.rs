@@ -1,13 +1,3 @@
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
-}
 pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -74,7 +64,7 @@ pub mod table_h {
         pub utf8: *const i8,
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
@@ -92,7 +82,6 @@ pub mod compose_iter_h {
 }
 
 pub use self::compose_iter_h::xkb_compose_table_iter_t;
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,

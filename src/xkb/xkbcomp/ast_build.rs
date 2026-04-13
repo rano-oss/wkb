@@ -100,13 +100,6 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-}
-
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_1 = DarrayKeysym;
@@ -140,7 +133,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -168,7 +161,6 @@ pub mod utf8_decoding_h {
 
     pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
-pub mod keymap_h {}
 pub mod include_h {
     pub const MERGE_AUGMENT_PREFIX: i32 = 124;
     pub const MERGE_REPLACE_PREFIX: i32 = 94;
@@ -199,8 +191,6 @@ pub use self::ast_h::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

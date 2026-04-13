@@ -1,4 +1,6 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::{xkb_context_init_includes, xkb_context_getenv};
+use crate::xkb::atom::{atom_table_free, atom_table_new};
 
 pub mod struct_timespec_h {
     #[derive(Copy, Clone)]
@@ -51,18 +53,6 @@ pub mod include_dirent_h {
         pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
     }
 }
-pub mod context_h {
-    pub use crate::xkb::context_priv::{xkb_context_getenv, xkb_context_init_includes};
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::atom::{atom_table_free, atom_table_new};
-    pub use crate::xkb::shared_types::atom_table;
-}
-
 pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
@@ -129,11 +119,7 @@ pub mod errno_base_h {
     pub const ENOTDIR: i32 = 20 as i32;
 }
 
-use self::atom_h::{atom_table_free, atom_table_new};
 pub use self::bits_stat_h::__S_IFMT;
-pub use self::context_h::{
-    xkb_context, xkb_context_getenv, xkb_context_init_includes, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
 pub use self::dirent_h::dirent;
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
 use self::errno_h::__errno_location;

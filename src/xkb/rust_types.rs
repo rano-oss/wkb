@@ -96,7 +96,7 @@ pub struct RuleNamesCStrings {
 
 /// Safe wrapper around xkb_context with automatic cleanup
 pub struct Context {
-    ptr: *mut super::context::context_h::xkb_context,
+    ptr: *mut crate::xkb::shared_types::xkb_context,
 }
 
 impl Context {
@@ -114,7 +114,7 @@ impl Context {
     }
 
     /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *mut super::context::context_h::xkb_context {
+    pub fn as_ptr(&self) -> *mut crate::xkb::shared_types::xkb_context {
         self.ptr
     }
 
@@ -172,12 +172,12 @@ impl Drop for Context {
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
 pub struct Keymap {
-    ptr: *mut super::keymap::keymap_h::xkb_keymap,
+    ptr: *mut crate::xkb::shared_types::xkb_keymap,
 }
 
 impl Keymap {
     /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *mut super::keymap::keymap_h::xkb_keymap {
+    pub fn as_ptr(&self) -> *mut crate::xkb::shared_types::xkb_keymap {
         self.ptr
     }
 
@@ -288,7 +288,7 @@ impl Keymap {
     pub fn new_state(&self) -> Option<State> {
         unsafe {
             let state_ptr =
-                super::state::xkb_state_new(self.ptr as *mut super::state::keymap_h::xkb_keymap);
+                super::state::xkb_state_new(self.ptr as *mut crate::xkb::shared_types::xkb_keymap);
             if state_ptr.is_null() {
                 None
             } else {
@@ -762,7 +762,7 @@ impl ComposeTable {
     pub fn new_from_locale(ctx: &Context, locale: &str) -> Option<Self> {
         unsafe {
             let locale_cstr = std::ffi::CString::new(locale).ok()?;
-            let ctx_cast = ctx.as_ptr() as *mut super::compile_compose::context_h::xkb_context;
+            let ctx_cast = ctx.as_ptr() as *mut crate::xkb::shared_types::xkb_context;
 
             let ptr =
                 super::compile_compose::xkbcommon_compose_h::xkb_compose_table_new_from_locale(

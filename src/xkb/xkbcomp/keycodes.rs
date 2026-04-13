@@ -1,26 +1,6 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_text;
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_overlay_index_t = u8;
-    pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
-        .wrapping_mul(CHAR_BIT as usize)
-        as xkb_led_index_t;
-    pub const XKB_KEYCODE_MAX_CONTIGUOUS: ::core::ffi::c_int = 0xfff as ::core::ffi::c_int;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -200,11 +180,9 @@ pub use self::ast_h::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,

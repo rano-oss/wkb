@@ -2,8 +2,6 @@ use crate::xkb::utils::{darray_append, darray_free, darray_resize, darray_resize
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-
-
 pub mod xkbcommon_errors_h {
 
     pub type xkb_error_code = i32;
@@ -25,86 +23,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
 
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
-
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub const XKB_ATOM_NONE: i32 = 0 as i32;
-    extern "C" {
-
-        pub type atom_table;
-    }
-}
-
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_overlay_index_t = u8;
-    pub const XKB_MOD_ALL: C2Rust_Unnamed_23 = 4294967295;
-    pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
-    pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
-    pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
-    pub type C2Rust_Unnamed_23 = u32;
-    pub type real_mod_index = u32;
-    pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
-    pub const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
-    pub const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
-    pub const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
-    pub const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
-    pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
-    pub const XKB_OVERLAY_MAX_X11: i32 = 2 as i32;
-    pub const XKB_OVERLAY_MAX: u64 =
-        (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
-    pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1 as i32;
-    pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-            XKB_OVERLAY_MAX_X11 as usize
-        } else {
-            XKB_OVERLAY_MAX as usize
-        }) as xkb_overlay_index_t;
-    }
-    pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
-        unsafe {
-            if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
-                return ::core::ptr::null::<xkb_key>();
-            } else if kc < (*keymap).num_keys_low {
-                return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
-            } else {
-                let mut lower: xkb_keycode_t = (*keymap).num_keys_low;
-                let mut upper: xkb_keycode_t = (*keymap).num_keys;
-                while lower < upper {
-                    let mid: xkb_keycode_t = lower.wrapping_add(
-                        upper
-                            .wrapping_sub(1 as xkb_keycode_t)
-                            .wrapping_sub(lower)
-                            .wrapping_div(2 as xkb_keycode_t),
-                    );
-                    let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
-                    if (*key).keycode < kc {
-                        lower = mid.wrapping_add(1 as xkb_keycode_t);
-                    } else if (*key).keycode > kc {
-                        upper = mid;
-                    } else {
-                        return key;
-                    }
-                }
-                return ::core::ptr::null::<xkb_key>();
-            };
-        }
-    }
-    pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
-        unsafe {
-            return (*entry).mods.mods == 0 as xkb_mod_mask_t
-                || (*entry).mods.mask != 0 as xkb_mod_mask_t;
-        }
-    }
-    pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 }
 
 pub mod state_priv_h {
@@ -175,11 +93,10 @@ pub mod state_priv_h {
         pub affect_controls: xkb_keyboard_control_flags,
         pub controls: xkb_keyboard_control_flags,
     }
-
-    use super::keymap_h::xkb_action_controls;
     use crate::xkb::shared_types::{
-        xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t, xkb_layout_index_t,
-        xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t, xkb_state_component,
+        xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t,
+        xkb_layout_index_t, xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t,
+        xkb_state_component,
     };
 }
 
@@ -438,7 +355,8 @@ pub mod utils_numbers_h {
 
 pub mod limits_h {
 
-    pub const CHAR_BIT: i32 = 8;}
+    pub const CHAR_BIT: i32 = 8;
+}
 
 pub mod util_mem_h {
     #[inline]
@@ -509,42 +427,6 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::keymap_h::{
-    entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
-    xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
-    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keymap_key_get_level, xkb_keysym_count_t, xkb_led, xkb_level,
-    xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
-    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
-    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
-    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2,
-    C2Rust_Unnamed_23, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
-    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey,
-    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
-    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
-    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
-    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
-    EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT, EXPLICIT_SYMBOLS, EXPLICIT_TYPES,
-    EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
-    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
-    XKB_MAX_GROUPS, XKB_MOD_ALL, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1,
-    XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
-    XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
-};
 pub use self::limits_h::CHAR_BIT;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -619,10 +501,44 @@ pub use self::xkbcommon_features_h::{
     XKB_FEATURE_ENUM_STATE_MATCH,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 pub use crate::xkb::keymap_priv::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
 pub use crate::xkb::shared_types::darray_size_t;
+pub use crate::xkb::shared_types::{
+    entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
+    xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
+    xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation, xkb_mod,
+    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
+    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
+    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_23,
+    C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES,
+    _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
+    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
+    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
+    EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT, EXPLICIT_SYMBOLS, EXPLICIT_TYPES,
+    EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
+    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
+    XKB_MAX_GROUPS, XKB_MOD_ALL, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1,
+    XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
+    XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
+};
 use libc::{calloc, free, qsort};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -4802,11 +4718,15 @@ unsafe fn c2rust_run_static_initializers() {
         };
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
-use crate::xkb::keymap::{xkb_keymap_key_get_syms_by_level, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref, xkb_keymap_mod_get_index, xkb_keymap_layout_get_index, xkb_keymap_led_get_index};
+use crate::xkb::keymap::{
+    xkb_keymap_key_get_syms_by_level, xkb_keymap_layout_get_index, xkb_keymap_led_get_index,
+    xkb_keymap_mod_get_index, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref,
+    xkb_keymap_unref,
+};
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
 use crate::xkb::keysym_utf::{xkb_keysym_to_utf32, xkb_keysym_to_utf8};
+use crate::xkb::shared_types::*;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

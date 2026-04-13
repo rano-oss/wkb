@@ -1,5 +1,7 @@
 use crate::xkb::context::{xkb_context_num_include_paths, xkb_context_include_path_get};
 use crate::xkb_logf;
+use crate::xkb::context_priv::{xkb_context_num_failed_include_paths, xkb_context_failed_include_path_get, xkb_context_getenv};
+use crate::xkb::context::{xkb_context_include_path_get_system_path, xkb_context_include_path_get_extra_path};
 
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -97,23 +99,6 @@ pub mod messages_codes_h {
     pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: xkb_message_code = 34;
     pub const _XKB_LOG_MESSAGE_MIN_CODE: xkb_message_code = 34;
 }
-pub mod context_h {
-    pub use crate::xkb::context::{
-        xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-    };
-    pub use crate::xkb::context_priv::{
-        xkb_context_failed_include_path_get, xkb_context_getenv,
-        xkb_context_num_failed_include_paths,
-    };
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
-        C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::atom_table;
-}
-
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
@@ -237,7 +222,7 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
             core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
@@ -249,7 +234,7 @@ pub mod scanner_utils_h {
 pub mod xkbcomp_priv_h {
     use libc::{FILE};
     use super::ast_h::XkbFile;
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn XkbParseFile(
         ctx: *mut xkb_context,
@@ -297,11 +282,6 @@ pub use self::ast_h::{
     STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
-};
-pub use self::context_h::{
-    xkb_context, xkb_context_failed_include_path_get, xkb_context_getenv,
-    xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-    xkb_context_num_failed_include_paths, C2Rust_Unnamed, C2Rust_Unnamed_0,
 };
 pub use self::include_h::{
     INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,

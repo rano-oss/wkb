@@ -1,28 +1,4 @@
-pub mod context_h {
-    pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
-    pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
-    #[inline]
-    pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-            CONTROL_ALL_BOOLEAN_V1 as i32
-        } else {
-            CONTROL_ALL_BOOLEAN as i32
-        }) as xkb_action_controls;
-    }
-}
+use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
 pub mod text_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -65,11 +41,7 @@ pub mod keysym_h {
     pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31 as i32;
 }
 
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{
-    xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
     xkb_mod, xkb_mod_set, _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,

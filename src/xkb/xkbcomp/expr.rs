@@ -1,4 +1,5 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::xkb_atom_text;
 
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
@@ -11,24 +12,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_text;
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    pub const XKB_ATOM_NONE: i32 = 0 as i32;
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_overlay_index_t = u8;
-    pub const XKB_LEVEL_MAX_IMPL: i32 = 2048 as i32;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -225,10 +208,8 @@ pub use self::ast_h::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::inttypes_h::imaxabs;
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,

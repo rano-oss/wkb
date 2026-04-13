@@ -772,6 +772,67 @@ pub struct xkb_state_update {
     pub layout_policy: *const xkb_layout_policy_update,
 }
 
+pub const XKB_ATOM_NONE: i32 = 0;
+
+// ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
+
+pub type C2Rust_Unnamed_13 = u32;
+pub type C2Rust_Unnamed_14 = u32;
+pub type C2Rust_Unnamed_15 = u32;
+pub type C2Rust_Unnamed_23 = u32;
+pub type real_mod_index = u32;
+
+pub const _LAST_XKB_EVENT_TYPE: C2Rust_Unnamed_13 = 4;
+
+pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
+pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 1;
+pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
+
+pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
+pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
+pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_15 = 4294967295;
+pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_15 = 0;
+
+pub const XKB_MOD_ALL: C2Rust_Unnamed_23 = 4294967295;
+pub const XKB_MOD_NONE: u32 = 0xffffffff;
+pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
+pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
+pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
+pub const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
+pub const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
+pub const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
+pub const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
+pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
+pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
+
+pub const XKB_MAX_GROUPS_X11: i32 = 4;
+pub const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
+
+pub const XKB_OVERLAY_MAX_X11: i32 = 2;
+pub const XKB_OVERLAY_MAX: u64 =
+    (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
+pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1;
+pub const XKB_OVERLAY_INVALID: i32 = 255;
+
+pub const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
+pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
+pub const XKB_MAX_MODS: xkb_mod_index_t = (::core::mem::size_of::<xkb_mod_mask_t>() as usize)
+    .wrapping_mul(CHAR_BIT as usize) as xkb_mod_index_t;
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_keymap_format_ops {
+    pub keymap_new_from_rmlvo: Option<
+        unsafe fn(*mut xkb_keymap, *const crate::xkb::rmlvo::rmlvo_h::xkb_rmlvo_builder) -> bool,
+    >,
+    pub keymap_new_from_names: Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
+    pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
+    pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,
+    pub keymap_get_as_string: Option<
+        unsafe fn(*mut xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags) -> *mut i8,
+    >,
+}
+
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
@@ -782,4 +843,123 @@ pub unsafe fn XkbKeyNumLevels(
     unsafe {
         return (*(*(*key).groups.offset(layout as isize)).type_0).num_levels;
     }
+}
+
+#[inline]
+pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
+    unsafe {
+        if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
+            return ::core::ptr::null::<xkb_key>();
+        } else if kc < (*keymap).num_keys_low {
+            return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
+        } else {
+            let mut lower: xkb_keycode_t = (*keymap).num_keys_low;
+            let mut upper: xkb_keycode_t = (*keymap).num_keys;
+            while lower < upper {
+                let mid: xkb_keycode_t = lower.wrapping_add(
+                    upper
+                        .wrapping_sub(1 as xkb_keycode_t)
+                        .wrapping_sub(lower)
+                        .wrapping_div(2 as xkb_keycode_t),
+                );
+                let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
+                if (*key).keycode < kc {
+                    lower = mid.wrapping_add(1 as xkb_keycode_t);
+                } else if (*key).keycode > kc {
+                    upper = mid;
+                } else {
+                    return key;
+                }
+            }
+            return ::core::ptr::null::<xkb_key>();
+        };
+    }
+}
+
+#[inline]
+pub unsafe fn XkbKeyByName(
+    mut keymap: *const xkb_keymap,
+    mut name: xkb_atom_t,
+    mut use_aliases: bool,
+) -> *mut xkb_key {
+    unsafe {
+        if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
+            let match_0: KeycodeMatch = *(*keymap)
+                .c2rust_unnamed
+                .c2rust_unnamed
+                .key_names
+                .offset(name as isize);
+            if match_0.c2rust_unnamed.found() {
+                if !match_0.c2rust_unnamed.is_alias() {
+                    return (*keymap).keys.offset(match_0.key.index() as isize) as *mut xkb_key;
+                } else if use_aliases {
+                    return (*keymap).keys.offset(
+                        (*(*keymap)
+                            .c2rust_unnamed
+                            .c2rust_unnamed
+                            .key_names
+                            .offset(match_0.alias.real() as isize))
+                        .key
+                        .index() as isize,
+                    ) as *mut xkb_key;
+                }
+            }
+        }
+        return ::core::ptr::null_mut::<xkb_key>();
+    }
+}
+
+#[inline]
+pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
+    unsafe {
+        return (*entry).mods.mods == 0 as xkb_mod_mask_t
+            || (*entry).mods.mask != 0 as xkb_mod_mask_t;
+    }
+}
+
+#[inline]
+pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+        XKB_OVERLAY_MAX_X11 as usize
+    } else {
+        XKB_OVERLAY_MAX as usize
+    }) as xkb_overlay_index_t;
+}
+
+#[inline]
+pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+        XKB_MAX_GROUPS_X11
+    } else {
+        XKB_MAX_GROUPS
+    }) as xkb_layout_index_t;
+}
+
+#[inline]
+pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+        CONTROL_ALL_BOOLEAN_V1 as i32
+    } else {
+        CONTROL_ALL_BOOLEAN as i32
+    }) as xkb_action_controls;
+}
+
+#[inline]
+pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+}
+
+#[inline]
+pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+}
+
+#[inline]
+pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+}
+
+#[inline]
+pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
 }

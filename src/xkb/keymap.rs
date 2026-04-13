@@ -1,4 +1,5 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::{xkb_context_sanitize_rule_names, xkb_atom_text, xkb_atom_lookup};
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
@@ -7,89 +8,13 @@ pub mod __stddef_size_t_h {
     #[c2rust::src_loc = "18:1"]
     pub type size_t = usize;
 }
-#[c2rust::header_src = "/usr/include/bits/types/struct_FILE.h:19"]
-#[c2rust::header_src = "/usr/include/bits/types/FILE.h:19"]
-pub mod context_h {
-    pub use crate::xkb::context_priv::{
-        xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names,
-    };
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    #[c2rust::src_loc = "19:9"]
-    pub const XKB_ATOM_NONE: i32 = 0 as i32;
-}
-
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
-pub mod keymap_h {
-    use super::rmlvo_h::xkb_rmlvo_builder;
-    pub use crate::xkb::shared_types::*;
-    use libc::FILE;
-
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "943:1"]
-    pub struct xkb_keymap_format_ops {
-        pub keymap_new_from_rmlvo:
-            Option<unsafe fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool>,
-        pub keymap_new_from_names:
-            Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
-        pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
-        pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut FILE) -> bool>,
-        pub keymap_get_as_string: Option<
-            unsafe fn(*mut xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags) -> *mut i8,
-        >,
-    }
-    #[inline]
-    #[c2rust::src_loc = "855:1"]
-    pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
-        unsafe {
-            if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
-                return ::core::ptr::null::<xkb_key>();
-            } else if kc < (*keymap).num_keys_low {
-                return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
-            } else {
-                let mut lower: xkb_keycode_t = (*keymap).num_keys_low;
-                let mut upper: xkb_keycode_t = (*keymap).num_keys;
-                while lower < upper {
-                    let mid: xkb_keycode_t = lower.wrapping_add(
-                        upper
-                            .wrapping_sub(1 as xkb_keycode_t)
-                            .wrapping_sub(lower)
-                            .wrapping_div(2 as xkb_keycode_t),
-                    );
-                    let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
-                    if (*key).keycode < kc {
-                        lower = mid.wrapping_add(1 as xkb_keycode_t);
-                    } else if (*key).keycode > kc {
-                        upper = mid;
-                    } else {
-                        return key;
-                    }
-                }
-                return ::core::ptr::null::<xkb_key>();
-            };
-        }
-    }
-    #[inline]
-    #[c2rust::src_loc = "896:1"]
-    pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
-        unsafe {
-            return (*entry).mods.mods == 0 as xkb_mod_mask_t
-                || (*entry).mods.mask != 0 as xkb_mod_mask_t;
-        }
-    }
-}
 
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
-unsafe fn text_v1_keymap_format_ops_ptr() -> *const keymap_h::xkb_keymap_format_ops {
+unsafe fn text_v1_keymap_format_ops_ptr() -> *const xkb_keymap_format_ops {
     &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
-        as *const keymap_h::xkb_keymap_format_ops
+        as *const xkb_keymap_format_ops
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/rmlvo.h:22"]
 pub mod rmlvo_h {
@@ -348,11 +273,6 @@ pub mod enums_h {
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_null.h:17"]
 #[c2rust::header_src = "/usr/include/stdint.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/stdbool.h:22"]
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{
-    xkb_atom_lookup, xkb_atom_text, xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed,
-    C2Rust_Unnamed_0,
-};
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
@@ -363,7 +283,7 @@ pub use self::enums_h::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
     xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,

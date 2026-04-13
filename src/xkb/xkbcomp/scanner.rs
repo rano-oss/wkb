@@ -1,16 +1,6 @@
 use crate::xkb::shared_types::*;
 use crate::xkb_logf;
-
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_intern;
-    pub use crate::xkb::shared_types::{
-        atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
-        C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-}
+use crate::xkb::context_priv::xkb_atom_intern;
 
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
@@ -417,7 +407,7 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::utf8_h::utf32_to_utf8;
     use super::utils_h::is_ascii;
@@ -576,7 +566,7 @@ pub mod parser_h {
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
     };
-    use super::atom_h::xkb_atom_t;
+    use crate::xkb::shared_types::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
 }
@@ -1041,8 +1031,6 @@ pub use self::ast_h::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

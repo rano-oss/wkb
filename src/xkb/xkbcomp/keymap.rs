@@ -13,80 +13,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type real_mod_index = u32;
-    pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
-    pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
-    pub const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
-    pub const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
-    pub const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
-    pub const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
-    pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
-    pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
-    pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
-    pub type xkb_overlay_index_t = u8;
-    pub type C2Rust_Unnamed_14 = u32;
-    pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
-    pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 1;
-    pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
-    pub type C2Rust_Unnamed_15 = u32;
-    pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_15 = 4294967295;
-    pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const XKB_ALL_GROUPS: u64 = ((1 as u64) << XKB_MAX_GROUPS).wrapping_sub(1 as u64);
-    pub const XKB_MAX_GROUPS_X11: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
-    #[inline]
-    pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-            XKB_MAX_GROUPS_X11
-        } else {
-            XKB_MAX_GROUPS
-        }) as xkb_layout_index_t;
-    }
-    pub const XKB_OVERLAY_MAX_X11: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-    pub const XKB_OVERLAY_MAX: u64 =
-        (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
-    #[inline]
-    pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-            XKB_OVERLAY_MAX_X11 as usize
-        } else {
-            XKB_OVERLAY_MAX as usize
-        }) as xkb_overlay_index_t;
-    }
-    pub const MAX_ACTIONS_PER_LEVEL: ::core::ffi::c_int = u16::MAX as ::core::ffi::c_int;
-    #[inline]
-    pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
-        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-    }
-    #[inline]
-    pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
-        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-    }
-    #[inline]
-    pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
-        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-    }
-    #[inline]
-    pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
-        return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32;
-    }
-    pub use crate::xkb::state::mod_mask_get_effective;
-}
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_13 = DarrayKeysym;
@@ -228,7 +154,7 @@ pub mod xkbcomp_priv_h {
     pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 }
 pub mod utils_h {
-    use libc::{calloc};
+    use libc::calloc;
     #[inline]
     pub unsafe fn is_aligned(
         mut pointer: *const ::core::ffi::c_void,
@@ -254,10 +180,10 @@ pub mod utils_h {
             return p;
         }
     }
-
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
+    pub const CHAR_BIT: ::core::ffi::c_int = 8;
+}
 pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
@@ -288,48 +214,7 @@ pub use self::ast_h::{
     STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
-pub use self::keymap_h::{
-    areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
-    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
-    mod_mask_get_effective, mod_type, real_mod_index, xkb_action, xkb_action_controls,
-    xkb_action_count_t, xkb_action_flags, xkb_action_type, xkb_controls_action,
-    xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation, xkb_mod,
-    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_14, C2Rust_Unnamed_15,
-    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
-    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKeyNumLevels,
-    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
-    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
-    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
-    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
-    DEFAULT_INTERPRET_KEY_REPEAT, DEFAULT_INTERPRET_VMOD, DEFAULT_INTERPRET_VMODMAP,
-    DEFAULT_KEY_REPEAT, DEFAULT_KEY_VMODMAP, EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT,
-    EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
-    FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
-    MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MAX_ACTIONS_PER_LEVEL, MOD_BOTH,
-    MOD_REAL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS,
-    XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3,
-    XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX,
-    XKB_OVERLAY_MAX_X11,
-};
 pub use self::limits_h::CHAR_BIT;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -400,6 +285,45 @@ pub use self::xkbcomp_priv_h::{
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
 pub use crate::xkb::shared_types::darray_size_t;
+pub use crate::xkb::shared_types::{
+    areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
+    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
+    mod_type, real_mod_index, xkb_action, xkb_action_controls, xkb_action_count_t,
+    xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
+    xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,
+    xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level,
+    xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_14,
+    C2Rust_Unnamed_15, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
+    C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch,
+    XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
+    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
+    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
+    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
+    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
+    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
+    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
+    DEFAULT_INTERPRET_KEY_REPEAT, DEFAULT_INTERPRET_VMOD, DEFAULT_INTERPRET_VMODMAP,
+    DEFAULT_KEY_REPEAT, DEFAULT_KEY_VMODMAP, EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT,
+    EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
+    FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
+    MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MAX_ACTIONS_PER_LEVEL, MOD_BOTH,
+    MOD_REAL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS,
+    XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3,
+    XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX,
+    XKB_OVERLAY_MAX_X11,
+};
+pub use crate::xkb::state::mod_mask_get_effective;
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
@@ -1644,8 +1568,8 @@ unsafe fn c2rust_run_static_initializers() {
         }
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level;
+use crate::xkb::shared_types::*;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

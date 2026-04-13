@@ -1,17 +1,6 @@
 use crate::xkb::keysym::xkb_keysym_from_name;
 use crate::xkb_logf;
-
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_intern;
-    pub use crate::xkb::shared_types::{
-        atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
-        C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
+use crate::xkb::context_priv::xkb_atom_intern;
 
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -149,7 +138,7 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::utils_h::istrncmp;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
@@ -297,7 +286,7 @@ pub mod parser_h {
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
     };
-    use super::atom_h::xkb_atom_t;
+    use crate::xkb::shared_types::xkb_atom_t;
     use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
 }
@@ -421,8 +410,6 @@ pub use self::ast_h::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::keysym_h::{xkb_keysym_is_deprecated, XKB_KEYSYM_MIN};
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

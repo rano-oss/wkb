@@ -12,17 +12,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
-}
-
 pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -60,9 +49,9 @@ pub mod rmlvo_h {
         pub layout: *mut i8,
         pub variant: *mut i8,
     }
-    use super::context_h::xkb_context;
-    use crate::xkb::shared_types::xkb_layout_index_t;
     use crate::xkb::shared_types::darray_size_t;
+    use crate::xkb::shared_types::xkb_context;
+    use crate::xkb::shared_types::xkb_layout_index_t;
 }
 pub mod messages_codes_h {
     pub const XKB_ERROR_ALLOCATION_ERROR: xkb_message_code = 550;
@@ -168,15 +157,10 @@ pub mod utils_h {
 
     use crate::xkb::utils::cstr_dup;
 }
-pub mod keymap_h {
-    pub const XKB_MAX_GROUPS: i32 = 32 as i32;
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 }
 
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
-pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -234,6 +218,7 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
 pub use crate::xkb::shared_types::darray_size_t;
+pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 use crate::xkb::utils::cstr_cmp;
 use crate::xkb::utils::{darray_append, darray_free};
 use libc::{calloc, free};
@@ -621,5 +606,5 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         return true;
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
+use crate::xkb::shared_types::*;

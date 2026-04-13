@@ -1,3 +1,4 @@
+use crate::xkb::context_priv::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -13,16 +14,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod context_h {
-    pub use crate::xkb::context_priv::{xkb_context_sanitize_rule_names, RMLVO};
-    pub use crate::xkb::shared_types::{
-        xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::atom_table;
-}
-
 pub mod rmlvo_h {
     pub use crate::xkb::rmlvo::rmlvo_h::*;
     pub type RMLVO = u32;
@@ -326,10 +317,10 @@ pub mod scanner_utils_h {
         }
     }
 
-    use super::context_h::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::utils_h::is_ascii;
     use crate::xkb::shared_types::darray_size_t;
+    use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::XKB_LOG_LEVEL_ERROR;
     use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
@@ -413,7 +404,7 @@ pub mod include_h {
     pub use crate::xkb::xkbcomp::include::expand_path;
 
     use super::ast_h::xkb_file_type;
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn FindFileInXkbPath(
         ctx: *mut xkb_context,
@@ -446,9 +437,6 @@ pub mod errno_h {
         pub fn __errno_location() -> *mut ::core::ffi::c_int;
     }
 }
-pub mod keymap_h {
-    pub const XKB_MAX_GROUPS: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
@@ -461,14 +449,10 @@ pub use self::ast_h::{
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
 };
-pub use self::context_h::{
-    xkb_context, xkb_context_sanitize_rule_names, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
 pub use self::include_h::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
-pub use self::keymap_h::XKB_MAX_GROUPS;
 pub use self::messages_codes_h::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -533,6 +517,7 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
+pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,

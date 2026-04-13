@@ -1,12 +1,5 @@
 use crate::xkb_logf;
 
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-}
-
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -126,7 +119,7 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -197,7 +190,7 @@ pub mod keymap_file_iterator_h {
         pub ctx: *mut xkb_context,
     }
     use super::ast_h::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::scanner_utils_h::scanner;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
@@ -232,7 +225,7 @@ pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
     use super::ast_h::xkb_file_type;
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
 
     pub unsafe fn FindFileInXkbPath(
         ctx: *mut xkb_context,
@@ -264,7 +257,7 @@ pub mod xkbcomp_priv_h {
     use libc::{FILE};
 
     use super::ast_h::XkbFile;
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::scanner_utils_h::scanner;
 
     pub unsafe fn XkbParseFile(
@@ -338,7 +331,6 @@ pub use self::ast_h::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::keymap_file_iterator_h::{
     xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,

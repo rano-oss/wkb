@@ -2,13 +2,6 @@
 //!
 //! Fully safe internals. Functions are normal Rust — no FFI wrappers.
 
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub const XKB_ATOM_NONE: i32 = 0 as i32;
-}
-
-pub use self::atom_h::{xkb_atom_t, XKB_ATOM_NONE};
 pub use crate::xkb::shared_types::darray_size_t;
 
 use std::ffi::CString;

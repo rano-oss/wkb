@@ -20,17 +20,6 @@ pub mod getopt_ext_h {
     }
 }
 
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
-}
-
 pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -88,7 +77,7 @@ pub mod table_h {
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
     }
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
     use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
@@ -99,7 +88,7 @@ pub mod xkbcommon_compose_h {
     pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
     pub type xkb_compose_format = u32;
     pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     use super::table_h::xkb_compose_table;
     extern "C" {
         pub fn xkb_compose_table_new_from_locale(
@@ -126,7 +115,7 @@ pub mod dump_h {
 }
 pub mod tools_common_h {
     use libc::{FILE};
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
     extern "C" {
         pub fn tools_enable_verbose_logging(ctx: *mut xkb_context);
         pub fn is_pipe_or_regular_file(fd: i32) -> bool;
@@ -163,7 +152,6 @@ pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
 
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::dump_h::xkb_compose_table_dump;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};

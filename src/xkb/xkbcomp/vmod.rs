@@ -1,23 +1,6 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_text;
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub const XKB_MAX_MODS: xkb_mod_index_t = (::core::mem::size_of::<xkb_mod_mask_t>() as usize)
-        .wrapping_mul(CHAR_BIT as usize)
-        as xkb_mod_index_t;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -58,10 +41,8 @@ pub use self::ast_h::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 use self::expr_h::ExprResolveModMask;
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     mod_type, xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };
 pub use self::limits_h::CHAR_BIT;

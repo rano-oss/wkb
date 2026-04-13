@@ -1,19 +1,6 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::xkb_atom_intern;
 
-pub mod context_h {
-    pub use crate::xkb::context_priv::xkb_atom_intern;
-    pub use crate::xkb::shared_types::{
-        atom_table, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names, C2Rust_Unnamed,
-        C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-}
 pub mod enums_h {
     pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
     pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
@@ -66,8 +53,6 @@ pub mod xkbcommon_names_h {
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
 }
 
-pub use self::atom_h::{atom_table, xkb_atom_t};
-pub use self::context_h::{xkb_atom_intern, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
@@ -78,7 +63,7 @@ pub use self::enums_h::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,

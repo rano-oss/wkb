@@ -1,3 +1,4 @@
+use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -13,70 +14,8 @@ pub mod xkbcommon_errors_h {
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 }
-pub mod context_h {
-    pub use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-}
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_overlay_index_t = u8;
-    pub type C2Rust_Unnamed_14 = u32;
-    pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
-    pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 1;
-    pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
-    pub type C2Rust_Unnamed_15 = u32;
-    pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_15 = 4294967295;
-    pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_15 = 0;
-    pub const XKB_MOD_NONE: u32 = 0xffffffff as u32;
-    pub const XKB_OVERLAY_INVALID: ::core::ffi::c_int = 255 as ::core::ffi::c_int;
-    #[inline]
-    pub unsafe fn XkbKeyByName(
-        mut keymap: *const xkb_keymap,
-        mut name: xkb_atom_t,
-        mut use_aliases: bool,
-    ) -> *mut xkb_key {
-        unsafe {
-            if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-                let match_0: KeycodeMatch = *(*keymap)
-                    .c2rust_unnamed
-                    .c2rust_unnamed
-                    .key_names
-                    .offset(name as isize);
-                if match_0.c2rust_unnamed.found() {
-                    if !match_0.c2rust_unnamed.is_alias() {
-                        let key_index = match_0.key.index();
-                        let actual_name = (*(*keymap).keys.offset(key_index as isize)).name;
-                        return (*keymap).keys.offset(key_index as isize) as *mut xkb_key;
-                    } else if use_aliases {
-                        return (*keymap).keys.offset(
-                            (*(*keymap)
-                                .c2rust_unnamed
-                                .c2rust_unnamed
-                                .key_names
-                                .offset(match_0.alias.real() as isize))
-                            .key
-                            .index() as isize,
-                        ) as *mut xkb_key;
-                    }
-                }
-            }
-            return ::core::ptr::null_mut::<xkb_key>();
-        }
-    }
-    pub use crate::xkb::keymap::clear_level;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -209,7 +148,7 @@ pub mod action_h {
     };
 }
 pub mod utils_h {
-    use libc::{calloc};
+    use libc::calloc;
     #[inline]
     pub unsafe fn istreq(mut s1: *const i8, mut s2: *const i8) -> bool {
         unsafe {
@@ -249,7 +188,8 @@ pub mod utils_h {
     pub use crate::xkb::utils::{istrcmp, istrncmp};
 }
 pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
+    pub const CHAR_BIT: ::core::ffi::c_int = 8;
+}
 pub mod utils_numbers_h {
     #[inline]
     pub unsafe fn parse_dec_to_uint64_t(
@@ -359,49 +299,12 @@ pub use self::ast_h::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{
-    xkb_atom_intern, xkb_atom_text, xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
 pub use self::darray_h::darray_size_t;
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
     ExprResolveString,
 };
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::keymap_h::{
-    clear_level, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
-    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
-    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
-    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
-    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_14, C2Rust_Unnamed_15,
-    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
-    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKeyByName,
-    XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
-    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
-    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
-    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
-    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
-    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
-    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
-    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
-    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
-    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
-    DEFAULT_INTERPRET_KEY_REPEAT, DEFAULT_INTERPRET_VMOD, DEFAULT_INTERPRET_VMODMAP,
-    DEFAULT_KEY_REPEAT, DEFAULT_KEY_VMODMAP, EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT,
-    EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
-    FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
-    MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
-    XKB_MOD_NONE, XKB_OVERLAY_INVALID,
-};
 use self::keysym_h::{xkb_keysym_is_keypad, xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 pub use self::limits_h::CHAR_BIT;
 pub use self::messages_codes_h::{
@@ -472,14 +375,48 @@ pub use self::xkbcomp_priv_h::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
+pub use crate::xkb::keymap::clear_level;
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
+pub use crate::xkb::shared_types::{
+    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
+    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
+    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
+    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
+    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
+    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
+    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_14, C2Rust_Unnamed_15,
+    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
+    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKeyByName,
+    XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
+    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
+    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
+    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
+    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
+    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
+    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
+    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
+    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
+    DEFAULT_INTERPRET_KEY_REPEAT, DEFAULT_INTERPRET_VMOD, DEFAULT_INTERPRET_VMODMAP,
+    DEFAULT_KEY_REPEAT, DEFAULT_KEY_VMODMAP, EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT,
+    EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
+    FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
+    MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
+    XKB_MOD_NONE, XKB_OVERLAY_INVALID,
+};
 use crate::xkb::utils::cstr_len;
-use libc::{abort, atoi, calloc, free, realloc};
 use crate::xkb::utils::{
     darray_append, darray_appends, darray_free, darray_growalloc, darray_resize_zero,
 };
+use libc::{abort, atoi, calloc, free, realloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsInfo {
@@ -4377,6 +4314,6 @@ pub unsafe fn CompileSymbols(
         return 0 != 0;
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::xkb_context_get_log_verbosity;
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
+use crate::xkb::shared_types::*;

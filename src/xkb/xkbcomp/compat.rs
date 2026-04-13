@@ -1,35 +1,6 @@
 use crate::xkb_logf;
+use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_atom_text};
 
-pub mod context_h {
-    pub use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
-    pub use crate::xkb::shared_types::{
-        atom_table, darray_size_t, xkb_atom_t, xkb_context, xkb_log_level, xkb_rule_names,
-        C2Rust_Unnamed, C2Rust_Unnamed_0,
-    };
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
-    pub const XKB_ATOM_NONE: i32 = 0 as i32;
-}
-
-pub mod keymap_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_overlay_index_t = u8;
-    pub type C2Rust_Unnamed_13 = u32;
-    pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 0;
-    pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_13 = 1;
-    pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_13 = 0;
-    pub type C2Rust_Unnamed_14 = u32;
-    pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_14 = 0;
-    pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_14 = 0;
-    pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_14 = 4294967295;
-    pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_14 = 0;
-    pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
-        .wrapping_mul(CHAR_BIT as usize)
-        as xkb_led_index_t;
-    pub const MAX_ACTIONS_PER_LEVEL: i32 = u16::MAX as i32;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -225,16 +196,12 @@ pub use self::ast_h::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::atom_h::{atom_table, xkb_atom_t, XKB_ATOM_NONE};
-pub use self::context_h::{
-    xkb_atom_text, xkb_context, xkb_context_get_buffer, C2Rust_Unnamed, C2Rust_Unnamed_0,
-};
 use self::expr_h::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
     ExprResolveMod, ExprResolveModMask,
 };
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::keymap_h::{
+pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
     xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,

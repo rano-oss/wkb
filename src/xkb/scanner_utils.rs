@@ -1,14 +1,3 @@
-pub mod context_h {
-    pub use crate::xkb::shared_types::*;
-}
-pub mod atom_h {
-    pub use crate::xkb::shared_types::*;
-
-    extern "C" {
-        pub type atom_table;
-    }
-}
-
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -32,9 +21,8 @@ pub mod scanner_utils_h {
         pub priv_0: *mut ::core::ffi::c_void,
     }
 
-    use super::context_h::xkb_context;
+    use crate::xkb::shared_types::xkb_context;
 }
-pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use crate::xkb::shared_types::darray_size_t;
 pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
