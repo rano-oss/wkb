@@ -884,23 +884,23 @@ pub unsafe fn xkb_keymap_compare(
 ) -> bool {
     unsafe {
         let mut identical: bool = true;
-        if properties as u32 & XKB_KEYMAP_CMP_MODS as i32 as u32 != 0 {
+        if properties as u32 & XKB_KEYMAP_CMP_MODS as u32 != 0 {
             identical =
                 keymap_compare_mods(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as u32 & XKB_KEYMAP_CMP_TYPES as i32 as u32 != 0 {
+        if properties as u32 & XKB_KEYMAP_CMP_TYPES as u32 != 0 {
             identical =
                 keymap_compare_types(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as u32 & XKB_KEYMAP_CMP_LEDS as i32 as u32 != 0 {
+        if properties as u32 & XKB_KEYMAP_CMP_LEDS as u32 != 0 {
             identical =
                 keymap_compare_leds(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as u32 & XKB_KEYMAP_CMP_KEYCODES as i32 as u32 != 0 {
+        if properties as u32 & XKB_KEYMAP_CMP_KEYCODES as u32 != 0 {
             identical =
                 keymap_compare_keycodes(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }
-        if properties as u32 & XKB_KEYMAP_CMP_SYMBOLS as i32 as u32 != 0 {
+        if properties as u32 & XKB_KEYMAP_CMP_SYMBOLS as u32 != 0 {
             identical =
                 keymap_compare_symbols(ctx, keymap1, keymap2) as i32 != 0 && identical as i32 != 0;
         }

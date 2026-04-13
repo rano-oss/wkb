@@ -258,15 +258,15 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         let mut modified: RMLVO = 0 as RMLVO;
         if isempty((*rmlvo).rules) {
             (*rmlvo).rules = xkb_context_get_default_rules(ctx);
-            modified = (modified as u32 | RMLVO_RULES as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_RULES as u32) as RMLVO;
         }
         if isempty((*rmlvo).model) {
             (*rmlvo).model = xkb_context_get_default_model(ctx);
-            modified = (modified as u32 | RMLVO_MODEL as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_MODEL as u32) as RMLVO;
         }
         if isempty((*rmlvo).layout) {
             (*rmlvo).layout = xkb_context_get_default_layout(ctx);
-            modified = (modified as u32 | RMLVO_LAYOUT as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_LAYOUT as u32) as RMLVO;
             let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
             if !isempty((*rmlvo).variant) {
                 xkb_logf!(
@@ -284,11 +284,11 @@ pub unsafe fn xkb_context_sanitize_rule_names(
                 );
             }
             (*rmlvo).variant = variant;
-            modified = (modified as u32 | RMLVO_VARIANT as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_VARIANT as u32) as RMLVO;
         }
         if (*rmlvo).options.is_null() {
             (*rmlvo).options = xkb_context_get_default_options(ctx);
-            modified = (modified as u32 | RMLVO_OPTIONS as i32 as u32) as RMLVO;
+            modified = (modified as u32 | RMLVO_OPTIONS as u32) as RMLVO;
         }
         return modified;
     }

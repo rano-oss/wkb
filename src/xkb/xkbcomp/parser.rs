@@ -3693,7 +3693,7 @@ pub unsafe fn parse(
                 } else {
                     FreeXkbFile(param.rtrn);
                 }
-            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT as i32 as u32 != 0
+            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT as u32 != 0
             {
                 FreeXkbFile(first);
                 return param.rtrn;
@@ -4588,7 +4588,7 @@ unsafe fn yypcontext_expected_tokens(
     unsafe {
         let mut yycount: i32 = 0 as i32;
         let mut yyn: i32 =
-            yypact[*(*yyctx).yyssp as i32 as usize] as i32;
+            yypact[*(*yyctx).yyssp as usize] as i32;
         if !(yyn == YYPACT_NINF) {
             let mut yyxbegin: i32 = if yyn < 0 as i32 {
                 -yyn
@@ -6960,7 +6960,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
         while yyssp != yyss {
             yydestruct(
                 b"Cleanup: popping\0".as_ptr() as *const i8,
-                yystos[*yyssp as i32 as usize] as yysymbol_kind_t,
+                yystos[*yyssp as usize] as yysymbol_kind_t,
                 yyvsp,
                 param,
             );

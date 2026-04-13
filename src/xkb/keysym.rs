@@ -21788,7 +21788,7 @@ pub mod keysym_names_h {
             explicit_count: 0 as u8,
         },
     ];
-    pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as i32 as u32];
+    pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as u32];
 
     use crate::xkb::shared_types::xkb_keysym_t;
 }
@@ -22055,7 +22055,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
         let mut entry: *const name_keysym = std::ptr::null();
         let mut tmp: *mut i8 = std::ptr::null_mut();
         let mut val: u32 = 0;
-        let mut icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as i32 as u32 != 0;
+        let mut icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as u32 != 0;
         if !icase {
             let mut pos: usize = keysym_name_perfect_hash(name);
             if pos

@@ -53,14 +53,14 @@ pub unsafe fn MergeModSets(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let clobber: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
         let mut vmod: xkb_mod_index_t = 0;
         let mut mod_0: *const xkb_mod = std::ptr::null();
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
             let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
-            if (*mod_0).type_0 as u32 != MOD_VIRT as i32 as u32 {
+            if (*mod_0).type_0 as u32 != MOD_VIRT as u32 {
             } else if (*into).mods[vmod as usize].type_0 as u32 == 0 as u32 {
                 (*into).mods[vmod as usize] = *mod_0;
                 if (*from).explicit_vmods & mask != 0 {
@@ -125,7 +125,7 @@ pub unsafe fn HandleVModDef(
         mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
         while vmod < (*mods).num_mods {
             if (*mod_0).name == (*stmt).name {
-                if (*mod_0).type_0 as u32 != MOD_VIRT as i32 as u32 {
+                if (*mod_0).type_0 as u32 != MOD_VIRT as u32 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -142,7 +142,7 @@ pub unsafe fn HandleVModDef(
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
                     let clobber: bool =
-                        (*stmt).merge as u32 != MERGE_AUGMENT as i32 as u32;
+                        (*stmt).merge as u32 != MERGE_AUGMENT as u32;
                     let use_0: xkb_mod_mask_t = if clobber as i32 != 0 {
                         mapping
                     } else {

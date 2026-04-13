@@ -645,13 +645,13 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
             return std::ptr::null_mut();
         }
         (*ctx).set_use_environment_names(
-            (flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32 as u32 == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0) as bool,
         );
         (*ctx).set_use_secure_getenv(
-            (flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as i32 as u32 == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0) as bool,
         );
         (*ctx).set_pending_default_includes(
-            (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32 == 0) as bool,
+            (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0) as bool,
         );
         (*ctx).includes.item = std::ptr::null_mut();
         (*ctx).includes.size = 0 as darray_size_t;

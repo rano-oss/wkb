@@ -14,7 +14,7 @@ pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
     unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
 #[inline]
 pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         CONTROL_NAMES_MIN_V1_INDEX as i32
     } else {
         CONTROL_NAMES_MIN_V2_INDEX as i32
@@ -77,95 +77,95 @@ pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
         name: b"Overlay3\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY3 as i32 as u32,
+        value: CONTROL_OVERLAY3 as u32,
     },
     LookupEntry {
         name: b"Overlay4\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY4 as i32 as u32,
+        value: CONTROL_OVERLAY4 as u32,
     },
     LookupEntry {
         name: b"Overlay5\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY5 as i32 as u32,
+        value: CONTROL_OVERLAY5 as u32,
     },
     LookupEntry {
         name: b"Overlay6\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY6 as i32 as u32,
+        value: CONTROL_OVERLAY6 as u32,
     },
     LookupEntry {
         name: b"Overlay7\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY7 as i32 as u32,
+        value: CONTROL_OVERLAY7 as u32,
     },
     LookupEntry {
         name: b"Overlay8\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY8 as i32 as u32,
+        value: CONTROL_OVERLAY8 as u32,
     },
     LookupEntry {
         name: b"all\0".as_ptr() as *const i8,
-        value: CONTROL_ALL_BOOLEAN as i32 as u32,
+        value: CONTROL_ALL_BOOLEAN as u32,
     },
     LookupEntry {
         name: b"RepeatKeys\0".as_ptr() as *const i8,
-        value: CONTROL_REPEAT as i32 as u32,
+        value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
         name: b"Repeat\0".as_ptr() as *const i8,
-        value: CONTROL_REPEAT as i32 as u32,
+        value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
         name: b"AutoRepeat\0".as_ptr() as *const i8,
-        value: CONTROL_REPEAT as i32 as u32,
+        value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
         name: b"SlowKeys\0".as_ptr() as *const i8,
-        value: CONTROL_SLOW as i32 as u32,
+        value: CONTROL_SLOW as u32,
     },
     LookupEntry {
         name: b"BounceKeys\0".as_ptr() as *const i8,
-        value: CONTROL_DEBOUNCE as i32 as u32,
+        value: CONTROL_DEBOUNCE as u32,
     },
     LookupEntry {
         name: b"StickyKeys\0".as_ptr() as *const i8,
-        value: CONTROL_STICKY_KEYS as i32 as u32,
+        value: CONTROL_STICKY_KEYS as u32,
     },
     LookupEntry {
         name: b"MouseKeys\0".as_ptr() as *const i8,
-        value: CONTROL_MOUSE_KEYS as i32 as u32,
+        value: CONTROL_MOUSE_KEYS as u32,
     },
     LookupEntry {
         name: b"MouseKeysAccel\0".as_ptr() as *const i8,
-        value: CONTROL_MOUSE_KEYS_ACCEL as i32 as u32,
+        value: CONTROL_MOUSE_KEYS_ACCEL as u32,
     },
     LookupEntry {
         name: b"AccessXKeys\0".as_ptr() as *const i8,
-        value: CONTROL_AX as i32 as u32,
+        value: CONTROL_AX as u32,
     },
     LookupEntry {
         name: b"AccessXTimeout\0".as_ptr() as *const i8,
-        value: CONTROL_AX_TIMEOUT as i32 as u32,
+        value: CONTROL_AX_TIMEOUT as u32,
     },
     LookupEntry {
         name: b"AccessXFeedback\0".as_ptr() as *const i8,
-        value: CONTROL_AX_FEEDBACK as i32 as u32,
+        value: CONTROL_AX_FEEDBACK as u32,
     },
     LookupEntry {
         name: b"AudibleBell\0".as_ptr() as *const i8,
-        value: CONTROL_BELL as i32 as u32,
+        value: CONTROL_BELL as u32,
     },
     LookupEntry {
         name: b"IgnoreGroupLock\0".as_ptr() as *const i8,
-        value: CONTROL_IGNORE_GROUP_LOCK as i32 as u32,
+        value: CONTROL_IGNORE_GROUP_LOCK as u32,
     },
     LookupEntry {
         name: b"Overlay1\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY1 as i32 as u32,
+        value: CONTROL_OVERLAY1 as u32,
     },
     LookupEntry {
         name: b"Overlay2\0".as_ptr() as *const i8,
-        value: CONTROL_OVERLAY2 as i32 as u32,
+        value: CONTROL_OVERLAY2 as u32,
     },
     LookupEntry {
         name: b"all\0".as_ptr() as *const i8,
-        value: CONTROL_ALL_BOOLEAN_V1 as i32 as u32,
+        value: CONTROL_ALL_BOOLEAN_V1 as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const i8,
@@ -179,27 +179,27 @@ pub static mut ctrlMaskNames: [LookupEntry; 25] = [
 pub static mut modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_DEPRESSED as i32 as u32,
+        value: XKB_STATE_MODS_DEPRESSED as u32,
     },
     LookupEntry {
         name: b"latched\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_LATCHED as i32 as u32,
+        value: XKB_STATE_MODS_LATCHED as u32,
     },
     LookupEntry {
         name: b"locked\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_LOCKED as i32 as u32,
+        value: XKB_STATE_MODS_LOCKED as u32,
     },
     LookupEntry {
         name: b"effective\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_EFFECTIVE as i32 as u32,
+        value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
         name: b"compat\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_EFFECTIVE as i32 as u32,
+        value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
         name: b"any\0".as_ptr() as *const i8,
-        value: XKB_STATE_MODS_EFFECTIVE as i32 as u32,
+        value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const i8,
@@ -213,23 +213,23 @@ pub static mut modComponentMaskNames: [LookupEntry; 8] = [
 pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
         name: b"base\0".as_ptr() as *const i8,
-        value: XKB_STATE_LAYOUT_DEPRESSED as i32 as u32,
+        value: XKB_STATE_LAYOUT_DEPRESSED as u32,
     },
     LookupEntry {
         name: b"latched\0".as_ptr() as *const i8,
-        value: XKB_STATE_LAYOUT_LATCHED as i32 as u32,
+        value: XKB_STATE_LAYOUT_LATCHED as u32,
     },
     LookupEntry {
         name: b"locked\0".as_ptr() as *const i8,
-        value: XKB_STATE_LAYOUT_LOCKED as i32 as u32,
+        value: XKB_STATE_LAYOUT_LOCKED as u32,
     },
     LookupEntry {
         name: b"effective\0".as_ptr() as *const i8,
-        value: XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32,
+        value: XKB_STATE_LAYOUT_EFFECTIVE as u32,
     },
     LookupEntry {
         name: b"any\0".as_ptr() as *const i8,
-        value: XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32,
+        value: XKB_STATE_LAYOUT_EFFECTIVE as u32,
     },
     LookupEntry {
         name: b"none\0".as_ptr() as *const i8,
@@ -299,171 +299,171 @@ pub static mut useModMapValueNames: [LookupEntry; 5] = [
 pub static mut actionTypeNames: [LookupEntry; 43] = [
     LookupEntry {
         name: b"NoAction\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_NONE as i32 as u32,
+        value: ACTION_TYPE_NONE as u32,
     },
     LookupEntry {
         name: b"VoidAction\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_VOID as i32 as u32,
+        value: ACTION_TYPE_VOID as u32,
     },
     LookupEntry {
         name: b"SetMods\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_MOD_SET as i32 as u32,
+        value: ACTION_TYPE_MOD_SET as u32,
     },
     LookupEntry {
         name: b"LatchMods\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_MOD_LATCH as i32 as u32,
+        value: ACTION_TYPE_MOD_LATCH as u32,
     },
     LookupEntry {
         name: b"LockMods\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_MOD_LOCK as i32 as u32,
+        value: ACTION_TYPE_MOD_LOCK as u32,
     },
     LookupEntry {
         name: b"SetGroup\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_GROUP_SET as i32 as u32,
+        value: ACTION_TYPE_GROUP_SET as u32,
     },
     LookupEntry {
         name: b"LatchGroup\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_GROUP_LATCH as i32 as u32,
+        value: ACTION_TYPE_GROUP_LATCH as u32,
     },
     LookupEntry {
         name: b"LockGroup\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_GROUP_LOCK as i32 as u32,
+        value: ACTION_TYPE_GROUP_LOCK as u32,
     },
     LookupEntry {
         name: b"MovePtr\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_MOVE as i32 as u32,
+        value: ACTION_TYPE_PTR_MOVE as u32,
     },
     LookupEntry {
         name: b"MovePointer\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_MOVE as i32 as u32,
+        value: ACTION_TYPE_PTR_MOVE as u32,
     },
     LookupEntry {
         name: b"PtrBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_BUTTON as i32 as u32,
+        value: ACTION_TYPE_PTR_BUTTON as u32,
     },
     LookupEntry {
         name: b"PointerButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_BUTTON as i32 as u32,
+        value: ACTION_TYPE_PTR_BUTTON as u32,
     },
     LookupEntry {
         name: b"LockPtrBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_LOCK as i32 as u32,
+        value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
         name: b"LockPtrButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_LOCK as i32 as u32,
+        value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
         name: b"LockPointerButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_LOCK as i32 as u32,
+        value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
         name: b"LockPointerBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_LOCK as i32 as u32,
+        value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
         name: b"SetPtrDflt\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_DEFAULT as i32 as u32,
+        value: ACTION_TYPE_PTR_DEFAULT as u32,
     },
     LookupEntry {
         name: b"SetPointerDefault\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PTR_DEFAULT as i32 as u32,
+        value: ACTION_TYPE_PTR_DEFAULT as u32,
     },
     LookupEntry {
         name: b"Terminate\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_TERMINATE as i32 as u32,
+        value: ACTION_TYPE_TERMINATE as u32,
     },
     LookupEntry {
         name: b"TerminateServer\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_TERMINATE as i32 as u32,
+        value: ACTION_TYPE_TERMINATE as u32,
     },
     LookupEntry {
         name: b"SwitchScreen\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_SWITCH_VT as i32 as u32,
+        value: ACTION_TYPE_SWITCH_VT as u32,
     },
     LookupEntry {
         name: b"SetControls\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_CTRL_SET as i32 as u32,
+        value: ACTION_TYPE_CTRL_SET as u32,
     },
     LookupEntry {
         name: b"LockControls\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_CTRL_LOCK as i32 as u32,
+        value: ACTION_TYPE_CTRL_LOCK as u32,
     },
     LookupEntry {
         name: b"RedirectKey\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_REDIRECT_KEY as i32 as u32,
+        value: ACTION_TYPE_REDIRECT_KEY as u32,
     },
     LookupEntry {
         name: b"Redirect\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_REDIRECT_KEY as i32 as u32,
+        value: ACTION_TYPE_REDIRECT_KEY as u32,
     },
     LookupEntry {
         name: b"Private\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_PRIVATE as i32 as u32,
+        value: ACTION_TYPE_PRIVATE as u32,
     },
     LookupEntry {
         name: b"ISOLock\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"ActionMessage\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"MessageAction\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"Message\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DeviceBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DevBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DevButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DeviceButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"LockDeviceBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"LockDevBtn\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"LockDevButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"LockDeviceButton\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DeviceValuator\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DevVal\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DeviceVal\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: b"DevValuator\0".as_ptr() as *const i8,
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32,
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
         name: std::ptr::null(),
@@ -473,23 +473,23 @@ pub static mut actionTypeNames: [LookupEntry; 43] = [
 pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
         name: b"NoneOf\0".as_ptr() as *const i8,
-        value: MATCH_NONE as i32 as u32,
+        value: MATCH_NONE as u32,
     },
     LookupEntry {
         name: b"AnyOfOrNone\0".as_ptr() as *const i8,
-        value: MATCH_ANY_OR_NONE as i32 as u32,
+        value: MATCH_ANY_OR_NONE as u32,
     },
     LookupEntry {
         name: b"AnyOf\0".as_ptr() as *const i8,
-        value: MATCH_ANY as i32 as u32,
+        value: MATCH_ANY as u32,
     },
     LookupEntry {
         name: b"AllOf\0".as_ptr() as *const i8,
-        value: MATCH_ALL as i32 as u32,
+        value: MATCH_ALL as u32,
     },
     LookupEntry {
         name: b"Exactly\0".as_ptr() as *const i8,
-        value: MATCH_EXACTLY as i32 as u32,
+        value: MATCH_EXACTLY as u32,
     },
     LookupEntry {
         name: std::ptr::null(),
@@ -1596,7 +1596,7 @@ pub unsafe fn ModMaskText(
         if mask == MOD_REAL_MASK_ALL {
             return b"all\0".as_ptr() as *const i8;
         }
-        if type_0 as u32 == MOD_REAL as i32 as u32 && mask & !MOD_REAL_MASK_ALL != 0
+        if type_0 as u32 == MOD_REAL as u32 && mask & !MOD_REAL_MASK_ALL != 0
             || (mask as u64 & !((1 as u64) << (*mods).num_mods).wrapping_sub(1 as u64) != 0) as i32
                 as i64
                 != 0

@@ -613,7 +613,7 @@ unsafe fn ExprResolveIntegerLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
                     return false;
                 }
-                *val_rtrn = if (*expr).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
+                *val_rtrn = if (*expr).common.type_0 as u32 == STMT_EXPR_NEGATE as u32 {
                     -l
                 } else {
                     !l
@@ -700,7 +700,7 @@ pub unsafe fn ExprResolveGroup(
             ),
             &raw const group_name_pattern as *const ::core::ffi::c_void,
         ) {
-            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 != 0
             {
                 PARSER_FATAL_ERROR as i32
@@ -708,7 +708,7 @@ pub unsafe fn ExprResolveGroup(
                 PARSER_RECOVERABLE_ERROR as i32
             }) as xkb_parser_error;
         }
-        if result < absolute as i32 as i64 || result > (*keymap_info).features.max_groups as i64 {
+        if result < absolute as i64 || result > (*keymap_info).features.max_groups as i64 {
             xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -719,7 +719,7 @@ pub unsafe fn ExprResolveGroup(
                 absolute as i32,
                 (*keymap_info).features.max_groups,
             );
-            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 != 0
             {
                 PARSER_FATAL_ERROR as i32
@@ -875,7 +875,7 @@ pub unsafe fn ExprResolveEnum(
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
-        if (*expr).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
+        if (*expr).common.type_0 as u32 != STMT_EXPR_IDENT as u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1031,7 +1031,7 @@ unsafe fn ExprResolveMaskLookup(
                             "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
                             crate::xkb::utils::CStrDisplay(
-                                if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as i32 as u32 {
+                                if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as u32 {
                                     b"divide\0".as_ptr() as *const i8
                                 } else {
                                     b"multiply\0".as_ptr() as *const i8
@@ -1190,7 +1190,7 @@ pub unsafe fn ExprResolveMod(
     mut ndx_rtrn: *mut xkb_mod_index_t,
 ) -> bool {
     unsafe {
-        if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as i32 as u32 {
+        if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,

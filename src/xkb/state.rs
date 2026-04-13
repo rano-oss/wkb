@@ -650,7 +650,7 @@ unsafe fn xkb_filter_group_set_new(
 ) {
     unsafe {
         (*filter).priv_0 = (*state).components.base_group as u32;
-        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
+        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -689,7 +689,7 @@ unsafe fn xkb_filter_group_set_func(
             return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).components.base_group = (*filter).priv_0 as i32;
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0 {
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0 {
             (*state).components.locked_group = 0 as i32 as i32;
         }
         (*filter).func = None;
@@ -704,34 +704,34 @@ unsafe fn get_state_component_changes(
     unsafe {
         let mut mask: xkb_state_component = 0 as xkb_state_component;
         if (*a).group != (*b).group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_EFFECTIVE as u32) as xkb_state_component;
         }
         if (*a).base_group != (*b).base_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_DEPRESSED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_DEPRESSED as u32) as xkb_state_component;
         }
         if (*a).latched_group != (*b).latched_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_LATCHED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_LATCHED as u32) as xkb_state_component;
         }
         if (*a).locked_group != (*b).locked_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_LOCKED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LAYOUT_LOCKED as u32) as xkb_state_component;
         }
         if (*a).mods != (*b).mods {
-            mask = (mask as u32 | XKB_STATE_MODS_EFFECTIVE as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_EFFECTIVE as u32) as xkb_state_component;
         }
         if (*a).base_mods != (*b).base_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_DEPRESSED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_DEPRESSED as u32) as xkb_state_component;
         }
         if (*a).latched_mods != (*b).latched_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_LATCHED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_LATCHED as u32) as xkb_state_component;
         }
         if (*a).locked_mods != (*b).locked_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_LOCKED as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_MODS_LOCKED as u32) as xkb_state_component;
         }
         if (*a).leds != (*b).leds {
-            mask = (mask as u32 | XKB_STATE_LEDS as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_LEDS as u32) as xkb_state_component;
         }
         if (*a).controls as u32 != (*b).controls as u32 {
-            mask = (mask as u32 | XKB_STATE_CONTROLS as i32 as u32) as xkb_state_component;
+            mask = (mask as u32 | XKB_STATE_CONTROLS as u32) as xkb_state_component;
         }
         return mask;
     }
@@ -743,9 +743,9 @@ unsafe fn xkb_filter_group_lock_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0 {
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0 {
             return;
-        } else if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
+        } else if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
             (*state).components.locked_group = (*filter).action.group.group;
         } else {
             (*state).components.locked_group += (*filter).action.group.group;
@@ -762,8 +762,8 @@ unsafe fn xkb_filter_group_lock_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0
-                && direction as u32 == XKB_KEY_DOWN as i32 as u32
+            if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0
+                && direction as u32 == XKB_KEY_DOWN as u32
             {
                 (*filter).action.group.flags = ((*filter).action.group.flags as u32
                     & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
@@ -787,8 +787,8 @@ unsafe fn xkb_filter_group_lock_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as i32 as u32 != 0 {
-            if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
+        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0 {
+            if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
                 (*state).components.locked_group = (*filter).action.group.group;
             } else {
                 (*state).components.locked_group += (*filter).action.group.group;
@@ -827,9 +827,9 @@ unsafe fn xkb_filter_group_latch_new(
                 let mut init = C2Rust_Unnamed_22 {
                     latch_group_delta: [0; 4],
                 };
-                init.set_latch(LATCH_KEY_DOWN as i32 as u32);
+                init.set_latch(LATCH_KEY_DOWN as u32);
                 init.set_group_delta(
-                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32
+                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32
                         != 0
                     {
                         (*filter).action.group.group - (*state).components.base_group
@@ -841,7 +841,7 @@ unsafe fn xkb_filter_group_latch_new(
             },
         };
         (*filter).priv_0 = priv_0.priv_0;
-        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0 {
+        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -861,12 +861,12 @@ unsafe fn xkb_filter_group_latch_func(
             priv_0: (*filter).priv_0,
         };
         let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch() as xkb_key_latch_state;
-        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
+        if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
-            if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
-                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 != 0 {
+            if latch as u32 == LATCH_KEY_DOWN as u32 {
+                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 != 0 {
                     let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
                     while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
@@ -883,26 +883,26 @@ unsafe fn xkb_filter_group_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as u32 == LATCH_PENDING as i32 as u32 {
+            } else if latch as u32 == LATCH_PENDING as u32 {
                 let sticky_keys: bool =
-                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
+                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
                 let flags: xkb_action_flags = ((*filter).action.group.flags as u32
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
                 while (k_0 as i32) < count as i32 {
                     if (*actions.offset(k_0 as isize)).type_0 as u32
-                        == ACTION_TYPE_GROUP_LATCH as i32 as u32
+                        == ACTION_TYPE_GROUP_LATCH as u32
                         && (*actions.offset(k_0 as isize)).group.group
                             == (*filter).action.group.group
                         && (*actions.offset(k_0 as isize)).group.flags as u32
                             == (*filter).action.group.flags as u32
                         || (*actions.offset(k_0 as isize)).type_0 as u32
-                            == ACTION_TYPE_GROUP_SET as i32 as u32
+                            == ACTION_TYPE_GROUP_SET as u32
                             && sticky_keys as i32 != 0
                             && (*actions.offset(k_0 as isize)).group.flags as u32 == flags as u32
                     {
-                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as i32 as u32
+                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as u32
                             != 0
                             && (*filter).action.group.group != 0 as i32
                         {
@@ -946,22 +946,22 @@ unsafe fn xkb_filter_group_latch_func(
             } else {
             }
         } else if !(key != (*filter).key) {
-            if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+            if direction as u32 == XKB_KEY_REPEATED as u32 {
                 return XKB_FILTER_CONSUME as i32 != 0;
-            } else if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
+            } else if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
                 && (*state).components.locked_group != 0
             {
-                if latch as u32 == LATCH_PENDING as i32 as u32 {
+                if latch as u32 == LATCH_PENDING as u32 {
                     (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
                 } else {
                     (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 }
                 (*state).components.locked_group = 0 as i32 as i32;
                 (*filter).func = None;
-            } else if latch as u32 == NO_LATCH as i32 as u32 {
+            } else if latch as u32 == NO_LATCH as u32 {
                 (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 (*filter).func = None;
-            } else if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
+            } else if latch as u32 == LATCH_KEY_DOWN as u32 {
                 latch = LATCH_PENDING;
                 (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
                 (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta();
@@ -1025,7 +1025,7 @@ unsafe fn xkb_filter_mod_set_func(
         (*state).clear_mods |= (*filter).priv_0;
         let unlock: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags as u32 & unlock as u32 == ACTION_LOCK_CLEAR as i32 as u32 {
+        if (*filter).action.mods.flags as u32 & unlock as u32 == ACTION_LOCK_CLEAR as u32 {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
         }
         (*filter).func = None;
@@ -1042,15 +1042,15 @@ unsafe fn xkb_filter_mod_lock_new(
         (*filter).priv_0 =
             ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as u32;
         if (*filter).priv_0 != 0
-            && (*filter).action.mods.flags as u32 & ACTION_UNLOCK_ON_PRESS as i32 as u32 != 0
+            && (*filter).action.mods.flags as u32 & ACTION_UNLOCK_ON_PRESS as u32 != 0
         {
-            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0 {
+            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0 {
                 (*state).components.locked_mods &= !(*filter).priv_0;
             }
             (*filter).func = None;
         } else {
             (*state).set_mods |= (*filter).action.mods.mods.mask;
-            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_LOCK as i32 as u32 == 0 {
+            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_LOCK as u32 == 0 {
                 (*state).components.locked_mods |= (*filter).action.mods.mods.mask;
             }
         };
@@ -1085,7 +1085,7 @@ unsafe fn xkb_filter_mod_lock_func(
             return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).clear_mods |= (*filter).action.mods.mods.mask;
-        if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0 {
+        if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0 {
             (*state).components.locked_mods &= !(*filter).priv_0;
         }
         (*filter).func = None;
@@ -1101,18 +1101,18 @@ unsafe fn xkb_filter_mod_latch_new(
     unsafe {
         let unlockOnPress: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
+        if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
             && (*filter).action.mods.flags as u32 & unlockOnPress as u32 != 0
             && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                 == (*filter).action.mods.mods.mask
         {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
             (*filter).func = None;
-        } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as i32 as u32 != 0 {
-            (*filter).priv_0 = LATCH_PENDING as i32 as u32;
+        } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32 != 0 {
+            (*filter).priv_0 = LATCH_PENDING as u32;
             (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = LATCH_KEY_DOWN as i32 as u32;
+            (*filter).priv_0 = LATCH_KEY_DOWN as u32;
             (*state).set_mods |= (*filter).action.mods.mods.mask;
         };
     }
@@ -1127,12 +1127,12 @@ unsafe fn xkb_filter_mod_latch_func(
 ) -> bool {
     unsafe {
         let mut latch: xkb_key_latch_state = (*filter).priv_0 as xkb_key_latch_state;
-        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
+        if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
-            if latch as u32 == LATCH_KEY_DOWN as i32 as u32 {
-                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 != 0 {
+            if latch as u32 == LATCH_KEY_DOWN as u32 {
+                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 != 0 {
                     let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
                     while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
@@ -1149,26 +1149,26 @@ unsafe fn xkb_filter_mod_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as u32 == LATCH_PENDING as i32 as u32 {
+            } else if latch as u32 == LATCH_PENDING as u32 {
                 let sticky_keys: bool =
-                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
+                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
                 let flags: xkb_action_flags = ((*filter).action.mods.flags as u32
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: xkb_action_count_t = 0 as xkb_action_count_t;
                 while (k_0 as i32) < count as i32 {
                     if ((*actions.offset(k_0 as isize)).type_0 as u32
-                        == ACTION_TYPE_MOD_LATCH as i32 as u32
+                        == ACTION_TYPE_MOD_LATCH as u32
                         && (*actions.offset(k_0 as isize)).mods.flags as u32
                             == (*filter).action.mods.flags as u32
                         || (*actions.offset(k_0 as isize)).type_0 as u32
-                            == ACTION_TYPE_MOD_SET as i32 as u32
+                            == ACTION_TYPE_MOD_SET as u32
                             && sticky_keys as i32 != 0
                             && (*actions.offset(k_0 as isize)).mods.flags as u32 == flags as u32)
                         && (*actions.offset(k_0 as isize)).mods.mods.mask
                             == (*filter).action.mods.mods.mask
                     {
-                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as i32 as u32
+                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as u32
                             != 0
                         {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
@@ -1232,28 +1232,28 @@ unsafe fn xkb_filter_mod_latch_func(
             } else {
             }
         } else if !(key != (*filter).key) {
-            if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+            if direction as u32 == XKB_KEY_REPEATED as u32 {
                 return XKB_FILTER_CONSUME as i32 != 0;
             } else {
                 let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as i32
                     | ACTION_LATCH_ON_PRESS as i32)
                     as xkb_action_flags;
-                if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as i32 as u32 != 0
+                if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
                     && (*filter).action.mods.flags as u32 & unlockOnPress as u32 == 0
                     && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                         == (*filter).action.mods.mods.mask
                 {
-                    if latch as u32 == LATCH_PENDING as i32 as u32 {
+                    if latch as u32 == LATCH_PENDING as u32 {
                         (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
                     } else {
                         (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     }
                     (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if latch as u32 == NO_LATCH as i32 as u32 {
+                } else if latch as u32 == NO_LATCH as u32 {
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as i32 as u32
+                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32
                     == 0
                 {
                     latch = LATCH_PENDING;
@@ -1273,15 +1273,15 @@ unsafe fn xkb_filter_ctrls_new(
     mut filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32 {
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32 {
             (*filter).priv_0 = (!((*state).components.controls as u32)
                 & (*filter).action.ctrls.ctrls as u32) as u32;
         } else {
             (*filter).priv_0 =
                 ((*state).components.controls as u32 & (*filter).action.ctrls.ctrls as u32) as u32;
         }
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32
-            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_LOCK as i32 as u32 == 0
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32
+            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_LOCK as u32 == 0
         {
             (*state).components.controls = ((*state).components.controls as u32
                 | (*filter).action.ctrls.ctrls as u32)
@@ -1317,15 +1317,15 @@ unsafe fn xkb_filter_ctrls_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as i32 as u32
-            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_UNLOCK as i32 as u32 == 0
+        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32
+            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0
         {
             let old: xkb_action_controls = (*state).components.controls;
             (*state).components.controls = ((*state).components.controls as u32
                 & !((*filter).priv_0 as xkb_action_controls as u32))
                 as xkb_action_controls;
-            if old as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0
-                && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 == 0
+            if old as u32 & CONTROL_STICKY_KEYS as u32 != 0
+                && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
             {
                 clear_all_latches_and_locks(state, events);
             }
@@ -1355,7 +1355,7 @@ unsafe fn append_redirect_key_events(
             while (*events).queue.size > 0 as darray_size_t
                 && event >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
             {
-                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
                     last_components = (*event).c2rust_unnamed.components.components;
                     break;
                 } else {
@@ -1392,9 +1392,9 @@ unsafe fn append_redirect_key_events(
             &mut (*events).queue.size,
             &mut (*events).queue.alloc,
             xkb_event {
-                type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
+                type_0: (if direction as u32 == XKB_KEY_UP as u32 {
                     XKB_EVENT_TYPE_KEY_UP as i32
-                } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                } else if direction as u32 == XKB_KEY_REPEATED as u32 {
                     XKB_EVENT_TYPE_KEY_REPEATED as i32
                 } else {
                     XKB_EVENT_TYPE_KEY_DOWN as i32
@@ -1456,7 +1456,7 @@ unsafe fn xkb_filter_redirect_key_func(
         if key != (*filter).key {
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
-        if direction as u32 == XKB_KEY_UP as i32 as u32 {
+        if direction as u32 == XKB_KEY_UP as u32 {
             append_redirect_key_events(
                 state,
                 events,
@@ -1465,14 +1465,14 @@ unsafe fn xkb_filter_redirect_key_func(
             );
             (*filter).func = None;
             return XKB_FILTER_CONSUME as i32 != 0;
-        } else if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
+        } else if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: xkb_action_count_t =
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
             let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
             while (a as i32) < count as i32 {
                 if (*actions.offset(a as isize)).type_0 as u32
-                    == ACTION_TYPE_REDIRECT_KEY as i32 as u32
+                    == ACTION_TYPE_REDIRECT_KEY as u32
                     && (*actions.offset(a as isize)).redirect.keycode
                         != (*filter).action.redirect.keycode
                 {
@@ -1716,7 +1716,7 @@ unsafe fn xkb_filter_apply_all(
                 filter = filter.offset(1);
             }
         }
-        if consumed as i32 != 0 || direction as u32 == XKB_KEY_UP as i32 as u32 {
+        if consumed as i32 != 0 || direction as u32 == XKB_KEY_UP as u32 {
             return;
         }
         let mut actions: *const xkb_action = std::ptr::null();
@@ -1725,7 +1725,7 @@ unsafe fn xkb_filter_apply_all(
         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
         while (k as i32) < count as i32 {
             if !((*actions.offset(k as isize)).type_0 as u32
-                >= _ACTION_TYPE_NUM_ENTRIES as i32 as u32)
+                >= _ACTION_TYPE_NUM_ENTRIES as u32)
             {
                 if !filter_action_funcs[(*actions.offset(k as isize)).type_0 as usize]
                     .new
@@ -1734,27 +1734,27 @@ unsafe fn xkb_filter_apply_all(
                     filter = xkb_filter_new(state);
                     (*filter).key = key;
                     (*filter).action = *actions.offset(k as isize);
-                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0
+                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0
                     {
-                        if (*filter).action.type_0 as u32 == ACTION_TYPE_MOD_SET as i32 as u32 {
+                        if (*filter).action.type_0 as u32 == ACTION_TYPE_MOD_SET as u32 {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
-                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as i32 as u32 != 0 {
+                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
                                 (*filter).action.mods.flags = ((*filter).action.mods.flags as u32
-                                    | ACTION_LATCH_TO_LOCK as i32 as u32)
+                                    | ACTION_LATCH_TO_LOCK as u32)
                                     as xkb_action_flags;
                             }
                         } else if (*filter).action.type_0 as u32
-                            == ACTION_TYPE_GROUP_SET as i32 as u32
+                            == ACTION_TYPE_GROUP_SET as u32
                         {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
-                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as i32 as u32 != 0 {
+                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
                                 (*filter).action.group.flags = ((*filter).action.group.flags as u32
-                                    | ACTION_LATCH_TO_LOCK as i32 as u32)
+                                    | ACTION_LATCH_TO_LOCK as u32)
                                     as xkb_action_flags;
                             }
                         }
                     }
-                    if (*filter).action.type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as i32 as u32 {
+                    if (*filter).action.type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32 {
                         (*filter).action.redirect.affect = mod_mask_get_effective(
                             (*state).keymap,
                             (*filter).action.redirect.affect,
@@ -1784,11 +1784,11 @@ unsafe fn xkb_state_init(
 ) {
     unsafe {
         (*state).flags = a11y_flags;
-        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32
-            && a11y_affect as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32 == 0
+        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as u32
+            && a11y_affect as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 == 0
         {
             (*state).flags = ((*state).flags as u32
-                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as i32 as u32)
+                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32)
                 as xkb_a11y_flags;
         }
         (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
@@ -1852,16 +1852,16 @@ unsafe fn xkb_state_led_update_all(mut state: *mut xkb_state) {
         while idx < (*(*state).keymap).num_leds {
             if (*led).which_mods as u32 != 0 as u32 && (*led).mods.mask != 0 as xkb_mod_mask_t {
                 let mut mod_mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-                if (*led).which_mods as u32 & XKB_STATE_MODS_EFFECTIVE as i32 as u32 != 0 {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_EFFECTIVE as u32 != 0 {
                     mod_mask |= (*state).components.mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_DEPRESSED as i32 as u32 != 0 {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_DEPRESSED as u32 != 0 {
                     mod_mask |= (*state).components.base_mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_LATCHED as i32 as u32 != 0 {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_LATCHED as u32 != 0 {
                     mod_mask |= (*state).components.latched_mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_LOCKED as i32 as u32 != 0 {
+                if (*led).which_mods as u32 & XKB_STATE_MODS_LOCKED as u32 != 0 {
                     mod_mask |= (*state).components.locked_mods;
                 }
                 if (*led).mods.mask & mod_mask != 0 {
@@ -1877,7 +1877,7 @@ unsafe fn xkb_state_led_update_all(mut state: *mut xkb_state) {
             match c2rust_current_block_23 {
                 13586036798005543211 => {
                     if (*led).which_groups() as i32 != 0 as i32 {
-                        if ((*led).groups != 0) as i32 as i64 != 0 as i64 {
+                        if ((*led).groups != 0) as i64 != 0 as i64 {
                             let mut group_mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
                             if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0
                             {
@@ -1983,7 +1983,7 @@ pub unsafe fn xkb_state_update_key(
 ) -> xkb_state_component {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as i32 as u32 && !(*key).repeats()
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats()
         {
             return 0 as xkb_state_component;
         }
@@ -2242,7 +2242,7 @@ unsafe fn state_update_latched_locked(
             (*state).components.locked_mods &= !affect_locked_mods;
             (*state).components.locked_mods |= locked_mods & affect_locked_mods;
         }
-        if (*update).components as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
+        if (*update).components as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
             (*state).components.locked_group = (*update).locked_layout;
         }
         let affect_latched_mods: xkb_mod_mask_t =
@@ -2254,7 +2254,7 @@ unsafe fn state_update_latched_locked(
                     as xkb_mod_mask_t;
             update_latch_modifiers(state, events, affect_latched_mods, latched_mods);
         }
-        if (*update).components as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
+        if (*update).components as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
             update_latch_group(state, events, (*update).latched_layout);
         }
     }
@@ -2348,8 +2348,8 @@ unsafe fn state_update_enabled_controls(
 ) {
     unsafe {
         let had_sticky_keys: bool =
-            (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 != 0;
-        affect = (affect as xkb_action_controls as u32 & CONTROL_ALL_BOOLEAN as i32 as u32)
+            (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
+        affect = (affect as xkb_action_controls as u32 & CONTROL_ALL_BOOLEAN as u32)
             as xkb_keyboard_control_flags;
         (*state).components.controls =
             ((*state).components.controls as u32 & !(affect as u32)) as xkb_action_controls;
@@ -2357,7 +2357,7 @@ unsafe fn state_update_enabled_controls(
             | controls as xkb_action_controls as u32 & affect as u32)
             as xkb_action_controls;
         if had_sticky_keys as i32 != 0
-            && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as i32 as u32 == 0
+            && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
         {
             clear_all_latches_and_locks(state, events);
         }
@@ -2372,9 +2372,9 @@ unsafe fn state_update_layout_policy(
     unsafe {
         if xkb_feature_supported(
             XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
-            (*update).policy as i32 as u32,
+            (*update).policy as u32,
         ) {
-            if (*update).policy as u32 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as i32 as u32 {
+            if (*update).policy as u32 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as u32 {
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_group.redirect_group = (*update).redirect;
                 } else {
@@ -2800,16 +2800,16 @@ unsafe fn serialize_mods(
 ) -> xkb_mod_mask_t {
     unsafe {
         let mut ret: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        if type_0 as u32 & XKB_STATE_MODS_EFFECTIVE as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_MODS_EFFECTIVE as u32 != 0 {
             return (*components).mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_DEPRESSED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_MODS_DEPRESSED as u32 != 0 {
             ret |= (*components).base_mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_LATCHED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_MODS_LATCHED as u32 != 0 {
             ret |= (*components).latched_mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_LOCKED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_MODS_LOCKED as u32 != 0 {
             ret |= (*components).locked_mods;
         }
         return ret;
@@ -2831,16 +2831,16 @@ unsafe fn serialize_layout(
 ) -> xkb_layout_index_t {
     unsafe {
         let mut ret: xkb_layout_index_t = 0 as xkb_layout_index_t;
-        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as u32 != 0 {
             return (*components).group;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as u32 != 0 {
             ret = ret.wrapping_add((*components).base_group as xkb_layout_index_t);
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
             ret = ret.wrapping_add((*components).latched_group as xkb_layout_index_t);
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
             ret = ret.wrapping_add((*components).locked_group as xkb_layout_index_t);
         }
         return ret;
@@ -2861,8 +2861,8 @@ unsafe fn serialize_controls(
     mut type_0: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
     unsafe {
-        return (if type_0 as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
-            ((*components).controls as u32 & CONTROL_ALL_BOOLEAN as i32 as u32)
+        return (if type_0 as u32 & XKB_STATE_CONTROLS as u32 != 0 {
+            ((*components).controls as u32 & CONTROL_ALL_BOOLEAN as u32)
                 as xkb_keyboard_control_flags as u32
         } else {
             0 as u32
@@ -2906,7 +2906,7 @@ pub unsafe fn xkb_state_mod_index_is_active(
     mut type_0: xkb_state_component,
 ) -> i32 {
     unsafe {
-        if (idx >= xkb_keymap_num_mods((*state).keymap)) as i32 as i64 != 0 {
+        if (idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
             return -1 as i32;
         }
         let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
@@ -2925,12 +2925,12 @@ unsafe fn match_mod_masks(
 ) -> bool {
     unsafe {
         let active: xkb_mod_mask_t = xkb_state_serialize_mods(state, type_0) as xkb_mod_mask_t;
-        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as i32 as u32 == 0
+        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as u32 == 0
             && active & !wanted != 0
         {
             return false;
         }
-        if match_0 as u32 & XKB_STATE_MATCH_ANY as i32 as u32 != 0 {
+        if match_0 as u32 & XKB_STATE_MATCH_ANY as u32 != 0 {
             return active & wanted != 0;
         }
         return active & wanted == wanted;
@@ -2957,7 +2957,7 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
             if idx == XKB_MOD_INVALID as xkb_mod_index_t {
                 break;
             }
-            if (idx >= num_mods) as i32 as i64 != 0 {
+            if (idx >= num_mods) as i64 != 0 {
                 ret = -1 as i32;
                 break;
             } else {
@@ -3037,16 +3037,16 @@ pub unsafe fn xkb_state_layout_index_is_active(
             return -1 as i32;
         }
         let mut ret: i32 = 0 as i32;
-        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as u32 != 0 {
             ret |= ((*state).components.group == idx) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as u32 != 0 {
             ret |= ((*state).components.base_group == idx as i32) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
             ret |= ((*state).components.latched_group == idx as i32) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as i32 as u32 != 0 {
+        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
             ret |= ((*state).components.locked_group == idx as i32) as i32;
         }
         return ret;
@@ -3161,7 +3161,7 @@ pub unsafe fn xkb_state_mod_index_is_consumed2(
 ) -> i32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as i32 as i64 != 0 {
+        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
             return -1 as i32;
         }
         let mapping: xkb_mod_mask_t = (*(*state).keymap).mods.mods[idx as usize].mapping;
@@ -3768,7 +3768,7 @@ pub unsafe fn xkb_machine_process_synthetic(
             &raw mut (*state).components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
+            if changed as u32 & XKB_STATE_CONTROLS as u32 != 0 {
                 machine_update_overlays(sm);
             }
             darray_append(
@@ -3941,7 +3941,7 @@ unsafe fn undo_tweaks(
                     >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
                         as *const xkb_event
             {
-                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
                     break;
                 }
                 event = event.offset(-1);
@@ -4012,7 +4012,7 @@ unsafe fn process_overlayable_key(
                 entry = entry.offset(1);
             }
         }
-        if direction as u32 == XKB_KEY_DOWN as i32 as u32 {
+        if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut new: *const xkb_key = key;
             if (*key).overlays as i32 & (*sm).overlays.enabled as i32 != 0 {
                 let mut stack: u32 = (*sm).overlays.order;
@@ -4069,7 +4069,7 @@ pub unsafe fn xkb_machine_process_key(
         (*events).next = 0 as darray_size_t;
         let state: *mut xkb_state = &raw mut (*sm).state;
         let mut key: *const xkb_key = XkbKey((*state).keymap, kc);
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as i32 as u32 && !(*key).repeats()
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats()
         {
             return XKB_SUCCESS;
         }
@@ -4140,9 +4140,9 @@ pub unsafe fn xkb_machine_process_key(
                 &mut (*events).queue.size,
                 &mut (*events).queue.alloc,
                 xkb_event {
-                    type_0: (if direction as u32 == XKB_KEY_UP as i32 as u32 {
+                    type_0: (if direction as u32 == XKB_KEY_UP as u32 {
                         XKB_EVENT_TYPE_KEY_UP as i32
-                    } else if direction as u32 == XKB_KEY_REPEATED as i32 as u32 {
+                    } else if direction as u32 == XKB_KEY_REPEATED as u32 {
                         XKB_EVENT_TYPE_KEY_REPEATED as i32
                     } else {
                         XKB_EVENT_TYPE_KEY_DOWN as i32
@@ -4161,7 +4161,7 @@ pub unsafe fn xkb_machine_process_key(
             &raw mut (*state).components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            if changed as u32 & XKB_STATE_CONTROLS as i32 as u32 != 0 {
+            if changed as u32 & XKB_STATE_CONTROLS as u32 != 0 {
                 machine_update_overlays(sm);
             }
             darray_append(
@@ -4252,7 +4252,7 @@ pub unsafe fn xkb_event_get_keycode(mut event: *const xkb_event) -> xkb_keycode_
 
 pub unsafe fn xkb_event_get_changed_components(mut event: *const xkb_event) -> xkb_state_component {
     unsafe {
-        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
             (*event).c2rust_unnamed.components.changed as u32
         } else {
             0 as u32
@@ -4265,7 +4265,7 @@ pub unsafe fn xkb_event_serialize_enabled_controls(
     mut components: xkb_state_component,
 ) -> xkb_keyboard_control_flags {
     unsafe {
-        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+        return (if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
             serialize_controls(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
@@ -4281,7 +4281,7 @@ pub unsafe fn xkb_event_serialize_mods(
     mut components: xkb_state_component,
 ) -> xkb_mod_mask_t {
     unsafe {
-        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
             serialize_mods(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
@@ -4297,7 +4297,7 @@ pub unsafe fn xkb_event_serialize_layout(
     mut components: xkb_state_component,
 ) -> xkb_layout_index_t {
     unsafe {
-        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+        return if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
             serialize_layout(
                 &raw const (*event).c2rust_unnamed.components.components,
                 components,
@@ -4312,7 +4312,7 @@ pub unsafe fn xkb_state_update_event(
     mut event: *const xkb_event,
 ) -> xkb_state_component {
     unsafe {
-        if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as i32 as u32 {
+        if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
             let prev_components: state_components = (*state).components;
             (*state).components = (*event).c2rust_unnamed.components.components;
             return get_state_component_changes(

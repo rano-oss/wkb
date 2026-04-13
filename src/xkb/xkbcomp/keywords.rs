@@ -784,11 +784,11 @@ unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const key
             5 as i32 as ::core::ffi::c_uchar,
             7 as i32 as ::core::ffi::c_uchar,
         ];
-        if len <= MAX_WORD_LENGTH as i32 as usize
-            && len >= MIN_WORD_LENGTH as i32 as usize
+        if len <= MAX_WORD_LENGTH as usize
+            && len >= MIN_WORD_LENGTH as usize
         {
             let mut key: u32 = keyword_gperf_hash(str, len);
-            if key <= MAX_HASH_VALUE as i32 as u32 {
+            if key <= MAX_HASH_VALUE as u32 {
                 if len == lengthtable[key as usize] as usize {
                     let mut s: *const i8 = (&raw const stringpool_contents as *const i8)
                         .offset(wordlist[key as usize].name as isize);

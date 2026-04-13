@@ -176,23 +176,23 @@ static mut constFalse: ExprBoolean = ExprBoolean {
 pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut ActionsInfo) {
     unsafe {
         let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
-        while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES as i32 as u32 {
+        while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES as u32 {
             (*info).actions[type_0 as usize].type_0 = type_0;
             type_0 += 1;
         }
-        (*info).actions[ACTION_TYPE_PTR_DEFAULT as i32 as usize]
+        (*info).actions[ACTION_TYPE_PTR_DEFAULT as usize]
             .dflt
             .flags = 0 as xkb_action_flags;
-        (*info).actions[ACTION_TYPE_PTR_DEFAULT as i32 as usize]
+        (*info).actions[ACTION_TYPE_PTR_DEFAULT as usize]
             .dflt
             .value = 1 as i8;
-        (*info).actions[ACTION_TYPE_PTR_MOVE as i32 as usize]
+        (*info).actions[ACTION_TYPE_PTR_MOVE as usize]
             .ptr
             .flags = ACTION_ACCEL;
-        (*info).actions[ACTION_TYPE_SWITCH_VT as i32 as usize]
+        (*info).actions[ACTION_TYPE_SWITCH_VT as usize]
             .screen
             .flags = ACTION_SAME_SCREEN;
-        (*info).actions[ACTION_TYPE_REDIRECT_KEY as i32 as usize]
+        (*info).actions[ACTION_TYPE_REDIRECT_KEY as usize]
             .redirect
             .keycode = (*keymap).redirect_key_auto;
     }
@@ -200,147 +200,147 @@ pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut Acti
 static mut fieldStrings: [LookupEntry; 37] = [
     LookupEntry {
         name: b"clearLocks\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_CLEAR_LOCKS as i32 as u32,
+        value: ACTION_FIELD_CLEAR_LOCKS as u32,
     },
     LookupEntry {
         name: b"latchToLock\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_LATCH_TO_LOCK as i32 as u32,
+        value: ACTION_FIELD_LATCH_TO_LOCK as u32,
     },
     LookupEntry {
         name: b"genKeyEvent\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_GEN_KEY_EVENT as i32 as u32,
+        value: ACTION_FIELD_GEN_KEY_EVENT as u32,
     },
     LookupEntry {
         name: b"generateKeyEvent\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_GEN_KEY_EVENT as i32 as u32,
+        value: ACTION_FIELD_GEN_KEY_EVENT as u32,
     },
     LookupEntry {
         name: b"report\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_REPORT as i32 as u32,
+        value: ACTION_FIELD_REPORT as u32,
     },
     LookupEntry {
         name: b"default\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_DEFAULT as i32 as u32,
+        value: ACTION_FIELD_DEFAULT as u32,
     },
     LookupEntry {
         name: b"affect\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_AFFECT as i32 as u32,
+        value: ACTION_FIELD_AFFECT as u32,
     },
     LookupEntry {
         name: b"increment\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_INCREMENT as i32 as u32,
+        value: ACTION_FIELD_INCREMENT as u32,
     },
     LookupEntry {
         name: b"modifiers\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_MODIFIERS as i32 as u32,
+        value: ACTION_FIELD_MODIFIERS as u32,
     },
     LookupEntry {
         name: b"mods\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_MODIFIERS as i32 as u32,
+        value: ACTION_FIELD_MODIFIERS as u32,
     },
     LookupEntry {
         name: b"group\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_GROUP as i32 as u32,
+        value: ACTION_FIELD_GROUP as u32,
     },
     LookupEntry {
         name: b"x\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_X as i32 as u32,
+        value: ACTION_FIELD_X as u32,
     },
     LookupEntry {
         name: b"y\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_Y as i32 as u32,
+        value: ACTION_FIELD_Y as u32,
     },
     LookupEntry {
         name: b"accel\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_ACCEL as i32 as u32,
+        value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
         name: b"accelerate\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_ACCEL as i32 as u32,
+        value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
         name: b"repeat\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_ACCEL as i32 as u32,
+        value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
         name: b"button\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_BUTTON as i32 as u32,
+        value: ACTION_FIELD_BUTTON as u32,
     },
     LookupEntry {
         name: b"value\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_VALUE as i32 as u32,
+        value: ACTION_FIELD_VALUE as u32,
     },
     LookupEntry {
         name: b"controls\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_CONTROLS as i32 as u32,
+        value: ACTION_FIELD_CONTROLS as u32,
     },
     LookupEntry {
         name: b"ctrls\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_CONTROLS as i32 as u32,
+        value: ACTION_FIELD_CONTROLS as u32,
     },
     LookupEntry {
         name: b"type\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_TYPE as i32 as u32,
+        value: ACTION_FIELD_TYPE as u32,
     },
     LookupEntry {
         name: b"count\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_COUNT as i32 as u32,
+        value: ACTION_FIELD_COUNT as u32,
     },
     LookupEntry {
         name: b"screen\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_SCREEN as i32 as u32,
+        value: ACTION_FIELD_SCREEN as u32,
     },
     LookupEntry {
         name: b"same\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_SAME as i32 as u32,
+        value: ACTION_FIELD_SAME as u32,
     },
     LookupEntry {
         name: b"sameServer\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_SAME as i32 as u32,
+        value: ACTION_FIELD_SAME as u32,
     },
     LookupEntry {
         name: b"data\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_DATA as i32 as u32,
+        value: ACTION_FIELD_DATA as u32,
     },
     LookupEntry {
         name: b"device\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_DEVICE as i32 as u32,
+        value: ACTION_FIELD_DEVICE as u32,
     },
     LookupEntry {
         name: b"dev\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_DEVICE as i32 as u32,
+        value: ACTION_FIELD_DEVICE as u32,
     },
     LookupEntry {
         name: b"key\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_KEYCODE as i32 as u32,
+        value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
         name: b"keycode\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_KEYCODE as i32 as u32,
+        value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
         name: b"kc\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_KEYCODE as i32 as u32,
+        value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
         name: b"clearmods\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_MODS_TO_CLEAR as i32 as u32,
+        value: ACTION_FIELD_MODS_TO_CLEAR as u32,
     },
     LookupEntry {
         name: b"clearmodifiers\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_MODS_TO_CLEAR as i32 as u32,
+        value: ACTION_FIELD_MODS_TO_CLEAR as u32,
     },
     LookupEntry {
         name: b"lockOnRelease\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_LOCK_ON_RELEASE as i32 as u32,
+        value: ACTION_FIELD_LOCK_ON_RELEASE as u32,
     },
     LookupEntry {
         name: b"unlockOnPress\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_UNLOCK_ON_PRESS as i32 as u32,
+        value: ACTION_FIELD_UNLOCK_ON_PRESS as u32,
     },
     LookupEntry {
         name: b"latchOnPress\0".as_ptr() as *const i8,
-        value: ACTION_FIELD_LATCH_ON_PRESS as i32 as u32,
+        value: ACTION_FIELD_LATCH_ON_PRESS as u32,
     },
     LookupEntry {
         name: std::ptr::null(),
@@ -396,7 +396,7 @@ unsafe fn ReportMismatch(
             crate::xkb::utils::CStrDisplay(type_0),
             crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
-        return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32 != 0 {
+        return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_RECOVERABLE_ERROR as i32
@@ -424,7 +424,7 @@ unsafe fn ReportFormatVersionMismatch(
             crate::xkb::utils::CStrDisplay(versions),
             format as u32,
         );
-        return (if strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32 != 0 {
+        return (if strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32 != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_SUCCESS as i32
@@ -448,7 +448,7 @@ unsafe fn ReportIllegal(
             crate::xkb::utils::CStrDisplay(fieldText(field)),
             crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
-        return (if strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as i32 as u32 != 0 {
+        return (if strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as u32 != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_SUCCESS as i32
@@ -472,7 +472,7 @@ unsafe fn ReportActionNotArray(
             crate::xkb::utils::CStrDisplay(fieldText(field)),
             crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
         );
-        return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32 != 0 {
+        return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_RECOVERABLE_ERROR as i32
@@ -498,7 +498,7 @@ unsafe fn HandleNoAction(
             crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
             crate::xkb::utils::CStrDisplay(fieldText(field)),
         );
-        return (if (*keymap_info).strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as i32 as u32 != 0
+        return (if (*keymap_info).strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as u32 != 0
         {
             PARSER_FATAL_ERROR as i32
         } else {
@@ -553,7 +553,7 @@ unsafe fn CheckModifierField(
         if !array_ndx.is_null() {
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
-        if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as i32 as u32 {
+        if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
             let mut valStr: *const i8 = std::ptr::null();
             valStr = xkb_atom_text(ctx, (*value).ident.ident);
             if !valStr.is_null()
@@ -561,7 +561,7 @@ unsafe fn CheckModifierField(
                     || istreq(valStr, b"modmapmods\0".as_ptr() as *const i8) as i32 != 0)
             {
                 *mods_rtrn = 0 as xkb_mod_mask_t;
-                *flags_inout = (*flags_inout as u32 | ACTION_MODS_LOOKUP_MODMAP as i32 as u32)
+                *flags_inout = (*flags_inout as u32 | ACTION_MODS_LOOKUP_MODMAP as u32)
                     as xkb_action_flags;
                 return PARSER_SUCCESS;
             }
@@ -588,7 +588,7 @@ static mut lockWhich: [LookupEntry; 5] = [
     },
     LookupEntry {
         name: b"lock\0".as_ptr() as *const i8,
-        value: ACTION_LOCK_NO_UNLOCK as i32 as u32,
+        value: ACTION_LOCK_NO_UNLOCK as u32,
     },
     LookupEntry {
         name: b"neither\0".as_ptr() as *const i8,
@@ -596,7 +596,7 @@ static mut lockWhich: [LookupEntry; 5] = [
     },
     LookupEntry {
         name: b"unlock\0".as_ptr() as *const i8,
-        value: ACTION_LOCK_NO_LOCK as i32 as u32,
+        value: ACTION_LOCK_NO_LOCK as u32,
     },
     LookupEntry {
         name: std::ptr::null(),
@@ -651,7 +651,7 @@ unsafe fn HandleSetLatchLockMods(
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_mod_action = &raw mut (*action).mods;
         let type_0: xkb_action_type = (*action).type_0;
-        if field as u32 == ACTION_FIELD_MODIFIERS as i32 as u32 {
+        if field as u32 == ACTION_FIELD_MODIFIERS as u32 {
             return CheckModifierField(
                 ctx,
                 (*keymap_info).strict,
@@ -663,7 +663,7 @@ unsafe fn HandleSetLatchLockMods(
                 &raw mut (*act).mods.mods,
             );
         }
-        if field as u32 == ACTION_FIELD_UNLOCK_ON_PRESS as i32 as u32 {
+        if field as u32 == ACTION_FIELD_UNLOCK_ON_PRESS as u32 {
             if (*keymap_info).features.mods_unlock_on_press {
                 return CheckBooleanFlag(
                     ctx,
@@ -686,9 +686,9 @@ unsafe fn HandleSetLatchLockMods(
                 );
             }
         }
-        if (type_0 as u32 == ACTION_TYPE_MOD_SET as i32 as u32
-            || type_0 as u32 == ACTION_TYPE_MOD_LATCH as i32 as u32)
-            && field as u32 == ACTION_FIELD_CLEAR_LOCKS as i32 as u32
+        if (type_0 as u32 == ACTION_TYPE_MOD_SET as u32
+            || type_0 as u32 == ACTION_TYPE_MOD_LATCH as u32)
+            && field as u32 == ACTION_FIELD_CLEAR_LOCKS as u32
         {
             return CheckBooleanFlag(
                 ctx,
@@ -701,8 +701,8 @@ unsafe fn HandleSetLatchLockMods(
                 &raw mut (*act).flags,
             );
         }
-        if type_0 as u32 == ACTION_TYPE_MOD_LATCH as i32 as u32 {
-            if field as u32 == ACTION_FIELD_LATCH_TO_LOCK as i32 as u32 {
+        if type_0 as u32 == ACTION_TYPE_MOD_LATCH as u32 {
+            if field as u32 == ACTION_FIELD_LATCH_TO_LOCK as u32 {
                 return CheckBooleanFlag(
                     ctx,
                     (*keymap_info).strict,
@@ -714,7 +714,7 @@ unsafe fn HandleSetLatchLockMods(
                     &raw mut (*act).flags,
                 );
             }
-            if field as u32 == ACTION_FIELD_LATCH_ON_PRESS as i32 as u32 {
+            if field as u32 == ACTION_FIELD_LATCH_ON_PRESS as u32 {
                 if (*keymap_info).features.mods_latch_on_press {
                     return CheckBooleanFlag(
                         ctx,
@@ -738,8 +738,8 @@ unsafe fn HandleSetLatchLockMods(
                 }
             }
         }
-        if type_0 as u32 == ACTION_TYPE_MOD_LOCK as i32 as u32
-            && field as u32 == ACTION_FIELD_AFFECT as i32 as u32
+        if type_0 as u32 == ACTION_TYPE_MOD_LOCK as u32
+            && field as u32 == ACTION_FIELD_AFFECT as u32
         {
             return CheckAffectField(
                 ctx,
@@ -774,22 +774,22 @@ unsafe fn CheckGroupField(
                 (*keymap_info).strict,
             );
         }
-        if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32
-            || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as i32 as u32
+        if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32
+            || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as u32
         {
             flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
             spec = (*value).unary.child;
             value_ptr = &raw mut (**value_ptr).unary.child as *mut *mut ExprDef;
         } else {
-            flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH as i32 as u32) as xkb_action_flags;
+            flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH as u32) as xkb_action_flags;
             spec = value;
         }
-        let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0;
+        let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0;
         let mut pending: bool = false;
         let ret: xkb_parser_error =
             ExprResolveGroup(keymap_info, spec, absolute, &raw mut idx, &raw mut pending)
                 as xkb_parser_error;
-        if ret as u32 != PARSER_SUCCESS as i32 as u32 && !pending {
+        if ret as u32 != PARSER_SUCCESS as u32 && !pending {
             ReportMismatch(
                 (*keymap_info).keymap.ctx,
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
@@ -801,7 +801,7 @@ unsafe fn CheckGroupField(
             return ret;
         }
         if pending {
-            flags = (flags as u32 | ACTION_PENDING_COMPUTATION as i32 as u32) as xkb_action_flags;
+            flags = (flags as u32 | ACTION_PENDING_COMPUTATION as u32) as xkb_action_flags;
             let pending_index: darray_size_t = (*(*keymap_info).pending_computations).size;
             darray_append(
                 &mut (*(*keymap_info).pending_computations).item,
@@ -818,9 +818,9 @@ unsafe fn CheckGroupField(
         } else {
             flags =
                 (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as xkb_action_flags;
-            if flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 == 0 {
+            if flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 == 0 {
                 *group_rtrn = idx as i32;
-                if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
+                if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32 {
                     *group_rtrn = -*group_rtrn;
                 }
             } else {
@@ -844,7 +844,7 @@ unsafe fn HandleSetLatchLockGroup(
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_group_action = &raw mut (*action).group;
         let type_0: xkb_action_type = (*action).type_0;
-        if field as u32 == ACTION_FIELD_GROUP as i32 as u32 {
+        if field as u32 == ACTION_FIELD_GROUP as u32 {
             return CheckGroupField(
                 keymap_info,
                 (*action).type_0,
@@ -855,9 +855,9 @@ unsafe fn HandleSetLatchLockGroup(
                 &raw mut (*act).group,
             );
         }
-        if (type_0 as u32 == ACTION_TYPE_GROUP_SET as i32 as u32
-            || type_0 as u32 == ACTION_TYPE_GROUP_LATCH as i32 as u32)
-            && field as u32 == ACTION_FIELD_CLEAR_LOCKS as i32 as u32
+        if (type_0 as u32 == ACTION_TYPE_GROUP_SET as u32
+            || type_0 as u32 == ACTION_TYPE_GROUP_LATCH as u32)
+            && field as u32 == ACTION_FIELD_CLEAR_LOCKS as u32
         {
             return CheckBooleanFlag(
                 ctx,
@@ -870,8 +870,8 @@ unsafe fn HandleSetLatchLockGroup(
                 &raw mut (*act).flags,
             );
         }
-        if type_0 as u32 == ACTION_TYPE_GROUP_LATCH as i32 as u32
-            && field as u32 == ACTION_FIELD_LATCH_TO_LOCK as i32 as u32
+        if type_0 as u32 == ACTION_TYPE_GROUP_LATCH as u32
+            && field as u32 == ACTION_FIELD_LATCH_TO_LOCK as u32
         {
             return CheckBooleanFlag(
                 ctx,
@@ -884,8 +884,8 @@ unsafe fn HandleSetLatchLockGroup(
                 &raw mut (*act).flags,
             );
         }
-        if type_0 as u32 == ACTION_TYPE_GROUP_LOCK as i32 as u32
-            && field as u32 == ACTION_FIELD_LOCK_ON_RELEASE as i32 as u32
+        if type_0 as u32 == ACTION_TYPE_GROUP_LOCK as u32
+            && field as u32 == ACTION_FIELD_LOCK_ON_RELEASE as u32
         {
             if (*keymap_info).features.group_lock_on_release {
                 return CheckBooleanFlag(
@@ -924,12 +924,12 @@ unsafe fn HandleMovePtr(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_pointer_action = &raw mut (*action).ptr;
-        if field as u32 == ACTION_FIELD_X as i32 as u32
-            || field as u32 == ACTION_FIELD_Y as i32 as u32
+        if field as u32 == ACTION_FIELD_X as u32
+            || field as u32 == ACTION_FIELD_Y as u32
         {
             let mut val: i64 = 0 as i64;
-            let absolute: bool = (*value).common.type_0 as u32 != STMT_EXPR_NEGATE as i32 as u32
-                && (*value).common.type_0 as u32 != STMT_EXPR_UNARY_PLUS as i32 as u32;
+            let absolute: bool = (*value).common.type_0 as u32 != STMT_EXPR_NEGATE as u32
+                && (*value).common.type_0 as u32 != STMT_EXPR_UNARY_PLUS as u32;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
@@ -956,7 +956,7 @@ unsafe fn HandleMovePtr(
                     val,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -964,21 +964,21 @@ unsafe fn HandleMovePtr(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as xkb_parser_error;
             }
-            if field as u32 == ACTION_FIELD_X as i32 as u32 {
+            if field as u32 == ACTION_FIELD_X as u32 {
                 if absolute {
                     (*act).flags =
-                        ((*act).flags as u32 | ACTION_ABSOLUTE_X as i32 as u32) as xkb_action_flags;
+                        ((*act).flags as u32 | ACTION_ABSOLUTE_X as u32) as xkb_action_flags;
                 }
                 (*act).x = val as i16;
             } else {
                 if absolute {
                     (*act).flags =
-                        ((*act).flags as u32 | ACTION_ABSOLUTE_Y as i32 as u32) as xkb_action_flags;
+                        ((*act).flags as u32 | ACTION_ABSOLUTE_Y as u32) as xkb_action_flags;
                 }
                 (*act).y = val as i16;
             }
             return PARSER_SUCCESS;
-        } else if field as u32 == ACTION_FIELD_ACCEL as i32 as u32 {
+        } else if field as u32 == ACTION_FIELD_ACCEL as u32 {
             return CheckBooleanFlag(
                 ctx,
                 (*keymap_info).strict,
@@ -1005,7 +1005,7 @@ unsafe fn HandlePtrBtn(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_pointer_button_action = &raw mut (*action).btn;
-        if field as u32 == ACTION_FIELD_BUTTON as i32 as u32 {
+        if field as u32 == ACTION_FIELD_BUTTON as u32 {
             let mut btn: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1029,7 +1029,7 @@ unsafe fn HandlePtrBtn(
                     btn,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1039,8 +1039,8 @@ unsafe fn HandlePtrBtn(
             }
             (*act).button = btn as u8;
             return PARSER_SUCCESS;
-        } else if (*action).type_0 as u32 == ACTION_TYPE_PTR_LOCK as i32 as u32
-            && field as u32 == ACTION_FIELD_AFFECT as i32 as u32
+        } else if (*action).type_0 as u32 == ACTION_TYPE_PTR_LOCK as u32
+            && field as u32 == ACTION_FIELD_AFFECT as u32
         {
             return CheckAffectField(
                 ctx,
@@ -1050,7 +1050,7 @@ unsafe fn HandlePtrBtn(
                 value,
                 &raw mut (*act).flags,
             );
-        } else if field as u32 == ACTION_FIELD_COUNT as i32 as u32 {
+        } else if field as u32 == ACTION_FIELD_COUNT as u32 {
             let mut val: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1074,7 +1074,7 @@ unsafe fn HandlePtrBtn(
                     val,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1118,7 +1118,7 @@ unsafe fn HandleSetPtrDflt(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_pointer_default_action = &raw mut (*action).dflt;
-        if field as u32 == ACTION_FIELD_AFFECT as i32 as u32 {
+        if field as u32 == ACTION_FIELD_AFFECT as u32 {
             let mut val: u32 = 0 as u32;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1139,22 +1139,22 @@ unsafe fn HandleSetPtrDflt(
                 );
             }
             return PARSER_SUCCESS;
-        } else if field as u32 == ACTION_FIELD_BUTTON as i32 as u32
-            || field as u32 == ACTION_FIELD_VALUE as i32 as u32
+        } else if field as u32 == ACTION_FIELD_BUTTON as u32
+            || field as u32 == ACTION_FIELD_VALUE as u32
         {
             let mut button: *const ExprDef = std::ptr::null();
             let mut btn: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32
-                || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as i32 as u32
+            if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32
+                || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as u32
             {
                 (*act).flags = ((*act).flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32)
                     as xkb_action_flags;
                 button = (*value).unary.child;
             } else {
-                (*act).flags = ((*act).flags as u32 | ACTION_ABSOLUTE_SWITCH as i32 as u32)
+                (*act).flags = ((*act).flags as u32 | ACTION_ABSOLUTE_SWITCH as u32)
                     as xkb_action_flags;
                 button = value;
             }
@@ -1177,7 +1177,7 @@ unsafe fn HandleSetPtrDflt(
                     btn,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1193,7 +1193,7 @@ unsafe fn HandleSetPtrDflt(
                     "Cannot set default pointer button to \"default\"; Illegal default button setting ignored\n",
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1201,7 +1201,7 @@ unsafe fn HandleSetPtrDflt(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as xkb_parser_error;
             }
-            (*act).value = (if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
+            (*act).value = (if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32 {
                 -btn
             } else {
                 btn
@@ -1223,20 +1223,20 @@ unsafe fn HandleSwitchScreen(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_switch_screen_action = &raw mut (*action).screen;
-        if field as u32 == ACTION_FIELD_SCREEN as i32 as u32 {
+        if field as u32 == ACTION_FIELD_SCREEN as u32 {
             let mut scrn: *const ExprDef = std::ptr::null();
             let mut val: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32
-                || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as i32 as u32
+            if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32
+                || (*value).common.type_0 as u32 == STMT_EXPR_UNARY_PLUS as u32
             {
                 (*act).flags = ((*act).flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32)
                     as xkb_action_flags;
                 scrn = (*value).unary.child;
             } else {
-                (*act).flags = ((*act).flags as u32 | ACTION_ABSOLUTE_SWITCH as i32 as u32)
+                (*act).flags = ((*act).flags as u32 | ACTION_ABSOLUTE_SWITCH as u32)
                     as xkb_action_flags;
                 scrn = value;
             }
@@ -1250,7 +1250,7 @@ unsafe fn HandleSwitchScreen(
                     (*keymap_info).strict,
                 );
             }
-            val = if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as i32 as u32 {
+            val = if (*value).common.type_0 as u32 == STMT_EXPR_NEGATE as u32 {
                 -val
             } else {
                 val
@@ -1266,7 +1266,7 @@ unsafe fn HandleSwitchScreen(
                     val,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1276,7 +1276,7 @@ unsafe fn HandleSwitchScreen(
             }
             (*act).screen = val as i8;
             return PARSER_SUCCESS;
-        } else if field as u32 == ACTION_FIELD_SAME as i32 as u32 {
+        } else if field as u32 == ACTION_FIELD_SAME as u32 {
             return CheckBooleanFlag(
                 ctx,
                 (*keymap_info).strict,
@@ -1303,7 +1303,7 @@ unsafe fn HandleSetLockControls(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_controls_action = &raw mut (*action).ctrls;
-        if field as u32 == ACTION_FIELD_CONTROLS as i32 as u32 {
+        if field as u32 == ACTION_FIELD_CONTROLS as u32 {
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
@@ -1326,8 +1326,8 @@ unsafe fn HandleSetLockControls(
             }
             (*act).ctrls = mask as xkb_action_controls;
             return PARSER_SUCCESS;
-        } else if field as u32 == ACTION_FIELD_AFFECT as i32 as u32
-            && (*action).type_0 as u32 == ACTION_TYPE_CTRL_LOCK as i32 as u32
+        } else if field as u32 == ACTION_FIELD_AFFECT as u32
+            && (*action).type_0 as u32 == ACTION_TYPE_CTRL_LOCK as u32
         {
             return CheckAffectField(
                 ctx,
@@ -1354,11 +1354,11 @@ unsafe fn HandleRedirectKey(
         let keymap: *const xkb_keymap = &raw const (*keymap_info).keymap;
         let ctx: *mut xkb_context = (*keymap).ctx;
         let act: *mut xkb_redirect_key_action = &raw mut (*action).redirect;
-        if field as u32 == ACTION_FIELD_KEYCODE as i32 as u32 {
+        if field as u32 == ACTION_FIELD_KEYCODE as u32 {
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as i32 as u32 {
+            if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
                 let mut valStr: *const i8 = xkb_atom_text(ctx, (*value).ident.ident);
                 if !valStr.is_null() && istreq(valStr, b"auto\0".as_ptr() as *const i8) as i32 != 0
                 {
@@ -1366,7 +1366,7 @@ unsafe fn HandleRedirectKey(
                     return PARSER_SUCCESS;
                 }
             }
-            if (*value).common.type_0 as u32 != STMT_EXPR_KEYNAME_LITERAL as i32 as u32 {
+            if (*value).common.type_0 as u32 != STMT_EXPR_KEYNAME_LITERAL as u32 {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1387,7 +1387,7 @@ unsafe fn HandleRedirectKey(
                     crate::xkb::utils::CStrDisplay(KeyNameText(ctx, (*value).key_name.key_name)),
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_VALUE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_VALUE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1398,8 +1398,8 @@ unsafe fn HandleRedirectKey(
             (*act).keycode = (*key).keycode;
             return PARSER_SUCCESS;
         }
-        if field as u32 == ACTION_FIELD_MODIFIERS as i32 as u32
-            || field as u32 == ACTION_FIELD_MODS_TO_CLEAR as i32 as u32
+        if field as u32 == ACTION_FIELD_MODIFIERS as u32
+            || field as u32 == ACTION_FIELD_MODS_TO_CLEAR as u32
         {
             let mut flags: xkb_action_flags = 0 as xkb_action_flags;
             let mut m: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
@@ -1413,7 +1413,7 @@ unsafe fn HandleRedirectKey(
                 &raw mut flags,
                 &raw mut m,
             );
-            if r as u32 != PARSER_SUCCESS as i32 as u32 {
+            if r as u32 != PARSER_SUCCESS as u32 {
                 return r;
             }
             if flags as u64 != 0 {
@@ -1427,7 +1427,7 @@ unsafe fn HandleRedirectKey(
                 );
             }
             (*act).affect |= m;
-            if field as u32 == ACTION_FIELD_MODIFIERS as i32 as u32 {
+            if field as u32 == ACTION_FIELD_MODIFIERS as u32 {
                 (*act).mods |= m;
             } else {
                 (*act).mods &= !m;
@@ -1460,7 +1460,7 @@ unsafe fn HandlePrivate(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         let mut act: *mut xkb_private_action = &raw mut (*action).priv_0;
-        if field as u32 == ACTION_FIELD_TYPE as i32 as u32 {
+        if field as u32 == ACTION_FIELD_TYPE as u32 {
             let mut type_0: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1484,7 +1484,7 @@ unsafe fn HandlePrivate(
                     type_0,
                 );
                 return (if (*keymap_info).strict as u32
-                    & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                    & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                     != 0
                 {
                     PARSER_FATAL_ERROR as i32
@@ -1492,7 +1492,7 @@ unsafe fn HandlePrivate(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as xkb_parser_error;
             }
-            if type_0 < ACTION_TYPE_PRIVATE as i32 as i64 {
+            if type_0 < ACTION_TYPE_PRIVATE as i64 {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
@@ -1505,7 +1505,7 @@ unsafe fn HandlePrivate(
                 (*act).type_0 = type_0 as xkb_action_type;
             }
             return PARSER_SUCCESS;
-        } else if field as u32 == ACTION_FIELD_DATA as i32 as u32 {
+        } else if field as u32 == ACTION_FIELD_DATA as u32 {
             if array_ndx.is_null() {
                 let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
                 if !ExprResolveString(ctx, value, &raw mut val) {
@@ -1530,7 +1530,7 @@ unsafe fn HandlePrivate(
                         len,
                     );
                     return (if (*keymap_info).strict as u32
-                        & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                        & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                         != 0
                     {
                         PARSER_FATAL_ERROR as i32
@@ -1560,7 +1560,7 @@ unsafe fn HandlePrivate(
                         "Array subscript must be integer; Illegal subscript ignored\n",
                     );
                     return (if (*keymap_info).strict as u32
-                        & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                        & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                         != 0
                     {
                         PARSER_FATAL_ERROR as i32
@@ -1578,7 +1578,7 @@ unsafe fn HandlePrivate(
                         ndx,
                     );
                     return (if (*keymap_info).strict as u32
-                        & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                        & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                         != 0
                     {
                         PARSER_FATAL_ERROR as i32
@@ -1605,7 +1605,7 @@ unsafe fn HandlePrivate(
                         datum,
                     );
                     return (if (*keymap_info).strict as u32
-                        & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                        & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                         != 0
                     {
                         PARSER_FATAL_ERROR as i32
@@ -1874,7 +1874,7 @@ pub unsafe fn HandleActionDef(
 ) -> xkb_parser_error {
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
-        if (*def).common.type_0 as u32 != STMT_EXPR_ACTION_DECL as i32 as u32 {
+        if (*def).common.type_0 as u32 != STMT_EXPR_ACTION_DECL as u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1897,12 +1897,12 @@ pub unsafe fn HandleActionDef(
                 crate::xkb::utils::CStrDisplay(action_name),
             );
             handler_type = ACTION_TYPE_UNKNOWN;
-            if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as i32 as u32 != 0 {
+            if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as u32 != 0 {
                 return PARSER_FATAL_ERROR;
             }
         }
         *action = (*info).actions[handler_type as usize];
-        if handler_type as u32 == ACTION_TYPE_UNSUPPORTED_LEGACY as i32 as u32 {
+        if handler_type as u32 == ACTION_TYPE_UNSUPPORTED_LEGACY as u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -1922,12 +1922,12 @@ pub unsafe fn HandleActionDef(
             let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
             let mut elemRtrn: *const i8 = std::ptr::null();
             let mut fieldRtrn: *const i8 = std::ptr::null();
-            if (*arg).common.type_0 as u32 == STMT_EXPR_ASSIGN as i32 as u32 {
+            if (*arg).common.type_0 as u32 == STMT_EXPR_ASSIGN as u32 {
                 field = (*arg).binary.left as *mut ExprDef;
                 value = (*arg).binary.right;
                 value_ptr = &raw mut (*arg).binary.right as *mut *mut ExprDef;
-            } else if (*arg).common.type_0 as u32 == STMT_EXPR_NOT as i32 as u32
-                || (*arg).common.type_0 as u32 == STMT_EXPR_INVERT as i32 as u32
+            } else if (*arg).common.type_0 as u32 == STMT_EXPR_NOT as u32
+                || (*arg).common.type_0 as u32 == STMT_EXPR_INVERT as u32
             {
                 field = (*arg).unary.child as *mut ExprDef;
                 value = &raw const constFalse as *const ExprDef;
@@ -1967,7 +1967,7 @@ pub unsafe fn HandleActionDef(
                     crate::xkb::utils::CStrDisplay(fieldRtrn),
                     crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
                 );
-                if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32 != 0
+                if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32 != 0
                 {
                     return PARSER_FATAL_ERROR;
                 }
@@ -1991,8 +1991,8 @@ pub unsafe fn HandleActionDef(
             }
             arg = (*arg).common.next as *mut ExprDef;
         }
-        return (if (*action).type_0 as u32 == ACTION_TYPE_UNKNOWN as i32 as u32 {
-            PARSER_RECOVERABLE_ERROR as i32 as u32
+        return (if (*action).type_0 as u32 == ACTION_TYPE_UNKNOWN as u32 {
+            PARSER_RECOVERABLE_ERROR as u32
         } else {
             ret as u32
         }) as xkb_parser_error;
@@ -2020,7 +2020,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(elem),
             );
-            return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as i32 as u32 != 0 {
+            return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as u32 != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
                 PARSER_RECOVERABLE_ERROR as i32
@@ -2036,7 +2036,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(field),
             );
-            return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as i32 as u32
+            return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32
                 != 0
             {
                 PARSER_FATAL_ERROR as i32
@@ -2057,11 +2057,11 @@ pub unsafe fn SetDefaultActionField(
             value,
             value_ptr,
         ) as xkb_parser_error;
-        if ret as u32 != PARSER_SUCCESS as i32 as u32 {
+        if ret as u32 != PARSER_SUCCESS as u32 {
             return ret;
         }
         if !action_equal(into, &raw mut from) {
-            let replace: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
+            let replace: bool = merge as u32 != MERGE_AUGMENT as u32;
             xkb_logf!(
                 (*keymap_info).keymap.ctx,
                 XKB_LOG_LEVEL_WARNING,

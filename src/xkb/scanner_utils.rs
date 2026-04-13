@@ -108,7 +108,7 @@ pub unsafe fn scanner_init(
 #[inline]
 pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
     unsafe {
-        if ((*s).pos >= (*s).len) as i32 as i64 != 0 {
+        if ((*s).pos >= (*s).len) as i64 != 0 {
             return '\0' as i32 as i8;
         }
         return *(*s).s.offset((*s).pos as isize);
@@ -149,7 +149,7 @@ pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
 #[inline]
 pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
     unsafe {
-        if scanner_eof(s) as i32 as i64 != 0 {
+        if scanner_eof(s) as i64 != 0 {
             return '\0' as i32 as i8;
         }
         let c2rust_fresh0 = (*s).pos;

@@ -171,7 +171,7 @@ static mut xkb_file_type_include_dirs: [*const i8; 7] = [
 ];
 unsafe fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as i32 as u32 {
+        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
             return b"\0".as_ptr() as *const i8;
         }
         return xkb_file_type_include_dirs[type_0 as usize];
@@ -372,7 +372,7 @@ unsafe fn expand_percent(
             );
             return 0 as usize;
         }
-        if (s.buf_pos > buf_size) as i32 as i64 != 0 {
+        if (s.buf_pos > buf_size) as i64 != 0 {
             let mut loc_5: scanner_loc = scanner_token_location(&raw mut s);
             xkb_logf!(
                 s.ctx,
@@ -419,7 +419,7 @@ pub unsafe fn expand_path(
         match c2rust_current_block {
             17179679302217393232 => return 0 as isize,
             _ => {
-                if (k >= buf_size) as i32 as i64 != 0 {
+                if (k >= buf_size) as i64 != 0 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -576,7 +576,7 @@ pub unsafe fn ProcessIncludeFile(
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        } else if (expanded != 0) as i32 as i64 != 0 {
+        } else if (expanded != 0) as i64 != 0 {
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(

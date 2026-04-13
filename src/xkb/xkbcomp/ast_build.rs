@@ -749,7 +749,7 @@ pub unsafe fn XkbFileFromComponents(
         let mut defsLast: *mut ParseCommon = std::ptr::null_mut();
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         loop {
-            if !(type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as i32 as u32) {
+            if !(type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as u32) {
                 c2rust_current_block = 13536709405535804910;
                 break;
             }
@@ -934,7 +934,7 @@ static mut xkb_file_type_strings: [*const i8; 7] = [
 
 pub unsafe fn xkb_file_type_to_string(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as i32 as u32 {
+        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         return xkb_file_type_strings[type_0 as usize];
@@ -982,7 +982,7 @@ static mut stmt_type_strings: [*const i8; 37] = [
 
 pub unsafe fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
     unsafe {
-        if type_0 as u32 >= _STMT_NUM_VALUES as i32 as u32 {
+        if type_0 as u32 >= _STMT_NUM_VALUES as u32 {
             return std::ptr::null();
         }
         return stmt_type_strings[type_0 as usize];

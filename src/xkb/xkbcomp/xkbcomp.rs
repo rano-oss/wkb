@@ -178,7 +178,7 @@ pub unsafe fn xkb_components_names_from_rules(
 }
 unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFile) -> bool {
     unsafe {
-        if (*file).file_type as u32 != FILE_TYPE_KEYMAP as i32 as u32 {
+        if (*file).file_type as u32 != FILE_TYPE_KEYMAP as u32 {
             xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -216,7 +216,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             types: std::ptr::null_mut(),
         };
         let mut file: *mut XkbFile = std::ptr::null_mut();
-        if (*(*keymap).ctx).log_level as u32 >= XKB_LOG_LEVEL_DEBUG as i32 as u32 {
+        if (*(*keymap).ctx).log_level as u32 >= XKB_LOG_LEVEL_DEBUG as u32 {
             let mut names: xkb_rule_names = xkb_rule_names {
                 rules: std::ptr::null(),
                 model: std::ptr::null(),
@@ -227,11 +227,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             let buf_size: usize =
                 (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub(1 as usize);
             let mut buf: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
-            if buf.is_null() as i32 as i64 != 0 {
+            if buf.is_null() as i64 != 0 {
                 return false;
             }
             ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names, buf, buf_size);
-            if !ok as i32 as i64 != 0 {
+            if !ok as i64 != 0 {
                 return false;
             }
             xkb_logf!(
@@ -261,11 +261,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             };
             let buf_size_0: usize = ::core::mem::size_of::<[i8; 2048]>() as usize;
             let mut buf_0: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
-            if buf_0.is_null() as i32 as i64 != 0 {
+            if buf_0.is_null() as i64 != 0 {
                 return false;
             }
             ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names_0, buf_0, buf_size_0);
-            if !ok as i32 as i64 != 0 {
+            if !ok as i64 != 0 {
                 return false;
             }
             xkb_logf!(

@@ -918,7 +918,7 @@ pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
 
 #[inline]
 pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
         XKB_OVERLAY_MAX as usize
@@ -927,7 +927,7 @@ pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_
 
 #[inline]
 pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_MAX_GROUPS_X11
     } else {
         XKB_MAX_GROUPS
@@ -936,7 +936,7 @@ pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_ind
 
 #[inline]
 pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         CONTROL_ALL_BOOLEAN_V1 as i32
     } else {
         CONTROL_ALL_BOOLEAN as i32
@@ -945,22 +945,22 @@ pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
 
 #[inline]
 pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
 pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
 pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
 pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32;
+    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 // Error codes (from xkbcommon_errors_h)

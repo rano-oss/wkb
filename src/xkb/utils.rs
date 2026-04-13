@@ -960,7 +960,7 @@ pub unsafe fn xkb_check_versioned_struct_size_(
 
 #[inline]
 pub unsafe fn popcount32(mut x: u32) -> u32 {
-    (x as u64).count_ones() as i32 as u32
+    (x as u64).count_ones() as u32
 }
 
 #[inline]
@@ -971,7 +971,7 @@ pub unsafe fn next_pow2(mut x: u32) -> u32 {
     (1 as u32)
         << (::core::mem::size_of::<u32>() as usize)
             .wrapping_mul(8 as usize)
-            .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize)
+            .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as usize)
 }
 
 #[inline]

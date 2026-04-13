@@ -123,7 +123,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     load_defaults = false;
                 }
                 101 => {
-                    flags = (flags as u32 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32)
+                    flags = (flags as u32 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as u32)
                         as rxkb_context_flags;
                 }
                 114 => {
@@ -139,7 +139,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             }
         }
         if optind < argc {
-            flags = (flags as u32 | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32)
+            flags = (flags as u32 | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32)
                 as rxkb_context_flags;
         }
         ctx = rxkb_context_new(flags);

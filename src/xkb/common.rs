@@ -203,7 +203,7 @@ unsafe fn consume_events(
             match xkb_event_get_type(event) as u32 {
                 1 | 2 | 3 => {
                     *kc = xkb_event_get_keycode(event);
-                    if flags as u32 & UNTIL_KEY_EVENT as i32 as u32 != 0 {
+                    if flags as u32 & UNTIL_KEY_EVENT as u32 != 0 {
                         return true;
                     }
                 }
@@ -666,7 +666,7 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
             return std::ptr::null_mut();
         }
         let size: usize = info.st_size as usize;
-        if size > MAX_FILE_SIZE as i32 as usize {
+        if size > MAX_FILE_SIZE as usize {
             eprintln!(
                 "Error: file {} exceeds maximum size",
                 crate::xkb::utils::CStrDisplay(path)
@@ -725,14 +725,14 @@ pub unsafe fn test_read_file(mut path_rel: *const i8) -> *mut i8 {
 pub unsafe fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_context {
     unsafe {
         let mut ctx_flags: xkb_context_flags = XKB_CONTEXT_NO_DEFAULT_INCLUDES;
-        if test_flags as u32 & CONTEXT_ALLOW_ENVIRONMENT_NAMES as i32 as u32 != 0 {
+        if test_flags as u32 & CONTEXT_ALLOW_ENVIRONMENT_NAMES as u32 != 0 {
             unsetenv(b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
             unsetenv(b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
             unsetenv(b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
             unsetenv(b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
             unsetenv(b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
         } else {
-            ctx_flags = (ctx_flags as u32 | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32 as u32)
+            ctx_flags = (ctx_flags as u32 | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32)
                 as xkb_context_flags;
         }
         let ctx: *mut xkb_context = xkb_context_new(ctx_flags) as *mut xkb_context;

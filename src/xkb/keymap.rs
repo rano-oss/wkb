@@ -250,7 +250,7 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
         {
             return std::ptr::null();
         }
-        return keymap_format_ops[format as i32 as usize];
+        return keymap_format_ops[format as usize];
     }
 }
 #[c2rust::src_loc = "113:1"]
@@ -861,9 +861,9 @@ pub unsafe fn xkb_keymap_key_iterator_new(
             return iter;
         }
         (*iter).skip_unbound =
-            flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as i32 as u32 != 0;
+            flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as u32 != 0;
         (*iter).increment =
-            (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as i32 as u32 != 0 {
+            (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as u32 != 0 {
                 -1 as i32
             } else {
                 1 as i32

@@ -495,7 +495,7 @@ unsafe fn split_comma_separated_mlvo(
                                 val_0.sval.start
                             ),
                         );
-                    } else if mlvo as u32 != MLVO_OPTION as i32 as u32 {
+                    } else if mlvo as u32 != MLVO_OPTION as u32 {
                         xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -573,12 +573,12 @@ unsafe fn matcher_new_from_rmlvo(
             },
         };
         let changed: RMLVO = xkb_context_sanitize_rule_names((*rmlvo).ctx, &raw mut names) as RMLVO;
-        if changed as u32 & RMLVO_RULES as i32 as u32 != 0 {
+        if changed as u32 & RMLVO_RULES as u32 != 0 {
             *rules = names.rules;
         } else {
             *rules = (*rmlvo).rules;
         }
-        if changed as u32 & RMLVO_MODEL as i32 as u32 != 0 {
+        if changed as u32 & RMLVO_MODEL as u32 != 0 {
             (*m).rmlvo.model.sval.start = names.model;
         } else {
             (*m).rmlvo.model.sval.start = (*rmlvo).model;
@@ -587,7 +587,7 @@ unsafe fn matcher_new_from_rmlvo(
         (*m).rmlvo
             .model
             .set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t);
-        if changed as u32 & RMLVO_LAYOUT as i32 as u32 != 0 {
+        if changed as u32 & RMLVO_LAYOUT as u32 != 0 {
             (*m).rmlvo.layouts =
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_LAYOUT, names.layout);
             (*m).rmlvo.variants =
@@ -685,7 +685,7 @@ unsafe fn matcher_new_from_rmlvo(
                 }
             }
         }
-        if changed as u32 & RMLVO_OPTIONS as i32 as u32 != 0 {
+        if changed as u32 & RMLVO_OPTIONS as u32 != 0 {
             (*m).rmlvo.options =
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_OPTION, names.options);
         } else {
@@ -5058,7 +5058,7 @@ unsafe fn matcher_include(
             } else {
             }
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        } else if (expanded != 0) as i32 as i64 != 0 {
+        } else if (expanded != 0) as i64 != 0 {
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
@@ -5259,14 +5259,14 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             start: std::ptr::null(),
         };
         mlvo = MLVO_MODEL;
-        while (mlvo as u32) < _MLVO_NUM_ENTRIES as i32 as u32 {
+        while (mlvo as u32) < _MLVO_NUM_ENTRIES as u32 {
             mlvo_sval = rules_mlvo_svals[mlvo as usize];
             if svaleq_prefix(mlvo_sval, ident) {
                 break;
             }
             mlvo += 1;
         }
-        if mlvo as u32 >= _MLVO_NUM_ENTRIES as i32 as u32 {
+        if mlvo as u32 >= _MLVO_NUM_ENTRIES as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
@@ -5321,9 +5321,9 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*m).mapping.c2rust_unnamed_0.active = 0 as xkb_layout_mask_t;
                 return;
             }
-            if mlvo as u32 == MLVO_LAYOUT as i32 as u32 {
+            if mlvo as u32 == MLVO_LAYOUT as u32 {
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx = idx;
-            } else if mlvo as u32 == MLVO_VARIANT as i32 as u32 {
+            } else if mlvo as u32 == MLVO_VARIANT as u32 {
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = idx;
             } else {
                 let mut loc_2: scanner_loc = scanner_token_location(s);
@@ -5341,16 +5341,16 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*m).mapping.c2rust_unnamed_0.active = 0 as xkb_layout_mask_t;
                 return;
             }
-        } else if mlvo as u32 == MLVO_LAYOUT as i32 as u32 {
+        } else if mlvo as u32 == MLVO_LAYOUT as u32 {
             (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx =
                 LAYOUT_INDEX_SINGLE as u32 as xkb_layout_index_t;
-        } else if mlvo as u32 == MLVO_VARIANT as i32 as u32 {
+        } else if mlvo as u32 == MLVO_VARIANT as u32 {
             (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx =
                 LAYOUT_INDEX_SINGLE as u32 as xkb_layout_index_t;
         }
-        if (mlvo as u32 == MLVO_LAYOUT as i32 as u32
+        if (mlvo as u32 == MLVO_LAYOUT as u32
             && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
-            || mlvo as u32 == MLVO_VARIANT as i32 as u32
+            || mlvo as u32 == MLVO_VARIANT as u32
                 && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
             && (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
                 != (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
@@ -5457,14 +5457,14 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             start: std::ptr::null(),
         };
         kccgst = KCCGST_KEYCODES;
-        while (kccgst as u32) < _KCCGST_NUM_ENTRIES as i32 as u32 {
+        while (kccgst as u32) < _KCCGST_NUM_ENTRIES as u32 {
             kccgst_sval = rules_kccgst_svals[kccgst as usize];
             if svaleq(rules_kccgst_svals[kccgst as usize], ident) {
                 break;
             }
             kccgst += 1;
         }
-        if kccgst as u32 >= _KCCGST_NUM_ENTRIES as i32 as u32 {
+        if kccgst as u32 >= _KCCGST_NUM_ENTRIES as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
@@ -5789,7 +5789,7 @@ unsafe fn match_value(
     unsafe {
         match match_type as u32 {
             1 => {
-                return wildcard_type as u32 == WILDCARD_MATCH_ALL as i32 as u32
+                return wildcard_type as u32 == WILDCARD_MATCH_ALL as u32
                     || to.len != 0;
             }
             2 => return to.len == 0,
@@ -5921,8 +5921,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len
                                 && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
-                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
+                                if mlv as u32 != MLVO_LAYOUT as u32
+                                    && mlv as u32 != MLVO_VARIANT as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
@@ -5983,7 +5983,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as i32 as u32
+                                                == MLVO_LAYOUT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
@@ -6008,7 +6008,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as i32 as u32
+                                                == MLVO_VARIANT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6034,7 +6034,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as i32 as u32
+                                                == MLVO_MODEL as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6098,8 +6098,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len
                                 && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
-                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
+                                if mlv as u32 != MLVO_LAYOUT as u32
+                                    && mlv as u32 != MLVO_VARIANT as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
@@ -6160,7 +6160,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as i32 as u32
+                                                == MLVO_LAYOUT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
@@ -6185,7 +6185,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as i32 as u32
+                                                == MLVO_VARIANT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6211,7 +6211,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as i32 as u32
+                                                == MLVO_MODEL as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6275,8 +6275,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len
                                 && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
-                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
+                                if mlv as u32 != MLVO_LAYOUT as u32
+                                    && mlv as u32 != MLVO_VARIANT as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
@@ -6337,7 +6337,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as i32 as u32
+                                                == MLVO_LAYOUT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
@@ -6362,7 +6362,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as i32 as u32
+                                                == MLVO_VARIANT as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6388,7 +6388,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as i32 as u32
+                                                == MLVO_MODEL as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6798,7 +6798,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             let mut match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
             let mut to: *mut matched_sval = std::ptr::null_mut();
             let mut matched: bool = false;
-            if mlvo as u32 == MLVO_MODEL as i32 as u32 {
+            if mlvo as u32 == MLVO_MODEL as u32 {
                 to = &raw mut (*m).rmlvo.model;
                 matched = match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_ALL);
             } else if (*m).mapping.has_layout_idx_range {
@@ -7525,13 +7525,13 @@ unsafe fn xkb_resolve_rules(
                         matcher,
                     );
                     if ret {
-                        if (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize].size
+                        if (*matcher).kccgst[KCCGST_KEYCODES as usize].size
                             == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_TYPES as i32 as usize].size
+                            || (*matcher).kccgst[KCCGST_TYPES as usize].size
                                 == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].size
+                            || (*matcher).kccgst[KCCGST_COMPAT as usize].size
                                 == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].size
+                            || (*matcher).kccgst[KCCGST_SYMBOLS as usize].size
                                 == 0 as darray_size_t
                         {
                             xkb_logf!(
@@ -7545,78 +7545,78 @@ unsafe fn xkb_resolve_rules(
                             ret = false;
                         } else {
                             (*out).keycodes = (*matcher).kccgst
-                                [KCCGST_KEYCODES as i32 as usize]
+                                [KCCGST_KEYCODES as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_KEYCODES as i32 as usize]
+                                    [KCCGST_KEYCODES as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
                                 .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
                                 .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
                                 .alloc = 0 as darray_size_t;
                             (*out).types =
-                                (*matcher).kccgst[KCCGST_TYPES as i32 as usize].item;
+                                (*matcher).kccgst[KCCGST_TYPES as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_TYPES as i32 as usize]
+                                    [KCCGST_TYPES as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].item =
+                            (*matcher).kccgst[KCCGST_TYPES as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].size =
+                            (*matcher).kccgst[KCCGST_TYPES as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].alloc =
+                            (*matcher).kccgst[KCCGST_TYPES as usize].alloc =
                                 0 as darray_size_t;
                             (*out).compatibility = (*matcher).kccgst
-                                [KCCGST_COMPAT as i32 as usize]
+                                [KCCGST_COMPAT as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_COMPAT as i32 as usize]
+                                    [KCCGST_COMPAT as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].item =
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].size =
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].alloc =
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].alloc =
                                 0 as darray_size_t;
                             (*out).symbols = (*matcher).kccgst
-                                [KCCGST_SYMBOLS as i32 as usize]
+                                [KCCGST_SYMBOLS as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_SYMBOLS as i32 as usize]
+                                    [KCCGST_SYMBOLS as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].item =
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].size =
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize]
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize]
                                 .alloc = 0 as darray_size_t;
                             (*out).geometry = (*matcher).kccgst
-                                [KCCGST_GEOMETRY as i32 as usize]
+                                [KCCGST_GEOMETRY as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_GEOMETRY as i32 as usize]
+                                    [KCCGST_GEOMETRY as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
                                 .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
                                 .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
                                 .alloc = 0 as darray_size_t;
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched() && (*mval).sval.len > 0 as usize {

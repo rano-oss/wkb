@@ -380,11 +380,11 @@ unsafe fn MergeInterp(
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         let mut collide: si_field = 0 as si_field;
-        if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
+        if (*new).merge as u32 == MERGE_REPLACE as u32 {
             if report {
                 xkb_logf!(
                     (*info).ctx,
@@ -407,7 +407,7 @@ unsafe fn MergeInterp(
         ) {
             (*old).interp.virtual_mod = (*new).interp.virtual_mod;
             (*old).defined =
-                ((*old).defined as u32 | SI_FIELD_VIRTUAL_MOD as i32 as u32) as si_field;
+                ((*old).defined as u32 | SI_FIELD_VIRTUAL_MOD as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_ACTION,
@@ -430,7 +430,7 @@ unsafe fn MergeInterp(
             } else {
                 (*old).interp.a.action = (*new).interp.a.action;
             }
-            (*old).defined = ((*old).defined as u32 | SI_FIELD_ACTION as i32 as u32) as si_field;
+            (*old).defined = ((*old).defined as u32 | SI_FIELD_ACTION as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_AUTO_REPEAT,
@@ -442,7 +442,7 @@ unsafe fn MergeInterp(
         ) {
             (*old).interp.set_repeat((*new).interp.repeat() as bool);
             (*old).defined =
-                ((*old).defined as u32 | SI_FIELD_AUTO_REPEAT as i32 as u32) as si_field;
+                ((*old).defined as u32 | SI_FIELD_AUTO_REPEAT as u32) as si_field;
         }
         if UseNewInterpField(
             SI_FIELD_LEVEL_ONE_ONLY,
@@ -454,7 +454,7 @@ unsafe fn MergeInterp(
         ) {
             (*old).interp.level_one_only = (*new).interp.level_one_only;
             (*old).defined =
-                ((*old).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as i32 as u32) as si_field;
+                ((*old).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as u32) as si_field;
         }
         if collide as u64 != 0 {
             xkb_logf!(
@@ -505,7 +505,7 @@ unsafe fn ResolveStateAndPredicate(
             return true;
         }
         *pred_rtrn = MATCH_EXACTLY;
-        if (*expr).common.type_0 as u32 == STMT_EXPR_ACTION_DECL as i32 as u32 {
+        if (*expr).common.type_0 as u32 == STMT_EXPR_ACTION_DECL as u32 {
             let mut pred_txt: *const i8 = xkb_atom_text((*info).ctx, (*expr).action.name);
             let mut pred: u32 = 0 as u32;
             if !LookupString(
@@ -526,7 +526,7 @@ unsafe fn ResolveStateAndPredicate(
             }
             *pred_rtrn = pred as xkb_match_operation;
             expr = (*expr).action.args as *mut ExprDef;
-        } else if (*expr).common.type_0 as u32 == STMT_EXPR_IDENT as i32 as u32 {
+        } else if (*expr).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
             let mut pred_txt_0: *const i8 = xkb_atom_text((*info).ctx, (*expr).ident.ident);
             if !pred_txt_0.is_null()
                 && istreq(pred_txt_0, b"any\0".as_ptr() as *const i8) as i32 != 0
@@ -574,7 +574,7 @@ unsafe fn MergeLedMap(
 ) -> bool {
     unsafe {
         let mut collide: led_field = 0 as led_field;
-        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         if (*old).led.mods.mods == (*new).led.mods.mods
@@ -587,7 +587,7 @@ unsafe fn MergeLedMap(
             (*old).defined = ((*old).defined as u32 | (*new).defined as u32) as led_field;
             return true;
         }
-        if (*new).merge as u32 == MERGE_REPLACE as i32 as u32 {
+        if (*new).merge as u32 == MERGE_REPLACE as u32 {
             if report {
                 xkb_logf!(
                     (*info).ctx,
@@ -611,7 +611,7 @@ unsafe fn MergeLedMap(
         ) {
             (*old).led.which_mods = (*new).led.which_mods;
             (*old).led.mods = (*new).led.mods;
-            (*old).defined = ((*old).defined as u32 | LED_FIELD_MODS as i32 as u32) as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_MODS as u32) as led_field;
         }
         if UseNewLEDField(
             LED_FIELD_GROUPS,
@@ -628,7 +628,7 @@ unsafe fn MergeLedMap(
             (*old)
                 .led
                 .set_pending_groups((*new).led.pending_groups() as bool);
-            (*old).defined = ((*old).defined as u32 | LED_FIELD_GROUPS as i32 as u32) as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_GROUPS as u32) as led_field;
         }
         if UseNewLEDField(
             LED_FIELD_CTRLS,
@@ -639,7 +639,7 @@ unsafe fn MergeLedMap(
             &raw mut collide,
         ) {
             (*old).led.ctrls = (*new).led.ctrls;
-            (*old).defined = ((*old).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
+            (*old).defined = ((*old).defined as u32 | LED_FIELD_CTRLS as u32) as led_field;
         }
         if collide as u64 != 0 {
             xkb_logf!(
@@ -949,7 +949,7 @@ unsafe fn SetInterpField(
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
-            if (*value).common.type_0 as u32 == STMT_EXPR_ACTION_LIST as i32 as u32 {
+            if (*value).common.type_0 as u32 == STMT_EXPR_ACTION_LIST as u32 {
                 let mut num_actions: u32 = 0 as u32;
                 let mut act: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
                 while !act.is_null() {
@@ -997,8 +997,8 @@ unsafe fn SetInterpField(
                         }
                         _ => {}
                     }
-                    if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as i32 as u32) {
-                        if (num_actions == 1 as u32) as i32 as i64 != 0 {
+                    if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as u32) {
+                        if (num_actions == 1 as u32) as i64 != 0 {
                             (*si).interp.num_actions = 1 as xkb_action_count_t;
                             (*si).interp.a.action = toAct;
                         } else {
@@ -1058,12 +1058,12 @@ unsafe fn SetInterpField(
                     2 => return false,
                     _ => {
                         (*si).interp.num_actions =
-                            ((*si).interp.a.action.type_0 as u32 != ACTION_TYPE_NONE as i32 as u32)
+                            ((*si).interp.a.action.type_0 as u32 != ACTION_TYPE_NONE as u32)
                                 as i32 as xkb_action_count_t;
                     }
                 }
             }
-            (*si).defined = ((*si).defined as u32 | SI_FIELD_ACTION as i32 as u32) as si_field;
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_ACTION as u32) as si_field;
         } else if istreq(field, b"virtualmodifier\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"virtualmod\0".as_ptr() as *const i8) as i32 != 0
         {
@@ -1086,7 +1086,7 @@ unsafe fn SetInterpField(
                 );
             }
             (*si).interp.virtual_mod = ndx;
-            (*si).defined = ((*si).defined as u32 | SI_FIELD_VIRTUAL_MOD as i32 as u32) as si_field;
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_VIRTUAL_MOD as u32) as si_field;
         } else if istreq(field, b"repeat\0".as_ptr() as *const i8) {
             let mut set: bool = false;
             if !arrayNdx.is_null() {
@@ -1096,7 +1096,7 @@ unsafe fn SetInterpField(
                 return ReportSIBadType(info, si, field, b"boolean\0".as_ptr() as *const i8);
             }
             (*si).interp.set_repeat(set as bool);
-            (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as i32 as u32) as si_field;
+            (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as u32) as si_field;
         } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
             xkb_logf!(
                 (*info).ctx,
@@ -1126,7 +1126,7 @@ unsafe fn SetInterpField(
             }
             (*si).interp.level_one_only = val != 0;
             (*si).defined =
-                ((*si).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as i32 as u32) as si_field;
+                ((*si).defined as u32 | SI_FIELD_LEVEL_ONE_ONLY as u32) as si_field;
         } else {
             ReportBadField(
                 (*info).ctx,
@@ -1135,7 +1135,7 @@ unsafe fn SetInterpField(
                 siText(si, info),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as u32
                 == 0;
         }
         return true;
@@ -1170,7 +1170,7 @@ unsafe fn SetLedMapField(
                     b"modifier mask\0".as_ptr() as *const i8,
                 );
             }
-            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_MODS as i32 as u32) as led_field;
+            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_MODS as u32) as led_field;
         } else if istreq(field, b"groups\0".as_ptr() as *const i8) {
             let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
             if !arrayNdx.is_null() {
@@ -1207,7 +1207,7 @@ unsafe fn SetLedMapField(
             }
             (*ledi).led.groups = mask;
             (*ledi).defined =
-                ((*ledi).defined as u32 | LED_FIELD_GROUPS as i32 as u32) as led_field;
+                ((*ledi).defined as u32 | LED_FIELD_GROUPS as u32) as led_field;
         } else if istreq(field, b"controls\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"ctrls\0".as_ptr() as *const i8) as i32 != 0
         {
@@ -1230,7 +1230,7 @@ unsafe fn SetLedMapField(
                 );
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
-            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_CTRLS as i32 as u32) as led_field;
+            (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_CTRLS as u32) as led_field;
         } else if istreq(field, b"allowexplicit\0".as_ptr() as *const i8) {
             xkb_logf!(
                 (*info).ctx,
@@ -1311,7 +1311,7 @@ unsafe fn SetLedMapField(
                 crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_LED_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_LED_FIELDS as u32
                 == 0;
         }
         return true;
@@ -1352,8 +1352,8 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 },
             };
             InitInterp(&raw mut temp);
-            temp.merge = (if temp.merge as u32 == MERGE_REPLACE as i32 as u32 {
-                MERGE_OVERRIDE as i32 as u32
+            temp.merge = (if temp.merge as u32 == MERGE_REPLACE as u32 {
+                MERGE_OVERRIDE as u32
             } else {
                 (*stmt).merge as u32
             }) as merge_mode;
@@ -1382,8 +1382,8 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 },
             };
             InitLED(&raw mut temp_0);
-            temp_0.merge = (if temp_0.merge as u32 == MERGE_REPLACE as i32 as u32 {
-                MERGE_OVERRIDE as i32 as u32
+            temp_0.merge = (if temp_0.merge as u32 == MERGE_REPLACE as u32 {
+                MERGE_OVERRIDE as u32
             } else {
                 (*stmt).merge as u32
             }) as merge_mode;
@@ -1402,7 +1402,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 &raw mut (*stmt).value,
                 (*stmt).merge,
             ) as u32
-                != PARSER_FATAL_ERROR as i32 as u32;
+                != PARSER_FATAL_ERROR as u32;
         } else {
             xkb_logf!(
                 (*info).ctx,
@@ -1413,7 +1413,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS as u32
                 == 0;
         }
         return ret;
@@ -1588,7 +1588,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
-                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
+                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as u32 {
                                 b"compound\0".as_ptr() as *const i8
                             } else {
                                 b"declaration\0".as_ptr() as *const i8
@@ -1597,7 +1597,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as u32
                         == 0;
                 }
                 _ => {

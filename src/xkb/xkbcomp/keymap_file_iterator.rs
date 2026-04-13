@@ -146,7 +146,7 @@ pub struct C2Rust_Unnamed_1 {
 
 pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as u32 > FILE_TYPE_KEYMAP as i32 as u32 {
+        if type_0 as u32 > FILE_TYPE_KEYMAP as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut xkb_file_type_strings: [*const i8; 7] = [
@@ -164,7 +164,7 @@ pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
 
 pub unsafe fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8 {
     unsafe {
-        if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as i32 as u32 {
+        if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut merge_mode_strings: [*const i8; 4] = [
@@ -273,7 +273,7 @@ pub unsafe fn xkb_resolve_file(
             }
             let xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map) as *mut XkbFile;
             if !xkb_file.is_null() {
-                if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as i32 as u32
+                if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as u32
                     && (*xkb_file).file_type as u32 != file_type as u32
                 {
                     xkb_logf!(
@@ -489,7 +489,7 @@ unsafe fn xkb_file_section_append_includes(
             let valid: bool = !xkb_file.is_null();
             if valid as i32 != 0
                 || flags as u32
-                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as i32 as u32
+                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as u32
                     == 0
             {
                 let path: darray_size_t = (*section).buffer.size;
@@ -630,7 +630,7 @@ unsafe fn xkb_file_section_process(
         let mut ok: bool = true;
         let mut stmt: *mut ParseCommon = (*xkb_file).defs;
         while !stmt.is_null() {
-            if (*stmt).type_0 as u32 == STMT_INCLUDE as i32 as u32 {
+            if (*stmt).type_0 as u32 == STMT_INCLUDE as u32 {
                 ok = xkb_file_section_append_includes(
                     ctx,
                     flags,
@@ -693,7 +693,7 @@ pub unsafe fn xkb_file_section_parse(
         }
         xkb_file_section_reset(section);
         let no_includes: bool =
-            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as i32 as u32 != 0;
+            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as u32 != 0;
         let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as i32
             != 0
             && (no_includes as i32 != 0
@@ -808,12 +808,12 @@ pub unsafe fn xkb_file_iterator_next(
                 break;
             }
             *section = &raw mut (*iter).section;
-            if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as i32 as u32 {
+            if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as u32 {
                 (*iter).pending_xkb_file = xkb_file;
                 (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
                 (*iter).map = std::ptr::null();
                 return true;
-            } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as i32 as u32
+            } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as u32
                 && (*xkb_file).file_type as u32 != (*iter).type_0 as u32
             {
                 if !(*iter).pending_xkb_file.is_null() {
@@ -839,7 +839,7 @@ pub unsafe fn xkb_file_iterator_next(
                     (*iter).finished = true;
                 }
                 process_includes = (*iter).flags as u32
-                    & XKB_FILE_ITERATOR_NO_INCLUDES as i32 as u32
+                    & XKB_FILE_ITERATOR_NO_INCLUDES as u32
                     == 0;
                 if process_includes as i32 != 0
                     && !xkb_file_section_process(

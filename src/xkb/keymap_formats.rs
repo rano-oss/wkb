@@ -40,7 +40,7 @@ pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_f
 
 pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {
-        if (format as u32) < keymap_formats[0 as i32 as usize] as u32 {
+        if (format as u32) < keymap_formats[0 as usize] as u32 {
             return false;
         }
         let mut k: usize = 0 as usize;
@@ -88,7 +88,7 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
 }
 pub unsafe fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *const i8 {
     unsafe {
-        if (format as u32) < keymap_formats_labels[0 as i32 as usize].format as u32 {
+        if (format as u32) < keymap_formats_labels[0 as usize].format as u32 {
             return std::ptr::null();
         }
         let mut k: usize = 0 as usize;

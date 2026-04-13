@@ -214,7 +214,7 @@ unsafe fn keycode_store_update_key(
     unsafe {
         if (!match_0.c2rust_unnamed.found()
             || match_0.c2rust_unnamed.is_alias() as i32 != 0)
-            as i32 as i64
+            as i64
             != 0
         {
             return;
@@ -437,7 +437,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
     unsafe {
         if (!match_0.c2rust_unnamed.found()
             || match_0.c2rust_unnamed.is_alias() as i32 != 0)
-            as i32 as i64
+            as i64
             != 0
         {
             return;
@@ -691,7 +691,7 @@ unsafe fn AddLedName(
     unsafe {
         let mut old_idx: xkb_led_index_t = 0;
         let mut old: *mut LedNameInfo = std::ptr::null_mut();
-        let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         old = FindLedByName(info, (*new).name, &raw mut old_idx);
         if !old.is_null() {
             if old_idx == new_idx {
@@ -799,7 +799,7 @@ unsafe fn AddKeyName(
         let mut match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, name);
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
+            let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if report {
                     xkb_logf!(
@@ -880,7 +880,7 @@ unsafe fn AddKeyName(
                 }
                 return true;
             }
-            let clobber_0: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
+            let clobber_0: bool = merge as u32 != MERGE_AUGMENT as u32;
             if report {
                 let kname: *const i8 = KeyNameText((*info).ctx, name) as *const i8;
                 let old_kname: *const i8 = KeyNameText((*info).ctx, old_name) as *const i8;
@@ -1190,7 +1190,7 @@ unsafe fn HandleAliasDef(
         let match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, (*def).alias) as KeycodeMatch;
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as i32 as u32;
+            let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if (*def).real == match_name.alias.real() {
                     if report {
@@ -1287,7 +1287,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as u32
                 == 0;
         }
         if !istreq(field, b"minimum\0".as_ptr() as *const i8)
@@ -1302,7 +1302,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as u32
                 == 0;
         }
         if !arrayNdx.is_null() {
@@ -1313,7 +1313,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 b"defaults\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 == 0;
         }
         let mut val: i64 = 0 as i64;
@@ -1330,7 +1330,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 b"integer 0..0xfffffffe\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 == 0;
         }
         return true;
@@ -1421,7 +1421,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
-                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as i32 as u32 {
+                            if (*stmt).type_0 as u32 == STMT_UNKNOWN_COMPOUND as u32 {
                                 b"compound\0".as_ptr() as *const i8
                             } else {
                                 b"declaration\0".as_ptr() as *const i8
@@ -1430,7 +1430,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as u32
                         == 0;
                 }
                 _ => {

@@ -301,17 +301,17 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                 }
                 2 => {
                     serialize_flags = (serialize_flags as u32
-                        | XKB_KEYMAP_SERIALIZE_PRETTY as i32 as u32)
+                        | XKB_KEYMAP_SERIALIZE_PRETTY as u32)
                         as xkb_keymap_serialize_flags;
                 }
                 3 => {
                     serialize_flags = (serialize_flags as u32
-                        | XKB_KEYMAP_SERIALIZE_KEEP_UNUSED as i32 as u32)
+                        | XKB_KEYMAP_SERIALIZE_KEEP_UNUSED as u32)
                         as xkb_keymap_serialize_flags;
                 }
                 4 => {
                     serialize_flags = (serialize_flags as u32
-                        | XKB_KEYMAP_SERIALIZE_EXPLICIT as i32 as u32)
+                        | XKB_KEYMAP_SERIALIZE_EXPLICIT as u32)
                         as xkb_keymap_serialize_flags;
                 }
                 5 => {

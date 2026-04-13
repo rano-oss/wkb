@@ -496,7 +496,7 @@ unsafe fn MergeGroups(
             }
         }
         (*into).defined = ((*into).defined as u32
-            | (*from).defined as u32 & GROUP_FIELD_TYPE as i32 as u32)
+            | (*from).defined as u32 & GROUP_FIELD_TYPE as u32)
             as group_field;
         if (*from).levels.size == 0 as darray_size_t {
             InitGroupInfo(from);
@@ -569,7 +569,7 @@ unsafe fn MergeGroups(
                             if clobber {
                                 if ((*fromLevel).num_syms as i32
                                     > 1 as i32)
-                                    as i32 as i64
+                                    as i64
                                     != 0
                                 {
                                     if ((*intoLevel).num_syms as i32
@@ -629,7 +629,7 @@ unsafe fn MergeGroups(
                         {
                             if ((*intoLevel).num_actions as i32
                                 > 1 as i32)
-                                as i32 as i64
+                                as i64
                                 != 0
                             {
                                 xkb_logf!(
@@ -682,7 +682,7 @@ unsafe fn MergeGroups(
                             if clobber {
                                 if ((*fromLevel).num_actions as i32
                                     > 1 as i32)
-                                    as i32 as i64
+                                    as i64
                                     != 0
                                 {
                                     if ((*intoLevel).num_actions as i32
@@ -698,7 +698,7 @@ unsafe fn MergeGroups(
                                     (*fromLevel).num_actions = 0 as xkb_action_count_t;
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 } else if (*fromLevel).a.action.type_0 as u32
-                                    != ACTION_TYPE_NONE as i32 as u32
+                                    != ACTION_TYPE_NONE as u32
                                 {
                                     if ((*intoLevel).num_actions as i32
                                         > 1 as i32)
@@ -719,7 +719,7 @@ unsafe fn MergeGroups(
                                 != 0)
                             {
                                 if (*intoLevel).a.action.type_0 as u32
-                                    == ACTION_TYPE_NONE as i32 as u32
+                                    == ACTION_TYPE_NONE as u32
                                 {
                                     if ((*fromLevel).num_actions as i32
                                         > 1 as i32)
@@ -768,7 +768,7 @@ unsafe fn MergeGroups(
                     as group_field;
             }
             (*into).defined = ((*into).defined as u32
-                | (*from).defined as u32 & GROUP_FIELD_SYMS as i32 as u32)
+                | (*from).defined as u32 & GROUP_FIELD_SYMS as u32)
                 as group_field;
         }
         if fromActionsCount != 0 {
@@ -778,7 +778,7 @@ unsafe fn MergeGroups(
                     as group_field;
             }
             (*into).defined = ((*into).defined as u32
-                | (*from).defined as u32 & GROUP_FIELD_ACTS as i32 as u32)
+                | (*from).defined as u32 & GROUP_FIELD_ACTS as u32)
                 as group_field;
         }
         return true;
@@ -1100,7 +1100,7 @@ unsafe fn merge_overlays(
                         }
                         if report {
                             *collide = (*collide as u32
-                                | KEY_FIELD_OVERLAY as i32 as u32)
+                                | KEY_FIELD_OVERLAY as u32)
                                 as key_field;
                         }
                     }
@@ -1148,7 +1148,7 @@ unsafe fn merge_overlays(
                     }
                 }
                 if report {
-                    *collide = (*collide as u32 | KEY_FIELD_OVERLAY as i32 as u32)
+                    *collide = (*collide as u32 | KEY_FIELD_OVERLAY as u32)
                         as key_field;
                 }
                 if clobber {
@@ -1340,7 +1340,7 @@ unsafe fn AddKeySymbols(
 unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
     unsafe {
         let mut old: *mut ModMapEntry = std::ptr::null_mut();
-        let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
+        let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         if !(*info).modmaps.item.is_null() {
             old = (*info)
                 .modmaps
@@ -1439,7 +1439,7 @@ unsafe fn MergeIncludedSymbols(
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while i < group_names_in_both {
             if !(*(*from).group_names.item.offset(i as isize) == 0) {
-                if !(merge as u32 == MERGE_AUGMENT as i32 as u32
+                if !(merge as u32 == MERGE_AUGMENT as u32
                     && *(*into).group_names.item.offset(i as isize) != 0)
                 {
                     *(*into).group_names.item.offset(i as isize) =
@@ -1699,7 +1699,7 @@ unsafe fn GetGroupIndex(
     mut ndx_rtrn: *mut xkb_layout_index_t,
 ) -> bool {
     unsafe {
-        let mut name: *const i8 = if field as u32 == GROUP_FIELD_SYMS as i32 as u32 {
+        let mut name: *const i8 = if field as u32 == GROUP_FIELD_SYMS as u32 {
             b"symbols\0".as_ptr() as *const i8
         } else {
             b"actions\0".as_ptr() as *const i8
@@ -1750,7 +1750,7 @@ unsafe fn GetGroupIndex(
             ndx_rtrn,
             std::ptr::null_mut(),
         ) as u32
-            != PARSER_SUCCESS as i32 as u32
+            != PARSER_SUCCESS as u32
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1787,13 +1787,13 @@ unsafe fn AddSymbolsToKey(
             return false;
         }
         let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
-        if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as i32 as u32 {
+        if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32
-                | GROUP_FIELD_SYMS as i32 as u32)
+                | GROUP_FIELD_SYMS as u32)
                 as group_field;
             return true;
         }
-        if (*value).common.type_0 as u32 != STMT_EXPR_KEYSYM_LIST as i32 as u32 {
+        if (*value).common.type_0 as u32 != STMT_EXPR_KEYSYM_LIST as u32 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1806,7 +1806,7 @@ unsafe fn AddSymbolsToKey(
             );
             return false;
         }
-        if (*groupi).defined as u32 & GROUP_FIELD_SYMS as i32 as u32 != 0 {
+        if (*groupi).defined as u32 & GROUP_FIELD_SYMS as u32 != 0 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1840,14 +1840,14 @@ unsafe fn AddSymbolsToKey(
             );
         }
         (*groupi).defined = ((*groupi).defined as u32
-            | GROUP_FIELD_SYMS as i32 as u32)
+            | GROUP_FIELD_SYMS as u32)
             as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
         let mut keysymList_0: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
                 (*groupi).levels.item.offset(level as isize) as *mut xkb_level;
-            if ((*keysymList_0).syms.size > 65535 as darray_size_t) as i32 as i64
+            if ((*keysymList_0).syms.size > 65535 as darray_size_t) as i64
                 != 0
             {
                 xkb_logf!(
@@ -1915,13 +1915,13 @@ unsafe fn AddActionsToKey(
             return false;
         }
         let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
-        if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as i32 as u32 {
+        if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32
-                | GROUP_FIELD_ACTS as i32 as u32)
+                | GROUP_FIELD_ACTS as u32)
                 as group_field;
             return true;
         }
-        if (*value).common.type_0 as u32 != STMT_EXPR_ACTION_LIST as i32 as u32 {
+        if (*value).common.type_0 as u32 != STMT_EXPR_ACTION_LIST as u32 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_CRITICAL,
@@ -1934,7 +1934,7 @@ unsafe fn AddActionsToKey(
             );
             return false;
         }
-        if (*groupi).defined as u32 & GROUP_FIELD_ACTS as i32 as u32 != 0 {
+        if (*groupi).defined as u32 & GROUP_FIELD_ACTS as u32 != 0 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_CRITICAL,
@@ -1961,7 +1961,7 @@ unsafe fn AddActionsToKey(
             );
         }
         (*groupi).defined = ((*groupi).defined as u32
-            | GROUP_FIELD_ACTS as i32 as u32)
+            | GROUP_FIELD_ACTS as u32)
             as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
         let mut nonEmptyLevels: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -1976,7 +1976,7 @@ unsafe fn AddActionsToKey(
                 num_actions = num_actions.wrapping_add(1);
                 act = (*act).common.next as *mut ExprDef;
             }
-            if (num_actions > 65535 as u32) as i32 as i64 != 0 {
+            if (num_actions > 65535 as u32) as i64 != 0 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -2011,7 +2011,7 @@ unsafe fn AddActionsToKey(
                     act_0,
                     &raw mut toAct,
                 ) as xkb_parser_error;
-                if r as u32 != PARSER_SUCCESS as i32 as u32 {
+                if r as u32 != PARSER_SUCCESS as u32 {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -2022,15 +2022,15 @@ unsafe fn AddActionsToKey(
                         ndx.wrapping_add(1 as xkb_layout_index_t),
                         level.wrapping_add(1 as xkb_level_index_t),
                     );
-                    if r as u32 == PARSER_FATAL_ERROR as i32 as u32 {
+                    if r as u32 == PARSER_FATAL_ERROR as u32 {
                         darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
                         return false;
                     } else {
                         toAct.type_0 = ACTION_TYPE_NONE;
                     }
                 }
-                if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as i32 as u32) {
-                    if (num_actions == 1 as u32) as i32 as i64 != 0 {
+                if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as u32) {
+                    if (num_actions == 1 as u32) as i64 != 0 {
                         (*leveli).num_actions = 1 as xkb_action_count_t;
                         (*leveli).a.action = toAct;
                         c2rust_current_block_102 = 1829140360157350833;
@@ -2050,7 +2050,7 @@ unsafe fn AddActionsToKey(
                 1134115459065347084 => {
                     if actions.size == 0 as darray_size_t {
                         (*leveli).num_actions = 0 as xkb_action_count_t;
-                    } else if (actions.size > 1 as darray_size_t) as i32 as i64 != 0
+                    } else if (actions.size > 1 as darray_size_t) as i64 != 0
                     {
                         (*leveli).num_actions = actions.size as xkb_action_count_t;
                         if actions.size > 0 as darray_size_t {
@@ -2119,31 +2119,31 @@ unsafe fn AddActionsToKey(
 static mut repeatEntries: [LookupEntry; 8] = [
     LookupEntry {
         name: b"true\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_YES as i32 as u32,
+        value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
         name: b"yes\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_YES as i32 as u32,
+        value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
         name: b"on\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_YES as i32 as u32,
+        value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
         name: b"false\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_NO as i32 as u32,
+        value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
         name: b"no\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_NO as i32 as u32,
+        value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
         name: b"off\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_NO as i32 as u32,
+        value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
         name: b"default\0".as_ptr() as *const i8,
-        value: KEY_REPEAT_UNDEFINED as i32 as u32,
+        value: KEY_REPEAT_UNDEFINED as u32,
     },
     LookupEntry {
         name: std::ptr::null(),
@@ -2313,7 +2313,7 @@ unsafe fn SetSymbolsField(
                 &raw mut ndx,
                 std::ptr::null_mut(),
             ) as u32
-                != PARSER_SUCCESS as i32 as u32
+                != PARSER_SUCCESS as u32
             {
                 xkb_logf!(
                     (*info).ctx,
@@ -2337,7 +2337,7 @@ unsafe fn SetSymbolsField(
                 (*(*keyi).groups.item.offset(ndx as isize)).type_0 = val;
                 let ref mut c2rust_fresh8 = (*(*keyi).groups.item.offset(ndx as isize)).defined;
                 *c2rust_fresh8 = (*c2rust_fresh8 as u32
-                    | GROUP_FIELD_TYPE as i32 as u32)
+                    | GROUP_FIELD_TYPE as u32)
                     as group_field;
             }
         } else if istreq(field, b"symbols\0".as_ptr() as *const i8) {
@@ -2507,7 +2507,7 @@ unsafe fn SetSymbolsField(
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*key).name)),
                             );
                             return (*(*info).keymap_info).strict as u32
-                                & PARSER_NO_FIELD_VALUE_MISMATCH as i32 as u32
+                                & PARSER_NO_FIELD_VALUE_MISMATCH as u32
                                 == 0;
                         }
                     }
@@ -2603,7 +2603,7 @@ unsafe fn SetSymbolsField(
                 &raw mut grp,
                 &raw mut pending,
             ) as u32
-                != PARSER_SUCCESS as i32 as u32
+                != PARSER_SUCCESS as u32
                 && !pending
             {
                 xkb_logf!(
@@ -2652,7 +2652,7 @@ unsafe fn SetSymbolsField(
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_KEY_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_KEY_FIELDS as u32
                 == 0;
         }
         return true;
@@ -2683,7 +2683,7 @@ unsafe fn SetGroupName(
             &raw mut group,
             std::ptr::null_mut(),
         ) as u32
-            != PARSER_SUCCESS as i32 as u32
+            != PARSER_SUCCESS as u32
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2734,7 +2734,7 @@ unsafe fn SetGroupName(
         } else {
             let old_name: xkb_atom_t = *(*info).group_names.item.offset(group_to_use as isize);
             if old_name != XKB_ATOM_NONE as xkb_atom_t && old_name != name {
-                let replace: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
+                let replace: bool = merge as u32 != MERGE_AUGMENT as u32;
                 let use_0: xkb_atom_t = if replace as i32 != 0 {
                     name
                 } else {
@@ -2809,7 +2809,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             InitKeyInfo((*info).ctx, &raw mut temp);
             temp.set_merge(
                 (if temp.merge() as i32 == MERGE_REPLACE as i32 {
-                    MERGE_OVERRIDE as i32 as u32
+                    MERGE_OVERRIDE as u32
                 } else {
                     (*stmt).merge as u32
                 }) as merge_mode as merge_mode,
@@ -2880,7 +2880,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 &raw mut (*stmt).value,
                 (*stmt).merge,
             ) as u32
-                != PARSER_FATAL_ERROR as i32 as u32;
+                != PARSER_FATAL_ERROR as u32;
         } else {
             xkb_logf!(
                 (*info).ctx,
@@ -2891,7 +2891,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS as u32
                 == 0;
         }
         return ret;
@@ -2909,9 +2909,9 @@ unsafe fn HandleSymbolsBody(
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
             if (*def).name.is_null() {
-                if (*def).value.is_null() as i32 as i64 != 0
+                if (*def).value.is_null() as i64 != 0
                     || (*(*def).value).common.type_0 as u32
-                        != STMT_EXPR_ACTION_LIST as i32 as u32
+                        != STMT_EXPR_ACTION_LIST as u32
                 {
                     field = b"symbols\0".as_ptr() as *const i8;
                 } else {
@@ -2941,7 +2941,7 @@ unsafe fn HandleSymbolsBody(
                     ok = false;
                 }
             }
-            if (*def).value.is_null() as i32 as i64 != 0 {
+            if (*def).value.is_null() as i64 != 0 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -3096,13 +3096,13 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         let mut c2rust_current_block_19: u64;
         let mut key: *mut ExprDef = (*def).keys as *mut ExprDef;
         while !key.is_null() {
-            if (*key).common.type_0 as u32 == STMT_EXPR_KEYNAME_LITERAL as i32 as u32
+            if (*key).common.type_0 as u32 == STMT_EXPR_KEYNAME_LITERAL as u32
             {
                 tmp.haveSymbol = false;
                 tmp.u.keyName = (*key).key_name.key_name;
                 c2rust_current_block_19 = 5601891728916014340;
             } else if (*key).common.type_0 as u32
-                == STMT_EXPR_KEYSYM_LITERAL as i32 as u32
+                == STMT_EXPR_KEYSYM_LITERAL as u32
             {
                 if (*key).keysym.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
                     c2rust_current_block_19 = 13536709405535804910;
@@ -3166,7 +3166,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
                             if (*stmt).type_0 as u32
-                                == STMT_UNKNOWN_COMPOUND as i32 as u32
+                                == STMT_UNKNOWN_COMPOUND as u32
                             {
                                 b"compound\0".as_ptr() as *const i8
                             } else {
@@ -3176,7 +3176,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as u32
                         == 0;
                 }
                 _ => {
@@ -3574,14 +3574,14 @@ unsafe fn CopySymbolsDefToKeymap(
                 let has_explicit_type = ((*keyi).defined() as i32
                     & KEY_FIELD_DEFAULT_TYPE as i32
                     != 0)
-                    || ((*groupi).defined as u32 & GROUP_FIELD_TYPE as i32 as u32
+                    || ((*groupi).defined as u32 & GROUP_FIELD_TYPE as u32
                         != 0);
                 if (*groupi).levels.size > 0 || has_explicit_type {
                     (*key).set_num_groups(i.wrapping_add(1));
                 }
                 if has_explicit_type {
                     (*key).explicit = ((*key).explicit as u32
-                        | EXPLICIT_TYPES as i32 as u32)
+                        | EXPLICIT_TYPES as u32)
                         as xkb_explicit_components;
                 }
                 i = i.wrapping_add(1);
@@ -3762,19 +3762,19 @@ unsafe fn CopySymbolsDefToKeymap(
                     {
                         (*(*key).groups.offset(i as isize)).set_explicit_symbols(true);
                         (*key).explicit = ((*key).explicit as u32
-                            | EXPLICIT_SYMBOLS as i32 as u32)
+                            | EXPLICIT_SYMBOLS as u32)
                             as xkb_explicit_components;
                     }
-                    if (*groupi).defined as u32 & GROUP_FIELD_ACTS as i32 as u32 != 0
+                    if (*groupi).defined as u32 & GROUP_FIELD_ACTS as u32 != 0
                     {
                         (*(*key).groups.offset(i as isize)).set_explicit_actions(true);
                         (*key).explicit = ((*key).explicit as u32
-                            | EXPLICIT_INTERP as i32 as u32)
+                            | EXPLICIT_INTERP as u32)
                             as xkb_explicit_components;
                     }
                     if (*(*key).groups.offset(i as isize)).explicit_type() {
                         (*key).explicit = ((*key).explicit as u32
-                            | EXPLICIT_TYPES as i32 as u32)
+                            | EXPLICIT_TYPES as u32)
                             as xkb_explicit_components;
                     }
 
@@ -3792,14 +3792,14 @@ unsafe fn CopySymbolsDefToKeymap(
         if (*keyi).defined() as i32 & KEY_FIELD_VMODMAP as i32 != 0 {
             (*key).vmodmap = (*keyi).vmodmap;
             (*key).explicit = ((*key).explicit as u32
-                | EXPLICIT_VMODMAP as i32 as u32)
+                | EXPLICIT_VMODMAP as u32)
                 as xkb_explicit_components;
         }
 
         if (*keyi).repeat() != KEY_REPEAT_UNDEFINED as key_repeat {
             (*key).set_repeats((*keyi).repeat() == KEY_REPEAT_YES as key_repeat);
             (*key).explicit = ((*key).explicit as u32
-                | EXPLICIT_REPEAT as i32 as u32)
+                | EXPLICIT_REPEAT as u32)
                 as xkb_explicit_components;
         }
 
@@ -3832,14 +3832,14 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     (*key).set_overlays_inline(false);
                     (*key).explicit = ((*key).explicit as u32
-                        | EXPLICIT_OVERLAY as i32 as u32)
+                        | EXPLICIT_OVERLAY as u32)
                         as xkb_explicit_components;
                 }
             } else {
                 (*key).c2rust_unnamed.overlay_key = (*keyi).c2rust_unnamed.overlay_key;
                 (*key).set_overlays_inline(true);
                 (*key).explicit = ((*key).explicit as u32
-                    | EXPLICIT_OVERLAY as i32 as u32)
+                    | EXPLICIT_OVERLAY as u32)
                     as xkb_explicit_components;
             }
         }

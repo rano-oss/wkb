@@ -1700,8 +1700,8 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
         }
         (*ctx).context_state = CONTEXT_NEW;
         (*ctx).load_extra_rules_files =
-            flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32 != 0;
-        (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as i32 as u32 == 0;
+            flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as u32 != 0;
+        (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
         (*ctx).log_fn =
             Some(default_log_fn as unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ())
                 as Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>;
@@ -1728,7 +1728,7 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
         list_init(&raw mut (*ctx).models);
         list_init(&raw mut (*ctx).layouts);
         list_init(&raw mut (*ctx).option_groups);
-        if flags as u32 & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32 as u32 == 0
+        if flags as u32 & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0
             && !rxkb_context_include_path_append_default(ctx)
         {
             rxkb_logf!(
@@ -1794,7 +1794,7 @@ pub unsafe fn rxkb_context_include_path_append(
         let mut rules: [i8; 4096] = [0; 4096];
         let mut tmp: *mut i8 = std::ptr::null_mut();
         let mut err: i32 = 0 as i32;
-        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
+        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -2065,7 +2065,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
     unsafe {
         let mut user_path: [i8; 4096] = [0; 4096];
         let mut ret: i32 = if false { 1 } else { 0 };
-        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
+        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -2211,7 +2211,7 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
     unsafe {
         let mut path: *mut *mut i8 = std::ptr::null_mut();
         let mut success: bool = false;
-        if (*ctx).context_state as u32 != CONTEXT_NEW as i32 as u32 {
+        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -2300,7 +2300,7 @@ pub unsafe fn rxkb_context_get_user_data(mut ctx: *mut rxkb_context) -> *mut ::c
 #[inline]
 unsafe fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
     unsafe {
-        return (*node).type_0 as u32 == XML_ELEMENT_NODE as i32 as u32
+        return (*node).type_0 as u32 == XML_ELEMENT_NODE as u32
             && xmlStrEqual((*node).name, name as *const xmlChar) != 0;
     }
 }
@@ -2309,7 +2309,7 @@ unsafe fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
         let mut n: *mut xmlNode = std::ptr::null_mut();
         n = (*node).children as *mut xmlNode;
         while !n.is_null() {
-            if (*n).type_0 as u32 == XML_TEXT_NODE as i32 as u32 {
+            if (*n).type_0 as u32 == XML_TEXT_NODE as u32 {
                 return xmlStrdup((*n).content) as *mut i8;
             }
             n = (*n).next as *mut xmlNode;

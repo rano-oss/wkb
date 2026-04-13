@@ -309,7 +309,7 @@ unsafe fn AddKeyType(
             xkb_context_get_log_verbosity((*info).ctx) as i32;
         old = FindMatchingKeyType(info, (*new).name);
         if !old.is_null() {
-            if (*new).merge as u32 != MERGE_AUGMENT as i32 as u32 {
+            if (*new).merge as u32 != MERGE_AUGMENT as u32 {
                 if same_file as i32 != 0 && verbosity > 0 as i32
                     || verbosity > 9 as i32
                 {
@@ -528,7 +528,7 @@ unsafe fn SetModifiers(
             );
             return false;
         }
-        if (*type_0).defined as u32 & TYPE_FIELD_MASK as i32 as u32 != 0 {
+        if (*type_0).defined as u32 & TYPE_FIELD_MASK as u32 != 0 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -1013,7 +1013,7 @@ unsafe fn SetKeyTypeField(
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
             ok = (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_TYPE_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_TYPE_FIELDS as u32
                 == 0;
         }
         (*type_0).defined = ((*type_0).defined as u32 | type_field as u32) as type_field;
@@ -1137,7 +1137,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
+                & PARSER_NO_UNKNOWN_STATEMENTS as u32
                 == 0;
         } else if !field.is_null() {
             xkb_logf!(
@@ -1149,7 +1149,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as i32 as u32
+                & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as u32
                 == 0;
         }
         return false;
@@ -1184,7 +1184,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
                             if (*stmt).type_0 as u32
-                                == STMT_UNKNOWN_COMPOUND as i32 as u32
+                                == STMT_UNKNOWN_COMPOUND as u32
                             {
                                 b"compound\0".as_ptr() as *const i8
                             } else {
@@ -1194,7 +1194,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as u32
                         == 0;
                 }
                 _ => {
