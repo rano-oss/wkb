@@ -9,11 +9,6 @@ pub mod utf8_decoding_h {
 
     pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
-pub mod include_h {
-    pub const MERGE_AUGMENT_PREFIX: i32 = 124;
-    pub const MERGE_REPLACE_PREFIX: i32 = 94;
-    pub use crate::xkb::xkbcomp::include::ParseIncludeMap;
-}
 
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
@@ -36,7 +31,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-pub use self::include_h::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
+pub use crate::xkb::xkbcomp::include::{ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

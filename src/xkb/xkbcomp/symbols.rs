@@ -21,13 +21,10 @@ pub mod action_h {
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
-pub mod include_h {
-    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-}
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::darray_h::darray_size_t;
-use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};

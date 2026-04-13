@@ -7,30 +7,21 @@ use crate::xkb::context_priv::{
 };
 use crate::xkb_logf;
 
-pub mod include_h {
-    pub const INCLUDE_MAX_DEPTH: ::core::ffi::c_int = 15 as ::core::ffi::c_int;
-    pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
-    pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
-    pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
-    pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
-        MERGE_OVERRIDE_PREFIX as i8,
-        MERGE_AUGMENT_PREFIX as i8,
-        MERGE_REPLACE_PREFIX as i8,
-        0 as ::core::ffi::c_int as i8,
-    ];
-}
+pub const INCLUDE_MAX_DEPTH: ::core::ffi::c_int = 15 as ::core::ffi::c_int;
+pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
+pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
+pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
+pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
+    MERGE_OVERRIDE_PREFIX as i8,
+    MERGE_AUGMENT_PREFIX as i8,
+    MERGE_REPLACE_PREFIX as i8,
+    0 as ::core::ffi::c_int as i8,
+];
+
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-pub use self::include_h::{
-    INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
-    MERGE_REPLACE_PREFIX,
-};
-pub use crate::xkb::scanner_utils::{
-    scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
-    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
-};
 use self::utils_paths_h::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -75,6 +66,10 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
+};
+pub use crate::xkb::scanner_utils::{
+    scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
+    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{

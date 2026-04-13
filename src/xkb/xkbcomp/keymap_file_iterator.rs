@@ -69,44 +69,11 @@ pub mod keymap_file_iterator_h {
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
-pub mod include_h {
-    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-    use libc::FILE;
-
-    use crate::xkb::shared_ast_types::xkb_file_type;
-    use crate::xkb::shared_types::xkb_context;
-
-    pub unsafe fn FindFileInXkbPath(
-        ctx: *mut xkb_context,
-        parent_file_name: *const i8,
-        name: *const i8,
-        name_len: usize,
-        type_0: xkb_file_type,
-        buf: *mut i8,
-        buf_size: usize,
-        offset: *mut u32,
-        required: bool,
-    ) -> *mut FILE {
-        unsafe {
-            crate::xkb::xkbcomp::include::FindFileInXkbPath(
-                ctx,
-                parent_file_name,
-                name,
-                name_len,
-                type_0,
-                buf,
-                buf_size,
-                offset,
-                required,
-            ) as *mut FILE
-        }
-    }
-}
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
+use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::keymap_file_iterator_h::{
     xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,
     xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,

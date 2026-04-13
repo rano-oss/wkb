@@ -11,42 +11,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 }
-pub mod include_h {
-    use libc::FILE;
-    pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
-    pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
-    pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
-    pub use crate::xkb::xkbcomp::include::expand_path;
-
-    use crate::xkb::shared_ast_types::xkb_file_type;
-    use crate::xkb::shared_types::xkb_context;
-
-    pub unsafe fn FindFileInXkbPath(
-        ctx: *mut xkb_context,
-        parent_file_name: *const i8,
-        name: *const i8,
-        name_len: usize,
-        type_0: xkb_file_type,
-        buf: *mut i8,
-        buf_size: usize,
-        offset: *mut u32,
-        required: bool,
-    ) -> *mut FILE {
-        unsafe {
-            crate::xkb::xkbcomp::include::FindFileInXkbPath(
-                ctx,
-                parent_file_name,
-                name,
-                name_len,
-                type_0,
-                buf,
-                buf_size,
-                offset,
-                required,
-            ) as *mut FILE
-        }
-    }
-}
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
@@ -59,7 +23,7 @@ pub use crate::xkb::shared_ast_types::{
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
 };
-pub use self::include_h::{
+pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };

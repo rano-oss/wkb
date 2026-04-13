@@ -12,9 +12,6 @@ pub mod action_h {
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
-pub mod include_h {
-    pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-}
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use crate::xkb::shared_ast_types::{
@@ -37,7 +34,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
