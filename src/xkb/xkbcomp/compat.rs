@@ -1,29 +1,16 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_atom_text};
 
-pub mod text_h {
-    pub use crate::xkb::text::{
-        ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
-        useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
-    };
-}
+use crate::xkb::text::{ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames, useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText};
+use crate::xkb::xkbcomp::expr::{ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask, ExprResolveMod, ExprResolveModMask};
 pub mod action_h {
     pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
     pub use crate::xkb::xkbcomp::action::{
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
 }
-pub mod limits_h {
-    pub const CHAR_BIT: i32 = 8;}
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::{
-        ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
-        ExprResolveMod, ExprResolveModMask,
-    };
 }
 pub mod util_mem_h {
     #[inline]
@@ -62,10 +49,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use self::expr_h::{
-    ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask,
-    ExprResolveMod, ExprResolveModMask,
-};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -99,7 +82,6 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MAX_ACTIONS_PER_LEVEL, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT, XKB_MAX_LEDS,
 };
-pub use self::limits_h::CHAR_BIT;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -143,10 +125,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
-};
-pub use self::text_h::{
-    ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
-    useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText,
 };
 pub use self::util_mem_h::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};

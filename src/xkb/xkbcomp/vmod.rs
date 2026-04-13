@@ -1,16 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
-pub mod text_h {
-
-    pub use crate::xkb::text::ModMaskText;
-}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::ExprResolveModMask;
-}
 
 pub use crate::xkb::shared_ast_types::{
     _ParseCommon, merge_mode, stmt_type, C2Rust_Unnamed_1, ExprAction, ExprActionList,
@@ -27,18 +17,17 @@ pub use crate::xkb::shared_ast_types::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
-use self::expr_h::ExprResolveModMask;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };
-pub use self::limits_h::CHAR_BIT;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-use self::text_h::ModMaskText;
 pub use crate::xkb::shared_types::darray_size_t;
+use crate::xkb::text::ModMaskText;
+use crate::xkb::xkbcomp::expr::ExprResolveModMask;
 pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set, mut reset: bool) {
     unsafe {
         *info = *mods;

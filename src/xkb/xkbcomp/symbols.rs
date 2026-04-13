@@ -2,23 +2,19 @@ use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
 use crate::xkb_logf;
 use c2rust_bitfields;
 
+use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
+use crate::xkb::xkbcomp::expr::{
+    ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
+    ExprResolveString,
+};
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
-}
-pub mod text_h {
-
-    pub use crate::xkb::text::{
-        ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText,
-    };
 }
 pub mod action_h {
     pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
     pub use crate::xkb::xkbcomp::action::{
         HandleActionDef, InitActionsInfo, SetDefaultActionField,
     };
-}
-pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;
 }
 pub mod utils_numbers_h {
     #[inline]
@@ -70,11 +66,9 @@ pub mod utils_numbers_h {
         }
         return (1 as u32)
             << (::core::mem::size_of::<u32>() as usize)
-                .wrapping_mul(CHAR_BIT as usize)
+                .wrapping_mul(8 as usize)
                 .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as i32 as usize);
     }
-
-    use super::limits_h::CHAR_BIT;
 }
 pub mod keysym_h {
     pub use crate::xkb::keysym::xkb_keysym_is_keypad;
@@ -82,13 +76,6 @@ pub mod keysym_h {
 }
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::{
-        ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
-        ExprResolveString,
-    };
 }
 pub mod util_mem_h {
     #[inline]
@@ -109,34 +96,17 @@ pub mod xkbcommon_keysyms_h {
 }
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
-pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
-    xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
-    ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
-    ExprKeysymList, ExprString, ExprUnary, IncludeStmt, ModMapDef, ParseCommon, SymbolsDef,
-    UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
-    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
-    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
-    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
-    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
-    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
-    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
-    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
-    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
-    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
-    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
-    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
-};
 pub use self::darray_h::darray_size_t;
-use self::expr_h::{
-    ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
-    ExprResolveString,
-};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 use self::keysym_h::{xkb_keysym_is_keypad, xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-pub use self::limits_h::CHAR_BIT;
+pub use self::util_mem_h::_steal;
+pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
+use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use crate::xkb::keymap::clear_level;
+pub use crate::xkb::keymap_priv::{
+    XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
+};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -181,21 +151,29 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::text_h::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
-pub use self::util_mem_h::_steal;
-pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
-pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
-use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-pub use crate::xkb::shared_types::{
-    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+pub use crate::xkb::shared_ast_types::{
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
+    xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
+    ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
+    ExprKeysymList, ExprString, ExprUnary, IncludeStmt, ModMapDef, ParseCommon, SymbolsDef,
+    UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
+    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
+    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
+    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
+    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
+    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-    xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, FreeXkbFile,
+    xkb_parser_error, xkb_parser_strict_flags, FreeXkbFile, XkbcompFeatures, XkbcompLookup,
     PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
     PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
     PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
@@ -204,10 +182,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
-};
-pub use crate::xkb::keymap::clear_level;
-pub use crate::xkb::keymap_priv::{
-    XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
 };
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -242,10 +216,17 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
     XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
+pub use crate::xkb::shared_types::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{
     darray_append, darray_appends, darray_free, darray_growalloc, darray_resize_zero,
 };
+pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
 use libc::{abort, atoi, calloc, free, realloc};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -918,9 +899,8 @@ unsafe fn overlays_get(
 ) -> bool {
     unsafe {
         if bit as ::core::ffi::c_int
-            >= (::core::mem::size_of::<xkb_overlay_mask_t>() as usize)
-                .wrapping_mul(CHAR_BIT as usize) as xkb_overlay_index_t
-                as ::core::ffi::c_int
+            >= (::core::mem::size_of::<xkb_overlay_mask_t>() as usize).wrapping_mul(8 as usize)
+                as xkb_overlay_index_t as ::core::ffi::c_int
         {
             return 0 != 0;
         }
@@ -950,9 +930,8 @@ unsafe fn overlays_insert(
 ) -> bool {
     unsafe {
         if bit as ::core::ffi::c_int
-            >= (::core::mem::size_of::<xkb_overlay_mask_t>() as usize)
-                .wrapping_mul(CHAR_BIT as usize) as xkb_overlay_index_t
-                as ::core::ffi::c_int
+            >= (::core::mem::size_of::<xkb_overlay_mask_t>() as usize).wrapping_mul(8 as usize)
+                as xkb_overlay_index_t as ::core::ffi::c_int
         {
             return 0 != 0;
         }

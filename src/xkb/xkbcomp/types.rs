@@ -1,18 +1,10 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::{xkb_atom_text, xkb_atom_intern};
 
-pub mod text_h {
-
-    pub use crate::xkb::text::{LookupEntry, ModMaskText};
-}
+use crate::xkb::text::{LookupEntry, ModMaskText};
+use crate::xkb::xkbcomp::expr::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::{
-        ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString,
-    };
 }
 pub mod util_mem_h {
     #[inline]
@@ -49,7 +41,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use self::expr_h::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -124,7 +115,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::util_mem_h::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};

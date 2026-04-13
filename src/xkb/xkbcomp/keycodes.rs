@@ -1,16 +1,8 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod text_h {
-
-    pub use crate::xkb::text::{KeyNameText, LookupEntry};
-}
-pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
-}
+use crate::xkb::text::{KeyNameText, LookupEntry};
+use crate::xkb::xkbcomp::expr::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 pub mod util_mem_h {
     #[inline]
     pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
@@ -46,7 +38,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use self::expr_h::{ExprResolveInteger, ExprResolveLhs, ExprResolveString};
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
@@ -78,7 +69,6 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
     XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS,
 };
-pub use self::limits_h::CHAR_BIT;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -123,7 +113,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::text_h::{KeyNameText, LookupEntry};
 pub use self::util_mem_h::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 pub use crate::xkb::shared_ast_types::{

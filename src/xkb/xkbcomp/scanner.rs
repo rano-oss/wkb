@@ -2,6 +2,7 @@ use crate::xkb::shared_types::*;
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_intern;
 
+use crate::xkb::text::LookupEntry;
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]

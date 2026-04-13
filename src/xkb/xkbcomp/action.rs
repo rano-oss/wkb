@@ -1,13 +1,7 @@
 use crate::xkb::context_priv::xkb_atom_text;
 use crate::xkb_logf;
 
-pub mod text_h {
-
-    pub use crate::xkb::text::{
-        actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
-        LookupValue,
-    };
-}
+use crate::xkb::text::{actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString, LookupValue};
 pub mod action_h {
     use crate::xkb::shared_types::xkb_action;
     #[derive(Copy, Clone)]
@@ -80,10 +74,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
-};
-pub use self::text_h::{
-    actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
-    LookupValue,
 };
 pub use crate::xkb::utils::{istrcmp, istreq};
 pub use crate::xkb::shared_ast_types::{

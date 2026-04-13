@@ -1,28 +1,32 @@
 use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
-pub mod text_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct LookupEntry {
-        pub name: *const i8,
-        pub value: u32,
-    }
-    pub type C2Rust_Unnamed_1 = u32;
-    pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
-    pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
-    #[inline]
-    pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
-            CONTROL_NAMES_MIN_V1_INDEX as i32
-        } else {
-            CONTROL_NAMES_MIN_V2_INDEX as i32
-        }) as u8;
-    }
-    use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
-}
 pub mod keysym_h {
     pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31 as i32;
 }
 
+// Was in text_h module — now at file level
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct LookupEntry {
+    pub name: *const i8,
+    pub value: u32,
+}
+pub type C2Rust_Unnamed_1 = u32;
+pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
+pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
+pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
+#[inline]
+pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
+    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32 {
+        CONTROL_NAMES_MIN_V1_INDEX as i32
+    } else {
+        CONTROL_NAMES_MIN_V2_INDEX as i32
+    }) as u8;
+}
+use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
+
+pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
+pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
     xkb_mod, xkb_mod_set, _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
@@ -39,14 +43,8 @@ pub use crate::xkb::shared_types::{
     MATCH_ALL, MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL,
     MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
-pub use self::keysym_h::XKB_KEYSYM_NAME_MAX_SIZE;
-pub use self::text_h::{
-    format_control_names_offset, C2Rust_Unnamed_1, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX,
-    CONTROL_NAMES_MIN_V2_INDEX,
-};
-pub use crate::xkb::utils::{istrcmp, istreq, strempty};
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len_safe;
+pub use crate::xkb::utils::{istrcmp, istreq, strempty};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,
@@ -1760,8 +1758,8 @@ unsafe fn c2rust_run_static_initializers() {
         ]
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::keysym::xkb_keysym_get_name;
+use crate::xkb::shared_types::*;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

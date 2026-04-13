@@ -141,10 +141,6 @@ pub mod utils_numbers_h {
     }
 }
 
-pub mod limits_h {
-
-    pub const CHAR_BIT: i32 = 8;
-}
 
 pub mod util_mem_h {
     #[inline]
@@ -208,7 +204,6 @@ pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 
-pub use self::limits_h::CHAR_BIT;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

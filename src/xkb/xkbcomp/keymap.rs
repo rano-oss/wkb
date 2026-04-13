@@ -1,60 +1,22 @@
+use crate::xkb::shared_types::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
+use crate::xkb::text::{
+    format_control_names_offset, ActionTypeText, C2Rust_Unnamed_1 as C2Rust_Unnamed_16,
+    KeyNameText, KeysymText, LookupEntry, CONTROL_NAMES_MIN_V1_INDEX, CONTROL_NAMES_MIN_V2_INDEX,
+    GROUP_LAST_INDEX_NAME,
+};
 use crate::xkb::utils::{darray_append, darray_appends, darray_free};
 use crate::xkb_logf;
 
-pub mod text_h {
-    pub use crate::xkb::text::LookupEntry;
-    pub type C2Rust_Unnamed_16 = u32;
-    pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_16 = 0;
-    pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_16 = 7;
-    pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
-    #[inline]
-    pub unsafe fn format_control_names_offset(mut format: xkb_keymap_format) -> u8 {
-        return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32 {
-            CONTROL_NAMES_MIN_V1_INDEX as ::core::ffi::c_int
-        } else {
-            CONTROL_NAMES_MIN_V2_INDEX as ::core::ffi::c_int
-        }) as u8;
-    }
-
-    use crate::xkb::shared_types::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
-    pub use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText};
-}
-pub mod limits_h {
-    pub const CHAR_BIT: ::core::ffi::c_int = 8;
-}
+use crate::xkb::xkbcomp::expr::{ExprResolveGroup, ExprResolveGroupMask};
 pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
-}
-pub mod expr_h {
-
-    pub use crate::xkb::xkbcomp::expr::{ExprResolveGroup, ExprResolveGroupMask};
 }
 pub mod xkbcommon_keysyms_h {
     pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 
 use self::ast_build_h::FreeStmt;
-pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags,
-    C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
-    STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
-    STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
-    STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
-    STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY,
-    STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT,
-    STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP,
-    STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
-};
-use self::expr_h::{ExprResolveGroup, ExprResolveGroupMask};
-pub use self::limits_h::CHAR_BIT;
+pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -99,26 +61,32 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::text_h::{
-    format_control_names_offset, ActionTypeText, C2Rust_Unnamed_16, KeyNameText, KeysymText,
-    LookupEntry, CONTROL_NAMES_MIN_V1_INDEX, CONTROL_NAMES_MIN_V2_INDEX, GROUP_LAST_INDEX_NAME,
+pub use crate::xkb::shared_ast_types::{
+    _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags,
+    C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
+    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
+    ExprUnary, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
+    STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
+    STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
+    STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
+    STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY,
+    STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT,
+    STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP,
+    STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use crate::xkb::utils::{is_aligned, memdup};
-pub use crate::xkb::shared_types::{
-    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
-};
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-    xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures,
-    PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
-    PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
-    PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
-    PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-    PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
+    xkb_parser_error, xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR,
+    PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS,
+    PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
+    PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
+    PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_KEY_FIELDS,
+    PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
     PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
@@ -162,7 +130,14 @@ pub use crate::xkb::shared_types::{
     XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX,
     XKB_OVERLAY_MAX_X11,
 };
+pub use crate::xkb::shared_types::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
 pub use crate::xkb::state::mod_mask_get_effective;
+pub use crate::xkb::utils::{is_aligned, memdup};
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
