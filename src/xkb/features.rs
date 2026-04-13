@@ -99,16 +99,16 @@ pub unsafe fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) ->
             1 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_feature_values as *const u32,
-                    (::core::mem::size_of::<[u32; 24]>() as usize)
-                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
+                    (std::mem::size_of::<[u32; 24]>() as usize)
+                        .wrapping_div(std::mem::size_of::<u32>() as usize),
                     value,
                 );
             }
             1000 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_error_code_values as *const u32,
-                    (::core::mem::size_of::<[u32; 9]>() as usize)
-                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
+                    (std::mem::size_of::<[u32; 9]>() as usize)
+                        .wrapping_div(std::mem::size_of::<u32>() as usize),
                     value,
                 );
             }
@@ -118,8 +118,8 @@ pub unsafe fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) ->
             5100 => {
                 return is_supported_enum_value_array(
                     &raw const xkb_log_level_values as *const u32,
-                    (::core::mem::size_of::<[u32; 5]>() as usize)
-                        .wrapping_div(::core::mem::size_of::<u32>() as usize),
+                    (std::mem::size_of::<[u32; 5]>() as usize)
+                        .wrapping_div(std::mem::size_of::<u32>() as usize),
                     value,
                 );
             }

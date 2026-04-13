@@ -177,7 +177,7 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
                 crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
-                (::core::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)
+                (std::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_mod_index_t,
             );
             return false;

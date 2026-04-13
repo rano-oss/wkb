@@ -471,7 +471,7 @@ unsafe fn HandleIncludeKeyTypes(
                 stmt,
                 FILE_TYPE_TYPES,
                 &raw mut path as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as i32;
@@ -1237,7 +1237,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         };
         let mut types: *mut xkb_key_type = calloc(
             num_types as usize,
-            ::core::mem::size_of::<xkb_key_type>() as usize,
+            std::mem::size_of::<xkb_key_type>() as usize,
         ) as *mut xkb_key_type;
         if types.is_null() {
             return false;
@@ -1252,7 +1252,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             (*type_0).name = xkb_atom_intern(
                 (*keymap).ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
-                (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
             );
             (*type_0).level_names = std::ptr::null_mut();
             (*type_0).num_level_names = 0 as xkb_level_index_t;
@@ -1262,22 +1262,22 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"ONE_LEVEL\0".as_ptr() as *const i8,
-                    (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"TWO_LEVEL\0".as_ptr() as *const i8,
-                    (::core::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"ALPHABETIC\0".as_ptr() as *const i8,
-                    (::core::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
                     (*keymap).ctx,
                     b"KEYPAD\0".as_ptr() as *const i8,
-                    (::core::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
                 ),
             ];
             let mut i: darray_size_t = 0 as darray_size_t;
@@ -1308,8 +1308,8 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 if (*type_1).num_levels <= 2 as xkb_level_index_t {
                     let mut t: u8 = 0 as u8;
                     while (t as i32)
-                        < (::core::mem::size_of::<[xkb_atom_t; 4]>() as usize)
-                            .wrapping_div(::core::mem::size_of::<xkb_atom_t>() as usize)
+                        < (std::mem::size_of::<[xkb_atom_t; 4]>() as usize)
+                            .wrapping_div(std::mem::size_of::<xkb_atom_t>() as usize)
                             as u8 as i32
                     {
                         if (*type_1).name == canonical_types[t as usize] {

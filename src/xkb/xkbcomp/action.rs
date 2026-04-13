@@ -1520,13 +1520,13 @@ unsafe fn HandlePrivate(
                 }
                 let mut str: *const i8 = xkb_atom_text(ctx, val);
                 let mut len: usize = cstr_len(str);
-                if len < 1 as usize || len > ::core::mem::size_of::<[u8; 7]>() as usize {
+                if len < 1 as usize || len > std::mem::size_of::<[u8; 7]>() as usize {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "A private action has {} data bytes, but got: {}; Illegal data ignored\n",
-                        ::core::mem::size_of::<[u8; 7]>(),
+                        std::mem::size_of::<[u8; 7]>(),
                         len,
                     );
                     return (if (*keymap_info).strict as u32
@@ -1568,13 +1568,13 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                if ndx < 0 as i64 || ndx as usize >= ::core::mem::size_of::<[u8; 7]>() as usize {
+                if ndx < 0 as i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() as usize {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "The data for a private action is {} bytes long; Attempt to use data[{}] ignored\n",
-                        ::core::mem::size_of::<[u8; 7]>(),
+                        std::mem::size_of::<[u8; 7]>(),
                         ndx,
                     );
                     return (if (*keymap_info).strict as u32

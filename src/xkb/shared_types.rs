@@ -632,7 +632,7 @@ pub type xkb_led_mask_t = u32;
 pub const CHAR_BIT: i32 = 8;
 pub const UINT16_MAX: i32 = 65535;
 
-pub const XKB_MAX_LEDS: xkb_led_index_t = (::core::mem::size_of::<xkb_led_mask_t>() as usize)
+pub const XKB_MAX_LEDS: xkb_led_index_t = (std::mem::size_of::<xkb_led_mask_t>() as usize)
     .wrapping_mul(CHAR_BIT as usize) as xkb_led_index_t;
 pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
@@ -810,13 +810,13 @@ pub const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
 
 pub const XKB_OVERLAY_MAX_X11: i32 = 2;
 pub const XKB_OVERLAY_MAX: u64 =
-    (::core::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
+    (std::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
 pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1;
 pub const XKB_OVERLAY_INVALID: i32 = 255;
 
 pub const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
 pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub const XKB_MAX_MODS: xkb_mod_index_t = (::core::mem::size_of::<xkb_mod_mask_t>() as usize)
+pub const XKB_MAX_MODS: xkb_mod_index_t = (std::mem::size_of::<xkb_mod_mask_t>() as usize)
     .wrapping_mul(CHAR_BIT as usize) as xkb_mod_index_t;
 
 #[derive(Copy, Clone)]

@@ -283,7 +283,7 @@ unsafe fn number(
         if scanner_str(
             s,
             b"0x\0".as_ptr() as *const i8,
-            (::core::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
         ) {
             match scanner_hex_int64(s, out) {
                 -1 => {
@@ -334,13 +334,13 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             if scanner_str(
                 s,
                 b"\xE2\x80\x8E\0".as_ptr() as *const i8,
-                (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
             ) as i32
                 != 0
                 || scanner_str(
                     s,
                     b"\xE2\x80\x8F\0".as_ptr() as *const i8,
-                    (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
                 ) as i32
                     != 0
             {
@@ -349,7 +349,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             if !(scanner_str(
                 s,
                 b"//\0".as_ptr() as *const i8,
-                (::core::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
             ) as i32
                 != 0
                 || scanner_chr(s, '#' as i32 as i8) as i32 != 0)

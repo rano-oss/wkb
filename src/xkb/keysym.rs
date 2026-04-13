@@ -21825,8 +21825,8 @@ fn find_keysym_index(mut ks: u32) -> isize {
         return -1 as i32 as isize;
     }
     let mut lo: isize = 0 as isize;
-    let mut hi: isize = (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
-        .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+    let mut hi: isize = (std::mem::size_of::<[name_keysym; 2502]>() as usize)
+        .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
         .wrapping_sub(1 as usize) as isize;
     while hi >= lo {
         let mut mid: isize = (lo + hi) / 2 as isize;
@@ -21914,8 +21914,8 @@ pub unsafe fn xkb_keysym_get_explicit_names(
         let mut count: i32 = 1 as i32;
         let mut pos: usize = 0 as usize;
         while pos
-            < (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
-                .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+            < (std::mem::size_of::<[name_keysym; 2635]>() as usize)
+                .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
         {
             if name_to_keysym[pos as usize].keysym == ks
                 && name_to_keysym[pos as usize].offset as i32 != canonical as i32
@@ -21969,8 +21969,8 @@ pub unsafe fn xkb_keysym_iterator_is_explicitly_named(mut iter: *mut xkb_keysym_
     unsafe {
         return (*iter).index >= 0 as i32
             && (*iter).index
-                < (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+                < (std::mem::size_of::<[name_keysym; 2502]>() as usize)
+                    .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
                     as i32
             && ((*iter).explicit as i32 != 0
                 || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym);
@@ -21985,8 +21985,8 @@ pub unsafe fn xkb_keysym_iterator_get_name(
     unsafe {
         if (*iter).index < 0 as i32
             || (*iter).index
-                >= (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+                >= (std::mem::size_of::<[name_keysym; 2502]>() as usize)
+                    .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
                     as i32
         {
             return -1 as i32;
@@ -22014,8 +22014,8 @@ pub unsafe fn xkb_keysym_iterator_get_name(
 pub unsafe fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bool {
     unsafe {
         if (*iter).index
-            >= (::core::mem::size_of::<[name_keysym; 2502]>() as usize)
-                .wrapping_div(::core::mem::size_of::<name_keysym>() as usize) as i32
+            >= (std::mem::size_of::<[name_keysym; 2502]>() as usize)
+                .wrapping_div(std::mem::size_of::<name_keysym>() as usize) as i32
                 - 1 as i32
         {
             return false;
@@ -22059,8 +22059,8 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
         if !icase {
             let mut pos: usize = keysym_name_perfect_hash(name);
             if pos
-                < (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+                < (std::mem::size_of::<[name_keysym; 2635]>() as usize)
+                    .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
             {
                 let mut s: *const i8 = get_name(
                     (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
@@ -22072,8 +22072,8 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
             }
         } else {
             let mut lo: i32 = 0 as i32;
-            let mut hi: i32 = (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
-                .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+            let mut hi: i32 = (std::mem::size_of::<[name_keysym; 2635]>() as usize)
+                .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
                 .wrapping_sub(1 as usize) as i32;
             while hi >= lo {
                 let mut mid: i32 = (lo + hi) / 2 as i32;
@@ -22098,8 +22098,8 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                 let mut last: *const name_keysym = std::ptr::null();
                 last = (&raw const name_to_keysym as *const name_keysym)
                     .offset(
-                        (::core::mem::size_of::<[name_keysym; 2635]>() as usize)
-                            .wrapping_div(::core::mem::size_of::<name_keysym>() as usize)
+                        (std::mem::size_of::<[name_keysym; 2635]>() as usize)
+                            .wrapping_div(std::mem::size_of::<name_keysym>() as usize)
                             as isize,
                     )
                     .offset(-(1 as i32 as isize));

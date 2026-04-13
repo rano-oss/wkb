@@ -351,7 +351,7 @@ unsafe fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
                 start: b"any\0".as_ptr() as *const i8,
             },
         ) as i32
@@ -359,7 +359,7 @@ unsafe fn resolve_keysym(
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[i8; 9]>() as usize).wrapping_sub(1 as usize),
+                    len: (std::mem::size_of::<[i8; 9]>() as usize).wrapping_sub(1 as usize),
                     start: b"nosymbol\0".as_ptr() as *const i8,
                 },
             ) as i32
@@ -371,7 +371,7 @@ unsafe fn resolve_keysym(
         if isvaleq(
             name,
             sval {
-                len: (::core::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
                 start: b"none\0".as_ptr() as *const i8,
             },
         ) as i32
@@ -379,7 +379,7 @@ unsafe fn resolve_keysym(
             || isvaleq(
                 name,
                 sval {
-                    len: (::core::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
+                    len: (std::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
                     start: b"voidsymbol\0".as_ptr() as *const i8,
                 },
             ) as i32
@@ -389,7 +389,7 @@ unsafe fn resolve_keysym(
             return true;
         }
         let mut buf: [i8; 31] = [0; 31];
-        if name.len >= ::core::mem::size_of::<[i8; 31]>() as usize {
+        if name.len >= std::mem::size_of::<[i8; 31]>() as usize {
             return false;
         }
         std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
@@ -440,7 +440,7 @@ unsafe fn resolve_keysym(
 }
 pub const YY_NULLPTR: *mut ::core::ffi::c_void =
     std::ptr::null_mut();
-pub const YYSTACK_GAP_MAXIMUM: i64 = ::core::mem::size_of::<yyalloc>() as i64 - 1 as i64;
+pub const YYSTACK_GAP_MAXIMUM: i64 = std::mem::size_of::<yyalloc>() as i64 - 1 as i64;
 pub const YYFINAL: i32 = 16 as i32;
 pub const YYLAST: i32 = 928 as i32;
 pub const YYNTOKENS: i32 = 66 as i32;
@@ -4949,7 +4949,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
         let mut yyval: YYSTYPE = YYSTYPE { num: 0 };
         let mut yymsgbuf: [i8; 128] = [0; 128];
         let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
-        let mut yymsg_alloc: i64 = ::core::mem::size_of::<[i8; 128]>() as i64;
+        let mut yymsg_alloc: i64 = std::mem::size_of::<[i8; 128]>() as i64;
         let mut yylen: i32 = 0 as i32;
         yychar = YYEMPTY as i32;
         's_60: loop {
@@ -4973,9 +4973,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                 let mut yyss1: *mut yy_state_t = yyss;
                 let mut yyptr: *mut yyalloc = malloc(
                     (yystacksize
-                        * (::core::mem::size_of::<yy_state_t>() as i64
-                            + ::core::mem::size_of::<YYSTYPE>() as i64)
-                        + (::core::mem::size_of::<yyalloc>() as i64 - 1 as i64))
+                        * (std::mem::size_of::<yy_state_t>() as i64
+                            + std::mem::size_of::<YYSTYPE>() as i64)
+                        + (std::mem::size_of::<yyalloc>() as i64 - 1 as i64))
                         as usize,
                 ) as *mut yyalloc;
                 if yyptr.is_null() {
@@ -4990,9 +4990,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                 );
                 yyss = &raw mut (*yyptr).yyss_alloc;
                 yynewbytes =
-                    yystacksize * ::core::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
+                    yystacksize * std::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
                 yyptr =
-                    yyptr.offset((yynewbytes / ::core::mem::size_of::<yyalloc>() as i64) as isize);
+                    yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
                 let mut yynewbytes_0: i64 = 0;
                 std::ptr::copy_nonoverlapping::<YYSTYPE>(
                     yyvs,
@@ -5001,9 +5001,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                 );
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
                 yynewbytes_0 =
-                    yystacksize * ::core::mem::size_of::<YYSTYPE>() as i64 + YYSTACK_GAP_MAXIMUM;
+                    yystacksize * std::mem::size_of::<YYSTYPE>() as i64 + YYSTACK_GAP_MAXIMUM;
                 yyptr = yyptr
-                    .offset((yynewbytes_0 / ::core::mem::size_of::<yyalloc>() as i64) as isize);
+                    .offset((yynewbytes_0 / std::mem::size_of::<yyalloc>() as i64) as isize);
                 if yyss1 != &raw mut yyssa as *mut yy_state_t {
                     free(yyss1 as *mut ::core::ffi::c_void);
                 }
@@ -5118,7 +5118,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                     yymsgp = yymsg;
                                 } else {
                                     yymsg = &raw mut yymsgbuf as *mut i8;
-                                    yymsg_alloc = ::core::mem::size_of::<[i8; 128]>() as i64;
+                                    yymsg_alloc = std::mem::size_of::<[i8; 128]>() as i64;
                                     yysyntax_error_status = YYENOMEM as i32;
                                 }
                             }
@@ -6086,7 +6086,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"action\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 7]>() as usize)
+                                (std::mem::size_of::<[i8; 7]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6095,7 +6095,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"interpret\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 10]>() as usize)
+                                (std::mem::size_of::<[i8; 10]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6104,7 +6104,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"type\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 5]>() as usize)
+                                (std::mem::size_of::<[i8; 5]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6113,7 +6113,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"key\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 4]>() as usize)
+                                (std::mem::size_of::<[i8; 4]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6122,7 +6122,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"group\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 6]>() as usize)
+                                (std::mem::size_of::<[i8; 6]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6131,7 +6131,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"modifier_map\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 13]>() as usize)
+                                (std::mem::size_of::<[i8; 13]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6140,7 +6140,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"indicator\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 10]>() as usize)
+                                (std::mem::size_of::<[i8; 10]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6149,7 +6149,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"shape\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 6]>() as usize)
+                                (std::mem::size_of::<[i8; 6]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6158,7 +6158,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"row\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 4]>() as usize)
+                                (std::mem::size_of::<[i8; 4]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6167,7 +6167,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"section\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 8]>() as usize)
+                                (std::mem::size_of::<[i8; 8]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6176,7 +6176,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"text\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 5]>() as usize)
+                                (std::mem::size_of::<[i8; 5]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -6822,7 +6822,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"default\0".as_ptr() as *const i8,
-                                (::core::mem::size_of::<[i8; 8]>() as usize)
+                                (std::mem::size_of::<[i8; 8]>() as usize)
                                     .wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;

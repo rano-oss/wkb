@@ -477,7 +477,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         .levels
                                         .offset(level as isize))
                                     .num_actions as usize,
-                                    ::core::mem::size_of::<xkb_action>() as usize,
+                                    std::mem::size_of::<xkb_action>() as usize,
                                 )
                                     as *mut xkb_action;
                                 if (*(*(*key).groups.offset(group as isize))
@@ -825,8 +825,8 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             alias = alias.wrapping_add(1);
         }
         if num_key_aliases != 0 {
-            let required_space: darray_size_t = (::core::mem::size_of::<xkb_key_alias>() as usize)
-                .wrapping_div(::core::mem::size_of::<KeycodeMatch>() as usize)
+            let required_space: darray_size_t = (std::mem::size_of::<xkb_key_alias>() as usize)
+                .wrapping_div(std::mem::size_of::<KeycodeMatch>() as usize)
                 .wrapping_mul(num_key_aliases as usize)
                 as darray_size_t;
             if min_alias >= required_space {
@@ -840,7 +840,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
                         as *mut ::core::ffi::c_void,
                     (num_key_aliases as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_key_alias>() as usize),
+                        .wrapping_mul(std::mem::size_of::<xkb_key_alias>() as usize),
                 ) as *mut xkb_key_alias;
                 if r.is_null() {
                     return false;
@@ -868,7 +868,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                             .offset(max_alias as isize)
                             .offset(1 as i32 as isize)
                             as *const ::core::ffi::c_void,
-                        ::core::mem::size_of::<xkb_key_alias>() as usize,
+                        std::mem::size_of::<xkb_key_alias>() as usize,
                     ) as i32 as isize)
                     as *mut xkb_key_alias;
                 add_key_aliases(keymap, min_alias, max_alias, aliases);
@@ -881,7 +881,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
                         as *mut ::core::ffi::c_void,
                     (num_key_aliases as usize)
-                        .wrapping_mul(::core::mem::size_of::<xkb_key_alias>() as usize),
+                        .wrapping_mul(std::mem::size_of::<xkb_key_alias>() as usize),
                 ) as *mut xkb_key_alias;
                 if r_0.is_null() {
                     return false;
@@ -890,7 +890,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             } else {
                 let aliases_0: *mut xkb_key_alias = calloc(
                     num_key_aliases as usize,
-                    ::core::mem::size_of::<xkb_key_alias>() as usize,
+                    std::mem::size_of::<xkb_key_alias>() as usize,
                 ) as *mut xkb_key_alias;
                 if aliases_0.is_null() {
                     return false;

@@ -191,7 +191,7 @@ pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: u
 #[inline]
 pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
     unsafe {
-        if (*s).buf_pos.wrapping_add(1 as usize) >= ::core::mem::size_of::<[i8; 1024]>() as usize {
+        if (*s).buf_pos.wrapping_add(1 as usize) >= std::mem::size_of::<[i8; 1024]>() as usize {
             return false;
         }
         let c2rust_fresh1 = (*s).buf_pos;
@@ -218,7 +218,7 @@ pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bo
 #[inline]
 pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) -> bool {
     unsafe {
-        if (*s).buf_pos.wrapping_add(5 as usize) <= ::core::mem::size_of::<[i8; 1024]>() as usize {
+        if (*s).buf_pos.wrapping_add(5 as usize) <= std::mem::size_of::<[i8; 1024]>() as usize {
             let mut count: i32 = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
                 c,
                 (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),

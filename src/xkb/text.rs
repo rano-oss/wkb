@@ -1603,7 +1603,7 @@ pub unsafe fn ModMaskText(
         {
             let (written, _) = crate::xkb::utils::snprintf_args(
                 &raw mut buf as *mut i8,
-                ::core::mem::size_of::<[i8; 1024]>() as usize,
+                std::mem::size_of::<[i8; 1024]>() as usize,
                 format_args!("{:#x}", mask),
             );
             pos = written;
@@ -1616,7 +1616,7 @@ pub unsafe fn ModMaskText(
                 if mask & 0x1 as xkb_mod_mask_t != 0 {
                     let (written, trunc) = crate::xkb::utils::snprintf_args(
                         (&raw mut buf as *mut i8).offset(pos as isize),
-                        (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                        (std::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
                         format_args!(
                             "{}{}",
                             if pos == 0 as usize { "" } else { "+" },
@@ -1659,7 +1659,7 @@ pub unsafe fn LedStateMaskText(
                     LookupValue(lookup as *const LookupEntry, (1 as u32) << i) as *const i8;
                 let (written, trunc) = crate::xkb::utils::snprintf_args(
                     (&raw mut buf as *mut i8).offset(pos as isize),
-                    (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                    (std::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
                     format_args!(
                         "{}{}",
                         if pos == 0 as usize { "" } else { "+" },
@@ -1669,7 +1669,7 @@ pub unsafe fn LedStateMaskText(
                 ret = if trunc { -1 } else { written as i32 };
                 if ret <= 0 as i32
                     || pos.wrapping_add(ret as usize)
-                        >= ::core::mem::size_of::<[i8; 1024]>() as usize
+                        >= std::mem::size_of::<[i8; 1024]>() as usize
                 {
                     break;
                 }
@@ -1713,7 +1713,7 @@ pub unsafe fn ControlMaskText(
                 ) as *const i8;
                 let (written, trunc) = crate::xkb::utils::snprintf_args(
                     (&raw mut buf as *mut i8).offset(pos as isize),
-                    (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
+                    (std::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub(pos),
                     format_args!(
                         "{}{}",
                         if pos == 0 as usize { "" } else { "+" },
@@ -1723,7 +1723,7 @@ pub unsafe fn ControlMaskText(
                 ret = if trunc { -1 } else { written as i32 };
                 if ret <= 0 as i32
                     || pos.wrapping_add(ret as usize)
-                        >= ::core::mem::size_of::<[i8; 1024]>() as usize
+                        >= std::mem::size_of::<[i8; 1024]>() as usize
                 {
                     break;
                 }

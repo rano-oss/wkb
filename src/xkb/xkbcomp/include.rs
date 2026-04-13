@@ -368,7 +368,7 @@ unsafe fn expand_percent(
                 crate::xkb::utils::CStrDisplay(s.file_name),
                 loc_4.line,
                 loc_4.column,
-                ::core::mem::size_of::<[i8; 1024]>(),
+                std::mem::size_of::<[i8; 1024]>(),
             );
             return 0 as usize;
         }

@@ -169,10 +169,10 @@ pub unsafe fn xkb_log(
 pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
     unsafe {
         let mut rtrn: *mut i8 = std::ptr::null_mut();
-        if size >= ::core::mem::size_of::<[i8; 2048]>() as usize {
+        if size >= std::mem::size_of::<[i8; 2048]>() as usize {
             return std::ptr::null_mut();
         }
-        if (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub((*ctx).text_next as usize)
+        if (std::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub((*ctx).text_next as usize)
             <= size
         {
             (*ctx).text_next = 0 as usize;

@@ -1647,41 +1647,41 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
         if istrneq(
             b"crit\0".as_ptr() as *const i8,
             level,
-            (::core::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_CRITICAL;
         }
         if istrneq(
             b"err\0".as_ptr() as *const i8,
             level,
-            (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_ERROR;
         }
         if istrneq(
             b"warn\0".as_ptr() as *const i8,
             level,
-            (::core::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_WARNING;
         }
         if istrneq(
             b"info\0".as_ptr() as *const i8,
             level,
-            (::core::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_INFO;
         }
         if istrneq(
             b"debug\0".as_ptr() as *const i8,
             level,
-            (::core::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
         ) as i32
             != 0
             || istrneq(
                 b"dbg\0".as_ptr() as *const i8,
                 level,
-                (::core::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
             ) as i32
                 != 0
         {
@@ -1838,7 +1838,7 @@ pub unsafe fn rxkb_context_include_path_append(
                 rules = [0; 4096];
                 let (_, _trunc) = crate::xkb::utils::snprintf_args(
                     &raw mut rules as *mut i8,
-                    ::core::mem::size_of::<[i8; 4096]>() as usize,
+                    std::mem::size_of::<[i8; 4096]>() as usize,
                     format_args!(
                         "{}/rules/{}.xml",
                         crate::xkb::utils::CStrDisplay(path),
@@ -1851,7 +1851,7 @@ pub unsafe fn rxkb_context_include_path_append(
                         RXKB_LOG_LEVEL_ERROR,
                         "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/rules/{}.xml\n",
                         XKB_ERROR_INVALID_PATH as i32,
-                        ::core::mem::size_of::<[i8; 4096]>(),
+                        std::mem::size_of::<[i8; 4096]>(),
                         crate::xkb::utils::CStrDisplay(path),
                         crate::xkb::utils::CStrDisplay(b"evdev\0".as_ptr() as *const i8),
                     );
@@ -1969,7 +1969,7 @@ unsafe fn add_direct_subdirectories(
                     }
                     let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut path_buf as *mut i8,
-                        ::core::mem::size_of::<[i8; 4096]>() as usize,
+                        std::mem::size_of::<[i8; 4096]>() as usize,
                         format_args!(
                             "{}/{}",
                             crate::xkb::utils::CStrDisplay(path),
@@ -2019,7 +2019,7 @@ unsafe fn add_direct_subdirectories(
                                 (*extensions).item.offset(versioned_count as isize)
                                     as *mut ::core::ffi::c_void,
                                 (*extensions).size.wrapping_sub(versioned_count) as usize,
-                                ::core::mem::size_of::<*mut i8>() as usize,
+                                std::mem::size_of::<*mut i8>() as usize,
                                 Some(
                                     compare_str
                                         as unsafe extern "C" fn(
@@ -2078,7 +2078,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
         if !xdg.is_null() {
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
                 format_args!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)),
             );
             if !_trunc {
@@ -2088,7 +2088,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
         } else if !home.is_null() {
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
                 format_args!("{}/.config/xkb", crate::xkb::utils::CStrDisplay(home)),
             );
             if !_trunc {
@@ -2099,7 +2099,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
         if !home.is_null() {
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
                 format_args!("{}/.xkb", crate::xkb::utils::CStrDisplay(home)),
             );
             if !_trunc {
@@ -2231,7 +2231,7 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
                 let mut rules: [i8; 4096] = [0; 4096];
                 let (_, _trunc) = crate::xkb::utils::snprintf_args(
                     &raw mut rules as *mut i8,
-                    ::core::mem::size_of::<[i8; 4096]>() as usize,
+                    std::mem::size_of::<[i8; 4096]>() as usize,
                     format_args!(
                         "{}/rules/{}.xml",
                         crate::xkb::utils::CStrDisplay(*path),
@@ -2252,7 +2252,7 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
                 if (*ctx).load_extra_rules_files as i32 != 0 {
                     let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut rules as *mut i8,
-                        ::core::mem::size_of::<[i8; 4096]>() as usize,
+                        std::mem::size_of::<[i8; 4096]>() as usize,
                         format_args!(
                             "{}/rules/{}.extras.xml",
                             crate::xkb::utils::CStrDisplay(*path),
@@ -2874,7 +2874,7 @@ unsafe extern "C" fn xml_error_func(
         args = c2rust_args.clone();
         rc = vsnprintf(
             (&raw mut buf as *mut i8).offset(slen as isize) as *mut i8,
-            (::core::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(slen as usize),
+            (std::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(slen as usize),
             msg,
             args,
         );
@@ -2890,10 +2890,10 @@ unsafe extern "C" fn xml_error_func(
             return;
         }
         slen += rc;
-        if slen >= ::core::mem::size_of::<[i8; 4096]>() as i32 {
-            buf[(::core::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(1 as usize)
+        if slen >= std::mem::size_of::<[i8; 4096]>() as i32 {
+            buf[(std::mem::size_of::<[i8; 4096]>() as usize).wrapping_sub(1 as usize)
                 as usize] = '\n' as i32 as i8;
-            slen = ::core::mem::size_of::<[i8; 4096]>() as i32;
+            slen = std::mem::size_of::<[i8; 4096]>() as i32;
         }
         if buf[(slen - 1 as i32) as usize] as i32 == '\n' as i32 {
             rxkb_logf!(
@@ -2920,8 +2920,8 @@ unsafe fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
         );
         let mut buf: xmlParserInputBufferPtr = xmlParserInputBufferCreateMem(
             &raw const dtdstr as *const i8,
-            (::core::mem::size_of::<[i8; 1061]>() as usize)
-                .wrapping_div(::core::mem::size_of::<i8>() as usize)
+            (std::mem::size_of::<[i8; 1061]>() as usize)
+                .wrapping_div(std::mem::size_of::<i8>() as usize)
                 .wrapping_sub(1 as usize) as i32,
             XML_CHAR_ENCODING_NONE,
         );

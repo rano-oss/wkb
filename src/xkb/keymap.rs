@@ -244,8 +244,8 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
         }
         if (format as i32) < 0 as i32
             || format as i32
-                >= (::core::mem::size_of::<[*const xkb_keymap_format_ops; 3]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<*const xkb_keymap_format_ops>() as usize)
+                >= (std::mem::size_of::<[*const xkb_keymap_format_ops; 3]>() as usize)
+                    .wrapping_div(std::mem::size_of::<*const xkb_keymap_format_ops>() as usize)
                     as i32
         {
             return std::ptr::null();

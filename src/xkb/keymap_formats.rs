@@ -33,8 +33,8 @@ static mut keymap_formats_labels: [format_label; 4] = [
 pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_format) -> usize {
     unsafe {
         *formats = &raw const keymap_formats as *const xkb_keymap_format;
-        return (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
-            .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize);
+        return (std::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
+            .wrapping_div(std::mem::size_of::<xkb_keymap_format>() as usize);
     }
 }
 
@@ -45,8 +45,8 @@ pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> b
         }
         let mut k: usize = 0 as usize;
         while k
-            < (::core::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
-                .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize)
+            < (std::mem::size_of::<[xkb_keymap_format; 2]>() as usize)
+                .wrapping_div(std::mem::size_of::<xkb_keymap_format>() as usize)
         {
             if keymap_formats[k as usize] as u32 == format as u32 {
                 return true;
@@ -74,8 +74,8 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
         } else {
             let mut k: usize = 0 as usize;
             while k
-                < (::core::mem::size_of::<[format_label; 4]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<format_label>() as usize)
+                < (std::mem::size_of::<[format_label; 4]>() as usize)
+                    .wrapping_div(std::mem::size_of::<format_label>() as usize)
             {
                 if cstr_cmp(raw, keymap_formats_labels[k as usize].label) == 0 as i32 {
                     return keymap_formats_labels[k as usize].format;
@@ -93,8 +93,8 @@ pub unsafe fn xkb_keymap_get_format_label(mut format: xkb_keymap_format) -> *con
         }
         let mut k: usize = 0 as usize;
         while k
-            < (::core::mem::size_of::<[format_label; 4]>() as usize)
-                .wrapping_div(::core::mem::size_of::<format_label>() as usize)
+            < (std::mem::size_of::<[format_label; 4]>() as usize)
+                .wrapping_div(std::mem::size_of::<format_label>() as usize)
         {
             if keymap_formats_labels[k as usize].format as u32 == format as u32 {
                 return keymap_formats_labels[k as usize].label;

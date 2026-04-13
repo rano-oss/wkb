@@ -220,8 +220,8 @@ pub unsafe fn xkb_map_flags_string_iter(
             },
         ];
         while (*index as usize)
-            < (::core::mem::size_of::<[C2Rust_Unnamed_1; 8]>() as usize)
-                .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_1>() as usize)
+            < (std::mem::size_of::<[C2Rust_Unnamed_1; 8]>() as usize)
+                .wrapping_div(std::mem::size_of::<C2Rust_Unnamed_1>() as usize)
         {
             if flags as u32 & names[*index as usize].flag as u32 != 0 {
                 let c2rust_fresh2 = *index;
@@ -484,7 +484,7 @@ unsafe fn xkb_file_section_append_includes(
                 stmt,
                 file_type,
                 &raw mut buf as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
             );
             let valid: bool = !xkb_file.is_null();
             if valid as i32 != 0

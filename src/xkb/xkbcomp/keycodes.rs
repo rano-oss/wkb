@@ -1132,7 +1132,7 @@ unsafe fn HandleIncludeKeycodes(
                 stmt,
                 FILE_TYPE_KEYCODES,
                 &raw mut path as *mut i8,
-                ::core::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
                 (*info).errorCount += 10 as i32;
@@ -1350,7 +1350,7 @@ unsafe fn HandleLedNameDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
                 (*def).ndx,
-                (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
+                (std::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
             return false;
@@ -1360,7 +1360,7 @@ unsafe fn HandleLedNameDef(
             let mut buf: [i8; 20] = [0; 20];
             crate::xkb::utils::snprintf_args(
                 &raw mut buf as *mut i8,
-                ::core::mem::size_of::<[i8; 20]>() as usize,
+                std::mem::size_of::<[i8; 20]>() as usize,
                 format_args!("{}", (*def).ndx),
             );
             (*info).errorCount += 1;
@@ -1489,7 +1489,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
         }
         let keys: *mut xkb_key = calloc(
             (*keymap).num_keys as usize,
-            ::core::mem::size_of::<xkb_key>() as usize,
+            std::mem::size_of::<xkb_key>() as usize,
         ) as *mut xkb_key;
         if keys.is_null() {
             (*keymap).num_keys = 0 as xkb_keycode_t;
@@ -1584,7 +1584,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
             (*info).keycodes.names.item = realloc(
                 (*info).keycodes.names.item as *mut ::core::ffi::c_void,
                 ((*info).keycodes.names.alloc as usize)
-                    .wrapping_mul(::core::mem::size_of::<KeycodeMatch>() as usize),
+                    .wrapping_mul(std::mem::size_of::<KeycodeMatch>() as usize),
             ) as *mut KeycodeMatch;
         }
         (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = (*info).keycodes.names.size;

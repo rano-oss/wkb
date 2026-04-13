@@ -2292,7 +2292,7 @@ pub unsafe fn xkb_state_update_latched_locked(
             0 as i32
         })) as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
+            size: std::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: affect_latched_mods,
             latched_mods: latched_mods,
@@ -2325,7 +2325,7 @@ unsafe fn clear_all_latches_and_locks(mut state: *mut xkb_state, mut events: *mu
             | XKB_STATE_LAYOUT_LOCKED as i32)
             as xkb_state_component;
         let update: xkb_state_components_update = xkb_state_components_update {
-            size: ::core::mem::size_of::<xkb_state_components_update>() as usize,
+            size: std::mem::size_of::<xkb_state_components_update>() as usize,
             components: components,
             affect_latched_mods: XKB_MOD_ALL as u32 as xkb_mod_mask_t,
             latched_mods: 0 as xkb_mod_mask_t,
@@ -2452,18 +2452,18 @@ unsafe fn check_state_update_abi_(
     unsafe {
         let mut error: xkb_error_code = XKB_SUCCESS;
         error = xkb_check_versioned_struct_size_(
-            ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-            ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-            ::core::mem::size_of::<xkb_state_update>() as usize,
+            std::mem::size_of::<xkb_state_update_v1>() as usize,
+            std::mem::size_of::<xkb_state_update_v1>() as usize,
+            std::mem::size_of::<xkb_state_update>() as usize,
             (*update).size,
             update as *const ::core::ffi::c_void,
         );
         if error as i32 != 0
             || !(*update).components.is_null() && {
                 error = xkb_check_versioned_struct_size_(
-                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-                    ::core::mem::size_of::<xkb_state_components_update>() as usize,
+                    std::mem::size_of::<xkb_state_update_v1>() as usize,
+                    std::mem::size_of::<xkb_state_update_v1>() as usize,
+                    std::mem::size_of::<xkb_state_components_update>() as usize,
                     (*(*update).components).size,
                     (*update).components as *const ::core::ffi::c_void,
                 );
@@ -2471,9 +2471,9 @@ unsafe fn check_state_update_abi_(
             }
             || !(*update).layout_policy.is_null() && {
                 error = xkb_check_versioned_struct_size_(
-                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-                    ::core::mem::size_of::<xkb_state_update_v1>() as usize,
-                    ::core::mem::size_of::<xkb_layout_policy_update>() as usize,
+                    std::mem::size_of::<xkb_state_update_v1>() as usize,
+                    std::mem::size_of::<xkb_state_update_v1>() as usize,
+                    std::mem::size_of::<xkb_layout_policy_update>() as usize,
                     (*(*update).layout_policy).size,
                     (*update).layout_policy as *const ::core::ffi::c_void,
                 );
@@ -2735,7 +2735,7 @@ pub unsafe fn xkb_state_key_get_utf8(
             let mut ret: i32 = xkb_keysym_to_utf8(
                 *syms.offset(i as isize),
                 &raw mut tmp as *mut i8,
-                ::core::mem::size_of::<[i8; 5]>() as usize,
+                std::mem::size_of::<[i8; 5]>() as usize,
             );
             if ret <= 0 as i32 {
                 c2rust_current_block = 17545813786824981435;
@@ -3521,7 +3521,7 @@ unsafe fn machine_set_mods(
             qsort(
                 mappings.item as *mut ::core::ffi::c_void,
                 mappings.size as usize,
-                ::core::mem::size_of::<machine_mods_mapping>() as usize,
+                std::mem::size_of::<machine_mods_mapping>() as usize,
                 Some(
                     cmp_mod_masks
                         as unsafe extern "C" fn(
@@ -3592,7 +3592,7 @@ unsafe fn machine_set_shortcuts(
         }
         let targets: *mut xkb_layout_index_t = calloc(
             (*keymap).num_groups as usize,
-            ::core::mem::size_of::<xkb_layout_index_t>() as usize,
+            std::mem::size_of::<xkb_layout_index_t>() as usize,
         ) as *mut xkb_layout_index_t;
         if targets.is_null() {
             return false;
