@@ -5,15 +5,6 @@ use c2rust_bitfields;
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 pub use crate::xkb::utils_paths::is_absolute_path;
 
-pub use crate::xkb::shared_ast_types::{
-    xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
-    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
-    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-};
-pub use crate::xkb::xkbcomp::include::{
-    expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
-    MERGE_REPLACE_PREFIX,
-};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -58,28 +49,42 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options};
-pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
+pub use crate::xkb::rmlvo::{
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
+    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+};
 pub use crate::xkb::scanner_utils::{
     darray_sval, scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof,
     scanner_eol, scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol,
     scanner_str, scanner_token_location, sval, svaleq, svaleq_prefix,
 };
-pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
-pub use crate::xkb::utils::parse_dec_to_uint32_t;
+pub use crate::xkb::shared_ast_types::{
+    xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
+    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
+    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+};
+pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
+pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
-pub use crate::xkb::shared_types::{darray_char, darray_size_t};
+pub use crate::xkb::shared_types::{
+    RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
+};
+pub use crate::xkb::utils::parse_dec_to_uint32_t;
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
     darray_growalloc, darray_resize, darray_resize_zero,
 };
-use libc::{calloc, fclose, fopen, free, FILE};
+pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
+pub use crate::xkb::xkbcomp::include::{
+    expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
+    MERGE_REPLACE_PREFIX,
+};
+use libc::{fclose, fopen, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct matcher {
@@ -546,11 +551,7 @@ unsafe fn matcher_new_from_rmlvo(
     mut rules: *mut *const i8,
 ) -> *mut matcher {
     unsafe {
-        let mut m: *mut matcher =
-            calloc(1 as usize, ::core::mem::size_of::<matcher>() as usize) as *mut matcher;
-        if m.is_null() {
-            return ::core::ptr::null_mut::<matcher>();
-        }
+        let mut m: *mut matcher = Box::into_raw(Box::new(std::mem::zeroed::<matcher>()));
         (*m).ctx = (*rmlvo).ctx;
         let mut names: xkb_rule_names = xkb_rule_names {
             rules: (*rmlvo).rules,
@@ -737,11 +738,7 @@ unsafe fn matcher_new_from_names(
     mut rmlvo: *const xkb_rule_names,
 ) -> *mut matcher {
     unsafe {
-        let mut m: *mut matcher =
-            calloc(1 as usize, ::core::mem::size_of::<matcher>() as usize) as *mut matcher;
-        if m.is_null() {
-            return ::core::ptr::null_mut::<matcher>();
-        }
+        let mut m: *mut matcher = Box::into_raw(Box::new(std::mem::zeroed::<matcher>()));
         (*m).ctx = ctx;
         (*m).rmlvo.model.sval.start = (*rmlvo).model;
         (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
@@ -861,7 +858,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
             &mut (*m).groups.size,
             &mut (*m).groups.alloc,
         );
-        free(m as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(m));
     }
 }
 unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {

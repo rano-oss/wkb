@@ -136,7 +136,7 @@ use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
 use crate::xkb::utils_paths::is_absolute_path;
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseStringInit, XkbParseStringNext};
-use libc::{calloc, fclose, fopen, free, FILE};
+use libc::{fclose, fopen, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -717,20 +717,8 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
     mut length: usize,
 ) -> *mut xkb_file_iterator {
     unsafe {
-        let iter: *mut xkb_file_iterator = calloc(
-            1 as usize,
-            ::core::mem::size_of::<xkb_file_iterator>() as usize,
-        ) as *mut xkb_file_iterator;
-        if iter.is_null() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                "[XKB-{:03}] Cannot allocate file iterator\n",
-                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
-            );
-            return ::core::ptr::null_mut::<xkb_file_iterator>();
-        }
+        let iter: *mut xkb_file_iterator =
+            Box::into_raw(Box::new(std::mem::zeroed::<xkb_file_iterator>()));
         (*iter).flags = iterator_flags;
         (*iter).ctx = ctx;
         (*iter).path = path;
@@ -759,7 +747,7 @@ pub unsafe fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator) {
         }
         xkb_file_section_free(&raw mut (*iter).section);
         FreeXkbFile((*iter).pending_xkb_file);
-        free(iter as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(iter));
     }
 }
 

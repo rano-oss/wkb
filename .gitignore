@@ -7,3 +7,4 @@ save.rs
 /.opencode
 /.ruff_cache
 /scripts
+/.cargo

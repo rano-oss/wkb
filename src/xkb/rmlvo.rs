@@ -92,7 +92,7 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::utils::cstr_cmp;
 pub use crate::xkb::utils::strdup_safe;
 use crate::xkb::utils::{darray_append, darray_free};
-use libc::{calloc, free};
+use libc::free;
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -111,11 +111,9 @@ pub unsafe fn xkb_rmlvo_builder_new(
             );
             return ::core::ptr::null_mut::<xkb_rmlvo_builder>();
         }
-        let builder: *mut xkb_rmlvo_builder = calloc(
-            1 as usize,
-            ::core::mem::size_of::<xkb_rmlvo_builder>() as usize,
-        ) as *mut xkb_rmlvo_builder;
-        if !builder.is_null() {
+        let builder: *mut xkb_rmlvo_builder =
+            Box::into_raw(Box::new(std::mem::zeroed::<xkb_rmlvo_builder>()));
+        {
             (*builder).refcnt = 1 as i32;
             (*builder).ctx = xkb_context_ref(context);
             (*builder).rules = strdup_safe(rules);
@@ -340,7 +338,7 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
             &mut (*rmlvo).options.alloc,
         );
         xkb_context_unref((*rmlvo).ctx);
-        free(rmlvo as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(rmlvo));
     }
 }
 pub unsafe fn xkb_rmlvo_builder_to_rules_names(

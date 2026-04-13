@@ -1799,11 +1799,7 @@ unsafe fn xkb_state_init(
 }
 pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
-        let state: *mut xkb_state =
-            calloc(1 as usize, ::core::mem::size_of::<xkb_state>() as usize) as *mut xkb_state;
-        if state.is_null() {
-            return ::core::ptr::null_mut::<xkb_state>();
-        }
+        let state: *mut xkb_state = Box::into_raw(Box::new(std::mem::zeroed::<xkb_state>()));
         xkb_state_init(state, keymap, XKB_A11Y_NO_FLAGS, XKB_A11Y_NO_FLAGS);
         return state;
     }
@@ -1836,7 +1832,7 @@ pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
             return;
         }
         xkb_state_destroy(state);
-        free(state as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(state));
     }
 }
 pub unsafe fn xkb_state_get_keymap(mut state: *mut xkb_state) -> *mut xkb_keymap {
@@ -3261,13 +3257,8 @@ static mut default_machine_options: xkb_machine_options = xkb_machine_options {
 
 pub unsafe fn xkb_machine_options_new(mut context: *mut xkb_context) -> *mut xkb_machine_options {
     unsafe {
-        let opt: *mut xkb_machine_options = calloc(
-            1 as usize,
-            ::core::mem::size_of::<xkb_machine_options>() as usize,
-        ) as *mut xkb_machine_options;
-        if opt.is_null() {
-            return ::core::ptr::null_mut::<xkb_machine_options>();
-        }
+        let opt: *mut xkb_machine_options =
+            Box::into_raw(Box::new(std::mem::zeroed::<xkb_machine_options>()));
         *opt = xkb_machine_options {
             a11y_affect: XKB_A11Y_NO_FLAGS,
             a11y_flags: XKB_A11Y_NO_FLAGS,
@@ -3306,7 +3297,7 @@ pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options)
             &mut (*options).mods.alloc,
         );
         xkb_context_unref((*options).ctx);
-        free(options as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(options));
     }
 }
 
@@ -3634,11 +3625,7 @@ pub unsafe fn xkb_machine_new(
     mut options: *const xkb_machine_options,
 ) -> *mut xkb_machine {
     unsafe {
-        let machine: *mut xkb_machine =
-            calloc(1 as usize, ::core::mem::size_of::<xkb_machine>() as usize) as *mut xkb_machine;
-        if machine.is_null() {
-            return ::core::ptr::null_mut::<xkb_machine>();
-        }
+        let machine: *mut xkb_machine = Box::into_raw(Box::new(std::mem::zeroed::<xkb_machine>()));
         if options.is_null() {
             options = &raw const default_machine_options;
         }
@@ -3685,7 +3672,7 @@ pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
         );
         free((*sm).config.shortcuts.targets as *mut ::core::ffi::c_void);
         free((*sm).config.modifiers.mappings as *mut ::core::ffi::c_void);
-        free(sm as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(sm));
     }
 }
 
@@ -4213,19 +4200,7 @@ pub unsafe fn xkb_events_new_batch(
             );
             return ::core::ptr::null_mut::<xkb_events>();
         }
-        let mut events: *mut xkb_events =
-            calloc(1 as usize, ::core::mem::size_of::<xkb_events>() as usize) as *mut xkb_events;
-        if events.is_null() {
-            xkb_logf!(
-                context,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}: cannot allocate state events collection\n",
-                XKB_ERROR_ALLOCATION_ERROR as i32,
-                crate::xkb::utils::CStrDisplay(b"xkb_events_new_batch\0".as_ptr() as *const i8),
-            );
-            return events;
-        }
+        let mut events: *mut xkb_events = Box::into_raw(Box::new(std::mem::zeroed::<xkb_events>()));
         (*events).queue.item = ::core::ptr::null_mut::<xkb_event>();
         (*events).queue.size = 0 as darray_size_t;
         (*events).queue.alloc = 0 as darray_size_t;
@@ -4246,7 +4221,7 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
             &mut (*events).queue.alloc,
         );
         xkb_context_unref((*events).ctx);
-        free(events as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(events));
     }
 }
 pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {

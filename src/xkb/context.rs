@@ -25,7 +25,7 @@ use crate::xkb::utils::xkb_stat;
 pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
-use libc::{calloc, free, qsort, strtol};
+use libc::{free, qsort, strtol};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -527,7 +527,7 @@ pub unsafe fn xkb_context_unref(mut ctx: *mut xkb_context) {
         free((*ctx).x11_atom_cache);
         xkb_context_include_path_clear(ctx);
         atom_table_free((*ctx).atom_table);
-        free(ctx as *mut ::core::ffi::c_void);
+        drop(Box::from_raw(ctx));
     }
 }
 unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
@@ -622,11 +622,7 @@ unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
 pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context {
     unsafe {
         let mut env: *const i8 = ::core::ptr::null::<i8>();
-        let mut ctx: *mut xkb_context =
-            calloc(1 as usize, ::core::mem::size_of::<xkb_context>() as usize) as *mut xkb_context;
-        if ctx.is_null() {
-            return ::core::ptr::null_mut::<xkb_context>();
-        }
+        let mut ctx: *mut xkb_context = Box::into_raw(Box::new(std::mem::zeroed::<xkb_context>()));
         (*ctx).refcnt = 1 as i32;
         (*ctx).log_fn =
             Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
@@ -645,7 +641,7 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
                 "Invalid context flags: 0x{:x}\n",
                 flags as u32 & !(XKB_CONTEXT_FLAGS as u32),
             );
-            free(ctx as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(ctx));
             return ::core::ptr::null_mut::<xkb_context>();
         }
         (*ctx).set_use_environment_names(

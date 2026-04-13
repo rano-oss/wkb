@@ -1,5 +1,5 @@
-use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb_logf;
 
 pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
     unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
@@ -18,7 +18,12 @@ pub const XKB_MOD_NAME_MOD4: [i8; 5] =
 pub const XKB_MOD_NAME_MOD5: [i8; 5] =
     unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
 
-pub use crate::xkb::shared_types::{XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES, XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES, XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES, XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES, XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES};
+pub use crate::xkb::messages::{
+    xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
+    XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
+    XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
+};
+pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -49,14 +54,18 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
     XKB_MAX_GROUPS,
 };
-pub use crate::xkb::messages::{
-    xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
-    XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
-    XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
+pub use crate::xkb::shared_types::{
+    XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
+    XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
+    XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES,
+    XKB_EVENT_TYPE_VALUES, XKB_KEYBOARD_CONTROL_FLAGS_VALUES, XKB_KEYMAP_COMPILE_FLAGS_VALUES,
+    XKB_KEYMAP_FORMAT_VALUES, XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES,
+    XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES,
+    XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
+    XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
-use libc::{calloc};
+
 unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
     unsafe {
         static mut builtin_mods: [*const i8; 8] = [
@@ -109,11 +118,7 @@ pub unsafe fn xkb_keymap_new(
             );
             return ::core::ptr::null_mut::<xkb_keymap>();
         }
-        let keymap: *mut xkb_keymap =
-            calloc(1 as usize, ::core::mem::size_of::<xkb_keymap>() as usize) as *mut xkb_keymap;
-        if keymap.is_null() {
-            return ::core::ptr::null_mut::<xkb_keymap>();
-        }
+        let keymap: *mut xkb_keymap = Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap>()));
         (*keymap).refcnt = 1 as i32;
         (*keymap).ctx = xkb_context_ref(ctx);
         (*keymap).format = format;
@@ -369,5 +374,5 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
         return 0 as xkb_action_count_t;
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::xkb_context_ref;
+use crate::xkb::shared_types::*;

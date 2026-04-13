@@ -21808,11 +21808,11 @@ pub use self::keysym_names_h::{
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
-pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
+pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
-use libc::{calloc, free};
+use libc::free;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keysym_iterator {
@@ -21939,10 +21939,8 @@ pub unsafe fn xkb_keysym_iterator_new(
     mut iterate_only_explicit_keysyms: bool,
 ) -> *mut xkb_keysym_iterator {
     unsafe {
-        let mut iter: *mut xkb_keysym_iterator = calloc(
-            1 as usize,
-            ::core::mem::size_of::<xkb_keysym_iterator>() as usize,
-        ) as *mut xkb_keysym_iterator;
+        let mut iter: *mut xkb_keysym_iterator =
+            Box::into_raw(Box::new(std::mem::zeroed::<xkb_keysym_iterator>()));
         (*iter).explicit = iterate_only_explicit_keysyms;
         (*iter).index = -1 as i32 as i32;
         (*iter).keysym = XKB_KEYSYM_UNICODE_MAX as u32;
@@ -21955,7 +21953,7 @@ pub unsafe fn xkb_keysym_iterator_unref(
 ) -> *mut xkb_keysym_iterator {
     unsafe {
         if !iter.is_null() {
-            free(iter as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(iter));
         }
         return ::core::ptr::null_mut::<xkb_keysym_iterator>();
     }

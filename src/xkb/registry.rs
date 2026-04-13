@@ -841,7 +841,7 @@ pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
-use libc::{calloc, free, getenv, qsort, strtol};
+use libc::{free, getenv, qsort, strtol};
 extern "C" {
     fn vsnprintf(s: *mut i8, maxlen: usize, format: *const i8, ...) -> i32;
 }
@@ -1023,7 +1023,7 @@ pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut 
         if (*object).base.refcount == 0 as u32 {
             rxkb_iso639_code_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_iso639_code>();
     }
@@ -1031,13 +1031,9 @@ pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut 
 #[inline]
 unsafe fn rxkb_iso639_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso639_code {
     unsafe {
-        let mut t: *mut rxkb_iso639_code = calloc(
-            1 as usize,
-            ::core::mem::size_of::<rxkb_iso639_code>() as usize,
-        ) as *mut rxkb_iso639_code;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_iso639_code =
+            Box::into_raw(Box::new(std::mem::zeroed::<rxkb_iso639_code>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1089,7 +1085,7 @@ pub unsafe fn rxkb_iso3166_code_unref(
         if (*object).base.refcount == 0 as u32 {
             rxkb_iso3166_code_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_iso3166_code>();
     }
@@ -1104,13 +1100,9 @@ pub unsafe fn rxkb_iso3166_code_ref(mut object: *mut rxkb_iso3166_code) -> *mut 
 #[inline]
 unsafe fn rxkb_iso3166_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso3166_code {
     unsafe {
-        let mut t: *mut rxkb_iso3166_code = calloc(
-            1 as usize,
-            ::core::mem::size_of::<rxkb_iso3166_code>() as usize,
-        ) as *mut rxkb_iso3166_code;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_iso3166_code =
+            Box::into_raw(Box::new(std::mem::zeroed::<rxkb_iso3166_code>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1136,7 +1128,7 @@ pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_optio
         if (*object).base.refcount == 0 as u32 {
             rxkb_option_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_option>();
     }
@@ -1151,11 +1143,8 @@ pub unsafe fn rxkb_option_ref(mut object: *mut rxkb_option) -> *mut rxkb_option 
 #[inline]
 unsafe fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
     unsafe {
-        let mut t: *mut rxkb_option =
-            calloc(1 as usize, ::core::mem::size_of::<rxkb_option>() as usize) as *mut rxkb_option;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_option = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1262,7 +1251,7 @@ pub unsafe fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut rxkb_layou
         if (*object).base.refcount == 0 as u32 {
             rxkb_layout_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_layout>();
     }
@@ -1270,11 +1259,8 @@ pub unsafe fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut rxkb_layou
 #[inline]
 unsafe fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
     unsafe {
-        let mut t: *mut rxkb_layout =
-            calloc(1 as usize, ::core::mem::size_of::<rxkb_layout>() as usize) as *mut rxkb_layout;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_layout = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_layout>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1352,7 +1338,7 @@ pub unsafe fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut rxkb_model {
         if (*object).base.refcount == 0 as u32 {
             rxkb_model_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_model>();
     }
@@ -1360,11 +1346,8 @@ pub unsafe fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut rxkb_model {
 #[inline]
 unsafe fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
     unsafe {
-        let mut t: *mut rxkb_model =
-            calloc(1 as usize, ::core::mem::size_of::<rxkb_model>() as usize) as *mut rxkb_model;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_model = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_model>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1457,7 +1440,7 @@ pub unsafe fn rxkb_option_group_unref(
         if (*object).base.refcount == 0 as u32 {
             rxkb_option_group_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_option_group>();
     }
@@ -1465,13 +1448,9 @@ pub unsafe fn rxkb_option_group_unref(
 #[inline]
 unsafe fn rxkb_option_group_create(mut parent: *mut rxkb_object) -> *mut rxkb_option_group {
     unsafe {
-        let mut t: *mut rxkb_option_group = calloc(
-            1 as usize,
-            ::core::mem::size_of::<rxkb_option_group>() as usize,
-        ) as *mut rxkb_option_group;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_option_group =
+            Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option_group>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1593,7 +1572,7 @@ pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_con
         if (*object).base.refcount == 0 as u32 {
             rxkb_context_destroy(object);
             list_remove(&raw mut (*object).base.link);
-            free(object as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(object));
         }
         return ::core::ptr::null_mut::<rxkb_context>();
     }
@@ -1601,12 +1580,8 @@ pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_con
 #[inline]
 unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
     unsafe {
-        let mut t: *mut rxkb_context =
-            calloc(1 as usize, ::core::mem::size_of::<rxkb_context>() as usize)
-                as *mut rxkb_context;
-        if !t.is_null() {
-            rxkb_object_init(&raw mut (*t).base, parent);
-        }
+        let mut t: *mut rxkb_context = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_context>()));
+        rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
 }
@@ -1747,7 +1722,7 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
                 crate::xkb::utils::CStrDisplay(b"rxkb_context_new\0".as_ptr() as *const i8),
                 flags as u32 & !(RXKB_CONTEXT_FLAGS as u32),
             );
-            free(ctx as *mut ::core::ffi::c_void);
+            drop(Box::from_raw(ctx));
             return ::core::ptr::null_mut::<rxkb_context>();
         }
         list_init(&raw mut (*ctx).models);
