@@ -113,7 +113,7 @@ pub use crate::xkb::shared_types::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::{cstr_free, cstr_len};
 use libc::{free, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -220,10 +220,10 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         free((*keymap).sym_interprets as *mut ::core::ffi::c_void);
         free((*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases as *mut ::core::ffi::c_void);
         free((*keymap).group_names as *mut ::core::ffi::c_void);
-        free((*keymap).keycodes_section_name as *mut ::core::ffi::c_void);
-        free((*keymap).symbols_section_name as *mut ::core::ffi::c_void);
-        free((*keymap).types_section_name as *mut ::core::ffi::c_void);
-        free((*keymap).compat_section_name as *mut ::core::ffi::c_void);
+        cstr_free((*keymap).keycodes_section_name);
+        cstr_free((*keymap).symbols_section_name);
+        cstr_free((*keymap).types_section_name);
+        cstr_free((*keymap).compat_section_name);
         xkb_context_unref((*keymap).ctx);
         drop(Box::from_raw(keymap));
     }
@@ -231,11 +231,8 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
 #[c2rust::src_loc = "99:1"]
 unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_keymap_format_ops {
     unsafe {
-        static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] = [
-            std::ptr::null(),
-            std::ptr::null(),
-            std::ptr::null(),
-        ];
+        static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] =
+            [std::ptr::null(), std::ptr::null(), std::ptr::null()];
         // Initialize lazily to bridge the type difference with xkbcomp's local type
         if keymap_format_ops[1].is_null() {
             let ptr = text_v1_keymap_format_ops_ptr();
@@ -860,14 +857,13 @@ pub unsafe fn xkb_keymap_key_iterator_new(
             (*iter).max = std::ptr::null();
             return iter;
         }
-        (*iter).skip_unbound =
-            flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as u32 != 0;
-        (*iter).increment =
-            (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as u32 != 0 {
-                -1 as i32
-            } else {
-                1 as i32
-            }) as i8;
+        (*iter).skip_unbound = flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as u32 != 0;
+        (*iter).increment = (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as u32 != 0
+        {
+            -1 as i32
+        } else {
+            1 as i32
+        }) as i8;
         (*iter).min = if (*keymap).num_keys_low != 0 {
             (*(*iter).keymap)
                 .keys

@@ -24,7 +24,7 @@ pub use crate::xkb::utils::eaccess;
 use crate::xkb::utils::xkb_stat;
 pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
+use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, darray_append, darray_free};
 use libc::{free, qsort, strtol};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
@@ -423,7 +423,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
         if !extensions.item.is_null() {
             ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
             while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
-                free(*ext_path as *mut ::core::ffi::c_void);
+                cstr_free(*ext_path);
                 ext_path = ext_path.offset(1);
             }
         }
@@ -457,7 +457,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
             path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
             {
-                free(*path as *mut ::core::ffi::c_void);
+                cstr_free(*path);
                 path = path.offset(1);
             }
         }
@@ -474,7 +474,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
                     .item
                     .offset((*ctx).failed_includes.size as isize) as *mut *mut i8
             {
-                free(*path as *mut ::core::ffi::c_void);
+                cstr_free(*path);
                 path = path.offset(1);
             }
         }

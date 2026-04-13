@@ -18,8 +18,6 @@ pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
     0 as i32 as i8,
 ];
 
-
-use crate::xkb::utils_paths::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -88,9 +86,10 @@ pub use crate::xkb::shared_ast_types::{
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::{cstr_free, cstr_len};
+use crate::xkb::utils_paths::is_absolute_path;
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
-use libc::{fclose, fopen, free, FILE};
+use libc::{fclose, fopen, FILE};
 pub unsafe fn ParseIncludeMap(
     mut str_inout: *mut *mut i8,
     mut file_rtrn: *mut *mut i8,
@@ -126,9 +125,8 @@ pub unsafe fn ParseIncludeMap(
         if tmp.is_null() {
             *file_rtrn = cstr_dup(str);
             *map_rtrn = std::ptr::null_mut();
-        } else if *str.offset(0 as i32 as isize) as i32 == '(' as i32
-        {
-            free(*extra_data as *mut ::core::ffi::c_void);
+        } else if *str.offset(0 as i32 as isize) as i32 == '(' as i32 {
+            cstr_free(*extra_data);
             return false;
         } else {
             let c2rust_fresh4 = tmp;
@@ -138,8 +136,8 @@ pub unsafe fn ParseIncludeMap(
             str = tmp;
             tmp = crate::xkb::utils::cstr_chr(str, ')' as i32);
             if tmp.is_null() || *tmp.offset(1 as i32 as isize) as i32 != '\0' as i32 {
-                free(*file_rtrn as *mut ::core::ffi::c_void);
-                free(*extra_data as *mut ::core::ffi::c_void);
+                cstr_free(*file_rtrn);
+                cstr_free(*extra_data);
                 return false;
             }
             let c2rust_fresh5 = tmp;
@@ -523,7 +521,7 @@ pub unsafe fn FindFileInXkbPath(
             }
             _ => {}
         }
-        free(name_buffer as *mut ::core::ffi::c_void);
+        cstr_free(name_buffer);
         return file;
     }
 }

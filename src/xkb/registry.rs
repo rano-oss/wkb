@@ -840,7 +840,7 @@ use crate::xkb::utils::{__errno_location, _steal, cstr_dup};
 pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
-use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
+use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, darray_append, darray_free};
 use libc::{free, getenv, qsort, strtol};
 extern "C" {
     fn vsnprintf(s: *mut i8, maxlen: usize, format: *const i8, ...) -> i32;
@@ -1545,7 +1545,7 @@ unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
             path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
             while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
             {
-                free(*path as *mut ::core::ffi::c_void);
+                cstr_free(*path);
                 path = path.offset(1);
             }
         }
@@ -1692,15 +1692,13 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
 }
 pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_context {
     unsafe {
-        let mut ctx: *mut rxkb_context =
-            rxkb_context_create(std::ptr::null_mut());
+        let mut ctx: *mut rxkb_context = rxkb_context_create(std::ptr::null_mut());
         let mut env: *const i8 = std::ptr::null();
         if ctx.is_null() {
             return std::ptr::null_mut();
         }
         (*ctx).context_state = CONTEXT_NEW;
-        (*ctx).load_extra_rules_files =
-            flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as u32 != 0;
+        (*ctx).load_extra_rules_files = flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as u32 != 0;
         (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
         (*ctx).log_fn =
             Some(default_log_fn as unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ())
@@ -2163,7 +2161,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
         if !extensions.item.is_null() {
             ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
             while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
-                free(*ext_path as *mut ::core::ffi::c_void);
+                cstr_free(*ext_path);
                 ext_path = ext_path.offset(1);
             }
         }
@@ -2576,8 +2574,7 @@ unsafe fn parse_variant(
                             node = (*node).next as *mut xmlNode;
                         }
                         if !found_language_list {
-                            let mut x: *mut rxkb_iso639_code =
-                                std::ptr::null_mut();
+                            let mut x: *mut rxkb_iso639_code = std::ptr::null_mut();
                             x = std::ptr::null_mut();
                             x = ((*l).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
                                 as *mut rxkb_iso639_code
@@ -2593,8 +2590,7 @@ unsafe fn parse_variant(
                             }
                         }
                         if !found_country_list {
-                            let mut x_0: *mut rxkb_iso3166_code =
-                                std::ptr::null_mut();
+                            let mut x_0: *mut rxkb_iso3166_code = std::ptr::null_mut();
                             x_0 = std::ptr::null_mut();
                             x_0 = ((*l).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
                                 as *mut rxkb_iso3166_code
@@ -2891,8 +2887,8 @@ unsafe extern "C" fn xml_error_func(
         }
         slen += rc;
         if slen >= std::mem::size_of::<[i8; 4096]>() as i32 {
-            buf[(std::mem::size_of::<[i8; 4096]>()).wrapping_sub(1 as usize)
-                as usize] = '\n' as i32 as i8;
+            buf[(std::mem::size_of::<[i8; 4096]>()).wrapping_sub(1 as usize) as usize] =
+                '\n' as i32 as i8;
             slen = std::mem::size_of::<[i8; 4096]>() as i32;
         }
         if buf[(slen - 1 as i32) as usize] as i32 == '\n' as i32 {
@@ -2926,11 +2922,7 @@ unsafe fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
             XML_CHAR_ENCODING_NONE,
         );
         if !buf.is_null() {
-            dtd = xmlIOParseDTD(
-                std::ptr::null_mut(),
-                buf,
-                XML_CHAR_ENCODING_UTF8,
-            ) as *mut xmlDtd;
+            dtd = xmlIOParseDTD(std::ptr::null_mut(), buf, XML_CHAR_ENCODING_UTF8) as *mut xmlDtd;
             if dtd.is_null() {
                 rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n",);
             } else {

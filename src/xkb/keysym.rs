@@ -21809,10 +21809,9 @@ pub use self::keysym_names_h::{
 };
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_dup;
-use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
+use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
-use libc::free;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keysym_iterator {
@@ -21970,8 +21969,7 @@ pub unsafe fn xkb_keysym_iterator_is_explicitly_named(mut iter: *mut xkb_keysym_
         return (*iter).index >= 0 as i32
             && (*iter).index
                 < (std::mem::size_of::<[name_keysym; 2502]>())
-                    .wrapping_div(std::mem::size_of::<name_keysym>())
-                    as i32
+                    .wrapping_div(std::mem::size_of::<name_keysym>()) as i32
             && ((*iter).explicit as i32 != 0
                 || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym);
     }
@@ -21986,8 +21984,7 @@ pub unsafe fn xkb_keysym_iterator_get_name(
         if (*iter).index < 0 as i32
             || (*iter).index
                 >= (std::mem::size_of::<[name_keysym; 2502]>())
-                    .wrapping_div(std::mem::size_of::<name_keysym>())
-                    as i32
+                    .wrapping_div(std::mem::size_of::<name_keysym>()) as i32
         {
             return -1 as i32;
         }
@@ -22149,7 +22146,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                     .wrapping_add(1 as usize),
             );
             ret = xkb_keysym_from_name(tmp, flags);
-            free(tmp as *mut ::core::ffi::c_void);
+            cstr_free(tmp);
             return ret;
         }
         return XKB_KEY_NoSymbol as u32;

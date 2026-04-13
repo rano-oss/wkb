@@ -1,8 +1,6 @@
 use crate::xkb_logf;
 
-extern "C" {
-    fn strndup(__string: *const i8, __n: usize) -> *mut i8;
-}
+use crate::xkb::utils::{cstr_free, cstr_ndup};
 
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
@@ -85,7 +83,6 @@ pub use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{
     ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
 };
-use libc::free;
 unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
@@ -601,7 +598,7 @@ pub unsafe fn UnknownStatementCreate(
             Box::into_raw(Box::new(std::mem::zeroed::<UnknownStatement>()));
         (*def).common.type_0 = type_0;
         (*def).common.next = std::ptr::null_mut();
-        (*def).name = strndup(name.start, name.len);
+        (*def).name = cstr_ndup(name.start, name.len);
         if (*def).name.is_null() {
             drop(Box::from_raw(def));
             return std::ptr::null_mut();
@@ -645,9 +642,9 @@ pub unsafe fn IncludeCreate(
                 break;
             }
             if isempty(file) {
-                free(file as *mut ::core::ffi::c_void);
-                free(map as *mut ::core::ffi::c_void);
-                free(extra_data as *mut ::core::ffi::c_void);
+                cstr_free(file);
+                cstr_free(map);
+                cstr_free(extra_data);
             } else {
                 if first.is_null() {
                     incl = Box::into_raw(Box::new(std::mem::zeroed::<IncludeStmt>()));
@@ -658,9 +655,9 @@ pub unsafe fn IncludeCreate(
                     incl = (*incl).next_incl as *mut IncludeStmt;
                 }
                 if incl.is_null() {
-                    free(file as *mut ::core::ffi::c_void);
-                    free(map as *mut ::core::ffi::c_void);
-                    free(extra_data as *mut ::core::ffi::c_void);
+                    cstr_free(file);
+                    cstr_free(map);
+                    cstr_free(extra_data);
                     c2rust_current_block = 15125582407903384992;
                     break;
                 } else {
@@ -697,14 +694,14 @@ pub unsafe fn IncludeCreate(
                     crate::xkb::utils::CStrDisplay(stmt),
                 );
                 FreeInclude(first);
-                free(stmt as *mut ::core::ffi::c_void);
+                cstr_free(stmt);
                 return std::ptr::null_mut();
             }
             _ => {
                 if !first.is_null() {
                     (*first).stmt = stmt;
                 } else {
-                    free(stmt as *mut ::core::ffi::c_void);
+                    cstr_free(stmt);
                 }
                 return first;
             }
@@ -802,10 +799,10 @@ unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
         let mut next: *mut IncludeStmt = std::ptr::null_mut();
         while !incl.is_null() {
             next = (*incl).next_incl as *mut IncludeStmt;
-            free((*incl).file as *mut ::core::ffi::c_void);
-            free((*incl).map as *mut ::core::ffi::c_void);
-            free((*incl).modifier as *mut ::core::ffi::c_void);
-            free((*incl).stmt as *mut ::core::ffi::c_void);
+            cstr_free((*incl).file);
+            cstr_free((*incl).map);
+            cstr_free((*incl).modifier);
+            cstr_free((*incl).stmt);
             drop(Box::from_raw(incl));
             incl = next;
         }
@@ -875,7 +872,7 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                     FreeStmt((*(stmt as *mut LedNameDef)).name as *mut ParseCommon);
                 }
                 35 | 36 => {
-                    free((*(stmt as *mut UnknownStatement)).name as *mut ::core::ffi::c_void);
+                    cstr_free((*(stmt as *mut UnknownStatement)).name);
                 }
                 _ => {}
             }
@@ -916,7 +913,7 @@ pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
                 }
                 _ => {}
             }
-            free((*file).name as *mut ::core::ffi::c_void);
+            cstr_free((*file).name);
             drop(Box::from_raw(file));
             file = next;
         }

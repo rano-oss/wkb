@@ -453,6 +453,41 @@ pub unsafe fn cstr_dup(s: *const i8) -> *mut i8 {
     std::ffi::CString::from(cstr).into_raw()
 }
 
+/// Safe replacement for `strndup`. Duplicates up to `n` bytes of a C string
+/// using Rust's allocator. Returns a `*mut i8` allocated via `CString::into_raw()`.
+/// Returns null if `s` is null.
+///
+/// # Safety
+/// If non-null, `s` must point to at least `n` readable bytes.
+#[inline]
+pub unsafe fn cstr_ndup(s: *const i8, n: usize) -> *mut i8 {
+    if s.is_null() {
+        return std::ptr::null_mut();
+    }
+    // Find actual length (stop at null or n bytes)
+    let mut len = 0;
+    while len < n && *s.add(len) != 0 {
+        len += 1;
+    }
+    let slice = std::slice::from_raw_parts(s as *const u8, len);
+    match std::ffi::CString::new(slice) {
+        Ok(cstring) => cstring.into_raw(),
+        Err(_) => std::ptr::null_mut(), // interior null (shouldn't happen since we stopped at null)
+    }
+}
+
+/// Frees a C string that was allocated by `cstr_dup`, `cstr_ndup`, or `strdup_safe`.
+/// Safe to call with null (no-op). Counterpart to `CString::into_raw()`.
+///
+/// # Safety
+/// `s` must be null or a pointer previously returned by `cstr_dup`/`cstr_ndup`/`strdup_safe`.
+#[inline]
+pub unsafe fn cstr_free(s: *mut i8) {
+    if !s.is_null() {
+        drop(std::ffi::CString::from_raw(s));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1007,24 +1042,18 @@ pub unsafe fn parse_dec_to_uint32_t(mut s: *const i8, mut len: usize, mut out: *
 }
 
 #[inline]
-pub unsafe fn parse_dec_to_uint64_t(
-    mut s: *const i8,
-    mut len: usize,
-    mut out: *mut u64,
-) -> i32 {
+pub unsafe fn parse_dec_to_uint64_t(mut s: *const i8, mut len: usize, mut out: *mut u64) -> i32 {
     unsafe {
         let mut result: u64 = 0 as u64;
         let mut i: usize = 0;
         i = 0 as usize;
         while i < len
-            && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar
-                as u32)
+            && ((*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32)
                 < 10 as u32
             && result <= (18446744073709551615 as u64).wrapping_div(10 as u64)
             && result.wrapping_mul(10 as u64)
                 <= (18446744073709551615 as u64).wrapping_sub(
-                    (*s.offset(i as isize) as i32 - '0' as i32)
-                        as ::core::ffi::c_uchar as u64,
+                    (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u64,
                 )
         {
             result = result
@@ -1034,8 +1063,7 @@ pub unsafe fn parse_dec_to_uint64_t(
         }
         *out = result as u64;
         return if i >= len
-            || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar
-                as u32
+            || (*s.offset(i as isize) as i32 - '0' as i32) as ::core::ffi::c_uchar as u32
                 >= 10 as u32
         {
             i as i32
@@ -1065,11 +1093,7 @@ pub static mut digits__: [::core::ffi::c_uchar; 256] = [
 ];
 
 #[inline]
-pub unsafe fn parse_hex_to_uint32_t(
-    mut s: *const i8,
-    mut len: usize,
-    mut out: *mut u32,
-) -> i32 {
+pub unsafe fn parse_hex_to_uint32_t(mut s: *const i8, mut len: usize, mut out: *mut u32) -> i32 {
     unsafe {
         let mut result: u32 = 0 as u32;
         let mut i: usize = 0 as usize;
@@ -1092,11 +1116,7 @@ pub unsafe fn parse_hex_to_uint32_t(
 }
 
 #[inline]
-pub unsafe fn parse_hex_to_uint64_t(
-    mut s: *const i8,
-    mut len: usize,
-    mut out: *mut u64,
-) -> i32 {
+pub unsafe fn parse_hex_to_uint64_t(mut s: *const i8, mut len: usize, mut out: *mut u64) -> i32 {
     unsafe {
         let mut result: u64 = 0 as u64;
         let mut i: usize = 0 as usize;
