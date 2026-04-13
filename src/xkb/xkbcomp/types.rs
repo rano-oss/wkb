@@ -1,18 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::{xkb_atom_text, xkb_atom_intern};
 
-pub mod xkbcommon_errors_h {
-    pub type xkb_error_code = ::core::ffi::c_int;
-    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
-    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
-    pub const XKB_SUCCESS: xkb_error_code = 0;
-    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
 pub mod text_h {
 
     pub use crate::xkb::text::{LookupEntry, ModMaskText};
@@ -140,7 +128,7 @@ pub use self::text_h::{LookupEntry, ModMaskText};
 pub use self::util_mem_h::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-pub use self::xkbcommon_errors_h::{
+pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,

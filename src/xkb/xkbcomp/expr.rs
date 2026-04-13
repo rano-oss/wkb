@@ -1,18 +1,6 @@
 use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
 
-pub mod xkbcommon_errors_h {
-    pub type xkb_error_code = i32;
-    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
-    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
-    pub const XKB_SUCCESS: xkb_error_code = 0;
-    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
 pub mod text_h {
     pub use crate::xkb::text::{buttonNames, LookupEntry};
     pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
@@ -153,7 +141,7 @@ pub use crate::xkb::messages::{
 pub use self::text_h::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
 pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
-pub use self::xkbcommon_errors_h::{
+pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,

@@ -1,16 +1,4 @@
 use crate::xkb::shared_types::*;
-pub mod xkbcommon_errors_h {
-    pub type xkb_error_code = i32;
-    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
-    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
-    pub const XKB_SUCCESS: xkb_error_code = 0;
-    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
 pub mod xkbcommon_features_h {
     pub type xkb_feature = u32;
     pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
@@ -104,7 +92,7 @@ pub mod enums_h {
         XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS as i32 as u32,
         XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as i32 as u32,
     ];
-    use super::xkbcommon_errors_h::{
+    use crate::xkb::shared_types::{
         XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
         XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
@@ -140,7 +128,7 @@ pub use self::enums_h::{
     XKB_KEYSYM_FLAGS_VALUES, XKB_KEY_DIRECTION_VALUES, XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES,
     XKB_RMLVO_BUILDER_FLAGS_VALUES, XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-pub use self::xkbcommon_errors_h::{
+pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,

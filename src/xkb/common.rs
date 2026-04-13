@@ -28,18 +28,6 @@ pub mod struct_stat_h {
     }
     use super::struct_timespec_h::timespec;
 }
-pub mod xkbcommon_errors_h {
-    pub type xkb_error_code = i32;
-    pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-    pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-    pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-    pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-    pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
-    pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
-    pub const XKB_SUCCESS: xkb_error_code = 0;
-    pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
 pub mod rmlvo_h {
     pub use crate::xkb::rmlvo::rmlvo_h::*;
 }
@@ -199,7 +187,7 @@ pub use crate::xkb::utils::{isempty, streq};
 pub use self::utils_numbers_h::parse_dec_to_uint32_t;
 use self::utils_paths_h::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;
-pub use self::xkbcommon_errors_h::{
+pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
