@@ -235,7 +235,7 @@ pub unsafe fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
                 get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t));
             return (*m_0).upper() as i32 != 0 && !(*m_0).lower();
         } else {
-            return 0 != 0;
+            return false;
         };
     }
 }
@@ -249,7 +249,7 @@ pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> bool {
             ))
             .lower();
         } else {
-            return 0 != 0;
+            return false;
         };
     }
 }

@@ -948,7 +948,7 @@ pub unsafe fn xkb_check_versioned_struct_size_(
         while p < end {
             let c2rust_fresh1 = p;
             p = p.offset(1);
-            if *c2rust_fresh1 as i32 != 0 as i32 {
+            if *c2rust_fresh1 != 0 {
                 return XKB_ERROR_ABI_FORWARD_COMPAT;
             }
         }

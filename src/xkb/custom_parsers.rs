@@ -95,7 +95,7 @@ unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
                 result = result
                     .wrapping_add((10 as i32 + *s.offset(i as isize) as i32 - 'A' as i32) as u32);
             } else {
-                return 0 != 0;
+                return false;
             }
             i = i.wrapping_add(1);
         }

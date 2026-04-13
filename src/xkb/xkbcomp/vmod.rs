@@ -116,7 +116,7 @@ pub unsafe fn HandleVModDef(
                     "Declaration of {} ignored\n",
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 );
-                return 0 != 0;
+                return false;
             }
         }
         let mut vmod: xkb_mod_index_t = 0;
@@ -133,11 +133,11 @@ pub unsafe fn HandleVModDef(
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
                     );
-                    return 0 != 0;
+                    return false;
                 }
                 let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
                 if (*stmt).value.is_null() {
-                    return 1 != 0;
+                    return true;
                 } else if (*mods).explicit_vmods & mask == 0 {
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
@@ -165,7 +165,7 @@ pub unsafe fn HandleVModDef(
                     (*mod_0).mapping = use_0;
                 }
                 (*mods).explicit_vmods |= mask;
-                return 1 != 0;
+                return true;
             }
             vmod = vmod.wrapping_add(1);
             mod_0 = mod_0.offset(1);
@@ -180,7 +180,7 @@ pub unsafe fn HandleVModDef(
                 (::core::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)
                     as xkb_mod_index_t,
             );
-            return 0 != 0;
+            return false;
         }
         (*mods).mods[(*mods).num_mods as usize].name = (*stmt).name;
         (*mods).mods[(*mods).num_mods as usize].type_0 = MOD_VIRT;
@@ -190,7 +190,7 @@ pub unsafe fn HandleVModDef(
             (*mods).explicit_vmods |= mask_0;
         }
         (*mods).num_mods = (*mods).num_mods.wrapping_add(1);
-        return 1 != 0;
+        return true;
     }
 }
 use crate::xkb::shared_types::*;

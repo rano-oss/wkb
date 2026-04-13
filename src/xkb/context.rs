@@ -483,7 +483,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
             &mut (*ctx).failed_includes.size,
             &mut (*ctx).failed_includes.alloc,
         );
-        (*ctx).set_pending_default_includes((0 != 0) as bool);
+        (*ctx).set_pending_default_includes((false) as bool);
     }
 }
 

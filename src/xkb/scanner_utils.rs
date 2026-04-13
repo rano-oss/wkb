@@ -165,10 +165,10 @@ pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
             as i64
             != 0
         {
-            return 0 != 0;
+            return false;
         }
         (*s).pos = (*s).pos.wrapping_add(1);
-        return 1 != 0;
+        return true;
     }
 }
 
@@ -176,15 +176,15 @@ pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
 pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
     unsafe {
         if (*s).len.wrapping_sub((*s).pos) < len {
-            return 0 != 0;
+            return false;
         }
         if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
             != std::slice::from_raw_parts(string as *const u8, len)
         {
-            return 0 != 0;
+            return false;
         }
         (*s).pos = (*s).pos.wrapping_add(len);
-        return 1 != 0;
+        return true;
     }
 }
 
@@ -192,12 +192,12 @@ pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: u
 pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
     unsafe {
         if (*s).buf_pos.wrapping_add(1 as usize) >= ::core::mem::size_of::<[i8; 1024]>() as usize {
-            return 0 != 0;
+            return false;
         }
         let c2rust_fresh1 = (*s).buf_pos;
         (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
         (*s).buf[c2rust_fresh1 as usize] = ch;
-        return 1 != 0;
+        return true;
     }
 }
 
@@ -207,11 +207,11 @@ pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bo
         let mut i: usize = 0 as usize;
         while *str.offset(i as isize) as i32 != 0 {
             if !scanner_buf_append(s, *str.offset(i as isize)) {
-                return 0 != 0;
+                return false;
             }
             i = i.wrapping_add(1);
         }
-        return 1 != 0;
+        return true;
     }
 }
 
@@ -230,14 +230,14 @@ pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) ->
                 );
             }
             if count == 0 as ::core::ffi::c_int {
-                return 0 != 0;
+                return false;
             }
             (*s).buf_pos = (*s)
                 .buf_pos
                 .wrapping_add((count - 1 as ::core::ffi::c_int) as usize);
-            return 1 != 0;
+            return true;
         } else {
-            return 0 != 0;
+            return false;
         };
     }
 }
@@ -258,7 +258,7 @@ pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
             } else {
                 scanner_next(s);
                 *out = c;
-                return 0 != 0;
+                return false;
             }
             i = i.wrapping_add(1);
         }
@@ -311,7 +311,7 @@ pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> ::cor
 pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32) -> bool {
     unsafe {
         if !scanner_chr(s, '{' as i32 as i8) {
-            return 0 != 0;
+            return false;
         }
         let mut cp: u32 = 0 as u32;
         let count: ::core::ffi::c_int = crate::xkb::utils::parse_hex_to_uint32_t(
@@ -337,7 +337,7 @@ pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32)
                 && cp <= 0x10ffff as u32;
         }
         (*s).pos = last_valid;
-        return 0 != 0;
+        return false;
     }
 }
 
@@ -349,7 +349,7 @@ pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool
             != 0
             || (*s).len < 2 as usize
         {
-            return 1 != 0;
+            return true;
         }
         if *(*s).s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
             || *(*s).s.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
@@ -365,7 +365,7 @@ pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool
                 loc.line,
                 loc.column,
             );
-            return 0 != 0;
+            return false;
         }
         if !crate::xkb::utils::is_ascii(*(*s).s.offset(0 as ::core::ffi::c_int as isize)) {
             let mut loc_0: scanner_loc = scanner_token_location(s);
@@ -379,9 +379,9 @@ pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool
                 loc_0.line,
                 loc_0.column,
             );
-            return 0 != 0;
+            return false;
         }
-        return 1 != 0;
+        return true;
     }
 }
 

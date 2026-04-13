@@ -98,14 +98,14 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
                             ctx
                         )),
                     );
-                    return 0 != 0;
+                    return false;
                 }
-                (*ctx).set_pending_default_includes((0 != 0) as bool);
+                (*ctx).set_pending_default_includes((false) as bool);
             } else {
-                return 0 != 0;
+                return false;
             }
         }
-        return 1 != 0;
+        return true;
     }
 }
 pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> darray_size_t {
@@ -136,7 +136,7 @@ pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
 }
 pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, cstr_len(string), 0 != 0);
+        return atom_intern((*ctx).atom_table, string, cstr_len(string), false);
     }
 }
 pub unsafe fn xkb_atom_intern(
@@ -145,7 +145,7 @@ pub unsafe fn xkb_atom_intern(
     mut len: usize,
 ) -> xkb_atom_t {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, len, 1 != 0);
+        return atom_intern((*ctx).atom_table, string, len, true);
     }
 }
 pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> *const i8 {

@@ -169,7 +169,7 @@ pub unsafe fn XkbModNameToIndex(
 pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_syms as i32 != (*b).num_syms as i32 {
-            return 0 != 0;
+            return false;
         }
         if (*a).num_syms as i32 <= 1 as i32 {
             return (*a).s.sym == (*b).s.sym;
@@ -185,10 +185,10 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
 pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
     unsafe {
         if (*a).type_0 as u32 != (*b).type_0 as u32 {
-            return 0 != 0;
+            return false;
         }
         match (*a).type_0 as u32 {
-            0 | 1 => return 1 != 0,
+            0 | 1 => return true,
             2 | 3 | 4 => {
                 return (*a).mods.flags as u32 == (*b).mods.flags as u32
                     && (*a).mods.mods.mask == (*b).mods.mods.mask
@@ -212,7 +212,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
                 return (*a).dflt.flags as u32 == (*b).dflt.flags as u32
                     && (*a).dflt.value as i32 == (*b).dflt.value as i32;
             }
-            12 => return 1 != 0,
+            12 => return true,
             13 => {
                 return (*a).screen.flags as u32 == (*b).screen.flags as u32
                     && (*a).screen.screen as i32 == (*b).screen.screen as i32;
@@ -226,7 +226,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
                     && (*a).redirect.affect == (*b).redirect.affect
                     && (*a).redirect.mods == (*b).redirect.mods;
             }
-            17 | 18 => return 1 != 0,
+            17 | 18 => return true,
             20 => {
                 return (*a).internal.flags as u32 == (*b).internal.flags as u32
                     && (*a).internal.c2rust_unnamed.clear_latched_mods
@@ -247,7 +247,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
 pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
         if (*a).num_actions as i32 != (*b).num_actions as i32 {
-            return 0 != 0;
+            return false;
         }
         if (*a).num_actions as i32 <= 1 as i32 {
             return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
@@ -258,11 +258,11 @@ pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_le
                 (*a).a.actions.offset(k as isize) as *mut xkb_action,
                 (*b).a.actions.offset(k as isize) as *mut xkb_action,
             ) {
-                return 0 != 0;
+                return false;
             }
             k = k.wrapping_add(1);
         }
-        return 1 != 0;
+        return true;
     }
 }
 pub unsafe fn XkbWrapGroupIntoRange(

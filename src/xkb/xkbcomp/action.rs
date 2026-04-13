@@ -164,14 +164,14 @@ static mut constTrue: ExprBoolean = ExprBoolean {
         next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: 1 != 0,
+    set: true,
 };
 static mut constFalse: ExprBoolean = ExprBoolean {
     common: _ParseCommon {
         next: ::core::ptr::null::<_ParseCommon>() as *mut _ParseCommon,
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: 0 != 0,
+    set: false,
 };
 pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut ActionsInfo) {
     unsafe {
@@ -517,7 +517,7 @@ unsafe fn CheckBooleanFlag(
     mut flags_inout: *mut xkb_action_flags,
 ) -> xkb_parser_error {
     unsafe {
-        let mut set: bool = 0 != 0;
+        let mut set: bool = false;
         if !array_ndx.is_null() {
             return ReportActionNotArray(ctx, action, field, strict);
         }
@@ -785,7 +785,7 @@ unsafe fn CheckGroupField(
             spec = value;
         }
         let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH as i32 as u32 != 0;
-        let mut pending: bool = 0 != 0;
+        let mut pending: bool = false;
         let ret: xkb_parser_error =
             ExprResolveGroup(keymap_info, spec, absolute, &raw mut idx, &raw mut pending)
                 as xkb_parser_error;
@@ -1376,7 +1376,7 @@ unsafe fn HandleRedirectKey(
                     (*keymap_info).strict,
                 );
             }
-            let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, 1 != 0);
+            let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, true);
             if key.is_null() {
                 xkb_logf!(
                     ctx,

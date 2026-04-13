@@ -288,24 +288,24 @@ unsafe fn number(
             match scanner_hex_int64(s, out) {
                 -1 => {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return 1 != 0;
+                    return true;
                 }
-                0 => return 0 != 0,
+                0 => return false,
                 _ => {
                     *out_tok = INTEGER as ::core::ffi::c_int;
-                    return 1 != 0;
+                    return true;
                 }
             }
         } else {
-            let mut is_digit_0: bool = 0 != 0;
+            let mut is_digit_0: bool = false;
             match scanner_dec_int64(s, out) {
                 -1 => {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return 1 != 0;
+                    return true;
                 }
-                0 => return 0 != 0,
+                0 => return false,
                 1 => {
-                    is_digit_0 = 1 != 0;
+                    is_digit_0 = true;
                 }
                 _ => {}
             }
@@ -313,7 +313,7 @@ unsafe fn number(
                 let mut dec: i64 = 0;
                 if scanner_dec_int64(s, &raw mut dec) < 0 as ::core::ffi::c_int {
                     *out_tok = ERROR_TOK as ::core::ffi::c_int;
-                    return 1 != 0;
+                    return true;
                 }
                 *out_tok = FLOAT as ::core::ffi::c_int;
             } else if is_digit_0 {
@@ -321,7 +321,7 @@ unsafe fn number(
             } else {
                 *out_tok = INTEGER as ::core::ffi::c_int;
             }
-            return 1 != 0;
+            return true;
         };
     }
 }
@@ -636,9 +636,9 @@ pub unsafe fn XkbParseStringInit(
                 loc_0.line,
                 loc_0.column,
             );
-            return 0 != 0;
+            return false;
         }
-        return 1 != 0;
+        return true;
     }
 }
 pub unsafe fn XkbParseString(

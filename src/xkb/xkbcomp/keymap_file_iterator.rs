@@ -263,7 +263,7 @@ pub unsafe fn xkb_resolve_file(
                 resolved_path,
                 resolved_path_size,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         loop {
@@ -361,7 +361,7 @@ pub unsafe fn xkb_resolve_file(
                 resolved_path,
                 resolved_path_size,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         match c2rust_current_block {
@@ -462,7 +462,7 @@ unsafe fn xkb_file_section_set_meta_data(
         } else {
             (*section).name = 0 as darray_size_t;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn xkb_file_section_append_includes(
@@ -612,11 +612,11 @@ unsafe fn xkb_file_section_append_includes(
                     }),
                 );
                 FreeXkbFile(xkb_file);
-                return 0 != 0;
+                return false;
             }
             stmt = (*stmt).next_incl as *mut IncludeStmt;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn xkb_file_section_process(
@@ -627,7 +627,7 @@ unsafe fn xkb_file_section_process(
     mut xkb_file: *const XkbFile,
 ) -> bool {
     unsafe {
-        let mut ok: bool = 1 != 0;
+        let mut ok: bool = true;
         let mut stmt: *mut ParseCommon = (*xkb_file).defs;
         while !stmt.is_null() {
             if (*stmt).type_0 as u32 == STMT_INCLUDE as ::core::ffi::c_int as u32 {
@@ -661,7 +661,7 @@ pub unsafe fn xkb_file_section_parse(
 ) -> bool {
     unsafe {
         if ExceedsIncludeMaxDepth(ctx, include_depth) {
-            return 0 != 0;
+            return false;
         }
         let mut file: *mut FILE = fopen(path, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         if file.is_null() {
@@ -672,7 +672,7 @@ pub unsafe fn xkb_file_section_parse(
                 "Cannot open file: {}\n",
                 crate::xkb::utils::CStrDisplay(path),
             );
-            return 0 != 0;
+            return false;
         }
         let mut xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map);
         fclose(file);
@@ -689,7 +689,7 @@ pub unsafe fn xkb_file_section_parse(
                 }),
                 crate::xkb::utils::CStrDisplay(path),
             );
-            return 0 != 0;
+            return false;
         }
         xkb_file_section_reset(section);
         let no_includes: bool =
@@ -761,7 +761,7 @@ pub unsafe fn xkb_file_iterator_next(
         let mut c2rust_current_block: u64;
         if (*iter).finished {
             *section = ::core::ptr::null::<xkb_file_section>();
-            return 1 != 0;
+            return true;
         }
         loop {
             xkb_file = ::core::ptr::null_mut::<XkbFile>();
@@ -795,9 +795,9 @@ pub unsafe fn xkb_file_iterator_next(
                         c2rust_current_block = 3132808253564788397;
                         break;
                     } else if xkb_file.is_null() {
-                        (*iter).finished = 1 != 0;
+                        (*iter).finished = true;
                         *section = ::core::ptr::null::<xkb_file_section>();
-                        return 1 != 0;
+                        return true;
                     }
                 }
                 _ => {}
@@ -812,7 +812,7 @@ pub unsafe fn xkb_file_iterator_next(
                 (*iter).pending_xkb_file = xkb_file;
                 (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
                 (*iter).map = ::core::ptr::null::<i8>();
-                return 1 != 0;
+                return true;
             } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as ::core::ffi::c_int as u32
                 && (*xkb_file).file_type as u32 != (*iter).type_0 as u32
             {
@@ -836,7 +836,7 @@ pub unsafe fn xkb_file_iterator_next(
                 }
             } else {
                 if !(*iter).map.is_null() {
-                    (*iter).finished = 1 != 0;
+                    (*iter).finished = true;
                 }
                 process_includes = (*iter).flags as u32
                     & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as u32
@@ -862,7 +862,7 @@ pub unsafe fn xkb_file_iterator_next(
             3132808253564788397 => {
                 FreeXkbFile(xkb_file);
                 *section = ::core::ptr::null::<xkb_file_section>();
-                return 0 != 0;
+                return false;
             }
             _ => {
                 if !(*iter).pending_section.is_null() {
@@ -870,7 +870,7 @@ pub unsafe fn xkb_file_iterator_next(
                 } else {
                     FreeXkbFile(xkb_file);
                 }
-                return 1 != 0;
+                return true;
             }
         };
     }

@@ -485,7 +485,7 @@ pub unsafe fn ReportNotArray(
             crate::xkb::utils::CStrDisplay(field),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return 0 != 0;
+        return false;
     }
 }
 
@@ -510,7 +510,7 @@ pub unsafe fn ReportBadType(
             crate::xkb::utils::CStrDisplay(wanted),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return 0 != 0;
+        return false;
     }
 }
 
@@ -532,7 +532,7 @@ pub unsafe fn ReportBadField(
             crate::xkb::utils::CStrDisplay(name),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return 0 != 0;
+        return false;
     }
 }
 
@@ -554,7 +554,7 @@ pub unsafe fn ReportShouldBeArray(
             crate::xkb::utils::CStrDisplay(field),
             crate::xkb::utils::CStrDisplay(name),
         );
-        return 0 != 0;
+        return false;
     }
 }
 use crate::xkb::shared_types::*;

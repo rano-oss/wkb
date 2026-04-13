@@ -155,7 +155,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut keymap_input_format: xkb_keymap_format = XKB_KEYMAP_FORMAT_TEXT_V2;
         let mut keymap_output_format: xkb_keymap_format = DEFAULT_OUTPUT_KEYMAP_FORMAT;
         let mut serialize_flags: xkb_keymap_serialize_flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
-        let mut explicit_iterations: bool = 0 != 0;
+        let mut explicit_iterations: bool = false;
         let mut ret: i32 = 0 as i32;
         let mut keymap_path: *mut i8 = ::core::ptr::null_mut::<i8>();
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
@@ -343,7 +343,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     } else {
                         max_iterations = max_iterations_raw as u32;
                     }
-                    explicit_iterations = 1 != 0;
+                    explicit_iterations = true;
                 }
                 12 => {
                     if explicit_iterations {

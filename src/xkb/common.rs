@@ -204,7 +204,7 @@ unsafe fn consume_events(
                 1 | 2 | 3 => {
                     *kc = xkb_event_get_keycode(event);
                     if flags as u32 & UNTIL_KEY_EVENT as i32 as u32 != 0 {
-                        return 1 != 0;
+                        return true;
                     }
                 }
                 4 => {
@@ -213,7 +213,7 @@ unsafe fn consume_events(
                 _ => {}
             }
         }
-        return 1 != 0;
+        return true;
     }
 }
 pub unsafe fn test_key_seq_va(
@@ -2299,12 +2299,12 @@ pub unsafe fn test_compile_output2(
         }
         if keymap.is_null() {
             eprintln!("Unexpected keymap compilation failure");
-            return 0 != 0;
+            return false;
         }
         let mut got_0: *mut i8 = xkb_keymap_get_as_string2(keymap, output_format, serialize_flags);
         if got_0.is_null() {
             eprintln!("Unexpected keymap serialization failure");
-            return 0 != 0;
+            return false;
         }
         xkb_keymap_unref(keymap);
         let path: *mut i8 = test_get_path(rel_path) as *mut i8;
@@ -2396,7 +2396,7 @@ pub unsafe fn test_compile_output2(
                             success = 0;
                         }
                         xkb_keymap_unref(keymap);
-                        test_round_trip = 0 != 0;
+                        test_round_trip = false;
                     }
                 } else {
                     eprintln!(
@@ -2462,7 +2462,7 @@ pub unsafe fn test_third_pary_compile_output(
                 crate::xkb::utils::CStrDisplay(got)
             );
             free(got as *mut ::core::ffi::c_void);
-            return 0 != 0;
+            return false;
         }
         let mut path: *mut i8 = test_get_path(rel_path);
         if !path.is_null() {

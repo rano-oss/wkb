@@ -727,7 +727,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
         let mut type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
         let mut count: usize = 0 as usize;
         if level == 0 as xkb_level_index_t {
-            let mut empty_mapped: bool = 0 != 0;
+            let mut empty_mapped: bool = false;
             let mut i: darray_size_t = 0 as darray_size_t;
             while i < (*type_0).num_entries && count < masks_size {
                 if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
@@ -735,7 +735,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
                     != 0
                     && (*(*type_0).entries.offset(i as isize)).mods.mask == 0 as xkb_mod_mask_t
                 {
-                    empty_mapped = 1 != 0;
+                    empty_mapped = true;
                     break;
                 } else {
                     i = i.wrapping_add(1);

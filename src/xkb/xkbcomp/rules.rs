@@ -460,7 +460,7 @@ unsafe fn split_comma_separated_mlvo(
                         start: s,
                     },
                 };
-                init.set_matched(0 != 0);
+                init.set_matched(false);
                 init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
                 init
             };
@@ -663,7 +663,7 @@ unsafe fn matcher_new_from_rmlvo(
                                 start: (*layout).layout,
                             },
                         };
-                        init.set_matched(0 != 0);
+                        init.set_matched(false);
                         init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
                         init
                     };
@@ -710,7 +710,7 @@ unsafe fn matcher_new_from_rmlvo(
                                 start: (*option).option,
                             },
                         };
-                        init.set_matched(0 != 0);
+                        init.set_matched(false);
                         init.set_layout(
                             if (*option).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                 OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t
@@ -5070,7 +5070,7 @@ unsafe fn matcher_include(
                 &raw mut buf as *mut i8,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         while !file.is_null() {
@@ -5105,7 +5105,7 @@ unsafe fn matcher_include(
                 &raw mut buf as *mut i8,
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         xkb_logf!(
@@ -5133,7 +5133,7 @@ unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
             (*m).mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
             i_0 = i_0.wrapping_add(1);
         }
-        (*m).mapping.has_layout_idx_range = 0 != 0;
+        (*m).mapping.has_layout_idx_range = false;
         (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx =
             XKB_LAYOUT_INVALID as xkb_layout_index_t;
         (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx =
@@ -5388,7 +5388,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         let mut c2rust_current_block_17: u64;
         match idx {
             XKB_LAYOUT_INVALID => {
-                (*m).mapping.has_layout_idx_range = 0 != 0;
+                (*m).mapping.has_layout_idx_range = false;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min =
                     XKB_LAYOUT_INVALID as xkb_layout_index_t;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
@@ -5397,7 +5397,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
                 c2rust_current_block_17 = 13056961889198038528;
             }
             4294967293 => {
-                (*m).mapping.has_layout_idx_range = 1 != 0;
+                (*m).mapping.has_layout_idx_range = true;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min =
                     1 as xkb_layout_index_t;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
@@ -5413,7 +5413,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
                 c2rust_current_block_17 = 13056961889198038528;
             }
             4294967294 => {
-                (*m).mapping.has_layout_idx_range = 1 != 0;
+                (*m).mapping.has_layout_idx_range = true;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min =
                     0 as xkb_layout_index_t;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
@@ -5438,7 +5438,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         }
         match c2rust_current_block_17 {
             9641388756612255828 => {
-                (*m).mapping.has_layout_idx_range = 0 != 0;
+                (*m).mapping.has_layout_idx_range = false;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min = idx;
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
                     idx.wrapping_add(1 as xkb_layout_index_t);
@@ -5650,13 +5650,13 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                     }
                     match c2rust_current_block {
                         436805222042109220 => {}
-                        _ => return 1 != 0,
+                        _ => return true,
                     }
                 }
             }
         }
         (*m).mapping.c2rust_unnamed_0.active = 0 as xkb_layout_mask_t;
-        return 0 != 0;
+        return false;
     }
 }
 unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
@@ -5686,7 +5686,7 @@ unsafe fn matcher_rule_set_mlvo_common(
                 loc.line,
                 loc.column,
             );
-            (*m).rule.skip = 1 != 0;
+            (*m).rule.skip = true;
             return;
         }
         (*m).rule.match_type_at_pos[(*m).rule.num_mlvo_values as usize] = match_type;
@@ -5733,7 +5733,7 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
                 loc.line,
                 loc.column,
             );
-            (*m).rule.skip = 1 != 0;
+            (*m).rule.skip = true;
             return;
         }
         (*m).rule.kccgst_value_at_pos[(*m).rule.num_kccgst_values as usize] = ident;
@@ -5744,12 +5744,12 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
     unsafe {
         let mut group: *mut group = ::core::ptr::null_mut::<group>();
         let mut element: *mut sval = ::core::ptr::null_mut::<sval>();
-        let mut found: bool = 0 != 0;
+        let mut found: bool = false;
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
                 if svaleq((*group).name, group_name) {
-                    found = 1 != 0;
+                    found = true;
                     break;
                 } else {
                     group = group.offset(1);
@@ -5757,7 +5757,7 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
             }
         }
         if !found {
-            return 0 != 0;
+            return false;
         }
         if !(*group).elements.item.is_null() {
             element = (*group)
@@ -5771,12 +5771,12 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
                     .offset((*group).elements.size as isize) as *mut sval
             {
                 if svaleq(to, *element) {
-                    return 1 != 0;
+                    return true;
                 }
                 element = element.offset(1);
             }
         }
-        return 0 != 0;
+        return false;
     }
 }
 unsafe fn match_value(
@@ -5794,7 +5794,7 @@ unsafe fn match_value(
             }
             2 => return to.len == 0,
             3 => return to.len != 0,
-            4 => return 1 != 0,
+            4 => return true,
             5 => return match_group(m, val, to),
             _ => {
                 return svaleq(val, to);
@@ -5812,7 +5812,7 @@ unsafe fn match_value_and_mark(
     unsafe {
         let mut matched: bool = match_value(m, val, (*to).sval, match_type, wildcard_type);
         if matched {
-            (*to).set_matched((1 != 0) as bool);
+            (*to).set_matched((true) as bool);
         }
         return matched;
     }
@@ -5872,7 +5872,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                     count as u32,
                 );
                 (*expanded).size = (*expanded).size.wrapping_sub(1);
-                return 1 != 0;
+                return true;
             }
         } else {
             sfx = 0 as i8;
@@ -5917,7 +5917,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 }
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                            expanded_index = 0 != 0;
+                            expanded_index = false;
                             if *i < value.len
                                 && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
                             {
@@ -5947,7 +5947,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                             idx = layout_idx;
-                                            expanded_index = 1 != 0;
+                                            expanded_index = true;
                                         }
                                         *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
@@ -6041,7 +6041,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             if expanded_value.is_null()
                                                 || (*expanded_value).sval.len == 0 as usize
                                             {
-                                                return 1 != 0;
+                                                return true;
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
@@ -6073,8 +6073,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 );
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            (*expanded_value).set_matched((1 != 0) as bool);
-                                            return 1 != 0;
+                                            (*expanded_value).set_matched((true) as bool);
+                                            return true;
                                         }
                                     }
                                 }
@@ -6094,7 +6094,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 }
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                            expanded_index = 0 != 0;
+                            expanded_index = false;
                             if *i < value.len
                                 && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
                             {
@@ -6124,7 +6124,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                             idx = layout_idx;
-                                            expanded_index = 1 != 0;
+                                            expanded_index = true;
                                         }
                                         *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
@@ -6218,7 +6218,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             if expanded_value.is_null()
                                                 || (*expanded_value).sval.len == 0 as usize
                                             {
-                                                return 1 != 0;
+                                                return true;
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
@@ -6250,8 +6250,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 );
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            (*expanded_value).set_matched((1 != 0) as bool);
-                                            return 1 != 0;
+                                            (*expanded_value).set_matched((true) as bool);
+                                            return true;
                                         }
                                     }
                                 }
@@ -6271,7 +6271,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 }
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                            expanded_index = 0 != 0;
+                            expanded_index = false;
                             if *i < value.len
                                 && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
                             {
@@ -6301,7 +6301,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                             idx = layout_idx;
-                                            expanded_index = 1 != 0;
+                                            expanded_index = true;
                                         }
                                         *i = (*i).wrapping_add(consumed as usize);
                                         c2rust_current_block = 10758786907990354186;
@@ -6395,7 +6395,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             if expanded_value.is_null()
                                                 || (*expanded_value).sval.len == 0 as usize
                                             {
-                                                return 1 != 0;
+                                                return true;
                                             }
                                             if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
                                             {
@@ -6427,8 +6427,8 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 );
                                                 (*expanded).size = (*expanded).size.wrapping_sub(1);
                                             }
-                                            (*expanded_value).set_matched((1 != 0) as bool);
-                                            return 1 != 0;
+                                            (*expanded_value).set_matched((true) as bool);
+                                            return true;
                                         }
                                     }
                                 }
@@ -6450,7 +6450,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             loc_1.line,
             loc_1.column,
         );
-        return 0 != 0;
+        return false;
     }
 }
 unsafe fn expand_qualifier_in_kccgst_value(
@@ -6618,7 +6618,7 @@ unsafe fn append_expanded_kccgst_value(
             item: ::core::ptr::null_mut::<i8>(),
         };
         let mut last_item_idx: darray_size_t = 0 as darray_size_t;
-        let mut has_separator: bool = 0 != 0;
+        let mut has_separator: bool = false;
         let mut i: usize = 0 as usize;
         loop {
             if !(i < value.len) {
@@ -6676,7 +6676,7 @@ unsafe fn append_expanded_kccgst_value(
                     );
                     expanded.size = expanded.size.wrapping_sub(1);
                     last_item_idx = expanded.size.wrapping_sub(1 as darray_size_t);
-                    has_separator = 1 != 0;
+                    has_separator = true;
                 }
                 _ => {
                     let c2rust_fresh6 = i;
@@ -6699,7 +6699,7 @@ unsafe fn append_expanded_kccgst_value(
                     &mut expanded.size,
                     &mut expanded.alloc,
                 );
-                return 0 != 0;
+                return false;
             }
             _ => {
                 if merge {
@@ -6720,7 +6720,7 @@ unsafe fn append_expanded_kccgst_value(
                     &mut expanded.size,
                     &mut expanded.alloc,
                 );
-                return 1 != 0;
+                return true;
             }
         };
     }
@@ -6728,7 +6728,7 @@ unsafe fn append_expanded_kccgst_value(
 unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
     unsafe {
         if !(*m).mapping.has_layout_idx_range {
-            return 1 != 0;
+            return true;
         }
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
         while (i as ::core::ffi::c_int) < (*m).mapping.num_kccgst as ::core::ffi::c_int {
@@ -6760,8 +6760,8 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
             }
             i = i.wrapping_add(1);
         }
-        (*m).mapping.has_layout_idx_range = 0 != 0;
-        return 1 != 0;
+        (*m).mapping.has_layout_idx_range = false;
+        return true;
     }
 }
 unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
@@ -6782,7 +6782,7 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
                 loc.line,
                 loc.column,
             );
-            (*m).rule.skip = 1 != 0;
+            (*m).rule.skip = true;
         }
     }
 }
@@ -6797,7 +6797,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             let mut value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
             let mut match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
             let mut to: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
-            let mut matched: bool = 0 != 0;
+            let mut matched: bool = false;
             if mlvo as u32 == MLVO_MODEL as ::core::ffi::c_int as u32 {
                 to = &raw mut (*m).rmlvo.model;
                 matched = match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_ALL);
@@ -6819,7 +6819,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                     match_type,
                                     WILDCARD_MATCH_NONEMPTY,
                                 ) {
-                                    matched = 1 != 0;
+                                    matched = true;
                                 } else {
                                     candidate_layouts &= !mask;
                                 }
@@ -6834,13 +6834,13 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                     match_type,
                                     WILDCARD_MATCH_NONEMPTY,
                                 ) {
-                                    matched = 1 != 0;
+                                    matched = true;
                                 } else {
                                     candidate_layouts &= !mask;
                                 }
                             }
                             _ => {
-                                let mut found_option: bool = 0 != 0;
+                                let mut found_option: bool = false;
                                 if !(*m).rmlvo.options.item.is_null() {
                                     to = (*m)
                                         .rmlvo
@@ -6867,8 +6867,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                                 match_type,
                                                 WILDCARD_MATCH_ALL,
                                             ) {
-                                                matched = 1 != 0;
-                                                found_option = 1 != 0;
+                                                matched = true;
+                                                found_option = true;
                                                 break;
                                             }
                                         }
@@ -6961,7 +6961,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                         append_expanded_kccgst_value(
                             m,
                             s,
-                            0 != 0,
+                            false,
                             &raw mut (*buf).buffer,
                             value_0,
                             idx,
@@ -6996,7 +6996,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                 append_expanded_kccgst_value(
                     m,
                     s,
-                    1 != 0,
+                    true,
                     (&raw mut (*m).kccgst as *mut darray_char).offset(kccgst_0 as isize)
                         as *mut darray_char,
                     value_1,
@@ -7027,7 +7027,7 @@ unsafe fn matcher_match(
         let mut c2rust_current_block: u64;
         let mut tok: rules_token = TOK_END_OF_FILE;
         if m.is_null() {
-            return 0 != 0;
+            return false;
         }
         '_initial: loop {
             tok = gettok(m, s);
@@ -7269,7 +7269,7 @@ unsafe fn matcher_match(
             }
         }
         match c2rust_current_block {
-            13194772801876125100 => return 1 != 0,
+            13194772801876125100 => return true,
             _ => {
                 match tok as u32 {
                     11 => {}
@@ -7287,7 +7287,7 @@ unsafe fn matcher_match(
                         );
                     }
                 }
-                return 0 != 0;
+                return false;
             }
         };
     }
@@ -7328,7 +7328,7 @@ unsafe fn read_rules_file(
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 "Invalid file descriptor\n",
             );
-            return 0 != 0;
+            return false;
         }
 
         let rust_file = File::from_raw_fd(fd);
@@ -7346,7 +7346,7 @@ unsafe fn read_rules_file(
                     crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
                 );
                 std::mem::forget(rust_file);
-                return 0 != 0;
+                return false;
             }
         };
 
@@ -7382,7 +7382,7 @@ unsafe fn read_rules_file(
                 loc_0.column,
             );
             std::mem::forget(rust_file);
-            return 0 != 0;
+            return false;
         }
         ret = matcher_match(
             matcher,
@@ -7425,7 +7425,7 @@ unsafe fn xkb_resolve_partial_rules(
                 crate::xkb::utils::CStrDisplay(rules),
                 crate::xkb::utils::CStrDisplay(suffix),
             );
-            return 0 != 0;
+            return false;
         }
         let mut offset: u32 = 0 as u32;
         let mut file: *mut FILE = ::core::ptr::null_mut::<FILE>();
@@ -7440,7 +7440,7 @@ unsafe fn xkb_resolve_partial_rules(
                 path,
                 path_size,
                 &raw mut offset,
-                0 != 0,
+                false,
             );
             if file.is_null() {
                 break;
@@ -7456,11 +7456,11 @@ unsafe fn xkb_resolve_partial_rules(
                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
                     crate::xkb::utils::CStrDisplay(path),
                 );
-                return 0 != 0;
+                return false;
             }
             offset = offset.wrapping_add(1);
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn xkb_resolve_rules(
@@ -7472,7 +7472,7 @@ unsafe fn xkb_resolve_rules(
 ) -> bool {
     unsafe {
         let mut mval: *mut matched_sval = ::core::ptr::null_mut::<matched_sval>();
-        let mut ret: bool = 0 != 0;
+        let mut ret: bool = false;
         let mut offset: u32 = 0 as u32;
         let mut path: [i8; 4096] = [0; 4096];
         let file: *mut FILE = FindFileInXkbPath(
@@ -7484,7 +7484,7 @@ unsafe fn xkb_resolve_rules(
             &raw mut path as *mut i8,
             ::core::mem::size_of::<[i8; 4096]>() as usize,
             &raw mut offset,
-            1 != 0,
+            true,
         ) as *mut FILE;
         if file.is_null() {
             xkb_logf!(
@@ -7542,7 +7542,7 @@ unsafe fn xkb_resolve_rules(
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
                                 crate::xkb::utils::CStrDisplay(rules),
                             );
-                            ret = 0 != 0;
+                            ret = false;
                         } else {
                             (*out).keycodes = (*matcher).kccgst
                                 [KCCGST_KEYCODES as ::core::ffi::c_int as usize]
@@ -7778,7 +7778,7 @@ pub unsafe fn xkb_components_from_rmlvo_builder(
         let mut rules: *const i8 = (*rmlvo).rules;
         let mut matcher: *mut matcher = matcher_new_from_rmlvo(rmlvo, &raw mut rules);
         if matcher.is_null() {
-            return 0 != 0;
+            return false;
         }
         let ret: bool =
             xkb_resolve_rules((*rmlvo).ctx, rules, matcher, out, explicit_layouts) as bool;
@@ -7795,7 +7795,7 @@ pub unsafe fn xkb_components_from_rules_names(
     unsafe {
         let mut matcher: *mut matcher = matcher_new_from_names(ctx, rmlvo);
         if matcher.is_null() {
-            return 0 != 0;
+            return false;
         }
         let ret: bool =
             xkb_resolve_rules(ctx, (*rmlvo).rules, matcher, out, explicit_layouts) as bool;

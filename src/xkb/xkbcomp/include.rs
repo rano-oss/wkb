@@ -129,7 +129,7 @@ pub unsafe fn ParseIncludeMap(
         } else if *str.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
         {
             free(*extra_data as *mut ::core::ffi::c_void);
-            return 0 != 0;
+            return false;
         } else {
             let c2rust_fresh4 = tmp;
             tmp = tmp.offset(1);
@@ -140,7 +140,7 @@ pub unsafe fn ParseIncludeMap(
             if tmp.is_null() || *tmp.offset(1 as i32 as isize) as i32 != '\0' as i32 {
                 free(*file_rtrn as *mut ::core::ffi::c_void);
                 free(*extra_data as *mut ::core::ffi::c_void);
-                return 0 != 0;
+                return false;
             }
             let c2rust_fresh5 = tmp;
             tmp = tmp.offset(1);
@@ -155,9 +155,9 @@ pub unsafe fn ParseIncludeMap(
         {
             *str_inout = next;
         } else {
-            return 0 != 0;
+            return false;
         }
-        return 1 != 0;
+        return true;
     }
 }
 static mut xkb_file_type_include_dirs: [*const i8; 7] = [
@@ -538,9 +538,9 @@ pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_dept
                 XKB_ERROR_RECURSIVE_INCLUDE as ::core::ffi::c_int,
                 15 as ::core::ffi::c_int,
             );
-            return 1 != 0;
+            return true;
         } else {
-            return 0 != 0;
+            return false;
         };
     }
 }
@@ -588,7 +588,7 @@ pub unsafe fn ProcessIncludeFile(
                 path,
                 path_size,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         while !file.is_null() {
@@ -633,7 +633,7 @@ pub unsafe fn ProcessIncludeFile(
                 path,
                 path_size,
                 &raw mut offset,
-                1 != 0,
+                true,
             );
         }
         if xkb_file.is_null() {

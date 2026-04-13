@@ -331,7 +331,7 @@ unsafe fn AddKeyType(
                 (*new).level_names.item = ::core::ptr::null_mut::<xkb_atom_t>();
                 (*new).level_names.size = 0 as darray_size_t;
                 (*new).level_names.alloc = 0 as darray_size_t;
-                return 1 != 0;
+                return true;
             }
             if same_file {
                 xkb_logf!(
@@ -344,7 +344,7 @@ unsafe fn AddKeyType(
                 );
             }
             ClearKeyTypeInfo(new);
-            return 1 != 0;
+            return true;
         }
         darray_append(
             &mut (*info).types.item,
@@ -352,7 +352,7 @@ unsafe fn AddKeyType(
             &mut (*info).types.alloc,
             *new,
         );
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn MergeIncludedKeyTypes(
@@ -389,7 +389,7 @@ unsafe fn MergeIncludedKeyTypes(
                     < (*from).types.item.offset((*from).types.size as isize) as *mut KeyTypeInfo
                 {
                     (*type_0).merge = merge;
-                    if !AddKeyType(into, type_0, 0 != 0) {
+                    if !AddKeyType(into, type_0, false) {
                         (*into).errorCount += 1;
                     }
                     type_0 = type_0.offset(1);
@@ -431,7 +431,7 @@ unsafe fn HandleIncludeKeyTypes(
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as ::core::ffi::c_int;
-            return 0 != 0;
+            return false;
         }
         InitKeyTypesInfo(
             &raw mut included,
@@ -476,7 +476,7 @@ unsafe fn HandleIncludeKeyTypes(
             if file.is_null() {
                 (*info).errorCount += 10 as ::core::ffi::c_int;
                 ClearKeyTypesInfo(&raw mut included);
-                return 0 != 0;
+                return false;
             }
             InitKeyTypesInfo(
                 &raw mut next_incl,
@@ -510,7 +510,7 @@ unsafe fn SetModifiers(
                 XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
                 "The modifiers field of a key type is not an array; Illegal array subscript ignored\n",
             );
-            return 0 != 0;
+            return false;
         }
         if !ExprResolveModMask(
             (*info).ctx,
@@ -526,7 +526,7 @@ unsafe fn SetModifiers(
                 "[XKB-{:03}] Key type mask field must be a modifier mask; Key type definition ignored\n",
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         if (*type_0).defined as u32 & TYPE_FIELD_MASK as ::core::ffi::c_int as u32 != 0 {
             xkb_logf!(
@@ -543,10 +543,10 @@ unsafe fn SetModifiers(
                     mods
                 )),
             );
-            return 0 != 0;
+            return false;
         }
         (*type_0).mods = mods;
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn FindMatchingMapEntry(
@@ -621,7 +621,7 @@ unsafe fn AddMapEntry(
                     (*new).level.wrapping_add(1 as xkb_level_index_t),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 );
-                return 1 != 0;
+                return true;
             }
             if clobber {
                 if (*new).level >= (*type_0).num_levels {
@@ -629,7 +629,7 @@ unsafe fn AddMapEntry(
                 }
                 (*old).level = (*new).level;
             }
-            return 1 != 0;
+            return true;
         }
         if (*new).level >= (*type_0).num_levels {
             (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
@@ -640,7 +640,7 @@ unsafe fn AddMapEntry(
             &mut (*type_0).entries.alloc,
             *new,
         );
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn SetMapEntry(
@@ -699,10 +699,10 @@ unsafe fn SetMapEntry(
                 "[XKB-{:03}] Level specifications in a key type must be integer; Ignoring malformed level specification\n",
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         entry.preserve.mods = 0 as xkb_mod_mask_t;
-        return AddMapEntry(info, type_0, &raw mut entry, 1 != 0, 1 != 0);
+        return AddMapEntry(info, type_0, &raw mut entry, true, true);
     }
 }
 unsafe fn AddPreserve(
@@ -736,7 +736,7 @@ unsafe fn AddPreserve(
                 } else {
                     if (*entry).preserve.mods == 0 as xkb_mod_mask_t {
                         (*entry).preserve.mods = preserve_mods;
-                        return 1 != 0;
+                        return true;
                     }
                     if (*entry).preserve.mods == preserve_mods {
                         xkb_logf!(
@@ -753,7 +753,7 @@ unsafe fn AddPreserve(
                             )),
                             crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                         );
-                        return 1 != 0;
+                        return true;
                     }
                     xkb_logf!(
                         (*info).ctx,
@@ -778,7 +778,7 @@ unsafe fn AddPreserve(
                         )),
                     );
                     (*entry).preserve.mods = preserve_mods;
-                    return 1 != 0;
+                    return true;
                 }
             }
         }
@@ -791,7 +791,7 @@ unsafe fn AddPreserve(
             &mut (*type_0).entries.alloc,
             new,
         );
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn SetPreserve(
@@ -858,7 +858,7 @@ unsafe fn SetPreserve(
                 crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
-            return 0 != 0;
+            return false;
         }
         if preserve_mods & !mods != 0 {
             let mut before_0: *const i8 = ::core::ptr::null::<i8>();
@@ -912,7 +912,7 @@ unsafe fn AddLevelName(
                     level.wrapping_add(1 as xkb_level_index_t),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 );
-                return 1 != 0;
+                return true;
             }
             if *(*type_0).level_names.item.offset(level as isize) != XKB_ATOM_NONE as xkb_atom_t {
                 let mut old: *const i8 = ::core::ptr::null::<i8>();
@@ -934,12 +934,12 @@ unsafe fn AddLevelName(
                     crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 { old } else { new }),
                 );
                 if !clobber {
-                    return 1 != 0;
+                    return true;
                 }
             }
         }
         *(*type_0).level_names.item.offset(level as isize) = name;
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn SetLevelName(
@@ -973,9 +973,9 @@ unsafe fn SetLevelName(
                 level.wrapping_add(1 as xkb_level_index_t),
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
             );
-            return 0 != 0;
+            return false;
         }
-        return AddLevelName(info, type_0, level, level_name, 1 != 0);
+        return AddLevelName(info, type_0, level, level_name, true);
     }
 }
 unsafe fn SetKeyTypeField(
@@ -986,7 +986,7 @@ unsafe fn SetKeyTypeField(
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        let mut ok: bool = 0 != 0;
+        let mut ok: bool = false;
         let mut type_field: type_field = 0 as type_field;
         if istreq(field, b"modifiers\0".as_ptr() as *const i8) {
             type_field = TYPE_FIELD_MASK;
@@ -1026,7 +1026,7 @@ unsafe fn HandleKeyTypeBody(
     mut type_0: *mut KeyTypeInfo,
 ) -> bool {
     unsafe {
-        let mut ok: bool = 1 != 0;
+        let mut ok: bool = true;
         let mut elem: *const i8 = ::core::ptr::null::<i8>();
         let mut field: *const i8 = ::core::ptr::null::<i8>();
         let mut arrayNdx: *mut ExprDef = ::core::ptr::null_mut::<ExprDef>();
@@ -1038,7 +1038,7 @@ unsafe fn HandleKeyTypeBody(
                 &raw mut field,
                 &raw mut arrayNdx,
             ) {
-                ok = 0 != 0;
+                ok = false;
             } else if !elem.is_null() {
                 if istreq(elem, b"type\0".as_ptr() as *const i8) {
                     xkb_logf!(
@@ -1061,11 +1061,11 @@ unsafe fn HandleKeyTypeBody(
                         crate::xkb::utils::CStrDisplay(elem),
                         crate::xkb::utils::CStrDisplay(field),
                     );
-                    ok = 0 != 0;
+                    ok = false;
                 }
             } else if !SetKeyTypeField(info, type_0, field, arrayNdx, (*def).value as *mut ExprDef)
             {
-                ok = 0 != 0;
+                ok = false;
             }
             def = (*def).common.next as *mut VarDef;
         }
@@ -1092,13 +1092,13 @@ unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef
             },
         };
         if !HandleKeyTypeBody(info, (*def).body, &raw mut type_0)
-            || !AddKeyType(info, &raw mut type_0, 1 != 0)
+            || !AddKeyType(info, &raw mut type_0, true)
         {
             (*info).errorCount += 1;
             ClearKeyTypeInfo(&raw mut type_0);
-            return 0 != 0;
+            return false;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) -> bool {
@@ -1113,7 +1113,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
             &raw mut field,
             &raw mut arrayNdx,
         ) {
-            return 0 != 0;
+            return false;
         } else if !elem.is_null()
             && istreq(elem, b"type\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
         {
@@ -1124,7 +1124,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 "[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
                 XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
             );
-            return 1 != 0;
+            return true;
         } else if !elem.is_null() {
             xkb_logf!(
                 (*info).ctx,
@@ -1152,7 +1152,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
                 == 0;
         }
-        return 0 != 0;
+        return false;
     }
 }
 unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile) {
@@ -1206,7 +1206,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
-                    ok = 0 != 0;
+                    ok = false;
                 }
             }
             if !ok {
@@ -1240,7 +1240,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             ::core::mem::size_of::<xkb_key_type>() as usize,
         ) as *mut xkb_key_type;
         if types.is_null() {
-            return 0 != 0;
+            return false;
         }
         if (*info).types.size == 0 as darray_size_t {
             let mut type_0: *mut xkb_key_type =
@@ -1256,7 +1256,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             );
             (*type_0).level_names = ::core::ptr::null_mut::<xkb_atom_t>();
             (*type_0).num_level_names = 0 as xkb_level_index_t;
-            (*type_0).required = 1 != 0;
+            (*type_0).required = true;
         } else {
             let canonical_types: [xkb_atom_t; 4] = [
                 xkb_atom_intern(
@@ -1304,7 +1304,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 (*def).entries.item = ::core::ptr::null_mut::<xkb_key_type_entry>();
                 (*def).entries.size = 0 as darray_size_t;
                 (*def).entries.alloc = 0 as darray_size_t;
-                (*type_1).required = 0 != 0;
+                (*type_1).required = false;
                 if (*type_1).num_levels <= 2 as xkb_level_index_t {
                     let mut t: u8 = 0 as u8;
                     while (t as ::core::ffi::c_int)
@@ -1313,7 +1313,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                             as u8 as ::core::ffi::c_int
                     {
                         if (*type_1).name == canonical_types[t as usize] {
-                            (*type_1).required = 1 != 0;
+                            (*type_1).required = true;
                             break;
                         } else {
                             t = t.wrapping_add(1);
@@ -1328,7 +1328,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         (*keymap).num_types = num_types;
         (*keymap).types = types;
         (*keymap).mods = (*info).mods;
-        return 1 != 0;
+        return true;
     }
 }
 pub unsafe fn CompileKeyTypes(
@@ -1369,11 +1369,11 @@ pub unsafe fn CompileKeyTypes(
         if !(info.errorCount != 0 as ::core::ffi::c_int) {
             if CopyKeyTypesToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearKeyTypesInfo(&raw mut info);
-                return 1 != 0;
+                return true;
             }
         }
         ClearKeyTypesInfo(&raw mut info);
-        return 0 != 0;
+        return false;
     }
 }
 use crate::xkb::shared_types::*;

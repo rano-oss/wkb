@@ -165,12 +165,12 @@ unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_
             as *mut xkb_mod;
         while k < (*keymap).mods.num_mods {
             if mask & (1 as xkb_mod_mask_t) << k != 0 && (*mod_0).mapping == 0 as xkb_mod_mask_t {
-                return 1 != 0;
+                return true;
             }
             k = k.wrapping_add(1);
             mod_0 = mod_0.offset(1);
         }
-        return 0 != 0;
+        return false;
     }
 }
 #[inline]
@@ -227,12 +227,12 @@ unsafe fn FindInterpForKey(
         num_syms =
             xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
         if num_syms <= 0 as ::core::ffi::c_int {
-            return 0 != 0;
+            return false;
         }
         let mut s: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         while s < num_syms {
             let mut c2rust_current_block_34: u64;
-            let mut found: bool = 0 != 0;
+            let mut found: bool = false;
             let mut i: darray_size_t = 0 as darray_size_t;
             's_26: loop {
                 if !(i < (*keymap).num_sym_interprets) {
@@ -242,7 +242,7 @@ unsafe fn FindInterpForKey(
                 let interp: *mut xkb_sym_interpret =
                     (*keymap).sym_interprets.offset(i as isize) as *mut xkb_sym_interpret;
                 let mut mods: xkb_mod_mask_t = 0;
-                found = 0 != 0;
+                found = false;
                 if !((*interp).sym != *syms.offset(s as isize)
                     && (*interp).sym != XKB_KEY_NoSymbol as xkb_keysym_t)
                 {
@@ -286,7 +286,7 @@ unsafe fn FindInterpForKey(
                                     as *mut *const xkb_sym_interpret
                             {
                                 if *previous_interp == interp as *const xkb_sym_interpret {
-                                    found = 0 != 0;
+                                    found = false;
                                     xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
@@ -313,7 +313,7 @@ unsafe fn FindInterpForKey(
                             &mut (*interprets).alloc,
                             interp,
                         );
-                        (*interp).set_required((1 != 0) as bool);
+                        (*interp).set_required((true) as bool);
                         c2rust_current_block_34 = 7659304154607701039;
                         break;
                     }
@@ -343,7 +343,7 @@ unsafe fn FindInterpForKey(
             }
             s += 1;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) -> bool {
@@ -388,7 +388,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         == 0
                                         && (*interp).repeat() as ::core::ffi::c_int != 0
                                     {
-                                        (*key).set_repeats((1 != 0) as bool);
+                                        (*key).set_repeats((true) as bool);
                                     }
                                 }
                                 if group == 0 as xkb_layout_index_t
@@ -504,20 +504,20 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         &mut interprets.size,
                                         &mut interprets.alloc,
                                     );
-                                    return 0 != 0;
+                                    return false;
                                 }
                             }
                         }
                         if !(actions.size == 0 as darray_size_t) {
                             let ref mut c2rust_fresh1 = *(*key).groups.offset(group as isize);
-                            (*c2rust_fresh1).set_implicit_actions((1 != 0) as bool);
+                            (*c2rust_fresh1).set_implicit_actions((true) as bool);
                         }
                         actions.size = 0 as darray_size_t;
                     }
                     level = level.wrapping_add(1);
                 }
                 if (*(*key).groups.offset(group as isize)).implicit_actions() {
-                    (*key).set_implicit_actions((1 != 0) as bool);
+                    (*key).set_implicit_actions((true) as bool);
                 }
             }
             group = group.wrapping_add(1);
@@ -531,7 +531,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
         if (*key).explicit as u32 & EXPLICIT_VMODMAP as ::core::ffi::c_int as u32 == 0 {
             (*key).vmodmap = vmodmap;
         }
-        return 1 != 0;
+        return true;
     }
 }
 #[inline]
@@ -658,13 +658,13 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                 match ExprResolveGroup(
                     info,
                     (*pc).expr,
-                    1 != 0,
+                    true,
                     &raw mut group,
                     ::core::ptr::null_mut::<bool>(),
                 ) as u32
                 {
                     0 => {
-                        (*pc).computed = 1 != 0;
+                        (*pc).computed = true;
                         (*pc).value = group.wrapping_sub(1 as xkb_layout_index_t) as u32;
                     }
                     2 => {
@@ -682,12 +682,12 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                     _ => {}
                 }
             }
-            (*key).set_out_of_range_pending_group((0 != 0) as bool);
+            (*key).set_out_of_range_pending_group((false) as bool);
             (*key).set_out_of_range_group_number(
                 (*pc).value as xkb_layout_index_t as xkb_layout_index_t,
             );
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn update_pending_action_fields(
@@ -727,11 +727,11 @@ unsafe fn update_pending_action_fields(
                                     "[XKB-{:03}] Invalid action group index\n",
                                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                                 );
-                                return 0 != 0;
+                                return false;
                             }
                             1 => {}
                             _ => {
-                                (*pc).computed = 1 != 0;
+                                (*pc).computed = true;
                                 if absolute {
                                     (*pc).value =
                                         group.wrapping_sub(1 as xkb_layout_index_t) as i32 as u32;
@@ -751,19 +751,19 @@ unsafe fn update_pending_action_fields(
                         & !(ACTION_PENDING_COMPUTATION as ::core::ffi::c_int) as u32)
                         as xkb_action_flags;
                 }
-                return 1 != 0;
+                return true;
             }
             16 => {
                 if keycode == XKB_KEYCODE_INVALID as xkb_keycode_t
                     || (*act).redirect.keycode != (*info).keymap.redirect_key_auto
                 {
-                    return 1 != 0;
+                    return true;
                 } else {
                     (*act).redirect.keycode = keycode;
                 }
-                return 1 != 0;
+                return true;
             }
-            _ => return 1 != 0,
+            _ => return true,
         };
     }
 }
@@ -789,15 +789,15 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
                         "[XKB-{:03}] Invalid LED group mask\n",
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
                     );
-                    return 0 != 0;
+                    return false;
                 }
-                (*pc).computed = 1 != 0;
+                (*pc).computed = true;
                 (*pc).value = mask as u32;
             }
-            (*led).set_pending_groups((0 != 0) as bool);
+            (*led).set_pending_groups((false) as bool);
             (*led).groups = (*pc).value as xkb_layout_mask_t;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
@@ -843,7 +843,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                         .wrapping_mul(::core::mem::size_of::<xkb_key_alias>() as usize),
                 ) as *mut xkb_key_alias;
                 if r.is_null() {
-                    return 0 != 0;
+                    return false;
                 }
                 (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases = r;
             } else if (*keymap)
@@ -884,7 +884,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                         .wrapping_mul(::core::mem::size_of::<xkb_key_alias>() as usize),
                 ) as *mut xkb_key_alias;
                 if r_0.is_null() {
-                    return 0 != 0;
+                    return false;
                 }
                 (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases = r_0;
             } else {
@@ -893,7 +893,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     ::core::mem::size_of::<xkb_key_alias>() as usize,
                 ) as *mut xkb_key_alias;
                 if aliases_0.is_null() {
-                    return 0 != 0;
+                    return false;
                 }
                 add_key_aliases(keymap, min_alias, max_alias, aliases_0);
                 free((*keymap).c2rust_unnamed.c2rust_unnamed.key_names as *mut ::core::ffi::c_void);
@@ -946,7 +946,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                         XKB_KEYCODE_INVALID as xkb_keycode_t,
                         act,
                     ) {
-                        return 0 != 0;
+                        return false;
                     }
                 } else {
                     let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
@@ -958,7 +958,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                             XKB_KEYCODE_INVALID as xkb_keycode_t,
                             act_0,
                         ) {
-                            return 0 != 0;
+                            return false;
                         }
                         a = a.wrapping_add(1);
                     }
@@ -975,7 +975,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         );
         while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
             if !ApplyInterpsToKey(keymap, key) {
-                return 0 != 0;
+                return false;
             }
             CheckMultipleActionsCategories(keymap, key);
             key = key.offset(1);
@@ -1081,7 +1081,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         );
         while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
             if !update_pending_key_fields(info, key) {
-                return 0 != 0;
+                return false;
             }
             let mut i_1: xkb_layout_index_t = 0 as xkb_layout_index_t;
             while i_1 < (*key).num_groups() {
@@ -1105,7 +1105,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                                 == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32)
                             && !update_pending_action_fields(info, (*key).keycode, act_1)
                         {
-                            return 0 != 0;
+                            return false;
                         }
                     } else {
                         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
@@ -1128,7 +1128,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                                     == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32)
                                 && !update_pending_action_fields(info, (*key).keycode, act_2)
                             {
-                                return 0 != 0;
+                                return false;
                             }
                             k = k.wrapping_add(1);
                         }
@@ -1146,11 +1146,11 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             if pending_computations as ::core::ffi::c_int != 0
                 && !update_pending_led_fields(info, led)
             {
-                return 0 != 0;
+                return false;
             }
             led = led.offset(1);
         }
-        return 1 != 0;
+        return true;
     }
 }
 static mut compile_file_fns: [compile_file_fn; 4] = {
@@ -1342,7 +1342,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 );
                 *keymap = info.keymap;
                 pending_computations_array_free(&raw mut pending_computations);
-                return 0 != 0;
+                return false;
             }
             type_0 += 1;
         }

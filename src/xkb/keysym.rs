@@ -22018,7 +22018,7 @@ pub unsafe fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bo
                 .wrapping_div(::core::mem::size_of::<name_keysym>() as usize) as i32
                 - 1 as i32
         {
-            return 0 != 0;
+            return false;
         }
         if (*iter).explicit as i32 != 0
             || (*iter).keysym >= XKB_KEYSYM_UNICODE_MAX as u32
@@ -22037,7 +22037,7 @@ pub unsafe fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bo
                 (*iter).keysym = XKB_KEYSYM_UNICODE_MIN as u32;
             }
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {

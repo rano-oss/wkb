@@ -187,7 +187,7 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
                 crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
             );
-            return 0 != 0;
+            return false;
         }
         if !CompileKeymap(file, keymap) {
             xkb_logf!(
@@ -197,9 +197,9 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
                 "[XKB-{:03}] Failed to compile keymap\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
-        return 1 != 0;
+        return true;
     }
 }
 unsafe fn text_v1_keymap_new_from_rmlvo(
@@ -228,11 +228,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 (::core::mem::size_of::<[i8; 2048]>() as usize).wrapping_sub(1 as usize);
             let mut buf: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
             if buf.is_null() as ::core::ffi::c_int as i64 != 0 {
-                return 0 != 0;
+                return false;
             }
             ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names, buf, buf_size);
             if !ok as ::core::ffi::c_int as i64 != 0 {
-                return 0 != 0;
+                return false;
             }
             xkb_logf!(
                 (*keymap).ctx,
@@ -262,11 +262,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             let buf_size_0: usize = ::core::mem::size_of::<[i8; 2048]>() as usize;
             let mut buf_0: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
             if buf_0.is_null() as ::core::ffi::c_int as i64 != 0 {
-                return 0 != 0;
+                return false;
             }
             ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names_0, buf_0, buf_size_0);
             if !ok as ::core::ffi::c_int as i64 != 0 {
-                return 0 != 0;
+                return false;
             }
             xkb_logf!(
                 (*keymap).ctx,
@@ -280,7 +280,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 crate::xkb::utils::CStrDisplay(names_0.variant),
                 crate::xkb::utils::CStrDisplay(names_0.options),
             );
-            return 0 != 0;
+            return false;
         }
         let max_groups: xkb_layout_index_t =
             format_max_groups((*keymap).format) as xkb_layout_index_t;
@@ -311,7 +311,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         ok = compile_keymap_file(keymap, file);
         FreeXkbFile(file);
@@ -362,7 +362,7 @@ unsafe fn text_v1_keymap_new_from_names(
                 crate::xkb::utils::CStrDisplay((*rmlvo).variant),
                 crate::xkb::utils::CStrDisplay((*rmlvo).options),
             );
-            return 0 != 0;
+            return false;
         }
         let max_groups: xkb_layout_index_t =
             format_max_groups((*keymap).format) as xkb_layout_index_t;
@@ -393,7 +393,7 @@ unsafe fn text_v1_keymap_new_from_names(
                 "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         ok = compile_keymap_file(keymap, file);
         FreeXkbFile(file);
@@ -423,7 +423,7 @@ unsafe fn text_v1_keymap_new_from_string(
                 "[XKB-{:03}] Failed to parse input xkb string\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         ok = compile_keymap_file(keymap, xkb_file);
         FreeXkbFile(xkb_file);
@@ -448,7 +448,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
                 "[XKB-{:03}] Failed to parse input xkb file\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as ::core::ffi::c_int,
             );
-            return 0 != 0;
+            return false;
         }
         ok = compile_keymap_file(keymap, xkb_file);
         FreeXkbFile(xkb_file);

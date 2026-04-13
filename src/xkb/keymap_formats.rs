@@ -41,7 +41,7 @@ pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_f
 pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {
         if (format as u32) < keymap_formats[0 as i32 as usize] as u32 {
-            return 0 != 0;
+            return false;
         }
         let mut k: usize = 0 as usize;
         while k
@@ -49,14 +49,14 @@ pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> b
                 .wrapping_div(::core::mem::size_of::<xkb_keymap_format>() as usize)
         {
             if keymap_formats[k as usize] as u32 == format as u32 {
-                return 1 != 0;
+                return true;
             }
             if keymap_formats[k as usize] as u32 > format as u32 {
-                return 0 != 0;
+                return false;
             }
             k = k.wrapping_add(1);
         }
-        return 0 != 0;
+        return false;
     }
 }
 pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {

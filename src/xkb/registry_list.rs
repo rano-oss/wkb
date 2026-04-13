@@ -59,7 +59,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut l: *mut rxkb_layout = ::core::ptr::null_mut::<rxkb_layout>();
         let mut g: *mut rxkb_option_group = ::core::ptr::null_mut::<rxkb_option_group>();
         let mut flags: rxkb_context_flags = RXKB_CONTEXT_NO_FLAGS;
-        let mut load_defaults: bool = 1 != 0;
+        let mut load_defaults: bool = true;
         let mut verbosity: i32 = 0 as i32;
         let mut ruleset: *const i8 = DEFAULT_XKB_RULES.as_ptr();
         static mut opts: [option; 6] = [
@@ -120,7 +120,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     return 0 as i32;
                 }
                 100 => {
-                    load_defaults = 0 != 0;
+                    load_defaults = false;
                 }
                 101 => {
                     flags = (flags as u32 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32 as u32)

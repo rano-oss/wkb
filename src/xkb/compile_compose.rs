@@ -126,8 +126,8 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
         let mut locale: *const i8 = ::core::ptr::null::<i8>();
         let mut path: *const i8 = ::core::ptr::null::<i8>();
         let mut format: xkb_compose_format = XKB_COMPOSE_FORMAT_TEXT_V1;
-        let mut verbose: bool = 0 != 0;
-        let mut test: bool = 0 != 0;
+        let mut verbose: bool = false;
+        let mut test: bool = false;
         static mut opts: [option; 6] = [
             option {
                 name: b"help\0".as_ptr() as *const i8,
@@ -186,7 +186,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             }
             match opt {
                 0 => {
-                    verbose = 1 != 0;
+                    verbose = true;
                 }
                 1 => {
                     path = optarg;
@@ -196,7 +196,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     locale = optarg;
                 }
                 3 => {
-                    test = 1 != 0;
+                    test = true;
                 }
                 104 => {
                     usage(stdout, *argv.offset(0 as i32 as isize));

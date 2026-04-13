@@ -49,17 +49,17 @@ pub unsafe fn LookupString(
 ) -> bool {
     unsafe {
         if string.is_null() {
-            return 0 != 0;
+            return false;
         }
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
             if istreq((*entry).name, string) {
                 *value_rtrn = (*entry).value as u32;
-                return 1 != 0;
+                return true;
             }
             entry = entry.offset(1);
         }
-        return 0 != 0;
+        return false;
     }
 }
 pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const i8 {
