@@ -52,36 +52,20 @@ extern "C" {
     pub fn xkb_keymap_parse_format(raw: *const i8) -> xkb_keymap_format;
     pub fn xkb_keymap_get_format_label(format: xkb_keymap_format) -> *const i8;
 }
-pub mod fcntl_linux_h {
-    pub const O_WRONLY: i32 = 0o1 as i32;
-}
-pub mod fcntl_h {
-    extern "C" {
-        pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
-    }
-}
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
     }
 }
-pub mod unistd_h {
-    pub const STDOUT_FILENO: i32 = 1 as i32;
-    pub const STDERR_FILENO: i32 = 2 as i32;
-    extern "C" {
-        pub fn close(__fd: i32) -> i32;
-        pub fn dup(__fd: i32) -> i32;
-        pub fn dup2(__fd: i32, __fd2: i32) -> i32;
-    }
-}
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
-use self::fcntl_h::open;
-pub use self::fcntl_linux_h::O_WRONLY;
+use crate::xkb::utils::open;
+pub use crate::xkb::shared_types::O_WRONLY;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-pub use self::unistd_h::{close, dup, dup2, STDERR_FILENO, STDOUT_FILENO};
+pub use crate::xkb::utils::{close, dup, dup2};
+pub use crate::xkb::shared_types::{STDERR_FILENO, STDOUT_FILENO};
 use crate::xkb::context::{xkb_context_new, xkb_context_unref};
 use crate::xkb::keymap::{
     xkb_keymap_get_as_string2, xkb_keymap_new_from_file, xkb_keymap_new_from_names2,

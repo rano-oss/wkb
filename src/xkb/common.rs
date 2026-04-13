@@ -1,33 +1,3 @@
-pub mod struct_timespec_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct timespec {
-        pub tv_sec: i64,
-        pub tv_nsec: i64,
-    }
-}
-pub mod struct_stat_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct stat {
-        pub st_dev: u64,
-        pub st_ino: u64,
-        pub st_nlink: u64,
-        pub st_mode: u32,
-        pub st_uid: u32,
-        pub st_gid: u32,
-        pub __pad0: i32,
-        pub st_rdev: u64,
-        pub st_size: i64,
-        pub st_blksize: i64,
-        pub st_blocks: i64,
-        pub st_atim: timespec,
-        pub st_mtim: timespec,
-        pub st_ctim: timespec,
-        pub __glibc_reserved: [i64; 3],
-    }
-    use super::struct_timespec_h::timespec;
-}
 pub mod xkbcommon_compose_h {
     extern "C" {
         pub type xkb_compose_state;
@@ -86,20 +56,6 @@ pub mod tools_common_h {
         );
     }
 }
-pub mod stat_h {
-    use super::struct_stat_h::stat;
-    extern "C" {
-        pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
-        pub fn mkdir(__path: *const i8, __mode: u32) -> i32;
-    }
-}
-pub mod include_locale_h {
-    pub const LC_ALL: i32 = __LC_ALL;
-    use super::locale_h::__LC_ALL;
-    extern "C" {
-        pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
-    }
-}
 extern "C" {
     pub fn __assert_fail(
         __assertion: *const i8,
@@ -108,15 +64,13 @@ extern "C" {
         __function: *const i8,
     ) -> !;
 }
-pub mod locale_h {
-    pub const __LC_ALL: i32 = 6 as i32;
-}
 
-pub use self::include_locale_h::{setlocale, LC_ALL};
-pub use self::locale_h::__LC_ALL;
-use self::stat_h::{fstat, mkdir};
-pub use self::struct_stat_h::stat;
-pub use self::struct_timespec_h::timespec;
+pub use crate::xkb::utils::setlocale;
+pub use crate::xkb::shared_types::LC_ALL;
+pub use crate::xkb::shared_types::__LC_ALL;
+use crate::xkb::utils::{fstat, mkdir};
+pub use crate::xkb::shared_types::stat;
+pub use crate::xkb::shared_types::timespec;
 pub use self::test_h::{
     key_seq_state, test_compile_buffer_t, test_context_flags, test_third_party_compile_buffer_t,
     BOTH, CONTEXT_ALLOW_ENVIRONMENT_NAMES, CONTEXT_NO_FLAG, DOWN, EVDEV_OFFSET, FINISH, NEXT,

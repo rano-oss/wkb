@@ -1,40 +1,3 @@
-pub mod struct_timespec_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct timespec {
-        pub tv_sec: i64,
-        pub tv_nsec: i64,
-    }
-}
-pub mod struct_stat_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct stat {
-        pub st_dev: u64,
-        pub st_ino: u64,
-        pub st_nlink: u64,
-        pub st_mode: u32,
-        pub st_uid: u32,
-        pub st_gid: u32,
-        pub __pad0: i32,
-        pub st_rdev: u64,
-        pub st_size: i64,
-        pub st_blksize: i64,
-        pub st_blocks: i64,
-        pub st_atim: timespec,
-        pub st_mtim: timespec,
-        pub st_ctim: timespec,
-        pub __glibc_reserved: [i64; 3],
-    }
-    use super::struct_timespec_h::timespec;
-}
-
-pub mod stat_h {
-    use super::struct_stat_h::stat;
-    extern "C" {
-        pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
-    }
-}
 pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
 
 extern "C" {
@@ -48,33 +11,12 @@ extern "C" {
     ) -> *mut ::core::ffi::c_void;
     pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
 }
-pub mod bits_stat_h {
-    pub const __S_IFMT: i32 = 0o170000 as i32;
-}
-pub mod fcntl_linux_h {
-    pub const O_RDONLY: i32 = 0 as i32;
-}
-pub mod fcntl_h {
-    extern "C" {
-        pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
-    }
-}
-pub mod unistd_h {
-    extern "C" {
-        pub fn close(__fd: i32) -> i32;
-    }
-}
 pub const PROT_READ: i32 = 0x1 as i32;
 pub const MAP_SHARED: i32 = 0x1 as i32;
 
-pub use self::bits_stat_h::__S_IFMT;
-use self::fcntl_h::open;
-pub use self::fcntl_linux_h::O_RDONLY;
-use self::stat_h::fstat;
-pub use self::struct_stat_h::stat;
-pub use self::struct_timespec_h::timespec;
-use self::unistd_h::close;
-use crate::xkb::shared_types::*;
+pub use crate::xkb::shared_types::timespec;
+use crate::xkb::shared_types::xkb_error_code;
+pub use crate::xkb::shared_types::__S_IFMT;
 pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
     unsafe {
         if path.is_null() {
@@ -1174,4 +1116,48 @@ pub unsafe fn parse_hex_to_uint64_t(
             -1 as ::core::ffi::c_int
         };
     }
+}
+
+// ── Consolidated extern "C" declarations ──────────────────────────────
+// (previously scattered across per-file pub mod xxx_h blocks)
+
+use crate::xkb::shared_types::{dirent, stat, O_RDONLY};
+
+// stat_h
+extern "C" {
+    pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
+    pub fn mkdir(__path: *const i8, __mode: u32) -> i32;
+}
+extern "C" {
+    #[link_name = "stat"]
+    pub fn xkb_stat(__file: *const i8, __buf: *mut stat) -> i32;
+}
+
+// include_locale_h
+extern "C" {
+    pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
+}
+
+// unistd_h
+extern "C" {
+    pub fn eaccess(__name: *const i8, __type: i32) -> i32;
+    pub fn close(__fd: i32) -> i32;
+    pub fn dup(__fd: i32) -> i32;
+    pub fn dup2(__fd: i32, __fd2: i32) -> i32;
+}
+
+// fcntl_h (variadic — must stay extern "C")
+extern "C" {
+    pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
+}
+
+// include_dirent_h
+extern "C" {
+    pub type __dirstream;
+}
+pub type DIR = __dirstream;
+extern "C" {
+    pub fn closedir(__dirp: *mut DIR) -> i32;
+    pub fn opendir(__name: *const i8) -> *mut DIR;
+    pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
 }

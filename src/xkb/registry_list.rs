@@ -46,27 +46,18 @@ pub mod xkbregistry_h {
         rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
     };
 }
-pub mod include_locale_h {
-    pub const LC_ALL: i32 = __LC_ALL;
-    use super::locale_h::__LC_ALL;
-    extern "C" {
-        pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
-    }
-}
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
         pub static mut optind: i32;
     }
 }
-pub mod locale_h {
-    pub const __LC_ALL: i32 = 6 as i32;
-}
 use crate::xkb::shared_types::*;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-pub use self::include_locale_h::{setlocale, LC_ALL};
-pub use self::locale_h::__LC_ALL;
+pub use crate::xkb::utils::setlocale;
+pub use crate::xkb::shared_types::LC_ALL;
+pub use crate::xkb::shared_types::__LC_ALL;
 pub use self::xkbregistry_h::{
     rxkb_context, rxkb_context_flags, rxkb_context_include_path_append,
     rxkb_context_include_path_append_default, rxkb_context_new, rxkb_context_parse,

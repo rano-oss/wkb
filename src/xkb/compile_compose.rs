@@ -120,32 +120,18 @@ pub mod tools_common_h {
         pub fn tools_read_stdin() -> *mut FILE;
     }
 }
-pub mod include_locale_h {
-    pub const LC_CTYPE: i32 = __LC_CTYPE;
-    pub const LC_ALL: i32 = __LC_ALL;
-    use super::locale_h::{__LC_ALL, __LC_CTYPE};
-    extern "C" {
-        pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
-    }
-}
 pub mod getopt_core_h {
     extern "C" {
         pub static mut optarg: *mut i8;
         pub static mut optind: i32;
     }
 }
-pub mod unistd_h {
-    pub const STDIN_FILENO: i32 = 0 as i32;
-}
-pub mod locale_h {
-    pub const __LC_CTYPE: i32 = 0 as i32;
-    pub const __LC_ALL: i32 = 6 as i32;
-}
 
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
-pub use self::include_locale_h::{setlocale, LC_ALL, LC_CTYPE};
-pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
+pub use crate::xkb::utils::setlocale;
+pub use crate::xkb::shared_types::{LC_ALL, LC_CTYPE};
+pub use crate::xkb::shared_types::{__LC_ALL, __LC_CTYPE};
 pub use self::table_h::{
     compose_node, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
     C2Rust_Unnamed_5,
@@ -153,7 +139,7 @@ pub use self::table_h::{
 use self::tools_common_h::{
     is_pipe_or_regular_file, tools_enable_verbose_logging, tools_read_stdin,
 };
-pub use self::unistd_h::STDIN_FILENO;
+pub use crate::xkb::shared_types::STDIN_FILENO;
 pub use self::xkbcommon_compose_h::{
     xkb_compose_compile_flags, xkb_compose_format, xkb_compose_table_new_from_file,
     xkb_compose_table_new_from_locale, xkb_compose_table_unref, XKB_COMPOSE_COMPILE_NO_FLAGS,

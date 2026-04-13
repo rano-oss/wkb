@@ -1,34 +1,3 @@
-pub mod struct_timespec_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct timespec {
-        pub tv_sec: i64,
-        pub tv_nsec: i64,
-    }
-}
-pub mod struct_stat_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct stat {
-        pub st_dev: u64,
-        pub st_ino: u64,
-        pub st_nlink: u64,
-        pub st_mode: u32,
-        pub st_uid: u32,
-        pub st_gid: u32,
-        pub __pad0: i32,
-        pub st_rdev: u64,
-        pub st_size: i64,
-        pub st_blksize: i64,
-        pub st_blocks: i64,
-        pub st_atim: timespec,
-        pub st_mtim: timespec,
-        pub st_ctim: timespec,
-        pub __glibc_reserved: [i64; 3],
-    }
-    use super::struct_timespec_h::timespec;
-}
-
 pub type xmlChar = ::core::ffi::c_uchar;
 extern "C" {
     pub fn xmlStrdup(cur: *const xmlChar) -> *mut xmlChar;
@@ -772,27 +741,6 @@ extern "C" {
     pub type _xmlAutomataState;
     pub type _xmlAutomata;
 }
-pub mod dirent_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct dirent {
-        pub d_ino: u64,
-        pub d_off: i64,
-        pub d_reclen: u16,
-        pub d_type: ::core::ffi::c_uchar,
-        pub d_name: [i8; 256],
-    }
-}
-pub mod include_dirent_h {
-    pub type DIR = __dirstream;
-    use super::dirent_h::dirent;
-    extern "C" {
-        pub type __dirstream;
-        pub fn closedir(__dirp: *mut DIR) -> i32;
-        pub fn opendir(__name: *const i8) -> *mut DIR;
-        pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
-    }
-}
 pub mod xkbregistry_h {
     pub type rxkb_log_level = u32;
     pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
@@ -813,35 +761,10 @@ pub mod xkbregistry_h {
 pub use crate::xkb::util_list::{
     list, list_append, list_empty, list_init, list_is_last, list_remove,
 };
-pub mod stat_h {
-    use super::struct_stat_h::stat;
-    extern "C" {
-        pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
-    }
-}
 extern "C" {
     pub fn xmlCheckVersion(version: i32);
 }
-pub mod errno_base_h {
-    pub const ENOMEM: i32 = 12 as i32;
-    pub const EACCES: i32 = 13 as i32;
-    pub const ENOTDIR: i32 = 20 as i32;
-}
-pub mod unistd_h {
-    pub const R_OK: i32 = 4 as i32;
-    pub const X_OK: i32 = 1 as i32;
-    extern "C" {
-        pub fn eaccess(__name: *const i8, __type: i32) -> i32;
-    }
-}
-pub mod bits_stat_h {
-    pub const __S_IFMT: i32 = 0o170000 as i32;
-}
 
-pub use self::bits_stat_h::__S_IFMT;
-pub use self::dirent_h::dirent;
-pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
-pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
 pub use self::parser_h::{
     _xmlAttrHashBucket, _xmlParserCtxt, _xmlParserInput, _xmlParserNodeInfo, _xmlParserNodeInfoSeq,
     _xmlParserNsData, _xmlSAXHandler, _xmlSAXLocator, _xmlStartTag, attributeDeclSAXFunc,
@@ -867,10 +790,6 @@ pub use self::parser_h::{
     XML_PARSE_PUSH_DOM, XML_PARSE_PUSH_SAX, XML_PARSE_READER, XML_PARSE_RECOVER, XML_PARSE_SAX,
     XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
 };
-use self::stat_h::stat;
-pub use self::struct_stat_h::stat;
-pub use self::struct_timespec_h::timespec;
-pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::xkbregistry_h::{
     rxkb_context_flags, rxkb_log_level, rxkb_popularity, RXKB_CONTEXT_LOAD_EXOTIC_RULES,
     RXKB_CONTEXT_NO_DEFAULT_INCLUDES, RXKB_CONTEXT_NO_FLAGS, RXKB_CONTEXT_NO_SECURE_GETENV,
@@ -919,15 +838,13 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::shared_types::{darray_size_t, darray_string};
-use crate::xkb::shared_types::{
-    DEFAULT_XKB_RULES, DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT,
-    DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH, DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
-    DFLT_XKB_LEGACY_ROOT,
-};
-use crate::xkb::utils::__errno_location;
-pub use crate::xkb::utils::_steal;
-use crate::xkb::utils::cstr_dup;
+pub use crate::xkb::shared_types::dirent;
+pub use crate::xkb::shared_types::stat;
+pub use crate::xkb::shared_types::timespec;
+pub use crate::xkb::utils::eaccess;
+use crate::xkb::utils::xkb_stat;
+pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
+use crate::xkb::utils::{__errno_location, _steal, cstr_dup};
 pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
@@ -1943,7 +1860,7 @@ pub unsafe fn rxkb_context_include_path_append(
                 },
                 __glibc_reserved: [0; 3],
             };
-            err = stat(path, &raw mut stat_buf);
+            err = xkb_stat(path, &raw mut stat_buf);
             if err != 0 as i32 {
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
@@ -2051,7 +1968,7 @@ unsafe fn add_direct_subdirectories(
             },
             __glibc_reserved: [0; 3],
         };
-        err = stat(path, &raw mut stat_buf);
+        err = xkb_stat(path, &raw mut stat_buf);
         if err != 0 as i32 {
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
@@ -2097,7 +2014,7 @@ unsafe fn add_direct_subdirectories(
                         c2rust_current_block = 17009998909239196508;
                         break;
                     } else {
-                        if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
+                        if xkb_stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
                             || !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32)
                         {
                             continue;

@@ -1,101 +1,29 @@
-use crate::xkb_logf;
-use crate::xkb::context_priv::{xkb_context_init_includes, xkb_context_getenv};
 use crate::xkb::atom::{atom_table_free, atom_table_new};
+use crate::xkb::context_priv::{xkb_context_getenv, xkb_context_init_includes};
+use crate::xkb_logf;
 
-pub mod struct_timespec_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct timespec {
-        pub tv_sec: i64,
-        pub tv_nsec: i64,
-    }
-}
-pub mod struct_stat_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct stat {
-        pub st_dev: u64,
-        pub st_ino: u64,
-        pub st_nlink: u64,
-        pub st_mode: u32,
-        pub st_uid: u32,
-        pub st_gid: u32,
-        pub __pad0: i32,
-        pub st_rdev: u64,
-        pub st_size: i64,
-        pub st_blksize: i64,
-        pub st_blocks: i64,
-        pub st_atim: timespec,
-        pub st_mtim: timespec,
-        pub st_ctim: timespec,
-        pub __glibc_reserved: [i64; 3],
-    }
-    use super::struct_timespec_h::timespec;
-}
-pub mod dirent_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct dirent {
-        pub d_ino: u64,
-        pub d_off: i64,
-        pub d_reclen: u16,
-        pub d_type: ::core::ffi::c_uchar,
-        pub d_name: [i8; 256],
-    }
-}
-pub mod include_dirent_h {
-    pub type DIR = __dirstream;
-    use super::dirent_h::dirent;
-    extern "C" {
-        pub type __dirstream;
-        pub fn closedir(__dirp: *mut DIR) -> i32;
-        pub fn opendir(__name: *const i8) -> *mut DIR;
-        pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
-    }
-}
-pub mod stat_h {
-    use super::struct_stat_h::stat;
-    extern "C" {
-        pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
-    }
-}
-pub mod bits_stat_h {
-    pub const __S_IFMT: i32 = 0o170000 as i32;
-}
-pub mod unistd_h {
-    pub const R_OK: i32 = 4 as i32;
-    pub const X_OK: i32 = 1 as i32;
-    extern "C" {
-        pub fn eaccess(__name: *const i8, __type: i32) -> i32;
-    }
-}
-pub mod errno_base_h {
-    pub const ENOMEM: i32 = 12 as i32;
-    pub const EACCES: i32 = 13 as i32;
-    pub const ENOTDIR: i32 = 20 as i32;
-}
-
-pub use self::bits_stat_h::__S_IFMT;
-pub use self::dirent_h::dirent;
-pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
-use crate::xkb::utils::__errno_location;
-pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-use self::stat_h::stat;
-pub use self::struct_stat_h::stat;
-pub use self::struct_timespec_h::timespec;
-pub use self::unistd_h::{eaccess, R_OK, X_OK};
-pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
+pub use crate::xkb::shared_types::dirent;
+pub use crate::xkb::shared_types::stat;
+pub use crate::xkb::shared_types::timespec;
+pub use crate::xkb::shared_types::__S_IFMT;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
+pub use crate::xkb::shared_types::{EACCES, ENOMEM, ENOTDIR};
+pub use crate::xkb::shared_types::{R_OK, X_OK};
+use crate::xkb::utils::__errno_location;
 use crate::xkb::utils::cstr_dup;
+pub use crate::xkb::utils::eaccess;
+use crate::xkb::utils::xkb_stat;
+pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
+pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 use libc::{calloc, free, qsort, strtol};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
@@ -155,7 +83,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
                 },
                 __glibc_reserved: [0; 3],
             };
-            err = stat(path, &raw mut stat_buf);
+            err = xkb_stat(path, &raw mut stat_buf);
             if err != 0 as i32 {
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
@@ -301,7 +229,7 @@ unsafe fn add_direct_subdirectories(
             },
             __glibc_reserved: [0; 3],
         };
-        err = stat(path, &raw mut stat_buf);
+        err = xkb_stat(path, &raw mut stat_buf);
         if err != 0 as i32 {
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
@@ -347,7 +275,7 @@ unsafe fn add_direct_subdirectories(
                         c2rust_current_block = 9563249396912231495;
                         break;
                     } else {
-                        if stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
+                        if xkb_stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
                             || !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32)
                         {
                             continue;
