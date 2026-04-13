@@ -18,11 +18,8 @@ pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
     0 as ::core::ffi::c_int as i8,
 ];
 
-pub mod utils_paths_h {
-    pub use crate::xkb::utils_paths::is_absolute_path;
-}
 
-use self::utils_paths_h::is_absolute_path;
+use crate::xkb::utils_paths::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

@@ -3,9 +3,6 @@ use crate::xkb::context_priv::{xkb_atom_text, xkb_atom_intern};
 
 use crate::xkb::text::{LookupEntry, ModMaskText};
 use crate::xkb::xkbcomp::expr::{ExprResolveLevel, ExprResolveLhs, ExprResolveModMask, ExprResolveString};
-pub mod vmod_h {
-    pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
 
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
@@ -103,7 +100,7 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
-use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,

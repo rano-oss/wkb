@@ -28,9 +28,6 @@ pub mod struct_stat_h {
     }
     use super::struct_timespec_h::timespec;
 }
-pub mod rmlvo_h {
-    pub use crate::xkb::rmlvo::rmlvo_h::*;
-}
 pub mod xkbcommon_compose_h {
     extern "C" {
         pub type xkb_compose_state;
@@ -113,12 +110,6 @@ pub mod assert_h {
         ) -> !;
     }
 }
-pub mod utils_paths_h {
-    pub use crate::xkb::utils_paths::is_absolute_path;
-}
-pub mod rules_h {
-    pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-}
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
@@ -127,11 +118,11 @@ use self::assert_h::__assert_fail;
 use crate::xkb::utils::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
-pub use self::rmlvo_h::{
+pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
-pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
+pub use crate::xkb::xkbcomp::rules::OPTIONS_GROUP_SPECIFIER_PREFIX;
 use self::stat_h::{fstat, mkdir};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -146,7 +137,7 @@ pub use self::tools_common_h::{
 };
 pub use crate::xkb::utils::{isempty, streq};
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
-use self::utils_paths_h::is_absolute_path;
+use crate::xkb::utils_paths::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,

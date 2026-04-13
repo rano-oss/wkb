@@ -12,22 +12,13 @@ use crate::xkb::xkbcomp::expr::{
 pub mod darray_h {
     pub use crate::xkb::shared_types::darray_size_t;
 }
-pub mod action_h {
-    pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
-    pub use crate::xkb::xkbcomp::action::{
-        HandleActionDef, InitActionsInfo, SetDefaultActionField,
-    };
-}
-pub mod vmod_h {
-    pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
 
-pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
+pub use crate::xkb::xkbcomp::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::darray_h::darray_size_t;
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
-use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 pub use crate::xkb::keymap::clear_level;
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,

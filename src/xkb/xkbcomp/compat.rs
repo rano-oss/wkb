@@ -3,17 +3,8 @@ use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_atom_text};
 
 use crate::xkb::text::{ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames, useModMapValueNames, KeysymText, LookupEntry, LookupString, ModMaskText, SIMatchText};
 use crate::xkb::xkbcomp::expr::{ExprResolveBoolean, ExprResolveEnum, ExprResolveGroupMask, ExprResolveLhs, ExprResolveMask, ExprResolveMod, ExprResolveModMask};
-pub mod action_h {
-    pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
-    pub use crate::xkb::xkbcomp::action::{
-        HandleActionDef, InitActionsInfo, SetDefaultActionField,
-    };
-}
-pub mod vmod_h {
-    pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-}
 
-pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
+pub use crate::xkb::xkbcomp::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
     xkb_map_flags, C2Rust_Unnamed_15, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
@@ -113,7 +104,7 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
-use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
+use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
     xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, FreeXkbFile,

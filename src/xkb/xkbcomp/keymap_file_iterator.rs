@@ -69,9 +69,6 @@ pub mod keymap_file_iterator_h {
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
-pub mod utils_paths_h {
-    pub use crate::xkb::utils_paths::is_absolute_path;
-}
 
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::keymap_file_iterator_h::{
@@ -80,7 +77,7 @@ pub use self::keymap_file_iterator_h::{
     XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
-use self::utils_paths_h::is_absolute_path;
+use crate::xkb::utils_paths::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
