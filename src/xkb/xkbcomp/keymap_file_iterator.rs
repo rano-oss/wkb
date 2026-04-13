@@ -1,83 +1,73 @@
 use crate::xkb_logf;
 
-pub mod keymap_file_iterator_h {
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct xkb_file_include {
-        #[bitfield(name = "valid", ty = "bool", bits = "0..=0")]
-        #[bitfield(name = "explicit_section", ty = "bool", bits = "1..=1")]
-        pub valid_explicit_section: [u8; 1],
-        #[bitfield(padding)]
-        pub c2rust_padding: [u8; 3],
-        pub merge: merge_mode,
-        pub path: darray_size_t,
-        pub file: darray_size_t,
-        pub section: darray_size_t,
-        pub modifier: darray_size_t,
-        pub flags: xkb_map_flags,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_file_include_group {
-        pub start: darray_size_t,
-        pub end: darray_size_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_file_section {
-        pub name: darray_size_t,
-        pub file_type: xkb_file_type,
-        pub flags: xkb_map_flags,
-        pub include_groups: C2Rust_Unnamed_3,
-        pub includes: C2Rust_Unnamed_2,
-        pub buffer: darray_char,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_2 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_file_include,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_3 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_file_include_group,
-    }
-    pub type xkb_file_iterator_flags = u32;
-    pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
-    pub const XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR: xkb_file_iterator_flags = 1;
-    pub const XKB_FILE_ITERATOR_NO_FLAG: xkb_file_iterator_flags = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_file_iterator {
-        pub flags: xkb_file_iterator_flags,
-        pub finished: bool,
-        pub path: *const i8,
-        pub map: *const i8,
-        pub type_0: xkb_file_type,
-        pub scanner: scanner,
-        pub section: xkb_file_section,
-        pub pending_xkb_file: *mut XkbFile,
-        pub pending_section: *mut XkbFile,
-        pub ctx: *mut xkb_context,
-    }
-    use crate::xkb::scanner_utils::scanner;
-    use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::shared_types::{darray_char, darray_size_t};
+#[derive(Copy, Clone, BitfieldStruct)]
+#[repr(C)]
+pub struct xkb_file_include {
+    #[bitfield(name = "valid", ty = "bool", bits = "0..=0")]
+    #[bitfield(name = "explicit_section", ty = "bool", bits = "1..=1")]
+    pub valid_explicit_section: [u8; 1],
+    #[bitfield(padding)]
+    pub c2rust_padding: [u8; 3],
+    pub merge: merge_mode,
+    pub path: darray_size_t,
+    pub file: darray_size_t,
+    pub section: darray_size_t,
+    pub modifier: darray_size_t,
+    pub flags: xkb_map_flags,
 }
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_file_include_group {
+    pub start: darray_size_t,
+    pub end: darray_size_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_file_section {
+    pub name: darray_size_t,
+    pub file_type: xkb_file_type,
+    pub flags: xkb_map_flags,
+    pub include_groups: C2Rust_Unnamed_3,
+    pub includes: C2Rust_Unnamed_2,
+    pub buffer: darray_char,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_2 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_file_include,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_3 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut xkb_file_include_group,
+}
+pub type xkb_file_iterator_flags = u32;
+pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
+pub const XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR: xkb_file_iterator_flags = 1;
+pub const XKB_FILE_ITERATOR_NO_FLAG: xkb_file_iterator_flags = 0;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_file_iterator {
+    pub flags: xkb_file_iterator_flags,
+    pub finished: bool,
+    pub path: *const i8,
+    pub map: *const i8,
+    pub type_0: xkb_file_type,
+    pub scanner: scanner,
+    pub section: xkb_file_section,
+    pub pending_xkb_file: *mut XkbFile,
+    pub pending_section: *mut XkbFile,
+    pub ctx: *mut xkb_context,
+}
+use crate::xkb::scanner_utils::scanner;
+use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
+use crate::xkb::shared_types::xkb_context;
+use crate::xkb::shared_types::{darray_char, darray_size_t};
 
-use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
-pub use self::keymap_file_iterator_h::{
-    xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,
-    xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,
-    XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
-};
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
-use crate::xkb::utils_paths::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -122,27 +112,29 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
+pub use crate::xkb::scanner_utils::scanner_loc;
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
-    xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
-    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
-    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
-    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
-    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
-    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
-    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+    _IncludeStmt, _ParseCommon, stmt_type, xkb_file_type_to_string, IncludeStmt, ParseCommon,
+    _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
 };
-pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 pub use crate::xkb::utils::strcpy_safe;
 use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
+use crate::xkb::utils_paths::is_absolute_path;
+use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 use libc::{calloc, fclose, fopen, free, FILE};
 #[derive(Copy, Clone)]

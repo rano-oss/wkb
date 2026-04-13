@@ -1,22 +1,22 @@
-use crate::xkb_logf;
 use crate::xkb::context_priv::xkb_atom_text;
+use crate::xkb_logf;
 
-pub mod keymap_compare_h {
-    pub type xkb_keymap_compare_property = u32;
-    pub const XKB_KEYMAP_CMP_POSSIBLY_DROPPED: xkb_keymap_compare_property = 4;
-    pub const XKB_KEYMAP_CMP_ALL: xkb_keymap_compare_property = 31;
-    pub const XKB_KEYMAP_CMP_SYMBOLS: xkb_keymap_compare_property = 16;
-    pub const XKB_KEYMAP_CMP_KEYCODES: xkb_keymap_compare_property = 8;
-    pub const XKB_KEYMAP_CMP_TYPES: xkb_keymap_compare_property = 4;
-    pub const XKB_KEYMAP_CMP_LEDS: xkb_keymap_compare_property = 2;
-    pub const XKB_KEYMAP_CMP_MODS: xkb_keymap_compare_property = 1;
-}
+pub type xkb_keymap_compare_property = u32;
+pub const XKB_KEYMAP_CMP_POSSIBLY_DROPPED: xkb_keymap_compare_property = 4;
+pub const XKB_KEYMAP_CMP_ALL: xkb_keymap_compare_property = 31;
+pub const XKB_KEYMAP_CMP_SYMBOLS: xkb_keymap_compare_property = 16;
+pub const XKB_KEYMAP_CMP_KEYCODES: xkb_keymap_compare_property = 8;
+pub const XKB_KEYMAP_CMP_TYPES: xkb_keymap_compare_property = 4;
+pub const XKB_KEYMAP_CMP_LEDS: xkb_keymap_compare_property = 2;
+pub const XKB_KEYMAP_CMP_MODS: xkb_keymap_compare_property = 1;
 
-pub use self::keymap_compare_h::{
-    xkb_keymap_compare_property, XKB_KEYMAP_CMP_ALL, XKB_KEYMAP_CMP_KEYCODES, XKB_KEYMAP_CMP_LEDS,
-    XKB_KEYMAP_CMP_MODS, XKB_KEYMAP_CMP_POSSIBLY_DROPPED, XKB_KEYMAP_CMP_SYMBOLS,
-    XKB_KEYMAP_CMP_TYPES,
+pub use crate::xkb::keymap_priv::action_equal;
+pub use crate::xkb::messages::{
+    xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
+    XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
+    XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
+pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -46,14 +46,7 @@ pub use crate::xkb::shared_types::{
     EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
 };
-pub use crate::xkb::messages::{
-    xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
-    XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
-    XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
-};
 pub use crate::xkb::utils::{streq, streq_null};
-pub use crate::xkb::keymap_priv::action_equal;
-pub use crate::xkb::shared_types::darray_size_t;
 unsafe fn keymap_compare_mods(
     mut ctx: *mut xkb_context,
     mut keymap1: *const xkb_keymap,

@@ -100,29 +100,20 @@ pub mod include_locale_h {
         pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
     }
 }
-pub mod assert_h {
-    extern "C" {
-        pub fn __assert_fail(
-            __assertion: *const i8,
-            __file: *const i8,
-            __line: u32,
-            __function: *const i8,
-        ) -> !;
-    }
+extern "C" {
+    pub fn __assert_fail(
+        __assertion: *const i8,
+        __file: *const i8,
+        __line: u32,
+        __function: *const i8,
+    ) -> !;
 }
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
 
-use self::assert_h::__assert_fail;
-use crate::xkb::utils::__errno_location;
 pub use self::include_locale_h::{setlocale, LC_ALL};
 pub use self::locale_h::__LC_ALL;
-pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
-};
-pub use crate::xkb::xkbcomp::rules::OPTIONS_GROUP_SPECIFIER_PREFIX;
 use self::stat_h::{fstat, mkdir};
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
@@ -135,15 +126,10 @@ pub use self::tools_common_h::{
     print_state_options, tools_print_keycode_state, DEFAULT_PRINT_OPTIONS, PRINT_ALL_FIELDS,
     PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
 };
-pub use crate::xkb::utils::{isempty, streq};
-pub use crate::xkb::utils::parse_dec_to_uint32_t;
-use crate::xkb::utils_paths::is_absolute_path;
 use self::xkbcommon_compose_h::xkb_compose_state;
-pub use crate::xkb::shared_types::{
-    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+pub use crate::xkb::rmlvo::{
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
+    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
 pub use crate::xkb::shared_types::*;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
@@ -176,6 +162,17 @@ pub use crate::xkb::shared_types::{
     EXPLICIT_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
 };
+pub use crate::xkb::shared_types::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
+use crate::xkb::utils::__errno_location;
+pub use crate::xkb::utils::parse_dec_to_uint32_t;
+pub use crate::xkb::utils::{isempty, streq};
+use crate::xkb::utils_paths::is_absolute_path;
+pub use crate::xkb::xkbcomp::rules::OPTIONS_GROUP_SPECIFIER_PREFIX;
 // Functions from xkb modules (previously extern "C" in xkbcommon_h block)
 use crate::xkb::context::{xkb_context_include_path_append, xkb_context_new, xkb_context_unref};
 use crate::xkb::keymap::{
@@ -188,7 +185,7 @@ use crate::xkb::rmlvo::{
     xkb_rmlvo_builder_append_layout, xkb_rmlvo_builder_append_option, xkb_rmlvo_builder_new,
     xkb_rmlvo_builder_unref,
 };
-use crate::xkb::state::state_priv_h::xkb_event;
+use crate::xkb::state::xkb_event;
 use crate::xkb::state::{
     xkb_event_get_keycode, xkb_event_get_type, xkb_events, xkb_events_next, xkb_machine,
     xkb_machine_process_key, xkb_state, xkb_state_get_keymap, xkb_state_key_get_syms,

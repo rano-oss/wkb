@@ -9,12 +9,9 @@ use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
     ExprResolveString,
 };
-pub mod darray_h {
-    pub use crate::xkb::shared_types::darray_size_t;
-}
+pub use crate::xkb::shared_types::darray_size_t;
 
 pub use crate::xkb::xkbcomp::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
-pub use self::darray_h::darray_size_t;
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};

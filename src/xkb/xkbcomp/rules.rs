@@ -14,9 +14,7 @@ pub mod rmlvo_h {
 pub mod rules_h {
     pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 }
-pub mod utils_paths_h {
-    pub use crate::xkb::utils_paths::is_absolute_path;
-}
+pub use crate::xkb::utils_paths::is_absolute_path;
 
 pub use crate::xkb::shared_ast_types::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
@@ -84,7 +82,6 @@ pub use crate::xkb::scanner_utils::{
 };
 pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
-use self::utils_paths_h::is_absolute_path;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,

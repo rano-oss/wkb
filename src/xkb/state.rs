@@ -2,82 +2,78 @@ use crate::xkb::utils::{darray_append, darray_free, darray_resize, darray_resize
 use crate::xkb_logf;
 use c2rust_bitfields;
 
+#[derive(Copy, Clone)]
+#[repr(C)]
 
-pub mod state_priv_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct xkb_event {
-        pub type_0: xkb_event_type,
-        pub c2rust_unnamed: C2Rust_Unnamed_17,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub union C2Rust_Unnamed_17 {
-        pub keycode: xkb_keycode_t,
-        pub components: C2Rust_Unnamed_18,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct C2Rust_Unnamed_18 {
-        pub components: state_components,
-        pub changed: xkb_state_component,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct state_components {
-        pub base_group: i32,
-        pub latched_group: i32,
-        pub locked_group: i32,
-        pub group: xkb_layout_index_t,
-        pub base_mods: xkb_mod_mask_t,
-        pub latched_mods: xkb_mod_mask_t,
-        pub locked_mods: xkb_mod_mask_t,
-        pub mods: xkb_mod_mask_t,
-        pub leds: xkb_led_mask_t,
-        pub controls: xkb_action_controls,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct xkb_state_update_v1 {
-        pub size: usize,
-        pub components: *const xkb_state_components_update_v1,
-        pub layout_policy: *const xkb_layout_policy_update_v1,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct xkb_layout_policy_update_v1 {
-        pub size: usize,
-        pub policy: xkb_layout_out_of_range_policy,
-        pub redirect: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-
-    pub struct xkb_state_components_update_v1 {
-        pub size: usize,
-        pub components: xkb_state_component,
-        pub affect_latched_mods: xkb_mod_mask_t,
-        pub latched_mods: xkb_mod_mask_t,
-        pub affect_locked_mods: xkb_mod_mask_t,
-        pub locked_mods: xkb_mod_mask_t,
-        pub latched_layout: i32,
-        pub locked_layout: i32,
-        pub affect_controls: xkb_keyboard_control_flags,
-        pub controls: xkb_keyboard_control_flags,
-    }
-    use crate::xkb::shared_types::{
-        xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t,
-        xkb_layout_index_t, xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t,
-        xkb_state_component,
-    };
+pub struct xkb_event {
+    pub type_0: xkb_event_type,
+    pub c2rust_unnamed: C2Rust_Unnamed_17,
 }
+#[derive(Copy, Clone)]
+#[repr(C)]
 
+pub union C2Rust_Unnamed_17 {
+    pub keycode: xkb_keycode_t,
+    pub components: C2Rust_Unnamed_18,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct C2Rust_Unnamed_18 {
+    pub components: state_components,
+    pub changed: xkb_state_component,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct state_components {
+    pub base_group: i32,
+    pub latched_group: i32,
+    pub locked_group: i32,
+    pub group: xkb_layout_index_t,
+    pub base_mods: xkb_mod_mask_t,
+    pub latched_mods: xkb_mod_mask_t,
+    pub locked_mods: xkb_mod_mask_t,
+    pub mods: xkb_mod_mask_t,
+    pub leds: xkb_led_mask_t,
+    pub controls: xkb_action_controls,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_state_update_v1 {
+    pub size: usize,
+    pub components: *const xkb_state_components_update_v1,
+    pub layout_policy: *const xkb_layout_policy_update_v1,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_layout_policy_update_v1 {
+    pub size: usize,
+    pub policy: xkb_layout_out_of_range_policy,
+    pub redirect: xkb_layout_index_t,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+
+pub struct xkb_state_components_update_v1 {
+    pub size: usize,
+    pub components: xkb_state_component,
+    pub affect_latched_mods: xkb_mod_mask_t,
+    pub latched_mods: xkb_mod_mask_t,
+    pub affect_locked_mods: xkb_mod_mask_t,
+    pub locked_mods: xkb_mod_mask_t,
+    pub latched_layout: i32,
+    pub locked_layout: i32,
+    pub affect_controls: xkb_keyboard_control_flags,
+    pub controls: xkb_keyboard_control_flags,
+}
+use crate::xkb::shared_types::{
+    xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t,
+    xkb_layout_index_t, xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t,
+    xkb_state_component,
+};
 
 pub mod xkbcommon_features_h {
 
@@ -133,10 +129,6 @@ pub mod xkbcommon_features_h {
     pub use crate::xkb::features::xkb_feature_supported;
 }
 
-
-
-
-
 pub mod utf8_h {
 
     /// Native Rust UTF-8 validation (replaces C FFI)
@@ -152,7 +144,25 @@ pub mod utf8_h {
     }
 }
 
-
+use self::utf8_h::is_valid_utf8;
+pub use self::xkbcommon_features_h::{
+    xkb_feature, xkb_feature_supported, XKB_FEATURE_ENUM_A11Y_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS, XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT,
+    XKB_FEATURE_ENUM_COMPOSE_FORMAT, XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_STATUS, XKB_FEATURE_ENUM_CONSUMED_MODE,
+    XKB_FEATURE_ENUM_CONTEXT_FLAGS, XKB_FEATURE_ENUM_ERROR_CODE, XKB_FEATURE_ENUM_EVENTS_FLAGS,
+    XKB_FEATURE_ENUM_EVENT_TYPE, XKB_FEATURE_ENUM_FEATURE, XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS,
+    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS, XKB_FEATURE_ENUM_KEYMAP_FORMAT,
+    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS, XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS,
+    XKB_FEATURE_ENUM_KEYSYM_FLAGS, XKB_FEATURE_ENUM_KEY_DIRECTION,
+    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY, XKB_FEATURE_ENUM_LOG_LEVEL,
+    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
+    XKB_FEATURE_ENUM_STATE_MATCH,
+};
+pub use crate::xkb::keymap::xkb_keymap_key_get_level;
+pub use crate::xkb::keymap_priv::{
+    xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
+};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -197,62 +207,30 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::state_priv_h::{
-    state_components, xkb_event, xkb_layout_policy_update_v1, xkb_state_components_update_v1,
-    xkb_state_update_v1, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
-};
-use self::utf8_h::is_valid_utf8;
-pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
-pub use crate::xkb::utils::one_bit_set;
-pub use crate::xkb::utils::popcount32;
-pub use crate::xkb::shared_types::{
-    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
-};
-pub use self::xkbcommon_features_h::{
-    xkb_feature, xkb_feature_supported, XKB_FEATURE_ENUM_A11Y_FLAGS,
-    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS, XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT,
-    XKB_FEATURE_ENUM_COMPOSE_FORMAT, XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS,
-    XKB_FEATURE_ENUM_COMPOSE_STATUS, XKB_FEATURE_ENUM_CONSUMED_MODE,
-    XKB_FEATURE_ENUM_CONTEXT_FLAGS, XKB_FEATURE_ENUM_ERROR_CODE, XKB_FEATURE_ENUM_EVENTS_FLAGS,
-    XKB_FEATURE_ENUM_EVENT_TYPE, XKB_FEATURE_ENUM_FEATURE, XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS,
-    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS, XKB_FEATURE_ENUM_KEYMAP_FORMAT,
-    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS, XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS,
-    XKB_FEATURE_ENUM_KEYSYM_FLAGS, XKB_FEATURE_ENUM_KEY_DIRECTION,
-    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY, XKB_FEATURE_ENUM_LOG_LEVEL,
-    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
-    XKB_FEATURE_ENUM_STATE_MATCH,
-};
-pub use crate::xkb::keymap::xkb_keymap_key_get_level;
-pub use crate::xkb::keymap_priv::{
-    xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
-};
 pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
-    entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action,
-    xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
-    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation, xkb_mod,
-    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_23,
-    C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
-    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES,
-    _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
-    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
-    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
-    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
-    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
-    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action, xkb_action_count_t,
+    xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
+    xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,
+    xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level,
+    xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2,
+    C2Rust_Unnamed_23, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
+    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey,
+    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
+    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
+    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
+    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
+    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -263,6 +241,15 @@ pub use crate::xkb::shared_types::{
     XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
     XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
 };
+pub use crate::xkb::shared_types::{
+    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
+    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
+};
+pub use crate::xkb::utils::one_bit_set;
+pub use crate::xkb::utils::popcount32;
+pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 use libc::{calloc, free, qsort};
 #[derive(Copy, Clone)]
 #[repr(C)]

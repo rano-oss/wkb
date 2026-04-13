@@ -1,36 +1,22 @@
 use crate::xkb::context_priv::xkb_atom_text;
 use crate::xkb_logf;
 
-use crate::xkb::text::{actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString, LookupValue};
-pub mod action_h {
-    use crate::xkb::shared_types::xkb_action;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct ActionsInfo {
-        pub actions: [xkb_action; 21],
-    }
+use crate::xkb::shared_types::xkb_action;
+use crate::xkb::text::{
+    actionTypeNames, ctrlMaskNames, ActionTypeText, KeyNameText, LookupEntry, LookupString,
+    LookupValue,
+};
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct ActionsInfo {
+    pub actions: [xkb_action; 21],
 }
 pub use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveButton, ExprResolveEnum, ExprResolveGroup, ExprResolveInteger,
     ExprResolveLhs, ExprResolveMask, ExprResolveModMask, ExprResolveString,
 };
 
-pub use self::action_h::ActionsInfo;
-pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, C2Rust_Unnamed_13, ExprAction,
-    ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
-    ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, ParseCommon,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
-};
+pub use crate::xkb::keymap_priv::action_equal;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -75,10 +61,24 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::utils::{istrcmp, istreq};
+pub use crate::xkb::shared_ast_types::{
+    _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, C2Rust_Unnamed_13, ExprAction,
+    ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
+    ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, ParseCommon,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
+};
 pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, xkb_keymap_info, xkb_parser_error,
-    xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, PARSER_FATAL_ERROR,
+    xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR,
     PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS,
     PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
     PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
@@ -88,14 +88,13 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::keymap_priv::action_equal;
 pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
-    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
-    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
-    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
-    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
-    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
+    mod_type, xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
+    xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation, xkb_mod,
+    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
     xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
     C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
@@ -121,6 +120,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::darray_append;
+pub use crate::xkb::utils::{istrcmp, istreq};
 pub type action_field = u32;
 pub const ACTION_FIELD_LATCH_ON_PRESS: action_field = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: action_field = 24;

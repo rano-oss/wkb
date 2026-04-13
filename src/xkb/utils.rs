@@ -35,20 +35,18 @@ pub mod stat_h {
         pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
     }
 }
-pub mod mman_h {
-    pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
+pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
 
-    extern "C" {
-        pub fn mmap(
-            __addr: *mut ::core::ffi::c_void,
-            __len: usize,
-            __prot: i32,
-            __flags: i32,
-            __fd: i32,
-            __offset: i64,
-        ) -> *mut ::core::ffi::c_void;
-        pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
-    }
+extern "C" {
+    pub fn mmap(
+        __addr: *mut ::core::ffi::c_void,
+        __len: usize,
+        __prot: i32,
+        __flags: i32,
+        __fd: i32,
+        __offset: i64,
+    ) -> *mut ::core::ffi::c_void;
+    pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
 }
 pub mod bits_stat_h {
     pub const __S_IFMT: i32 = 0o170000 as i32;
@@ -66,16 +64,12 @@ pub mod unistd_h {
         pub fn close(__fd: i32) -> i32;
     }
 }
-pub mod mman_linux_h {
-    pub const PROT_READ: i32 = 0x1 as i32;
-    pub const MAP_SHARED: i32 = 0x1 as i32;
-}
+pub const PROT_READ: i32 = 0x1 as i32;
+pub const MAP_SHARED: i32 = 0x1 as i32;
 
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_RDONLY;
-pub use self::mman_h::{mmap, munmap, MAP_FAILED};
-pub use self::mman_linux_h::{MAP_SHARED, PROT_READ};
 use self::stat_h::fstat;
 pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;

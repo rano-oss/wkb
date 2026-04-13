@@ -100,16 +100,12 @@ pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: xkb_message_code = 971;
 
 // ── messages_h ─────────────────────────────────────────────────────
 
-pub mod messages_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_message_entry {
-        pub code: super::xkb_message_code,
-        pub label: *const i8,
-    }
-    extern "C" {
-        pub fn xkb_message_get(code: super::xkb_message_code) -> *const xkb_message_entry;
-    }
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_message_entry {
+    pub code: xkb_message_code,
+    pub label: *const i8,
 }
-
-pub use self::messages_h::{xkb_message_entry, xkb_message_get};
+extern "C" {
+    pub fn xkb_message_get(code: xkb_message_code) -> *const xkb_message_entry;
+}

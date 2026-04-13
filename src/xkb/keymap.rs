@@ -4,10 +4,8 @@ use crate::xkb::context_priv::{xkb_context_sanitize_rule_names, xkb_atom_text, x
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_size_t.h:19"]
-pub mod __stddef_size_t_h {
-    #[c2rust::src_loc = "18:1"]
-    pub type size_t = usize;
-}
+#[c2rust::src_loc = "18:1"]
+pub type size_t = usize;
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.

@@ -2,13 +2,10 @@ use crate::xkb::context_priv::xkb_atom_text;
 use crate::xkb_logf;
 
 use crate::xkb::text::{buttonNames, LookupEntry, GROUP_LAST_INDEX_NAME};
-pub mod inttypes_h {
-    extern "C" {
-        pub fn imaxabs(__n: i64) -> i64;
-    }
+extern "C" {
+    pub fn imaxabs(__n: i64) -> i64;
 }
 
-use self::inttypes_h::imaxabs;
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
 pub use crate::xkb::messages::{

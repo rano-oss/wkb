@@ -24,24 +24,22 @@ pub mod enums_h {
     pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
     pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 }
-pub mod xkbcommon_names_h {
-    pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
-        unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
-    pub const XKB_MOD_NAME_CAPS: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Lock\0") };
-    pub const XKB_MOD_NAME_CTRL: [i8; 8] =
-        unsafe { ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"Control\0") };
-    pub const XKB_MOD_NAME_MOD1: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod1\0") };
-    pub const XKB_MOD_NAME_MOD2: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod2\0") };
-    pub const XKB_MOD_NAME_MOD3: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod3\0") };
-    pub const XKB_MOD_NAME_MOD4: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod4\0") };
-    pub const XKB_MOD_NAME_MOD5: [i8; 5] =
-        unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
-}
+pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
+    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
+pub const XKB_MOD_NAME_CAPS: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Lock\0") };
+pub const XKB_MOD_NAME_CTRL: [i8; 8] =
+    unsafe { ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"Control\0") };
+pub const XKB_MOD_NAME_MOD1: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod1\0") };
+pub const XKB_MOD_NAME_MOD2: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod2\0") };
+pub const XKB_MOD_NAME_MOD3: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod3\0") };
+pub const XKB_MOD_NAME_MOD4: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod4\0") };
+pub const XKB_MOD_NAME_MOD5: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
 
 pub use self::enums_h::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
@@ -87,10 +85,6 @@ pub use crate::xkb::messages::{
     xkb_log_verbosity, XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
-};
-pub use self::xkbcommon_names_h::{
-    XKB_MOD_NAME_CAPS, XKB_MOD_NAME_CTRL, XKB_MOD_NAME_MOD1, XKB_MOD_NAME_MOD2, XKB_MOD_NAME_MOD3,
-    XKB_MOD_NAME_MOD4, XKB_MOD_NAME_MOD5, XKB_MOD_NAME_SHIFT,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;

@@ -8,9 +8,7 @@ pub const XKB_KEY_Hyper_R: i32 = 0xffee as i32;
 pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
 pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
 use crate::xkb::shared_types::*;
-pub mod sys_types_h {
-    pub type ssize_t = isize;
-}
+pub type ssize_t = isize;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -21809,7 +21807,6 @@ pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
-pub use self::sys_types_h::ssize_t;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 use crate::xkb::utils::cstr_dup;

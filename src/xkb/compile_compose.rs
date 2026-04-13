@@ -77,19 +77,19 @@ pub mod table_h {
         #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
         pub _pad_is_leaf: [u8; 4],
     }
-    use crate::xkb::shared_types::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
+    use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
-    use libc::{FILE};
+    use libc::FILE;
     pub type xkb_compose_compile_flags = u32;
     pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
     pub type xkb_compose_format = u32;
     pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
-    use crate::xkb::shared_types::xkb_context;
     use super::table_h::xkb_compose_table;
+    use crate::xkb::shared_types::xkb_context;
     extern "C" {
         pub fn xkb_compose_table_new_from_locale(
             context: *mut xkb_context,
@@ -106,16 +106,14 @@ pub mod xkbcommon_compose_h {
         pub fn xkb_compose_table_unref(table: *mut xkb_compose_table);
     }
 }
-pub mod dump_h {
-    use libc::{FILE};
-    use super::table_h::xkb_compose_table;
-    extern "C" {
-        pub fn xkb_compose_table_dump(file: *mut FILE, table: *mut xkb_compose_table) -> bool;
-    }
+use self::table_h::xkb_compose_table;
+use libc::FILE;
+extern "C" {
+    pub fn xkb_compose_table_dump(file: *mut FILE, table: *mut xkb_compose_table) -> bool;
 }
 pub mod tools_common_h {
-    use libc::{FILE};
     use crate::xkb::shared_types::xkb_context;
+    use libc::FILE;
     extern "C" {
         pub fn tools_enable_verbose_logging(ctx: *mut xkb_context);
         pub fn is_pipe_or_regular_file(fd: i32) -> bool;
@@ -144,20 +142,18 @@ pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
 
-use self::dump_h::xkb_compose_table_dump;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL, LC_CTYPE};
 pub use self::locale_h::{__LC_ALL, __LC_CTYPE};
 pub use self::table_h::{
-    compose_node, xkb_compose_table, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
-    C2Rust_Unnamed_4, C2Rust_Unnamed_5,
+    compose_node, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
+    C2Rust_Unnamed_5,
 };
 use self::tools_common_h::{
     is_pipe_or_regular_file, tools_enable_verbose_logging, tools_read_stdin,
 };
 pub use self::unistd_h::STDIN_FILENO;
-pub use crate::xkb::utils::isempty;
 pub use self::xkbcommon_compose_h::{
     xkb_compose_compile_flags, xkb_compose_format, xkb_compose_table_new_from_file,
     xkb_compose_table_new_from_locale, xkb_compose_table_unref, XKB_COMPOSE_COMPILE_NO_FLAGS,
@@ -165,7 +161,8 @@ pub use self::xkbcommon_compose_h::{
 };
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::cstr_cmp;
-use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE, exit, fclose, fopen, perror};
+pub use crate::xkb::utils::isempty;
+use libc::{exit, fclose, fopen, perror, EXIT_FAILURE, EXIT_SUCCESS};
 extern "C" {
     pub static stderr: *mut libc::FILE;
     pub static stdout: *mut libc::FILE;
@@ -399,5 +396,5 @@ pub fn main() {
         ) as i32)
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::{xkb_context_new, xkb_context_unref};
+use crate::xkb::shared_types::*;

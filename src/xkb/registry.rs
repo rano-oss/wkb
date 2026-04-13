@@ -29,299 +29,269 @@ pub mod struct_stat_h {
     use super::struct_timespec_h::timespec;
 }
 
-pub mod xmlstring_h {
-    pub type xmlChar = ::core::ffi::c_uchar;
-    extern "C" {
-        pub fn xmlStrdup(cur: *const xmlChar) -> *mut xmlChar;
-        pub fn xmlStrEqual(str1: *const xmlChar, str2: *const xmlChar) -> i32;
-    }
+pub type xmlChar = ::core::ffi::c_uchar;
+extern "C" {
+    pub fn xmlStrdup(cur: *const xmlChar) -> *mut xmlChar;
+    pub fn xmlStrEqual(str1: *const xmlChar, str2: *const xmlChar) -> i32;
 }
-pub mod xmlmemory_h {
-    pub type xmlFreeFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
-    extern "C" {
-        pub static mut xmlFree: xmlFreeFunc;
-    }
+pub type xmlFreeFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
+extern "C" {
+    pub static mut xmlFree: xmlFreeFunc;
 }
-pub mod xmlIO_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlParserInputBuffer {
-        pub context: *mut ::core::ffi::c_void,
-        pub readcallback: xmlInputReadCallback,
-        pub closecallback: xmlInputCloseCallback,
-        pub encoder: xmlCharEncodingHandlerPtr,
-        pub buffer: xmlBufPtr,
-        pub raw: xmlBufPtr,
-        pub compressed: i32,
-        pub error: i32,
-        pub rawconsumed: u64,
-    }
-    pub type xmlInputCloseCallback = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
-    pub type xmlInputReadCallback =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
-    use super::encoding_h::{xmlCharEncoding, xmlCharEncodingHandlerPtr};
-    use super::tree_h::{xmlBufPtr, xmlParserInputBufferPtr};
-    extern "C" {
-        pub fn xmlParserInputBufferCreateMem(
-            mem: *const i8,
-            size: i32,
-            enc: xmlCharEncoding,
-        ) -> xmlParserInputBufferPtr;
-    }
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlParserInputBuffer {
+    pub context: *mut ::core::ffi::c_void,
+    pub readcallback: xmlInputReadCallback,
+    pub closecallback: xmlInputCloseCallback,
+    pub encoder: xmlCharEncodingHandlerPtr,
+    pub buffer: xmlBufPtr,
+    pub raw: xmlBufPtr,
+    pub compressed: i32,
+    pub error: i32,
+    pub rawconsumed: u64,
 }
-pub mod tree_h {
-    pub type xmlBufPtr = *mut xmlBuf;
-    pub type xmlBuf = _xmlBuf;
-    pub type xmlParserInputBuffer = _xmlParserInputBuffer;
-    pub type xmlParserInputBufferPtr = *mut xmlParserInputBuffer;
-    pub type xmlEntityPtr = *mut xmlEntity;
-    pub type xmlEntity = _xmlEntity;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlDoc {
-        pub _private: *mut ::core::ffi::c_void,
-        pub type_0: xmlElementType,
-        pub name: *mut i8,
-        pub children: *mut _xmlNode,
-        pub last: *mut _xmlNode,
-        pub parent: *mut _xmlNode,
-        pub next: *mut _xmlNode,
-        pub prev: *mut _xmlNode,
-        pub doc: *mut _xmlDoc,
-        pub compression: i32,
-        pub standalone: i32,
-        pub intSubset: *mut _xmlDtd,
-        pub extSubset: *mut _xmlDtd,
-        pub oldNs: *mut _xmlNs,
-        pub version: *const xmlChar,
-        pub encoding: *const xmlChar,
-        pub ids: *mut ::core::ffi::c_void,
-        pub refs: *mut ::core::ffi::c_void,
-        pub URL: *const xmlChar,
-        pub charset: i32,
-        pub dict: *mut _xmlDict,
-        pub psvi: *mut ::core::ffi::c_void,
-        pub parseFlags: i32,
-        pub properties: i32,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlNs {
-        pub next: *mut _xmlNs,
-        pub type_0: xmlNsType,
-        pub href: *const xmlChar,
-        pub prefix: *const xmlChar,
-        pub _private: *mut ::core::ffi::c_void,
-        pub context: *mut _xmlDoc,
-    }
-    pub type xmlElementType = xmlNsType;
-    pub type xmlNsType = u32;
-    pub const XML_XINCLUDE_END: xmlNsType = 20;
-    pub const XML_XINCLUDE_START: xmlNsType = 19;
-    pub const XML_NAMESPACE_DECL: xmlNsType = 18;
-    pub const XML_ENTITY_DECL: xmlNsType = 17;
-    pub const XML_ATTRIBUTE_DECL: xmlNsType = 16;
-    pub const XML_ELEMENT_DECL: xmlNsType = 15;
-    pub const XML_DTD_NODE: xmlNsType = 14;
-    pub const XML_HTML_DOCUMENT_NODE: xmlNsType = 13;
-    pub const XML_NOTATION_NODE: xmlNsType = 12;
-    pub const XML_DOCUMENT_FRAG_NODE: xmlNsType = 11;
-    pub const XML_DOCUMENT_TYPE_NODE: xmlNsType = 10;
-    pub const XML_DOCUMENT_NODE: xmlNsType = 9;
-    pub const XML_COMMENT_NODE: xmlNsType = 8;
-    pub const XML_PI_NODE: xmlNsType = 7;
-    pub const XML_ENTITY_NODE: xmlNsType = 6;
-    pub const XML_ENTITY_REF_NODE: xmlNsType = 5;
-    pub const XML_CDATA_SECTION_NODE: xmlNsType = 4;
-    pub const XML_TEXT_NODE: xmlNsType = 3;
-    pub const XML_ATTRIBUTE_NODE: xmlNsType = 2;
-    pub const XML_ELEMENT_NODE: xmlNsType = 1;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlDtd {
-        pub _private: *mut ::core::ffi::c_void,
-        pub type_0: xmlElementType,
-        pub name: *const xmlChar,
-        pub children: *mut _xmlNode,
-        pub last: *mut _xmlNode,
-        pub parent: *mut _xmlDoc,
-        pub next: *mut _xmlNode,
-        pub prev: *mut _xmlNode,
-        pub doc: *mut _xmlDoc,
-        pub notations: *mut ::core::ffi::c_void,
-        pub elements: *mut ::core::ffi::c_void,
-        pub attributes: *mut ::core::ffi::c_void,
-        pub entities: *mut ::core::ffi::c_void,
-        pub ExternalID: *const xmlChar,
-        pub SystemID: *const xmlChar,
-        pub pentities: *mut ::core::ffi::c_void,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlNode {
-        pub _private: *mut ::core::ffi::c_void,
-        pub type_0: xmlElementType,
-        pub name: *const xmlChar,
-        pub children: *mut _xmlNode,
-        pub last: *mut _xmlNode,
-        pub parent: *mut _xmlNode,
-        pub next: *mut _xmlNode,
-        pub prev: *mut _xmlNode,
-        pub doc: *mut _xmlDoc,
-        pub ns: *mut xmlNs,
-        pub content: *mut xmlChar,
-        pub properties: *mut _xmlAttr,
-        pub nsDef: *mut xmlNs,
-        pub psvi: *mut ::core::ffi::c_void,
-        pub line: u16,
-        pub extra: u16,
-    }
-    pub type xmlNs = _xmlNs;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlAttr {
-        pub _private: *mut ::core::ffi::c_void,
-        pub type_0: xmlElementType,
-        pub name: *const xmlChar,
-        pub children: *mut _xmlNode,
-        pub last: *mut _xmlNode,
-        pub parent: *mut _xmlNode,
-        pub next: *mut _xmlAttr,
-        pub prev: *mut _xmlAttr,
-        pub doc: *mut _xmlDoc,
-        pub ns: *mut xmlNs,
-        pub atype: xmlAttributeType,
-        pub psvi: *mut ::core::ffi::c_void,
-    }
-    pub type xmlAttributeType = u32;
-    pub const XML_ATTRIBUTE_NOTATION: xmlAttributeType = 10;
-    pub const XML_ATTRIBUTE_ENUMERATION: xmlAttributeType = 9;
-    pub const XML_ATTRIBUTE_NMTOKENS: xmlAttributeType = 8;
-    pub const XML_ATTRIBUTE_NMTOKEN: xmlAttributeType = 7;
-    pub const XML_ATTRIBUTE_ENTITIES: xmlAttributeType = 6;
-    pub const XML_ATTRIBUTE_ENTITY: xmlAttributeType = 5;
-    pub const XML_ATTRIBUTE_IDREFS: xmlAttributeType = 4;
-    pub const XML_ATTRIBUTE_IDREF: xmlAttributeType = 3;
-    pub const XML_ATTRIBUTE_ID: xmlAttributeType = 2;
-    pub const XML_ATTRIBUTE_CDATA: xmlAttributeType = 1;
-    pub type xmlParserInput = _xmlParserInput;
-    pub type xmlParserInputPtr = *mut xmlParserInput;
-    pub type xmlAttrPtr = *mut xmlAttr;
-    pub type xmlAttr = _xmlAttr;
-    pub type xmlNodePtr = *mut xmlNode;
-    pub type xmlNode = _xmlNode;
-    pub type xmlDocPtr = *mut xmlDoc;
-    pub type xmlDoc = _xmlDoc;
-    pub type xmlSAXLocatorPtr = *mut xmlSAXLocator;
-    pub type xmlSAXLocator = _xmlSAXLocator;
-    pub type xmlElementContentPtr = *mut xmlElementContent;
-    pub type xmlElementContent = _xmlElementContent;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlElementContent {
-        pub type_0: xmlElementContentType,
-        pub ocur: xmlElementContentOccur,
-        pub name: *const xmlChar,
-        pub c1: *mut _xmlElementContent,
-        pub c2: *mut _xmlElementContent,
-        pub parent: *mut _xmlElementContent,
-        pub prefix: *const xmlChar,
-    }
-    pub type xmlElementContentOccur = u32;
-    pub const XML_ELEMENT_CONTENT_PLUS: xmlElementContentOccur = 4;
-    pub const XML_ELEMENT_CONTENT_MULT: xmlElementContentOccur = 3;
-    pub const XML_ELEMENT_CONTENT_OPT: xmlElementContentOccur = 2;
-    pub const XML_ELEMENT_CONTENT_ONCE: xmlElementContentOccur = 1;
-    pub type xmlElementContentType = u32;
-    pub const XML_ELEMENT_CONTENT_OR: xmlElementContentType = 4;
-    pub const XML_ELEMENT_CONTENT_SEQ: xmlElementContentType = 3;
-    pub const XML_ELEMENT_CONTENT_ELEMENT: xmlElementContentType = 2;
-    pub const XML_ELEMENT_CONTENT_PCDATA: xmlElementContentType = 1;
-    pub type xmlEnumerationPtr = *mut xmlEnumeration;
-    pub type xmlEnumeration = _xmlEnumeration;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlEnumeration {
-        pub next: *mut _xmlEnumeration,
-        pub name: *const xmlChar,
-    }
-    pub type xmlParserCtxt = _xmlParserCtxt;
-    pub type xmlParserCtxtPtr = *mut xmlParserCtxt;
-    pub type xmlSAXHandler = _xmlSAXHandler;
-    pub type xmlSAXHandlerPtr = *mut xmlSAXHandler;
-    pub type xmlDtd = _xmlDtd;
-    pub type xmlDtdPtr = *mut xmlDtd;
-    use super::entities_h::_xmlEntity;
-    use super::parser_h::{_xmlParserCtxt, _xmlParserInput, _xmlSAXHandler, _xmlSAXLocator};
-    use super::xmlIO_h::_xmlParserInputBuffer;
-    use super::xmlstring_h::xmlChar;
-    extern "C" {
-        pub type _xmlBuf;
-        pub type _xmlDict;
-        pub fn xmlFreeDtd(cur: xmlDtdPtr);
-        pub fn xmlFreeDoc(cur: xmlDocPtr);
-        pub fn xmlDocGetRootElement(doc: *const xmlDoc) -> xmlNodePtr;
-        pub fn xmlGetProp(node: *const xmlNode, name: *const xmlChar) -> *mut xmlChar;
-    }
+pub type xmlInputCloseCallback = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
+pub type xmlInputReadCallback = Option<unsafe fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
+extern "C" {
+    pub fn xmlParserInputBufferCreateMem(
+        mem: *const i8,
+        size: i32,
+        enc: xmlCharEncoding,
+    ) -> xmlParserInputBufferPtr;
 }
-pub mod encoding_h {
-    pub type xmlCharEncodingHandlerPtr = *mut xmlCharEncodingHandler;
-    pub type xmlCharEncodingHandler = _xmlCharEncodingHandler;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlCharEncodingHandler {
-        pub name: *mut i8,
-        pub input: xmlCharEncodingInputFunc,
-        pub output: xmlCharEncodingOutputFunc,
-        pub iconv_in: iconv_t,
-        pub iconv_out: iconv_t,
-    }
-    pub type xmlCharEncodingOutputFunc = Option<
-        unsafe fn(
-            *mut ::core::ffi::c_uchar,
-            *mut i32,
-            *const ::core::ffi::c_uchar,
-            *mut i32,
-        ) -> i32,
-    >;
-    pub type xmlCharEncodingInputFunc = Option<
-        unsafe fn(
-            *mut ::core::ffi::c_uchar,
-            *mut i32,
-            *const ::core::ffi::c_uchar,
-            *mut i32,
-        ) -> i32,
-    >;
-    pub type xmlCharEncoding = i32;
-    pub const XML_CHAR_ENCODING_ASCII: xmlCharEncoding = 22;
-    pub const XML_CHAR_ENCODING_EUC_JP: xmlCharEncoding = 21;
-    pub const XML_CHAR_ENCODING_SHIFT_JIS: xmlCharEncoding = 20;
-    pub const XML_CHAR_ENCODING_2022_JP: xmlCharEncoding = 19;
-    pub const XML_CHAR_ENCODING_8859_9: xmlCharEncoding = 18;
-    pub const XML_CHAR_ENCODING_8859_8: xmlCharEncoding = 17;
-    pub const XML_CHAR_ENCODING_8859_7: xmlCharEncoding = 16;
-    pub const XML_CHAR_ENCODING_8859_6: xmlCharEncoding = 15;
-    pub const XML_CHAR_ENCODING_8859_5: xmlCharEncoding = 14;
-    pub const XML_CHAR_ENCODING_8859_4: xmlCharEncoding = 13;
-    pub const XML_CHAR_ENCODING_8859_3: xmlCharEncoding = 12;
-    pub const XML_CHAR_ENCODING_8859_2: xmlCharEncoding = 11;
-    pub const XML_CHAR_ENCODING_8859_1: xmlCharEncoding = 10;
-    pub const XML_CHAR_ENCODING_UCS2: xmlCharEncoding = 9;
-    pub const XML_CHAR_ENCODING_UCS4_3412: xmlCharEncoding = 8;
-    pub const XML_CHAR_ENCODING_UCS4_2143: xmlCharEncoding = 7;
-    pub const XML_CHAR_ENCODING_EBCDIC: xmlCharEncoding = 6;
-    pub const XML_CHAR_ENCODING_UCS4BE: xmlCharEncoding = 5;
-    pub const XML_CHAR_ENCODING_UCS4LE: xmlCharEncoding = 4;
-    pub const XML_CHAR_ENCODING_UTF16BE: xmlCharEncoding = 3;
-    pub const XML_CHAR_ENCODING_UTF16LE: xmlCharEncoding = 2;
-    pub const XML_CHAR_ENCODING_UTF8: xmlCharEncoding = 1;
-    pub const XML_CHAR_ENCODING_NONE: xmlCharEncoding = 0;
-    pub const XML_CHAR_ENCODING_ERROR: xmlCharEncoding = -1;
-    use super::iconv_h::iconv_t;
+pub type xmlBufPtr = *mut xmlBuf;
+pub type xmlBuf = _xmlBuf;
+pub type xmlParserInputBuffer = _xmlParserInputBuffer;
+pub type xmlParserInputBufferPtr = *mut xmlParserInputBuffer;
+pub type xmlEntityPtr = *mut xmlEntity;
+pub type xmlEntity = _xmlEntity;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlDoc {
+    pub _private: *mut ::core::ffi::c_void,
+    pub type_0: xmlElementType,
+    pub name: *mut i8,
+    pub children: *mut _xmlNode,
+    pub last: *mut _xmlNode,
+    pub parent: *mut _xmlNode,
+    pub next: *mut _xmlNode,
+    pub prev: *mut _xmlNode,
+    pub doc: *mut _xmlDoc,
+    pub compression: i32,
+    pub standalone: i32,
+    pub intSubset: *mut _xmlDtd,
+    pub extSubset: *mut _xmlDtd,
+    pub oldNs: *mut _xmlNs,
+    pub version: *const xmlChar,
+    pub encoding: *const xmlChar,
+    pub ids: *mut ::core::ffi::c_void,
+    pub refs: *mut ::core::ffi::c_void,
+    pub URL: *const xmlChar,
+    pub charset: i32,
+    pub dict: *mut _xmlDict,
+    pub psvi: *mut ::core::ffi::c_void,
+    pub parseFlags: i32,
+    pub properties: i32,
 }
-pub mod iconv_h {
-    pub type iconv_t = *mut ::core::ffi::c_void;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlNs {
+    pub next: *mut _xmlNs,
+    pub type_0: xmlNsType,
+    pub href: *const xmlChar,
+    pub prefix: *const xmlChar,
+    pub _private: *mut ::core::ffi::c_void,
+    pub context: *mut _xmlDoc,
 }
+pub type xmlElementType = xmlNsType;
+pub type xmlNsType = u32;
+pub const XML_XINCLUDE_END: xmlNsType = 20;
+pub const XML_XINCLUDE_START: xmlNsType = 19;
+pub const XML_NAMESPACE_DECL: xmlNsType = 18;
+pub const XML_ENTITY_DECL: xmlNsType = 17;
+pub const XML_ATTRIBUTE_DECL: xmlNsType = 16;
+pub const XML_ELEMENT_DECL: xmlNsType = 15;
+pub const XML_DTD_NODE: xmlNsType = 14;
+pub const XML_HTML_DOCUMENT_NODE: xmlNsType = 13;
+pub const XML_NOTATION_NODE: xmlNsType = 12;
+pub const XML_DOCUMENT_FRAG_NODE: xmlNsType = 11;
+pub const XML_DOCUMENT_TYPE_NODE: xmlNsType = 10;
+pub const XML_DOCUMENT_NODE: xmlNsType = 9;
+pub const XML_COMMENT_NODE: xmlNsType = 8;
+pub const XML_PI_NODE: xmlNsType = 7;
+pub const XML_ENTITY_NODE: xmlNsType = 6;
+pub const XML_ENTITY_REF_NODE: xmlNsType = 5;
+pub const XML_CDATA_SECTION_NODE: xmlNsType = 4;
+pub const XML_TEXT_NODE: xmlNsType = 3;
+pub const XML_ATTRIBUTE_NODE: xmlNsType = 2;
+pub const XML_ELEMENT_NODE: xmlNsType = 1;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlDtd {
+    pub _private: *mut ::core::ffi::c_void,
+    pub type_0: xmlElementType,
+    pub name: *const xmlChar,
+    pub children: *mut _xmlNode,
+    pub last: *mut _xmlNode,
+    pub parent: *mut _xmlDoc,
+    pub next: *mut _xmlNode,
+    pub prev: *mut _xmlNode,
+    pub doc: *mut _xmlDoc,
+    pub notations: *mut ::core::ffi::c_void,
+    pub elements: *mut ::core::ffi::c_void,
+    pub attributes: *mut ::core::ffi::c_void,
+    pub entities: *mut ::core::ffi::c_void,
+    pub ExternalID: *const xmlChar,
+    pub SystemID: *const xmlChar,
+    pub pentities: *mut ::core::ffi::c_void,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlNode {
+    pub _private: *mut ::core::ffi::c_void,
+    pub type_0: xmlElementType,
+    pub name: *const xmlChar,
+    pub children: *mut _xmlNode,
+    pub last: *mut _xmlNode,
+    pub parent: *mut _xmlNode,
+    pub next: *mut _xmlNode,
+    pub prev: *mut _xmlNode,
+    pub doc: *mut _xmlDoc,
+    pub ns: *mut xmlNs,
+    pub content: *mut xmlChar,
+    pub properties: *mut _xmlAttr,
+    pub nsDef: *mut xmlNs,
+    pub psvi: *mut ::core::ffi::c_void,
+    pub line: u16,
+    pub extra: u16,
+}
+pub type xmlNs = _xmlNs;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlAttr {
+    pub _private: *mut ::core::ffi::c_void,
+    pub type_0: xmlElementType,
+    pub name: *const xmlChar,
+    pub children: *mut _xmlNode,
+    pub last: *mut _xmlNode,
+    pub parent: *mut _xmlNode,
+    pub next: *mut _xmlAttr,
+    pub prev: *mut _xmlAttr,
+    pub doc: *mut _xmlDoc,
+    pub ns: *mut xmlNs,
+    pub atype: xmlAttributeType,
+    pub psvi: *mut ::core::ffi::c_void,
+}
+pub type xmlAttributeType = u32;
+pub const XML_ATTRIBUTE_NOTATION: xmlAttributeType = 10;
+pub const XML_ATTRIBUTE_ENUMERATION: xmlAttributeType = 9;
+pub const XML_ATTRIBUTE_NMTOKENS: xmlAttributeType = 8;
+pub const XML_ATTRIBUTE_NMTOKEN: xmlAttributeType = 7;
+pub const XML_ATTRIBUTE_ENTITIES: xmlAttributeType = 6;
+pub const XML_ATTRIBUTE_ENTITY: xmlAttributeType = 5;
+pub const XML_ATTRIBUTE_IDREFS: xmlAttributeType = 4;
+pub const XML_ATTRIBUTE_IDREF: xmlAttributeType = 3;
+pub const XML_ATTRIBUTE_ID: xmlAttributeType = 2;
+pub const XML_ATTRIBUTE_CDATA: xmlAttributeType = 1;
+pub type xmlParserInput = _xmlParserInput;
+pub type xmlParserInputPtr = *mut xmlParserInput;
+pub type xmlAttrPtr = *mut xmlAttr;
+pub type xmlAttr = _xmlAttr;
+pub type xmlNodePtr = *mut xmlNode;
+pub type xmlNode = _xmlNode;
+pub type xmlDocPtr = *mut xmlDoc;
+pub type xmlDoc = _xmlDoc;
+pub type xmlSAXLocatorPtr = *mut xmlSAXLocator;
+pub type xmlSAXLocator = _xmlSAXLocator;
+pub type xmlElementContentPtr = *mut xmlElementContent;
+pub type xmlElementContent = _xmlElementContent;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlElementContent {
+    pub type_0: xmlElementContentType,
+    pub ocur: xmlElementContentOccur,
+    pub name: *const xmlChar,
+    pub c1: *mut _xmlElementContent,
+    pub c2: *mut _xmlElementContent,
+    pub parent: *mut _xmlElementContent,
+    pub prefix: *const xmlChar,
+}
+pub type xmlElementContentOccur = u32;
+pub const XML_ELEMENT_CONTENT_PLUS: xmlElementContentOccur = 4;
+pub const XML_ELEMENT_CONTENT_MULT: xmlElementContentOccur = 3;
+pub const XML_ELEMENT_CONTENT_OPT: xmlElementContentOccur = 2;
+pub const XML_ELEMENT_CONTENT_ONCE: xmlElementContentOccur = 1;
+pub type xmlElementContentType = u32;
+pub const XML_ELEMENT_CONTENT_OR: xmlElementContentType = 4;
+pub const XML_ELEMENT_CONTENT_SEQ: xmlElementContentType = 3;
+pub const XML_ELEMENT_CONTENT_ELEMENT: xmlElementContentType = 2;
+pub const XML_ELEMENT_CONTENT_PCDATA: xmlElementContentType = 1;
+pub type xmlEnumerationPtr = *mut xmlEnumeration;
+pub type xmlEnumeration = _xmlEnumeration;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlEnumeration {
+    pub next: *mut _xmlEnumeration,
+    pub name: *const xmlChar,
+}
+pub type xmlParserCtxt = _xmlParserCtxt;
+pub type xmlParserCtxtPtr = *mut xmlParserCtxt;
+pub type xmlSAXHandler = _xmlSAXHandler;
+pub type xmlSAXHandlerPtr = *mut xmlSAXHandler;
+pub type xmlDtd = _xmlDtd;
+pub type xmlDtdPtr = *mut xmlDtd;
+extern "C" {
+    pub type _xmlBuf;
+    pub type _xmlDict;
+    pub fn xmlFreeDtd(cur: xmlDtdPtr);
+    pub fn xmlFreeDoc(cur: xmlDocPtr);
+    pub fn xmlDocGetRootElement(doc: *const xmlDoc) -> xmlNodePtr;
+    pub fn xmlGetProp(node: *const xmlNode, name: *const xmlChar) -> *mut xmlChar;
+}
+pub type xmlCharEncodingHandlerPtr = *mut xmlCharEncodingHandler;
+pub type xmlCharEncodingHandler = _xmlCharEncodingHandler;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlCharEncodingHandler {
+    pub name: *mut i8,
+    pub input: xmlCharEncodingInputFunc,
+    pub output: xmlCharEncodingOutputFunc,
+    pub iconv_in: iconv_t,
+    pub iconv_out: iconv_t,
+}
+pub type xmlCharEncodingOutputFunc = Option<
+    unsafe fn(*mut ::core::ffi::c_uchar, *mut i32, *const ::core::ffi::c_uchar, *mut i32) -> i32,
+>;
+pub type xmlCharEncodingInputFunc = Option<
+    unsafe fn(*mut ::core::ffi::c_uchar, *mut i32, *const ::core::ffi::c_uchar, *mut i32) -> i32,
+>;
+pub type xmlCharEncoding = i32;
+pub const XML_CHAR_ENCODING_ASCII: xmlCharEncoding = 22;
+pub const XML_CHAR_ENCODING_EUC_JP: xmlCharEncoding = 21;
+pub const XML_CHAR_ENCODING_SHIFT_JIS: xmlCharEncoding = 20;
+pub const XML_CHAR_ENCODING_2022_JP: xmlCharEncoding = 19;
+pub const XML_CHAR_ENCODING_8859_9: xmlCharEncoding = 18;
+pub const XML_CHAR_ENCODING_8859_8: xmlCharEncoding = 17;
+pub const XML_CHAR_ENCODING_8859_7: xmlCharEncoding = 16;
+pub const XML_CHAR_ENCODING_8859_6: xmlCharEncoding = 15;
+pub const XML_CHAR_ENCODING_8859_5: xmlCharEncoding = 14;
+pub const XML_CHAR_ENCODING_8859_4: xmlCharEncoding = 13;
+pub const XML_CHAR_ENCODING_8859_3: xmlCharEncoding = 12;
+pub const XML_CHAR_ENCODING_8859_2: xmlCharEncoding = 11;
+pub const XML_CHAR_ENCODING_8859_1: xmlCharEncoding = 10;
+pub const XML_CHAR_ENCODING_UCS2: xmlCharEncoding = 9;
+pub const XML_CHAR_ENCODING_UCS4_3412: xmlCharEncoding = 8;
+pub const XML_CHAR_ENCODING_UCS4_2143: xmlCharEncoding = 7;
+pub const XML_CHAR_ENCODING_EBCDIC: xmlCharEncoding = 6;
+pub const XML_CHAR_ENCODING_UCS4BE: xmlCharEncoding = 5;
+pub const XML_CHAR_ENCODING_UCS4LE: xmlCharEncoding = 4;
+pub const XML_CHAR_ENCODING_UTF16BE: xmlCharEncoding = 3;
+pub const XML_CHAR_ENCODING_UTF16LE: xmlCharEncoding = 2;
+pub const XML_CHAR_ENCODING_UTF8: xmlCharEncoding = 1;
+pub const XML_CHAR_ENCODING_NONE: xmlCharEncoding = 0;
+pub const XML_CHAR_ENCODING_ERROR: xmlCharEncoding = -1;
+pub type iconv_t = *mut ::core::ffi::c_void;
 pub mod parser_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -662,17 +632,17 @@ pub mod parser_h {
     pub const XML_PARSE_DTDLOAD: C2Rust_Unnamed = 4;
     pub const XML_PARSE_NOENT: C2Rust_Unnamed = 2;
     pub const XML_PARSE_RECOVER: C2Rust_Unnamed = 1;
-    use super::dict_h::xmlDictPtr;
-    use super::encoding_h::xmlCharEncoding;
-    use super::hash_h::xmlHashTablePtr;
-    use super::tree_h::{
+    use super::xmlChar;
+    use super::xmlCharEncoding;
+    use super::xmlDictPtr;
+    use super::xmlHashTablePtr;
+    use super::xmlValidCtxt;
+    use super::{
         _xmlNode, xmlAttrPtr, xmlDocPtr, xmlDtdPtr, xmlElementContentPtr, xmlEntityPtr,
         xmlEnumerationPtr, xmlNodePtr, xmlParserCtxtPtr, xmlParserInputBufferPtr,
         xmlParserInputPtr, xmlSAXHandlerPtr, xmlSAXLocatorPtr,
     };
-    use super::valid_h::xmlValidCtxt;
-    use super::xmlerror_h::{xmlError, xmlStructuredErrorFunc};
-    use super::xmlstring_h::xmlChar;
+    use super::{xmlError, xmlStructuredErrorFunc};
     extern "C" {
         pub type _xmlAttrHashBucket;
         pub type _xmlParserNsData;
@@ -693,131 +663,114 @@ pub mod parser_h {
         ) -> xmlDocPtr;
     }
 }
-pub mod entities_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlEntity {
-        pub _private: *mut ::core::ffi::c_void,
-        pub type_0: xmlElementType,
-        pub name: *const xmlChar,
-        pub children: *mut _xmlNode,
-        pub last: *mut _xmlNode,
-        pub parent: *mut _xmlDtd,
-        pub next: *mut _xmlNode,
-        pub prev: *mut _xmlNode,
-        pub doc: *mut _xmlDoc,
-        pub orig: *mut xmlChar,
-        pub content: *mut xmlChar,
-        pub length: i32,
-        pub etype: xmlEntityType,
-        pub ExternalID: *const xmlChar,
-        pub SystemID: *const xmlChar,
-        pub nexte: *mut _xmlEntity,
-        pub URI: *const xmlChar,
-        pub owner: i32,
-        pub flags: i32,
-        pub expandedSize: u64,
-    }
-    pub type xmlEntityType = u32;
-    pub const XML_INTERNAL_PREDEFINED_ENTITY: xmlEntityType = 6;
-    pub const XML_EXTERNAL_PARAMETER_ENTITY: xmlEntityType = 5;
-    pub const XML_INTERNAL_PARAMETER_ENTITY: xmlEntityType = 4;
-    pub const XML_EXTERNAL_GENERAL_UNPARSED_ENTITY: xmlEntityType = 3;
-    pub const XML_EXTERNAL_GENERAL_PARSED_ENTITY: xmlEntityType = 2;
-    pub const XML_INTERNAL_GENERAL_ENTITY: xmlEntityType = 1;
-    use super::tree_h::{_xmlDoc, _xmlDtd, _xmlNode, xmlElementType};
-    use super::xmlstring_h::xmlChar;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlEntity {
+    pub _private: *mut ::core::ffi::c_void,
+    pub type_0: xmlElementType,
+    pub name: *const xmlChar,
+    pub children: *mut _xmlNode,
+    pub last: *mut _xmlNode,
+    pub parent: *mut _xmlDtd,
+    pub next: *mut _xmlNode,
+    pub prev: *mut _xmlNode,
+    pub doc: *mut _xmlDoc,
+    pub orig: *mut xmlChar,
+    pub content: *mut xmlChar,
+    pub length: i32,
+    pub etype: xmlEntityType,
+    pub ExternalID: *const xmlChar,
+    pub SystemID: *const xmlChar,
+    pub nexte: *mut _xmlEntity,
+    pub URI: *const xmlChar,
+    pub owner: i32,
+    pub flags: i32,
+    pub expandedSize: u64,
 }
-pub mod xmlerror_h {
-    pub type xmlError = _xmlError;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlError {
-        pub domain: i32,
-        pub code: i32,
-        pub message: *mut i8,
-        pub level: xmlErrorLevel,
-        pub file: *mut i8,
-        pub line: i32,
-        pub str1: *mut i8,
-        pub str2: *mut i8,
-        pub str3: *mut i8,
-        pub int1: i32,
-        pub int2: i32,
-        pub ctxt: *mut ::core::ffi::c_void,
-        pub node: *mut ::core::ffi::c_void,
-    }
-    pub type xmlErrorLevel = u32;
-    pub const XML_ERR_FATAL: xmlErrorLevel = 3;
-    pub const XML_ERR_ERROR: xmlErrorLevel = 2;
-    pub const XML_ERR_WARNING: xmlErrorLevel = 1;
-    pub const XML_ERR_NONE: xmlErrorLevel = 0;
-    pub type xmlStructuredErrorFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlError) -> ()>;
-    pub type xmlGenericErrorFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    extern "C" {
-        pub fn xmlSetGenericErrorFunc(ctx: *mut ::core::ffi::c_void, handler: xmlGenericErrorFunc);
-    }
+pub type xmlEntityType = u32;
+pub const XML_INTERNAL_PREDEFINED_ENTITY: xmlEntityType = 6;
+pub const XML_EXTERNAL_PARAMETER_ENTITY: xmlEntityType = 5;
+pub const XML_INTERNAL_PARAMETER_ENTITY: xmlEntityType = 4;
+pub const XML_EXTERNAL_GENERAL_UNPARSED_ENTITY: xmlEntityType = 3;
+pub const XML_EXTERNAL_GENERAL_PARSED_ENTITY: xmlEntityType = 2;
+pub const XML_INTERNAL_GENERAL_ENTITY: xmlEntityType = 1;
+pub type xmlError = _xmlError;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlError {
+    pub domain: i32,
+    pub code: i32,
+    pub message: *mut i8,
+    pub level: xmlErrorLevel,
+    pub file: *mut i8,
+    pub line: i32,
+    pub str1: *mut i8,
+    pub str2: *mut i8,
+    pub str3: *mut i8,
+    pub int1: i32,
+    pub int2: i32,
+    pub ctxt: *mut ::core::ffi::c_void,
+    pub node: *mut ::core::ffi::c_void,
 }
-pub mod hash_h {
-    pub type xmlHashTablePtr = *mut xmlHashTable;
-    pub type xmlHashTable = _xmlHashTable;
-    extern "C" {
-        pub type _xmlHashTable;
-    }
+pub type xmlErrorLevel = u32;
+pub const XML_ERR_FATAL: xmlErrorLevel = 3;
+pub const XML_ERR_ERROR: xmlErrorLevel = 2;
+pub const XML_ERR_WARNING: xmlErrorLevel = 1;
+pub const XML_ERR_NONE: xmlErrorLevel = 0;
+pub type xmlStructuredErrorFunc =
+    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlError) -> ()>;
+pub type xmlGenericErrorFunc =
+    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+extern "C" {
+    pub fn xmlSetGenericErrorFunc(ctx: *mut ::core::ffi::c_void, handler: xmlGenericErrorFunc);
 }
-pub mod dict_h {
-    pub type xmlDictPtr = *mut xmlDict;
-    pub type xmlDict = _xmlDict;
-    use super::tree_h::_xmlDict;
+pub type xmlHashTablePtr = *mut xmlHashTable;
+pub type xmlHashTable = _xmlHashTable;
+extern "C" {
+    pub type _xmlHashTable;
 }
-pub mod valid_h {
-    pub type xmlValidCtxt = _xmlValidCtxt;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlValidCtxt {
-        pub userData: *mut ::core::ffi::c_void,
-        pub error: xmlValidityErrorFunc,
-        pub warning: xmlValidityWarningFunc,
-        pub node: xmlNodePtr,
-        pub nodeNr: i32,
-        pub nodeMax: i32,
-        pub nodeTab: *mut xmlNodePtr,
-        pub flags: u32,
-        pub doc: xmlDocPtr,
-        pub valid: i32,
-        pub vstate: *mut xmlValidState,
-        pub vstateNr: i32,
-        pub vstateMax: i32,
-        pub vstateTab: *mut xmlValidState,
-        pub am: xmlAutomataPtr,
-        pub state: xmlAutomataStatePtr,
-    }
-    pub type xmlValidState = _xmlValidState;
-    pub type xmlValidityWarningFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    pub type xmlValidityErrorFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    pub type xmlValidCtxtPtr = *mut xmlValidCtxt;
-    use super::tree_h::{xmlDocPtr, xmlDtdPtr, xmlNodePtr};
-    use super::xmlautomata_h::{xmlAutomataPtr, xmlAutomataStatePtr};
-    extern "C" {
-        pub type _xmlValidState;
-        pub fn xmlNewValidCtxt() -> xmlValidCtxtPtr;
-        pub fn xmlFreeValidCtxt(_: xmlValidCtxtPtr);
-        pub fn xmlValidateDtd(ctxt: xmlValidCtxtPtr, doc: xmlDocPtr, dtd: xmlDtdPtr) -> i32;
-    }
+pub type xmlDictPtr = *mut xmlDict;
+pub type xmlDict = _xmlDict;
+pub type xmlValidCtxt = _xmlValidCtxt;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct _xmlValidCtxt {
+    pub userData: *mut ::core::ffi::c_void,
+    pub error: xmlValidityErrorFunc,
+    pub warning: xmlValidityWarningFunc,
+    pub node: xmlNodePtr,
+    pub nodeNr: i32,
+    pub nodeMax: i32,
+    pub nodeTab: *mut xmlNodePtr,
+    pub flags: u32,
+    pub doc: xmlDocPtr,
+    pub valid: i32,
+    pub vstate: *mut xmlValidState,
+    pub vstateNr: i32,
+    pub vstateMax: i32,
+    pub vstateTab: *mut xmlValidState,
+    pub am: xmlAutomataPtr,
+    pub state: xmlAutomataStatePtr,
 }
-pub mod xmlautomata_h {
-    pub type xmlAutomataStatePtr = *mut xmlAutomataState;
-    pub type xmlAutomataState = _xmlAutomataState;
-    pub type xmlAutomataPtr = *mut xmlAutomata;
-    pub type xmlAutomata = _xmlAutomata;
-    extern "C" {
-        pub type _xmlAutomataState;
-        pub type _xmlAutomata;
-    }
+pub type xmlValidState = _xmlValidState;
+pub type xmlValidityWarningFunc =
+    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+pub type xmlValidityErrorFunc =
+    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
+pub type xmlValidCtxtPtr = *mut xmlValidCtxt;
+extern "C" {
+    pub type _xmlValidState;
+    pub fn xmlNewValidCtxt() -> xmlValidCtxtPtr;
+    pub fn xmlFreeValidCtxt(_: xmlValidCtxtPtr);
+    pub fn xmlValidateDtd(ctxt: xmlValidCtxtPtr, doc: xmlDocPtr, dtd: xmlDtdPtr) -> i32;
+}
+pub type xmlAutomataStatePtr = *mut xmlAutomataState;
+pub type xmlAutomataState = _xmlAutomataState;
+pub type xmlAutomataPtr = *mut xmlAutomata;
+pub type xmlAutomata = _xmlAutomata;
+extern "C" {
+    pub type _xmlAutomataState;
+    pub type _xmlAutomata;
 }
 pub mod dirent_h {
     #[derive(Copy, Clone)]
@@ -857,21 +810,17 @@ pub mod xkbregistry_h {
     pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 }
 
-pub mod util_list_h {
-    pub use crate::xkb::util_list::{
-        list, list_append, list_empty, list_init, list_is_last, list_remove,
-    };
-}
+pub use crate::xkb::util_list::{
+    list, list_append, list_empty, list_init, list_is_last, list_remove,
+};
 pub mod stat_h {
     use super::struct_stat_h::stat;
     extern "C" {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod xmlversion_h {
-    extern "C" {
-        pub fn xmlCheckVersion(version: i32);
-    }
+extern "C" {
+    pub fn xmlCheckVersion(version: i32);
 }
 pub mod errno_base_h {
     pub const ENOMEM: i32 = 12 as i32;
@@ -890,30 +839,44 @@ pub mod bits_stat_h {
 }
 
 pub use self::bits_stat_h::__S_IFMT;
-pub use self::dict_h::{xmlDict, xmlDictPtr};
 pub use self::dirent_h::dirent;
-pub use self::encoding_h::{
-    _xmlCharEncodingHandler, xmlCharEncoding, xmlCharEncodingHandler, xmlCharEncodingHandlerPtr,
-    xmlCharEncodingInputFunc, xmlCharEncodingOutputFunc, XML_CHAR_ENCODING_2022_JP,
-    XML_CHAR_ENCODING_8859_1, XML_CHAR_ENCODING_8859_2, XML_CHAR_ENCODING_8859_3,
-    XML_CHAR_ENCODING_8859_4, XML_CHAR_ENCODING_8859_5, XML_CHAR_ENCODING_8859_6,
-    XML_CHAR_ENCODING_8859_7, XML_CHAR_ENCODING_8859_8, XML_CHAR_ENCODING_8859_9,
-    XML_CHAR_ENCODING_ASCII, XML_CHAR_ENCODING_EBCDIC, XML_CHAR_ENCODING_ERROR,
-    XML_CHAR_ENCODING_EUC_JP, XML_CHAR_ENCODING_NONE, XML_CHAR_ENCODING_SHIFT_JIS,
-    XML_CHAR_ENCODING_UCS2, XML_CHAR_ENCODING_UCS4BE, XML_CHAR_ENCODING_UCS4LE,
-    XML_CHAR_ENCODING_UCS4_2143, XML_CHAR_ENCODING_UCS4_3412, XML_CHAR_ENCODING_UTF16BE,
-    XML_CHAR_ENCODING_UTF16LE, XML_CHAR_ENCODING_UTF8,
-};
-pub use self::entities_h::{
-    _xmlEntity, xmlEntityType, XML_EXTERNAL_GENERAL_PARSED_ENTITY,
-    XML_EXTERNAL_GENERAL_UNPARSED_ENTITY, XML_EXTERNAL_PARAMETER_ENTITY,
-    XML_INTERNAL_GENERAL_ENTITY, XML_INTERNAL_PARAMETER_ENTITY, XML_INTERNAL_PREDEFINED_ENTITY,
-};
 pub use self::errno_base_h::{EACCES, ENOMEM, ENOTDIR};
-use crate::xkb::utils::__errno_location;
-pub use self::hash_h::{_xmlHashTable, xmlHashTable, xmlHashTablePtr};
-pub use self::iconv_h::iconv_t;
 pub use self::include_dirent_h::{__dirstream, closedir, opendir, readdir, DIR};
+pub use self::parser_h::{
+    _xmlAttrHashBucket, _xmlParserCtxt, _xmlParserInput, _xmlParserNodeInfo, _xmlParserNodeInfoSeq,
+    _xmlParserNsData, _xmlSAXHandler, _xmlSAXLocator, _xmlStartTag, attributeDeclSAXFunc,
+    cdataBlockSAXFunc, charactersSAXFunc, commentSAXFunc, elementDeclSAXFunc, endDocumentSAXFunc,
+    endElementNsSAX2Func, endElementSAXFunc, entityDeclSAXFunc, errorSAXFunc,
+    externalSubsetSAXFunc, fatalErrorSAXFunc, getEntitySAXFunc, getParameterEntitySAXFunc,
+    hasExternalSubsetSAXFunc, hasInternalSubsetSAXFunc, ignorableWhitespaceSAXFunc,
+    internalSubsetSAXFunc, isStandaloneSAXFunc, notationDeclSAXFunc, processingInstructionSAXFunc,
+    referenceSAXFunc, resolveEntitySAXFunc, setDocumentLocatorSAXFunc, startDocumentSAXFunc,
+    startElementNsSAX2Func, startElementSAXFunc, unparsedEntityDeclSAXFunc, warningSAXFunc,
+    xmlAttrHashBucket, xmlCtxtReadFile, xmlCtxtUseOptions, xmlFreeParserCtxt, xmlIOParseDTD,
+    xmlNewParserCtxt, xmlParserInputDeallocate, xmlParserInputState, xmlParserMode,
+    xmlParserNodeInfo, xmlParserNodeInfoSeq, xmlParserNsData, xmlStartTag, C2Rust_Unnamed,
+    XML_PARSER_ATTRIBUTE_VALUE, XML_PARSER_CDATA_SECTION, XML_PARSER_COMMENT, XML_PARSER_CONTENT,
+    XML_PARSER_DTD, XML_PARSER_END_TAG, XML_PARSER_ENTITY_DECL, XML_PARSER_ENTITY_VALUE,
+    XML_PARSER_EOF, XML_PARSER_EPILOG, XML_PARSER_IGNORE, XML_PARSER_MISC, XML_PARSER_PI,
+    XML_PARSER_PROLOG, XML_PARSER_PUBLIC_LITERAL, XML_PARSER_START, XML_PARSER_START_TAG,
+    XML_PARSER_SYSTEM_LITERAL, XML_PARSER_XML_DECL, XML_PARSE_BIG_LINES, XML_PARSE_COMPACT,
+    XML_PARSE_DOM, XML_PARSE_DTDATTR, XML_PARSE_DTDLOAD, XML_PARSE_DTDVALID, XML_PARSE_HUGE,
+    XML_PARSE_IGNORE_ENC, XML_PARSE_NOBASEFIX, XML_PARSE_NOBLANKS, XML_PARSE_NOCDATA,
+    XML_PARSE_NODICT, XML_PARSE_NOENT, XML_PARSE_NOERROR, XML_PARSE_NONET, XML_PARSE_NOWARNING,
+    XML_PARSE_NOXINCNODE, XML_PARSE_NSCLEAN, XML_PARSE_OLD10, XML_PARSE_OLDSAX, XML_PARSE_PEDANTIC,
+    XML_PARSE_PUSH_DOM, XML_PARSE_PUSH_SAX, XML_PARSE_READER, XML_PARSE_RECOVER, XML_PARSE_SAX,
+    XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
+};
+use self::stat_h::stat;
+pub use self::struct_stat_h::stat;
+pub use self::struct_timespec_h::timespec;
+pub use self::unistd_h::{eaccess, R_OK, X_OK};
+pub use self::xkbregistry_h::{
+    rxkb_context_flags, rxkb_log_level, rxkb_popularity, RXKB_CONTEXT_LOAD_EXOTIC_RULES,
+    RXKB_CONTEXT_NO_DEFAULT_INCLUDES, RXKB_CONTEXT_NO_FLAGS, RXKB_CONTEXT_NO_SECURE_GETENV,
+    RXKB_LOG_LEVEL_CRITICAL, RXKB_LOG_LEVEL_DEBUG, RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO,
+    RXKB_LOG_LEVEL_WARNING, RXKB_POPULARITY_EXOTIC, RXKB_POPULARITY_STANDARD,
+};
 pub use crate::xkb::messages::{
     xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -956,91 +919,18 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::parser_h::{
-    _xmlAttrHashBucket, _xmlParserCtxt, _xmlParserInput, _xmlParserNodeInfo, _xmlParserNodeInfoSeq,
-    _xmlParserNsData, _xmlSAXHandler, _xmlSAXLocator, _xmlStartTag, attributeDeclSAXFunc,
-    cdataBlockSAXFunc, charactersSAXFunc, commentSAXFunc, elementDeclSAXFunc, endDocumentSAXFunc,
-    endElementNsSAX2Func, endElementSAXFunc, entityDeclSAXFunc, errorSAXFunc,
-    externalSubsetSAXFunc, fatalErrorSAXFunc, getEntitySAXFunc, getParameterEntitySAXFunc,
-    hasExternalSubsetSAXFunc, hasInternalSubsetSAXFunc, ignorableWhitespaceSAXFunc,
-    internalSubsetSAXFunc, isStandaloneSAXFunc, notationDeclSAXFunc, processingInstructionSAXFunc,
-    referenceSAXFunc, resolveEntitySAXFunc, setDocumentLocatorSAXFunc, startDocumentSAXFunc,
-    startElementNsSAX2Func, startElementSAXFunc, unparsedEntityDeclSAXFunc, warningSAXFunc,
-    xmlAttrHashBucket, xmlCtxtReadFile, xmlCtxtUseOptions, xmlFreeParserCtxt, xmlIOParseDTD,
-    xmlNewParserCtxt, xmlParserInputDeallocate, xmlParserInputState, xmlParserMode,
-    xmlParserNodeInfo, xmlParserNodeInfoSeq, xmlParserNsData, xmlStartTag, C2Rust_Unnamed,
-    XML_PARSER_ATTRIBUTE_VALUE, XML_PARSER_CDATA_SECTION, XML_PARSER_COMMENT, XML_PARSER_CONTENT,
-    XML_PARSER_DTD, XML_PARSER_END_TAG, XML_PARSER_ENTITY_DECL, XML_PARSER_ENTITY_VALUE,
-    XML_PARSER_EOF, XML_PARSER_EPILOG, XML_PARSER_IGNORE, XML_PARSER_MISC, XML_PARSER_PI,
-    XML_PARSER_PROLOG, XML_PARSER_PUBLIC_LITERAL, XML_PARSER_START, XML_PARSER_START_TAG,
-    XML_PARSER_SYSTEM_LITERAL, XML_PARSER_XML_DECL, XML_PARSE_BIG_LINES, XML_PARSE_COMPACT,
-    XML_PARSE_DOM, XML_PARSE_DTDATTR, XML_PARSE_DTDLOAD, XML_PARSE_DTDVALID, XML_PARSE_HUGE,
-    XML_PARSE_IGNORE_ENC, XML_PARSE_NOBASEFIX, XML_PARSE_NOBLANKS, XML_PARSE_NOCDATA,
-    XML_PARSE_NODICT, XML_PARSE_NOENT, XML_PARSE_NOERROR, XML_PARSE_NONET, XML_PARSE_NOWARNING,
-    XML_PARSE_NOXINCNODE, XML_PARSE_NSCLEAN, XML_PARSE_OLD10, XML_PARSE_OLDSAX, XML_PARSE_PEDANTIC,
-    XML_PARSE_PUSH_DOM, XML_PARSE_PUSH_SAX, XML_PARSE_READER, XML_PARSE_RECOVER, XML_PARSE_SAX,
-    XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
-};
-use self::stat_h::stat;
-pub use self::struct_stat_h::stat;
-pub use self::struct_timespec_h::timespec;
-pub use self::tree_h::{
-    _xmlAttr, _xmlBuf, _xmlDict, _xmlDoc, _xmlDtd, _xmlElementContent, _xmlEnumeration, _xmlNode,
-    _xmlNs, xmlAttr, xmlAttrPtr, xmlAttributeType, xmlBuf, xmlBufPtr, xmlDoc, xmlDocGetRootElement,
-    xmlDocPtr, xmlDtd, xmlDtdPtr, xmlElementContent, xmlElementContentOccur, xmlElementContentPtr,
-    xmlElementContentType, xmlElementType, xmlEntity, xmlEntityPtr, xmlEnumeration,
-    xmlEnumerationPtr, xmlFreeDoc, xmlFreeDtd, xmlGetProp, xmlNode, xmlNodePtr, xmlNs, xmlNsType,
-    xmlParserCtxt, xmlParserCtxtPtr, xmlParserInput, xmlParserInputBuffer, xmlParserInputBufferPtr,
-    xmlParserInputPtr, xmlSAXHandler, xmlSAXHandlerPtr, xmlSAXLocator, xmlSAXLocatorPtr,
-    XML_ATTRIBUTE_CDATA, XML_ATTRIBUTE_DECL, XML_ATTRIBUTE_ENTITIES, XML_ATTRIBUTE_ENTITY,
-    XML_ATTRIBUTE_ENUMERATION, XML_ATTRIBUTE_ID, XML_ATTRIBUTE_IDREF, XML_ATTRIBUTE_IDREFS,
-    XML_ATTRIBUTE_NMTOKEN, XML_ATTRIBUTE_NMTOKENS, XML_ATTRIBUTE_NODE, XML_ATTRIBUTE_NOTATION,
-    XML_CDATA_SECTION_NODE, XML_COMMENT_NODE, XML_DOCUMENT_FRAG_NODE, XML_DOCUMENT_NODE,
-    XML_DOCUMENT_TYPE_NODE, XML_DTD_NODE, XML_ELEMENT_CONTENT_ELEMENT, XML_ELEMENT_CONTENT_MULT,
-    XML_ELEMENT_CONTENT_ONCE, XML_ELEMENT_CONTENT_OPT, XML_ELEMENT_CONTENT_OR,
-    XML_ELEMENT_CONTENT_PCDATA, XML_ELEMENT_CONTENT_PLUS, XML_ELEMENT_CONTENT_SEQ,
-    XML_ELEMENT_DECL, XML_ELEMENT_NODE, XML_ENTITY_DECL, XML_ENTITY_NODE, XML_ENTITY_REF_NODE,
-    XML_HTML_DOCUMENT_NODE, XML_NAMESPACE_DECL, XML_NOTATION_NODE, XML_PI_NODE, XML_TEXT_NODE,
-    XML_XINCLUDE_END, XML_XINCLUDE_START,
-};
-pub use self::unistd_h::{eaccess, R_OK, X_OK};
-pub use self::util_list_h::{list, list_append, list_empty, list_init, list_is_last, list_remove};
-pub use crate::xkb::utils::_steal;
-pub use crate::xkb::utils::{
-    check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
-};
-pub use self::valid_h::{
-    _xmlValidCtxt, _xmlValidState, xmlFreeValidCtxt, xmlNewValidCtxt, xmlValidCtxt,
-    xmlValidCtxtPtr, xmlValidState, xmlValidateDtd, xmlValidityErrorFunc, xmlValidityWarningFunc,
-};
-pub use self::xkbregistry_h::{
-    rxkb_context_flags, rxkb_log_level, rxkb_popularity, RXKB_CONTEXT_LOAD_EXOTIC_RULES,
-    RXKB_CONTEXT_NO_DEFAULT_INCLUDES, RXKB_CONTEXT_NO_FLAGS, RXKB_CONTEXT_NO_SECURE_GETENV,
-    RXKB_LOG_LEVEL_CRITICAL, RXKB_LOG_LEVEL_DEBUG, RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO,
-    RXKB_LOG_LEVEL_WARNING, RXKB_POPULARITY_EXOTIC, RXKB_POPULARITY_STANDARD,
-};
-pub use self::xmlIO_h::{
-    _xmlParserInputBuffer, xmlInputCloseCallback, xmlInputReadCallback,
-    xmlParserInputBufferCreateMem,
-};
-pub use self::xmlautomata_h::{
-    _xmlAutomata, _xmlAutomataState, xmlAutomata, xmlAutomataPtr, xmlAutomataState,
-    xmlAutomataStatePtr,
-};
-pub use self::xmlerror_h::{
-    _xmlError, xmlError, xmlErrorLevel, xmlGenericErrorFunc, xmlSetGenericErrorFunc,
-    xmlStructuredErrorFunc, XML_ERR_ERROR, XML_ERR_FATAL, XML_ERR_NONE, XML_ERR_WARNING,
-};
-pub use self::xmlmemory_h::{xmlFree, xmlFreeFunc};
-pub use self::xmlstring_h::{xmlChar, xmlStrEqual, xmlStrdup};
-use self::xmlversion_h::xmlCheckVersion;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DEFAULT_XKB_RULES, DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT,
     DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH, DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_LEGACY_ROOT,
 };
+use crate::xkb::utils::__errno_location;
+pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_dup;
+pub use crate::xkb::utils::{
+    check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
+};
 use crate::xkb::utils::{cstr_cmp, cstr_len, darray_append, darray_free};
 use libc::{calloc, free, getenv, qsort, strtol};
 extern "C" {

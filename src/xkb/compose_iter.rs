@@ -64,8 +64,8 @@ pub mod table_h {
         pub utf8: *const i8,
     }
 
-    use crate::xkb::shared_types::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
+    use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
@@ -75,13 +75,9 @@ pub mod xkbcommon_compose_h {
     pub type xkb_compose_format = u32;
     pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
 }
-pub mod compose_iter_h {
-    pub type xkb_compose_table_iter_t =
-        Option<unsafe fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
-    use super::table_h::xkb_compose_table_entry;
-}
+pub type xkb_compose_table_iter_t =
+    Option<unsafe fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
 
-pub use self::compose_iter_h::xkb_compose_table_iter_t;
 pub use self::table_h::{
     compose_node, xkb_compose_table, xkb_compose_table_entry, C2Rust_Unnamed_1, C2Rust_Unnamed_2,
     C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
