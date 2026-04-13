@@ -48,12 +48,7 @@ impl RuleNames {
     ///
     /// Returns tuple of (C struct, CStrings that must be kept alive)
     /// The CStrings must outlive the C struct since it contains pointers to them.
-    pub fn to_c_keymap(
-        &self,
-    ) -> (
-        crate::xkb::shared_types::xkb_rule_names,
-        RuleNamesCStrings,
-    ) {
+    pub fn to_c_keymap(&self) -> (crate::xkb::shared_types::xkb_rule_names, RuleNamesCStrings) {
         let rules_c = CString::new(self.rules.as_str()).unwrap_or_default();
         let model_c = CString::new(self.model.as_str()).unwrap_or_default();
         let layout_c = CString::new(self.layout.as_str()).unwrap_or_default();
@@ -489,7 +484,11 @@ impl State {
     }
 
     /// Update key state (press or release)
-    pub fn update_key(&mut self, keycode: u32, direction: super::common::xkb_key_direction) {
+    pub fn update_key(
+        &mut self,
+        keycode: u32,
+        direction: crate::xkb::shared_types::xkb_key_direction,
+    ) {
         unsafe {
             super::state::xkb_state_update_key(self.ptr, keycode, direction);
         }
@@ -637,16 +636,15 @@ impl Drop for State {
 
 /// Safe wrapper around rxkb_context for keyboard layout registry
 pub struct RxkbContext {
-    ptr: *mut super::registry_list::xkbregistry_h::rxkb_context,
+    ptr: *mut super::registry_list::rxkb_context,
 }
 
 impl RxkbContext {
     /// Create a new registry context
     pub fn new() -> Option<Self> {
         unsafe {
-            let ptr = super::registry_list::xkbregistry_h::rxkb_context_new(
-                super::registry_list::xkbregistry_h::RXKB_CONTEXT_NO_FLAGS,
-            );
+            let ptr =
+                super::registry_list::rxkb_context_new(super::registry_list::RXKB_CONTEXT_NO_FLAGS);
             if ptr.is_null() {
                 None
             } else {
@@ -658,7 +656,7 @@ impl RxkbContext {
     /// Load default registry paths
     pub fn include_path_append_default(&self) {
         unsafe {
-            super::registry_list::xkbregistry_h::rxkb_context_include_path_append_default(self.ptr);
+            super::registry_list::rxkb_context_include_path_append_default(self.ptr);
         }
     }
 
@@ -666,14 +664,14 @@ impl RxkbContext {
     pub fn parse(&self, ruleset: &str) -> bool {
         unsafe {
             let ruleset_cstr = std::ffi::CString::new(ruleset).unwrap_or_default();
-            super::registry_list::xkbregistry_h::rxkb_context_parse(self.ptr, ruleset_cstr.as_ptr())
+            super::registry_list::rxkb_context_parse(self.ptr, ruleset_cstr.as_ptr())
         }
     }
 
     /// Get the first layout in the registry
     pub fn layout_first(&self) -> Option<RxkbLayout> {
         unsafe {
-            let ptr = super::registry_list::xkbregistry_h::rxkb_layout_first(self.ptr);
+            let ptr = super::registry_list::rxkb_layout_first(self.ptr);
             if ptr.is_null() {
                 None
             } else {
@@ -686,21 +684,21 @@ impl RxkbContext {
 impl Drop for RxkbContext {
     fn drop(&mut self) {
         unsafe {
-            super::registry_list::xkbregistry_h::rxkb_context_unref(self.ptr);
+            super::registry_list::rxkb_context_unref(self.ptr);
         }
     }
 }
 
 /// Safe wrapper around rxkb_layout for keyboard layout information
 pub struct RxkbLayout {
-    ptr: *mut super::registry_list::xkbregistry_h::rxkb_layout,
+    ptr: *mut super::registry_list::rxkb_layout,
 }
 
 impl RxkbLayout {
     /// Get the layout name (e.g., "us", "de", "fr")
     pub fn get_name(&self) -> Option<String> {
         unsafe {
-            let name_ptr = super::registry_list::xkbregistry_h::rxkb_layout_get_name(self.ptr);
+            let name_ptr = super::registry_list::rxkb_layout_get_name(self.ptr);
             if name_ptr.is_null() {
                 None
             } else {
@@ -716,8 +714,7 @@ impl RxkbLayout {
     /// Get the layout variant (e.g., "dvorak", "colemak"), returns None for base layout
     pub fn get_variant(&self) -> Option<String> {
         unsafe {
-            let variant_ptr =
-                super::registry_list::xkbregistry_h::rxkb_layout_get_variant(self.ptr);
+            let variant_ptr = super::registry_list::rxkb_layout_get_variant(self.ptr);
             if variant_ptr.is_null() {
                 None
             } else {
@@ -736,7 +733,7 @@ impl RxkbLayout {
     /// Get the next layout in the registry
     pub fn next(&self) -> Option<RxkbLayout> {
         unsafe {
-            let ptr = super::registry_list::xkbregistry_h::rxkb_layout_next(self.ptr);
+            let ptr = super::registry_list::rxkb_layout_next(self.ptr);
             if ptr.is_null() {
                 None
             } else {
@@ -764,12 +761,11 @@ impl ComposeTable {
             let locale_cstr = std::ffi::CString::new(locale).ok()?;
             let ctx_cast = ctx.as_ptr() as *mut crate::xkb::shared_types::xkb_context;
 
-            let ptr =
-                super::compile_compose::xkbcommon_compose_h::xkb_compose_table_new_from_locale(
-                    ctx_cast,
-                    locale_cstr.as_ptr(),
-                    super::compile_compose::xkbcommon_compose_h::XKB_COMPOSE_COMPILE_NO_FLAGS,
-                );
+            let ptr = super::compile_compose::xkb_compose_table_new_from_locale(
+                ctx_cast,
+                locale_cstr.as_ptr(),
+                super::compile_compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
+            );
 
             if ptr.is_null() {
                 None
@@ -790,9 +786,7 @@ impl ComposeTable {
 impl Drop for ComposeTable {
     fn drop(&mut self) {
         unsafe {
-            super::compile_compose::xkbcommon_compose_h::xkb_compose_table_unref(
-                self.ptr as *mut _,
-            );
+            super::compile_compose::xkb_compose_table_unref(self.ptr as *mut _);
         }
     }
 }

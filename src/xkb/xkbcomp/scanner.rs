@@ -175,13 +175,11 @@ pub mod utf8_h {
         }
     }
 }
-pub mod parser_priv_h {
 
-    // Re-export parse functions from parser module
-    pub use super::super::parser::{parse, parse_next};
+// Re-export parse functions from parser module
+pub use super::parser::{parse, parse_next};
 
-    pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
-}
+pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
     yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
@@ -194,7 +192,6 @@ pub use self::parser_h::{
     XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
     XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
-use self::parser_priv_h::{keyword_to_token, parse, parse_next};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

@@ -149,71 +149,50 @@ pub mod parser_h {
     use crate::xkb::shared_types::xkb_atom_t;
     use crate::xkb::shared_types::xkb_keysym_t;
 }
-pub mod ast_build_h {
 
-    use crate::xkb::scanner_utils::{scanner, sval};
-    use crate::xkb::shared_ast_types::ExprDef;
-    use crate::xkb::shared_types::xkb_keysym_t;
-    pub use crate::xkb::xkbcomp::ast_build::{
-        BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
-        ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
-        ExprCreateInteger, ExprCreateKeyName, ExprCreateKeySym, ExprCreateKeySymList,
-        ExprCreateString, ExprCreateUnary, ExprEmptyList, FreeStmt, GroupCompatCreate,
-        IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, LedMapCreate,
-        LedNameCreate, ModMapCreate, SymbolsCreate, VModCreate, VarCreate, XkbFileCreate,
-    };
-
-    pub unsafe fn ExprKeySymListAppendString(
-        param: *mut scanner,
-        expr: *mut ExprDef,
-        string: *const i8,
-    ) -> *mut ExprDef {
-        unsafe {
-            crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
-                param as *mut _,
-                expr as *mut _,
-                string,
-            ) as *mut ExprDef
-        }
-    }
-
-    pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> xkb_keysym_t {
-        unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
-    }
-
-    pub unsafe fn UnknownStatementCreate(
-        type_0: crate::xkb::shared_ast_types::stmt_type,
-        name: sval,
-    ) -> *mut crate::xkb::shared_ast_types::UnknownStatement {
-        unsafe {
-            crate::xkb::xkbcomp::ast_build::UnknownStatementCreate(
-                type_0,
-                *(&name as *const sval as *const _),
-            ) as *mut _
-        }
-    }
-}
-pub mod parser_priv_h {
-    use super::parser_h::YYSTYPE;
-    use crate::xkb::scanner_utils::scanner;
-
-    pub unsafe fn _xkbcommon_lex(
-        yylval: *mut YYSTYPE,
-        scanner: *mut scanner,
-    ) -> ::core::ffi::c_int {
-        unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
-    }
-}
-
-use self::ast_build_h::{
+use crate::xkb::shared_types::xkb_keysym_t;
+pub use crate::xkb::xkbcomp::ast_build::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
     ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
     ExprCreateInteger, ExprCreateKeyName, ExprCreateKeySym, ExprCreateKeySymList, ExprCreateString,
-    ExprCreateUnary, ExprEmptyList, ExprKeySymListAppendString, FreeStmt, GroupCompatCreate,
-    IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, KeysymParseString,
-    LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate,
-    VarCreate, XkbFileCreate,
+    ExprCreateUnary, ExprEmptyList, FreeStmt, GroupCompatCreate, IncludeCreate, InterpCreate,
+    KeyAliasCreate, KeyTypeCreate, KeycodeCreate, LedMapCreate, LedNameCreate, ModMapCreate,
+    SymbolsCreate, VModCreate, VarCreate, XkbFileCreate,
 };
+
+pub unsafe fn ExprKeySymListAppendString(
+    param: *mut scanner,
+    expr: *mut ExprDef,
+    string: *const i8,
+) -> *mut ExprDef {
+    unsafe {
+        crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+            param as *mut _,
+            expr as *mut _,
+            string,
+        ) as *mut ExprDef
+    }
+}
+
+pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> xkb_keysym_t {
+    unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
+}
+
+pub unsafe fn UnknownStatementCreate(
+    type_0: crate::xkb::shared_ast_types::stmt_type,
+    name: sval,
+) -> *mut crate::xkb::shared_ast_types::UnknownStatement {
+    unsafe {
+        crate::xkb::xkbcomp::ast_build::UnknownStatementCreate(
+            type_0,
+            *(&name as *const sval as *const _),
+        ) as *mut _
+    }
+}
+pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> ::core::ffi::c_int {
+    unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
+}
+
 pub use self::parser_h::{
     yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
     C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
@@ -225,8 +204,6 @@ pub use self::parser_h::{
     XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
     XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
-use self::parser_priv_h::_xkbcommon_lex;
-pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -271,6 +248,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
+pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
     C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,

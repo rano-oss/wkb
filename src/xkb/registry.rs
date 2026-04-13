@@ -741,22 +741,20 @@ extern "C" {
     pub type _xmlAutomataState;
     pub type _xmlAutomata;
 }
-pub mod xkbregistry_h {
-    pub type rxkb_log_level = u32;
-    pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
-    pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
-    pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
-    pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
-    pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
-    pub type rxkb_popularity = u32;
-    pub const RXKB_POPULARITY_EXOTIC: rxkb_popularity = 2;
-    pub const RXKB_POPULARITY_STANDARD: rxkb_popularity = 1;
-    pub type rxkb_context_flags = u32;
-    pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
-    pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
-    pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
-    pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
-}
+pub type rxkb_log_level = u32;
+pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
+pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
+pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
+pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
+pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
+pub type rxkb_popularity = u32;
+pub const RXKB_POPULARITY_EXOTIC: rxkb_popularity = 2;
+pub const RXKB_POPULARITY_STANDARD: rxkb_popularity = 1;
+pub type rxkb_context_flags = u32;
+pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
+pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
+pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
+pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 
 pub use crate::xkb::util_list::{
     list, list_append, list_empty, list_init, list_is_last, list_remove,
@@ -789,12 +787,6 @@ pub use self::parser_h::{
     XML_PARSE_NOXINCNODE, XML_PARSE_NSCLEAN, XML_PARSE_OLD10, XML_PARSE_OLDSAX, XML_PARSE_PEDANTIC,
     XML_PARSE_PUSH_DOM, XML_PARSE_PUSH_SAX, XML_PARSE_READER, XML_PARSE_RECOVER, XML_PARSE_SAX,
     XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
-};
-pub use self::xkbregistry_h::{
-    rxkb_context_flags, rxkb_log_level, rxkb_popularity, RXKB_CONTEXT_LOAD_EXOTIC_RULES,
-    RXKB_CONTEXT_NO_DEFAULT_INCLUDES, RXKB_CONTEXT_NO_FLAGS, RXKB_CONTEXT_NO_SECURE_GETENV,
-    RXKB_LOG_LEVEL_CRITICAL, RXKB_LOG_LEVEL_DEBUG, RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO,
-    RXKB_LOG_LEVEL_WARNING, RXKB_POPULARITY_EXOTIC, RXKB_POPULARITY_STANDARD,
 };
 pub use crate::xkb::messages::{
     xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

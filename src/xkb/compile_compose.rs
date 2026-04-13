@@ -1,127 +1,100 @@
-
-pub mod table_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_compose_table {
-        pub refcnt: i32,
-        pub format: xkb_compose_format,
-        pub flags: xkb_compose_compile_flags,
-        pub ctx: *mut xkb_context,
-        pub locale: *mut i8,
-        pub utf8: darray_char,
-        pub nodes: C2Rust_Unnamed_1,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_1 {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut compose_node,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct compose_node {
-        pub keysym: xkb_keysym_t,
-        pub lokid: u32,
-        pub hikid: u32,
-        pub c2rust_unnamed: C2Rust_Unnamed_2,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub union C2Rust_Unnamed_2 {
-        pub c2rust_unnamed: C2Rust_Unnamed_5,
-        pub internal: C2Rust_Unnamed_4,
-        pub leaf: C2Rust_Unnamed_3,
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_3 {
-        #[bitfield(name = "utf8", ty = "u32", bits = "0..=30")]
-        #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-        pub utf8_is_leaf: [u8; 4],
-        pub keysym: xkb_keysym_t,
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_4 {
-        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
-        #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-        pub _pad_is_leaf: [u8; 4],
-        pub eqkid: u32,
-    }
-    #[derive(Copy, Clone, BitfieldStruct)]
-    #[repr(C)]
-    pub struct C2Rust_Unnamed_5 {
-        #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
-        #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-        pub _pad_is_leaf: [u8; 4],
-    }
-    use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::shared_types::xkb_keysym_t;
-    use crate::xkb::shared_types::{darray_char, darray_size_t};
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_compose_table {
+    pub refcnt: i32,
+    pub format: xkb_compose_format,
+    pub flags: xkb_compose_compile_flags,
+    pub ctx: *mut xkb_context,
+    pub locale: *mut i8,
+    pub utf8: darray_char,
+    pub nodes: C2Rust_Unnamed_1,
 }
-pub mod xkbcommon_compose_h {
-    use libc::FILE;
-    pub type xkb_compose_compile_flags = u32;
-    pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
-    pub type xkb_compose_format = u32;
-    pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
-    use super::table_h::xkb_compose_table;
-    use crate::xkb::shared_types::xkb_context;
-    extern "C" {
-        pub fn xkb_compose_table_new_from_locale(
-            context: *mut xkb_context,
-            locale: *const i8,
-            flags: xkb_compose_compile_flags,
-        ) -> *mut xkb_compose_table;
-        pub fn xkb_compose_table_new_from_file(
-            context: *mut xkb_context,
-            file: *mut FILE,
-            locale: *const i8,
-            format: xkb_compose_format,
-            flags: xkb_compose_compile_flags,
-        ) -> *mut xkb_compose_table;
-        pub fn xkb_compose_table_unref(table: *mut xkb_compose_table);
-    }
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_1 {
+    pub size: darray_size_t,
+    pub alloc: darray_size_t,
+    pub item: *mut compose_node,
 }
-use self::table_h::xkb_compose_table;
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct compose_node {
+    pub keysym: xkb_keysym_t,
+    pub lokid: u32,
+    pub hikid: u32,
+    pub c2rust_unnamed: C2Rust_Unnamed_2,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub union C2Rust_Unnamed_2 {
+    pub c2rust_unnamed: C2Rust_Unnamed_5,
+    pub internal: C2Rust_Unnamed_4,
+    pub leaf: C2Rust_Unnamed_3,
+}
+#[derive(Copy, Clone, BitfieldStruct)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_3 {
+    #[bitfield(name = "utf8", ty = "u32", bits = "0..=30")]
+    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
+    pub utf8_is_leaf: [u8; 4],
+    pub keysym: xkb_keysym_t,
+}
+#[derive(Copy, Clone, BitfieldStruct)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_4 {
+    #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
+    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
+    pub _pad_is_leaf: [u8; 4],
+    pub eqkid: u32,
+}
+#[derive(Copy, Clone, BitfieldStruct)]
+#[repr(C)]
+pub struct C2Rust_Unnamed_5 {
+    #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
+    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
+    pub _pad_is_leaf: [u8; 4],
+}
+use crate::xkb::shared_types::xkb_context;
+use crate::xkb::shared_types::xkb_keysym_t;
+use crate::xkb::shared_types::{darray_char, darray_size_t};
 use libc::FILE;
+pub type xkb_compose_compile_flags = u32;
+pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
+pub type xkb_compose_format = u32;
+pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
+extern "C" {
+    pub fn xkb_compose_table_new_from_locale(
+        context: *mut xkb_context,
+        locale: *const i8,
+        flags: xkb_compose_compile_flags,
+    ) -> *mut xkb_compose_table;
+    pub fn xkb_compose_table_new_from_file(
+        context: *mut xkb_context,
+        file: *mut FILE,
+        locale: *const i8,
+        format: xkb_compose_format,
+        flags: xkb_compose_compile_flags,
+    ) -> *mut xkb_compose_table;
+    pub fn xkb_compose_table_unref(table: *mut xkb_compose_table);
+}
 extern "C" {
     pub fn xkb_compose_table_dump(file: *mut FILE, table: *mut xkb_compose_table) -> bool;
 }
-pub mod tools_common_h {
-    use crate::xkb::shared_types::xkb_context;
-    use libc::FILE;
-    extern "C" {
-        pub fn tools_enable_verbose_logging(ctx: *mut xkb_context);
-        pub fn is_pipe_or_regular_file(fd: i32) -> bool;
-        pub fn tools_read_stdin() -> *mut FILE;
-    }
+extern "C" {
+    pub fn tools_enable_verbose_logging(ctx: *mut xkb_context);
+    pub fn is_pipe_or_regular_file(fd: i32) -> bool;
+    pub fn tools_read_stdin() -> *mut FILE;
 }
 
-use crate::xkb::utils::{optarg, optind};
-pub use crate::xkb::utils::getopt_long;
-pub use crate::xkb::shared_types::{no_argument, option, required_argument};
-pub use crate::xkb::utils::setlocale;
-pub use crate::xkb::shared_types::{LC_ALL, LC_CTYPE};
-pub use crate::xkb::shared_types::{__LC_ALL, __LC_CTYPE};
-pub use self::table_h::{
-    compose_node, C2Rust_Unnamed_1, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
-    C2Rust_Unnamed_5,
-};
-use self::tools_common_h::{
-    is_pipe_or_regular_file, tools_enable_verbose_logging, tools_read_stdin,
-};
 pub use crate::xkb::shared_types::STDIN_FILENO;
-pub use self::xkbcommon_compose_h::{
-    xkb_compose_compile_flags, xkb_compose_format, xkb_compose_table_new_from_file,
-    xkb_compose_table_new_from_locale, xkb_compose_table_unref, XKB_COMPOSE_COMPILE_NO_FLAGS,
-    XKB_COMPOSE_FORMAT_TEXT_V1,
-};
-pub use crate::xkb::shared_types::{darray_char, darray_size_t};
+pub use crate::xkb::shared_types::{no_argument, option, required_argument};
+pub use crate::xkb::shared_types::{__LC_ALL, __LC_CTYPE};
+pub use crate::xkb::shared_types::{LC_ALL, LC_CTYPE};
 use crate::xkb::utils::cstr_cmp;
+pub use crate::xkb::utils::getopt_long;
 pub use crate::xkb::utils::isempty;
+pub use crate::xkb::utils::setlocale;
+use crate::xkb::utils::{optarg, optind};
 use libc::{exit, fclose, fopen, perror, EXIT_FAILURE, EXIT_SUCCESS};
 extern "C" {
     pub static stderr: *mut libc::FILE;

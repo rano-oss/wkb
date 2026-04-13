@@ -1,35 +1,30 @@
 // use f128; // f128 is unstable, replaced with f64
 
-pub mod bench_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct bench_time {
-        pub seconds: i64,
-        pub nanoseconds: i64,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct bench {
-        pub start: bench_time,
-        pub stop: bench_time,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct estimate {
-        pub elapsed: i64,
-        pub stdev: i64,
-    }
-    extern "C" {
-        pub fn bench_start2(bench: *mut bench);
-        pub fn bench_stop2(bench: *mut bench);
-        pub fn bench_elapsed(bench: *const bench, result: *mut bench_time);
-        pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
-    }
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct bench_time {
+    pub seconds: i64,
+    pub nanoseconds: i64,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct bench {
+    pub start: bench_time,
+    pub stop: bench_time,
+}
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct estimate {
+    pub elapsed: i64,
+    pub stdev: i64,
+}
+extern "C" {
+    pub fn bench_start2(bench: *mut bench);
+    pub fn bench_stop2(bench: *mut bench);
+    pub fn bench_elapsed(bench: *const bench, result: *mut bench_time);
+    pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
 }
 
-pub use self::bench_h::{
-    bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
-};
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::optarg;
 pub use crate::xkb::utils::getopt_long;

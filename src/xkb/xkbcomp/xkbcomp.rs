@@ -1,43 +1,37 @@
 use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_context_sanitize_rule_names};
 use crate::xkb_logf;
 
-pub mod rules_h {
-    use crate::xkb::rmlvo::xkb_rmlvo_builder;
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::shared_types::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
-    pub unsafe fn xkb_components_from_rmlvo_builder(
-        rmlvo: *const xkb_rmlvo_builder,
-        out: *mut xkb_component_names,
-        explicit_layouts: *mut xkb_layout_index_t,
-    ) -> bool {
-        unsafe {
-            crate::xkb::xkbcomp::rules::xkb_components_from_rmlvo_builder(
-                rmlvo as *const _,
-                out as *mut _,
-                explicit_layouts,
-            )
-        }
+use crate::xkb::shared_types::xkb_context;
+use crate::xkb::shared_types::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
+pub unsafe fn xkb_components_from_rmlvo_builder(
+    rmlvo: *const xkb_rmlvo_builder,
+    out: *mut xkb_component_names,
+    explicit_layouts: *mut xkb_layout_index_t,
+) -> bool {
+    unsafe {
+        crate::xkb::xkbcomp::rules::xkb_components_from_rmlvo_builder(
+            rmlvo as *const _,
+            out as *mut _,
+            explicit_layouts,
+        )
     }
-    pub unsafe fn xkb_components_from_rules_names(
-        ctx: *mut xkb_context,
-        rmlvo: *const xkb_rule_names,
-        out: *mut xkb_component_names,
-        explicit_layouts: *mut xkb_layout_index_t,
-    ) -> bool {
-        unsafe {
-            crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
-                ctx,
-                rmlvo,
-                out as *mut _,
-                explicit_layouts,
-            )
-        }
+}
+pub unsafe fn xkb_components_from_rules_names(
+    ctx: *mut xkb_context,
+    rmlvo: *const xkb_rule_names,
+    out: *mut xkb_component_names,
+    explicit_layouts: *mut xkb_layout_index_t,
+) -> bool {
+    unsafe {
+        crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
+            ctx,
+            rmlvo,
+            out as *mut _,
+            explicit_layouts,
+        )
     }
 }
 
-pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, xkb_rmlvo_builder_to_rules_names};
-pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
-use self::rules_h::{xkb_components_from_rmlvo_builder, xkb_components_from_rules_names};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -82,6 +76,10 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
+pub use crate::xkb::rmlvo::{
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
+    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, xkb_rmlvo_builder_to_rules_names,
+};
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
     _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon,
@@ -98,6 +96,9 @@ pub use crate::xkb::shared_ast_types::{
     STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
+};
+pub use crate::xkb::shared_types::{
+    RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 use crate::xkb::xkbcomp::ast_build::XkbFileFromComponents;
 use crate::xkb::xkbcomp::keymap::CompileKeymap;

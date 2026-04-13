@@ -1,60 +1,49 @@
-pub mod xkbcommon_compose_h {
-    extern "C" {
-        pub type xkb_compose_state;
-    }
+extern "C" {
+    pub type xkb_compose_state;
 }
-pub mod test_h {
-    pub type key_seq_state = u32;
-    pub const FINISH: key_seq_state = 5;
-    pub const NEXT: key_seq_state = 4;
-    pub const BOTH: key_seq_state = 3;
-    pub const UP: key_seq_state = 2;
-    pub const REPEAT: key_seq_state = 1;
-    pub const DOWN: key_seq_state = 0;
-    pub type test_context_flags = u32;
-    pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
-    pub const CONTEXT_NO_FLAG: test_context_flags = 0;
-    pub type test_compile_buffer_t = Option<
-        unsafe fn(
-            *mut xkb_context,
-            xkb_keymap_format,
-            *const i8,
-            usize,
-            *mut ::core::ffi::c_void,
-        ) -> *mut xkb_keymap,
-    >;
-    pub type test_third_party_compile_buffer_t = Option<
-        unsafe fn(*const i8, usize, *mut ::core::ffi::c_void, *mut *mut i8, *mut usize) -> i32,
-    >;
-    pub const EVDEV_OFFSET: i32 = 8 as i32;
+pub type key_seq_state = u32;
+pub const FINISH: key_seq_state = 5;
+pub const NEXT: key_seq_state = 4;
+pub const BOTH: key_seq_state = 3;
+pub const UP: key_seq_state = 2;
+pub const REPEAT: key_seq_state = 1;
+pub const DOWN: key_seq_state = 0;
+pub type test_context_flags = u32;
+pub const CONTEXT_ALLOW_ENVIRONMENT_NAMES: test_context_flags = 1;
+pub const CONTEXT_NO_FLAG: test_context_flags = 0;
+pub type test_compile_buffer_t = Option<
+    unsafe fn(
+        *mut xkb_context,
+        xkb_keymap_format,
+        *const i8,
+        usize,
+        *mut ::core::ffi::c_void,
+    ) -> *mut xkb_keymap,
+>;
+pub type test_third_party_compile_buffer_t =
+    Option<unsafe fn(*const i8, usize, *mut ::core::ffi::c_void, *mut *mut i8, *mut usize) -> i32>;
+pub const EVDEV_OFFSET: i32 = 8 as i32;
 
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::shared_types::xkb_keymap;
-    use crate::xkb::shared_types::xkb_keymap_format;
-}
-pub mod tools_common_h {
-    pub type print_state_options = u32;
-    pub const DEFAULT_PRINT_OPTIONS: print_state_options = 15;
-    pub const PRINT_UNILINE: print_state_options = 8;
-    pub const PRINT_VERBOSE: print_state_options = 4;
-    pub const PRINT_VERBOSE_ONE_LINE_FIELDS: print_state_options = 3;
-    pub const PRINT_ALL_FIELDS: print_state_options = 3;
-    pub const PRINT_UNICODE: print_state_options = 2;
-    pub const PRINT_LAYOUT: print_state_options = 1;
-    use super::xkbcommon_compose_h::xkb_compose_state;
-    use crate::xkb::shared_types::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t};
-    use crate::xkb::state::xkb_state;
-    extern "C" {
-        pub fn tools_print_keycode_state(
-            prefix: *const i8,
-            state: *mut xkb_state,
-            compose_state: *mut xkb_compose_state,
-            keycode: xkb_keycode_t,
-            direction: xkb_key_direction,
-            consumed_mode: xkb_consumed_mode,
-            options: print_state_options,
-        );
-    }
+use crate::xkb::shared_types::{xkb_context, xkb_keymap_format};
+pub type print_state_options = u32;
+pub const DEFAULT_PRINT_OPTIONS: print_state_options = 15;
+pub const PRINT_UNILINE: print_state_options = 8;
+pub const PRINT_VERBOSE: print_state_options = 4;
+pub const PRINT_VERBOSE_ONE_LINE_FIELDS: print_state_options = 3;
+pub const PRINT_ALL_FIELDS: print_state_options = 3;
+pub const PRINT_UNICODE: print_state_options = 2;
+pub const PRINT_LAYOUT: print_state_options = 1;
+use crate::xkb::shared_types::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t};
+extern "C" {
+    pub fn tools_print_keycode_state(
+        prefix: *const i8,
+        state: *mut xkb_state,
+        compose_state: *mut xkb_compose_state,
+        keycode: xkb_keycode_t,
+        direction: xkb_key_direction,
+        consumed_mode: xkb_consumed_mode,
+        options: print_state_options,
+    );
 }
 extern "C" {
     pub fn __assert_fail(
@@ -65,26 +54,14 @@ extern "C" {
     ) -> !;
 }
 
-pub use crate::xkb::utils::setlocale;
-pub use crate::xkb::shared_types::LC_ALL;
-pub use crate::xkb::shared_types::__LC_ALL;
-use crate::xkb::utils::{fstat, mkdir};
-pub use crate::xkb::shared_types::stat;
-pub use crate::xkb::shared_types::timespec;
-pub use self::test_h::{
-    key_seq_state, test_compile_buffer_t, test_context_flags, test_third_party_compile_buffer_t,
-    BOTH, CONTEXT_ALLOW_ENVIRONMENT_NAMES, CONTEXT_NO_FLAG, DOWN, EVDEV_OFFSET, FINISH, NEXT,
-    REPEAT, UP,
-};
-pub use self::tools_common_h::{
-    print_state_options, tools_print_keycode_state, DEFAULT_PRINT_OPTIONS, PRINT_ALL_FIELDS,
-    PRINT_LAYOUT, PRINT_UNICODE, PRINT_UNILINE, PRINT_VERBOSE, PRINT_VERBOSE_ONE_LINE_FIELDS,
-};
-use self::xkbcommon_compose_h::xkb_compose_state;
 pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
 };
+pub use crate::xkb::shared_types::stat;
+pub use crate::xkb::shared_types::timespec;
+pub use crate::xkb::shared_types::__LC_ALL;
+pub use crate::xkb::shared_types::LC_ALL;
 pub use crate::xkb::shared_types::*;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 pub use crate::xkb::shared_types::{
@@ -124,6 +101,8 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::__errno_location;
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
+pub use crate::xkb::utils::setlocale;
+use crate::xkb::utils::{fstat, mkdir};
 pub use crate::xkb::utils::{isempty, streq};
 use crate::xkb::utils_paths::is_absolute_path;
 pub use crate::xkb::xkbcomp::rules::OPTIONS_GROUP_SPECIFIER_PREFIX;

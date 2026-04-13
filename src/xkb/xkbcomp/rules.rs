@@ -2,9 +2,7 @@ use crate::xkb::context_priv::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-pub mod rules_h {
-    pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
-}
+pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
 pub use crate::xkb::utils_paths::is_absolute_path;
 
 pub use crate::xkb::shared_ast_types::{
@@ -62,7 +60,6 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::rmlvo::{xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts, xkb_rmlvo_builder_option, xkb_rmlvo_builder_options};
 pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
-pub use self::rules_h::OPTIONS_GROUP_SPECIFIER_PREFIX;
 pub use crate::xkb::scanner_utils::{
     darray_sval, scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof,
     scanner_eol, scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol,

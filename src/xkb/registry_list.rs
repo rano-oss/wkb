@@ -1,30 +1,28 @@
-pub mod xkbregistry_h {
-    pub type rxkb_context_flags = u32;
-    pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
-    pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
-    pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
-    pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
-    pub type rxkb_log_level = u32;
-    pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
-    pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
-    pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
-    pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
-    pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
-    pub use crate::xkb::registry::{
-        rxkb_context, rxkb_context_include_path_append, rxkb_context_include_path_append_default,
-        rxkb_context_new, rxkb_context_parse, rxkb_context_set_log_level, rxkb_context_unref,
-        rxkb_iso3166_code, rxkb_iso3166_code_get_code, rxkb_iso3166_code_next, rxkb_iso639_code,
-        rxkb_iso639_code_get_code, rxkb_iso639_code_next, rxkb_layout, rxkb_layout_first,
-        rxkb_layout_get_brief, rxkb_layout_get_description, rxkb_layout_get_iso3166_first,
-        rxkb_layout_get_iso639_first, rxkb_layout_get_name, rxkb_layout_get_variant,
-        rxkb_layout_next, rxkb_model, rxkb_model_first, rxkb_model_get_description,
-        rxkb_model_get_name, rxkb_model_get_vendor, rxkb_model_next, rxkb_option,
-        rxkb_option_first, rxkb_option_get_brief, rxkb_option_get_description,
-        rxkb_option_get_name, rxkb_option_group, rxkb_option_group_allows_multiple,
-        rxkb_option_group_first, rxkb_option_group_get_description, rxkb_option_group_get_name,
-        rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
-    };
-}
+pub type rxkb_context_flags = u32;
+pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
+pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
+pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
+pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
+pub type rxkb_log_level = u32;
+pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
+pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
+pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
+pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
+pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
+pub use crate::xkb::registry::{
+    rxkb_context, rxkb_context_include_path_append, rxkb_context_include_path_append_default,
+    rxkb_context_new, rxkb_context_parse, rxkb_context_set_log_level, rxkb_context_unref,
+    rxkb_iso3166_code, rxkb_iso3166_code_get_code, rxkb_iso3166_code_next, rxkb_iso639_code,
+    rxkb_iso639_code_get_code, rxkb_iso639_code_next, rxkb_layout, rxkb_layout_first,
+    rxkb_layout_get_brief, rxkb_layout_get_description, rxkb_layout_get_iso3166_first,
+    rxkb_layout_get_iso639_first, rxkb_layout_get_name, rxkb_layout_get_variant,
+    rxkb_layout_next, rxkb_model, rxkb_model_first, rxkb_model_get_description,
+    rxkb_model_get_name, rxkb_model_get_vendor, rxkb_model_next, rxkb_option,
+    rxkb_option_first, rxkb_option_get_brief, rxkb_option_get_description,
+    rxkb_option_get_name, rxkb_option_group, rxkb_option_group_allows_multiple,
+    rxkb_option_group_first, rxkb_option_group_get_description, rxkb_option_group_get_name,
+    rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
+};
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::{optarg, optind};
 pub use crate::xkb::utils::getopt_long;
@@ -32,23 +30,6 @@ pub use crate::xkb::shared_types::{no_argument, option, required_argument};
 pub use crate::xkb::utils::setlocale;
 pub use crate::xkb::shared_types::LC_ALL;
 pub use crate::xkb::shared_types::__LC_ALL;
-pub use self::xkbregistry_h::{
-    rxkb_context, rxkb_context_flags, rxkb_context_include_path_append,
-    rxkb_context_include_path_append_default, rxkb_context_new, rxkb_context_parse,
-    rxkb_context_set_log_level, rxkb_context_unref, rxkb_iso3166_code, rxkb_iso3166_code_get_code,
-    rxkb_iso3166_code_next, rxkb_iso639_code, rxkb_iso639_code_get_code, rxkb_iso639_code_next,
-    rxkb_layout, rxkb_layout_first, rxkb_layout_get_brief, rxkb_layout_get_description,
-    rxkb_layout_get_iso3166_first, rxkb_layout_get_iso639_first, rxkb_layout_get_name,
-    rxkb_layout_get_variant, rxkb_layout_next, rxkb_log_level, rxkb_model, rxkb_model_first,
-    rxkb_model_get_description, rxkb_model_get_name, rxkb_model_get_vendor, rxkb_model_next,
-    rxkb_option, rxkb_option_first, rxkb_option_get_brief, rxkb_option_get_description,
-    rxkb_option_get_name, rxkb_option_group, rxkb_option_group_allows_multiple,
-    rxkb_option_group_first, rxkb_option_group_get_description, rxkb_option_group_get_name,
-    rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
-    RXKB_CONTEXT_LOAD_EXOTIC_RULES, RXKB_CONTEXT_NO_DEFAULT_INCLUDES, RXKB_CONTEXT_NO_FLAGS,
-    RXKB_CONTEXT_NO_SECURE_GETENV, RXKB_LOG_LEVEL_CRITICAL, RXKB_LOG_LEVEL_DEBUG,
-    RXKB_LOG_LEVEL_ERROR, RXKB_LOG_LEVEL_INFO, RXKB_LOG_LEVEL_WARNING,
-};
 use crate::xkb::shared_types::DEFAULT_XKB_RULES;
 use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE};
 extern "C" {

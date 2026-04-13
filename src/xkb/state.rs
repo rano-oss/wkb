@@ -75,59 +75,56 @@ use crate::xkb::shared_types::{
     xkb_state_component,
 };
 
-pub mod xkbcommon_features_h {
+pub type xkb_feature = u32;
 
-    pub type xkb_feature = u32;
+pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
 
-    pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
+pub const XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS: xkb_feature = 31200;
 
-    pub const XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS: xkb_feature = 31200;
+pub const XKB_FEATURE_ENUM_COMPOSE_STATUS: xkb_feature = 31000;
 
-    pub const XKB_FEATURE_ENUM_COMPOSE_STATUS: xkb_feature = 31000;
+pub const XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS: xkb_feature = 30200;
 
-    pub const XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS: xkb_feature = 30200;
+pub const XKB_FEATURE_ENUM_COMPOSE_FORMAT: xkb_feature = 30000;
 
-    pub const XKB_FEATURE_ENUM_COMPOSE_FORMAT: xkb_feature = 30000;
+pub const XKB_FEATURE_ENUM_EVENTS_FLAGS: xkb_feature = 27600;
 
-    pub const XKB_FEATURE_ENUM_EVENTS_FLAGS: xkb_feature = 27600;
+pub const XKB_FEATURE_ENUM_KEY_DIRECTION: xkb_feature = 27020;
 
-    pub const XKB_FEATURE_ENUM_KEY_DIRECTION: xkb_feature = 27020;
+pub const XKB_FEATURE_ENUM_EVENT_TYPE: xkb_feature = 27000;
 
-    pub const XKB_FEATURE_ENUM_EVENT_TYPE: xkb_feature = 27000;
+pub const XKB_FEATURE_ENUM_CONSUMED_MODE: xkb_feature = 24840;
 
-    pub const XKB_FEATURE_ENUM_CONSUMED_MODE: xkb_feature = 24840;
+pub const XKB_FEATURE_ENUM_STATE_MATCH: xkb_feature = 24820;
 
-    pub const XKB_FEATURE_ENUM_STATE_MATCH: xkb_feature = 24820;
+pub const XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS: xkb_feature = 24060;
 
-    pub const XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS: xkb_feature = 24060;
+pub const XKB_FEATURE_ENUM_A11Y_FLAGS: xkb_feature = 24040;
 
-    pub const XKB_FEATURE_ENUM_A11Y_FLAGS: xkb_feature = 24040;
+pub const XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY: xkb_feature = 24020;
 
-    pub const XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY: xkb_feature = 24020;
+pub const XKB_FEATURE_ENUM_STATE_COMPONENT: xkb_feature = 24000;
 
-    pub const XKB_FEATURE_ENUM_STATE_COMPONENT: xkb_feature = 24000;
+pub const XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS: xkb_feature = 21600;
 
-    pub const XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS: xkb_feature = 21600;
+pub const XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS: xkb_feature = 21400;
 
-    pub const XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS: xkb_feature = 21400;
+pub const XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS: xkb_feature = 21200;
 
-    pub const XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS: xkb_feature = 21200;
+pub const XKB_FEATURE_ENUM_KEYMAP_FORMAT: xkb_feature = 21000;
 
-    pub const XKB_FEATURE_ENUM_KEYMAP_FORMAT: xkb_feature = 21000;
+pub const XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS: xkb_feature = 18200;
 
-    pub const XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS: xkb_feature = 18200;
+pub const XKB_FEATURE_ENUM_KEYSYM_FLAGS: xkb_feature = 9200;
 
-    pub const XKB_FEATURE_ENUM_KEYSYM_FLAGS: xkb_feature = 9200;
+pub const XKB_FEATURE_ENUM_LOG_LEVEL: xkb_feature = 5100;
 
-    pub const XKB_FEATURE_ENUM_LOG_LEVEL: xkb_feature = 5100;
+pub const XKB_FEATURE_ENUM_CONTEXT_FLAGS: xkb_feature = 3200;
 
-    pub const XKB_FEATURE_ENUM_CONTEXT_FLAGS: xkb_feature = 3200;
+pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 
-    pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
-
-    pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
-    pub use crate::xkb::features::xkb_feature_supported;
-}
+pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
+pub use crate::xkb::features::xkb_feature_supported;
 
 pub mod utf8_h {
 
@@ -145,20 +142,6 @@ pub mod utf8_h {
 }
 
 use self::utf8_h::is_valid_utf8;
-pub use self::xkbcommon_features_h::{
-    xkb_feature, xkb_feature_supported, XKB_FEATURE_ENUM_A11Y_FLAGS,
-    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS, XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT,
-    XKB_FEATURE_ENUM_COMPOSE_FORMAT, XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS,
-    XKB_FEATURE_ENUM_COMPOSE_STATUS, XKB_FEATURE_ENUM_CONSUMED_MODE,
-    XKB_FEATURE_ENUM_CONTEXT_FLAGS, XKB_FEATURE_ENUM_ERROR_CODE, XKB_FEATURE_ENUM_EVENTS_FLAGS,
-    XKB_FEATURE_ENUM_EVENT_TYPE, XKB_FEATURE_ENUM_FEATURE, XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS,
-    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS, XKB_FEATURE_ENUM_KEYMAP_FORMAT,
-    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS, XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS,
-    XKB_FEATURE_ENUM_KEYSYM_FLAGS, XKB_FEATURE_ENUM_KEY_DIRECTION,
-    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY, XKB_FEATURE_ENUM_LOG_LEVEL,
-    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
-    XKB_FEATURE_ENUM_STATE_MATCH,
-};
 pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 pub use crate::xkb::keymap_priv::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
