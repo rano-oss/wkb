@@ -23,23 +23,6 @@ pub mod text_h {
         ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText,
     };
 }
-pub mod xkbcomp_priv_h {
-    pub use crate::xkb::shared_ast_types::{
-        pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-        xkb_parser_error, xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup,
-        PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
-        PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
-        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
-        PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
-        PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
-    };
-    pub type C2Rust_Unnamed_16 = XkbcompLookup;
-    pub type C2Rust_Unnamed_17 = XkbcompFeatures;
-    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
-}
 pub mod action_h {
     pub use crate::xkb::xkbcomp::action::action_h::ActionsInfo;
     pub use crate::xkb::xkbcomp::action::{
@@ -222,9 +205,9 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
-pub use self::xkbcomp_priv_h::{
+pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-    xkb_parser_error, xkb_parser_strict_flags, C2Rust_Unnamed_16, C2Rust_Unnamed_17, FreeXkbFile,
+    xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, FreeXkbFile,
     PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
     PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
     PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,

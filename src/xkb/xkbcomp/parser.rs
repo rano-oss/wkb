@@ -194,10 +194,6 @@ pub mod keysym_h {
     pub const XKB_KEYSYM_MIN: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     pub use crate::xkb::keysym::xkb_keysym_is_deprecated;
 }
-pub mod xkbcomp_priv_h {
-    pub use crate::xkb::shared_ast_types::safe_map_name;
-    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
-}
 pub mod ast_build_h {
 
     use crate::xkb::shared_ast_types::ExprDef;
@@ -352,7 +348,7 @@ pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };
-pub use self::xkbcomp_priv_h::{safe_map_name, FreeXkbFile};
+pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 use libc::{free, malloc};

@@ -89,14 +89,14 @@ pub mod keymap_file_iterator_h {
         pub pending_section: *mut XkbFile,
         pub ctx: *mut xkb_context,
     }
+    use super::scanner_utils_h::scanner;
     use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
     use crate::xkb::shared_types::xkb_context;
-    use super::scanner_utils_h::scanner;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod include_h {
-    use libc::{FILE};
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+    use libc::FILE;
 
     use crate::xkb::shared_ast_types::xkb_file_type;
     use crate::xkb::shared_types::xkb_context;
@@ -127,90 +127,18 @@ pub mod include_h {
         }
     }
 }
-pub mod xkbcomp_priv_h {
-    use libc::{FILE};
-
-    use crate::xkb::shared_ast_types::XkbFile;
-    use crate::xkb::shared_types::xkb_context;
-    use super::scanner_utils_h::scanner;
-
-    pub unsafe fn XkbParseFile(
-        ctx: *mut xkb_context,
-        file: *mut FILE,
-        file_name: *const i8,
-        map: *const i8,
-    ) -> *mut XkbFile {
-        unsafe {
-            crate::xkb::xkbcomp::scanner::XkbParseFile(ctx, file as *mut _, file_name, map)
-                as *mut XkbFile
-        }
-    }
-
-    pub unsafe fn XkbParseStringInit(
-        ctx: *mut xkb_context,
-        scanner: *mut scanner,
-        string: *const i8,
-        len: usize,
-        file_name: *const i8,
-        map: *const i8,
-    ) -> bool {
-        unsafe {
-            crate::xkb::xkbcomp::scanner::XkbParseStringInit(
-                ctx,
-                scanner as *mut _,
-                string,
-                len,
-                file_name,
-                map,
-            )
-        }
-    }
-
-    pub unsafe fn XkbParseStringNext(
-        ctx: *mut xkb_context,
-        scanner: *mut scanner,
-        map: *const i8,
-        out: *mut *mut XkbFile,
-    ) -> bool {
-        unsafe {
-            crate::xkb::xkbcomp::scanner::XkbParseStringNext(
-                ctx,
-                scanner as *mut _,
-                map,
-                out as *mut *mut _,
-            )
-        }
-    }
-
-    pub use crate::xkb::xkbcomp::ast_build::FreeXkbFile;
-}
 pub mod utils_paths_h {
     pub use crate::xkb::utils_paths::is_absolute_path;
 }
 
-pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
-    xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
-    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
-    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
-    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
-    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
-    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
-    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
-};
 use self::include_h::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 pub use self::keymap_file_iterator_h::{
     xkb_file_include, xkb_file_include_group, xkb_file_iterator, xkb_file_iterator_flags,
     xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,
     XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
 };
+pub use self::scanner_utils_h::{scanner, scanner_loc};
+use self::utils_paths_h::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -255,13 +183,29 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::scanner_utils_h::{scanner, scanner_loc};
-pub use crate::xkb::utils::strcpy_safe;
-use self::utils_paths_h::is_absolute_path;
-use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
+use crate::xkb::shared_ast_types::FreeXkbFile;
+pub use crate::xkb::shared_ast_types::{
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
+    xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
+    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
+    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
+    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
+    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
+    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
+    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+};
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
+pub use crate::xkb::utils::strcpy_safe;
 use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
-use libc::{FILE, calloc, fclose, fopen, free};
+use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseStringInit, XkbParseStringNext};
+use libc::{calloc, fclose, fopen, free, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_1 {
@@ -864,7 +808,7 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
         xkb_file_section_init(&raw mut (*iter).section);
         if !XkbParseStringInit(
             ctx,
-            &raw mut (*iter).scanner,
+            (&raw mut (*iter).scanner) as *mut _,
             string,
             length,
             path,
@@ -918,7 +862,7 @@ pub unsafe fn xkb_file_iterator_next(
                 1394248824506584008 => {
                     if !XkbParseStringNext(
                         (*iter).ctx,
-                        &raw mut (*iter).scanner,
+                        (&raw mut (*iter).scanner) as *mut _,
                         (*iter).map,
                         &raw mut xkb_file,
                     ) {

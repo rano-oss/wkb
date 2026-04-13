@@ -154,7 +154,7 @@ pub type C2Rust_Unnamed_13 = DarrayKeysym;
 pub type C2Rust_Unnamed_15 = DarrayKeysym;
 
 // Re-export ast_build functions used by consumers via ast_h
-pub use crate::xkb::xkbcomp::ast_build::{stmt_type_to_string, xkb_file_type_to_string, stmt_type_to_operator_char};
+pub use crate::xkb::xkbcomp::ast_build::{stmt_type_to_string, xkb_file_type_to_string, stmt_type_to_operator_char, FreeXkbFile};
 
 #[derive(Copy, Clone)]
 #[repr(C)]

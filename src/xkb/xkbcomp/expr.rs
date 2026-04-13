@@ -18,22 +18,6 @@ pub mod text_h {
     pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
         unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
 }
-pub mod xkbcomp_priv_h {
-    pub use crate::xkb::shared_ast_types::{
-        pending_computation, pending_computation_array, xkb_keymap_info, xkb_parser_error,
-        xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR,
-        PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
-        PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
-        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
-        PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
-        PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
-    };
-    pub type C2Rust_Unnamed_14 = XkbcompLookup;
-    pub type C2Rust_Unnamed_15 = XkbcompFeatures;
-}
 pub mod inttypes_h {
     extern "C" {
         pub fn imaxabs(__n: i64) -> i64;
@@ -175,9 +159,9 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use self::xkbcomp_priv_h::{
+pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, xkb_keymap_info, xkb_parser_error,
-    xkb_parser_strict_flags, C2Rust_Unnamed_14, C2Rust_Unnamed_15, PARSER_FATAL_ERROR,
+    xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, PARSER_FATAL_ERROR,
     PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS,
     PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
     PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,

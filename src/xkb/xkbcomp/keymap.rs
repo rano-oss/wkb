@@ -32,26 +32,6 @@ pub mod text_h {
     use crate::xkb::shared_types::{xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1};
     pub use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText};
 }
-pub mod xkbcomp_priv_h {
-    pub use crate::xkb::shared_ast_types::{
-        pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-        xkb_parser_error, xkb_parser_strict_flags, XkbcompFeatures, XkbcompLookup,
-        PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
-        PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
-        PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
-        PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
-        PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS,
-        PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
-    };
-    pub type C2Rust_Unnamed_17 = XkbcompLookup;
-    pub type C2Rust_Unnamed_18 = XkbcompFeatures;
-    pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
-    pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
-    pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
-    pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
-}
 pub mod limits_h {
     pub const CHAR_BIT: ::core::ffi::c_int = 8;
 }
@@ -143,9 +123,9 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
-pub use self::xkbcomp_priv_h::{
+pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-    xkb_parser_error, xkb_parser_strict_flags, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
+    xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures,
     PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
     PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
     PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
@@ -1309,7 +1289,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
             } else {
                 PARSER_V2_LAX_FLAGS as ::core::ffi::c_int
             }) as xkb_parser_strict_flags,
-            features: C2Rust_Unnamed_18 {
+            features: XkbcompFeatures {
                 max_groups: format_max_groups((*keymap).format),
                 max_overlays: format_max_overlays((*keymap).format),
                 controls_name_offset: format_control_names_offset((*keymap).format),
@@ -1318,7 +1298,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 mods_latch_on_press: isModsLatchOnPressSupported((*keymap).format),
                 overlapping_overlays: areOverlappingOverlaysSupported((*keymap).format),
             },
-            lookup: C2Rust_Unnamed_17 {
+            lookup: XkbcompLookup {
                 groupIndexNames: [
                     LookupEntry {
                         name: b"first\0".as_ptr() as *const i8,
