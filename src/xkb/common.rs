@@ -55,8 +55,7 @@ extern "C" {
 }
 
 pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
 pub use crate::xkb::shared_types::stat;
 pub use crate::xkb::shared_types::timespec;
@@ -149,12 +148,7 @@ pub struct C2Rust_Unnamed_15 {
 }
 pub unsafe fn test_init() {
     unsafe {
-        setvbuf(
-            stdout,
-            std::ptr::null_mut(),
-            _IONBF,
-            BUFSIZ as usize,
-        );
+        setvbuf(stdout, std::ptr::null_mut(), _IONBF, BUFSIZ as usize);
         setlocale(LC_ALL, b"\0".as_ptr() as *const i8);
     }
 }
@@ -529,12 +523,7 @@ pub unsafe extern "C" fn test_key_seq(mut keymap: *mut xkb_keymap, mut c2rust_ar
         let mut ap: ::core::ffi::VaList;
         let mut ret: i32 = 0;
         ap = c2rust_args.clone();
-        ret = test_key_seq_va(
-            keymap,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            ap,
-        );
+        ret = test_key_seq_va(keymap, std::ptr::null_mut(), std::ptr::null_mut(), ap);
         return ret;
     }
 }
@@ -732,8 +721,8 @@ pub unsafe fn test_get_context(mut test_flags: test_context_flags) -> *mut xkb_c
             unsetenv(b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
             unsetenv(b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
         } else {
-            ctx_flags = (ctx_flags as u32 | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32)
-                as xkb_context_flags;
+            ctx_flags =
+                (ctx_flags as u32 | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32) as xkb_context_flags;
         }
         let ctx: *mut xkb_context = xkb_context_new(ctx_flags) as *mut xkb_context;
         if ctx.is_null() {

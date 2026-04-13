@@ -50,8 +50,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
 pub use crate::xkb::scanner_utils::{
     darray_sval, scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof,
@@ -405,17 +404,12 @@ static mut rules_kccgst_svals: [sval; 5] = [sval {
 pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
 unsafe fn strip_spaces(mut v: sval) -> sval {
     unsafe {
-        while v.len > 0 as usize
-            && is_space(*v.start.offset(0 as i32 as isize)) as i32
-                != 0
-        {
+        while v.len > 0 as usize && is_space(*v.start.offset(0 as i32 as isize)) as i32 != 0 {
             v.len = v.len.wrapping_sub(1);
             v.start = v.start.offset(1);
         }
         while v.len > 0 as usize
-            && is_space(*v.start.offset(v.len.wrapping_sub(1 as usize) as isize))
-                as i32
-                != 0
+            && is_space(*v.start.offset(v.len.wrapping_sub(1 as usize) as isize)) as i32 != 0
         {
             v.len = v.len.wrapping_sub(1);
         }
@@ -476,8 +470,7 @@ unsafe fn split_comma_separated_mlvo(
                 s = s.offset(1);
                 let layout_start: *const i8 = s;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                let mut count: i32 =
-                    parse_dec_to_uint32_t(s, usize::MAX as usize, &raw mut layout);
+                let mut count: i32 = parse_dec_to_uint32_t(s, usize::MAX as usize, &raw mut layout);
                 if count > 0 as i32 {
                     s = s.offset(count as isize);
                     if layout == 0 as xkb_layout_index_t
@@ -514,9 +507,7 @@ unsafe fn split_comma_separated_mlvo(
                     }
                 }
                 let layout_index_end: *const i8 = s;
-                while *s as i32 != '\0' as i32
-                    && *s as i32 != ',' as i32
-                {
+                while *s as i32 != '\0' as i32 && *s as i32 != ',' as i32 {
                     s = s.offset(1);
                 }
                 if count <= 0 as i32 || layout_index_end != s {
@@ -556,17 +547,17 @@ unsafe fn matcher_new_from_rmlvo(
         let mut names: xkb_rule_names = xkb_rule_names {
             rules: (*rmlvo).rules,
             model: (*rmlvo).model,
-            layout: if (*rmlvo).layouts.size == 0 as darray_size_t {
+            layout: if (*rmlvo).layouts.is_empty() {
                 std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
             },
-            variant: if (*rmlvo).layouts.size == 0 as darray_size_t {
+            variant: if (*rmlvo).layouts.is_empty() {
                 std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
             },
-            options: if (*rmlvo).options.size == 0 as darray_size_t {
+            options: if (*rmlvo).options.is_empty() {
                 std::ptr::null()
             } else {
                 b"x\0".as_ptr() as *const i8
@@ -642,92 +633,66 @@ unsafe fn matcher_new_from_rmlvo(
                 );
             }
         } else {
-            let mut layout: *mut xkb_rmlvo_builder_layout =
-                std::ptr::null_mut();
-            if !(*rmlvo).layouts.item.is_null() {
-                layout = (*rmlvo)
-                    .layouts
-                    .item
-                    .offset(0 as i32 as isize)
-                    as *mut xkb_rmlvo_builder_layout;
-                while layout
-                    < (*rmlvo).layouts.item.offset((*rmlvo).layouts.size as isize)
-                        as *mut xkb_rmlvo_builder_layout
-                {
-                    let mut val: matched_sval = {
-                        let mut init = matched_sval {
-                            matched_layout: [0; 4],
-                            c2rust_padding: [0; 4],
-                            sval: sval {
-                                len: cstr_len_safe((*layout).layout),
-                                start: (*layout).layout,
-                            },
-                        };
-                        init.set_matched(false);
-                        init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
-                        init
+            for layout in (*rmlvo).layouts.iter() {
+                let mut val: matched_sval = {
+                    let mut init = matched_sval {
+                        matched_layout: [0; 4],
+                        c2rust_padding: [0; 4],
+                        sval: sval {
+                            len: cstr_len_safe(layout.layout),
+                            start: layout.layout,
+                        },
                     };
-                    darray_append(
-                        &mut (*m).rmlvo.layouts.item,
-                        &mut (*m).rmlvo.layouts.size,
-                        &mut (*m).rmlvo.layouts.alloc,
-                        val,
-                    );
-                    val.sval.start = (*layout).variant;
-                    val.sval.len = cstr_len_safe((*layout).variant);
-                    darray_append(
-                        &mut (*m).rmlvo.variants.item,
-                        &mut (*m).rmlvo.variants.size,
-                        &mut (*m).rmlvo.variants.alloc,
-                        val,
-                    );
-                    layout = layout.offset(1);
-                }
+                    init.set_matched(false);
+                    init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
+                    init
+                };
+                darray_append(
+                    &mut (*m).rmlvo.layouts.item,
+                    &mut (*m).rmlvo.layouts.size,
+                    &mut (*m).rmlvo.layouts.alloc,
+                    val,
+                );
+                val.sval.start = layout.variant;
+                val.sval.len = cstr_len_safe(layout.variant);
+                darray_append(
+                    &mut (*m).rmlvo.variants.item,
+                    &mut (*m).rmlvo.variants.size,
+                    &mut (*m).rmlvo.variants.alloc,
+                    val,
+                );
             }
         }
         if changed as u32 & RMLVO_OPTIONS as u32 != 0 {
             (*m).rmlvo.options =
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_OPTION, names.options);
         } else {
-            let mut option: *mut xkb_rmlvo_builder_option =
-                std::ptr::null_mut();
-            if !(*rmlvo).options.item.is_null() {
-                option = (*rmlvo)
-                    .options
-                    .item
-                    .offset(0 as i32 as isize)
-                    as *mut xkb_rmlvo_builder_option;
-                while option
-                    < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
-                        as *mut xkb_rmlvo_builder_option
-                {
-                    let mut val_0: matched_sval = {
-                        let mut init = matched_sval {
-                            matched_layout: [0; 4],
-                            c2rust_padding: [0; 4],
-                            sval: sval {
-                                len: cstr_len_safe((*option).option),
-                                start: (*option).option,
-                            },
-                        };
-                        init.set_matched(false);
-                        init.set_layout(
-                            if (*option).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                                OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t
-                            } else {
-                                (*option).layout
-                            },
-                        );
-                        init
+            for option in (*rmlvo).options.iter() {
+                let val_0: matched_sval = {
+                    let mut init = matched_sval {
+                        matched_layout: [0; 4],
+                        c2rust_padding: [0; 4],
+                        sval: sval {
+                            len: cstr_len_safe(option.option),
+                            start: option.option,
+                        },
                     };
-                    darray_append(
-                        &mut (*m).rmlvo.options.item,
-                        &mut (*m).rmlvo.options.size,
-                        &mut (*m).rmlvo.options.alloc,
-                        val_0,
+                    init.set_matched(false);
+                    init.set_layout(
+                        if option.layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+                            OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t
+                        } else {
+                            option.layout
+                        },
                     );
-                    option = option.offset(1);
-                }
+                    init
+                };
+                darray_append(
+                    &mut (*m).rmlvo.options.item,
+                    &mut (*m).rmlvo.options.size,
+                    &mut (*m).rmlvo.options.alloc,
+                    val_0,
+                );
             }
         }
         return m;
@@ -843,9 +808,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
             &mut (*m).pending_kccgst.slices.alloc,
         );
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
-        while (i as i32)
-            < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32
-        {
+        while (i as i32) < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32 {
             crate::xkb::utils::darray_free(
                 &mut (*m).kccgst[i as usize].item,
                 &mut (*m).kccgst[i as usize].size,
@@ -5120,16 +5083,12 @@ unsafe fn matcher_include(
 unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
     unsafe {
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
-        while (i as i32)
-            < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32
-        {
+        while (i as i32) < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32 {
             (*m).mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
             i = i.wrapping_add(1);
         }
         let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-        while (i_0 as i32)
-            < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32
-        {
+        while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32 {
             (*m).mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
             i_0 = i_0.wrapping_add(1);
         }
@@ -5158,8 +5117,7 @@ unsafe fn parse_layout_int_index(
             &raw mut val,
         ) as i32;
         if count <= 0 as i32
-            || *s.offset((1 as i32 + count) as isize) as i32
-                != ']' as i32
+            || *s.offset((1 as i32 + count) as isize) as i32 != ']' as i32
             || val == 0 as u32
             || val > XKB_MAX_GROUPS as u32
         {
@@ -5176,9 +5134,7 @@ unsafe fn extract_layout_index(
 ) -> i32 {
     unsafe {
         *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-        if max_len < 3 as usize
-            || *s.offset(0 as i32 as isize) as i32 != '[' as i32
-        {
+        if max_len < 3 as usize || *s.offset(0 as i32 as isize) as i32 != '[' as i32 {
             return -1 as i32;
         }
         if max_len > 3 as usize
@@ -5219,9 +5175,7 @@ unsafe fn extract_mapping_layout_index(
                 range: LAYOUT_INDEX_ANY,
             },
         ];
-        if max_len < 3 as usize
-            || *s.offset(0 as i32 as isize) as i32 != '[' as i32
-        {
+        if max_len < 3 as usize || *s.offset(0 as i32 as isize) as i32 != '[' as i32 {
             *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
             return -1 as i32;
         }
@@ -5348,8 +5302,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx =
                 LAYOUT_INDEX_SINGLE as u32 as xkb_layout_index_t;
         }
-        if (mlvo as u32 == MLVO_LAYOUT as u32
-            && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
+        if (mlvo as u32 == MLVO_LAYOUT as u32 && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
             || mlvo as u32 == MLVO_VARIANT as u32
                 && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
             && (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
@@ -5672,9 +5625,7 @@ unsafe fn matcher_rule_set_mlvo_common(
     mut match_type: mlvo_match_type,
 ) {
     unsafe {
-        if (*m).rule.num_mlvo_values as i32
-            >= (*m).mapping.num_mlvo as i32
-        {
+        if (*m).rule.num_mlvo_values as i32 >= (*m).mapping.num_mlvo as i32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
@@ -5719,9 +5670,7 @@ unsafe fn matcher_rule_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut id
 }
 unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
-        if (*m).rule.num_kccgst_values as i32
-            >= (*m).mapping.num_kccgst as i32
-        {
+        if (*m).rule.num_kccgst_values as i32 >= (*m).mapping.num_kccgst as i32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
@@ -5760,10 +5709,7 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
             return false;
         }
         if !(*group).elements.item.is_null() {
-            element = (*group)
-                .elements
-                .item
-                .offset(0 as i32 as isize) as *mut sval;
+            element = (*group).elements.item.offset(0 as i32 as isize) as *mut sval;
             while element
                 < (*group)
                     .elements
@@ -5789,8 +5735,7 @@ unsafe fn match_value(
     unsafe {
         match match_type as u32 {
             1 => {
-                return wildcard_type as u32 == WILDCARD_MATCH_ALL as u32
-                    || to.len != 0;
+                return wildcard_type as u32 == WILDCARD_MATCH_ALL as u32 || to.len != 0;
             }
             2 => return to.len == 0,
             3 => return to.len != 0,
@@ -5918,9 +5863,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
-                            if *i < value.len
-                                && *str.offset(*i as isize) as i32 == '[' as i32
-                            {
+                            if *i < value.len && *str.offset(*i as isize) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
@@ -5965,8 +5908,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
-                                            if *str.offset(c2rust_fresh8 as isize)
-                                                as i32
+                                            if *str.offset(c2rust_fresh8 as isize) as i32
                                                 != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
@@ -5980,19 +5922,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     match c2rust_current_block {
                                         14165246690716487359 => {}
                                         _ => {
-                                            expanded_value =
-                                                std::ptr::null_mut();
-                                            if mlv as u32
-                                                == MLVO_LAYOUT as u32
-                                            {
+                                            expanded_value = std::ptr::null_mut();
+                                            if mlv as u32 == MLVO_LAYOUT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.layouts.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .layouts
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
@@ -6007,18 +5947,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_VARIANT as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_VARIANT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
                                                         == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.variants.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .variants
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
@@ -6033,9 +5972,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_MODEL as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_MODEL as u32 {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
@@ -6043,8 +5980,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as i32 != 0 as i32
-                                            {
+                                            if pfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6062,8 +5998,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as i32 != 0 as i32
-                                            {
+                                            if sfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6095,9 +6030,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
-                            if *i < value.len
-                                && *str.offset(*i as isize) as i32 == '[' as i32
-                            {
+                            if *i < value.len && *str.offset(*i as isize) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
@@ -6142,8 +6075,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
-                                            if *str.offset(c2rust_fresh8 as isize)
-                                                as i32
+                                            if *str.offset(c2rust_fresh8 as isize) as i32
                                                 != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
@@ -6157,19 +6089,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     match c2rust_current_block {
                                         14165246690716487359 => {}
                                         _ => {
-                                            expanded_value =
-                                                std::ptr::null_mut();
-                                            if mlv as u32
-                                                == MLVO_LAYOUT as u32
-                                            {
+                                            expanded_value = std::ptr::null_mut();
+                                            if mlv as u32 == MLVO_LAYOUT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.layouts.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .layouts
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
@@ -6184,18 +6114,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_VARIANT as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_VARIANT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
                                                         == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.variants.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .variants
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
@@ -6210,9 +6139,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_MODEL as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_MODEL as u32 {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
@@ -6220,8 +6147,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as i32 != 0 as i32
-                                            {
+                                            if pfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6239,8 +6165,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as i32 != 0 as i32
-                                            {
+                                            if sfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6272,9 +6197,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             }
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
-                            if *i < value.len
-                                && *str.offset(*i as isize) as i32 == '[' as i32
-                            {
+                            if *i < value.len && *str.offset(*i as isize) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
@@ -6319,8 +6242,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
-                                            if *str.offset(c2rust_fresh8 as isize)
-                                                as i32
+                                            if *str.offset(c2rust_fresh8 as isize) as i32
                                                 != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
@@ -6334,19 +6256,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     match c2rust_current_block {
                                         14165246690716487359 => {}
                                         _ => {
-                                            expanded_value =
-                                                std::ptr::null_mut();
-                                            if mlv as u32
-                                                == MLVO_LAYOUT as u32
-                                            {
+                                            expanded_value = std::ptr::null_mut();
+                                            if mlv as u32 == MLVO_LAYOUT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.layouts.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .layouts
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
@@ -6361,18 +6281,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_VARIANT as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_VARIANT as u32 {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
                                                         == 1 as darray_size_t
                                                     {
-                                                        expanded_value =
-                                                            (*m).rmlvo.variants.item.offset(
-                                                                0 as i32 as isize,
-                                                            )
-                                                                as *mut matched_sval;
+                                                        expanded_value = (*m)
+                                                            .rmlvo
+                                                            .variants
+                                                            .item
+                                                            .offset(0 as i32 as isize)
+                                                            as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
@@ -6387,9 +6306,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         .offset(idx as isize)
                                                         as *mut matched_sval;
                                                 }
-                                            } else if mlv as u32
-                                                == MLVO_MODEL as u32
-                                            {
+                                            } else if mlv as u32 == MLVO_MODEL as u32 {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
                                             if expanded_value.is_null()
@@ -6397,8 +6314,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as i32 != 0 as i32
-                                            {
+                                            if pfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6416,8 +6332,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as i32 != 0 as i32
-                                            {
+                                            if sfx as i32 != 0 as i32 {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
                                                     &mut (*expanded).size,
@@ -6473,10 +6388,8 @@ unsafe fn expand_qualifier_in_kccgst_value(
                 || *str.offset((*i).wrapping_add(3 as usize) as isize) as i32
                     == MERGE_REPLACE_PREFIX))
             && *str.offset(*i as isize) as i32 == 'a' as i32
-            && *str.offset((*i).wrapping_add(1 as usize) as isize) as i32
-                == 'l' as i32
-            && *str.offset((*i).wrapping_add(2 as usize) as isize) as i32
-                == 'l' as i32
+            && *str.offset((*i).wrapping_add(1 as usize) as isize) as i32 == 'l' as i32
+            && *str.offset((*i).wrapping_add(2 as usize) as isize) as i32 == 'l' as i32
         {
             if has_layout_idx_range {
                 let mut loc: scanner_loc = scanner_token_location(s);
@@ -6556,12 +6469,9 @@ unsafe fn expand_qualifier_in_kccgst_value(
 #[inline]
 unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut from: *const i8) {
     unsafe {
-        let from_plus: bool = *from.offset(0 as i32 as isize) as i32
-            == MERGE_OVERRIDE_PREFIX
-            || *from.offset(0 as i32 as isize) as i32
-                == MERGE_AUGMENT_PREFIX
-            || *from.offset(0 as i32 as isize) as i32
-                == MERGE_REPLACE_PREFIX;
+        let from_plus: bool = *from.offset(0 as i32 as isize) as i32 == MERGE_OVERRIDE_PREFIX
+            || *from.offset(0 as i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
+            || *from.offset(0 as i32 as isize) as i32 == MERGE_REPLACE_PREFIX;
         if from_plus as i32 != 0 || (*into).size == 0 as darray_size_t {
             darray_appends_nul(
                 &mut (*into).item,
@@ -6766,10 +6676,8 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
 }
 unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
     unsafe {
-        if (*m).rule.num_mlvo_values as i32
-            != (*m).mapping.num_mlvo as i32
-            || (*m).rule.num_kccgst_values as i32
-                != (*m).mapping.num_kccgst as i32
+        if (*m).rule.num_mlvo_values as i32 != (*m).mapping.num_mlvo as i32
+            || (*m).rule.num_kccgst_values as i32 != (*m).mapping.num_kccgst as i32
         {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
@@ -6842,11 +6750,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                             _ => {
                                 let mut found_option: bool = false;
                                 if !(*m).rmlvo.options.item.is_null() {
-                                    to = (*m)
-                                        .rmlvo
-                                        .options
-                                        .item
-                                        .offset(0 as i32 as isize)
+                                    to = (*m).rmlvo.options.item.offset(0 as i32 as isize)
                                         as *mut matched_sval;
                                     while to
                                         < (*m)
@@ -6856,8 +6760,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                             .offset((*m).rmlvo.options.size as isize)
                                             as *mut matched_sval
                                     {
-                                        if !((*to).layout() as i32
-                                            != OPTIONS_MATCH_ALL_GROUPS
+                                        if !((*to).layout() as i32 != OPTIONS_MATCH_ALL_GROUPS
                                             && (*to).layout() != idx)
                                         {
                                             if match_value_and_mark(
@@ -6901,11 +6804,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                     }
                     _ => {
                         if !(*m).rmlvo.options.item.is_null() {
-                            to = (*m)
-                                .rmlvo
-                                .options
-                                .item
-                                .offset(0 as i32 as isize)
+                            to = (*m).rmlvo.options.item.offset(0 as i32 as isize)
                                 as *mut matched_sval;
                             while to
                                 < (*m)
@@ -6915,8 +6814,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                     .offset((*m).rmlvo.options.size as isize)
                                     as *mut matched_sval
                             {
-                                if !((*to).layout() as i32
-                                    != OPTIONS_MATCH_ALL_GROUPS
+                                if !((*to).layout() as i32 != OPTIONS_MATCH_ALL_GROUPS
                                     && (*to).layout()
                                         != (*m)
                                             .mapping
@@ -6951,9 +6849,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             while idx < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
                 if candidate_layouts & (1 as xkb_layout_mask_t) << idx != 0 {
                     let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-                    while (i_0 as i32)
-                        < (*m).mapping.num_kccgst as i32
-                    {
+                    while (i_0 as i32) < (*m).mapping.num_kccgst as i32 {
                         let kccgst: rules_kccgst = (*m).mapping.kccgst_at_pos[i_0 as usize];
                         let value_0: sval = (*m).rule.kccgst_value_at_pos[i_0 as usize];
                         let buf: *mut kccgst_buffer = &raw mut (*m).pending_kccgst;
@@ -7146,9 +7042,11 @@ unsafe fn matcher_match(
                                             2 => {
                                                 if !(*m).rule.skip {
                                                     if (*m).val.string.len == 1 as usize
-                                                        && *(*m).val.string.start.offset(
-                                                            0 as i32 as isize,
-                                                        )
+                                                        && *(*m)
+                                                            .val
+                                                            .string
+                                                            .start
+                                                            .offset(0 as i32 as isize)
                                                             as i32
                                                             == '+' as i32
                                                     {
@@ -7525,14 +7423,10 @@ unsafe fn xkb_resolve_rules(
                         matcher,
                     );
                     if ret {
-                        if (*matcher).kccgst[KCCGST_KEYCODES as usize].size
-                            == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_TYPES as usize].size
-                                == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_COMPAT as usize].size
-                                == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_SYMBOLS as usize].size
-                                == 0 as darray_size_t
+                        if (*matcher).kccgst[KCCGST_KEYCODES as usize].size == 0 as darray_size_t
+                            || (*matcher).kccgst[KCCGST_TYPES as usize].size == 0 as darray_size_t
+                            || (*matcher).kccgst[KCCGST_COMPAT as usize].size == 0 as darray_size_t
+                            || (*matcher).kccgst[KCCGST_SYMBOLS as usize].size == 0 as darray_size_t
                         {
                             xkb_logf!(
                                 ctx,
@@ -7544,80 +7438,46 @@ unsafe fn xkb_resolve_rules(
                             );
                             ret = false;
                         } else {
-                            (*out).keycodes = (*matcher).kccgst
-                                [KCCGST_KEYCODES as usize]
-                                .item;
+                            (*out).keycodes = (*matcher).kccgst[KCCGST_KEYCODES as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
-                                *(std::ptr::null_mut()
-                                    as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_KEYCODES as usize]
-                                    .size;
+                                *(std::ptr::null_mut() as *mut darray_size_t) =
+                                    (*matcher).kccgst[KCCGST_KEYCODES as usize].size;
                             }
-                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
-                                .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
-                                .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_KEYCODES as usize]
-                                .alloc = 0 as darray_size_t;
-                            (*out).types =
-                                (*matcher).kccgst[KCCGST_TYPES as usize].item;
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize].item = std::ptr::null_mut();
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize].size = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_KEYCODES as usize].alloc = 0 as darray_size_t;
+                            (*out).types = (*matcher).kccgst[KCCGST_TYPES as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
-                                *(std::ptr::null_mut()
-                                    as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_TYPES as usize]
-                                    .size;
+                                *(std::ptr::null_mut() as *mut darray_size_t) =
+                                    (*matcher).kccgst[KCCGST_TYPES as usize].size;
                             }
-                            (*matcher).kccgst[KCCGST_TYPES as usize].item =
-                                std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_TYPES as usize].size =
-                                0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_TYPES as usize].alloc =
-                                0 as darray_size_t;
-                            (*out).compatibility = (*matcher).kccgst
-                                [KCCGST_COMPAT as usize]
-                                .item;
+                            (*matcher).kccgst[KCCGST_TYPES as usize].item = std::ptr::null_mut();
+                            (*matcher).kccgst[KCCGST_TYPES as usize].size = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_TYPES as usize].alloc = 0 as darray_size_t;
+                            (*out).compatibility = (*matcher).kccgst[KCCGST_COMPAT as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
-                                *(std::ptr::null_mut()
-                                    as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_COMPAT as usize]
-                                    .size;
+                                *(std::ptr::null_mut() as *mut darray_size_t) =
+                                    (*matcher).kccgst[KCCGST_COMPAT as usize].size;
                             }
-                            (*matcher).kccgst[KCCGST_COMPAT as usize].item =
-                                std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_COMPAT as usize].size =
-                                0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_COMPAT as usize].alloc =
-                                0 as darray_size_t;
-                            (*out).symbols = (*matcher).kccgst
-                                [KCCGST_SYMBOLS as usize]
-                                .item;
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].item = std::ptr::null_mut();
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].size = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_COMPAT as usize].alloc = 0 as darray_size_t;
+                            (*out).symbols = (*matcher).kccgst[KCCGST_SYMBOLS as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
-                                *(std::ptr::null_mut()
-                                    as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_SYMBOLS as usize]
-                                    .size;
+                                *(std::ptr::null_mut() as *mut darray_size_t) =
+                                    (*matcher).kccgst[KCCGST_SYMBOLS as usize].size;
                             }
-                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].item =
-                                std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].size =
-                                0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_SYMBOLS as usize]
-                                .alloc = 0 as darray_size_t;
-                            (*out).geometry = (*matcher).kccgst
-                                [KCCGST_GEOMETRY as usize]
-                                .item;
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].item = std::ptr::null_mut();
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].size = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_SYMBOLS as usize].alloc = 0 as darray_size_t;
+                            (*out).geometry = (*matcher).kccgst[KCCGST_GEOMETRY as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
-                                *(std::ptr::null_mut()
-                                    as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_GEOMETRY as usize]
-                                    .size;
+                                *(std::ptr::null_mut() as *mut darray_size_t) =
+                                    (*matcher).kccgst[KCCGST_GEOMETRY as usize].size;
                             }
-                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
-                                .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
-                                .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_GEOMETRY as usize]
-                                .alloc = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize].item = std::ptr::null_mut();
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize].size = 0 as darray_size_t;
+                            (*matcher).kccgst[KCCGST_GEOMETRY as usize].alloc = 0 as darray_size_t;
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                 xkb_logf!(
@@ -7633,11 +7493,7 @@ unsafe fn xkb_resolve_rules(
                                 );
                             }
                             if !(*matcher).rmlvo.layouts.item.is_null() {
-                                mval = (*matcher)
-                                    .rmlvo
-                                    .layouts
-                                    .item
-                                    .offset(0 as i32 as isize)
+                                mval = (*matcher).rmlvo.layouts.item.offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7661,11 +7517,7 @@ unsafe fn xkb_resolve_rules(
                                 }
                             }
                             if !(*matcher).rmlvo.variants.item.is_null() {
-                                mval = (*matcher)
-                                    .rmlvo
-                                    .variants
-                                    .item
-                                    .offset(0 as i32 as isize)
+                                mval = (*matcher).rmlvo.variants.item.offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7689,11 +7541,7 @@ unsafe fn xkb_resolve_rules(
                                 }
                             }
                             if !(*matcher).rmlvo.options.item.is_null() {
-                                mval = (*matcher)
-                                    .rmlvo
-                                    .options
-                                    .item
-                                    .offset(0 as i32 as isize)
+                                mval = (*matcher).rmlvo.options.item.offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7732,19 +7580,14 @@ unsafe fn xkb_resolve_rules(
                                         symbols,
                                         usize::MAX as usize,
                                         &raw mut group,
-                                    )
-                                        as i32;
+                                    ) as i32;
                                     if count > 0 as i32
-                                        && (*symbols.offset(count as isize) as i32
-                                            == '\0' as i32
-                                            || (*symbols.offset(count as isize)
-                                                as i32
+                                        && (*symbols.offset(count as isize) as i32 == '\0' as i32
+                                            || (*symbols.offset(count as isize) as i32
                                                 == MERGE_OVERRIDE_PREFIX
-                                                || *symbols.offset(count as isize)
-                                                    as i32
+                                                || *symbols.offset(count as isize) as i32
                                                     == MERGE_AUGMENT_PREFIX
-                                                || *symbols.offset(count as isize)
-                                                    as i32
+                                                || *symbols.offset(count as isize) as i32
                                                     == MERGE_REPLACE_PREFIX))
                                         && group > 0 as xkb_layout_index_t
                                         && group <= XKB_MAX_GROUPS as xkb_layout_index_t

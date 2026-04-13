@@ -68,25 +68,7 @@ pub struct xkb_rule_names {
     pub options: *const i8,
 }
 
-// ── Darray helper structs (used in xkb_context) ─────────────────────
-
-/// String darray (includes field)
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut *mut i8,
-}
-
-/// String darray (failed_includes field)
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_0 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut *mut i8,
-}
+// ── Darray helper structs (used in rules, compose, keymap_file_iterator) ─────
 
 /// Char darray (used in rules, compose, keymap_file_iterator)
 #[derive(Copy, Clone)]
@@ -115,7 +97,7 @@ pub use crate::xkb::atom::atom_table;
 
 use c2rust_bitfields::BitfieldStruct;
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct xkb_context {
     pub refcnt: i32,
@@ -124,8 +106,8 @@ pub struct xkb_context {
     pub log_verbosity: i32,
     pub user_data: *mut ::core::ffi::c_void,
     pub names_dflt: xkb_rule_names,
-    pub includes: C2Rust_Unnamed_0,
-    pub failed_includes: C2Rust_Unnamed,
+    pub includes: Vec<*mut i8>,
+    pub failed_includes: Vec<*mut i8>,
     pub atom_table: *mut atom_table,
     pub x11_atom_cache: *mut ::core::ffi::c_void,
     pub text_buffer: [i8; 2048],
@@ -632,8 +614,8 @@ pub type xkb_led_mask_t = u32;
 pub const CHAR_BIT: i32 = 8;
 pub const UINT16_MAX: i32 = 65535;
 
-pub const XKB_MAX_LEDS: xkb_led_index_t = (std::mem::size_of::<xkb_led_mask_t>())
-    .wrapping_mul(CHAR_BIT as usize) as xkb_led_index_t;
+pub const XKB_MAX_LEDS: xkb_led_index_t =
+    (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(CHAR_BIT as usize) as xkb_led_index_t;
 pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
@@ -816,8 +798,8 @@ pub const XKB_OVERLAY_INVALID: i32 = 255;
 
 pub const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
 pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub const XKB_MAX_MODS: xkb_mod_index_t = (std::mem::size_of::<xkb_mod_mask_t>())
-    .wrapping_mul(CHAR_BIT as usize) as xkb_mod_index_t;
+pub const XKB_MAX_MODS: xkb_mod_index_t =
+    (std::mem::size_of::<xkb_mod_mask_t>()).wrapping_mul(CHAR_BIT as usize) as xkb_mod_index_t;
 
 #[derive(Copy, Clone)]
 #[repr(C)]

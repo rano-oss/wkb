@@ -77,8 +77,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, xkb_rmlvo_builder_to_rules_names,
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
+    xkb_rmlvo_builder_to_rules_names,
 };
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
@@ -224,8 +224,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 variant: std::ptr::null(),
                 options: std::ptr::null(),
             };
-            let buf_size: usize =
-                (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(1 as usize);
+            let buf_size: usize = (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(1 as usize);
             let mut buf: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
             if buf.is_null() as i64 != 0 {
                 return false;

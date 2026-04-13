@@ -91,12 +91,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             } else if !check_eaccess(path, R_OK | X_OK) {
                 err = EACCES;
             } else {
-                darray_append(
-                    &mut (*ctx).includes.item,
-                    &mut (*ctx).includes.size,
-                    &mut (*ctx).includes.alloc,
-                    tmp,
-                );
+                (*ctx).includes.push(tmp);
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
@@ -108,12 +103,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
             }
         }
         if !tmp.is_null() {
-            darray_append(
-                &mut (*ctx).failed_includes.item,
-                &mut (*ctx).failed_includes.size,
-                &mut (*ctx).failed_includes.alloc,
-                tmp,
-            );
+            (*ctx).failed_includes.push(tmp);
         }
         xkb_logf!(
             ctx,
@@ -452,37 +442,14 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
 
 pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
     unsafe {
-        let mut path: *mut *mut i8 = std::ptr::null_mut();
-        if !(*ctx).includes.item.is_null() {
-            path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
-            while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
-            {
-                cstr_free(*path);
-                path = path.offset(1);
-            }
+        for path in (*ctx).includes.iter() {
+            cstr_free(*path);
         }
-        darray_free(
-            &mut (*ctx).includes.item,
-            &mut (*ctx).includes.size,
-            &mut (*ctx).includes.alloc,
-        );
-        if !(*ctx).failed_includes.item.is_null() {
-            path = (*ctx).failed_includes.item.offset(0 as i32 as isize) as *mut *mut i8;
-            while path
-                < (*ctx)
-                    .failed_includes
-                    .item
-                    .offset((*ctx).failed_includes.size as isize) as *mut *mut i8
-            {
-                cstr_free(*path);
-                path = path.offset(1);
-            }
+        (*ctx).includes.clear();
+        for path in (*ctx).failed_includes.iter() {
+            cstr_free(*path);
         }
-        darray_free(
-            &mut (*ctx).failed_includes.item,
-            &mut (*ctx).failed_includes.size,
-            &mut (*ctx).failed_includes.alloc,
-        );
+        (*ctx).failed_includes.clear();
         (*ctx).set_pending_default_includes((false) as bool);
     }
 }
@@ -496,7 +463,7 @@ pub unsafe fn xkb_context_include_path_reset_defaults(mut ctx: *mut xkb_context)
 pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
-            (*ctx).includes.size as u32
+            (*ctx).includes.len() as u32
         } else {
             0 as u32
         };
@@ -507,7 +474,7 @@ pub unsafe fn xkb_context_include_path_get(mut ctx: *mut xkb_context, mut idx: u
         if idx >= xkb_context_num_include_paths(ctx) {
             return std::ptr::null();
         }
-        return *(*ctx).includes.item.offset(idx as isize);
+        return *(*ctx).includes.as_ptr().add(idx as usize);
     }
 }
 pub unsafe fn xkb_context_ref(mut ctx: *mut xkb_context) -> *mut xkb_context {
@@ -622,7 +589,18 @@ unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
 pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context {
     unsafe {
         let mut env: *const i8 = std::ptr::null();
-        let mut ctx: *mut xkb_context = Box::into_raw(Box::new(std::mem::zeroed::<xkb_context>()));
+        let ctx: *mut xkb_context = {
+            // Allocate zeroed memory (all scalar/pointer fields zero-init fine),
+            // then write Vec fields which cannot be zero-initialized.
+            let layout = std::alloc::Layout::new::<xkb_context>();
+            let ptr = std::alloc::alloc_zeroed(layout) as *mut xkb_context;
+            if ptr.is_null() {
+                std::alloc::handle_alloc_error(layout);
+            }
+            std::ptr::write(&raw mut (*ptr).includes, Vec::new());
+            std::ptr::write(&raw mut (*ptr).failed_includes, Vec::new());
+            ptr
+        };
         (*ctx).refcnt = 1 as i32;
         (*ctx).log_fn =
             Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
@@ -653,12 +631,6 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
         (*ctx).set_pending_default_includes(
             (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0) as bool,
         );
-        (*ctx).includes.item = std::ptr::null_mut();
-        (*ctx).includes.size = 0 as darray_size_t;
-        (*ctx).includes.alloc = 0 as darray_size_t;
-        (*ctx).failed_includes.item = std::ptr::null_mut();
-        (*ctx).failed_includes.size = 0 as darray_size_t;
-        (*ctx).failed_includes.alloc = 0 as darray_size_t;
         env = xkb_context_getenv(ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
         if !env.is_null() {
             xkb_context_set_log_level(ctx, log_level(env));

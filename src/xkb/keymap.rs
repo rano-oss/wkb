@@ -60,8 +60,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_layouts,
-    xkb_rmlvo_builder_option, xkb_rmlvo_builder_options,
+    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{

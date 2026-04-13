@@ -1,5 +1,5 @@
+use crate::xkb::atom::{atom_intern, atom_table_size, atom_text};
 use crate::xkb::context::xkb_context_include_path_get_system_path;
-use crate::xkb::atom::{atom_table_size, atom_intern, atom_text};
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -45,12 +45,14 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::shared_types::{RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT};
-pub use crate::xkb::utils::isempty;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
+pub use crate::xkb::shared_types::{
+    RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
+};
 use crate::xkb::utils::cstr_len;
-use libc::{getenv};
+pub use crate::xkb::utils::isempty;
+use libc::getenv;
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
@@ -86,7 +88,7 @@ pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8)
 pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
     unsafe {
         if (*ctx).pending_default_includes() {
-            if (*ctx).failed_includes.size == 0 as darray_size_t {
+            if (*ctx).failed_includes.is_empty() {
                 if xkb_context_include_path_append_default(ctx) == 0 {
                     xkb_logf!(
                         ctx,
@@ -111,7 +113,7 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
 pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> darray_size_t {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
-            (*ctx).failed_includes.size
+            (*ctx).failed_includes.len() as darray_size_t
         } else {
             0 as darray_size_t
         };
@@ -125,7 +127,7 @@ pub unsafe fn xkb_context_failed_include_path_get(
         if idx >= xkb_context_num_failed_include_paths(ctx) {
             return std::ptr::null();
         }
-        return *(*ctx).failed_includes.item.offset(idx as isize);
+        return *(*ctx).failed_includes.as_ptr().add(idx as usize);
     }
 }
 
@@ -172,9 +174,7 @@ pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize)
         if size >= std::mem::size_of::<[i8; 2048]>() {
             return std::ptr::null_mut();
         }
-        if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub((*ctx).text_next as usize)
-            <= size
-        {
+        if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub((*ctx).text_next as usize) <= size {
             (*ctx).text_next = 0 as usize;
         }
         rtrn =
@@ -293,5 +293,5 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         return modified;
     }
 }
-use crate::xkb::shared_types::*;
 use crate::xkb::context::xkb_context_include_path_append_default;
+use crate::xkb::shared_types::*;

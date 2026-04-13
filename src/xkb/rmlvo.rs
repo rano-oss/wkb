@@ -1,35 +1,19 @@
-use crate::xkb::shared_types::{darray_size_t, xkb_context, xkb_layout_index_t};
+use crate::xkb::shared_types::{xkb_context, xkb_layout_index_t};
 use crate::xkb_logf;
 
-#[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_rmlvo_builder {
     pub rules: *mut i8,
     pub model: *mut i8,
-    pub layouts: xkb_rmlvo_builder_layouts,
-    pub options: xkb_rmlvo_builder_options,
+    pub layouts: Vec<xkb_rmlvo_builder_layout>,
+    pub options: Vec<xkb_rmlvo_builder_option>,
     pub refcnt: i32,
     pub ctx: *mut xkb_context,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct xkb_rmlvo_builder_options {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_rmlvo_builder_option,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_rmlvo_builder_option {
     pub option: *mut i8,
     pub layout: xkb_layout_index_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct xkb_rmlvo_builder_layouts {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_rmlvo_builder_layout,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -92,7 +76,6 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::utils::cstr_cmp;
 use crate::xkb::utils::cstr_free;
 pub use crate::xkb::utils::strdup_safe;
-use crate::xkb::utils::{darray_append, darray_free};
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,
@@ -111,34 +94,38 @@ pub unsafe fn xkb_rmlvo_builder_new(
             );
             return std::ptr::null_mut();
         }
-        let builder: *mut xkb_rmlvo_builder =
-            Box::into_raw(Box::new(std::mem::zeroed::<xkb_rmlvo_builder>()));
-        {
-            (*builder).refcnt = 1 as i32;
-            (*builder).ctx = xkb_context_ref(context);
-            (*builder).rules = strdup_safe(rules);
-            if !((*builder).rules.is_null() && !rules.is_null()) {
-                (*builder).model = strdup_safe(model);
-                if !((*builder).model.is_null() && !model.is_null()) {
-                    (*builder).layouts.item = std::ptr::null_mut();
-                    (*builder).layouts.size = 0 as darray_size_t;
-                    (*builder).layouts.alloc = 0 as darray_size_t;
-                    (*builder).options.item = std::ptr::null_mut();
-                    (*builder).options.size = 0 as darray_size_t;
-                    (*builder).options.alloc = 0 as darray_size_t;
-                    return builder;
-                }
-            }
+        let rules_dup = strdup_safe(rules);
+        if rules_dup.is_null() && !rules.is_null() {
+            xkb_logf!(
+                context,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] Cannot allocate a RMLVO builder.\n",
+                XKB_ERROR_ALLOCATION_ERROR as i32,
+            );
+            return std::ptr::null_mut();
         }
-        xkb_logf!(
-            context,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] Cannot allocate a RMLVO builder.\n",
-            XKB_ERROR_ALLOCATION_ERROR as i32,
-        );
-        xkb_rmlvo_builder_unref(builder);
-        return std::ptr::null_mut();
+        let model_dup = strdup_safe(model);
+        if model_dup.is_null() && !model.is_null() {
+            cstr_free(rules_dup);
+            xkb_logf!(
+                context,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] Cannot allocate a RMLVO builder.\n",
+                XKB_ERROR_ALLOCATION_ERROR as i32,
+            );
+            return std::ptr::null_mut();
+        }
+        let builder = Box::into_raw(Box::new(xkb_rmlvo_builder {
+            refcnt: 1,
+            ctx: xkb_context_ref(context),
+            rules: rules_dup,
+            model: model_dup,
+            layouts: Vec::new(),
+            options: Vec::new(),
+        }));
+        return builder;
     }
 }
 pub unsafe fn xkb_rmlvo_builder_append_layout(
@@ -149,7 +136,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
     mut options_len: usize,
 ) -> bool {
     unsafe {
-        let idx: xkb_layout_index_t = (*rmlvo).layouts.size as xkb_layout_index_t;
+        let idx: xkb_layout_index_t = (*rmlvo).layouts.len() as xkb_layout_index_t;
         if idx >= XKB_MAX_GROUPS as xkb_layout_index_t {
             xkb_logf!(
                 (*rmlvo).ctx,
@@ -189,12 +176,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
             );
             return false;
         }
-        darray_append(
-            &mut (*rmlvo).layouts.item,
-            &mut (*rmlvo).layouts.size,
-            &mut (*rmlvo).layouts.alloc,
-            new,
-        );
+        (*rmlvo).layouts.push(new);
         if options.is_null() {
             options_len = 0 as usize;
         }
@@ -221,12 +203,7 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
                 );
                 return false;
             }
-            darray_append(
-                &mut (*rmlvo).options.item,
-                &mut (*rmlvo).options.size,
-                &mut (*rmlvo).options.alloc,
-                option,
-            );
+            (*rmlvo).options.push(option);
             k = k.wrapping_add(1);
         }
         return true;
@@ -240,20 +217,11 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
         if option.is_null() {
             return false;
         }
-        let mut prev: *const xkb_rmlvo_builder_option = std::ptr::null();
-        if !(*rmlvo).options.item.is_null() {
-            prev = (*rmlvo).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
-            while prev
-                < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
-                    as *mut xkb_rmlvo_builder_option
-                    as *const xkb_rmlvo_builder_option
+        for prev in (*rmlvo).options.iter() {
+            if prev.layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
+                && cstr_cmp(prev.option, option) == 0 as i32
             {
-                if (*prev).layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
-                    && cstr_cmp((*prev).option, option) == 0 as i32
-                {
-                    return true;
-                }
-                prev = prev.offset(1);
+                return true;
             }
         }
         let new: xkb_rmlvo_builder_option = xkb_rmlvo_builder_option {
@@ -271,12 +239,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             );
             return false;
         }
-        darray_append(
-            &mut (*rmlvo).options.item,
-            &mut (*rmlvo).options.size,
-            &mut (*rmlvo).options.alloc,
-            new,
-        );
+        (*rmlvo).options.push(new);
         return true;
     }
 }
@@ -297,43 +260,14 @@ pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
         }
         cstr_free((*rmlvo).rules);
         cstr_free((*rmlvo).model);
-        let mut layout: *const xkb_rmlvo_builder_layout = std::ptr::null();
-        if !(*rmlvo).layouts.item.is_null() {
-            layout =
-                (*rmlvo).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
-            while layout
-                < (*rmlvo).layouts.item.offset((*rmlvo).layouts.size as isize)
-                    as *mut xkb_rmlvo_builder_layout
-                    as *const xkb_rmlvo_builder_layout
-            {
-                cstr_free((*layout).layout);
-                cstr_free((*layout).variant);
-                layout = layout.offset(1);
-            }
+        for layout in (*rmlvo).layouts.iter() {
+            cstr_free(layout.layout);
+            cstr_free(layout.variant);
         }
-        darray_free(
-            &mut (*rmlvo).layouts.item,
-            &mut (*rmlvo).layouts.size,
-            &mut (*rmlvo).layouts.alloc,
-        );
-        let mut option: *const xkb_rmlvo_builder_option = std::ptr::null();
-        if !(*rmlvo).options.item.is_null() {
-            option =
-                (*rmlvo).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
-            while option
-                < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
-                    as *mut xkb_rmlvo_builder_option
-                    as *const xkb_rmlvo_builder_option
-            {
-                cstr_free((*option).option);
-                option = option.offset(1);
-            }
+        // Vec is dropped automatically when Box is dropped
+        for option in (*rmlvo).options.iter() {
+            cstr_free(option.option);
         }
-        darray_free(
-            &mut (*rmlvo).options.item,
-            &mut (*rmlvo).options.size,
-            &mut (*rmlvo).options.alloc,
-        );
         xkb_context_unref((*rmlvo).ctx);
         drop(Box::from_raw(rmlvo));
     }
@@ -349,30 +283,21 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         (*rmlvo).model = (*builder).model;
         let mut start: *mut i8 = buf;
         (*rmlvo).layout = start;
-        let mut k: darray_size_t = 0;
-        let mut layout: *const xkb_rmlvo_builder_layout = std::ptr::null();
-        if !(*builder).layouts.item.is_null() {
-            k = 0 as darray_size_t;
-            layout =
-                (*builder).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
-            while k < (*builder).layouts.size {
-                let (count, trunc) = crate::xkb::utils::snprintf_args(
-                    start,
-                    buf_size,
-                    format_args!(
-                        "{}{}",
-                        if k > 0 as darray_size_t { "," } else { "" },
-                        crate::xkb::utils::CStrDisplay((*layout).layout),
-                    ),
-                );
-                if trunc || (count == 0 && k > 0) {
-                    return false;
-                }
-                buf_size = buf_size.wrapping_sub(count);
-                start = start.offset(count as isize);
-                k = k.wrapping_add(1);
-                layout = layout.offset(1);
+        for (k, layout) in (*builder).layouts.iter().enumerate() {
+            let (count, trunc) = crate::xkb::utils::snprintf_args(
+                start,
+                buf_size,
+                format_args!(
+                    "{}{}",
+                    if k > 0 { "," } else { "" },
+                    crate::xkb::utils::CStrDisplay(layout.layout),
+                ),
+            );
+            if trunc || (count == 0 && k > 0) {
+                return false;
             }
+            buf_size = buf_size.wrapping_sub(count);
+            start = start.offset(count as isize);
         }
         if buf_size <= 1 as usize {
             return false;
@@ -381,32 +306,25 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
         (*rmlvo).variant = start;
-        if !(*builder).layouts.item.is_null() {
-            k = 0 as darray_size_t;
-            layout =
-                (*builder).layouts.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_layout;
-            while k < (*builder).layouts.size {
-                let (count_0, trunc) = crate::xkb::utils::snprintf_args(
-                    start,
-                    buf_size,
-                    format_args!(
-                        "{}{}",
-                        if k > 0 as darray_size_t { "," } else { "" },
-                        crate::xkb::utils::CStrDisplay(if !(*layout).variant.is_null() {
-                            (*layout).variant as *const i8
-                        } else {
-                            b"\0".as_ptr() as *const i8
-                        }),
-                    ),
-                );
-                if trunc || (count_0 == 0 && k > 0) {
-                    return false;
-                }
-                buf_size = buf_size.wrapping_sub(count_0);
-                start = start.offset(count_0 as isize);
-                k = k.wrapping_add(1);
-                layout = layout.offset(1);
+        for (k, layout) in (*builder).layouts.iter().enumerate() {
+            let (count_0, trunc) = crate::xkb::utils::snprintf_args(
+                start,
+                buf_size,
+                format_args!(
+                    "{}{}",
+                    if k > 0 { "," } else { "" },
+                    crate::xkb::utils::CStrDisplay(if !layout.variant.is_null() {
+                        layout.variant as *const i8
+                    } else {
+                        b"\0".as_ptr() as *const i8
+                    }),
+                ),
+            );
+            if trunc || (count_0 == 0 && k > 0) {
+                return false;
             }
+            buf_size = buf_size.wrapping_sub(count_0);
+            start = start.offset(count_0 as isize);
         }
         if buf_size <= 1 as usize {
             return false;
@@ -415,52 +333,44 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
         (*rmlvo).options = start;
-        let mut option: *const xkb_rmlvo_builder_option = std::ptr::null();
-        if !(*builder).options.item.is_null() {
-            k = 0 as darray_size_t;
-            option =
-                (*builder).options.item.offset(0 as i32 as isize) as *mut xkb_rmlvo_builder_option;
-            while k < (*builder).options.size {
-                let mut count_1: i32 = {
-                    let (written, trunc) = crate::xkb::utils::snprintf_args(
-                        start,
-                        buf_size,
-                        format_args!(
-                            "{}{}",
-                            if k > 0 as darray_size_t { "," } else { "" },
-                            crate::xkb::utils::CStrDisplay((*option).option),
-                        ),
-                    );
-                    if trunc {
-                        -1
-                    } else {
-                        written as i32
-                    }
-                };
+        for (k, option) in (*builder).options.iter().enumerate() {
+            let mut count_1: i32 = {
+                let (written, trunc) = crate::xkb::utils::snprintf_args(
+                    start,
+                    buf_size,
+                    format_args!(
+                        "{}{}",
+                        if k > 0 { "," } else { "" },
+                        crate::xkb::utils::CStrDisplay(option.option),
+                    ),
+                );
+                if trunc {
+                    -1
+                } else {
+                    written as i32
+                }
+            };
+            if count_1 < 0 as i32 || count_1 as usize >= buf_size {
+                return false;
+            }
+            buf_size = buf_size.wrapping_sub(count_1 as usize);
+            start = start.offset(count_1 as isize);
+            if option.layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
+                let (written, trunc) = crate::xkb::utils::snprintf_args(
+                    start,
+                    buf_size,
+                    format_args!(
+                        "{}{}",
+                        (OPTIONS_GROUP_SPECIFIER_PREFIX as u8 as char),
+                        option.layout
+                    ),
+                );
+                count_1 = if trunc { -1 } else { written as i32 };
                 if count_1 < 0 as i32 || count_1 as usize >= buf_size {
                     return false;
                 }
                 buf_size = buf_size.wrapping_sub(count_1 as usize);
                 start = start.offset(count_1 as isize);
-                if (*option).layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                    let (written, trunc) = crate::xkb::utils::snprintf_args(
-                        start,
-                        buf_size,
-                        format_args!(
-                            "{}{}",
-                            (OPTIONS_GROUP_SPECIFIER_PREFIX as u8 as char),
-                            (*option).layout
-                        ),
-                    );
-                    count_1 = if trunc { -1 } else { written as i32 };
-                    if count_1 < 0 as i32 || count_1 as usize >= buf_size {
-                        return false;
-                    }
-                    buf_size = buf_size.wrapping_sub(count_1 as usize);
-                    start = start.offset(count_1 as isize);
-                }
-                k = k.wrapping_add(1);
-                option = option.offset(1);
             }
         }
         if buf_size == 0 as usize {
