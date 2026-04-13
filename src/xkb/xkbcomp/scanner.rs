@@ -1,334 +1,8 @@
+use crate::xkb::context_priv::xkb_atom_intern;
 use crate::xkb::shared_types::*;
 use crate::xkb_logf;
-use crate::xkb::context_priv::xkb_atom_intern;
 
 use crate::xkb::text::LookupEntry;
-pub mod scanner_utils_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct sval {
-        pub len: usize,
-        pub start: *const i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner_loc {
-        pub line: usize,
-        pub column: usize,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner {
-        pub pos: usize,
-        pub len: usize,
-        pub s: *const i8,
-        pub buf: [i8; 1024],
-        pub buf_pos: usize,
-        pub token_pos: usize,
-        pub cached_pos: usize,
-        pub cached_loc: scanner_loc,
-        pub file_name: *const i8,
-        pub ctx: *mut xkb_context,
-        pub priv_0: *mut ::core::ffi::c_void,
-    }
-    #[inline]
-    pub unsafe fn scanner_init(
-        mut s: *mut scanner,
-        mut ctx: *mut xkb_context,
-        mut string: *const i8,
-        mut len: usize,
-        mut file_name: *const i8,
-        mut priv_0: *mut ::core::ffi::c_void,
-    ) {
-        unsafe {
-            (*s).s = string;
-            (*s).len = len;
-            (*s).pos = 0 as usize;
-            (*s).token_pos = 0 as usize;
-            (*s).cached_pos = 0 as usize;
-            (*s).cached_loc.column = 1 as usize;
-            (*s).cached_loc.line = (*s).cached_loc.column;
-            (*s).file_name = file_name;
-            (*s).ctx = ctx;
-            (*s).priv_0 = priv_0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
-        unsafe {
-            if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
-                return '\0' as i32 as i8;
-            }
-            return *(*s).s.offset((*s).pos as isize);
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
-        unsafe {
-            return (*s).pos >= (*s).len;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
-        unsafe {
-            return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
-        unsafe {
-            let mut nl: *const i8 = crate::xkb::utils::byte_memchr(
-                (*s).s.offset((*s).pos as isize),
-                b'\n',
-                (*s).len.wrapping_sub((*s).pos),
-            );
-            let new_pos: usize = if !nl.is_null() {
-                nl.offset_from((*s).s) as i64 as usize
-            } else {
-                (*s).len
-            };
-            (*s).pos = new_pos;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
-        unsafe {
-            if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
-                return '\0' as i32 as i8;
-            }
-            let c2rust_fresh0 = (*s).pos;
-            (*s).pos = (*s).pos.wrapping_add(1);
-            return *(*s).s.offset(c2rust_fresh0 as isize);
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
-        unsafe {
-            if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
-                as ::core::ffi::c_int as i64
-                != 0
-            {
-                return 0 != 0;
-            }
-            (*s).pos = (*s).pos.wrapping_add(1);
-            return 1 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
-        unsafe {
-            if (*s).len.wrapping_sub((*s).pos) < len {
-                return 0 != 0;
-            }
-            if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
-                != std::slice::from_raw_parts(string as *const u8, len)
-            {
-                return 0 != 0;
-            }
-            (*s).pos = (*s).pos.wrapping_add(len);
-            return 1 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
-        unsafe {
-            if (*s).buf_pos.wrapping_add(1 as usize)
-                >= ::core::mem::size_of::<[i8; 1024]>() as usize
-            {
-                return 0 != 0;
-            }
-            let c2rust_fresh1 = (*s).buf_pos;
-            (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
-            (*s).buf[c2rust_fresh1 as usize] = ch;
-            return 1 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) -> bool {
-        unsafe {
-            if (*s).buf_pos.wrapping_add(5 as usize)
-                <= ::core::mem::size_of::<[i8; 1024]>() as usize
-            {
-                let mut count: ::core::ffi::c_int = utf32_to_utf8(
-                    c,
-                    (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
-                );
-                if count == 0 as ::core::ffi::c_int {
-                    count = utf32_to_utf8(
-                        0xfffd as u32,
-                        (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
-                    );
-                }
-                if count == 0 as ::core::ffi::c_int {
-                    return 0 != 0;
-                }
-                (*s).buf_pos = (*s)
-                    .buf_pos
-                    .wrapping_add((count - 1 as ::core::ffi::c_int) as usize);
-                return 1 != 0;
-            } else {
-                return 0 != 0;
-            };
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
-        unsafe {
-            let mut i: u8 = 0 as u8;
-            let mut c: u8 = 0 as u8;
-            while scanner_peek(s) as ::core::ffi::c_int >= '0' as i32
-                && scanner_peek(s) as ::core::ffi::c_int <= '7' as i32
-                && (i as ::core::ffi::c_int) < 4 as ::core::ffi::c_int
-            {
-                if (c as ::core::ffi::c_int) < 0o40 as ::core::ffi::c_int {
-                    c = (c as ::core::ffi::c_int * 8 as ::core::ffi::c_int
-                        + scanner_next(s) as ::core::ffi::c_int
-                        - '0' as i32) as u8;
-                } else {
-                    scanner_next(s);
-                    *out = c;
-                    return 0 != 0;
-                }
-                i = i.wrapping_add(1);
-            }
-            *out = c;
-            return i as ::core::ffi::c_int > 0 as ::core::ffi::c_int;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
-        unsafe {
-            let mut val: u64 = 0 as u64;
-            let count: ::core::ffi::c_int = parse_dec_to_uint64_t(
-                (*s).s.offset((*s).pos as isize),
-                (*s).len.wrapping_sub((*s).pos),
-                &raw mut val,
-            ) as ::core::ffi::c_int;
-            if count > 0 as ::core::ffi::c_int {
-                if val > i64::MAX as u64 {
-                    return -1 as ::core::ffi::c_int;
-                }
-                (*s).pos = (*s).pos.wrapping_add(count as usize);
-                *out = val as i64;
-            }
-            return count;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
-        unsafe {
-            let mut val: u64 = 0 as u64;
-            let count: ::core::ffi::c_int = parse_hex_to_uint64_t(
-                (*s).s.offset((*s).pos as isize),
-                (*s).len.wrapping_sub((*s).pos),
-                &raw mut val,
-            ) as ::core::ffi::c_int;
-            if count > 0 as ::core::ffi::c_int {
-                if val > i64::MAX as u64 {
-                    return -1 as ::core::ffi::c_int;
-                }
-                (*s).pos = (*s).pos.wrapping_add(count as usize);
-                *out = val as i64;
-            }
-            return count;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32) -> bool {
-        unsafe {
-            if !scanner_chr(s, '{' as i32 as i8) {
-                return 0 != 0;
-            }
-            let mut cp: u32 = 0 as u32;
-            let count: ::core::ffi::c_int = parse_hex_to_uint32_t(
-                (*s).s.offset((*s).pos as isize),
-                (*s).len.wrapping_sub((*s).pos),
-                &raw mut cp,
-            ) as ::core::ffi::c_int;
-            if count > 0 as ::core::ffi::c_int {
-                (*s).pos = (*s).pos.wrapping_add(count as usize);
-            }
-            let last_valid: usize = (*s).pos;
-            while !scanner_eof(s)
-                && !scanner_eol(s)
-                && scanner_peek(s) as ::core::ffi::c_int != '"' as i32
-                && scanner_peek(s) as ::core::ffi::c_int != '}' as i32
-            {
-                scanner_next(s);
-            }
-            if scanner_chr(s, '}' as i32 as i8) {
-                *out = cp;
-                return count > 0 as ::core::ffi::c_int
-                    && (*s).pos == last_valid.wrapping_add(1 as usize)
-                    && cp <= 0x10ffff as u32;
-            }
-            (*s).pos = last_valid;
-            return 0 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_check_supported_char_encoding(mut scanner: *mut scanner) -> bool {
-        unsafe {
-            if scanner_str(scanner, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize)
-                as ::core::ffi::c_int
-                != 0
-                || (*scanner).len < 2 as usize
-            {
-                return 1 != 0;
-            }
-            if *(*scanner).s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '\0' as i32
-                || *(*scanner).s.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32
-            {
-                let mut loc: scanner_loc = scanner_token_location(scanner);
-                xkb_logf!(
-                    (*scanner).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                    XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
-                    loc.line,
-                    loc.column,
-                );
-                return 0 != 0;
-            }
-            if !is_ascii(*(*scanner).s.offset(0 as ::core::ffi::c_int as isize)) {
-                let mut loc_0: scanner_loc = scanner_token_location(scanner);
-                xkb_logf!(
-                    (*scanner).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
-                    "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                    XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
-                    crate::xkb::utils::CStrDisplay((*scanner).file_name),
-                    loc_0.line,
-                    loc_0.column,
-                );
-                return 0 != 0;
-            }
-            return 1 != 0;
-        }
-    }
-
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
-    use super::utf8_h::utf32_to_utf8;
-    use crate::xkb::utils::is_ascii;
-    use crate::xkb::utils::{
-        parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
-    };
-    use crate::xkb::shared_types::*;
-    use crate::xkb_logf;
-    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
-        unsafe {
-            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
-                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
-            ))
-        }
-    }
-}
 pub mod parser_h {
     pub type yytokentype = ::core::ffi::c_int;
     pub const ALTERNATE_GROUP: yytokentype = 77;
@@ -462,13 +136,13 @@ pub mod parser_h {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
+    use crate::xkb::scanner_utils::sval;
     use crate::xkb::shared_ast_types::{
         merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
         UnknownStatement, VModDef, VarDef, XkbFile,
     };
     use crate::xkb::shared_types::xkb_atom_t;
-    use super::scanner_utils_h::sval;
     use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub mod utf8_h {
@@ -509,27 +183,18 @@ pub mod parser_priv_h {
     pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 }
 
-pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
-    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
-    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
-    GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
-    ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
+pub use self::parser_h::{
+    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
+    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
+    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
+    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
+    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
+    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
+    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
+    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
+    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
+use self::parser_priv_h::{keyword_to_token, parse, parse_next};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -574,33 +239,42 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::parser_h::{
-    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
-    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
-    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
-    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
-    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
-    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
-    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
-    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
-    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
-};
-use self::parser_priv_h::{keyword_to_token, parse, parse_next};
-pub use self::scanner_utils_h::{
+pub use crate::xkb::scanner_utils::{
     scanner, scanner_buf_append, scanner_buf_appends_code_point,
     scanner_check_supported_char_encoding, scanner_chr, scanner_dec_int64, scanner_eof,
     scanner_eol, scanner_hex_int64, scanner_init, scanner_loc, scanner_next, scanner_oct,
     scanner_peek, scanner_skip_to_eol, scanner_str, scanner_token_location,
     scanner_unicode_code_point, sval,
 };
-pub use crate::xkb::utils::{
-    is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
-};
-pub use crate::xkb::utils::{
-    digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
+pub use crate::xkb::shared_ast_types::{
+    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
+    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
+    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
+    GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
+    ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
+    _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
+pub use crate::xkb::utils::{
+    digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
+};
+pub use crate::xkb::utils::{
+    is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
+};
 use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(

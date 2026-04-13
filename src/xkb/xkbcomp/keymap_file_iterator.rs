@@ -1,30 +1,5 @@
 use crate::xkb_logf;
 
-pub mod scanner_utils_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner_loc {
-        pub line: usize,
-        pub column: usize,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner {
-        pub pos: usize,
-        pub len: usize,
-        pub s: *const i8,
-        pub buf: [i8; 1024],
-        pub buf_pos: usize,
-        pub token_pos: usize,
-        pub cached_pos: usize,
-        pub cached_loc: scanner_loc,
-        pub file_name: *const i8,
-        pub ctx: *mut xkb_context,
-        pub priv_0: *mut ::core::ffi::c_void,
-    }
-
-    use crate::xkb::shared_types::xkb_context;
-}
 pub mod keymap_file_iterator_h {
     #[derive(Copy, Clone, BitfieldStruct)]
     #[repr(C)]
@@ -89,7 +64,7 @@ pub mod keymap_file_iterator_h {
         pub pending_section: *mut XkbFile,
         pub ctx: *mut xkb_context,
     }
-    use super::scanner_utils_h::scanner;
+    use crate::xkb::scanner_utils::scanner;
     use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
     use crate::xkb::shared_types::xkb_context;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
@@ -137,7 +112,7 @@ pub use self::keymap_file_iterator_h::{
     xkb_file_section, C2Rust_Unnamed_2, C2Rust_Unnamed_3, XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR,
     XKB_FILE_ITERATOR_NO_FLAG, XKB_FILE_ITERATOR_NO_INCLUDES,
 };
-pub use self::scanner_utils_h::{scanner, scanner_loc};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
 use self::utils_paths_h::is_absolute_path;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

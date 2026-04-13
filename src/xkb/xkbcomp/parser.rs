@@ -7,52 +7,6 @@ use crate::xkb_logf;
 
 pub const XKB_KEYSYM_MIN: i32 = 0;
 
-pub mod scanner_utils_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct sval {
-        pub len: usize,
-        pub start: *const i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner_loc {
-        pub line: usize,
-        pub column: usize,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner {
-        pub pos: usize,
-        pub len: usize,
-        pub s: *const i8,
-        pub buf: [i8; 1024],
-        pub buf_pos: usize,
-        pub token_pos: usize,
-        pub cached_pos: usize,
-        pub cached_loc: scanner_loc,
-        pub file_name: *const i8,
-        pub ctx: *mut xkb_context,
-        pub priv_0: *mut ::core::ffi::c_void,
-    }
-    #[inline]
-    pub unsafe fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
-        unsafe {
-            return s1.len == s2.len
-                && istrncmp(s1.start, s2.start, s1.len) == 0 as ::core::ffi::c_int;
-        }
-    }
-
-    use crate::xkb::shared_types::xkb_context;
-    use crate::xkb::utils::istrncmp;
-    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
-        unsafe {
-            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
-                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
-            ))
-        }
-    }
-}
 pub mod parser_h {
     pub type yytokentype = ::core::ffi::c_int;
     pub const ALTERNATE_GROUP: yytokentype = 77;
@@ -186,7 +140,7 @@ pub mod parser_h {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
-    use super::scanner_utils_h::sval;
+    use crate::xkb::scanner_utils::sval;
     use crate::xkb::shared_ast_types::{
         merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
         KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
@@ -197,7 +151,7 @@ pub mod parser_h {
 }
 pub mod ast_build_h {
 
-    use super::scanner_utils_h::{scanner, sval};
+    use crate::xkb::scanner_utils::{scanner, sval};
     use crate::xkb::shared_ast_types::ExprDef;
     use crate::xkb::shared_types::xkb_keysym_t;
     pub use crate::xkb::xkbcomp::ast_build::{
@@ -241,7 +195,7 @@ pub mod ast_build_h {
 }
 pub mod parser_priv_h {
     use super::parser_h::YYSTYPE;
-    use super::scanner_utils_h::scanner;
+    use crate::xkb::scanner_utils::scanner;
 
     pub unsafe fn _xkbcommon_lex(
         yylval: *mut YYSTYPE,
@@ -272,7 +226,7 @@ pub use self::parser_h::{
     XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
 use self::parser_priv_h::_xkbcommon_lex;
-pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
+pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

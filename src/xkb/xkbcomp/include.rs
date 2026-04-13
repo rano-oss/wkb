@@ -7,134 +7,6 @@ use crate::xkb::context_priv::{
 };
 use crate::xkb_logf;
 
-pub mod scanner_utils_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner_loc {
-        pub line: usize,
-        pub column: usize,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner {
-        pub pos: usize,
-        pub len: usize,
-        pub s: *const i8,
-        pub buf: [i8; 1024],
-        pub buf_pos: usize,
-        pub token_pos: usize,
-        pub cached_pos: usize,
-        pub cached_loc: scanner_loc,
-        pub file_name: *const i8,
-        pub ctx: *mut xkb_context,
-        pub priv_0: *mut ::core::ffi::c_void,
-    }
-    #[inline]
-    pub unsafe fn scanner_init(
-        mut s: *mut scanner,
-        mut ctx: *mut xkb_context,
-        mut string: *const i8,
-        mut len: usize,
-        mut file_name: *const i8,
-        mut priv_0: *mut ::core::ffi::c_void,
-    ) {
-        unsafe {
-            (*s).s = string;
-            (*s).len = len;
-            (*s).pos = 0 as usize;
-            (*s).token_pos = 0 as usize;
-            (*s).cached_pos = 0 as usize;
-            (*s).cached_loc.column = 1 as usize;
-            (*s).cached_loc.line = (*s).cached_loc.column;
-            (*s).file_name = file_name;
-            (*s).ctx = ctx;
-            (*s).priv_0 = priv_0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
-        unsafe {
-            if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
-                return '\0' as i32 as i8;
-            }
-            return *(*s).s.offset((*s).pos as isize);
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
-        unsafe {
-            return (*s).pos >= (*s).len;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
-        unsafe {
-            return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
-        unsafe {
-            if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
-                return '\0' as i32 as i8;
-            }
-            let c2rust_fresh0 = (*s).pos;
-            (*s).pos = (*s).pos.wrapping_add(1);
-            return *(*s).s.offset(c2rust_fresh0 as isize);
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
-        unsafe {
-            if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int)
-                as ::core::ffi::c_int as i64
-                != 0
-            {
-                return 0 != 0;
-            }
-            (*s).pos = (*s).pos.wrapping_add(1);
-            return 1 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
-        unsafe {
-            if (*s).buf_pos.wrapping_add(1 as usize)
-                >= ::core::mem::size_of::<[i8; 1024]>() as usize
-            {
-                return 0 != 0;
-            }
-            let c2rust_fresh1 = (*s).buf_pos;
-            (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
-            (*s).buf[c2rust_fresh1 as usize] = ch;
-            return 1 != 0;
-        }
-    }
-    #[inline]
-    pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
-        unsafe {
-            let (written, trunc) = crate::xkb::utils::snprintf_args(
-                (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
-                (::core::mem::size_of::<[i8; 1024]>() as usize).wrapping_sub((*s).buf_pos),
-                format_args!("{}", crate::xkb::utils::CStrDisplay(str)),
-            );
-            if trunc {
-                return 0 != 0;
-            }
-            (*s).buf_pos = (*s).buf_pos.wrapping_add(written);
-            return 1 != 0;
-        }
-    }
-
-    use crate::xkb::shared_types::xkb_context;
-    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
-        unsafe {
-            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
-                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
-            ))
-        }
-    }
-}
 pub mod include_h {
     pub const INCLUDE_MAX_DEPTH: ::core::ffi::c_int = 15 as ::core::ffi::c_int;
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
@@ -155,7 +27,7 @@ pub use self::include_h::{
     INCLUDE_MAX_DEPTH, MERGE_AUGMENT_PREFIX, MERGE_MODE_PREFIXES, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
-pub use self::scanner_utils_h::{
+pub use crate::xkb::scanner_utils::{
     scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };

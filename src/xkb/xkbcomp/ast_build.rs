@@ -4,44 +4,6 @@ extern "C" {
     fn strndup(__string: *const i8, __n: usize) -> *mut i8;
 }
 
-pub mod scanner_utils_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct sval {
-        pub len: usize,
-        pub start: *const i8,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner_loc {
-        pub line: usize,
-        pub column: usize,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct scanner {
-        pub pos: usize,
-        pub len: usize,
-        pub s: *const i8,
-        pub buf: [i8; 1024],
-        pub buf_pos: usize,
-        pub token_pos: usize,
-        pub cached_pos: usize,
-        pub cached_loc: scanner_loc,
-        pub file_name: *const i8,
-        pub ctx: *mut xkb_context,
-        pub priv_0: *mut ::core::ffi::c_void,
-    }
-
-    use crate::xkb::shared_types::xkb_context;
-    pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
-        unsafe {
-            core::mem::transmute(crate::xkb::scanner_utils::scanner_token_location(
-                s as *mut crate::xkb::scanner_utils::scanner_utils_h::scanner,
-            ))
-        }
-    }
-}
 pub mod utf8_decoding_h {
     pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
@@ -119,7 +81,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
