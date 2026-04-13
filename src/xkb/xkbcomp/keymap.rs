@@ -159,9 +159,9 @@ unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_
     unsafe {
         let mut k: xkb_mod_index_t = 0;
         let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
-        k = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+        k = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
+            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
             as *mut xkb_mod;
         while k < (*keymap).mods.num_mods {
             if mask & (1 as xkb_mod_mask_t) << k != 0 && (*mod_0).mapping == 0 as xkb_mod_mask_t {
@@ -189,7 +189,7 @@ unsafe fn UpdateActionMods(
     unsafe {
         match (*act).type_0 as u32 {
             2 | 3 | 4 => {
-                if (*act).mods.flags as u32 & ACTION_MODS_LOOKUP_MODMAP as ::core::ffi::c_int as u32
+                if (*act).mods.flags as u32 & ACTION_MODS_LOOKUP_MODMAP as i32 as u32
                     != 0
                 {
                     (*act).mods.mods.mods = modmap;
@@ -223,13 +223,13 @@ unsafe fn FindInterpForKey(
 ) -> bool {
     unsafe {
         let mut syms: *const xkb_keysym_t = std::ptr::null();
-        let mut num_syms: ::core::ffi::c_int = 0;
+        let mut num_syms: i32 = 0;
         num_syms =
             xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
-        if num_syms <= 0 as ::core::ffi::c_int {
+        if num_syms <= 0 as i32 {
             return false;
         }
-        let mut s: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+        let mut s: i32 = 0 as i32;
         while s < num_syms {
             let mut c2rust_current_block_34: u64;
             let mut found: bool = false;
@@ -246,7 +246,7 @@ unsafe fn FindInterpForKey(
                 if !((*interp).sym != *syms.offset(s as isize)
                     && (*interp).sym != XKB_KEY_NoSymbol as xkb_keysym_t)
                 {
-                    if (*interp).level_one_only as ::core::ffi::c_int != 0
+                    if (*interp).level_one_only as i32 != 0
                         && level != 0 as xkb_level_index_t
                     {
                         mods = 0 as xkb_mod_mask_t;
@@ -271,7 +271,7 @@ unsafe fn FindInterpForKey(
                         }
                         _ => {}
                     }
-                    if found as ::core::ffi::c_int != 0
+                    if found as i32 != 0
                         && i > 0 as darray_size_t
                         && (*interp).sym == XKB_KEY_NoSymbol as xkb_keysym_t
                     {
@@ -279,7 +279,7 @@ unsafe fn FindInterpForKey(
                             std::ptr::null_mut();
                         if !(*interprets).item.is_null() {
                             previous_interp =
-                                (*interprets).item.offset(0 as ::core::ffi::c_int as isize)
+                                (*interprets).item.offset(0 as i32 as isize)
                                     as *mut *const xkb_sym_interpret;
                             while previous_interp
                                 < (*interprets).item.offset((*interprets).size as isize)
@@ -290,9 +290,9 @@ unsafe fn FindInterpForKey(
                                     xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key {}.\n",
-                                        s + 1 as ::core::ffi::c_int,
+                                        s + 1 as i32,
                                         crate::xkb::utils::CStrDisplay(KeysymText((*keymap).ctx, *syms.offset(s as isize))),
                                         level.wrapping_add(1 as xkb_level_index_t),
                                         group.wrapping_add(1 as xkb_layout_index_t),
@@ -376,7 +376,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                     if found {
                         if !interprets.item.is_null() {
                             k = 0 as usize;
-                            interp_iter = interprets.item.offset(0 as ::core::ffi::c_int as isize)
+                            interp_iter = interprets.item.offset(0 as i32 as isize)
                                 as *mut *const xkb_sym_interpret;
                             while k < interprets.size as usize {
                                 interp = *interp_iter;
@@ -384,9 +384,9 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                     && level == 0 as xkb_level_index_t
                                 {
                                     if (*key).explicit as u32
-                                        & EXPLICIT_REPEAT as ::core::ffi::c_int as u32
+                                        & EXPLICIT_REPEAT as i32 as u32
                                         == 0
-                                        && (*interp).repeat() as ::core::ffi::c_int != 0
+                                        && (*interp).repeat() as i32 != 0
                                     {
                                         (*key).set_repeats((true) as bool);
                                     }
@@ -401,7 +401,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                             as xkb_mod_mask_t;
                                     }
                                 }
-                                match (*interp).num_actions as ::core::ffi::c_int {
+                                match (*interp).num_actions as i32 {
                                     0 => {}
                                     1 => {
                                         darray_append(
@@ -425,16 +425,16 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 interp_iter = interp_iter.offset(1);
                             }
                         }
-                        if (actions.size != 0) as ::core::ffi::c_int as i64
+                        if (actions.size != 0) as i32 as i64
                             > MAX_ACTIONS_PER_LEVEL as i64
                         {
                             xkb_logf!(
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
-                                65535 as ::core::ffi::c_int,
+                                65535 as i32,
                                 actions.size,
                             );
                             (*(*(*key).groups.offset(group as isize))
@@ -462,7 +462,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                     .levels
                                     .offset(level as isize))
                                 .a
-                                .action = *actions.item.offset(0 as ::core::ffi::c_int as isize);
+                                .action = *actions.item.offset(0 as i32 as isize);
                             }
                             _ => {
                                 let ref mut c2rust_fresh0 =
@@ -490,9 +490,9 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                     xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] Could not allocate interpret actions\n",
-                                        XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                                        XKB_ERROR_ALLOCATION_ERROR as i32,
                                     );
                                     darray_free(
                                         &mut actions.item,
@@ -528,7 +528,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
             &mut interprets.size,
             &mut interprets.alloc,
         );
-        if (*key).explicit as u32 & EXPLICIT_VMODMAP as ::core::ffi::c_int as u32 == 0 {
+        if (*key).explicit as u32 & EXPLICIT_VMODMAP as i32 as u32 == 0 {
             (*key).vmodmap = vmodmap;
         }
         return true;
@@ -537,17 +537,17 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
 #[inline]
 unsafe fn is_mod_action(mut action: *mut xkb_action) -> bool {
     unsafe {
-        return (*action).type_0 as u32 == ACTION_TYPE_MOD_SET as ::core::ffi::c_int as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LATCH as ::core::ffi::c_int as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LOCK as ::core::ffi::c_int as u32;
+        return (*action).type_0 as u32 == ACTION_TYPE_MOD_SET as i32 as u32
+            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LATCH as i32 as u32
+            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LOCK as i32 as u32;
     }
 }
 #[inline]
 unsafe fn is_group_action(mut action: *mut xkb_action) -> bool {
     unsafe {
-        return (*action).type_0 as u32 == ACTION_TYPE_GROUP_SET as ::core::ffi::c_int as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LATCH as ::core::ffi::c_int as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LOCK as ::core::ffi::c_int as u32;
+        return (*action).type_0 as u32 == ACTION_TYPE_GROUP_SET as i32 as u32
+            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LATCH as i32 as u32
+            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LOCK as i32 as u32;
     }
 }
 unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) {
@@ -560,36 +560,36 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                     .levels
                     .offset(l as isize)
                     as *mut xkb_level;
-                if !((*level).num_actions as ::core::ffi::c_int <= 1 as ::core::ffi::c_int) {
+                if !((*level).num_actions as i32 <= 1 as i32) {
                     let mut i: xkb_action_count_t = 0 as xkb_action_count_t;
-                    while (i as ::core::ffi::c_int) < (*level).num_actions as ::core::ffi::c_int {
+                    while (i as i32) < (*level).num_actions as i32 {
                         let mut action1: *mut xkb_action =
                             (*level).a.actions.offset(i as isize) as *mut xkb_action;
                         let mut mod_action: bool = is_mod_action(action1);
                         let mut group_action: bool = is_group_action(action1);
-                        if mod_action as ::core::ffi::c_int != 0
-                            || group_action as ::core::ffi::c_int != 0
+                        if mod_action as i32 != 0
+                            || group_action as i32 != 0
                             || (*action1).type_0 as u32
-                                == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32
+                                == ACTION_TYPE_REDIRECT_KEY as i32 as u32
                         {
-                            let mut j: xkb_action_count_t = (i as ::core::ffi::c_int
-                                + 1 as ::core::ffi::c_int)
+                            let mut j: xkb_action_count_t = (i as i32
+                                + 1 as i32)
                                 as xkb_action_count_t;
-                            while (j as ::core::ffi::c_int)
-                                < (*level).num_actions as ::core::ffi::c_int
+                            while (j as i32)
+                                < (*level).num_actions as i32
                             {
                                 let mut action2: *mut xkb_action =
                                     (*level).a.actions.offset(j as isize) as *mut xkb_action;
                                 if (*action1).type_0 as u32 == (*action2).type_0 as u32
-                                    || mod_action as ::core::ffi::c_int != 0
-                                        && is_mod_action(action2) as ::core::ffi::c_int != 0
-                                    || group_action as ::core::ffi::c_int != 0
-                                        && is_group_action(action2) as ::core::ffi::c_int != 0
+                                    || mod_action as i32 != 0
+                                        && is_mod_action(action2) as i32 != 0
+                                    || group_action as i32 != 0
+                                        && is_group_action(action2) as i32 != 0
                                 {
-                                    let type_0: *const i8 = if mod_action as ::core::ffi::c_int != 0
+                                    let type_0: *const i8 = if mod_action as i32 != 0
                                     {
                                         b"modifiers\0".as_ptr() as *const i8
-                                    } else if group_action as ::core::ffi::c_int != 0 {
+                                    } else if group_action as i32 != 0 {
                                         b"group\0".as_ptr() as *const i8
                                     } else {
                                         ActionTypeText((*action1).type_0) as *const i8
@@ -597,10 +597,10 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                                     xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
                                         crate::xkb::utils::CStrDisplay(type_0),
-                                        j as ::core::ffi::c_int + 1 as ::core::ffi::c_int,
+                                        j as i32 + 1 as i32,
                                         crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                         g.wrapping_add(1 as xkb_layout_index_t),
                                         l.wrapping_add(1 as xkb_level_index_t),
@@ -633,8 +633,8 @@ unsafe fn add_key_aliases(
                 .c2rust_unnamed
                 .key_names
                 .offset(alias as isize);
-            if entry.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0
-                && entry.c2rust_unnamed.found() as ::core::ffi::c_int != 0
+            if entry.c2rust_unnamed.is_alias() as i32 != 0
+                && entry.c2rust_unnamed.found() as i32 != 0
             {
                 *aliases = xkb_key_alias {
                     real: entry.alias.real(),
@@ -671,12 +671,12 @@ unsafe fn update_pending_key_fields(mut info: *mut xkb_keymap_info, mut key: *mu
                         xkb_logf!(
                             (*info).keymap.ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Invalid key redirect group index\n",
-                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                         );
                         return (*info).strict as u32
-                            & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
+                            & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
                             != 0;
                     }
                     _ => {}
@@ -699,7 +699,7 @@ unsafe fn update_pending_action_fields(
         match (*act).type_0 as u32 {
             5 | 6 | 7 => {
                 if (*act).group.flags as u32
-                    & ACTION_PENDING_COMPUTATION as ::core::ffi::c_int as u32
+                    & ACTION_PENDING_COMPUTATION as i32 as u32
                     != 0
                 {
                     let pc: *mut pending_computation = (*(*info).pending_computations)
@@ -709,7 +709,7 @@ unsafe fn update_pending_action_fields(
                     if !(*pc).computed {
                         let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
                         let absolute: bool = (*act).group.flags as u32
-                            & ACTION_ABSOLUTE_SWITCH as ::core::ffi::c_int as u32
+                            & ACTION_ABSOLUTE_SWITCH as i32 as u32
                             != 0;
                         match ExprResolveGroup(
                             info,
@@ -723,9 +723,9 @@ unsafe fn update_pending_action_fields(
                                 xkb_logf!(
                                     (*info).keymap.ctx,
                                     XKB_LOG_LEVEL_ERROR,
-                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Invalid action group index\n",
-                                    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                                    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                                 );
                                 return false;
                             }
@@ -738,7 +738,7 @@ unsafe fn update_pending_action_fields(
                                 } else {
                                     (*pc).value = group as u32;
                                     if (*(*pc).expr).common.type_0 as u32
-                                        == STMT_EXPR_NEGATE as ::core::ffi::c_int as u32
+                                        == STMT_EXPR_NEGATE as i32 as u32
                                     {
                                         (*pc).value = -((*pc).value as i32) as u32;
                                     }
@@ -748,7 +748,7 @@ unsafe fn update_pending_action_fields(
                     }
                     (*act).group.group = (*pc).value as i32;
                     (*act).group.flags = ((*act).group.flags as u32
-                        & !(ACTION_PENDING_COMPUTATION as ::core::ffi::c_int) as u32)
+                        & !(ACTION_PENDING_COMPUTATION as i32) as u32)
                         as xkb_action_flags;
                 }
                 return true;
@@ -785,9 +785,9 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
                     xkb_logf!(
                         (*info).keymap.ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Invalid LED group mask\n",
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                     );
                     return false;
                 }
@@ -813,8 +813,8 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 .c2rust_unnamed
                 .key_names
                 .offset(alias as isize);
-            if entry.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0
-                && entry.c2rust_unnamed.found() as ::core::ffi::c_int != 0
+            if entry.c2rust_unnamed.is_alias() as i32 != 0
+                && entry.c2rust_unnamed.found() as i32 != 0
             {
                 if num_key_aliases == 0 {
                     min_alias = alias as darray_size_t;
@@ -859,17 +859,17 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     .c2rust_unnamed
                     .key_names
                     .offset(max_alias as isize)
-                    .offset(1 as ::core::ffi::c_int as isize)
+                    .offset(1 as i32 as isize)
                     .offset(!is_aligned(
                         (*keymap)
                             .c2rust_unnamed
                             .c2rust_unnamed
                             .key_names
                             .offset(max_alias as isize)
-                            .offset(1 as ::core::ffi::c_int as isize)
+                            .offset(1 as i32 as isize)
                             as *const ::core::ffi::c_void,
                         ::core::mem::size_of::<xkb_key_alias>() as usize,
-                    ) as ::core::ffi::c_int as isize)
+                    ) as i32 as isize)
                     as *mut xkb_key_alias;
                 add_key_aliases(keymap, min_alias, max_alias, aliases);
                 std::ptr::copy_nonoverlapping::<xkb_key_alias>(
@@ -925,12 +925,12 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             } else {
                 1 as xkb_layout_index_t
             };
-            (*info).lookup.groupIndexNames[GROUP_INDEX_NAME_LAST as ::core::ffi::c_int as usize] =
+            (*info).lookup.groupIndexNames[GROUP_INDEX_NAME_LAST as i32 as usize] =
                 LookupEntry {
                     name: GROUP_LAST_INDEX_NAME.as_ptr(),
                     value: num_groups as u32,
                 };
-            (*info).lookup.groupMaskNames[GROUP_MASK_NAME_LAST as ::core::ffi::c_int as usize] =
+            (*info).lookup.groupMaskNames[GROUP_MASK_NAME_LAST as i32 as usize] =
                 LookupEntry {
                     name: GROUP_LAST_INDEX_NAME.as_ptr(),
                     value: (1 as u32) << num_groups.wrapping_sub(1 as xkb_layout_index_t),
@@ -939,7 +939,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             while i < (*keymap).num_sym_interprets {
                 let interp: *mut xkb_sym_interpret =
                     (*keymap).sym_interprets.offset(i as isize) as *mut xkb_sym_interpret;
-                if (*interp).num_actions as ::core::ffi::c_int <= 1 as ::core::ffi::c_int {
+                if (*interp).num_actions as i32 <= 1 as i32 {
                     let act: *mut xkb_action = &raw mut (*interp).a.action;
                     if !update_pending_action_fields(
                         info,
@@ -950,7 +950,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     }
                 } else {
                     let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
-                    while (a as ::core::ffi::c_int) < (*interp).num_actions as ::core::ffi::c_int {
+                    while (a as i32) < (*interp).num_actions as i32 {
                         let act_0: *mut xkb_action =
                             (*interp).a.actions.offset(a as isize) as *mut xkb_action;
                         if !update_pending_action_fields(
@@ -990,9 +990,9 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }) as isize,
         );
         while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            idx = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+            idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
             mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-                .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
+                .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
                 as *mut xkb_mod;
             while idx < (*keymap).mods.num_mods {
                 if (*key).vmodmap & (1 as xkb_mod_mask_t) << idx != 0 {
@@ -1003,10 +1003,10 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }
             key = key.offset(1);
         }
-        if (*keymap).format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as ::core::ffi::c_int as u32 {
-            idx = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+        if (*keymap).format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as i32 as u32 {
+            idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
             mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-                .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
+                .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
                 as *mut xkb_mod;
             while idx < (*keymap).mods.num_mods {
                 let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << idx;
@@ -1021,9 +1021,9 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }
         }
         let mut extra_canonical_mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        idx = _XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as xkb_mod_index_t;
+        idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as ::core::ffi::c_int as isize)
+            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
             as *mut xkb_mod;
         while idx < (*keymap).mods.num_mods {
             extra_canonical_mods |= (*mod_0).mapping;
@@ -1090,8 +1090,8 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                     if (*(*(*key).groups.offset(i_1 as isize))
                         .levels
                         .offset(j_0 as isize))
-                    .num_actions as ::core::ffi::c_int
-                        <= 1 as ::core::ffi::c_int
+                    .num_actions as i32
+                        <= 1 as i32
                     {
                         let act_1: *mut xkb_action =
                             &raw mut (*(*(*key).groups.offset(i_1 as isize))
@@ -1100,20 +1100,20 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                             .a
                             .action;
                         UpdateActionMods(keymap, act_1, (*key).modmap);
-                        if (pending_computations as ::core::ffi::c_int != 0
+                        if (pending_computations as i32 != 0
                             || (*act_1).type_0 as u32
-                                == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32)
+                                == ACTION_TYPE_REDIRECT_KEY as i32 as u32)
                             && !update_pending_action_fields(info, (*key).keycode, act_1)
                         {
                             return false;
                         }
                     } else {
                         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-                        while (k as ::core::ffi::c_int)
+                        while (k as i32)
                             < (*(*(*key).groups.offset(i_1 as isize))
                                 .levels
                                 .offset(j_0 as isize))
-                            .num_actions as ::core::ffi::c_int
+                            .num_actions as i32
                         {
                             let act_2: *mut xkb_action = (*(*(*key).groups.offset(i_1 as isize))
                                 .levels
@@ -1123,9 +1123,9 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                             .offset(k as isize)
                                 as *mut xkb_action;
                             UpdateActionMods(keymap, act_2, (*key).modmap);
-                            if (pending_computations as ::core::ffi::c_int != 0
+                            if (pending_computations as i32 != 0
                                 || (*act_2).type_0 as u32
-                                    == ACTION_TYPE_REDIRECT_KEY as ::core::ffi::c_int as u32)
+                                    == ACTION_TYPE_REDIRECT_KEY as i32 as u32)
                                 && !update_pending_action_fields(info, (*key).keycode, act_2)
                             {
                                 return false;
@@ -1143,7 +1143,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while led < (&raw mut (*keymap).leds as *mut xkb_led).offset((*keymap).num_leds as isize) {
             ComputeEffectiveMask(keymap, &raw mut (*led).mods);
-            if pending_computations as ::core::ffi::c_int != 0
+            if pending_computations as i32 != 0
                 && !update_pending_led_fields(info, led)
             {
                 return false;
@@ -1165,7 +1165,7 @@ unsafe fn pending_computations_array_free(mut p: *mut pending_computation_array)
     unsafe {
         let mut pc: *mut pending_computation = std::ptr::null_mut();
         if !(*p).item.is_null() {
-            pc = (*p).item.offset(0 as ::core::ffi::c_int as isize) as *mut pending_computation;
+            pc = (*p).item.offset(0 as i32 as isize) as *mut pending_computation;
             while pc < (*p).item.offset((*p).size as isize) as *mut pending_computation {
                 FreeStmt((*pc).expr as *mut ParseCommon);
                 pc = pc.offset(1);
@@ -1186,22 +1186,22 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
         let mut ctx: *mut xkb_context = (*keymap).ctx;
         file = (*file).defs as *mut XkbFile;
         while !file.is_null() {
-            if ((*file).file_type as u32) < FIRST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as u32
-                || (*file).file_type as u32 > LAST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as u32
+            if ((*file).file_type as u32) < FIRST_KEYMAP_FILE_TYPE as i32 as u32
+                || (*file).file_type as u32 > LAST_KEYMAP_FILE_TYPE as i32 as u32
             {
-                if (*file).file_type as u32 == FILE_TYPE_GEOMETRY as ::core::ffi::c_int as u32 {
+                if (*file).file_type as u32 == FILE_TYPE_GEOMETRY as i32 as u32 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_BRIEF as i32,
                         "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as ::core::ffi::c_int,
+                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32,
                     );
                 } else {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Cannot define {} in a keymap file\n",
                         crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
                     );
@@ -1210,7 +1210,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "More than one {} section in keymap file; All sections after the first ignored\n",
                     crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
                 );
@@ -1227,23 +1227,23 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
         let mut info: xkb_keymap_info = xkb_keymap_info {
             keymap: *keymap,
             strict: (if (*keymap).format as u32
-                == XKB_KEYMAP_FORMAT_TEXT_V1 as ::core::ffi::c_int as u32
+                == XKB_KEYMAP_FORMAT_TEXT_V1 as i32 as u32
             {
                 if (*keymap).flags as u32
-                    & XKB_KEYMAP_COMPILE_STRICT_MODE as ::core::ffi::c_int as u32
+                    & XKB_KEYMAP_COMPILE_STRICT_MODE as i32 as u32
                     != 0
                 {
-                    PARSER_V1_STRICT_FLAGS as ::core::ffi::c_int
+                    PARSER_V1_STRICT_FLAGS as i32
                 } else {
-                    PARSER_V1_LAX_FLAGS as ::core::ffi::c_int
+                    PARSER_V1_LAX_FLAGS as i32
                 }
             } else if (*keymap).flags as u32
-                & XKB_KEYMAP_COMPILE_STRICT_MODE as ::core::ffi::c_int as u32
+                & XKB_KEYMAP_COMPILE_STRICT_MODE as i32 as u32
                 != 0
             {
-                PARSER_V2_STRICT_FLAGS as ::core::ffi::c_int
+                PARSER_V2_STRICT_FLAGS as i32
             } else {
-                PARSER_V2_LAX_FLAGS as ::core::ffi::c_int
+                PARSER_V2_LAX_FLAGS as i32
             }) as xkb_parser_strict_flags,
             features: XkbcompFeatures {
                 max_groups: format_max_groups((*keymap).format),
@@ -1309,12 +1309,12 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
             pending_computations: &raw mut pending_computations,
         };
         type_0 = FIRST_KEYMAP_FILE_TYPE;
-        while type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as ::core::ffi::c_int as u32 {
+        while type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as i32 as u32 {
             if files[type_0 as usize].is_null() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Component {} not provided in keymap\n",
                     crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
                 );
@@ -1322,7 +1322,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Compiling {} \"{}\"\n",
                     crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
                     crate::xkb::utils::CStrDisplay(safe_map_name(files[type_0 as usize])),
@@ -1336,7 +1336,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Failed to compile {}\n",
                     crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
                 );
@@ -1369,7 +1369,7 @@ unsafe fn c2rust_run_static_initializers() {
                     },
                 },
             };
-            init.set_repeat(DEFAULT_INTERPRET_KEY_REPEAT as ::core::ffi::c_int != 0);
+            init.set_repeat(DEFAULT_INTERPRET_KEY_REPEAT as i32 != 0);
             init.set_required(false);
             init
         }

@@ -121,7 +121,7 @@ use libc::{calloc, free, realloc};
 #[repr(C)]
 pub struct KeyNamesInfo {
     pub name: *mut i8,
-    pub errorCount: ::core::ffi::c_int,
+    pub errorCount: i32,
     pub include_depth: u32,
     pub keycodes: KeycodeStore,
     pub led_names: [LedNameInfo; 32],
@@ -213,8 +213,8 @@ unsafe fn keycode_store_update_key(
 ) {
     unsafe {
         if (!match_0.c2rust_unnamed.found()
-            || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0)
-            as ::core::ffi::c_int as i64
+            || match_0.c2rust_unnamed.is_alias() as i32 != 0)
+            as i32 as i64
             != 0
         {
             return;
@@ -328,7 +328,7 @@ unsafe fn keycode_store_insert_key(
                         .high
                         .item
                         .offset(__index as isize)
-                        .offset(1 as ::core::ffi::c_int as isize),
+                        .offset(1 as i32 as isize),
                     (*store)
                         .high
                         .size
@@ -376,7 +376,7 @@ unsafe fn keycode_store_insert_key(
             }
             if (*store).low.size == 0 as darray_size_t {
                 (*store).min =
-                    (*(*store).high.item.offset(0 as ::core::ffi::c_int as isize)).keycode;
+                    (*(*store).high.item.offset(0 as i32 as isize)).keycode;
             }
         }
         return true;
@@ -436,8 +436,8 @@ unsafe fn keycode_store_delete_name(mut store: *const KeycodeStore, mut name: xk
 unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: KeycodeMatch) {
     unsafe {
         if (!match_0.c2rust_unnamed.found()
-            || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0)
-            as ::core::ffi::c_int as i64
+            || match_0.c2rust_unnamed.is_alias() as i32 != 0)
+            as i32 as i64
             != 0
         {
             return;
@@ -496,16 +496,16 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
             (*store).high.size = (*store).high.size.wrapping_sub(1);
             let mut entry: *mut KeycodeMatch = std::ptr::null_mut();
             if !(*store).names.item.is_null() {
-                entry = (*store).names.item.offset(0 as ::core::ffi::c_int as isize)
+                entry = (*store).names.item.offset(0 as i32 as isize)
                     as *mut KeycodeMatch;
                 while entry
                     < (*store).names.item.offset((*store).names.size as isize) as *mut KeycodeMatch
                 {
-                    if (*entry).c2rust_unnamed.found() as ::core::ffi::c_int != 0
+                    if (*entry).c2rust_unnamed.found() as i32 != 0
                         && !(*entry).c2rust_unnamed.is_alias()
                         && !(*entry).key.low()
-                        && (*entry).key.index() as ::core::ffi::c_int
-                            > match_0.key.index() as ::core::ffi::c_int
+                        && (*entry).key.index() as i32
+                            > match_0.key.index() as i32
                     {
                         (*entry)
                             .key
@@ -519,7 +519,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
             (*store).min = if (*store).high.size == 0 as darray_size_t {
                 XKB_KEYCODE_INVALID as xkb_keycode_t
             } else {
-                (*(*store).high.item.offset(0 as ::core::ffi::c_int as isize)).keycode
+                (*(*store).high.item.offset(0 as i32 as isize)).keycode
             };
         } else {
             let mut kc: xkb_keycode_t = (*store).min;
@@ -541,7 +541,7 @@ unsafe fn keycode_store_get_keycode(
 ) -> xkb_keycode_t {
     unsafe {
         if !match_0.c2rust_unnamed.found()
-            || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0
+            || match_0.c2rust_unnamed.is_alias() as i32 != 0
         {
             return XKB_KEYCODE_INVALID as xkb_keycode_t;
         } else if match_0.key.low() {
@@ -558,7 +558,7 @@ unsafe fn keycode_store_get_key_name(
 ) -> xkb_atom_t {
     unsafe {
         if !match_0.c2rust_unnamed.found()
-            || match_0.c2rust_unnamed.is_alias() as ::core::ffi::c_int != 0
+            || match_0.c2rust_unnamed.is_alias() as i32 != 0
         {
             return XKB_ATOM_NONE as xkb_atom_t;
         } else if match_0.key.low() {
@@ -691,7 +691,7 @@ unsafe fn AddLedName(
     unsafe {
         let mut old_idx: xkb_led_index_t = 0;
         let mut old: *mut LedNameInfo = std::ptr::null_mut();
-        let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
+        let replace: bool = (*new).merge as u32 != MERGE_AUGMENT as i32 as u32;
         old = FindLedByName(info, (*new).name, &raw mut old_idx);
         if !old.is_null() {
             if old_idx == new_idx {
@@ -699,7 +699,7 @@ unsafe fn AddLedName(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Multiple indicators named \"{}\"; Identical definitions ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                     );
@@ -707,12 +707,12 @@ unsafe fn AddLedName(
                 return true;
             }
             if report {
-                let mut use_0: xkb_led_index_t = if replace as ::core::ffi::c_int != 0 {
+                let mut use_0: xkb_led_index_t = if replace as i32 != 0 {
                     new_idx.wrapping_add(1 as xkb_led_index_t)
                 } else {
                     old_idx.wrapping_add(1 as xkb_led_index_t)
                 };
-                let mut ignore: xkb_led_index_t = if replace as ::core::ffi::c_int != 0 {
+                let mut ignore: xkb_led_index_t = if replace as i32 != 0 {
                     old_idx.wrapping_add(1 as xkb_led_index_t)
                 } else {
                     new_idx.wrapping_add(1 as xkb_led_index_t)
@@ -720,7 +720,7 @@ unsafe fn AddLedName(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple indicators named {}; Using {}, ignoring {}\n",
                     crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                     use_0,
@@ -740,12 +740,12 @@ unsafe fn AddLedName(
             as *mut LedNameInfo;
         if (*old).name != XKB_ATOM_NONE as xkb_atom_t {
             if report {
-                let use_1: xkb_atom_t = if replace as ::core::ffi::c_int != 0 {
+                let use_1: xkb_atom_t = if replace as i32 != 0 {
                     (*new).name
                 } else {
                     (*old).name
                 };
-                let ignore_0: xkb_atom_t = if replace as ::core::ffi::c_int != 0 {
+                let ignore_0: xkb_atom_t = if replace as i32 != 0 {
                     (*old).name
                 } else {
                     (*new).name
@@ -753,7 +753,7 @@ unsafe fn AddLedName(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple names for indicator {}; Using {}, ignoring {}\n",
                     new_idx.wrapping_add(1 as xkb_led_index_t),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, use_1)),
@@ -799,22 +799,22 @@ unsafe fn AddKeyName(
         let mut match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, name);
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
+            let clobber: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if report {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Key name {} already assigned to an alias; Using {}, ignoring {}\n",
-                        XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
+                        XKB_WARNING_CONFLICTING_KEY_NAME as i32,
                         crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
-                        crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 {
+                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                             b"key\0".as_ptr() as *const i8
                         } else {
                             b"alias\0".as_ptr() as *const i8
                         }),
-                        crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 {
+                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                             b"alias\0".as_ptr() as *const i8
                         } else {
                             b"key\0".as_ptr() as *const i8
@@ -833,12 +833,12 @@ unsafe fn AddKeyName(
                         as xkb_keycode_t;
                 if old_kc != kc {
                     if report {
-                        let use_0: xkb_keycode_t = if clobber as ::core::ffi::c_int != 0 {
+                        let use_0: xkb_keycode_t = if clobber as i32 != 0 {
                             kc
                         } else {
                             old_kc
                         };
-                        let ignore: xkb_keycode_t = if clobber as ::core::ffi::c_int != 0 {
+                        let ignore: xkb_keycode_t = if clobber as i32 != 0 {
                             old_kc
                         } else {
                             kc
@@ -846,9 +846,9 @@ unsafe fn AddKeyName(
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Key name {} assigned to multiple keys; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
+                            XKB_WARNING_CONFLICTING_KEY_NAME as i32,
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
                             use_0,
                             ignore,
@@ -872,7 +872,7 @@ unsafe fn AddKeyName(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Multiple identical key name definitions; Later occurrences of \"{} = {}\" ignored\n",
                         crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, old_name)),
                         kc,
@@ -880,16 +880,16 @@ unsafe fn AddKeyName(
                 }
                 return true;
             }
-            let clobber_0: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
+            let clobber_0: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
             if report {
                 let kname: *const i8 = KeyNameText((*info).ctx, name) as *const i8;
                 let old_kname: *const i8 = KeyNameText((*info).ctx, old_name) as *const i8;
-                let use_1: *const i8 = if clobber_0 as ::core::ffi::c_int != 0 {
+                let use_1: *const i8 = if clobber_0 as i32 != 0 {
                     kname
                 } else {
                     old_kname
                 };
-                let ignore_0: *const i8 = if clobber_0 as ::core::ffi::c_int != 0 {
+                let ignore_0: *const i8 = if clobber_0 as i32 != 0 {
                     old_kname
                 } else {
                     kname
@@ -897,7 +897,7 @@ unsafe fn AddKeyName(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple names for keycode {}; Using {}, ignoring {}\n",
                     kc,
                     crate::xkb::utils::CStrDisplay(use_1),
@@ -912,9 +912,9 @@ unsafe fn AddKeyName(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot add keycode\n",
-                XKB_ERROR_ALLOCATION_ERROR as ::core::ffi::c_int,
+                XKB_ERROR_ALLOCATION_ERROR as i32,
             );
             return false;
         }
@@ -959,7 +959,7 @@ unsafe fn MergeKeycodeStores(
                     .keycodes
                     .high
                     .item
-                    .offset(0 as ::core::ffi::c_int as isize)
+                    .offset(0 as i32 as isize)
                     as *mut HighKeycodeEntry;
                 while new
                     < (*from)
@@ -983,7 +983,7 @@ unsafe fn MergeKeycodeStores(
                     .keycodes
                     .names
                     .item
-                    .offset(0 as ::core::ffi::c_int as isize)
+                    .offset(0 as i32 as isize)
                     as *mut KeycodeMatch;
                 while alias < (*from).keycodes.names.size {
                     if !(!(*match_0).c2rust_unnamed.found()
@@ -1016,7 +1016,7 @@ unsafe fn MergeIncludedKeycodes(
     mut report: bool,
 ) {
     unsafe {
-        if (*from).errorCount > 0 as ::core::ffi::c_int {
+        if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
             return;
         }
@@ -1087,7 +1087,7 @@ unsafe fn HandleIncludeKeycodes(
             keymap_info: std::ptr::null(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
-            (*info).errorCount += 10 as ::core::ffi::c_int;
+            (*info).errorCount += 10 as i32;
             return false;
         }
         InitKeyNamesInfo(&raw mut included, (*info).keymap_info, 0 as u32);
@@ -1135,7 +1135,7 @@ unsafe fn HandleIncludeKeycodes(
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
-                (*info).errorCount += 10 as ::core::ffi::c_int;
+                (*info).errorCount += 10 as i32;
                 ClearKeyNamesInfo(&raw mut included);
                 return false;
             }
@@ -1152,7 +1152,7 @@ unsafe fn HandleIncludeKeycodes(
         }
         MergeIncludedKeycodes(info, &raw mut included, (*include).merge, report);
         ClearKeyNamesInfo(&raw mut included);
-        return (*info).errorCount == 0 as ::core::ffi::c_int;
+        return (*info).errorCount == 0 as i32;
     }
 }
 unsafe fn HandleKeycodeDef(
@@ -1165,7 +1165,7 @@ unsafe fn HandleKeycodeDef(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Illegal keycode {}: must be between 0..{}; Key ignored\n",
                 (*stmt).value,
                 (0xffffffff as u32).wrapping_sub(1 as u32),
@@ -1190,27 +1190,27 @@ unsafe fn HandleAliasDef(
         let match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, (*def).alias) as KeycodeMatch;
         if match_name.c2rust_unnamed.found() {
-            let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
+            let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as i32 as u32;
             if match_name.c2rust_unnamed.is_alias() {
                 if (*def).real == match_name.alias.real() {
                     if report {
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Alias of {} for {} declared more than once; First definition ignored\n",
-                            XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
+                            XKB_WARNING_CONFLICTING_KEY_NAME as i32,
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).real)),
                         );
                     }
                 } else {
-                    let use_0: xkb_atom_t = if clobber as ::core::ffi::c_int != 0 {
+                    let use_0: xkb_atom_t = if clobber as i32 != 0 {
                         (*def).real
                     } else {
                         match_name.alias.real()
                     };
-                    let ignore: xkb_atom_t = if clobber as ::core::ffi::c_int != 0 {
+                    let ignore: xkb_atom_t = if clobber as i32 != 0 {
                         match_name.alias.real()
                     } else {
                         (*def).real
@@ -1219,9 +1219,9 @@ unsafe fn HandleAliasDef(
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Multiple definitions for alias {}; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
+                            XKB_WARNING_CONFLICTING_KEY_NAME as i32,
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, use_0)),
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, ignore)),
@@ -1235,16 +1235,16 @@ unsafe fn HandleAliasDef(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Alias name {} already assigned to a real key; Using {}, ignoring {}\n",
-                        XKB_WARNING_CONFLICTING_KEY_NAME as ::core::ffi::c_int,
+                        XKB_WARNING_CONFLICTING_KEY_NAME as i32,
                         crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
-                        crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 {
+                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                             b"alias\0".as_ptr() as *const i8
                         } else {
                             b"key\0".as_ptr() as *const i8
                         }),
-                        crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 {
+                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                             b"key\0".as_ptr() as *const i8
                         } else {
                             b"alias\0".as_ptr() as *const i8
@@ -1279,15 +1279,15 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
-                XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
+                XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
                 crate::xkb::utils::CStrDisplay(elem),
                 crate::xkb::utils::CStrDisplay(elem),
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as i32 as u32
                 == 0;
         }
         if !istreq(field, b"minimum\0".as_ptr() as *const i8)
@@ -1296,13 +1296,13 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
+                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
+                & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as i32 as u32
                 == 0;
         }
         if !arrayNdx.is_null() {
@@ -1313,7 +1313,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 b"defaults\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
                 == 0;
         }
         let mut val: i64 = 0 as i64;
@@ -1330,7 +1330,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 b"integer 0..0xfffffffe\0".as_ptr() as *const i8,
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_FIELD_TYPE_MISMATCH as ::core::ffi::c_int as u32
+                & PARSER_NO_FIELD_TYPE_MISMATCH as i32 as u32
                 == 0;
         }
         return true;
@@ -1347,7 +1347,7 @@ unsafe fn HandleLedNameDef(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
                 (*def).ndx,
                 (::core::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
@@ -1389,10 +1389,10 @@ unsafe fn HandleLedNameDef(
 unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
-        let verbosity: ::core::ffi::c_int =
-            xkb_context_get_log_verbosity((*info).ctx) as ::core::ffi::c_int;
-        let report_same_file: bool = verbosity > 0 as ::core::ffi::c_int;
-        let report_include: bool = verbosity > 7 as ::core::ffi::c_int;
+        let verbosity: i32 =
+            xkb_context_get_log_verbosity((*info).ctx) as i32;
+        let report_same_file: bool = verbosity > 0 as i32;
+        let report_include: bool = verbosity > 7 as i32;
         free((*info).name as *mut ::core::ffi::c_void);
         (*info).name = strdup_safe((*file).name);
         let mut stmt: *mut ParseCommon = (*file).defs;
@@ -1417,7 +1417,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
@@ -1430,14 +1430,14 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
                         == 0;
                 }
                 _ => {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Keycode files may define key and indicator names only; Ignoring {}\n",
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
@@ -1447,11 +1447,11 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
             if !ok {
                 (*info).errorCount += 1;
             }
-            if (*info).errorCount > 10 as ::core::ffi::c_int {
+            if (*info).errorCount > 10 as i32 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Abandoning keycodes file \"{}\"\n",
                     crate::xkb::utils::CStrDisplay(safe_map_name(file)),
                 );
@@ -1514,7 +1514,7 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
                 .keycodes
                 .high
                 .item
-                .offset(0 as ::core::ffi::c_int as isize)
+                .offset(0 as i32 as isize)
                 as *mut HighKeycodeEntry;
             while entry
                 < (*info)
@@ -1544,7 +1544,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                 .keycodes
                 .names
                 .item
-                .offset(0 as ::core::ffi::c_int as isize)
+                .offset(0 as i32 as isize)
                 as *mut KeycodeMatch;
             while name < (*info).keycodes.names.size {
                 if (*match_0).c2rust_unnamed.found() {
@@ -1557,7 +1557,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                             xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_WARNING,
-                                XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_DETAILED as i32,
                                 "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
                                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
@@ -1694,7 +1694,7 @@ pub unsafe fn CompileKeycodes(
         if !file.is_null() {
             HandleKeycodesFile(&raw mut info, file);
         }
-        if !(info.errorCount != 0 as ::core::ffi::c_int) {
+        if !(info.errorCount != 0 as i32) {
             if CopyKeyNamesInfoToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearKeyNamesInfo(&raw mut info);
                 return true;

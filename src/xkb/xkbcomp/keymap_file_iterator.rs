@@ -146,7 +146,7 @@ pub struct C2Rust_Unnamed_1 {
 
 pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
     unsafe {
-        if type_0 as u32 > FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
+        if type_0 as u32 > FILE_TYPE_KEYMAP as i32 as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut xkb_file_type_strings: [*const i8; 7] = [
@@ -164,7 +164,7 @@ pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
 
 pub unsafe fn xkb_merge_mode_name(mut merge: merge_mode) -> *const i8 {
     unsafe {
-        if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as ::core::ffi::c_int as u32 {
+        if merge as u32 >= _MERGE_MODE_NUM_ENTRIES as i32 as u32 {
             return b"unknown\0".as_ptr() as *const i8;
         }
         static mut merge_mode_strings: [*const i8; 4] = [
@@ -273,20 +273,20 @@ pub unsafe fn xkb_resolve_file(
             }
             let xkb_file: *mut XkbFile = XkbParseFile(ctx, file, path, map) as *mut XkbFile;
             if !xkb_file.is_null() {
-                if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as ::core::ffi::c_int as u32
+                if (file_type as u32) < _FILE_TYPE_NUM_ENTRIES as i32 as u32
                     && (*xkb_file).file_type as u32 != file_type as u32
                 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "File of wrong type (expected {}, got {}); file \"{}\" ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(file_type)),
                         crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(
                             (*xkb_file).file_type
                         )),
                         crate::xkb::utils::CStrDisplay(
-                            if absolute_path as ::core::ffi::c_int != 0 {
+                            if absolute_path as i32 != 0 {
                                 path
                             } else {
                                 resolved_path as *const i8
@@ -295,7 +295,7 @@ pub unsafe fn xkb_resolve_file(
                     );
                     c2rust_current_block = 6705605813258909411;
                 } else if !map.is_null()
-                    || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as ::core::ffi::c_int != 0
+                    || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
                 {
                     if strcpy_safe(
                         resolved_map,
@@ -347,7 +347,7 @@ pub unsafe fn xkb_resolve_file(
                 _ => {}
             }
             FreeXkbFile(xkb_file);
-            if !file.is_null() || absolute_path as ::core::ffi::c_int != 0 {
+            if !file.is_null() || absolute_path as i32 != 0 {
                 c2rust_current_block = 16203760046146113240;
                 break;
             }
@@ -371,7 +371,7 @@ pub unsafe fn xkb_resolve_file(
                 } else if !candidate.is_null() {
                     fclose(candidate);
                 }
-                if !(absolute_path as ::core::ffi::c_int != 0
+                if !(absolute_path as i32 != 0
                     && !file.is_null()
                     && strcpy_safe(resolved_path, resolved_path_size, path).is_null())
                 {
@@ -383,9 +383,9 @@ pub unsafe fn xkb_resolve_file(
         xkb_logf!(
             ctx,
             XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Cannot copy resolved path or section\n",
-            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as ::core::ffi::c_int,
+            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
         );
         fclose(file);
         return std::ptr::null_mut();
@@ -487,9 +487,9 @@ unsafe fn xkb_file_section_append_includes(
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             let valid: bool = !xkb_file.is_null();
-            if valid as ::core::ffi::c_int != 0
+            if valid as i32 != 0
                 || flags as u32
-                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as ::core::ffi::c_int as u32
+                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as i32 as u32
                     == 0
             {
                 let path: darray_size_t = (*section).buffer.size;
@@ -510,7 +510,7 @@ unsafe fn xkb_file_section_append_includes(
                     cstr_len((*stmt).file).wrapping_add(1) as u32,
                 );
                 let section_name: darray_size_t = if !(*stmt).map.is_null()
-                    || valid as ::core::ffi::c_int != 0 && !(*xkb_file).name.is_null()
+                    || valid as i32 != 0 && !(*xkb_file).name.is_null()
                 {
                     (*section).buffer.size
                 } else {
@@ -544,7 +544,7 @@ unsafe fn xkb_file_section_append_includes(
                         cstr_len((*stmt).modifier).wrapping_add(1) as u32,
                     );
                 }
-                let section_flags: xkb_map_flags = (if valid as ::core::ffi::c_int != 0 {
+                let section_flags: xkb_map_flags = (if valid as i32 != 0 {
                     (*xkb_file).flags as u32
                 } else {
                     0 as u32
@@ -594,9 +594,9 @@ unsafe fn xkb_file_section_append_includes(
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {} include failure in: {}{}{}{}\n",
-                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as ::core::ffi::c_int,
+                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                     crate::xkb::utils::CStrDisplay(xkb_file_type_name(file_type)),
                     crate::xkb::utils::CStrDisplay(section_path),
                     crate::xkb::utils::CStrDisplay(if (*section).name != 0 {
@@ -630,7 +630,7 @@ unsafe fn xkb_file_section_process(
         let mut ok: bool = true;
         let mut stmt: *mut ParseCommon = (*xkb_file).defs;
         while !stmt.is_null() {
-            if (*stmt).type_0 as u32 == STMT_INCLUDE as ::core::ffi::c_int as u32 {
+            if (*stmt).type_0 as u32 == STMT_INCLUDE as i32 as u32 {
                 ok = xkb_file_section_append_includes(
                     ctx,
                     flags,
@@ -668,7 +668,7 @@ pub unsafe fn xkb_file_section_parse(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot open file: {}\n",
                 crate::xkb::utils::CStrDisplay(path),
             );
@@ -680,7 +680,7 @@ pub unsafe fn xkb_file_section_parse(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot parse map \"{}\" in file: {}\n",
                 crate::xkb::utils::CStrDisplay(if !map.is_null() {
                     map
@@ -693,12 +693,12 @@ pub unsafe fn xkb_file_section_parse(
         }
         xkb_file_section_reset(section);
         let no_includes: bool =
-            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as u32 != 0;
-        let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as ::core::ffi::c_int
+            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as i32 as u32 != 0;
+        let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as i32
             != 0
-            && (no_includes as ::core::ffi::c_int != 0
+            && (no_includes as i32 != 0
                 || xkb_file_section_process(ctx, iterator_flags, path, section, xkb_file)
-                    as ::core::ffi::c_int
+                    as i32
                     != 0);
         FreeXkbFile(xkb_file);
         return ok;
@@ -788,7 +788,7 @@ pub unsafe fn xkb_file_iterator_next(
                         xkb_logf!(
                             (*iter).ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Error while parsing section in file: {}\n",
                             crate::xkb::utils::CStrDisplay((*iter).path),
                         );
@@ -808,12 +808,12 @@ pub unsafe fn xkb_file_iterator_next(
                 break;
             }
             *section = &raw mut (*iter).section;
-            if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as ::core::ffi::c_int as u32 {
+            if (*xkb_file).file_type as u32 == FILE_TYPE_KEYMAP as i32 as u32 {
                 (*iter).pending_xkb_file = xkb_file;
                 (*iter).pending_section = (*xkb_file).defs as *mut XkbFile;
                 (*iter).map = std::ptr::null();
                 return true;
-            } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as ::core::ffi::c_int as u32
+            } else if (*iter).type_0 as u32 != FILE_TYPE_INVALID as i32 as u32
                 && (*xkb_file).file_type as u32 != (*iter).type_0 as u32
             {
                 if !(*iter).pending_xkb_file.is_null() {
@@ -822,7 +822,7 @@ pub unsafe fn xkb_file_iterator_next(
                     xkb_logf!(
                         (*iter).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "File type mismatch: {}, section: {}\n",
                         crate::xkb::utils::CStrDisplay((*iter).path),
                         crate::xkb::utils::CStrDisplay(if !(*xkb_file).name.is_null() {
@@ -839,9 +839,9 @@ pub unsafe fn xkb_file_iterator_next(
                     (*iter).finished = true;
                 }
                 process_includes = (*iter).flags as u32
-                    & XKB_FILE_ITERATOR_NO_INCLUDES as ::core::ffi::c_int as u32
+                    & XKB_FILE_ITERATOR_NO_INCLUDES as i32 as u32
                     == 0;
-                if process_includes as ::core::ffi::c_int != 0
+                if process_includes as i32 != 0
                     && !xkb_file_section_process(
                         (*iter).ctx,
                         (*iter).flags,

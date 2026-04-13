@@ -53,14 +53,14 @@ pub unsafe fn MergeModSets(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let clobber: bool = merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
+        let clobber: bool = merge as u32 != MERGE_AUGMENT as i32 as u32;
         let mut vmod: xkb_mod_index_t = 0;
         let mut mod_0: *const xkb_mod = std::ptr::null();
         vmod = 0 as xkb_mod_index_t;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
             let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
-            if (*mod_0).type_0 as u32 != MOD_VIRT as ::core::ffi::c_int as u32 {
+            if (*mod_0).type_0 as u32 != MOD_VIRT as i32 as u32 {
             } else if (*into).mods[vmod as usize].type_0 as u32 == 0 as u32 {
                 (*into).mods[vmod as usize] = *mod_0;
                 if (*from).explicit_vmods & mask != 0 {
@@ -72,12 +72,12 @@ pub unsafe fn MergeModSets(
                     (*into).mods[vmod as usize].mapping = (*mod_0).mapping;
                     (*into).explicit_vmods |= mask;
                 } else if (*mod_0).mapping != (*into).mods[vmod as usize].mapping {
-                    let use_0: xkb_mod_mask_t = if clobber as ::core::ffi::c_int != 0 {
+                    let use_0: xkb_mod_mask_t = if clobber as i32 != 0 {
                         (*mod_0).mapping
                     } else {
                         (*into).mods[vmod as usize].mapping
                     };
-                    let ignore: xkb_mod_mask_t = if clobber as ::core::ffi::c_int != 0 {
+                    let ignore: xkb_mod_mask_t = if clobber as i32 != 0 {
                         (*into).mods[vmod as usize].mapping
                     } else {
                         (*mod_0).mapping
@@ -85,7 +85,7 @@ pub unsafe fn MergeModSets(
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
@@ -112,7 +112,7 @@ pub unsafe fn HandleVModDef(
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Declaration of {} ignored\n",
                     crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 );
@@ -125,11 +125,11 @@ pub unsafe fn HandleVModDef(
         mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
         while vmod < (*mods).num_mods {
             if (*mod_0).name == (*stmt).name {
-                if (*mod_0).type_0 as u32 != MOD_VIRT as ::core::ffi::c_int as u32 {
+                if (*mod_0).type_0 as u32 != MOD_VIRT as i32 as u32 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
                     );
@@ -142,13 +142,13 @@ pub unsafe fn HandleVModDef(
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
                     let clobber: bool =
-                        (*stmt).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32;
-                    let use_0: xkb_mod_mask_t = if clobber as ::core::ffi::c_int != 0 {
+                        (*stmt).merge as u32 != MERGE_AUGMENT as i32 as u32;
+                    let use_0: xkb_mod_mask_t = if clobber as i32 != 0 {
                         mapping
                     } else {
                         (*mod_0).mapping
                     };
-                    let ignore: xkb_mod_mask_t = if clobber as ::core::ffi::c_int != 0 {
+                    let ignore: xkb_mod_mask_t = if clobber as i32 != 0 {
                         (*mod_0).mapping
                     } else {
                         mapping
@@ -156,7 +156,7 @@ pub unsafe fn HandleVModDef(
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
@@ -174,7 +174,7 @@ pub unsafe fn HandleVModDef(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
                 crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
                 (::core::mem::size_of::<xkb_mod_mask_t>() as usize).wrapping_mul(8 as usize)

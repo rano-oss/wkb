@@ -108,7 +108,7 @@ pub unsafe fn scanner_init(
 #[inline]
 pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
     unsafe {
-        if ((*s).pos >= (*s).len) as ::core::ffi::c_int as i64 != 0 {
+        if ((*s).pos >= (*s).len) as i32 as i64 != 0 {
             return '\0' as i32 as i8;
         }
         return *(*s).s.offset((*s).pos as isize);
@@ -125,7 +125,7 @@ pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
 #[inline]
 pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
     unsafe {
-        return scanner_peek(s) as ::core::ffi::c_int == '\n' as i32;
+        return scanner_peek(s) as i32 == '\n' as i32;
     }
 }
 
@@ -149,7 +149,7 @@ pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
 #[inline]
 pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
     unsafe {
-        if scanner_eof(s) as ::core::ffi::c_int as i64 != 0 {
+        if scanner_eof(s) as i32 as i64 != 0 {
             return '\0' as i32 as i8;
         }
         let c2rust_fresh0 = (*s).pos;
@@ -161,7 +161,7 @@ pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
 #[inline]
 pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
     unsafe {
-        if (scanner_peek(s) as ::core::ffi::c_int != ch as ::core::ffi::c_int) as ::core::ffi::c_int
+        if (scanner_peek(s) as i32 != ch as i32) as i32
             as i64
             != 0
         {
@@ -219,22 +219,22 @@ pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bo
 pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) -> bool {
     unsafe {
         if (*s).buf_pos.wrapping_add(5 as usize) <= ::core::mem::size_of::<[i8; 1024]>() as usize {
-            let mut count: ::core::ffi::c_int = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
+            let mut count: i32 = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
                 c,
                 (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
             );
-            if count == 0 as ::core::ffi::c_int {
+            if count == 0 as i32 {
                 count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
                     0xfffd as u32,
                     (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
                 );
             }
-            if count == 0 as ::core::ffi::c_int {
+            if count == 0 as i32 {
                 return false;
             }
             (*s).buf_pos = (*s)
                 .buf_pos
-                .wrapping_add((count - 1 as ::core::ffi::c_int) as usize);
+                .wrapping_add((count - 1 as i32) as usize);
             return true;
         } else {
             return false;
@@ -247,13 +247,13 @@ pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
     unsafe {
         let mut i: u8 = 0 as u8;
         let mut c: u8 = 0 as u8;
-        while scanner_peek(s) as ::core::ffi::c_int >= '0' as i32
-            && scanner_peek(s) as ::core::ffi::c_int <= '7' as i32
-            && (i as ::core::ffi::c_int) < 4 as ::core::ffi::c_int
+        while scanner_peek(s) as i32 >= '0' as i32
+            && scanner_peek(s) as i32 <= '7' as i32
+            && (i as i32) < 4 as i32
         {
-            if (c as ::core::ffi::c_int) < 0o40 as ::core::ffi::c_int {
-                c = (c as ::core::ffi::c_int * 8 as ::core::ffi::c_int
-                    + scanner_next(s) as ::core::ffi::c_int
+            if (c as i32) < 0o40 as i32 {
+                c = (c as i32 * 8 as i32
+                    + scanner_next(s) as i32
                     - '0' as i32) as u8;
             } else {
                 scanner_next(s);
@@ -263,22 +263,22 @@ pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
             i = i.wrapping_add(1);
         }
         *out = c;
-        return i as ::core::ffi::c_int > 0 as ::core::ffi::c_int;
+        return i as i32 > 0 as i32;
     }
 }
 
 #[inline]
-pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
+pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> i32 {
     unsafe {
         let mut val: u64 = 0 as u64;
-        let count: ::core::ffi::c_int = crate::xkb::utils::parse_dec_to_uint64_t(
+        let count: i32 = crate::xkb::utils::parse_dec_to_uint64_t(
             (*s).s.offset((*s).pos as isize),
             (*s).len.wrapping_sub((*s).pos),
             &raw mut val,
-        ) as ::core::ffi::c_int;
-        if count > 0 as ::core::ffi::c_int {
+        ) as i32;
+        if count > 0 as i32 {
             if val > i64::MAX as u64 {
-                return -1 as ::core::ffi::c_int;
+                return -1 as i32;
             }
             (*s).pos = (*s).pos.wrapping_add(count as usize);
             *out = val as i64;
@@ -288,17 +288,17 @@ pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> ::cor
 }
 
 #[inline]
-pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> ::core::ffi::c_int {
+pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> i32 {
     unsafe {
         let mut val: u64 = 0 as u64;
-        let count: ::core::ffi::c_int = crate::xkb::utils::parse_hex_to_uint64_t(
+        let count: i32 = crate::xkb::utils::parse_hex_to_uint64_t(
             (*s).s.offset((*s).pos as isize),
             (*s).len.wrapping_sub((*s).pos),
             &raw mut val,
-        ) as ::core::ffi::c_int;
-        if count > 0 as ::core::ffi::c_int {
+        ) as i32;
+        if count > 0 as i32 {
             if val > i64::MAX as u64 {
-                return -1 as ::core::ffi::c_int;
+                return -1 as i32;
             }
             (*s).pos = (*s).pos.wrapping_add(count as usize);
             *out = val as i64;
@@ -314,25 +314,25 @@ pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32)
             return false;
         }
         let mut cp: u32 = 0 as u32;
-        let count: ::core::ffi::c_int = crate::xkb::utils::parse_hex_to_uint32_t(
+        let count: i32 = crate::xkb::utils::parse_hex_to_uint32_t(
             (*s).s.offset((*s).pos as isize),
             (*s).len.wrapping_sub((*s).pos),
             &raw mut cp,
-        ) as ::core::ffi::c_int;
-        if count > 0 as ::core::ffi::c_int {
+        ) as i32;
+        if count > 0 as i32 {
             (*s).pos = (*s).pos.wrapping_add(count as usize);
         }
         let last_valid: usize = (*s).pos;
         while !scanner_eof(s)
             && !scanner_eol(s)
-            && scanner_peek(s) as ::core::ffi::c_int != '"' as i32
-            && scanner_peek(s) as ::core::ffi::c_int != '}' as i32
+            && scanner_peek(s) as i32 != '"' as i32
+            && scanner_peek(s) as i32 != '}' as i32
         {
             scanner_next(s);
         }
         if scanner_chr(s, '}' as i32 as i8) {
             *out = cp;
-            return count > 0 as ::core::ffi::c_int
+            return count > 0 as i32
                 && (*s).pos == last_valid.wrapping_add(1 as usize)
                 && cp <= 0x10ffff as u32;
         }
@@ -345,36 +345,36 @@ pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32)
 pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool {
     use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     unsafe {
-        if scanner_str(s, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize) as ::core::ffi::c_int
+        if scanner_str(s, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize) as i32
             != 0
             || (*s).len < 2 as usize
         {
             return true;
         }
-        if *(*s).s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
-            || *(*s).s.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
+        if *(*s).s.offset(0 as i32 as isize) as i32 == '\0' as i32
+            || *(*s).s.offset(1 as i32 as isize) as i32 == '\0' as i32
         {
             let mut loc: scanner_loc = scanner_token_location(s);
             crate::xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
             return false;
         }
-        if !crate::xkb::utils::is_ascii(*(*s).s.offset(0 as ::core::ffi::c_int as isize)) {
+        if !crate::xkb::utils::is_ascii(*(*s).s.offset(0 as i32 as isize)) {
             let mut loc_0: scanner_loc = scanner_token_location(s);
             crate::xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
@@ -407,6 +407,6 @@ pub unsafe fn svaleq_prefix(mut s1: sval, mut s2: sval) -> bool {
 pub unsafe fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
     unsafe {
         return s1.len == s2.len
-            && crate::xkb::utils::istrncmp(s1.start, s2.start, s1.len) == 0 as ::core::ffi::c_int;
+            && crate::xkb::utils::istrncmp(s1.start, s2.start, s1.len) == 0 as i32;
     }
 }

@@ -2,7 +2,7 @@ use crate::xkb::context_priv::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-pub const OPTIONS_GROUP_SPECIFIER_PREFIX: ::core::ffi::c_int = '!' as i32;
+pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 pub use crate::xkb::utils_paths::is_absolute_path;
 
 pub use crate::xkb::messages::{
@@ -253,26 +253,26 @@ pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
 #[repr(C)]
 pub struct C2Rust_Unnamed_7 {
     pub name: *const i8,
-    pub length: ::core::ffi::c_int,
+    pub length: i32,
     pub range: layout_index_ranges,
 }
 pub type layout_index_ranges = u32;
 pub type wildcard_match_type = u32;
 pub const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
 pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
-pub const MAX_INCLUDE_DEPTH: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
+pub const MAX_INCLUDE_DEPTH: i32 = 5 as i32;
 #[inline]
 unsafe fn is_ident(mut ch: i8) -> bool {
     unsafe {
-        return is_graph(ch) as ::core::ffi::c_int != 0 && ch as ::core::ffi::c_int != '\\' as i32;
+        return is_graph(ch) as i32 != 0 && ch as i32 != '\\' as i32;
     }
 }
 unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
     unsafe {
         loop {
-            while scanner_chr(s, ' ' as i32 as i8) as ::core::ffi::c_int != 0
-                || scanner_chr(s, '\t' as i32 as i8) as ::core::ffi::c_int != 0
-                || scanner_chr(s, '\r' as i32 as i8) as ::core::ffi::c_int != 0
+            while scanner_chr(s, ' ' as i32 as i8) as i32 != 0
+                || scanner_chr(s, '\t' as i32 as i8) as i32 != 0
+                || scanner_chr(s, '\r' as i32 as i8) as i32 != 0
             {}
             if scanner_str(
                 s,
@@ -296,9 +296,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
                     loc.column,
@@ -353,9 +353,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_0.line,
                     loc_0.column,
@@ -384,9 +384,9 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             crate::xkb::utils::CStrDisplay((*s).file_name),
             loc_1.line,
             loc_1.column,
@@ -402,11 +402,11 @@ static mut rules_kccgst_svals: [sval; 5] = [sval {
     len: 0,
     start: std::ptr::null(),
 }; 5];
-pub const OPTIONS_MATCH_ALL_GROUPS: ::core::ffi::c_int = XKB_MAX_GROUPS;
+pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
 unsafe fn strip_spaces(mut v: sval) -> sval {
     unsafe {
         while v.len > 0 as usize
-            && is_space(*v.start.offset(0 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int
+            && is_space(*v.start.offset(0 as i32 as isize)) as i32
                 != 0
         {
             v.len = v.len.wrapping_sub(1);
@@ -414,7 +414,7 @@ unsafe fn strip_spaces(mut v: sval) -> sval {
         }
         while v.len > 0 as usize
             && is_space(*v.start.offset(v.len.wrapping_sub(1 as usize) as isize))
-                as ::core::ffi::c_int
+                as i32
                 != 0
         {
             v.len = v.len.wrapping_sub(1);
@@ -464,21 +464,21 @@ unsafe fn split_comma_separated_mlvo(
                 init.set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t);
                 init
             };
-            while *s as ::core::ffi::c_int != '\0' as i32
-                && *s as ::core::ffi::c_int != ',' as i32
-                && *s as ::core::ffi::c_int != OPTIONS_GROUP_SPECIFIER_PREFIX
+            while *s as i32 != '\0' as i32
+                && *s as i32 != ',' as i32
+                && *s as i32 != OPTIONS_GROUP_SPECIFIER_PREFIX
             {
                 s = s.offset(1);
                 val_0.sval.len = val_0.sval.len.wrapping_add(1);
             }
             val_0.sval = strip_spaces(val_0.sval);
-            if *s as ::core::ffi::c_int == OPTIONS_GROUP_SPECIFIER_PREFIX {
+            if *s as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
                 s = s.offset(1);
                 let layout_start: *const i8 = s;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                let mut count: ::core::ffi::c_int =
+                let mut count: i32 =
                     parse_dec_to_uint32_t(s, usize::MAX as usize, &raw mut layout);
-                if count > 0 as ::core::ffi::c_int {
+                if count > 0 as i32 {
                     s = s.offset(count as isize);
                     if layout == 0 as xkb_layout_index_t
                         || layout > XKB_MAX_GROUPS as xkb_layout_index_t
@@ -486,20 +486,20 @@ unsafe fn split_comma_separated_mlvo(
                         xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
-                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                             layout,
                             crate::xkb::utils::CStrNDisplay(
                                 val_0.sval.len as usize,
                                 val_0.sval.start
                             ),
                         );
-                    } else if mlvo as u32 != MLVO_OPTION as ::core::ffi::c_int as u32 {
+                    } else if mlvo as u32 != MLVO_OPTION as i32 as u32 {
                         xkb_logf!(
                             ctx,
                             XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
                             layout,
                             crate::xkb::utils::CStrNDisplay(
@@ -514,18 +514,18 @@ unsafe fn split_comma_separated_mlvo(
                     }
                 }
                 let layout_index_end: *const i8 = s;
-                while *s as ::core::ffi::c_int != '\0' as i32
-                    && *s as ::core::ffi::c_int != ',' as i32
+                while *s as i32 != '\0' as i32
+                    && *s as i32 != ',' as i32
                 {
                     s = s.offset(1);
                 }
-                if count <= 0 as ::core::ffi::c_int || layout_index_end != s {
+                if count <= 0 as i32 || layout_index_end != s {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as ::core::ffi::c_int,
+                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                         crate::xkb::utils::CStrNDisplay(s.offset_from(layout_start) as i64
                             as usize, layout_start),
                         crate::xkb::utils::CStrNDisplay(val_0.sval.len as usize, val_0.sval.start),
@@ -536,10 +536,10 @@ unsafe fn split_comma_separated_mlvo(
                 }
             }
             darray_append(&mut arr.item, &mut arr.size, &mut arr.alloc, val_0);
-            if *s as ::core::ffi::c_int == '\0' as i32 {
+            if *s as i32 == '\0' as i32 {
                 break;
             }
-            if *s as ::core::ffi::c_int == ',' as i32 {
+            if *s as i32 == ',' as i32 {
                 s = s.offset(1);
             }
         }
@@ -573,12 +573,12 @@ unsafe fn matcher_new_from_rmlvo(
             },
         };
         let changed: RMLVO = xkb_context_sanitize_rule_names((*rmlvo).ctx, &raw mut names) as RMLVO;
-        if changed as u32 & RMLVO_RULES as ::core::ffi::c_int as u32 != 0 {
+        if changed as u32 & RMLVO_RULES as i32 as u32 != 0 {
             *rules = names.rules;
         } else {
             *rules = (*rmlvo).rules;
         }
-        if changed as u32 & RMLVO_MODEL as ::core::ffi::c_int as u32 != 0 {
+        if changed as u32 & RMLVO_MODEL as i32 as u32 != 0 {
             (*m).rmlvo.model.sval.start = names.model;
         } else {
             (*m).rmlvo.model.sval.start = (*rmlvo).model;
@@ -587,7 +587,7 @@ unsafe fn matcher_new_from_rmlvo(
         (*m).rmlvo
             .model
             .set_layout(OPTIONS_MATCH_ALL_GROUPS as xkb_layout_index_t as xkb_layout_index_t);
-        if changed as u32 & RMLVO_LAYOUT as ::core::ffi::c_int as u32 != 0 {
+        if changed as u32 & RMLVO_LAYOUT as i32 as u32 != 0 {
             (*m).rmlvo.layouts =
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_LAYOUT, names.layout);
             (*m).rmlvo.variants =
@@ -597,7 +597,7 @@ unsafe fn matcher_new_from_rmlvo(
                     xkb_logf!(
                         (*m).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "More layouts than variants: \"{}\" vs. \"{}\".\n",
                         crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
                             names.layout
@@ -621,7 +621,7 @@ unsafe fn matcher_new_from_rmlvo(
                 xkb_logf!(
                     (*m).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Less layouts than variants: \"{}\" vs. \"{}\".\n",
                     crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
                         names.layout
@@ -648,7 +648,7 @@ unsafe fn matcher_new_from_rmlvo(
                 layout = (*rmlvo)
                     .layouts
                     .item
-                    .offset(0 as ::core::ffi::c_int as isize)
+                    .offset(0 as i32 as isize)
                     as *mut xkb_rmlvo_builder_layout;
                 while layout
                     < (*rmlvo).layouts.item.offset((*rmlvo).layouts.size as isize)
@@ -685,7 +685,7 @@ unsafe fn matcher_new_from_rmlvo(
                 }
             }
         }
-        if changed as u32 & RMLVO_OPTIONS as ::core::ffi::c_int as u32 != 0 {
+        if changed as u32 & RMLVO_OPTIONS as i32 as u32 != 0 {
             (*m).rmlvo.options =
                 split_comma_separated_mlvo((*rmlvo).ctx, MLVO_OPTION, names.options);
         } else {
@@ -695,7 +695,7 @@ unsafe fn matcher_new_from_rmlvo(
                 option = (*rmlvo)
                     .options
                     .item
-                    .offset(0 as ::core::ffi::c_int as isize)
+                    .offset(0 as i32 as isize)
                     as *mut xkb_rmlvo_builder_option;
                 while option
                     < (*rmlvo).options.item.offset((*rmlvo).options.size as isize)
@@ -753,7 +753,7 @@ unsafe fn matcher_new_from_names(
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "More layouts than variants: \"{}\" vs. \"{}\".\n",
                     crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
                         (*rmlvo).layout
@@ -777,7 +777,7 @@ unsafe fn matcher_new_from_names(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Less layouts than variants: \"{}\" vs. \"{}\".\n",
                 crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
                     (*rmlvo).layout
@@ -822,7 +822,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
         );
         let mut group: *mut group = std::ptr::null_mut();
         if !(*m).groups.item.is_null() {
-            group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
+            group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
                 crate::xkb::utils::darray_free(
                     &mut (*group).elements.item,
@@ -843,8 +843,8 @@ unsafe fn matcher_free(mut m: *mut matcher) {
             &mut (*m).pending_kccgst.slices.alloc,
         );
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
-        while (i as ::core::ffi::c_int)
-            < _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as kccgst_index_t as ::core::ffi::c_int
+        while (i as i32)
+            < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32
         {
             crate::xkb::utils::darray_free(
                 &mut (*m).kccgst[i as usize].item,
@@ -905,7 +905,7 @@ unsafe fn matcher_include(
             xkb_logf!(
                 (*parent_scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
                 crate::xkb::utils::CStrDisplay((*parent_scanner).file_name),
                 loc.line,
@@ -917,7 +917,7 @@ unsafe fn matcher_include(
         let mut stmt_file: *const i8 = inc.start;
         let mut stmt_file_len: usize = inc.len;
         let mut buf: [i8; 4096] = [
-            0 as ::core::ffi::c_int as i8,
+            0 as i32 as i8,
             0,
             0,
             0,
@@ -5046,9 +5046,9 @@ unsafe fn matcher_include(
                     xkb_logf!(
                         (*m).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
-                        XKB_ERROR_INVALID_PATH as ::core::ffi::c_int,
+                        XKB_ERROR_INVALID_PATH as i32,
                         stmt_file_len,
                         ::core::mem::size_of::<[i8; 4096]>(),
                         crate::xkb::utils::CStrNDisplay(stmt_file_len as usize, stmt_file),
@@ -5058,7 +5058,7 @@ unsafe fn matcher_include(
             } else {
             }
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        } else if (expanded != 0) as ::core::ffi::c_int as i64 != 0 {
+        } else if (expanded != 0) as i32 as i64 != 0 {
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
@@ -5088,7 +5088,7 @@ unsafe fn matcher_include(
             xkb_logf!(
                 (*m).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "No components returned from included XKB rules \"{}\"\n",
                 crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
             );
@@ -5111,7 +5111,7 @@ unsafe fn matcher_include(
         xkb_logf!(
             (*m).ctx,
             XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Failed to open included XKB rules \"{}\"\n",
             crate::xkb::utils::CStrNDisplay(stmt_file_len as usize, stmt_file),
         );
@@ -5120,15 +5120,15 @@ unsafe fn matcher_include(
 unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
     unsafe {
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
-        while (i as ::core::ffi::c_int)
-            < _MLVO_NUM_ENTRIES as ::core::ffi::c_int as mlvo_index_t as ::core::ffi::c_int
+        while (i as i32)
+            < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32
         {
             (*m).mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
             i = i.wrapping_add(1);
         }
         let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-        while (i_0 as ::core::ffi::c_int)
-            < _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as kccgst_index_t as ::core::ffi::c_int
+        while (i_0 as i32)
+            < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32
         {
             (*m).mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
             i_0 = i_0.wrapping_add(1);
@@ -5149,44 +5149,44 @@ unsafe fn parse_layout_int_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         let mut val: u32 = 0 as u32;
-        let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
-            s.offset(1 as ::core::ffi::c_int as isize) as *const i8,
+        let count: i32 = parse_dec_to_uint32_t(
+            s.offset(1 as i32 as isize) as *const i8,
             max_len.wrapping_sub(2 as usize),
             &raw mut val,
-        ) as ::core::ffi::c_int;
-        if count <= 0 as ::core::ffi::c_int
-            || *s.offset((1 as ::core::ffi::c_int + count) as isize) as ::core::ffi::c_int
+        ) as i32;
+        if count <= 0 as i32
+            || *s.offset((1 as i32 + count) as isize) as i32
                 != ']' as i32
             || val == 0 as u32
             || val > XKB_MAX_GROUPS as u32
         {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         *out = val.wrapping_sub(1 as u32) as xkb_layout_index_t;
-        return count + 2 as ::core::ffi::c_int;
+        return count + 2 as i32;
     }
 }
 unsafe fn extract_layout_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
         if max_len < 3 as usize
-            || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '[' as i32
+            || *s.offset(0 as i32 as isize) as i32 != '[' as i32
         {
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         if max_len > 3 as usize
-            && *s.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '%' as i32
-            && *s.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'i' as i32
-            && *s.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ']' as i32
+            && *s.offset(1 as i32 as isize) as i32 == '%' as i32
+            && *s.offset(2 as i32 as isize) as i32 == 'i' as i32
+            && *s.offset(3 as i32 as isize) as i32 == ']' as i32
         {
-            return 4 as ::core::ffi::c_int;
+            return 4 as i32;
         }
         return parse_layout_int_index(s, max_len, out);
     }
@@ -5195,35 +5195,35 @@ unsafe fn extract_mapping_layout_index(
     mut s: *const i8,
     mut max_len: usize,
     mut out: *mut xkb_layout_index_t,
-) -> ::core::ffi::c_int {
+) -> i32 {
     unsafe {
         static mut names: [C2Rust_Unnamed_7; 4] = [
             C2Rust_Unnamed_7 {
                 name: b"single]\0".as_ptr() as *const i8,
-                length: 7 as ::core::ffi::c_int,
+                length: 7 as i32,
                 range: LAYOUT_INDEX_SINGLE,
             },
             C2Rust_Unnamed_7 {
                 name: b"first]\0".as_ptr() as *const i8,
-                length: 6 as ::core::ffi::c_int,
+                length: 6 as i32,
                 range: LAYOUT_INDEX_FIRST,
             },
             C2Rust_Unnamed_7 {
                 name: b"later]\0".as_ptr() as *const i8,
-                length: 6 as ::core::ffi::c_int,
+                length: 6 as i32,
                 range: LAYOUT_INDEX_LATER,
             },
             C2Rust_Unnamed_7 {
                 name: b"any]\0".as_ptr() as *const i8,
-                length: 4 as ::core::ffi::c_int,
+                length: 4 as i32,
                 range: LAYOUT_INDEX_ANY,
             },
         ];
         if max_len < 3 as usize
-            || *s.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '[' as i32
+            || *s.offset(0 as i32 as isize) as i32 != '[' as i32
         {
             *out = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-            return -1 as ::core::ffi::c_int;
+            return -1 as i32;
         }
         let mut k: u32 = 0 as u32;
         while (k as usize)
@@ -5231,13 +5231,13 @@ unsafe fn extract_mapping_layout_index(
                 .wrapping_div(::core::mem::size_of::<C2Rust_Unnamed_7>() as usize)
         {
             if cstr_ncmp(
-                s.offset(1 as ::core::ffi::c_int as isize) as *const i8,
+                s.offset(1 as i32 as isize) as *const i8,
                 names[k as usize].name,
                 names[k as usize].length as usize,
-            ) == 0 as ::core::ffi::c_int
+            ) == 0 as i32
             {
                 *out = names[k as usize].range as xkb_layout_index_t;
-                return names[k as usize].length + 1 as ::core::ffi::c_int;
+                return names[k as usize].length + 1 as i32;
             }
             k = k.wrapping_add(1);
         }
@@ -5259,21 +5259,21 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             start: std::ptr::null(),
         };
         mlvo = MLVO_MODEL;
-        while (mlvo as u32) < _MLVO_NUM_ENTRIES as ::core::ffi::c_int as u32 {
+        while (mlvo as u32) < _MLVO_NUM_ENTRIES as i32 as u32 {
             mlvo_sval = rules_mlvo_svals[mlvo as usize];
             if svaleq_prefix(mlvo_sval, ident) {
                 break;
             }
             mlvo += 1;
         }
-        if mlvo as u32 >= _MLVO_NUM_ENTRIES as ::core::ffi::c_int as u32 {
+        if mlvo as u32 >= _MLVO_NUM_ENTRIES as i32 as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
@@ -5287,9 +5287,9 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
@@ -5300,19 +5300,19 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         }
         if mlvo_sval.len < ident.len {
             let mut idx: xkb_layout_index_t = 0;
-            let mut consumed: ::core::ffi::c_int = extract_mapping_layout_index(
+            let mut consumed: i32 = extract_mapping_layout_index(
                 ident.start.offset(mlvo_sval.len as isize),
                 ident.len.wrapping_sub(mlvo_sval.len),
                 &raw mut idx,
             );
-            if ident.len.wrapping_sub(mlvo_sval.len) as ::core::ffi::c_int != consumed {
+            if ident.len.wrapping_sub(mlvo_sval.len) as i32 != consumed {
                 let mut loc_1: scanner_loc = scanner_token_location(s);
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_1.line,
                     loc_1.column,
@@ -5321,18 +5321,18 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*m).mapping.c2rust_unnamed_0.active = 0 as xkb_layout_mask_t;
                 return;
             }
-            if mlvo as u32 == MLVO_LAYOUT as ::core::ffi::c_int as u32 {
+            if mlvo as u32 == MLVO_LAYOUT as i32 as u32 {
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx = idx;
-            } else if mlvo as u32 == MLVO_VARIANT as ::core::ffi::c_int as u32 {
+            } else if mlvo as u32 == MLVO_VARIANT as i32 as u32 {
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = idx;
             } else {
                 let mut loc_2: scanner_loc = scanner_token_location(s);
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc_2.line,
                     loc_2.column,
@@ -5341,17 +5341,17 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 (*m).mapping.c2rust_unnamed_0.active = 0 as xkb_layout_mask_t;
                 return;
             }
-        } else if mlvo as u32 == MLVO_LAYOUT as ::core::ffi::c_int as u32 {
+        } else if mlvo as u32 == MLVO_LAYOUT as i32 as u32 {
             (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx =
                 LAYOUT_INDEX_SINGLE as u32 as xkb_layout_index_t;
-        } else if mlvo as u32 == MLVO_VARIANT as ::core::ffi::c_int as u32 {
+        } else if mlvo as u32 == MLVO_VARIANT as i32 as u32 {
             (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx =
                 LAYOUT_INDEX_SINGLE as u32 as xkb_layout_index_t;
         }
-        if (mlvo as u32 == MLVO_LAYOUT as ::core::ffi::c_int as u32
-            && is_mlvo_mask_defined(m, MLVO_VARIANT) as ::core::ffi::c_int != 0
-            || mlvo as u32 == MLVO_VARIANT as ::core::ffi::c_int as u32
-                && is_mlvo_mask_defined(m, MLVO_LAYOUT) as ::core::ffi::c_int != 0)
+        if (mlvo as u32 == MLVO_LAYOUT as i32 as u32
+            && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
+            || mlvo as u32 == MLVO_VARIANT as i32 as u32
+                && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
             && (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
                 != (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
         {
@@ -5359,9 +5359,9 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_3.line,
                 loc_3.column,
@@ -5370,8 +5370,8 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             return;
         }
         (*m).mapping.mlvo_at_pos[(*m).mapping.num_mlvo as usize] = mlvo;
-        (*m).mapping.defined_mlvo_mask = ((*m).mapping.defined_mlvo_mask as ::core::ffi::c_int
-            | (1 as u32 as mlvo_mask_t as ::core::ffi::c_int) << mlvo as u32)
+        (*m).mapping.defined_mlvo_mask = ((*m).mapping.defined_mlvo_mask as i32
+            | (1 as u32 as mlvo_mask_t as i32) << mlvo as u32)
             as mlvo_mask_t;
         (*m).mapping.num_mlvo = (*m).mapping.num_mlvo.wrapping_add(1);
     }
@@ -5457,21 +5457,21 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             start: std::ptr::null(),
         };
         kccgst = KCCGST_KEYCODES;
-        while (kccgst as u32) < _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as u32 {
+        while (kccgst as u32) < _KCCGST_NUM_ENTRIES as i32 as u32 {
             kccgst_sval = rules_kccgst_svals[kccgst as usize];
             if svaleq(rules_kccgst_svals[kccgst as usize], ident) {
                 break;
             }
             kccgst += 1;
         }
-        if kccgst as u32 >= _KCCGST_NUM_ENTRIES as ::core::ffi::c_int as u32 {
+        if kccgst as u32 >= _KCCGST_NUM_ENTRIES as i32 as u32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
@@ -5485,9 +5485,9 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
@@ -5497,8 +5497,8 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             return;
         }
         (*m).mapping.kccgst_at_pos[(*m).mapping.num_kccgst as usize] = kccgst;
-        (*m).mapping.defined_kccgst_mask = ((*m).mapping.defined_kccgst_mask as ::core::ffi::c_int
-            | (1 as u32 as kccgst_mask_t as ::core::ffi::c_int) << kccgst as u32)
+        (*m).mapping.defined_kccgst_mask = ((*m).mapping.defined_kccgst_mask as i32
+            | (1 as u32 as kccgst_mask_t as i32) << kccgst as u32)
             as kccgst_mask_t;
         (*m).mapping.num_kccgst = (*m).mapping.num_kccgst.wrapping_add(1);
     }
@@ -5506,26 +5506,26 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
 unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bool {
     unsafe {
         let mut c2rust_current_block: u64;
-        if (*m).mapping.num_mlvo as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
+        if (*m).mapping.num_mlvo as i32 == 0 as i32 {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
             );
-        } else if (*m).mapping.num_kccgst as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
+        } else if (*m).mapping.num_kccgst as i32 == 0 as i32 {
             let mut loc_0: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc_0.line,
                 loc_0.column,
@@ -5672,16 +5672,16 @@ unsafe fn matcher_rule_set_mlvo_common(
     mut match_type: mlvo_match_type,
 ) {
     unsafe {
-        if (*m).rule.num_mlvo_values as ::core::ffi::c_int
-            >= (*m).mapping.num_mlvo as ::core::ffi::c_int
+        if (*m).rule.num_mlvo_values as i32
+            >= (*m).mapping.num_mlvo as i32
         {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
@@ -5719,16 +5719,16 @@ unsafe fn matcher_rule_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut id
 }
 unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
-        if (*m).rule.num_kccgst_values as ::core::ffi::c_int
-            >= (*m).mapping.num_kccgst as ::core::ffi::c_int
+        if (*m).rule.num_kccgst_values as i32
+            >= (*m).mapping.num_kccgst as i32
         {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
@@ -5746,7 +5746,7 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
         let mut element: *mut sval = std::ptr::null_mut();
         let mut found: bool = false;
         if !(*m).groups.item.is_null() {
-            group = (*m).groups.item.offset(0 as ::core::ffi::c_int as isize) as *mut group;
+            group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
                 if svaleq((*group).name, group_name) {
                     found = true;
@@ -5763,7 +5763,7 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
             element = (*group)
                 .elements
                 .item
-                .offset(0 as ::core::ffi::c_int as isize) as *mut sval;
+                .offset(0 as i32 as isize) as *mut sval;
             while element
                 < (*group)
                     .elements
@@ -5789,7 +5789,7 @@ unsafe fn match_value(
     unsafe {
         match match_type as u32 {
             1 => {
-                return wildcard_type as u32 == WILDCARD_MATCH_ALL as ::core::ffi::c_int as u32
+                return wildcard_type as u32 == WILDCARD_MATCH_ALL as i32 as u32
                     || to.len != 0;
             }
             2 => return to.len == 0,
@@ -5834,13 +5834,13 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         let mut pfx: i8 = 0;
         let mut sfx: i8 = 0;
         let mut expanded_value: *mut matched_sval = std::ptr::null_mut();
-        if *str.offset(*i as isize) as ::core::ffi::c_int == 'i' as i32
+        if *str.offset(*i as isize) as i32 == 'i' as i32
             && ((*i).wrapping_add(1 as usize) == value.len
-                || (*str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
+                || (*str.offset((*i).wrapping_add(1 as usize) as isize) as i32
                     == MERGE_OVERRIDE_PREFIX
-                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
+                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as i32
                         == MERGE_AUGMENT_PREFIX
-                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
+                    || *str.offset((*i).wrapping_add(1 as usize) as isize) as i32
                         == MERGE_REPLACE_PREFIX))
         {
             if layout_idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -5848,10 +5848,10 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
                     XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION
-                        as ::core::ffi::c_int,
+                        as i32,
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
                     loc.column,
@@ -5877,15 +5877,15 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         } else {
             sfx = 0 as i8;
             pfx = sfx;
-            if *str.offset(*i as isize) as ::core::ffi::c_int == '(' as i32
-                || (*str.offset(*i as isize) as ::core::ffi::c_int == MERGE_OVERRIDE_PREFIX
-                    || *str.offset(*i as isize) as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
-                    || *str.offset(*i as isize) as ::core::ffi::c_int == MERGE_REPLACE_PREFIX)
-                || *str.offset(*i as isize) as ::core::ffi::c_int == '_' as i32
-                || *str.offset(*i as isize) as ::core::ffi::c_int == '-' as i32
+            if *str.offset(*i as isize) as i32 == '(' as i32
+                || (*str.offset(*i as isize) as i32 == MERGE_OVERRIDE_PREFIX
+                    || *str.offset(*i as isize) as i32 == MERGE_AUGMENT_PREFIX
+                    || *str.offset(*i as isize) as i32 == MERGE_REPLACE_PREFIX)
+                || *str.offset(*i as isize) as i32 == '_' as i32
+                || *str.offset(*i as isize) as i32 == '-' as i32
             {
                 pfx = *str.offset(*i as isize);
-                if *str.offset(*i as isize) as ::core::ffi::c_int == '(' as i32 {
+                if *str.offset(*i as isize) as i32 == '(' as i32 {
                     sfx = ')' as i32 as i8;
                 }
                 *i = (*i).wrapping_add(1);
@@ -5902,7 +5902,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                 _ => {
                     let c2rust_fresh7 = *i;
                     *i = (*i).wrapping_add(1);
-                    match *str.offset(c2rust_fresh7 as isize) as ::core::ffi::c_int {
+                    match *str.offset(c2rust_fresh7 as isize) as i32 {
                         109 => {
                             c2rust_current_block = 1495343238628690102;
                             match c2rust_current_block {
@@ -5919,30 +5919,30 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
                             if *i < value.len
-                                && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
+                                && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as ::core::ffi::c_int as u32
-                                    && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
+                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
+                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
-                                        XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                                        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: ::core::ffi::c_int = extract_layout_index(
+                                    let mut consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
                                     );
-                                    if consumed == -1 as ::core::ffi::c_int {
+                                    if consumed == -1 as i32 {
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -5959,15 +5959,15 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             match c2rust_current_block {
                                 14165246690716487359 => {}
                                 _ => {
-                                    if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                                    if sfx as i32 != 0 as i32 {
                                         if *i >= value.len {
                                             c2rust_current_block = 14165246690716487359;
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
                                             if *str.offset(c2rust_fresh8 as isize)
-                                                as ::core::ffi::c_int
-                                                != sfx as ::core::ffi::c_int
+                                                as i32
+                                                != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
                                             } else {
@@ -5983,20 +5983,20 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as ::core::ffi::c_int as u32
+                                                == MLVO_LAYOUT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.layouts.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.layouts.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6008,7 +6008,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as ::core::ffi::c_int as u32
+                                                == MLVO_VARIANT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6016,13 +6016,13 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.variants.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.variants.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6034,7 +6034,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as ::core::ffi::c_int as u32
+                                                == MLVO_MODEL as i32 as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6043,7 +6043,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if pfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6062,7 +6062,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if sfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6096,30 +6096,30 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
                             if *i < value.len
-                                && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
+                                && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as ::core::ffi::c_int as u32
-                                    && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
+                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
+                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
-                                        XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                                        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: ::core::ffi::c_int = extract_layout_index(
+                                    let mut consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
                                     );
-                                    if consumed == -1 as ::core::ffi::c_int {
+                                    if consumed == -1 as i32 {
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -6136,15 +6136,15 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             match c2rust_current_block {
                                 14165246690716487359 => {}
                                 _ => {
-                                    if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                                    if sfx as i32 != 0 as i32 {
                                         if *i >= value.len {
                                             c2rust_current_block = 14165246690716487359;
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
                                             if *str.offset(c2rust_fresh8 as isize)
-                                                as ::core::ffi::c_int
-                                                != sfx as ::core::ffi::c_int
+                                                as i32
+                                                != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
                                             } else {
@@ -6160,20 +6160,20 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as ::core::ffi::c_int as u32
+                                                == MLVO_LAYOUT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.layouts.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.layouts.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6185,7 +6185,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as ::core::ffi::c_int as u32
+                                                == MLVO_VARIANT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6193,13 +6193,13 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.variants.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.variants.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6211,7 +6211,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as ::core::ffi::c_int as u32
+                                                == MLVO_MODEL as i32 as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6220,7 +6220,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if pfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6239,7 +6239,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if sfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6273,30 +6273,30 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             idx = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                             expanded_index = false;
                             if *i < value.len
-                                && *str.offset(*i as isize) as ::core::ffi::c_int == '[' as i32
+                                && *str.offset(*i as isize) as i32 == '[' as i32
                             {
-                                if mlv as u32 != MLVO_LAYOUT as ::core::ffi::c_int as u32
-                                    && mlv as u32 != MLVO_VARIANT as ::core::ffi::c_int as u32
+                                if mlv as u32 != MLVO_LAYOUT as i32 as u32
+                                    && mlv as u32 != MLVO_VARIANT as i32 as u32
                                 {
                                     let mut loc_0: scanner_loc = scanner_token_location(s);
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
-                                        XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                                        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         crate::xkb::utils::CStrDisplay((*s).file_name),
                                         loc_0.line,
                                         loc_0.column,
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: ::core::ffi::c_int = extract_layout_index(
+                                    let mut consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
                                     );
-                                    if consumed == -1 as ::core::ffi::c_int {
+                                    if consumed == -1 as i32 {
                                         c2rust_current_block = 14165246690716487359;
                                     } else {
                                         if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
@@ -6313,15 +6313,15 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             match c2rust_current_block {
                                 14165246690716487359 => {}
                                 _ => {
-                                    if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+                                    if sfx as i32 != 0 as i32 {
                                         if *i >= value.len {
                                             c2rust_current_block = 14165246690716487359;
                                         } else {
                                             let c2rust_fresh8 = *i;
                                             *i = (*i).wrapping_add(1);
                                             if *str.offset(c2rust_fresh8 as isize)
-                                                as ::core::ffi::c_int
-                                                != sfx as ::core::ffi::c_int
+                                                as i32
+                                                != sfx as i32
                                             {
                                                 c2rust_current_block = 14165246690716487359;
                                             } else {
@@ -6337,20 +6337,20 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             expanded_value =
                                                 std::ptr::null_mut();
                                             if mlv as u32
-                                                == MLVO_LAYOUT as ::core::ffi::c_int as u32
+                                                == MLVO_LAYOUT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.layouts.size == 1 as darray_size_t
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.layouts.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.layouts.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.layouts.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6362,7 +6362,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_VARIANT as ::core::ffi::c_int as u32
+                                                == MLVO_VARIANT as i32 as u32
                                             {
                                                 if idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
                                                     if (*m).rmlvo.variants.size
@@ -6370,13 +6370,13 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                     {
                                                         expanded_value =
                                                             (*m).rmlvo.variants.item.offset(
-                                                                0 as ::core::ffi::c_int as isize,
+                                                                0 as i32 as isize,
                                                             )
                                                                 as *mut matched_sval;
                                                     }
                                                 } else if idx
                                                     < (*m).rmlvo.variants.size as xkb_layout_index_t
-                                                    && (expanded_index as ::core::ffi::c_int != 0
+                                                    && (expanded_index as i32 != 0
                                                         || (*m).rmlvo.variants.size
                                                             > 1 as darray_size_t)
                                                 {
@@ -6388,7 +6388,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                         as *mut matched_sval;
                                                 }
                                             } else if mlv as u32
-                                                == MLVO_MODEL as ::core::ffi::c_int as u32
+                                                == MLVO_MODEL as i32 as u32
                                             {
                                                 expanded_value = &raw mut (*m).rmlvo.model;
                                             }
@@ -6397,7 +6397,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                             {
                                                 return true;
                                             }
-                                            if pfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if pfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6416,7 +6416,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             (*expanded).size = (*expanded).size.wrapping_sub(1);
-                                            if sfx as ::core::ffi::c_int != 0 as ::core::ffi::c_int
+                                            if sfx as i32 != 0 as i32
                                             {
                                                 darray_appends_nul(
                                                     &mut (*expanded).item,
@@ -6443,9 +6443,9 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             crate::xkb::utils::CStrDisplay((*s).file_name),
             loc_1.line,
             loc_1.column,
@@ -6466,16 +6466,16 @@ unsafe fn expand_qualifier_in_kccgst_value(
     unsafe {
         let mut str: *const i8 = value.start;
         if ((*i).wrapping_add(3 as usize) <= value.len
-            || (*str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
+            || (*str.offset((*i).wrapping_add(3 as usize) as isize) as i32
                 == MERGE_OVERRIDE_PREFIX
-                || *str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
+                || *str.offset((*i).wrapping_add(3 as usize) as isize) as i32
                     == MERGE_AUGMENT_PREFIX
-                || *str.offset((*i).wrapping_add(3 as usize) as isize) as ::core::ffi::c_int
+                || *str.offset((*i).wrapping_add(3 as usize) as isize) as i32
                     == MERGE_REPLACE_PREFIX))
-            && *str.offset(*i as isize) as ::core::ffi::c_int == 'a' as i32
-            && *str.offset((*i).wrapping_add(1 as usize) as isize) as ::core::ffi::c_int
+            && *str.offset(*i as isize) as i32 == 'a' as i32
+            && *str.offset((*i).wrapping_add(1 as usize) as isize) as i32
                 == 'l' as i32
-            && *str.offset((*i).wrapping_add(2 as usize) as isize) as ::core::ffi::c_int
+            && *str.offset((*i).wrapping_add(2 as usize) as isize) as i32
                 == 'l' as i32
         {
             if has_layout_idx_range {
@@ -6483,7 +6483,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_DETAILED as i32,
                     "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
                     crate::xkb::utils::CStrDisplay((*s).file_name),
                     loc.line,
@@ -6556,13 +6556,13 @@ unsafe fn expand_qualifier_in_kccgst_value(
 #[inline]
 unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut from: *const i8) {
     unsafe {
-        let from_plus: bool = *from.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+        let from_plus: bool = *from.offset(0 as i32 as isize) as i32
             == MERGE_OVERRIDE_PREFIX
-            || *from.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+            || *from.offset(0 as i32 as isize) as i32
                 == MERGE_AUGMENT_PREFIX
-            || *from.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+            || *from.offset(0 as i32 as isize) as i32
                 == MERGE_REPLACE_PREFIX;
-        if from_plus as ::core::ffi::c_int != 0 || (*into).size == 0 as darray_size_t {
+        if from_plus as i32 != 0 || (*into).size == 0 as darray_size_t {
             darray_appends_nul(
                 &mut (*into).item,
                 &mut (*into).size,
@@ -6575,11 +6575,11 @@ unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut
             let ch: i8 = (if (*into).size == 0 as darray_size_t {
                 '\0' as i32
             } else {
-                *(*into).item.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
+                *(*into).item.offset(0 as i32 as isize) as i32
             }) as i8;
-            let into_plus: bool = ch as ::core::ffi::c_int == MERGE_OVERRIDE_PREFIX
-                || ch as ::core::ffi::c_int == MERGE_AUGMENT_PREFIX
-                || ch as ::core::ffi::c_int == MERGE_REPLACE_PREFIX;
+            let into_plus: bool = ch as i32 == MERGE_OVERRIDE_PREFIX
+                || ch as i32 == MERGE_AUGMENT_PREFIX
+                || ch as i32 == MERGE_REPLACE_PREFIX;
             if into_plus {
                 let old_size = (*into).size;
                 let new_size = size.wrapping_add(old_size).wrapping_add(1);
@@ -6625,7 +6625,7 @@ unsafe fn append_expanded_kccgst_value(
                 c2rust_current_block = 10758786907990354186;
                 break;
             }
-            match *str.offset(i as isize) as ::core::ffi::c_int {
+            match *str.offset(i as isize) as i32 {
                 58 => {
                     let c2rust_fresh4 = i;
                     i = i.wrapping_add(1);
@@ -6731,7 +6731,7 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
             return true;
         }
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
-        while (i as ::core::ffi::c_int) < (*m).mapping.num_kccgst as ::core::ffi::c_int {
+        while (i as i32) < (*m).mapping.num_kccgst as i32 {
             let kccgst: rules_kccgst = (*m).mapping.kccgst_at_pos[i as usize];
             let mut layout: xkb_layout_index_t =
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min;
@@ -6744,7 +6744,7 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
                         (*buf).slices.item.offset(k as isize) as *mut kccgst_buffer_slice;
                     if (*slice).kccgst() as u32 == kccgst as u32
                         && (*slice).layout == layout
-                        && (*slice).length() as ::core::ffi::c_int != 0
+                        && (*slice).length() as i32 != 0
                     {
                         concat_kccgst(
                             (&raw mut (*m).kccgst as *mut darray_char).offset(kccgst as isize)
@@ -6766,18 +6766,18 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
 }
 unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
     unsafe {
-        if (*m).rule.num_mlvo_values as ::core::ffi::c_int
-            != (*m).mapping.num_mlvo as ::core::ffi::c_int
-            || (*m).rule.num_kccgst_values as ::core::ffi::c_int
-                != (*m).mapping.num_kccgst as ::core::ffi::c_int
+        if (*m).rule.num_mlvo_values as i32
+            != (*m).mapping.num_mlvo as i32
+            || (*m).rule.num_kccgst_values as i32
+                != (*m).mapping.num_kccgst as i32
         {
             let mut loc: scanner_loc = scanner_token_location(s);
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 crate::xkb::utils::CStrDisplay((*s).file_name),
                 loc.line,
                 loc.column,
@@ -6792,13 +6792,13 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask;
         let mut idx: xkb_layout_index_t = 0;
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
-        while (i as ::core::ffi::c_int) < (*m).mapping.num_mlvo as ::core::ffi::c_int {
+        while (i as i32) < (*m).mapping.num_mlvo as i32 {
             let mut mlvo: rules_mlvo = (*m).mapping.mlvo_at_pos[i as usize];
             let mut value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
             let mut match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
             let mut to: *mut matched_sval = std::ptr::null_mut();
             let mut matched: bool = false;
-            if mlvo as u32 == MLVO_MODEL as ::core::ffi::c_int as u32 {
+            if mlvo as u32 == MLVO_MODEL as i32 as u32 {
                 to = &raw mut (*m).rmlvo.model;
                 matched = match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_ALL);
             } else if (*m).mapping.has_layout_idx_range {
@@ -6846,7 +6846,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                         .rmlvo
                                         .options
                                         .item
-                                        .offset(0 as ::core::ffi::c_int as isize)
+                                        .offset(0 as i32 as isize)
                                         as *mut matched_sval;
                                     while to
                                         < (*m)
@@ -6856,7 +6856,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                             .offset((*m).rmlvo.options.size as isize)
                                             as *mut matched_sval
                                     {
-                                        if !((*to).layout() as ::core::ffi::c_int
+                                        if !((*to).layout() as i32
                                             != OPTIONS_MATCH_ALL_GROUPS
                                             && (*to).layout() != idx)
                                         {
@@ -6905,7 +6905,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                 .rmlvo
                                 .options
                                 .item
-                                .offset(0 as ::core::ffi::c_int as isize)
+                                .offset(0 as i32 as isize)
                                 as *mut matched_sval;
                             while to
                                 < (*m)
@@ -6915,7 +6915,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                     .offset((*m).rmlvo.options.size as isize)
                                     as *mut matched_sval
                             {
-                                if !((*to).layout() as ::core::ffi::c_int
+                                if !((*to).layout() as i32
                                     != OPTIONS_MATCH_ALL_GROUPS
                                     && (*to).layout()
                                         != (*m)
@@ -6951,8 +6951,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             while idx < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
                 if candidate_layouts & (1 as xkb_layout_mask_t) << idx != 0 {
                     let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-                    while (i_0 as ::core::ffi::c_int)
-                        < (*m).mapping.num_kccgst as ::core::ffi::c_int
+                    while (i_0 as i32)
+                        < (*m).mapping.num_kccgst as i32
                     {
                         let kccgst: rules_kccgst = (*m).mapping.kccgst_at_pos[i_0 as usize];
                         let value_0: sval = (*m).rule.kccgst_value_at_pos[i_0 as usize];
@@ -6990,7 +6990,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             }
         } else {
             let mut i_1: kccgst_index_t = 0 as kccgst_index_t;
-            while (i_1 as ::core::ffi::c_int) < (*m).mapping.num_kccgst as ::core::ffi::c_int {
+            while (i_1 as i32) < (*m).mapping.num_kccgst as i32 {
                 let mut kccgst_0: rules_kccgst = (*m).mapping.kccgst_at_pos[i_1 as usize];
                 let mut value_1: sval = (*m).rule.kccgst_value_at_pos[i_1 as usize];
                 append_expanded_kccgst_value(
@@ -7118,7 +7118,7 @@ unsafe fn matcher_match(
                             }
                         }
                         if (*m).mapping.c2rust_unnamed_0.active != 0
-                            && matcher_mapping_verify(m, s) as ::core::ffi::c_int != 0
+                            && matcher_mapping_verify(m, s) as i32 != 0
                         {
                             matcher_mapping_set_layout_bounds(m);
                             if (*m).mapping.has_layout_idx_range {
@@ -7147,9 +7147,9 @@ unsafe fn matcher_match(
                                                 if !(*m).rule.skip {
                                                     if (*m).val.string.len == 1 as usize
                                                         && *(*m).val.string.start.offset(
-                                                            0 as ::core::ffi::c_int as isize,
+                                                            0 as i32 as isize,
                                                         )
-                                                            as ::core::ffi::c_int
+                                                            as i32
                                                             == '+' as i32
                                                     {
                                                         matcher_rule_set_mlvo_wildcard(
@@ -7278,9 +7278,9 @@ unsafe fn matcher_match(
                         xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: unexpected token\n",
-                            XKB_ERROR_INVALID_RULES_SYNTAX as ::core::ffi::c_int,
+                            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                             crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc.line,
                             loc.column,
@@ -7325,7 +7325,7 @@ unsafe fn read_rules_file(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Invalid file descriptor\n",
             );
             return false;
@@ -7340,7 +7340,7 @@ unsafe fn read_rules_file(
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Couldn't read rules file \"{}\": {}\n",
                     crate::xkb::utils::CStrDisplay(path),
                     crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
@@ -7363,9 +7363,9 @@ unsafe fn read_rules_file(
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 crate::xkb::utils::CStrDisplay(scanner.file_name),
                 loc.line,
                 loc.column,
@@ -7374,9 +7374,9 @@ unsafe fn read_rules_file(
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as ::core::ffi::c_int,
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 crate::xkb::utils::CStrDisplay(scanner.file_name),
                 loc_0.line,
                 loc_0.column,
@@ -7419,9 +7419,9 @@ unsafe fn xkb_resolve_partial_rules(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                 crate::xkb::utils::CStrDisplay(rules),
                 crate::xkb::utils::CStrDisplay(suffix),
             );
@@ -7451,9 +7451,9 @@ unsafe fn xkb_resolve_partial_rules(
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                     crate::xkb::utils::CStrDisplay(path),
                 );
                 return false;
@@ -7490,9 +7490,9 @@ unsafe fn xkb_resolve_rules(
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                 crate::xkb::utils::CStrDisplay(rules),
             );
         } else {
@@ -7510,9 +7510,9 @@ unsafe fn xkb_resolve_rules(
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                        XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                        XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                         crate::xkb::utils::CStrDisplay(&raw mut path as *mut i8),
                     );
                 } else {
@@ -7525,107 +7525,107 @@ unsafe fn xkb_resolve_rules(
                         matcher,
                     );
                     if ret {
-                        if (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize].size
+                        if (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize].size
                             == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].size
+                            || (*matcher).kccgst[KCCGST_TYPES as i32 as usize].size
                                 == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].size
+                            || (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].size
                                 == 0 as darray_size_t
-                            || (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].size
+                            || (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].size
                                 == 0 as darray_size_t
                         {
                             xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                 crate::xkb::utils::CStrDisplay(rules),
                             );
                             ret = false;
                         } else {
                             (*out).keycodes = (*matcher).kccgst
-                                [KCCGST_KEYCODES as ::core::ffi::c_int as usize]
+                                [KCCGST_KEYCODES as i32 as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_KEYCODES as ::core::ffi::c_int as usize]
+                                    [KCCGST_KEYCODES as i32 as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
                                 .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
                                 .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_KEYCODES as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_KEYCODES as i32 as usize]
                                 .alloc = 0 as darray_size_t;
                             (*out).types =
-                                (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].item;
+                                (*matcher).kccgst[KCCGST_TYPES as i32 as usize].item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_TYPES as ::core::ffi::c_int as usize]
+                                    [KCCGST_TYPES as i32 as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].item =
+                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].size =
+                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_TYPES as ::core::ffi::c_int as usize].alloc =
+                            (*matcher).kccgst[KCCGST_TYPES as i32 as usize].alloc =
                                 0 as darray_size_t;
                             (*out).compatibility = (*matcher).kccgst
-                                [KCCGST_COMPAT as ::core::ffi::c_int as usize]
+                                [KCCGST_COMPAT as i32 as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_COMPAT as ::core::ffi::c_int as usize]
+                                    [KCCGST_COMPAT as i32 as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].item =
+                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].size =
+                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_COMPAT as ::core::ffi::c_int as usize].alloc =
+                            (*matcher).kccgst[KCCGST_COMPAT as i32 as usize].alloc =
                                 0 as darray_size_t;
                             (*out).symbols = (*matcher).kccgst
-                                [KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
+                                [KCCGST_SYMBOLS as i32 as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
+                                    [KCCGST_SYMBOLS as i32 as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].item =
+                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].item =
                                 std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize].size =
+                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize].size =
                                 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_SYMBOLS as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_SYMBOLS as i32 as usize]
                                 .alloc = 0 as darray_size_t;
                             (*out).geometry = (*matcher).kccgst
-                                [KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
+                                [KCCGST_GEOMETRY as i32 as usize]
                                 .item;
                             if !std::ptr::null_mut::<u8>().is_null() {
                                 *(std::ptr::null_mut()
                                     as *mut darray_size_t) = (*matcher).kccgst
-                                    [KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
+                                    [KCCGST_GEOMETRY as i32 as usize]
                                     .size;
                             }
-                            (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
                                 .item = std::ptr::null_mut();
-                            (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
                                 .size = 0 as darray_size_t;
-                            (*matcher).kccgst[KCCGST_GEOMETRY as ::core::ffi::c_int as usize]
+                            (*matcher).kccgst[KCCGST_GEOMETRY as i32 as usize]
                                 .alloc = 0 as darray_size_t;
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched() && (*mval).sval.len > 0 as usize {
                                 xkb_logf!(
                                     (*matcher).ctx,
                                     XKB_LOG_LEVEL_ERROR,
-                                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
-                                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                     crate::xkb::utils::CStrNDisplay(
                                         (*mval).sval.len as usize,
                                         (*mval).sval.start
@@ -7637,7 +7637,7 @@ unsafe fn xkb_resolve_rules(
                                     .rmlvo
                                     .layouts
                                     .item
-                                    .offset(0 as ::core::ffi::c_int as isize)
+                                    .offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7651,9 +7651,9 @@ unsafe fn xkb_resolve_rules(
                                         xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
-                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
@@ -7665,7 +7665,7 @@ unsafe fn xkb_resolve_rules(
                                     .rmlvo
                                     .variants
                                     .item
-                                    .offset(0 as ::core::ffi::c_int as isize)
+                                    .offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7679,9 +7679,9 @@ unsafe fn xkb_resolve_rules(
                                         xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
-                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
@@ -7693,7 +7693,7 @@ unsafe fn xkb_resolve_rules(
                                     .rmlvo
                                     .options
                                     .item
-                                    .offset(0 as ::core::ffi::c_int as isize)
+                                    .offset(0 as i32 as isize)
                                     as *mut matched_sval;
                                 while mval
                                     < (*matcher)
@@ -7707,9 +7707,9 @@ unsafe fn xkb_resolve_rules(
                                         xkb_logf!(
                                             (*matcher).ctx,
                                             XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
-                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as ::core::ffi::c_int,
+                                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             crate::xkb::utils::CStrNDisplay((*mval).sval.len as usize, (*mval).sval.start),
                                         );
                                     }
@@ -7728,23 +7728,23 @@ unsafe fn xkb_resolve_rules(
                                     }
                                     let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
                                     symbols = symbols.offset(1);
-                                    let count: ::core::ffi::c_int = parse_dec_to_uint32_t(
+                                    let count: i32 = parse_dec_to_uint32_t(
                                         symbols,
                                         usize::MAX as usize,
                                         &raw mut group,
                                     )
-                                        as ::core::ffi::c_int;
-                                    if count > 0 as ::core::ffi::c_int
-                                        && (*symbols.offset(count as isize) as ::core::ffi::c_int
+                                        as i32;
+                                    if count > 0 as i32
+                                        && (*symbols.offset(count as isize) as i32
                                             == '\0' as i32
                                             || (*symbols.offset(count as isize)
-                                                as ::core::ffi::c_int
+                                                as i32
                                                 == MERGE_OVERRIDE_PREFIX
                                                 || *symbols.offset(count as isize)
-                                                    as ::core::ffi::c_int
+                                                    as i32
                                                     == MERGE_AUGMENT_PREFIX
                                                 || *symbols.offset(count as isize)
-                                                    as ::core::ffi::c_int
+                                                    as i32
                                                     == MERGE_REPLACE_PREFIX))
                                         && group > 0 as xkb_layout_index_t
                                         && group <= XKB_MAX_GROUPS as xkb_layout_index_t

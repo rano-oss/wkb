@@ -127,7 +127,7 @@ use libc::{calloc, free};
 #[repr(C)]
 pub struct KeyTypesInfo {
     pub name: *mut i8,
-    pub errorCount: ::core::ffi::c_int,
+    pub errorCount: i32,
     pub include_depth: u32,
     pub types: C2Rust_Unnamed_16,
     pub mods: xkb_mod_set,
@@ -265,7 +265,7 @@ unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
         let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
         if !(*info).types.item.is_null() {
             type_0 =
-                (*info).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
+                (*info).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
             while type_0
                 < (*info).types.item.offset((*info).types.size as isize) as *mut KeyTypeInfo
             {
@@ -287,7 +287,7 @@ unsafe fn FindMatchingKeyType(
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         if !(*info).types.item.is_null() {
-            old = (*info).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
+            old = (*info).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
             while old < (*info).types.item.offset((*info).types.size as isize) as *mut KeyTypeInfo {
                 if (*old).name == name {
                     return old;
@@ -305,21 +305,21 @@ unsafe fn AddKeyType(
 ) -> bool {
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
-        let verbosity: ::core::ffi::c_int =
-            xkb_context_get_log_verbosity((*info).ctx) as ::core::ffi::c_int;
+        let verbosity: i32 =
+            xkb_context_get_log_verbosity((*info).ctx) as i32;
         old = FindMatchingKeyType(info, (*new).name);
         if !old.is_null() {
-            if (*new).merge as u32 != MERGE_AUGMENT as ::core::ffi::c_int as u32 {
-                if same_file as ::core::ffi::c_int != 0 && verbosity > 0 as ::core::ffi::c_int
-                    || verbosity > 9 as ::core::ffi::c_int
+            if (*new).merge as u32 != MERGE_AUGMENT as i32 as u32 {
+                if same_file as i32 != 0 && verbosity > 0 as i32
+                    || verbosity > 9 as i32
                 {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
-                            as ::core::ffi::c_int,
+                            as i32,
                         crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                     );
                 }
@@ -337,9 +337,9 @@ unsafe fn AddKeyType(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_DETAILED as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
-                    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as ::core::ffi::c_int,
+                    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as i32,
                     crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
                 );
             }
@@ -361,7 +361,7 @@ unsafe fn MergeIncludedKeyTypes(
     mut merge: merge_mode,
 ) {
     unsafe {
-        if (*from).errorCount > 0 as ::core::ffi::c_int {
+        if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
             return;
         }
@@ -384,7 +384,7 @@ unsafe fn MergeIncludedKeyTypes(
             let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
             if !(*from).types.item.is_null() {
                 type_0 =
-                    (*from).types.item.offset(0 as ::core::ffi::c_int as isize) as *mut KeyTypeInfo;
+                    (*from).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
                 while type_0
                     < (*from).types.item.offset((*from).types.size as isize) as *mut KeyTypeInfo
                 {
@@ -430,7 +430,7 @@ unsafe fn HandleIncludeKeyTypes(
             keymap_info: std::ptr::null(),
         };
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
-            (*info).errorCount += 10 as ::core::ffi::c_int;
+            (*info).errorCount += 10 as i32;
             return false;
         }
         InitKeyTypesInfo(
@@ -474,7 +474,7 @@ unsafe fn HandleIncludeKeyTypes(
                 ::core::mem::size_of::<[i8; 4096]>() as usize,
             );
             if file.is_null() {
-                (*info).errorCount += 10 as ::core::ffi::c_int;
+                (*info).errorCount += 10 as i32;
                 ClearKeyTypesInfo(&raw mut included);
                 return false;
             }
@@ -492,7 +492,7 @@ unsafe fn HandleIncludeKeyTypes(
         }
         MergeIncludedKeyTypes(info, &raw mut included, (*include).merge);
         ClearKeyTypesInfo(&raw mut included);
-        return (*info).errorCount == 0 as ::core::ffi::c_int;
+        return (*info).errorCount == 0 as i32;
     }
 }
 unsafe fn SetModifiers(
@@ -507,7 +507,7 @@ unsafe fn SetModifiers(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The modifiers field of a key type is not an array; Illegal array subscript ignored\n",
             );
             return false;
@@ -522,17 +522,17 @@ unsafe fn SetModifiers(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Key type mask field must be a modifier mask; Key type definition ignored\n",
-                XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
+                XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as i32,
             );
             return false;
         }
-        if (*type_0).defined as u32 & TYPE_FIELD_MASK as ::core::ffi::c_int as u32 != 0 {
+        if (*type_0).defined as u32 & TYPE_FIELD_MASK as i32 as u32 != 0 {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
                 crate::xkb::utils::CStrDisplay(TypeMaskTxt(info, type_0)),
@@ -559,7 +559,7 @@ unsafe fn FindMatchingMapEntry(
             entry = (*type_0)
                 .entries
                 .item
-                .offset(0 as ::core::ffi::c_int as isize)
+                .offset(0 as i32 as isize)
                 as *mut xkb_key_type_entry;
             while entry
                 < (*type_0)
@@ -588,22 +588,22 @@ unsafe fn AddMapEntry(
         let mut old: *mut xkb_key_type_entry = std::ptr::null_mut();
         old = FindMatchingMapEntry(type_0, (*new).mods.mods);
         if !old.is_null() {
-            if report as ::core::ffi::c_int != 0 && (*old).level != (*new).level {
+            if report as i32 != 0 && (*old).level != (*new).level {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Multiple map entries for {} in {}; Using {}, ignoring {}\n",
-                    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as ::core::ffi::c_int,
+                    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
                     crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
-                    (if clobber as ::core::ffi::c_int != 0 {
+                    (if clobber as i32 != 0 {
                         (*new).level
                     } else {
                         (*old).level
                     })
                     .wrapping_add(1 as xkb_level_index_t),
-                    (if clobber as ::core::ffi::c_int != 0 {
+                    (if clobber as i32 != 0 {
                         (*old).level
                     } else {
                         (*new).level
@@ -614,9 +614,9 @@ unsafe fn AddMapEntry(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_VERBOSE as i32,
                     "[XKB-{:03}] Multiple occurrences of map[{}]= {} in {}; Ignored\n",
-                    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as ::core::ffi::c_int,
+                    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
                     crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
                     (*new).level.wrapping_add(1 as xkb_level_index_t),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
@@ -677,9 +677,9 @@ unsafe fn SetMapEntry(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Map entry for modifiers not used by type {}; Using {} instead of {}\n",
-                XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as ::core::ffi::c_int,
+                XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
@@ -695,9 +695,9 @@ unsafe fn SetMapEntry(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Level specifications in a key type must be integer; Ignoring malformed level specification\n",
-                XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as ::core::ffi::c_int,
+                XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
             );
             return false;
         }
@@ -722,7 +722,7 @@ unsafe fn AddPreserve(
             entry = (*type_0)
                 .entries
                 .item
-                .offset(0 as ::core::ffi::c_int as isize)
+                .offset(0 as i32 as isize)
                 as *mut xkb_key_type_entry;
             while entry
                 < (*type_0)
@@ -742,9 +742,9 @@ unsafe fn AddPreserve(
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
+                            XKB_LOG_VERBOSITY_VERBOSE as i32,
                             "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
-                            XKB_WARNING_DUPLICATE_ENTRY as ::core::ffi::c_int,
+                            XKB_WARNING_DUPLICATE_ENTRY as i32,
                             crate::xkb::utils::CStrDisplay(ModMaskText(
                                 (*info).ctx,
                                 MOD_BOTH,
@@ -758,10 +758,10 @@ unsafe fn AddPreserve(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_BRIEF as i32,
                         "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
-                            as ::core::ffi::c_int,
+                            as i32,
                         crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
                         crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(
@@ -833,9 +833,9 @@ unsafe fn SetPreserve(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Preserve entry for modifiers not used by the {} type; Index {} converted to {}\n",
-                XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as ::core::ffi::c_int,
+                XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(before),
                 crate::xkb::utils::CStrDisplay(after),
@@ -852,9 +852,9 @@ unsafe fn SetPreserve(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
-                XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as ::core::ffi::c_int,
+                XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as i32,
                 crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
@@ -869,9 +869,9 @@ unsafe fn SetPreserve(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Illegal value for preserve[{}] in type {}; Converted {} to {}\n",
-                XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as ::core::ffi::c_int,
+                XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as i32,
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
@@ -906,9 +906,9 @@ unsafe fn AddLevelName(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_VERBOSE as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_VERBOSE as i32,
                     "[XKB-{:03}] Duplicate names for level {} of key type {}; Ignored\n",
-                    XKB_WARNING_DUPLICATE_ENTRY as ::core::ffi::c_int,
+                    XKB_WARNING_DUPLICATE_ENTRY as i32,
                     level.wrapping_add(1 as xkb_level_index_t),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
                 );
@@ -925,13 +925,13 @@ unsafe fn AddLevelName(
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_BRIEF as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_BRIEF as i32,
                     "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
-                    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as ::core::ffi::c_int,
+                    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as i32,
                     level.wrapping_add(1 as xkb_level_index_t),
                     crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
-                    crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 { new } else { old }),
-                    crate::xkb::utils::CStrDisplay(if clobber as ::core::ffi::c_int != 0 { old } else { new }),
+                    crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 { new } else { old }),
+                    crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 { old } else { new }),
                 );
                 if !clobber {
                     return true;
@@ -967,9 +967,9 @@ unsafe fn SetLevelName(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as ::core::ffi::c_int,
+                XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 level.wrapping_add(1 as xkb_level_index_t),
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
             );
@@ -997,8 +997,8 @@ unsafe fn SetKeyTypeField(
         } else if istreq(field, b"preserve\0".as_ptr() as *const i8) {
             type_field = TYPE_FIELD_PRESERVE;
             ok = SetPreserve(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"levelname\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
-            || istreq(field, b"level_name\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+        } else if istreq(field, b"levelname\0".as_ptr() as *const i8) as i32 != 0
+            || istreq(field, b"level_name\0".as_ptr() as *const i8) as i32 != 0
         {
             type_field = TYPE_FIELD_LEVEL_NAME;
             ok = SetLevelName(info, type_0, arrayNdx, value);
@@ -1006,14 +1006,14 @@ unsafe fn SetKeyTypeField(
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown field \"{}\" in key type \"{}\"; Definition ignored\n",
-                XKB_ERROR_UNKNOWN_FIELD as ::core::ffi::c_int,
+                XKB_ERROR_UNKNOWN_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(field),
                 crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
             );
             ok = (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_TYPE_FIELDS as ::core::ffi::c_int as u32
+                & PARSER_NO_UNKNOWN_TYPE_FIELDS as i32 as u32
                 == 0;
         }
         (*type_0).defined = ((*type_0).defined as u32 | type_field as u32) as type_field;
@@ -1044,9 +1044,9 @@ unsafe fn HandleKeyTypeBody(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
-                        XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as ::core::ffi::c_int,
+                        XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(elem),
                         crate::xkb::utils::CStrDisplay(field),
                     );
@@ -1054,9 +1054,9 @@ unsafe fn HandleKeyTypeBody(
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
-                        XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as ::core::ffi::c_int,
+                        XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
                         crate::xkb::utils::CStrDisplay(elem),
                         crate::xkb::utils::CStrDisplay(elem),
                         crate::xkb::utils::CStrDisplay(field),
@@ -1115,41 +1115,41 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
         ) {
             return false;
         } else if !elem.is_null()
-            && istreq(elem, b"type\0".as_ptr() as *const i8) as ::core::ffi::c_int != 0
+            && istreq(elem, b"type\0".as_ptr() as *const i8) as i32 != 0
         {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
-                XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
+                XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
             );
             return true;
         } else if !elem.is_null() {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown element \"{}\"; Value for field \"{}.{}\" ignored\n",
-                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
+                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(elem),
                 crate::xkb::utils::CStrDisplay(elem),
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
+                & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
                 == 0;
         } else if !field.is_null() {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as ::core::ffi::c_int,
+                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
-                & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as ::core::ffi::c_int as u32
+                & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as i32 as u32
                 == 0;
         }
         return false;
@@ -1179,12 +1179,12 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as ::core::ffi::c_int,
+                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         crate::xkb::utils::CStrDisplay(
                             if (*stmt).type_0 as u32
-                                == STMT_UNKNOWN_COMPOUND as ::core::ffi::c_int as u32
+                                == STMT_UNKNOWN_COMPOUND as i32 as u32
                             {
                                 b"compound\0".as_ptr() as *const i8
                             } else {
@@ -1194,16 +1194,16 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
                     );
                     ok = (*(*info).keymap_info).strict as u32
-                        & PARSER_NO_UNKNOWN_STATEMENTS as ::core::ffi::c_int as u32
+                        & PARSER_NO_UNKNOWN_STATEMENTS as i32 as u32
                         == 0;
                 }
                 _ => {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Key type files may not include other declarations; Ignoring {}\n",
-                        XKB_ERROR_WRONG_STATEMENT_TYPE as ::core::ffi::c_int,
+                        XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
                         crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
                     );
                     ok = false;
@@ -1212,13 +1212,13 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
             if !ok {
                 (*info).errorCount += 1;
             }
-            if (*info).errorCount > 10 as ::core::ffi::c_int {
+            if (*info).errorCount > 10 as i32 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as ::core::ffi::c_int,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Abandoning keytypes file \"{}\"\n",
-                    XKB_ERROR_INVALID_XKB_SYNTAX as ::core::ffi::c_int,
+                    XKB_ERROR_INVALID_XKB_SYNTAX as i32,
                     crate::xkb::utils::CStrDisplay(safe_map_name(file)),
                 );
                 break;
@@ -1244,7 +1244,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         }
         if (*info).types.size == 0 as darray_size_t {
             let mut type_0: *mut xkb_key_type =
-                types.offset(0 as ::core::ffi::c_int as isize) as *mut xkb_key_type;
+                types.offset(0 as i32 as isize) as *mut xkb_key_type;
             (*type_0).mods.mods = 0 as xkb_mod_mask_t;
             (*type_0).num_levels = 1 as xkb_level_index_t;
             (*type_0).entries = std::ptr::null_mut();
@@ -1307,10 +1307,10 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 (*type_1).required = false;
                 if (*type_1).num_levels <= 2 as xkb_level_index_t {
                     let mut t: u8 = 0 as u8;
-                    while (t as ::core::ffi::c_int)
+                    while (t as i32)
                         < (::core::mem::size_of::<[xkb_atom_t; 4]>() as usize)
                             .wrapping_div(::core::mem::size_of::<xkb_atom_t>() as usize)
-                            as u8 as ::core::ffi::c_int
+                            as u8 as i32
                     {
                         if (*type_1).name == canonical_types[t as usize] {
                             (*type_1).required = true;
@@ -1366,7 +1366,7 @@ pub unsafe fn CompileKeyTypes(
         if !file.is_null() {
             HandleKeyTypesFile(&raw mut info, file);
         }
-        if !(info.errorCount != 0 as ::core::ffi::c_int) {
+        if !(info.errorCount != 0 as i32) {
             if CopyKeyTypesToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
                 ClearKeyTypesInfo(&raw mut info);
                 return true;
