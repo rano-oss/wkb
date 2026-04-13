@@ -1,3 +1,4 @@
+use crate::xkb::keysym::xkb_keysym_from_name;
 use crate::xkb_logf;
 
 pub mod context_h {
@@ -12,17 +13,6 @@ pub mod atom_h {
     pub const XKB_ATOM_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    };
-    pub type xkb_keysym_flags = u32;
-    pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
-    pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
-    pub const XKB_KEYSYM_MAX: ::core::ffi::c_int = 0x1fffffff as ::core::ffi::c_int;
-    pub use crate::xkb::keysym::xkb_keysym_from_name;
-}
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_1 = DarrayKeysym;
@@ -309,7 +299,7 @@ pub mod parser_h {
     };
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub mod utils_h {
     #[inline]
@@ -343,7 +333,7 @@ pub mod ast_build_h {
 
     use super::ast_h::ExprDef;
     use super::scanner_utils_h::{scanner, sval};
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
     pub use crate::xkb::xkbcomp::ast_build::{
         BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
         ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
@@ -492,11 +482,6 @@ pub use self::parser_h::{
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use self::utils_h::{istrncmp, streq, streq_not_null};
-pub use self::xkbcommon_h::{
-    xkb_keysym_flags, xkb_keysym_from_name, xkb_keysym_t, xkb_log_level, xkb_rule_names,
-    XKB_KEYSYM_CASE_INSENSITIVE, XKB_KEYSYM_MAX, XKB_KEYSYM_NO_FLAGS, XKB_LOG_LEVEL_CRITICAL,
-    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
 };
@@ -7347,3 +7332,4 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> ::core::ffi::c_i
         return yyresult;
     }
 }
+use crate::xkb::shared_types::*;

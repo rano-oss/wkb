@@ -31,16 +31,6 @@ pub mod atom_h {
     }
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_context_flags = u32;
-    pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
-    pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
-    pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
-    pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-    pub use crate::xkb::context::{xkb_context_new, xkb_context_unref};
-}
 pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -100,7 +90,7 @@ pub mod table_h {
     }
     use super::context_h::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
@@ -192,12 +182,6 @@ pub use self::xkbcommon_compose_h::{
     xkb_compose_compile_flags, xkb_compose_format, xkb_compose_table_new_from_file,
     xkb_compose_table_new_from_locale, xkb_compose_table_unref, XKB_COMPOSE_COMPILE_NO_FLAGS,
     XKB_COMPOSE_FORMAT_TEXT_V1,
-};
-pub use self::xkbcommon_h::{
-    xkb_context_flags, xkb_context_new, xkb_context_unref, xkb_keysym_t, xkb_log_level,
-    xkb_rule_names, XKB_CONTEXT_NO_DEFAULT_INCLUDES, XKB_CONTEXT_NO_ENVIRONMENT_NAMES,
-    XKB_CONTEXT_NO_FLAGS, XKB_CONTEXT_NO_SECURE_GETENV, XKB_LOG_LEVEL_CRITICAL,
-    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::cstr_cmp;
@@ -435,3 +419,5 @@ pub fn main() {
         ) as i32)
     }
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::context::{xkb_context_new, xkb_context_unref};

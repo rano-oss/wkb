@@ -7,9 +7,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::*;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -395,12 +392,6 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc};
 pub use self::utils_h::strcpy_safe;
 use self::utils_paths_h::is_absolute_path;
-pub use self::xkbcommon_h::{
-    xkb_keymap_compile_flags, xkb_keymap_format, xkb_log_level, xkb_rule_names,
-    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
-    XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-};
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile, XkbParseStringInit, XkbParseStringNext};
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
@@ -1164,3 +1155,4 @@ pub unsafe fn xkb_file_section_get_string(
         return (*section).buffer.item.offset(idx as isize) as *mut i8;
     }
 }
+use crate::xkb::shared_types::*;

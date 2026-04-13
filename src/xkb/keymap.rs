@@ -24,56 +24,11 @@ pub mod atom_h {
     pub const XKB_ATOM_NONE: i32 = 0 as i32;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
-        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
-        xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-        xkb_state_component, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE,
-        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_INVALID,
-        XKB_LAYOUT_OUT_OF_RANGE_CLAMP, XKB_LAYOUT_OUT_OF_RANGE_REDIRECT,
-        XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID,
-        XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
-        XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
-        XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-        XKB_STATE_MODS_LOCKED,
-    };
-    #[c2rust::src_loc = "1321:1"]
-    pub type xkb_keymap_serialize_flags = u32;
-    #[c2rust::src_loc = "1548:5"]
-    pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
-    #[c2rust::src_loc = "1541:5"]
-    pub const XKB_KEYMAP_SERIALIZE_KEEP_UNUSED: xkb_keymap_serialize_flags = 2;
-    #[c2rust::src_loc = "1535:5"]
-    pub const XKB_KEYMAP_SERIALIZE_PRETTY: xkb_keymap_serialize_flags = 1;
-    #[c2rust::src_loc = "1529:5"]
-    pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
-    #[c2rust::src_loc = "1644:1"]
-    pub type xkb_keymap_key_iterator_flags = u32;
-    #[c2rust::src_loc = "1664:5"]
-    pub const XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND: xkb_keymap_key_iterator_flags = 2;
-    #[c2rust::src_loc = "1656:5"]
-    pub const XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER: xkb_keymap_key_iterator_flags = 1;
-    #[c2rust::src_loc = "1650:5"]
-    pub const XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS: xkb_keymap_key_iterator_flags = 0;
-    #[c2rust::src_loc = "1739:1"]
-    pub type xkb_keymap_key_iter_t =
-        Option<unsafe fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> ()>;
-    #[c2rust::src_loc = "350:9"]
-    pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
-    #[c2rust::src_loc = "358:9"]
-    pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
-    #[c2rust::src_loc = "1515:9"]
-    pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    use super::keymap_h::xkb_keymap;
-    pub use crate::xkb::context::xkb_context_unref;
-}
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 pub mod keymap_h {
-    use libc::{FILE};
     use super::rmlvo_h::xkb_rmlvo_builder;
     pub use crate::xkb::shared_types::*;
+    use libc::FILE;
 
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -138,47 +93,7 @@ unsafe fn text_v1_keymap_format_ops_ptr() -> *const keymap_h::xkb_keymap_format_
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/rmlvo.h:22"]
 pub mod rmlvo_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "36:1"]
-    pub struct xkb_rmlvo_builder {
-        pub rules: *mut i8,
-        pub model: *mut i8,
-        pub layouts: xkb_rmlvo_builder_layouts,
-        pub options: xkb_rmlvo_builder_options,
-        pub refcnt: i32,
-        pub ctx: *mut xkb_context,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "34:9"]
-    pub struct xkb_rmlvo_builder_options {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_option,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "29:1"]
-    pub struct xkb_rmlvo_builder_option {
-        pub option: *mut i8,
-        pub layout: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "27:9"]
-    pub struct xkb_rmlvo_builder_layouts {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_layout,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    #[c2rust::src_loc = "22:1"]
-    pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut i8,
-        pub variant: *mut i8,
-    }
+    pub use crate::xkb::rmlvo::rmlvo_h::*;
     #[c2rust::src_loc = "14:1"]
     pub type RMLVO = u32;
     #[c2rust::src_loc = "19:5"]
@@ -191,9 +106,6 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     #[c2rust::src_loc = "15:5"]
     pub const RMLVO_RULES: RMLVO = 1;
-    use super::context_h::xkb_context;
-    use super::xkbcommon_h::xkb_layout_index_t;
-    use crate::xkb::shared_types::darray_size_t;
 }
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/messages-codes.h:21"]
 pub mod messages_codes_h {
@@ -529,28 +441,10 @@ pub use self::rmlvo_h::{
     xkb_rmlvo_builder_option, xkb_rmlvo_builder_options, RMLVO, RMLVO_LAYOUT, RMLVO_MODEL,
     RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use self::xkbcommon_h::{
-    xkb_context_unref, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
-    xkb_keymap_key_iter_t, xkb_keymap_key_iterator_flags, xkb_keymap_serialize_flags, xkb_keysym_t,
-    xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
-    xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-    xkb_state_component, XKB_KEYCODE_INVALID, XKB_KEYMAP_COMPILE_NO_FLAGS,
-    XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-    XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER, XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS,
-    XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND, XKB_KEYMAP_SERIALIZE_EXPLICIT,
-    XKB_KEYMAP_SERIALIZE_KEEP_UNUSED, XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY,
-    XKB_KEYMAP_USE_ORIGINAL_FORMAT, XKB_LAYOUT_INVALID, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
-    XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LED_INVALID,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
-    XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
-    XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-    XKB_STATE_MODS_LOCKED,
-};
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
-use libc::{FILE, calloc, free};
+use libc::{calloc, free, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
 #[c2rust::src_loc = "591:1"]
@@ -1466,3 +1360,5 @@ pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_ke
         return (*key).repeats() as i32;
     }
 }
+use crate::xkb::context::xkb_context_unref;
+use crate::xkb::shared_types::*;

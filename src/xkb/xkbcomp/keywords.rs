@@ -399,6 +399,7 @@ static mut gperf_downcase: [::core::ffi::c_uchar; 256] = [
     254 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     255 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
+use crate::xkb::shared_types::*;
 unsafe fn gperf_case_memcmp(
     mut s1: *const i8,
     mut s2: *const i8,

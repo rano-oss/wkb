@@ -23,68 +23,14 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_layout_index_t, xkb_layout_mask_t, xkb_log_level, xkb_rule_names, XKB_LAYOUT_INVALID,
-        XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-        XKB_LOG_LEVEL_WARNING,
-    };
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_component_names {
-        pub keycodes: *mut i8,
-        pub compatibility: *mut i8,
-        pub geometry: *mut i8,
-        pub symbols: *mut i8,
-        pub types: *mut i8,
-    }
-}
 pub mod rmlvo_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder {
-        pub rules: *mut i8,
-        pub model: *mut i8,
-        pub layouts: xkb_rmlvo_builder_layouts,
-        pub options: xkb_rmlvo_builder_options,
-        pub refcnt: ::core::ffi::c_int,
-        pub ctx: *mut xkb_context,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_options {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_option,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_option {
-        pub option: *mut i8,
-        pub layout: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layouts {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_layout,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut i8,
-        pub variant: *mut i8,
-    }
+    pub use crate::xkb::rmlvo::rmlvo_h::*;
     pub type RMLVO = u32;
     pub const RMLVO_OPTIONS: RMLVO = 16;
     pub const RMLVO_VARIANT: RMLVO = 8;
     pub const RMLVO_LAYOUT: RMLVO = 4;
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
-    use super::context_h::xkb_context;
-    use super::xkbcommon_h::xkb_layout_index_t;
-    use crate::xkb::shared_types::darray_size_t;
 }
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
@@ -383,8 +329,8 @@ pub mod scanner_utils_h {
     use super::context_h::xkb_context;
     use super::messages_codes_h::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     use super::utils_h::is_ascii;
-    use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
     use crate::xkb::shared_types::darray_size_t;
+    use crate::xkb::shared_types::XKB_LOG_LEVEL_ERROR;
     use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
@@ -460,7 +406,7 @@ pub mod utils_numbers_h {
     }
 }
 pub mod include_h {
-    use libc::{FILE};
+    use libc::FILE;
     pub const MERGE_OVERRIDE_PREFIX: ::core::ffi::c_int = '+' as i32;
     pub const MERGE_AUGMENT_PREFIX: ::core::ffi::c_int = '|' as i32;
     pub const MERGE_REPLACE_PREFIX: ::core::ffi::c_int = '^' as i32;
@@ -587,17 +533,12 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use self::xkbcommon_h::{
-    xkb_component_names, xkb_layout_index_t, xkb_layout_mask_t, xkb_log_level, xkb_rule_names,
-    XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
-    XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-};
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
-use libc::{FILE, calloc, fclose, fopen, free};
 use crate::xkb::utils::{
     cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_appends, darray_appends_nul,
     darray_growalloc, darray_resize, darray_resize_zero,
 };
+use libc::{calloc, fclose, fopen, free, FILE};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct matcher {
@@ -8368,6 +8309,7 @@ unsafe fn c2rust_run_static_initializers() {
         ];
     }
 }
+use crate::xkb::shared_types::*;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

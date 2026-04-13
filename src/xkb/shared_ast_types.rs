@@ -549,3 +549,4 @@ pub unsafe fn ReportShouldBeArray(
         return 0 != 0;
     }
 }
+use crate::xkb::shared_types::*;

@@ -1,3 +1,4 @@
+use crate::xkb::shared_types::*;
 pub mod xkbcommon_errors_h {
     pub type xkb_error_code = i32;
     pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
@@ -9,9 +10,6 @@ pub mod xkbcommon_errors_h {
     pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
     pub const XKB_SUCCESS: xkb_error_code = 0;
     pub const XKB_ERROR_INVALID: xkb_error_code = -1;
-}
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
 }
 pub mod xkbcommon_features_h {
     pub type xkb_feature = u32;
@@ -126,7 +124,7 @@ pub mod enums_h {
         XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
         XKB_FEATURE_ENUM_STATE_MATCH,
     };
-    use super::xkbcommon_h::{
+    use crate::xkb::shared_types::{
         XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
         XKB_LOG_LEVEL_WARNING,
     };
@@ -160,10 +158,6 @@ pub use self::xkbcommon_features_h::{
     XKB_FEATURE_ENUM_KEY_DIRECTION, XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_FEATURE_ENUM_LOG_LEVEL, XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS,
     XKB_FEATURE_ENUM_STATE_COMPONENT, XKB_FEATURE_ENUM_STATE_MATCH,
-};
-pub use self::xkbcommon_h::{
-    xkb_log_level, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR,
-    XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 fn is_supported_enum_value_mask(mut values: u32, mut value: u32) -> bool {
     return value < 32 as u32 && values as u32 & (1 as u32) << value != 0;

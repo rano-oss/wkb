@@ -20,38 +20,6 @@ pub mod getopt_ext_h {
         ) -> i32;
     }
 }
-pub mod xkbcommon_h {
-    use libc::{FILE};
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_context_flags = u32;
-    pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
-    pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
-    pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
-    pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-    pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    pub use crate::xkb::context::{xkb_context_new, xkb_context_unref};
-    extern "C" {
-        pub fn xkb_keymap_new_from_names2(
-            context: *mut xkb_context,
-            names: *const xkb_rule_names,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_new_from_file(
-            context: *mut xkb_context,
-            file: *mut FILE,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_unref(keymap: *mut xkb_keymap);
-        pub fn xkb_keymap_get_as_string2(
-            keymap: *mut xkb_keymap,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_serialize_flags,
-        ) -> *mut i8;
-    }
-}
 pub mod bench_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -80,7 +48,7 @@ pub mod bench_h {
 }
 pub mod keymap_formats_h {
     pub const DEFAULT_OUTPUT_KEYMAP_FORMAT: xkb_keymap_format = XKB_KEYMAP_USE_ORIGINAL_FORMAT;
-    use super::xkbcommon_h::{xkb_keymap_format, XKB_KEYMAP_USE_ORIGINAL_FORMAT};
+    use crate::xkb::shared_types::{xkb_keymap_format, XKB_KEYMAP_USE_ORIGINAL_FORMAT};
     extern "C" {
         pub fn xkb_keymap_parse_format(raw: *const i8) -> xkb_keymap_format;
         pub fn xkb_keymap_get_format_label(format: xkb_keymap_format) -> *const i8;
@@ -111,6 +79,8 @@ pub mod unistd_h {
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
+use crate::xkb::context::{xkb_context_new, xkb_context_unref};
+use crate::xkb::keymap::{xkb_keymap_get_as_string2, xkb_keymap_new_from_file, xkb_keymap_new_from_names2, xkb_keymap_unref};
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_WRONLY;
 use self::getopt_core_h::optarg;
@@ -124,16 +94,6 @@ extern "C" {
     pub static stderr: *mut libc::FILE;
     pub static stdout: *mut libc::FILE;
 }
-pub use self::xkbcommon_h::{
-    xkb_context, xkb_context_flags, xkb_context_new, xkb_context_unref, xkb_keymap,
-    xkb_keymap_compile_flags, xkb_keymap_format, xkb_keymap_get_as_string2,
-    xkb_keymap_new_from_file, xkb_keymap_new_from_names2, xkb_keymap_serialize_flags,
-    xkb_keymap_unref, xkb_rule_names, XKB_CONTEXT_NO_DEFAULT_INCLUDES,
-    XKB_CONTEXT_NO_ENVIRONMENT_NAMES, XKB_CONTEXT_NO_FLAGS, XKB_CONTEXT_NO_SECURE_GETENV,
-    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEYMAP_SERIALIZE_EXPLICIT, XKB_KEYMAP_SERIALIZE_KEEP_UNUSED,
-    XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT,
-};
 use crate::xkb::shared_types::{
     DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
     DEFAULT_XKB_VARIANT, EXIT_INVALID_USAGE,
@@ -630,3 +590,4 @@ pub fn main() {
         ) as i32)
     }
 }
+use crate::xkb::shared_types::*;

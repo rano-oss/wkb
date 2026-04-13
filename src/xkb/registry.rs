@@ -3369,3 +3369,4 @@ unsafe fn parse(
         return success;
     }
 }
+use crate::xkb::shared_types::*;

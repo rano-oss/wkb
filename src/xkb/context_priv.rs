@@ -9,13 +9,6 @@ pub mod atom_h {
     pub use crate::xkb::atom::{atom_intern, atom_table, atom_table_size, atom_text};
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::context::xkb_context_include_path_append_default;
-    pub use crate::xkb::shared_types::{
-        xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    };
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = i32;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -189,10 +182,6 @@ extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
 
-pub use self::xkbcommon_h::{
-    xkb_context_include_path_append_default, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL,
-    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-};
 
 /// Macro that formats a Rust format string into a stack buffer, then calls `xkb_log`.
 /// This uses `core::fmt::Write` instead of C `snprintf`.
@@ -432,3 +421,5 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         return modified;
     }
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::context::xkb_context_include_path_append_default;

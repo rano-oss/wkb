@@ -23,16 +23,6 @@ pub mod atom_h {
     }
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_rmlvo_builder_flags = u32;
-    pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
-    extern "C" {
-        pub fn xkb_context_ref(context: *mut xkb_context) -> *mut xkb_context;
-        pub fn xkb_context_unref(context: *mut xkb_context);
-    }
-}
 pub mod rmlvo_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -71,7 +61,7 @@ pub mod rmlvo_h {
         pub variant: *mut i8,
     }
     use super::context_h::xkb_context;
-    use super::xkbcommon_h::xkb_layout_index_t;
+    use crate::xkb::shared_types::xkb_layout_index_t;
     use crate::xkb::shared_types::darray_size_t;
 }
 pub mod messages_codes_h {
@@ -242,11 +232,6 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
-};
-pub use self::xkbcommon_h::{
-    xkb_context_ref, xkb_context_unref, xkb_layout_index_t, xkb_log_level, xkb_rmlvo_builder_flags,
-    xkb_rule_names, XKB_LAYOUT_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_RMLVO_BUILDER_NO_FLAGS,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_cmp;
@@ -636,3 +621,5 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         return true;
     }
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::context::{xkb_context_ref, xkb_context_unref};

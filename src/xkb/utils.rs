@@ -71,6 +71,7 @@ pub mod mman_linux_h {
     pub const MAP_SHARED: i32 = 0x1 as i32;
 }
 
+use crate::xkb::shared_types::*;
 pub use self::bits_stat_h::__S_IFMT;
 use self::fcntl_h::open;
 pub use self::fcntl_linux_h::O_RDONLY;

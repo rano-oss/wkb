@@ -51,133 +51,6 @@ pub mod atom_h {
     }
 }
 
-pub mod xkbcommon_h {
-    use libc::{FILE};
-    use super::rmlvo_h::xkb_rmlvo_builder;
-    use super::xkbcommon_errors_h::xkb_error_code;
-    pub use crate::xkb::context::{
-        xkb_context_include_path_append, xkb_context_new, xkb_context_unref,
-    };
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_rmlvo_builder_flags = u32;
-    pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
-    pub type xkb_context_flags = u32;
-    pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
-    pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
-    pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
-    pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-    pub type xkb_event_type = u32;
-    pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
-    pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
-    pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
-    pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
-    pub type xkb_key_direction = u32;
-    pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
-    pub const XKB_KEY_DOWN: xkb_key_direction = 1;
-    pub const XKB_KEY_UP: xkb_key_direction = 0;
-    pub type xkb_consumed_mode = u32;
-    pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
-    pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
-    pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 4294967295 as xkb_keymap_format;
-    extern "C" {
-        pub type xkb_machine;
-        pub type xkb_state;
-        pub type xkb_event;
-        pub type xkb_events;
-        pub fn xkb_rmlvo_builder_new(
-            context: *mut xkb_context,
-            rules: *const i8,
-            model: *const i8,
-            flags: xkb_rmlvo_builder_flags,
-        ) -> *mut xkb_rmlvo_builder;
-        pub fn xkb_rmlvo_builder_append_layout(
-            rmlvo: *mut xkb_rmlvo_builder,
-            layout: *const i8,
-            variant: *const i8,
-            options: *const *const i8,
-            options_len: usize,
-        ) -> bool;
-        pub fn xkb_rmlvo_builder_append_option(
-            rmlvo: *mut xkb_rmlvo_builder,
-            option: *const i8,
-        ) -> bool;
-        pub fn xkb_rmlvo_builder_unref(rmlvo: *mut xkb_rmlvo_builder);
-        pub fn xkb_keysym_get_name(keysym: xkb_keysym_t, buffer: *mut i8, size: usize) -> i32;
-        pub fn xkb_keymap_new_from_rmlvo(
-            rmlvo: *const xkb_rmlvo_builder,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_new_from_names2(
-            context: *mut xkb_context,
-            names: *const xkb_rule_names,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_new_from_file(
-            context: *mut xkb_context,
-            file: *mut FILE,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_new_from_string(
-            context: *mut xkb_context,
-            string: *const i8,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_new_from_buffer(
-            context: *mut xkb_context,
-            buffer: *const i8,
-            length: usize,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_compile_flags,
-        ) -> *mut xkb_keymap;
-        pub fn xkb_keymap_unref(keymap: *mut xkb_keymap);
-        pub fn xkb_keymap_get_as_string2(
-            keymap: *mut xkb_keymap,
-            format: xkb_keymap_format,
-            flags: xkb_keymap_serialize_flags,
-        ) -> *mut i8;
-        pub fn xkb_keymap_num_leds(keymap: *mut xkb_keymap) -> xkb_led_index_t;
-        pub fn xkb_event_get_type(event: *const xkb_event) -> xkb_event_type;
-        pub fn xkb_event_get_keycode(event: *const xkb_event) -> xkb_keycode_t;
-        pub fn xkb_events_next(events: *mut xkb_events) -> *const xkb_event;
-        pub fn xkb_machine_process_key(
-            machine: *mut xkb_machine,
-            key: xkb_keycode_t,
-            direction: xkb_key_direction,
-            events: *mut xkb_events,
-        ) -> xkb_error_code;
-        pub fn xkb_state_new(keymap: *mut xkb_keymap) -> *mut xkb_state;
-        pub fn xkb_state_unref(state: *mut xkb_state);
-        pub fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap;
-        pub fn xkb_state_update_key(
-            state: *mut xkb_state,
-            key: xkb_keycode_t,
-            direction: xkb_key_direction,
-        ) -> xkb_state_component;
-        pub fn xkb_state_update_event(
-            state: *mut xkb_state,
-            event: *const xkb_event,
-        ) -> xkb_state_component;
-        pub fn xkb_state_key_get_syms(
-            state: *mut xkb_state,
-            key: xkb_keycode_t,
-            syms_out: *mut *const xkb_keysym_t,
-        ) -> i32;
-        pub fn xkb_state_serialize_mods(
-            state: *mut xkb_state,
-            components: xkb_state_component,
-        ) -> xkb_mod_mask_t;
-        pub fn xkb_state_serialize_layout(
-            state: *mut xkb_state,
-            components: xkb_state_component,
-        ) -> xkb_layout_index_t;
-        pub fn xkb_state_led_index_is_active(state: *mut xkb_state, idx: xkb_led_index_t) -> i32;
-    }
-}
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
@@ -185,45 +58,7 @@ pub mod keymap_h {
     pub const _LAST_XKB_EVENT_TYPE: C2Rust_Unnamed_13 = 4;
 }
 pub mod rmlvo_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder {
-        pub rules: *mut i8,
-        pub model: *mut i8,
-        pub layouts: xkb_rmlvo_builder_layouts,
-        pub options: xkb_rmlvo_builder_options,
-        pub refcnt: i32,
-        pub ctx: *mut xkb_context,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_options {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_option,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_option {
-        pub option: *mut i8,
-        pub layout: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layouts {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_layout,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut i8,
-        pub variant: *mut i8,
-    }
-    use super::context_h::xkb_context;
-    use super::xkbcommon_h::xkb_layout_index_t;
-    use crate::xkb::shared_types::darray_size_t;
+    pub use crate::xkb::rmlvo::rmlvo_h::*;
 }
 pub mod xkbcommon_compose_h {
     extern "C" {
@@ -257,7 +92,7 @@ pub mod test_h {
 
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::xkbcommon_h::xkb_keymap_format;
+    use crate::xkb::shared_types::xkb_keymap_format;
 }
 pub mod tools_common_h {
     pub type print_state_options = u32;
@@ -269,7 +104,8 @@ pub mod tools_common_h {
     pub const PRINT_UNICODE: print_state_options = 2;
     pub const PRINT_LAYOUT: print_state_options = 1;
     use super::xkbcommon_compose_h::xkb_compose_state;
-    use super::xkbcommon_h::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t, xkb_state};
+    use crate::xkb::shared_types::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t};
+    use crate::xkb::state::xkb_state;
     extern "C" {
         pub fn tools_print_keycode_state(
             prefix: *const i8,
@@ -428,40 +264,35 @@ pub use self::xkbcommon_errors_h::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use self::xkbcommon_h::{
-    xkb_consumed_mode, xkb_context_flags, xkb_context_include_path_append, xkb_context_new,
-    xkb_context_unref, xkb_event, xkb_event_get_keycode, xkb_event_get_type, xkb_event_type,
-    xkb_events, xkb_events_next, xkb_key_direction, xkb_keycode_t, xkb_keymap_compile_flags,
-    xkb_keymap_format, xkb_keymap_get_as_string2, xkb_keymap_new_from_buffer,
-    xkb_keymap_new_from_file, xkb_keymap_new_from_names2, xkb_keymap_new_from_rmlvo,
-    xkb_keymap_new_from_string, xkb_keymap_num_leds, xkb_keymap_serialize_flags, xkb_keymap_unref,
-    xkb_keysym_get_name, xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t,
-    xkb_layout_out_of_range_policy, xkb_led_index_t, xkb_led_mask_t, xkb_level_index_t,
-    xkb_log_level, xkb_machine, xkb_machine_process_key, xkb_mod_index_t, xkb_mod_mask_t,
-    xkb_rmlvo_builder_append_layout, xkb_rmlvo_builder_append_option, xkb_rmlvo_builder_flags,
-    xkb_rmlvo_builder_new, xkb_rmlvo_builder_unref, xkb_rule_names, xkb_state, xkb_state_component,
-    xkb_state_get_keymap, xkb_state_key_get_syms, xkb_state_led_index_is_active, xkb_state_new,
-    xkb_state_serialize_layout, xkb_state_serialize_mods, xkb_state_unref, xkb_state_update_event,
-    xkb_state_update_key, XKB_CONSUMED_MODE_GTK, XKB_CONSUMED_MODE_XKB,
-    XKB_CONTEXT_NO_DEFAULT_INCLUDES, XKB_CONTEXT_NO_ENVIRONMENT_NAMES, XKB_CONTEXT_NO_FLAGS,
-    XKB_CONTEXT_NO_SECURE_GETENV, XKB_EVENT_TYPE_COMPONENTS_CHANGE, XKB_EVENT_TYPE_KEY_DOWN,
-    XKB_EVENT_TYPE_KEY_REPEATED, XKB_EVENT_TYPE_KEY_UP, XKB_KEYMAP_COMPILE_NO_FLAGS,
-    XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-    XKB_KEYMAP_SERIALIZE_EXPLICIT, XKB_KEYMAP_SERIALIZE_KEEP_UNUSED, XKB_KEYMAP_SERIALIZE_NO_FLAGS,
-    XKB_KEYMAP_SERIALIZE_PRETTY, XKB_KEYMAP_USE_ORIGINAL_FORMAT, XKB_KEY_DOWN, XKB_KEY_REPEATED,
-    XKB_KEY_UP, XKB_LAYOUT_INVALID, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
-    XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL,
-    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    XKB_RMLVO_BUILDER_NO_FLAGS, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
-    XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
-    XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-    XKB_STATE_MODS_LOCKED,
-};
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
+pub use crate::xkb::shared_types::*;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
+// Functions from xkb modules (previously extern "C" in xkbcommon_h block)
+use crate::xkb::context::{xkb_context_include_path_append, xkb_context_new, xkb_context_unref};
+use crate::xkb::keymap::{
+    xkb_keymap_get_as_string2, xkb_keymap_new_from_buffer, xkb_keymap_new_from_file,
+    xkb_keymap_new_from_names2, xkb_keymap_new_from_rmlvo, xkb_keymap_new_from_string,
+    xkb_keymap_num_leds, xkb_keymap_unref,
+};
+use crate::xkb::keysym::xkb_keysym_get_name;
+use crate::xkb::rmlvo::{
+    xkb_rmlvo_builder_append_layout, xkb_rmlvo_builder_append_option, xkb_rmlvo_builder_new,
+    xkb_rmlvo_builder_unref,
+};
+use crate::xkb::state::state_priv_h::xkb_event;
+use crate::xkb::state::{
+    xkb_event_get_keycode, xkb_event_get_type, xkb_events, xkb_events_next, xkb_machine,
+    xkb_machine_process_key, xkb_state, xkb_state_get_keymap, xkb_state_key_get_syms,
+    xkb_state_led_index_is_active, xkb_state_new, xkb_state_serialize_layout,
+    xkb_state_serialize_mods, xkb_state_unref, xkb_state_update_event, xkb_state_update_key,
+};
+
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{cstr_dup, darray_append, darray_free, darray_resize_zero};
-use libc::{BUFSIZ, EXIT_SUCCESS, FILE, _IONBF, fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf, unsetenv};
+use libc::{
+    fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf,
+    unsetenv, _IONBF, BUFSIZ, EXIT_SUCCESS, FILE,
+};
 extern "C" {
     pub static stdout: *mut libc::FILE;
 }

@@ -41,80 +41,6 @@ pub mod atom_h {
     }
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_key_direction = u32;
-    pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
-    pub const XKB_KEY_DOWN: xkb_key_direction = 1;
-    pub const XKB_KEY_UP: xkb_key_direction = 0;
-    pub type xkb_event_type = u32;
-    pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
-    pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
-    pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
-    pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
-    pub type xkb_a11y_flags = u32;
-    pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
-    pub const XKB_A11Y_LATCH_TO_LOCK: xkb_a11y_flags = 1;
-    pub const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
-    pub type xkb_keyboard_control_flags = u32;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY7: xkb_keyboard_control_flags = 128;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY6: xkb_keyboard_control_flags = 64;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY5: xkb_keyboard_control_flags = 32;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY4: xkb_keyboard_control_flags = 16;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY3: xkb_keyboard_control_flags = 8;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY2: xkb_keyboard_control_flags = 4;
-    pub const XKB_KEYBOARD_CONTROL_OVERLAY1: xkb_keyboard_control_flags = 2;
-    pub const XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS: xkb_keyboard_control_flags = 1;
-    pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
-    pub type xkb_events_flags = u32;
-    pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_state_components_update {
-        pub size: usize,
-        pub components: xkb_state_component,
-        pub affect_latched_mods: xkb_mod_mask_t,
-        pub latched_mods: xkb_mod_mask_t,
-        pub affect_locked_mods: xkb_mod_mask_t,
-        pub locked_mods: xkb_mod_mask_t,
-        pub latched_layout: i32,
-        pub locked_layout: i32,
-        pub affect_controls: xkb_keyboard_control_flags,
-        pub controls: xkb_keyboard_control_flags,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_layout_policy_update {
-        pub size: usize,
-        pub policy: xkb_layout_out_of_range_policy,
-        pub redirect: xkb_layout_index_t,
-    }
-    pub struct xkb_state_update {
-        pub size: usize,
-        pub components: *const xkb_state_components_update,
-        pub layout_policy: *const xkb_layout_policy_update,
-    }
-    pub type xkb_consumed_mode = u32;
-    pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
-    pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
-    pub type xkb_state_match = u32;
-    pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
-    pub const XKB_STATE_MATCH_ALL: xkb_state_match = 2;
-    pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
-    pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff as u32;
-    pub const XKB_LEVEL_INVALID: u32 = 0xffffffff as u32;
-    pub const XKB_LED_INVALID: u32 = 0xffffffff as u32;
-    pub use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
-    pub use crate::xkb::keymap::{
-        xkb_keymap_key_get_syms_by_level, xkb_keymap_layout_get_index, xkb_keymap_led_get_index,
-        xkb_keymap_mod_get_index, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods,
-        xkb_keymap_ref, xkb_keymap_unref,
-    };
-    pub use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
-    pub use crate::xkb::keysym_utf::{xkb_keysym_to_utf32, xkb_keysym_to_utf8};
-}
 
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
@@ -251,7 +177,7 @@ pub mod state_priv_h {
     }
 
     use super::keymap_h::xkb_action_controls;
-    use super::xkbcommon_h::{
+    use crate::xkb::shared_types::{
         xkb_event_type, xkb_keyboard_control_flags, xkb_keycode_t, xkb_layout_index_t,
         xkb_layout_out_of_range_policy, xkb_led_mask_t, xkb_mod_mask_t, xkb_state_component,
     };
@@ -691,33 +617,6 @@ pub use self::xkbcommon_features_h::{
     XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY, XKB_FEATURE_ENUM_LOG_LEVEL,
     XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
     XKB_FEATURE_ENUM_STATE_MATCH,
-};
-pub use self::xkbcommon_h::{
-    xkb_a11y_flags, xkb_consumed_mode, xkb_context_ref, xkb_context_unref, xkb_event_type,
-    xkb_events_flags, xkb_key_direction, xkb_keyboard_control_flags, xkb_keycode_t,
-    xkb_keymap_compile_flags, xkb_keymap_format, xkb_keymap_key_get_syms_by_level,
-    xkb_keymap_layout_get_index, xkb_keymap_led_get_index, xkb_keymap_mod_get_index,
-    xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref,
-    xkb_keysym_t, xkb_keysym_to_upper, xkb_keysym_to_utf32, xkb_keysym_to_utf8, xkb_layout_index_t,
-    xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_layout_policy_update, xkb_led_index_t,
-    xkb_led_mask_t, xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
-    xkb_rule_names, xkb_state_component, xkb_state_components_update, xkb_state_match,
-    xkb_state_update, XKB_A11Y_LATCH_SIMULTANEOUS_KEYS, XKB_A11Y_LATCH_TO_LOCK, XKB_A11Y_NO_FLAGS,
-    XKB_CONSUMED_MODE_GTK, XKB_CONSUMED_MODE_XKB, XKB_EVENTS_NO_FLAGS,
-    XKB_EVENT_TYPE_COMPONENTS_CHANGE, XKB_EVENT_TYPE_KEY_DOWN, XKB_EVENT_TYPE_KEY_REPEATED,
-    XKB_EVENT_TYPE_KEY_UP, XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS, XKB_KEYBOARD_CONTROL_NO_FLAGS,
-    XKB_KEYBOARD_CONTROL_OVERLAY1, XKB_KEYBOARD_CONTROL_OVERLAY2, XKB_KEYBOARD_CONTROL_OVERLAY3,
-    XKB_KEYBOARD_CONTROL_OVERLAY4, XKB_KEYBOARD_CONTROL_OVERLAY5, XKB_KEYBOARD_CONTROL_OVERLAY6,
-    XKB_KEYBOARD_CONTROL_OVERLAY7, XKB_KEYBOARD_CONTROL_OVERLAY8, XKB_KEYCODE_INVALID,
-    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP, XKB_LAYOUT_INVALID,
-    XKB_LAYOUT_OUT_OF_RANGE_CLAMP, XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-    XKB_LED_INVALID, XKB_LEVEL_INVALID, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID,
-    XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
-    XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MATCH_ALL,
-    XKB_STATE_MATCH_ANY, XKB_STATE_MATCH_NON_EXCLUSIVE, XKB_STATE_MODS_DEPRESSED,
-    XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
 };
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::{
@@ -4903,6 +4802,11 @@ unsafe fn c2rust_run_static_initializers() {
         };
     }
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
+use crate::xkb::keymap::{xkb_keymap_key_get_syms_by_level, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref, xkb_keymap_mod_get_index, xkb_keymap_layout_get_index, xkb_keymap_led_get_index};
+use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
+use crate::xkb::keysym_utf::{xkb_keysym_to_utf32, xkb_keysym_to_utf8};
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

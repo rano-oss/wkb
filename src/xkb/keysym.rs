@@ -1,14 +1,7 @@
+use crate::xkb::shared_types::*;
+use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
 pub mod sys_types_h {
     pub type ssize_t = isize;
-}
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-
-    pub type xkb_keysym_flags = u32;
-    pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
-    pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
-    pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
-    pub use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
 }
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
@@ -21791,7 +21784,7 @@ pub mod keysym_names_h {
     ];
     pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as i32 as u32];
 
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub mod utils_h {
     #[inline]
@@ -21888,10 +21881,6 @@ pub use self::sys_types_h::ssize_t;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{is_xdigit, istrcmp, istrncmp};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
-pub use self::xkbcommon_h::{
-    xkb_keysym_flags, xkb_keysym_t, xkb_utf32_to_keysym, XKB_KEYSYM_CASE_INSENSITIVE,
-    XKB_KEYSYM_MAX, XKB_KEYSYM_NO_FLAGS,
-};
 pub use self::xkbcommon_keysyms_h::{
     XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,
     XKB_KEY_Mode_switch, XKB_KEY_NoSymbol, XKB_KEY_Num_Lock, XKB_KEY_Shift_L,

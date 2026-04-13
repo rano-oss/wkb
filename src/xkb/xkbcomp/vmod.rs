@@ -11,13 +11,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-        XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-        XKB_LOG_LEVEL_WARNING,
-    };
-}
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
@@ -78,11 +71,6 @@ pub use self::messages_codes_h::{
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
 use self::text_h::ModMaskText;
-pub use self::xkbcommon_h::{
-    xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING,
-};
 pub use crate::xkb::shared_types::darray_size_t;
 pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set, mut reset: bool) {
     unsafe {
@@ -249,3 +237,4 @@ pub unsafe fn HandleVModDef(
         return 1 != 0;
     }
 }
+use crate::xkb::shared_types::*;

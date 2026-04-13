@@ -63,17 +63,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    };
-    pub type xkb_context_flags = u32;
-    pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
-    pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
-    pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
-    pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-}
 pub mod messages_codes_h {
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
     pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
@@ -159,12 +148,6 @@ pub use self::struct_stat_h::stat;
 pub use self::struct_timespec_h::timespec;
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::utils_h::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
-pub use self::xkbcommon_h::{
-    xkb_context_flags, xkb_log_level, xkb_rule_names, XKB_CONTEXT_NO_DEFAULT_INCLUDES,
-    XKB_CONTEXT_NO_ENVIRONMENT_NAMES, XKB_CONTEXT_NO_FLAGS, XKB_CONTEXT_NO_SECURE_GETENV,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING,
-};
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
@@ -882,3 +865,4 @@ pub unsafe fn xkb_context_set_user_data(
         (*ctx).user_data = user_data;
     }
 }
+use crate::xkb::shared_types::*;

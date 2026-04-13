@@ -62,6 +62,7 @@ pub mod getopt_core_h {
 pub mod locale_h {
     pub const __LC_ALL: i32 = 6 as i32;
 }
+use crate::xkb::shared_types::*;
 use self::getopt_core_h::{optarg, optind};
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::include_locale_h::{setlocale, LC_ALL};

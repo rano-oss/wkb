@@ -9,9 +9,6 @@ pub mod atom_h {
     }
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-}
 pub mod scanner_utils_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -39,10 +36,6 @@ pub mod scanner_utils_h {
 }
 pub use self::context_h::{xkb_context, C2Rust_Unnamed, C2Rust_Unnamed_0};
 pub use self::scanner_utils_h::{scanner, scanner_loc};
-pub use self::xkbcommon_h::{
-    xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-};
 pub use crate::xkb::shared_types::darray_size_t;
 pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
     unsafe {
@@ -86,3 +79,4 @@ pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
         return loc;
     }
 }
+use crate::xkb::shared_types::*;

@@ -9,18 +9,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::keysym::xkb_keysym_get_name;
-    pub use crate::xkb::shared_types::{
-        xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-        xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-        XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-        XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
-        XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED,
-        XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-        XKB_STATE_MODS_LOCKED,
-    };
-}
 pub mod keymap_h {
     pub use crate::xkb::shared_types::*;
 
@@ -53,7 +41,7 @@ pub mod text_h {
             CONTROL_NAMES_MIN_V2_INDEX as i32
         }) as u8;
     }
-    use super::xkbcommon_h::XKB_KEYMAP_FORMAT_TEXT_V1;
+    use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 }
 pub mod utils_h {
     #[inline]
@@ -103,15 +91,6 @@ pub use self::text_h::{
     CONTROL_NAMES_MIN_V2_INDEX,
 };
 pub use self::utils_h::{istrcmp, istreq, strempty};
-pub use self::xkbcommon_h::{
-    xkb_keysym_get_name, xkb_keysym_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t,
-    xkb_rule_names, xkb_state_component, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING, XKB_MOD_INVALID, XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED,
-    XKB_STATE_LAYOUT_EFFECTIVE, XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
-    XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-    XKB_STATE_MODS_LOCKED,
-};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len_safe;
 pub unsafe fn LookupString(
@@ -1827,6 +1806,8 @@ unsafe fn c2rust_run_static_initializers() {
         ]
     }
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::keysym::xkb_keysym_get_name;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
 #[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]

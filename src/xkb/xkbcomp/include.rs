@@ -1,3 +1,4 @@
+use crate::xkb::context::{xkb_context_num_include_paths, xkb_context_include_path_get};
 use crate::xkb_logf;
 
 pub mod messages_codes_h {
@@ -113,13 +114,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::atom_table;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
-    pub use crate::xkb::shared_types::{
-        xkb_context, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    };
-}
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub use crate::xkb::xkbcomp::ast_build::xkb_file_type_to_string;
@@ -362,11 +356,6 @@ pub use self::scanner_utils_h::{
     scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
 };
 use self::utils_paths_h::is_absolute_path;
-pub use self::xkbcommon_h::{
-    xkb_context_include_path_get, xkb_context_num_include_paths, xkb_log_level, xkb_rule_names,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING,
-};
 use self::xkbcomp_priv_h::{FreeXkbFile, XkbParseFile};
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
@@ -947,3 +936,4 @@ pub unsafe fn ProcessIncludeFile(
         return xkb_file;
     }
 }
+use crate::xkb::shared_types::*;

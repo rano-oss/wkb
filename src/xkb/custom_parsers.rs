@@ -417,6 +417,7 @@ pub mod getopt_core_h {
 pub use self::bench_h::{
     bench, bench_elapsed, bench_start2, bench_stop2, bench_time, estimate, predictPerturbed,
 };
+use crate::xkb::shared_types::*;
 use self::getopt_core_h::optarg;
 pub use self::getopt_ext_h::{getopt_long, no_argument, option, required_argument};
 pub use self::utils_h::is_xdigit;

@@ -8,9 +8,6 @@ pub mod atom_h {
         pub type atom_table;
     }
 }
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-}
 pub mod table_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -79,7 +76,7 @@ pub mod table_h {
 
     use super::context_h::xkb_context;
     use super::xkbcommon_compose_h::{xkb_compose_compile_flags, xkb_compose_format};
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
     use crate::xkb::shared_types::{darray_char, darray_size_t};
 }
 pub mod xkbcommon_compose_h {
@@ -103,10 +100,6 @@ pub use self::table_h::{
 pub use self::xkbcommon_compose_h::{
     xkb_compose_compile_flags, xkb_compose_format, XKB_COMPOSE_COMPILE_NO_FLAGS,
     XKB_COMPOSE_FORMAT_TEXT_V1,
-};
-pub use self::xkbcommon_h::{
-    xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use crate::xkb::shared_types::{darray_char, darray_size_t};
 unsafe fn for_each_helper(
@@ -174,3 +167,4 @@ pub unsafe fn xkb_compose_table_for_each(
         );
     }
 }
+use crate::xkb::shared_types::*;

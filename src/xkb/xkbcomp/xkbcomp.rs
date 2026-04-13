@@ -12,39 +12,10 @@ pub mod context_h {
 pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::{
-        xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format, xkb_keysym_t,
-        xkb_layout_index_t, xkb_layout_mask_t, xkb_layout_out_of_range_policy, xkb_led_index_t,
-        xkb_level_index_t, xkb_log_level, xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names,
-        xkb_state_component, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE,
-        XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
-        XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL,
-        XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-        XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
-        XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS,
-        XKB_STATE_MODS_DEPRESSED, XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED,
-        XKB_STATE_MODS_LOCKED,
-    };
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_component_names {
-        pub keycodes: *mut i8,
-        pub compatibility: *mut i8,
-        pub geometry: *mut i8,
-        pub symbols: *mut i8,
-        pub types: *mut i8,
-    }
-    pub type xkb_keymap_serialize_flags = u32;
-    pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
-    pub const XKB_KEYMAP_SERIALIZE_KEEP_UNUSED: xkb_keymap_serialize_flags = 2;
-    pub const XKB_KEYMAP_SERIALIZE_PRETTY: xkb_keymap_serialize_flags = 1;
-    pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
-}
 pub mod keymap_h {
-    use libc::{FILE};
     use super::rmlvo_h::xkb_rmlvo_builder;
     pub use crate::xkb::shared_types::*;
+    use libc::FILE;
 
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -70,42 +41,7 @@ pub mod keymap_h {
     }
 }
 pub mod rmlvo_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder {
-        pub rules: *mut i8,
-        pub model: *mut i8,
-        pub layouts: xkb_rmlvo_builder_layouts,
-        pub options: xkb_rmlvo_builder_options,
-        pub refcnt: ::core::ffi::c_int,
-        pub ctx: *mut xkb_context,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_options {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_option,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_option {
-        pub option: *mut i8,
-        pub layout: xkb_layout_index_t,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layouts {
-        pub size: darray_size_t,
-        pub alloc: darray_size_t,
-        pub item: *mut xkb_rmlvo_builder_layout,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_rmlvo_builder_layout {
-        pub layout: *mut i8,
-        pub variant: *mut i8,
-    }
+    pub use crate::xkb::rmlvo::rmlvo_h::*;
     pub type RMLVO = u32;
     pub const RMLVO_OPTIONS: RMLVO = 16;
     pub const RMLVO_VARIANT: RMLVO = 8;
@@ -113,9 +49,7 @@ pub mod rmlvo_h {
     pub const RMLVO_MODEL: RMLVO = 2;
     pub const RMLVO_RULES: RMLVO = 1;
 
-    use super::context_h::xkb_context;
-    use super::xkbcommon_h::{xkb_layout_index_t, xkb_rule_names};
-    use crate::xkb::shared_types::darray_size_t;
+    use crate::xkb::shared_types::xkb_rule_names;
     pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         builder: *const xkb_rmlvo_builder,
         rmlvo: *mut xkb_rule_names,
@@ -235,7 +169,7 @@ pub mod messages_codes_h {
 pub mod rules_h {
     use super::context_h::xkb_context;
     use super::rmlvo_h::xkb_rmlvo_builder;
-    use super::xkbcommon_h::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
+    use crate::xkb::shared_types::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
     pub unsafe fn xkb_components_from_rmlvo_builder(
         rmlvo: *const xkb_rmlvo_builder,
         out: *mut xkb_component_names,
@@ -266,12 +200,14 @@ pub mod rules_h {
     }
 }
 pub mod xkbcomp_priv_h {
-    use libc::{FILE};
+    use libc::FILE;
 
     use super::ast_h::XkbFile;
     use super::context_h::xkb_context;
     use super::keymap_h::xkb_keymap;
-    use super::xkbcommon_h::{xkb_component_names, xkb_keymap_format, xkb_keymap_serialize_flags};
+    use crate::xkb::shared_types::{
+        xkb_component_names, xkb_keymap_format, xkb_keymap_serialize_flags,
+    };
 
     // Stub implementation for text_v1_keymap_get_as_string (serialization not yet implemented)
     pub unsafe fn text_v1_keymap_get_as_string(
@@ -426,26 +362,12 @@ pub use self::rmlvo_h::{
     RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 use self::rules_h::{xkb_components_from_rmlvo_builder, xkb_components_from_rules_names};
-pub use self::xkbcommon_h::{
-    xkb_component_names, xkb_keycode_t, xkb_keymap_compile_flags, xkb_keymap_format,
-    xkb_keymap_serialize_flags, xkb_keysym_t, xkb_layout_index_t, xkb_layout_mask_t,
-    xkb_layout_out_of_range_policy, xkb_led_index_t, xkb_level_index_t, xkb_log_level,
-    xkb_mod_index_t, xkb_mod_mask_t, xkb_rule_names, xkb_state_component,
-    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_COMPILE_STRICT_MODE, XKB_KEYMAP_FORMAT_TEXT_V1,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEYMAP_SERIALIZE_EXPLICIT, XKB_KEYMAP_SERIALIZE_KEEP_UNUSED,
-    XKB_KEYMAP_SERIALIZE_NO_FLAGS, XKB_KEYMAP_SERIALIZE_PRETTY, XKB_LAYOUT_OUT_OF_RANGE_CLAMP,
-    XKB_LAYOUT_OUT_OF_RANGE_REDIRECT, XKB_LAYOUT_OUT_OF_RANGE_WRAP, XKB_LOG_LEVEL_CRITICAL,
-    XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    XKB_STATE_CONTROLS, XKB_STATE_LAYOUT_DEPRESSED, XKB_STATE_LAYOUT_EFFECTIVE,
-    XKB_STATE_LAYOUT_LATCHED, XKB_STATE_LAYOUT_LOCKED, XKB_STATE_LEDS, XKB_STATE_MODS_DEPRESSED,
-    XKB_STATE_MODS_EFFECTIVE, XKB_STATE_MODS_LATCHED, XKB_STATE_MODS_LOCKED,
-};
 use self::xkbcomp_priv_h::{
     text_v1_keymap_get_as_string, CompileKeymap, FreeXkbFile, XkbFileFromComponents, XkbParseFile,
     XkbParseString,
 };
 pub use crate::xkb::shared_types::darray_size_t;
-use libc::{FILE, free};
+use libc::{free, FILE};
 
 pub unsafe fn xkb_components_names_from_rules(
     mut ctx: *mut xkb_context,
@@ -756,6 +678,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
         return ok;
     }
 }
+use crate::xkb::shared_types::*;
 pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {
     xkb_keymap_format_ops {
         keymap_new_from_rmlvo: Some(

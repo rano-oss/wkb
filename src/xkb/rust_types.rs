@@ -51,7 +51,7 @@ impl RuleNames {
     pub fn to_c_keymap(
         &self,
     ) -> (
-        super::keymap::xkbcommon_h::xkb_rule_names,
+        crate::xkb::shared_types::xkb_rule_names,
         RuleNamesCStrings,
     ) {
         let rules_c = CString::new(self.rules.as_str()).unwrap_or_default();
@@ -60,7 +60,7 @@ impl RuleNames {
         let variant_c = CString::new(self.variant.as_str()).unwrap_or_default();
         let options_c = CString::new(self.options.as_str()).unwrap_or_default();
 
-        let c_struct = super::keymap::xkbcommon_h::xkb_rule_names {
+        let c_struct = crate::xkb::shared_types::xkb_rule_names {
             rules: rules_c.as_ptr(),
             model: model_c.as_ptr(),
             layout: layout_c.as_ptr(),
@@ -103,7 +103,7 @@ impl Context {
     /// Create a new XKB context
     pub fn new() -> Option<Self> {
         unsafe {
-            use super::context::xkbcommon_h::XKB_CONTEXT_NO_FLAGS;
+            use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
             let ptr = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
             if ptr.is_null() {
                 None
@@ -121,7 +121,7 @@ impl Context {
     /// Create a keymap from RMLVO names
     pub fn keymap_from_names(&self, rules: &RuleNames) -> Option<Keymap> {
         unsafe {
-            use super::keymap::xkbcommon_h::XKB_KEYMAP_COMPILE_NO_FLAGS;
+            use crate::xkb::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
             let (rmlvo_c, _strings) = rules.to_c_keymap();
             let keymap_ptr = super::keymap::xkb_keymap_new_from_names(
@@ -141,7 +141,7 @@ impl Context {
     /// Create a keymap from a keymap string
     pub fn keymap_from_string(&self, keymap_str: &str) -> Option<Keymap> {
         unsafe {
-            use super::keymap::xkbcommon_h::{
+            use crate::xkb::shared_types::{
                 XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
             };
 
@@ -850,3 +850,4 @@ mod tests {
         assert!(min >= 8); // evdev starts at 8
     }
 }
+use crate::xkb::shared_types::*;

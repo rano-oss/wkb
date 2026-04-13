@@ -1,3 +1,4 @@
+use crate::xkb::shared_types::*;
 use crate::xkb_logf;
 
 pub mod context_h {
@@ -11,13 +12,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::{atom_table, darray_size_t, xkb_atom_t};
 }
 
-pub mod xkbcommon_h {
-
-    pub use crate::xkb::shared_types::{
-        xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-        XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
-    };
-}
 pub mod messages_codes_h {
     pub type xkb_log_verbosity = ::core::ffi::c_int;
     pub const XKB_LOG_VERBOSITY_DEFAULT: xkb_log_verbosity = 0;
@@ -430,7 +424,7 @@ pub mod scanner_utils_h {
     use super::utils_numbers_h::{
         parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
     };
-    use super::xkbcommon_h::XKB_LOG_LEVEL_ERROR;
+    use crate::xkb::shared_types::*;
     use crate::xkb_logf;
     pub unsafe fn scanner_token_location(s: *mut scanner) -> scanner_loc {
         unsafe {
@@ -584,7 +578,7 @@ pub mod parser_h {
     };
     use super::atom_h::xkb_atom_t;
     use super::scanner_utils_h::sval;
-    use super::xkbcommon_h::xkb_keysym_t;
+    use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub mod utils_h {
     #[inline]
@@ -1117,10 +1111,6 @@ pub use self::utils_h::{
 };
 pub use self::utils_numbers_h::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
-};
-pub use self::xkbcommon_h::{
-    xkb_keysym_t, xkb_log_level, xkb_rule_names, XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG,
-    XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO, XKB_LOG_LEVEL_WARNING,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;

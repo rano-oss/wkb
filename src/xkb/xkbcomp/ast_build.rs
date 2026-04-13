@@ -107,20 +107,6 @@ pub mod atom_h {
     pub use crate::xkb::shared_types::*;
 }
 
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct xkb_component_names {
-        pub keycodes: *mut i8,
-        pub compatibility: *mut i8,
-        pub geometry: *mut i8,
-        pub symbols: *mut i8,
-        pub types: *mut i8,
-    }
-    pub use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
-}
 pub mod ast_h {
     pub use crate::xkb::shared_ast_types::*;
     pub type C2Rust_Unnamed_1 = DarrayKeysym;
@@ -263,11 +249,6 @@ pub use self::messages_codes_h::{
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_h::{isempty, strdup_safe};
-pub use self::xkbcommon_h::{
-    xkb_component_names, xkb_keysym_t, xkb_log_level, xkb_rule_names, xkb_utf32_to_keysym,
-    XKB_LOG_LEVEL_CRITICAL, XKB_LOG_LEVEL_DEBUG, XKB_LOG_LEVEL_ERROR, XKB_LOG_LEVEL_INFO,
-    XKB_LOG_LEVEL_WARNING,
-};
 pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;
@@ -1226,3 +1207,5 @@ pub unsafe fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
         _ => return '\0' as i32 as i8,
     };
 }
+use crate::xkb::shared_types::*;
+use crate::xkb::keysym_utf::xkb_utf32_to_keysym;

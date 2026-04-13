@@ -1,6 +1,3 @@
-pub mod xkbcommon_h {
-    pub use crate::xkb::shared_types::*;
-}
 pub mod utils_numbers_h {
     pub static mut digits__: [::core::ffi::c_uchar; 256] = [
         0xff as i32 as ::core::ffi::c_uchar,
@@ -301,9 +298,7 @@ pub mod utils_h {
 
 pub use self::utils_h::is_xdigit;
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
-pub use self::xkbcommon_h::{
-    xkb_keymap_format, XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
-};
+use crate::xkb::shared_types::*;
 use crate::xkb::utils::cstr_cmp;
 #[derive(Copy, Clone)]
 #[repr(C)]

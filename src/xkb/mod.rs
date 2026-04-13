@@ -75,6 +75,7 @@ pub mod messages;
 pub mod rust_types;
 
 // WKB integration functions
+use crate::xkb::shared_types::*;
 use crate::modifiers::*;
 use crate::{ListComposer, WKB};
 use std::collections::{BTreeMap, HashSet};

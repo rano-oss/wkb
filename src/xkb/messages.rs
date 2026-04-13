@@ -140,4 +140,5 @@ pub use self::messages_codes_h::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
+use crate::xkb::shared_types::*;
 pub use self::messages_h::{xkb_message_entry, xkb_message_get};

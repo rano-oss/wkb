@@ -660,6 +660,118 @@ pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
 
 pub const EXIT_INVALID_USAGE: i32 = 2;
 
+// ── xkbcommon_h types (moved from duplicated pub mod xkbcommon_h blocks) ─
+
+pub type xkb_context_flags = u32;
+pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
+pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
+pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
+pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
+
+pub type xkb_key_direction = u32;
+pub const XKB_KEY_UP: xkb_key_direction = 0;
+pub const XKB_KEY_DOWN: xkb_key_direction = 1;
+pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
+
+pub type xkb_event_type = u32;
+pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
+pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
+pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
+pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
+
+pub type xkb_consumed_mode = u32;
+pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
+pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
+
+pub type xkb_keysym_flags = u32;
+pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
+pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
+
+pub type xkb_state_match = u32;
+pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
+pub const XKB_STATE_MATCH_ALL: xkb_state_match = 2;
+pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
+
+pub type xkb_a11y_flags = u32;
+pub const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
+pub const XKB_A11Y_LATCH_TO_LOCK: xkb_a11y_flags = 1;
+pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
+
+pub type xkb_keyboard_control_flags = u32;
+pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
+pub const XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS: xkb_keyboard_control_flags = 1;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY1: xkb_keyboard_control_flags = 2;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY2: xkb_keyboard_control_flags = 4;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY3: xkb_keyboard_control_flags = 8;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY4: xkb_keyboard_control_flags = 16;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY5: xkb_keyboard_control_flags = 32;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY6: xkb_keyboard_control_flags = 64;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY7: xkb_keyboard_control_flags = 128;
+pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
+
+pub type xkb_events_flags = u32;
+pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
+
+pub type xkb_rmlvo_builder_flags = u32;
+pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
+
+pub type xkb_keymap_key_iterator_flags = u32;
+pub const XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS: xkb_keymap_key_iterator_flags = 0;
+pub const XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER: xkb_keymap_key_iterator_flags = 1;
+pub const XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND: xkb_keymap_key_iterator_flags = 2;
+
+pub type xkb_keymap_key_iter_t =
+    Option<unsafe fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> ()>;
+
+pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
+pub const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
+pub const XKB_LED_INVALID: u32 = 0xffffffff;
+pub const XKB_LEVEL_INVALID: u32 = 0xffffffff;
+pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 0xffffffff;
+
+pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_component_names {
+    pub keycodes: *mut i8,
+    pub compatibility: *mut i8,
+    pub geometry: *mut i8,
+    pub symbols: *mut i8,
+    pub types: *mut i8,
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_state_components_update {
+    pub size: usize,
+    pub components: xkb_state_component,
+    pub affect_latched_mods: xkb_mod_mask_t,
+    pub latched_mods: xkb_mod_mask_t,
+    pub affect_locked_mods: xkb_mod_mask_t,
+    pub locked_mods: xkb_mod_mask_t,
+    pub latched_layout: i32,
+    pub locked_layout: i32,
+    pub affect_controls: xkb_keyboard_control_flags,
+    pub controls: xkb_keyboard_control_flags,
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_layout_policy_update {
+    pub size: usize,
+    pub policy: xkb_layout_out_of_range_policy,
+    pub redirect: xkb_layout_index_t,
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub struct xkb_state_update {
+    pub size: usize,
+    pub components: *const xkb_state_components_update,
+    pub layout_policy: *const xkb_layout_policy_update,
+}
+
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
