@@ -75,31 +75,16 @@ pub mod utils_numbers_h {
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
-pub mod util_mem_h {
-    #[inline]
-    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-            let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = std::ptr::null_mut::<core::ffi::c_void>();
-            return swapped;
-        }
-    }
-}
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-}
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 }
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 pub use self::darray_h::darray_size_t;
 use self::include_h::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-pub use self::util_mem_h::_steal;
+pub use crate::xkb::utils::_steal;
 pub use self::utils_numbers_h::{next_pow2, parse_dec_to_uint64_t, popcount32};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap::clear_level;
 pub use crate::xkb::keymap_priv::{
     XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,

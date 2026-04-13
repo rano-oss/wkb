@@ -52,9 +52,6 @@ pub mod include_h {
     pub const MERGE_REPLACE_PREFIX: i32 = 94;
     pub use crate::xkb::xkbcomp::include::ParseIncludeMap;
 }
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
-}
 
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
@@ -125,7 +122,6 @@ pub use crate::xkb::messages::{
 pub use self::scanner_utils_h::{scanner, scanner_loc, scanner_token_location, sval};
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use crate::xkb::utils::{isempty, strdup_safe};
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;

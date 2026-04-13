@@ -180,6 +180,16 @@ pub unsafe fn istrncmp(mut a: *const i8, mut b: *const i8, mut n: usize) -> i32 
 }
 
 // New Rust file utilities
+#[inline]
+pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
+    unsafe {
+        let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
+        let mut swapped: *mut ::core::ffi::c_void = *original;
+        *original = std::ptr::null_mut::<core::ffi::c_void>();
+        return swapped;
+    }
+}
+
 extern "C" {
     pub fn __errno_location() -> *mut i32;
 }
@@ -972,4 +982,40 @@ pub unsafe fn check_eaccess(path: *const i8, mode: i32) -> bool {
         fn eaccess(__name: *const i8, __type: i32) -> i32;
     }
     unsafe { eaccess(path, mode) == 0 }
+}
+
+pub unsafe fn xkb_check_versioned_struct_size_(
+    mut v1_size: usize,
+    mut min_size: usize,
+    mut lib_size: usize,
+    mut caller_size: usize,
+    mut caller_data: *const ::core::ffi::c_void,
+) -> xkb_error_code {
+    use crate::xkb::shared_types::{
+        XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
+        XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_SUCCESS,
+    };
+    unsafe {
+        if caller_size < v1_size {
+            return XKB_ERROR_ABI_INVALID_STRUCT_SIZE;
+        }
+        if caller_size < min_size {
+            return XKB_ERROR_ABI_BACKWARD_COMPAT;
+        }
+        if caller_size <= lib_size {
+            return XKB_SUCCESS;
+        }
+        let mut p: *const ::core::ffi::c_uchar =
+            (caller_data as *const ::core::ffi::c_uchar).offset(lib_size as isize);
+        let mut end: *const ::core::ffi::c_uchar =
+            (caller_data as *const ::core::ffi::c_uchar).offset(caller_size as isize);
+        while p < end {
+            let c2rust_fresh1 = p;
+            p = p.offset(1);
+            if *c2rust_fresh1 as i32 != 0 as i32 {
+                return XKB_ERROR_ABI_FORWARD_COMPAT;
+            }
+        }
+        return XKB_SUCCESS;
+    }
 }

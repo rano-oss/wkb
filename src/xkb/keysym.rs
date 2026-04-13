@@ -1,4 +1,12 @@
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
+pub const XKB_KEY_Mode_switch: i32 = 0xff7e as i32;
+pub const XKB_KEY_Num_Lock: i32 = 0xff7f as i32;
+pub const XKB_KEY_KP_Space: i32 = 0xff80 as i32;
+pub const XKB_KEY_KP_Equal: i32 = 0xffbd as i32;
+pub const XKB_KEY_Shift_L: i32 = 0xffe1 as i32;
+pub const XKB_KEY_Hyper_R: i32 = 0xffee as i32;
+pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
+pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
 use crate::xkb::shared_types::*;
 pub mod sys_types_h {
     pub type ssize_t = isize;
@@ -21841,17 +21849,6 @@ pub mod utf8_decoding_h {
 
     pub use crate::xkb::utf8_decoding::utf8_next_code_point;
 }
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
-    pub const XKB_KEY_Mode_switch: i32 = 0xff7e as i32;
-    pub const XKB_KEY_Num_Lock: i32 = 0xff7f as i32;
-    pub const XKB_KEY_KP_Space: i32 = 0xff80 as i32;
-    pub const XKB_KEY_KP_Equal: i32 = 0xffbd as i32;
-    pub const XKB_KEY_Shift_L: i32 = 0xffe1 as i32;
-    pub const XKB_KEY_Hyper_R: i32 = 0xffee as i32;
-    pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
-    pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
-}
 
 pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
@@ -21865,10 +21862,6 @@ pub use self::keysym_names_h::{
 pub use self::sys_types_h::ssize_t;
 pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use self::utils_numbers_h::{digits__, parse_hex_to_uint32_t};
-pub use self::xkbcommon_keysyms_h::{
-    XKB_KEY_Hyper_R, XKB_KEY_ISO_Level5_Lock, XKB_KEY_ISO_Lock, XKB_KEY_KP_Equal, XKB_KEY_KP_Space,
-    XKB_KEY_Mode_switch, XKB_KEY_NoSymbol, XKB_KEY_Num_Lock, XKB_KEY_Shift_L,
-};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_len, cstr_ncmp};
 pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};

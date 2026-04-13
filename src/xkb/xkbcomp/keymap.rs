@@ -11,12 +11,8 @@ use crate::xkb::xkbcomp::expr::{ExprResolveGroup, ExprResolveGroupMask};
 pub mod ast_build_h {
     pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 }
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-}
 
 use self::ast_build_h::FreeStmt;
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

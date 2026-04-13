@@ -142,46 +142,6 @@ pub mod utils_numbers_h {
 }
 
 
-pub mod util_mem_h {
-    #[inline]
-
-    pub unsafe fn xkb_check_versioned_struct_size_(
-        mut v1_size: usize,
-        mut min_size: usize,
-        mut lib_size: usize,
-        mut caller_size: usize,
-        mut caller_data: *const ::core::ffi::c_void,
-    ) -> xkb_error_code {
-        unsafe {
-            if caller_size < v1_size {
-                return XKB_ERROR_ABI_INVALID_STRUCT_SIZE;
-            }
-            if caller_size < min_size {
-                return XKB_ERROR_ABI_BACKWARD_COMPAT;
-            }
-            if caller_size <= lib_size {
-                return XKB_SUCCESS;
-            }
-            let mut p: *const ::core::ffi::c_uchar =
-                (caller_data as *const ::core::ffi::c_uchar).offset(lib_size as isize);
-            let mut end: *const ::core::ffi::c_uchar =
-                (caller_data as *const ::core::ffi::c_uchar).offset(caller_size as isize);
-            while p < end {
-                let c2rust_fresh1 = p;
-                p = p.offset(1);
-                if *c2rust_fresh1 as i32 != 0 as i32 {
-                    return XKB_ERROR_ABI_FORWARD_COMPAT;
-                }
-            }
-            return XKB_SUCCESS;
-        }
-    }
-
-    use crate::xkb::shared_types::{
-        xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-        XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_SUCCESS,
-    };
-}
 
 
 pub mod utf8_h {
@@ -199,10 +159,6 @@ pub mod utf8_h {
     }
 }
 
-pub mod xkbcommon_keysyms_h {
-
-    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
-}
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -253,7 +209,7 @@ pub use self::state_priv_h::{
     xkb_state_update_v1, C2Rust_Unnamed_17, C2Rust_Unnamed_18,
 };
 use self::utf8_h::is_valid_utf8;
-pub use self::util_mem_h::xkb_check_versioned_struct_size_;
+pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 pub use crate::xkb::utils::one_bit_set;
 pub use self::utils_numbers_h::popcount32;
 pub use crate::xkb::shared_types::{
@@ -276,7 +232,6 @@ pub use self::xkbcommon_features_h::{
     XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS, XKB_FEATURE_ENUM_STATE_COMPONENT,
     XKB_FEATURE_ENUM_STATE_MATCH,
 };
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 pub use crate::xkb::keymap_priv::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,

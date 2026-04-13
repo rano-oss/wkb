@@ -1,4 +1,7 @@
 use crate::xkb::context_priv::xkb_atom_intern;
+pub const XKB_KEY_VoidSymbol: i32 = 0xffffff as ::core::ffi::c_int;
+pub const XKB_KEY_0: i32 = 0x30 as ::core::ffi::c_int;
+pub const XKB_KEY_section: i32 = 0xa7 as ::core::ffi::c_int;
 use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
 use crate::xkb_logf;
 
@@ -247,12 +250,6 @@ pub mod parser_priv_h {
         unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
     }
 }
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    pub const XKB_KEY_VoidSymbol: ::core::ffi::c_int = 0xffffff as ::core::ffi::c_int;
-    pub const XKB_KEY_0: ::core::ffi::c_int = 0x30 as ::core::ffi::c_int;
-    pub const XKB_KEY_section: ::core::ffi::c_int = 0xa7 as ::core::ffi::c_int;
-}
 
 use self::ast_build_h::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
@@ -276,9 +273,6 @@ pub use self::parser_h::{
 };
 use self::parser_priv_h::_xkbcommon_lex;
 pub use self::scanner_utils_h::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
-pub use self::xkbcommon_keysyms_h::{
-    XKB_KEY_NoSymbol, XKB_KEY_VoidSymbol, XKB_KEY_section, XKB_KEY_0,
-};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

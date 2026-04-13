@@ -6,17 +6,6 @@ use crate::xkb::xkbcomp::expr::{ExprResolveLevel, ExprResolveLhs, ExprResolveMod
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
-pub mod util_mem_h {
-    #[inline]
-    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-            let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = std::ptr::null_mut::<core::ffi::c_void>();
-            return swapped;
-        }
-    }
-}
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 }
@@ -115,7 +104,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::util_mem_h::_steal;
+pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
 pub use crate::xkb::shared_types::{

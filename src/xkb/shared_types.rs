@@ -973,5 +973,7 @@ pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
 pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
 pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
 pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
+pub const XKB_KEY_NoSymbol: i32 = 0;
+
 pub const XKB_SUCCESS: xkb_error_code = 0;
 pub const XKB_ERROR_INVALID: xkb_error_code = -1;

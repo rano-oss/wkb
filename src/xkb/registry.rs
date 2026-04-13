@@ -868,17 +868,6 @@ pub mod stat_h {
         pub fn stat(__file: *const i8, __buf: *mut stat) -> i32;
     }
 }
-pub mod util_mem_h {
-    #[inline]
-    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-        unsafe {
-            let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-            let mut swapped: *mut ::core::ffi::c_void = *original;
-            *original = std::ptr::null_mut::<core::ffi::c_void>();
-            return swapped;
-        }
-    }
-}
 pub mod xmlversion_h {
     extern "C" {
         pub fn xmlCheckVersion(version: i32);
@@ -1016,7 +1005,7 @@ pub use self::tree_h::{
 };
 pub use self::unistd_h::{eaccess, R_OK, X_OK};
 pub use self::util_list_h::{list, list_append, list_empty, list_init, list_is_last, list_remove};
-pub use self::util_mem_h::_steal;
+pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };

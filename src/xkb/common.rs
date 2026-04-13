@@ -134,9 +134,6 @@ pub mod utils_numbers_h {
         }
     }
 }
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
-}
 pub mod assert_h {
     extern "C" {
         pub fn __assert_fail(
@@ -188,7 +185,6 @@ pub use crate::xkb::shared_types::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::shared_types::*;
 pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 pub use crate::xkb::shared_types::{

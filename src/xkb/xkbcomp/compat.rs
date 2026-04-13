@@ -12,20 +12,8 @@ pub mod action_h {
 pub mod vmod_h {
     pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 }
-pub mod util_mem_h {
-    #[inline]
-    pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-        let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-        let mut swapped: *mut ::core::ffi::c_void = *original;
-        *original = std::ptr::null_mut::<core::ffi::c_void>();
-        return swapped;
-    }
-}
 pub mod include_h {
     pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-}
-pub mod xkbcommon_keysyms_h {
-    pub const XKB_KEY_NoSymbol: i32 = 0 as i32;
 }
 
 pub use self::action_h::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
@@ -126,10 +114,9 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use self::util_mem_h::_steal;
+pub use crate::xkb::utils::_steal;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use self::vmod_h::{HandleVModDef, InitVMods, MergeModSets};
-pub use self::xkbcommon_keysyms_h::XKB_KEY_NoSymbol;
 pub use crate::xkb::shared_ast_types::{
     pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
     xkb_parser_error, xkb_parser_strict_flags, XkbcompLookup, XkbcompFeatures, FreeXkbFile,
