@@ -1520,7 +1520,7 @@ unsafe fn HandlePrivate(
                 }
                 let mut str: *const i8 = xkb_atom_text(ctx, val);
                 let mut len: usize = cstr_len(str);
-                if len < 1 as usize || len > std::mem::size_of::<[u8; 7]>() as usize {
+                if len < 1 as usize || len > std::mem::size_of::<[u8; 7]>() {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
@@ -1568,7 +1568,7 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                if ndx < 0 as i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() as usize {
+                if ndx < 0 as i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,

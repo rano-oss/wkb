@@ -424,7 +424,7 @@ pub unsafe fn test_key_seq_va(
                 xkb_keysym_get_name(
                     *syms.offset(i as isize),
                     &raw mut ksbuf as *mut i8,
-                    std::mem::size_of::<[i8; 31]>() as usize,
+                    std::mem::size_of::<[i8; 31]>(),
                 );
                 eprint!(
                     "{}{}",
@@ -440,7 +440,7 @@ pub unsafe fn test_key_seq_va(
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
                         &raw mut ksbuf as *mut i8,
-                        std::mem::size_of::<[i8; 31]>() as usize,
+                        std::mem::size_of::<[i8; 31]>(),
                     );
                     eprintln!(
                         "\nERROR: Did not expect keysym: {}.",
@@ -452,7 +452,7 @@ pub unsafe fn test_key_seq_va(
                     xkb_keysym_get_name(
                         keysym,
                         &raw mut ksbuf as *mut i8,
-                        std::mem::size_of::<[i8; 31]>() as usize,
+                        std::mem::size_of::<[i8; 31]>(),
                     );
                     eprint!(
                         "\nERROR: Expected keysym: {}. ",
@@ -461,7 +461,7 @@ pub unsafe fn test_key_seq_va(
                     xkb_keysym_get_name(
                         *syms.offset(i as isize),
                         &raw mut ksbuf as *mut i8,
-                        std::mem::size_of::<[i8; 31]>() as usize,
+                        std::mem::size_of::<[i8; 31]>(),
                     );
                     eprintln!(
                         " Got keysym: {}.",
@@ -479,7 +479,7 @@ pub unsafe fn test_key_seq_va(
                     xkb_keysym_get_name(
                         keysym,
                         &raw mut ksbuf as *mut i8,
-                        std::mem::size_of::<[i8; 31]>() as usize,
+                        std::mem::size_of::<[i8; 31]>(),
                     );
                     eprintln!(
                         "\nERROR: Expected {}, but got no keysyms.",
@@ -501,7 +501,7 @@ pub unsafe fn test_key_seq_va(
             xkb_keysym_get_name(
                 keysym,
                 &raw mut ksbuf as *mut i8,
-                std::mem::size_of::<[i8; 31]>() as usize,
+                std::mem::size_of::<[i8; 31]>(),
             );
             eprintln!(
                 "\nERROR: Expected keysym: {}. Didn't get it.",
@@ -681,7 +681,7 @@ pub unsafe fn read_file(mut path: *const i8, mut file: *mut FILE) -> *mut i8 {
         *__errno_location() = 0 as i32;
         let count: usize = fread(
             ret as *mut ::core::ffi::c_void,
-            std::mem::size_of::<i8>() as usize,
+            std::mem::size_of::<i8>(),
             size,
             file,
         ) as usize;
@@ -1976,7 +1976,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                     o = o.offset(1);
                 }
                 let len: usize = o.offset_from(option) as i64 as usize;
-                if len >= std::mem::size_of::<[i8; 1024]>() as usize {
+                if len >= std::mem::size_of::<[i8; 1024]>() {
                     c2rust_current_block = 4427821232739340156;
                     break;
                 }
@@ -2050,7 +2050,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         let mut layout_0: *const i8 = l;
                         let mut variant: *const i8 = v;
                         let mut start: *mut i8 = &raw mut buf as *mut i8;
-                        let mut buf_size: usize = std::mem::size_of::<[i8; 1024]>() as usize;
+                        let mut buf_size: usize = std::mem::size_of::<[i8; 1024]>();
                         while *l as i32 != '\0' as i32 && *l as i32 != ',' as i32 {
                             l = l.offset(1);
                         }
@@ -2365,8 +2365,8 @@ pub unsafe fn test_compile_output2(
                 || output_format as u32 == XKB_KEYMAP_USE_ORIGINAL_FORMAT as u32;
             let mut k: u32 = 0 as u32;
             while (k as usize)
-                < (std::mem::size_of::<[*const i8; 2]>() as usize)
-                    .wrapping_div(std::mem::size_of::<*const i8>() as usize)
+                < (std::mem::size_of::<[*const i8; 2]>())
+                    .wrapping_div(std::mem::size_of::<*const i8>())
                 && success != 0
             {
                 if streq(expected, got_0) {
@@ -2520,8 +2520,8 @@ pub unsafe fn test_third_pary_compile_output(
             ];
             let mut k: u32 = 0 as u32;
             while (k as usize)
-                < (std::mem::size_of::<[*const i8; 2]>() as usize)
-                    .wrapping_div(std::mem::size_of::<*const i8>() as usize)
+                < (std::mem::size_of::<[*const i8; 2]>())
+                    .wrapping_div(std::mem::size_of::<*const i8>())
                 && success != 0
             {
                 if streq(expected, got) {

@@ -676,7 +676,7 @@ unsafe fn AddLedMap(mut info: *mut CompatInfo, mut new: *mut LedInfo, mut same_f
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Too many LEDs defined (maximum {})\n",
-                (std::mem::size_of::<xkb_led_mask_t>() as usize).wrapping_mul(8 as usize)
+                (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8 as usize)
                     as xkb_led_index_t,
             );
             return false;
@@ -911,7 +911,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                 stmt,
                 FILE_TYPE_COMPAT,
                 &raw mut path as *mut i8,
-                std::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>(),
             );
             if file.is_null() {
                 (*info).errorCount += 10 as i32;
@@ -1700,7 +1700,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
-                            (std::mem::size_of::<xkb_led_mask_t>() as usize)
+                            (std::mem::size_of::<xkb_led_mask_t>())
                                 .wrapping_mul(8 as usize)
                                 as xkb_led_index_t,
                             crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),

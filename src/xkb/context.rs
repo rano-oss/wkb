@@ -263,7 +263,7 @@ unsafe fn add_direct_subdirectories(
                     }
                     let (_, _trunc) = crate::xkb::utils::snprintf_args(
                         &raw mut path_buf as *mut i8,
-                        std::mem::size_of::<[i8; 4096]>() as usize,
+                        std::mem::size_of::<[i8; 4096]>(),
                         format_args!(
                             "{}/{}",
                             crate::xkb::utils::CStrDisplay(path),
@@ -313,7 +313,7 @@ unsafe fn add_direct_subdirectories(
                                 (*extensions).item.offset(versioned_count as isize)
                                     as *mut ::core::ffi::c_void,
                                 (*extensions).size.wrapping_sub(versioned_count) as usize,
-                                std::mem::size_of::<*mut i8>() as usize,
+                                std::mem::size_of::<*mut i8>(),
                                 Some(
                                     compare_str
                                         as unsafe extern "C" fn(
@@ -566,41 +566,41 @@ unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
         if istrneq(
             b"crit\0".as_ptr() as *const i8,
             level,
-            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return XKB_LOG_LEVEL_CRITICAL;
         }
         if istrneq(
             b"err\0".as_ptr() as *const i8,
             level,
-            (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
         ) {
             return XKB_LOG_LEVEL_ERROR;
         }
         if istrneq(
             b"warn\0".as_ptr() as *const i8,
             level,
-            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return XKB_LOG_LEVEL_WARNING;
         }
         if istrneq(
             b"info\0".as_ptr() as *const i8,
             level,
-            (std::mem::size_of::<[i8; 5]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return XKB_LOG_LEVEL_INFO;
         }
         if istrneq(
             b"debug\0".as_ptr() as *const i8,
             level,
-            (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
         ) as i32
             != 0
             || istrneq(
                 b"dbg\0".as_ptr() as *const i8,
                 level,
-                (std::mem::size_of::<[i8; 4]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
             ) as i32
                 != 0
         {

@@ -340,7 +340,7 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
                 *c2rust_fresh0 = memdup(
                     (*(*from).levels.item.offset(j as isize)).s.syms as *const ::core::ffi::c_void,
                     (*(*from).levels.item.offset(j as isize)).num_syms as usize,
-                    std::mem::size_of::<xkb_keysym_t>() as usize,
+                    std::mem::size_of::<xkb_keysym_t>(),
                 ) as *mut xkb_keysym_t;
             }
             if (*(*from).levels.item.offset(j as isize)).num_actions as i32
@@ -351,7 +351,7 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
                     (*(*from).levels.item.offset(j as isize)).a.actions
                         as *const ::core::ffi::c_void,
                     (*(*from).levels.item.offset(j as isize)).num_actions as usize,
-                    std::mem::size_of::<xkb_action>() as usize,
+                    std::mem::size_of::<xkb_action>(),
                 ) as *mut xkb_action;
             }
             j = j.wrapping_add(1);
@@ -364,7 +364,7 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
         (*keyi).name = xkb_atom_intern(
             ctx,
             b"*\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 2]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 2]>()).wrapping_sub(1 as usize),
         );
         (*keyi).set_out_of_range_group_policy(
             XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy,
@@ -812,7 +812,7 @@ unsafe fn overlays_get(
 ) -> bool {
     unsafe {
         if bit as i32
-            >= (std::mem::size_of::<xkb_overlay_mask_t>() as usize).wrapping_mul(8 as usize)
+            >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8 as usize)
                 as xkb_overlay_index_t as i32
         {
             return false;
@@ -843,7 +843,7 @@ unsafe fn overlays_insert(
 ) -> bool {
     unsafe {
         if bit as i32
-            >= (std::mem::size_of::<xkb_overlay_mask_t>() as usize).wrapping_mul(8 as usize)
+            >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8 as usize)
                 as xkb_overlay_index_t as i32
         {
             return false;
@@ -884,7 +884,7 @@ unsafe fn overlays_insert(
             let alloc: xkb_overlay_index_t = popcount32(overlays as u32) as xkb_overlay_index_t;
             let tmp: *mut *const xkb_key = calloc(
                 alloc as usize,
-                std::mem::size_of::<*const xkb_key>() as usize,
+                std::mem::size_of::<*const xkb_key>(),
             ) as *mut *const xkb_key;
             if tmp.is_null() {
                 return false;
@@ -918,7 +918,7 @@ unsafe fn overlays_insert(
                 let tmp_0: *mut *const xkb_key = realloc(
                     (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
                     (alloc_0 as usize)
-                        .wrapping_mul(std::mem::size_of::<*const xkb_key>() as usize),
+                        .wrapping_mul(std::mem::size_of::<*const xkb_key>()),
                 ) as *mut *const xkb_key;
                 if tmp_0.is_null() {
                     return false;
@@ -1025,7 +1025,7 @@ unsafe fn merge_overlays(
                         if (*dest).overlays_alloc == 0 {
                             let mut tmp: *mut *const xkb_key = calloc(
                                 count as usize,
-                                std::mem::size_of::<*const xkb_key>() as usize,
+                                std::mem::size_of::<*const xkb_key>(),
                             )
                                 as *mut *const xkb_key;
                             if tmp.is_null() {
@@ -1645,7 +1645,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 stmt,
                 FILE_TYPE_SYMBOLS,
                 &raw mut path as *mut i8,
-                std::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>(),
             );
             if file.is_null() {
                 (*info).errorCount += 10 as i32;
@@ -1880,7 +1880,7 @@ unsafe fn AddSymbolsToKey(
                         (*keysymList_0).syms.item = realloc(
                             (*keysymList_0).syms.item as *mut ::core::ffi::c_void,
                             ((*keysymList_0).syms.alloc as usize)
-                                .wrapping_mul(std::mem::size_of::<xkb_keysym_t>() as usize),
+                                .wrapping_mul(std::mem::size_of::<xkb_keysym_t>()),
                         ) as *mut xkb_keysym_t;
                     }
                     (*leveli).s.syms = (*keysymList_0).syms.item;
@@ -2102,7 +2102,7 @@ unsafe fn AddActionsToKey(
                     (*groupi).levels.item = realloc(
                         (*groupi).levels.item as *mut ::core::ffi::c_void,
                         ((*groupi).levels.alloc as usize)
-                            .wrapping_mul(std::mem::size_of::<xkb_level>() as usize),
+                            .wrapping_mul(std::mem::size_of::<xkb_level>()),
                     ) as *mut xkb_level;
                 }
             } else {
@@ -2175,7 +2175,7 @@ unsafe fn ExprResolveOverlayEntry(
             );
             return false;
         }
-        let prefix: usize = (std::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize);
+        let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize);
         let len: usize = cstr_len(field.offset(prefix as isize)) as usize;
         let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
         if parse_dec_to_uint64_t(
@@ -2399,7 +2399,7 @@ unsafe fn SetSymbolsField(
         } else if istrneq(
             b"permanentoverlay\0".as_ptr() as *const i8,
             field,
-            (std::mem::size_of::<[i8; 17]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 17]>()).wrapping_sub(1 as usize),
         ) {
             xkb_logf!(
                 (*info).ctx,
@@ -2412,7 +2412,7 @@ unsafe fn SetSymbolsField(
         } else if istrneq(
             b"overlay\0".as_ptr() as *const i8,
             field,
-            (std::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
             let mut key: *const xkb_key = std::ptr::null();
@@ -3286,7 +3286,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
             return xkb_atom_intern(
                 ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
         sym0 = if (*(*groupi)
@@ -3356,7 +3356,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 return xkb_atom_intern(
                     ctx,
                     b"ALPHABETIC\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as i32 != 0
@@ -3365,13 +3365,13 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 return xkb_atom_intern(
                     ctx,
                     b"KEYPAD\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
                 b"TWO_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 10]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
         if width <= 4 as xkb_level_index_t {
@@ -3450,13 +3450,13 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                     return xkb_atom_intern(
                         ctx,
                         b"FOUR_LEVEL_ALPHABETIC\0".as_ptr() as *const i8,
-                        (std::mem::size_of::<[i8; 22]>() as usize).wrapping_sub(1 as usize),
+                        (std::mem::size_of::<[i8; 22]>()).wrapping_sub(1 as usize),
                     );
                 }
                 return xkb_atom_intern(
                     ctx,
                     b"FOUR_LEVEL_SEMIALPHABETIC\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 26]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 26]>()).wrapping_sub(1 as usize),
                 );
             }
             if xkb_keysym_is_keypad(sym0) as i32 != 0
@@ -3465,13 +3465,13 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 return xkb_atom_intern(
                     ctx,
                     b"FOUR_LEVEL_KEYPAD\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 18]>() as usize).wrapping_sub(1 as usize),
+                    (std::mem::size_of::<[i8; 18]>()).wrapping_sub(1 as usize),
                 );
             }
             return xkb_atom_intern(
                 ctx,
                 b"FOUR_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 11]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1 as usize),
             );
         }
         return XKB_ATOM_NONE as xkb_atom_t;
@@ -3624,7 +3624,7 @@ unsafe fn CopySymbolsDefToKeymap(
 
             (*key).groups = calloc(
                 (*key).num_groups() as usize,
-                std::mem::size_of::<xkb_group>() as usize,
+                std::mem::size_of::<xkb_group>(),
             ) as *mut xkb_group;
 
             // Find and assign the groups' types in the keymap
@@ -3722,7 +3722,7 @@ unsafe fn CopySymbolsDefToKeymap(
                                         (*leveli).s.syms = realloc(
                                             (*leveli).s.syms as *mut ::core::ffi::c_void,
                                             (2 * (*leveli).num_syms as usize).wrapping_mul(
-                                                std::mem::size_of::<xkb_keysym_t>() as usize,
+                                                std::mem::size_of::<xkb_keysym_t>(),
                                             ),
                                         )
                                             as *mut xkb_keysym_t;

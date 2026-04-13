@@ -80,8 +80,8 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
         ];
         let mut i: xkb_mod_index_t = 0 as xkb_mod_index_t;
         while (i as usize)
-            < (std::mem::size_of::<[*const i8; 8]>() as usize)
-                .wrapping_div(std::mem::size_of::<*const i8>() as usize)
+            < (std::mem::size_of::<[*const i8; 8]>())
+                .wrapping_div(std::mem::size_of::<*const i8>())
         {
             (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
                 (*keymap).ctx,
@@ -92,8 +92,8 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
             (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as xkb_mod_mask_t;
             i = i.wrapping_add(1);
         }
-        (*keymap).mods.num_mods = (std::mem::size_of::<[*const i8; 8]>() as usize)
-            .wrapping_div(std::mem::size_of::<*const i8>() as usize)
+        (*keymap).mods.num_mods = (std::mem::size_of::<[*const i8; 8]>())
+            .wrapping_div(std::mem::size_of::<*const i8>())
             as xkb_mod_index_t;
         (*keymap).canonical_state_mask = MOD_REAL_MASK_ALL;
     }
@@ -175,7 +175,7 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
             return (*a).s.sym == (*b).s.sym;
         }
         {
-            let n = (std::mem::size_of::<xkb_keysym_t>() as usize)
+            let n = (std::mem::size_of::<xkb_keysym_t>())
                 .wrapping_mul((*a).num_syms as usize);
             return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
                 == std::slice::from_raw_parts((*b).s.syms as *const u8, n);

@@ -277,7 +277,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             if scanner_str(
                 s,
                 b"//\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 3]>() as usize).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1 as usize),
             ) {
                 scanner_skip_to_eol(s);
             }
@@ -323,21 +323,21 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
         if scanner_str(
             s,
             b"<none>\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_NONE;
         }
         if scanner_str(
             s,
             b"<some>\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_SOME;
         }
         if scanner_str(
             s,
             b"<any>\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_ANY;
         }
@@ -367,7 +367,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
         if scanner_str(
             s,
             b"include\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_INCLUDE;
         }
@@ -5021,7 +5021,7 @@ unsafe fn matcher_include(
             stmt_file_len,
             FILE_TYPE_RULES,
             &raw mut buf as *mut i8,
-            std::mem::size_of::<[i8; 4096]>() as usize,
+            std::mem::size_of::<[i8; 4096]>(),
         ) as isize;
         if expanded < 0 as isize {
             return;
@@ -5034,7 +5034,7 @@ unsafe fn matcher_include(
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
             if expanded == 0 {
-                if stmt_file_len < std::mem::size_of::<[i8; 4096]>() as usize {
+                if stmt_file_len < std::mem::size_of::<[i8; 4096]>() {
                     std::ptr::copy_nonoverlapping(
                         stmt_file as *const u8,
                         &raw mut buf as *mut i8 as *mut u8,
@@ -5068,7 +5068,7 @@ unsafe fn matcher_include(
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>(),
                 &raw mut offset,
                 true,
             );
@@ -5103,7 +5103,7 @@ unsafe fn matcher_include(
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>(),
                 &raw mut offset,
                 true,
             );
@@ -5227,8 +5227,8 @@ unsafe fn extract_mapping_layout_index(
         }
         let mut k: u32 = 0 as u32;
         while (k as usize)
-            < (std::mem::size_of::<[C2Rust_Unnamed_7; 4]>() as usize)
-                .wrapping_div(std::mem::size_of::<C2Rust_Unnamed_7>() as usize)
+            < (std::mem::size_of::<[C2Rust_Unnamed_7; 4]>())
+                .wrapping_div(std::mem::size_of::<C2Rust_Unnamed_7>())
         {
             if cstr_ncmp(
                 s.offset(1 as i32 as isize) as *const i8,
@@ -5861,7 +5861,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                 let mut index_str: [i8; 12] = [0; 12];
                 let mut count: i32 = crate::xkb::utils::snprintf_c(
                     &raw mut index_str as *mut i8,
-                    std::mem::size_of::<[i8; 12]>() as usize,
+                    std::mem::size_of::<[i8; 12]>(),
                     format_args!("{}", layout_idx.wrapping_add(1 as xkb_layout_index_t)),
                 );
                 darray_appends_nul(
@@ -6535,7 +6535,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     }
                     let mut count: i32 = crate::xkb::utils::snprintf_c(
                         &raw mut layout_index as *mut i8,
-                        std::mem::size_of::<[i8; 12]>() as usize,
+                        std::mem::size_of::<[i8; 12]>(),
                         format_args!("{}", l.wrapping_add(1 as xkb_layout_index_t)),
                     );
                     darray_appends_nul(
@@ -7408,7 +7408,7 @@ unsafe fn xkb_resolve_partial_rules(
         let mut partial_rules: [i8; 60] = [0; 60];
         let (_, _trunc) = crate::xkb::utils::snprintf_args(
             &raw mut partial_rules as *mut i8,
-            std::mem::size_of::<[i8; 60]>() as usize,
+            std::mem::size_of::<[i8; 60]>(),
             format_args!(
                 "{}{}",
                 crate::xkb::utils::CStrDisplay(rules),
@@ -7482,7 +7482,7 @@ unsafe fn xkb_resolve_rules(
             cstr_len(rules),
             FILE_TYPE_RULES,
             &raw mut path as *mut i8,
-            std::mem::size_of::<[i8; 4096]>() as usize,
+            std::mem::size_of::<[i8; 4096]>(),
             &raw mut offset,
             true,
         ) as *mut FILE;
@@ -7499,7 +7499,7 @@ unsafe fn xkb_resolve_rules(
             ret = xkb_resolve_partial_rules(
                 ctx,
                 &raw mut path as *mut i8,
-                std::mem::size_of::<[i8; 4096]>() as usize,
+                std::mem::size_of::<[i8; 4096]>(),
                 rules,
                 b".pre\0".as_ptr() as *const i8,
                 matcher,
@@ -7519,7 +7519,7 @@ unsafe fn xkb_resolve_rules(
                     ret = xkb_resolve_partial_rules(
                         ctx,
                         &raw mut path as *mut i8,
-                        std::mem::size_of::<[i8; 4096]>() as usize,
+                        std::mem::size_of::<[i8; 4096]>(),
                         rules,
                         b".post\0".as_ptr() as *const i8,
                         matcher,
@@ -7807,41 +7807,41 @@ unsafe fn c2rust_run_static_initializers() {
     unsafe {
         rules_kccgst_svals = [
             sval {
-                len: (std::mem::size_of::<[i8; 9]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1 as usize),
                 start: b"keycodes\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
                 start: b"types\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 start: b"compat\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
                 start: b"symbols\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 9]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1 as usize),
                 start: b"geometry\0".as_ptr() as *const i8,
             },
         ];
         rules_mlvo_svals = [
             sval {
-                len: (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
                 start: b"model\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 start: b"layout\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 8]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
                 start: b"variant\0".as_ptr() as *const i8,
             },
             sval {
-                len: (std::mem::size_of::<[i8; 7]>() as usize).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 start: b"option\0".as_ptr() as *const i8,
             },
         ];

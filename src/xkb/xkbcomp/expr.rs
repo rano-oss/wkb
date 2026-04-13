@@ -674,7 +674,7 @@ pub unsafe fn ExprResolveGroup(
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
             min: 1 as u32,
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
@@ -1237,7 +1237,7 @@ pub unsafe fn ExprResolveGroupMask(
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
             min: 1 as u32,
             max: (*keymap_info).features.max_groups as u32,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
@@ -1268,7 +1268,7 @@ unsafe fn c2rust_run_static_initializers() {
     unsafe {
         level_name_pattern = named_integer_pattern {
             prefix: b"Level\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>() as usize).wrapping_sub(1 as usize),
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
             min: 1 as u32,
             max: XKB_LEVEL_MAX_IMPL as u32,
             entries: std::ptr::null(),

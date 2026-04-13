@@ -969,7 +969,7 @@ pub unsafe fn next_pow2(mut x: u32) -> u32 {
         return 1 as u32;
     }
     (1 as u32)
-        << (std::mem::size_of::<u32>() as usize)
+        << (std::mem::size_of::<u32>())
             .wrapping_mul(8 as usize)
             .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as usize)
 }
