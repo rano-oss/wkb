@@ -844,4 +844,3 @@ mod tests {
         assert!(min >= 8); // evdev starts at 8
     }
 }
-use crate::xkb::shared_types::*;

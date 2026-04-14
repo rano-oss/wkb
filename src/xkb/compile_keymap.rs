@@ -50,7 +50,7 @@ extern "C" {
 }
 use crate::xkb::shared_types::{
     DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_OPTIONS, DEFAULT_XKB_RULES,
-    DEFAULT_XKB_VARIANT, EXIT_INVALID_USAGE,
+    DEFAULT_XKB_VARIANT,
 };
 pub const OPT_STDEV: options = 12;
 pub const OPT_ITERATIONS: options = 11;

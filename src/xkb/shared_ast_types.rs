@@ -5,7 +5,7 @@
 //! can share the same Rust types.
 
 use crate::xkb::shared_types::{
-    darray_size_t, xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t,
+    xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t,
     xkb_log_level, xkb_overlay_index_t,
 };
 use crate::xkb::text::LookupEntry;
@@ -126,35 +126,31 @@ pub union ExprDef {
     pub array_ref: ExprArrayRef,
     pub action: ExprAction,
     pub actions: ExprActionList,
-    pub keysym_list: ExprKeysymList,
+    /// Placeholder for ExprKeysymList (non-Copy due to Vec).
+    /// Access via `*(ptr as *mut ExprKeysymList)` instead.
+    pub keysym_list_padding: ExprKeysymListPadding,
 }
 
+/// Padding type that keeps ExprDef union large enough for ExprKeysymList.
+/// ExprKeysymList contains a Vec and is not Copy, so it cannot be a union variant directly.
+/// Access ExprKeysymList only through `*mut ExprKeysymList` pointer casts.
 #[derive(Copy, Clone)]
+#[repr(C)]
+pub struct ExprKeysymListPadding {
+    pub _pad: [u8; std::mem::size_of::<ExprKeysymList>()],
+}
+
+#[derive(Clone)]
 #[repr(C)]
 pub struct ExprKeysymList {
     pub common: ParseCommon,
-    pub syms: DarrayKeysym,
+    pub syms: Vec<xkb_keysym_t>,
 }
-
-/// Canonical name for the darray(xkb_keysym_t) inline struct.
-/// Known in c2rust-generated code as C2Rust_Unnamed_1 (ast_build, parser, scanner, vmod),
-/// C2Rust_Unnamed_13 (action, expr, keycodes, keymap, symbols, types),
-/// or C2Rust_Unnamed_15 (compat).
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct DarrayKeysym {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_keysym_t,
-}
-
-// Type aliases for C2Rust_Unnamed variants that map to DarrayKeysym
-pub type C2Rust_Unnamed_1 = DarrayKeysym;
-pub type C2Rust_Unnamed_13 = DarrayKeysym;
-pub type C2Rust_Unnamed_15 = DarrayKeysym;
 
 // Re-export ast_build functions used by consumers via ast_h
-pub use crate::xkb::xkbcomp::ast_build::{stmt_type_to_string, xkb_file_type_to_string, stmt_type_to_operator_char, FreeXkbFile};
+pub use crate::xkb::xkbcomp::ast_build::{
+    stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string, FreeXkbFile,
+};
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -415,20 +411,12 @@ pub struct pending_computation {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct pending_computation_array {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut pending_computation,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_keymap_info {
     pub keymap: xkb_keymap,
     pub strict: xkb_parser_strict_flags,
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
-    pub pending_computations: *mut pending_computation_array,
+    pub pending_computations: *mut Vec<pending_computation>,
 }
 
 /// Lookup tables for group names/masks (was C2Rust_Unnamed_14 in xkbcomp_priv_h).
@@ -557,4 +545,3 @@ pub unsafe fn ReportShouldBeArray(
         return false;
     }
 }
-use crate::xkb::shared_types::*;

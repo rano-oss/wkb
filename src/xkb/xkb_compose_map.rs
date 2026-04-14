@@ -19,7 +19,6 @@
 //! [`super::resolve_compose_file`], before `compose.dir` lookup,
 //! `locale.alias` resolution, or any heuristic.
 
-use crate::xkb::shared_types::*;
 use std::collections::BTreeMap;
 
 lazy_static::lazy_static! {

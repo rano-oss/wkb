@@ -61,32 +61,32 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
-    xkb_map_flags, C2Rust_Unnamed_13, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
-    ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
-    ExprKeysymList, ExprString, ExprUnary, IncludeStmt, ModMapDef, ParseCommon, SymbolsDef,
-    UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
-    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
-    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
-    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
-    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
-    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
-    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
-    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
-    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
-    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
-    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
-    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+    xkb_map_flags, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
+    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
+    ExprUnary, IncludeStmt, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
+    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_ast_types::{
-    pending_computation, pending_computation_array, safe_map_name, xkb_keymap_info,
-    xkb_parser_error, xkb_parser_strict_flags, FreeXkbFile, XkbcompFeatures, XkbcompLookup,
-    PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH, PARSER_NO_FIELD_VALUE_MISMATCH,
-    PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS, PARSER_NO_UNKNOWN_ACTION,
-    PARSER_NO_UNKNOWN_ACTION_FIELDS, PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS,
-    PARSER_NO_UNKNOWN_INTERPRET_FIELDS, PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS,
-    PARSER_NO_UNKNOWN_KEY_FIELDS, PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
+    pending_computation, safe_map_name, xkb_keymap_info, xkb_parser_error, xkb_parser_strict_flags,
+    FreeXkbFile, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH,
+    PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS,
+    PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
+    PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
+    PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_KEY_FIELDS,
+    PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
     PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
@@ -133,7 +133,6 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::darray_append;
 pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 pub use crate::xkb::xkbcomp::action::{
@@ -1534,7 +1533,7 @@ unsafe fn AddSymbolsToKey(
         let mut keysymList: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList.is_null() {
             nLevels = nLevels.wrapping_add(1);
-            if (*keysymList).syms.size > 0 as darray_size_t {
+            if (&(*keysymList).syms).len() as darray_size_t > 0 as darray_size_t {
                 nonEmptyLevels = nLevels;
             }
             keysymList = (*keysymList).common.next as *mut ExprKeysymList;
@@ -1551,7 +1550,8 @@ unsafe fn AddSymbolsToKey(
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
-            if ((*keysymList_0).syms.size > 65535 as darray_size_t) as i64 != 0 {
+            let syms_len = (&(*keysymList_0).syms).len() as darray_size_t;
+            if (syms_len > 65535 as darray_size_t) as i64 != 0 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -1561,34 +1561,28 @@ unsafe fn AddSymbolsToKey(
                     ndx.wrapping_add(1 as xkb_layout_index_t),
                     level.wrapping_add(1 as xkb_level_index_t),
                     65535 as i32,
-                    (*keysymList_0).syms.size,
+                    syms_len,
                 );
                 return false;
             }
-            (*leveli).num_syms = (*keysymList_0).syms.size as xkb_keysym_count_t;
+            (*leveli).num_syms = syms_len as xkb_keysym_count_t;
             match (*leveli).num_syms as i32 {
                 0 => {
                     (*leveli).s.sym = XKB_KEY_NoSymbol as xkb_keysym_t;
                 }
                 1 => {
-                    (*leveli).s.sym = *(*keysymList_0).syms.item.offset(0 as i32 as isize);
+                    (*leveli).s.sym = (&(*keysymList_0).syms)[0];
                 }
                 _ => {
-                    if (*keysymList_0).syms.size > 0 as darray_size_t {
-                        (*keysymList_0).syms.alloc = (*keysymList_0).syms.size;
-                        (*keysymList_0).syms.item = realloc(
-                            (*keysymList_0).syms.item as *mut ::core::ffi::c_void,
-                            ((*keysymList_0).syms.alloc as usize)
-                                .wrapping_mul(std::mem::size_of::<xkb_keysym_t>()),
-                        ) as *mut xkb_keysym_t;
+                    // Steal the Vec buffer into a raw pointer for leveli.s.syms
+                    let syms_ref = &mut (*keysymList_0).syms;
+                    if !syms_ref.is_empty() {
+                        syms_ref.shrink_to_fit();
+                        (*leveli).s.syms = syms_ref.as_mut_ptr();
+                        // Prevent Vec from freeing the buffer
+                        let stolen = std::mem::take(syms_ref);
+                        std::mem::forget(stolen);
                     }
-                    (*leveli).s.syms = (*keysymList_0).syms.item;
-                    if !std::ptr::null_mut::<u8>().is_null() {
-                        *(std::ptr::null_mut() as *mut darray_size_t) = (*keysymList_0).syms.size;
-                    }
-                    (*keysymList_0).syms.item = std::ptr::null_mut();
-                    (*keysymList_0).syms.size = 0 as darray_size_t;
-                    (*keysymList_0).syms.alloc = 0 as darray_size_t;
                     let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
                     while (k as i32) < (*leveli).num_syms as i32 {
                         k = k.wrapping_add(1);
@@ -2238,17 +2232,12 @@ unsafe fn SetSymbolsField(
             if pending {
                 (*keyi).set_out_of_range_pending_group((true) as bool);
                 let pending_index: darray_size_t =
-                    (*(*(*info).keymap_info).pending_computations).size;
-                darray_append(
-                    &mut (*(*(*info).keymap_info).pending_computations).item,
-                    &mut (*(*(*info).keymap_info).pending_computations).size,
-                    &mut (*(*(*info).keymap_info).pending_computations).alloc,
-                    pending_computation {
-                        expr: *value_ptr,
-                        computed: false,
-                        value: 0 as u32,
-                    },
-                );
+                    (&*(*(*info).keymap_info).pending_computations).len() as darray_size_t;
+                (&mut *(*(*info).keymap_info).pending_computations).push(pending_computation {
+                    expr: *value_ptr,
+                    computed: false,
+                    value: 0 as u32,
+                });
                 *value_ptr = std::ptr::null_mut();
                 (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;
             } else {

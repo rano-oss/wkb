@@ -7,7 +7,6 @@ use crate::xkb_logf;
 
 pub const XKB_KEYSYM_MIN: i32 = 0;
 
-
 use crate::xkb::shared_types::xkb_keysym_t;
 pub use crate::xkb::xkbcomp::ast_build::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
@@ -108,25 +107,24 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
-    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction,
+    ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
+    ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef,
+    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
+    ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
+    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
+    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
+    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
+    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
+    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
+    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_types::darray_size_t;
@@ -397,10 +395,7 @@ unsafe fn resolve_keysym(
         sym = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
         if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
             *sym_rtrn = sym;
-            if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32
-                as i64
-                != 0
-            {
+            if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64 != 0 {
                 let mut ref_name: *const i8 = std::ptr::null();
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
                     if ref_name.is_null() {
@@ -438,8 +433,7 @@ unsafe fn resolve_keysym(
         return false;
     }
 }
-pub const YY_NULLPTR: *mut ::core::ffi::c_void =
-    std::ptr::null_mut();
+pub const YY_NULLPTR: *mut ::core::ffi::c_void = std::ptr::null_mut();
 pub const YYSTACK_GAP_MAXIMUM: i64 = std::mem::size_of::<yyalloc>() as i64 - 1 as i64;
 pub const YYFINAL: i32 = 16 as i32;
 pub const YYLAST: i32 = 928 as i32;
@@ -3693,8 +3687,7 @@ pub unsafe fn parse(
                 } else {
                     FreeXkbFile(param.rtrn);
                 }
-            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT as u32 != 0
-            {
+            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT as u32 != 0 {
                 FreeXkbFile(first);
                 return param.rtrn;
             } else if first.is_null() {
@@ -4587,14 +4580,9 @@ unsafe fn yypcontext_expected_tokens(
 ) -> i32 {
     unsafe {
         let mut yycount: i32 = 0 as i32;
-        let mut yyn: i32 =
-            yypact[*(*yyctx).yyssp as usize] as i32;
+        let mut yyn: i32 = yypact[*(*yyctx).yyssp as usize] as i32;
         if !(yyn == YYPACT_NINF) {
-            let mut yyxbegin: i32 = if yyn < 0 as i32 {
-                -yyn
-            } else {
-                0 as i32
-            };
+            let mut yyxbegin: i32 = if yyn < 0 as i32 { -yyn } else { 0 as i32 };
             let mut yychecklim: i32 = YYLAST - yyn + 1 as i32;
             let mut yyxend: i32 = if yychecklim < YYNTOKENS {
                 yychecklim
@@ -4621,10 +4609,7 @@ unsafe fn yypcontext_expected_tokens(
                 yyx += 1;
             }
         }
-        if !yyarg.is_null()
-            && yycount == 0 as i32
-            && (0 as i32) < yyargn
-        {
+        if !yyarg.is_null() && yycount == 0 as i32 && (0 as i32) < yyargn {
             *yyarg.offset(0 as i32 as isize) = YYSYMBOL_YYEMPTY;
         }
         return yycount;
@@ -4730,12 +4715,11 @@ unsafe fn yysyntax_error(
                         -1 as i32 as u64
                     }) as i64)
             {
-                *yymsg_alloc =
-                    (if (9223372036854775807 as i64 as u64) < -1 as i32 as u64 {
-                        9223372036854775807 as i64 as u64
-                    } else {
-                        -1 as i32 as u64
-                    }) as i64;
+                *yymsg_alloc = (if (9223372036854775807 as i64 as u64) < -1 as i32 as u64 {
+                    9223372036854775807 as i64 as u64
+                } else {
+                    -1 as i32 as u64
+                }) as i64;
             }
             return -1 as i32;
         }
@@ -4747,8 +4731,7 @@ unsafe fn yysyntax_error(
                 break;
             }
             if *yyp as i32 == '%' as i32
-                && *yyformat.offset(1 as i32 as isize) as i32
-                    == 's' as i32
+                && *yyformat.offset(1 as i32 as isize) as i32 == 's' as i32
                 && yyi_0 < yycount
             {
                 let c2rust_fresh3 = yyi_0;
@@ -4953,8 +4936,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
         let mut yylen: i32 = 0 as i32;
         yychar = YYEMPTY as i32;
         's_60: loop {
-            (false && (0 as i32 <= yystate && yystate < 384 as i32))
-                as i32;
+            (false && (0 as i32 <= yystate && yystate < 384 as i32)) as i32;
             *yyssp = yystate as yy_state_t;
             if yyss
                 .offset(yystacksize as isize)
@@ -4991,8 +4973,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                 yyss = &raw mut (*yyptr).yyss_alloc;
                 yynewbytes =
                     yystacksize * std::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
-                yyptr =
-                    yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
+                yyptr = yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
                 let mut yynewbytes_0: i64 = 0;
                 std::ptr::copy_nonoverlapping::<YYSTYPE>(
                     yyvs,
@@ -5002,17 +4983,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
                 yynewbytes_0 =
                     yystacksize * std::mem::size_of::<YYSTYPE>() as i64 + YYSTACK_GAP_MAXIMUM;
-                yyptr = yyptr
-                    .offset((yynewbytes_0 / std::mem::size_of::<yyalloc>() as i64) as isize);
+                yyptr =
+                    yyptr.offset((yynewbytes_0 / std::mem::size_of::<yyalloc>() as i64) as isize);
                 if yyss1 != &raw mut yyssa as *mut yy_state_t {
                     free(yyss1 as *mut ::core::ffi::c_void);
                 }
-                yyssp = yyss
-                    .offset(yysize as isize)
-                    .offset(-(1 as i32 as isize));
-                yyvsp = yyvs
-                    .offset(yysize as isize)
-                    .offset(-(1 as i32 as isize));
+                yyssp = yyss.offset(yysize as isize).offset(-(1 as i32 as isize));
+                yyvsp = yyvs.offset(yysize as isize).offset(-(1 as i32 as isize));
                 if yyss
                     .offset(yystacksize as isize)
                     .offset(-(1 as i32 as isize))
@@ -5055,8 +5032,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         yyn += yytoken as i32;
                         if yyn < 0 as i32
                             || YYLAST < yyn
-                            || yycheck[yyn as usize] as i32
-                                != yytoken as i32
+                            || yycheck[yyn as usize] as i32 != yytoken as i32
                         {
                             c2rust_current_block = 16146138031620631371;
                         } else {
@@ -5179,9 +5155,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.file = XkbFileCreate(
                                 (*yyvsp.offset(-5 as i32 as isize)).file_type,
                                 (*yyvsp.offset(-4 as i32 as isize)).str,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .fileList
-                                    .head as *mut ParseCommon,
+                                (*yyvsp.offset(-2 as i32 as isize)).fileList.head
+                                    as *mut ParseCommon,
                                 (*yyvsp.offset(-6 as i32 as isize)).mapFlags,
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -5199,29 +5174,16 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         9 => {
-                            if !(*yyvsp.offset(0 as i32 as isize))
-                                .file
-                                .is_null()
-                            {
-                                if !(*yyvsp.offset(-1 as i32 as isize))
-                                    .fileList
-                                    .head
-                                    .is_null()
-                                {
-                                    yyval.fileList.head = (*yyvsp
-                                        .offset(-1 as i32 as isize))
-                                    .fileList
-                                    .head;
-                                    (*yyval.fileList.last).common.next = &raw mut (*(*yyvsp
-                                        .offset(0 as i32 as isize))
-                                    .file)
-                                        .common
-                                        as *mut _ParseCommon;
-                                    yyval.fileList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).file;
+                            if !(*yyvsp.offset(0 as i32 as isize)).file.is_null() {
+                                if !(*yyvsp.offset(-1 as i32 as isize)).fileList.head.is_null() {
+                                    yyval.fileList.head =
+                                        (*yyvsp.offset(-1 as i32 as isize)).fileList.head;
+                                    (*yyval.fileList.last).common.next =
+                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).file).common
+                                            as *mut _ParseCommon;
+                                    yyval.fileList.last = (*yyvsp.offset(0 as i32 as isize)).file;
                                 } else {
-                                    yyval.fileList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).file;
+                                    yyval.fileList.last = (*yyvsp.offset(0 as i32 as isize)).file;
                                     yyval.fileList.head = yyval.fileList.last;
                                 }
                             }
@@ -5236,9 +5198,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.file = XkbFileCreate(
                                 (*yyvsp.offset(-5 as i32 as isize)).file_type,
                                 (*yyvsp.offset(-4 as i32 as isize)).str,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .anyList
-                                    .head,
+                                (*yyvsp.offset(-2 as i32 as isize)).anyList.head,
                                 (*yyvsp.offset(-6 as i32 as isize)).mapFlags,
                             );
                             c2rust_current_block = 9699707990742192723;
@@ -5264,8 +5224,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         17 => {
-                            yyval.mapFlags =
-                                (*yyvsp.offset(0 as i32 as isize)).mapFlags;
+                            yyval.mapFlags = (*yyvsp.offset(0 as i32 as isize)).mapFlags;
                             c2rust_current_block = 9699707990742192723;
                         }
                         18 => {
@@ -5273,15 +5232,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         19 => {
-                            yyval.mapFlags = ((*yyvsp.offset(-1 as i32 as isize))
-                                .mapFlags as u32
+                            yyval.mapFlags = ((*yyvsp.offset(-1 as i32 as isize)).mapFlags as u32
                                 | (*yyvsp.offset(0 as i32 as isize)).mapFlags as u32)
                                 as xkb_map_flags;
                             c2rust_current_block = 9699707990742192723;
                         }
                         20 => {
-                            yyval.mapFlags =
-                                (*yyvsp.offset(0 as i32 as isize)).mapFlags;
+                            yyval.mapFlags = (*yyvsp.offset(0 as i32 as isize)).mapFlags;
                             c2rust_current_block = 9699707990742192723;
                         }
                         21 => {
@@ -5317,83 +5274,48 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         29 => {
-                            if !(*yyvsp.offset(0 as i32 as isize))
-                                .any
-                                .is_null()
-                            {
-                                if !(*yyvsp.offset(-1 as i32 as isize))
-                                    .anyList
-                                    .head
-                                    .is_null()
-                                {
-                                    yyval.anyList.head = (*yyvsp
-                                        .offset(-1 as i32 as isize))
-                                    .anyList
-                                    .head;
-                                    let ref mut c2rust_fresh0 = (*(*yyvsp
-                                        .offset(-1 as i32 as isize))
-                                    .anyList
-                                    .last)
-                                        .next;
+                            if !(*yyvsp.offset(0 as i32 as isize)).any.is_null() {
+                                if !(*yyvsp.offset(-1 as i32 as isize)).anyList.head.is_null() {
+                                    yyval.anyList.head =
+                                        (*yyvsp.offset(-1 as i32 as isize)).anyList.head;
+                                    let ref mut c2rust_fresh0 =
+                                        (*(*yyvsp.offset(-1 as i32 as isize)).anyList.last).next;
                                     *c2rust_fresh0 =
-                                        (*yyvsp.offset(0 as i32 as isize)).any
-                                            as *mut _ParseCommon;
-                                    yyval.anyList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).any;
+                                        (*yyvsp.offset(0 as i32 as isize)).any as *mut _ParseCommon;
+                                    yyval.anyList.last = (*yyvsp.offset(0 as i32 as isize)).any;
                                 } else {
-                                    yyval.anyList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).any;
+                                    yyval.anyList.last = (*yyvsp.offset(0 as i32 as isize)).any;
                                     yyval.anyList.head = yyval.anyList.last;
                                 }
                             }
                             c2rust_current_block = 9699707990742192723;
                         }
                         30 => {
-                            let mut vmod: *mut VModDef = (*yyvsp
-                                .offset(0 as i32 as isize))
-                            .vmodList
-                            .head;
+                            let mut vmod: *mut VModDef =
+                                (*yyvsp.offset(0 as i32 as isize)).vmodList.head;
                             while !vmod.is_null() {
-                                (*vmod).merge =
-                                    (*yyvsp.offset(-1 as i32 as isize)).merge;
+                                (*vmod).merge = (*yyvsp.offset(-1 as i32 as isize)).merge;
                                 vmod = (*vmod).common.next as *mut VModDef;
                             }
-                            if !(*yyvsp.offset(-2 as i32 as isize))
-                                .anyList
-                                .head
-                                .is_null()
-                            {
-                                yyval.anyList.head = (*yyvsp
-                                    .offset(-2 as i32 as isize))
-                                .anyList
-                                .head;
-                                let ref mut c2rust_fresh1 = (*(*yyvsp
-                                    .offset(-2 as i32 as isize))
-                                .anyList
-                                .last)
-                                    .next;
-                                *c2rust_fresh1 = &raw mut (*(*yyvsp
-                                    .offset(0 as i32 as isize))
-                                .vmodList
-                                .head)
-                                    .common
-                                    as *mut _ParseCommon;
-                                yyval.anyList.last = &raw mut (*(*yyvsp
-                                    .offset(0 as i32 as isize))
-                                .vmodList
-                                .last)
-                                    .common;
+                            if !(*yyvsp.offset(-2 as i32 as isize)).anyList.head.is_null() {
+                                yyval.anyList.head =
+                                    (*yyvsp.offset(-2 as i32 as isize)).anyList.head;
+                                let ref mut c2rust_fresh1 =
+                                    (*(*yyvsp.offset(-2 as i32 as isize)).anyList.last).next;
+                                *c2rust_fresh1 =
+                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.head)
+                                        .common
+                                        as *mut _ParseCommon;
+                                yyval.anyList.last =
+                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.last)
+                                        .common;
                             } else {
-                                yyval.anyList.head = &raw mut (*(*yyvsp
-                                    .offset(0 as i32 as isize))
-                                .vmodList
-                                .head)
-                                    .common;
-                                yyval.anyList.last = &raw mut (*(*yyvsp
-                                    .offset(0 as i32 as isize))
-                                .vmodList
-                                .last)
-                                    .common;
+                                yyval.anyList.head =
+                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.head)
+                                        .common;
+                                yyval.anyList.last =
+                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.last)
+                                        .common;
                             }
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5405,72 +5327,69 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         32 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).var).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).var
-                                as *mut ParseCommon;
+                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         33 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).interp).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).interp
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).interp as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         34 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).keyCode).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).keyCode
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).keyCode as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         35 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).keyAlias).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).keyAlias
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).keyAlias as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         36 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).keyType).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).keyType
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).keyType as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         37 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).syms).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).syms
-                                as *mut ParseCommon;
+                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).syms as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         38 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).modMask).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).modMask
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).modMask as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         39 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).groupCompat)
-                                .merge = (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize))
-                                .groupCompat
-                                as *mut ParseCommon;
+                            (*(*yyvsp.offset(0 as i32 as isize)).groupCompat).merge =
+                                (*yyvsp.offset(-1 as i32 as isize)).merge;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).groupCompat as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         40 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).ledMap).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).ledMap
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).ledMap as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         41 => {
                             (*(*yyvsp.offset(0 as i32 as isize)).ledName).merge =
                                 (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).ledName
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).ledName as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         42 => {
@@ -5486,13 +5405,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         45 => {
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).unknown
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).unknown as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         46 => {
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).unknown
-                                as *mut ParseCommon;
+                            yyval.any =
+                                (*yyvsp.offset(0 as i32 as isize)).unknown as *mut ParseCommon;
                             c2rust_current_block = 9699707990742192723;
                         }
                         47 => {
@@ -5502,8 +5421,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 (*yyvsp.offset(-1 as i32 as isize)).merge,
                             ) as *mut ParseCommon;
                             free(
-                                (*yyvsp.offset(0 as i32 as isize)).str
-                                    as *mut ::core::ffi::c_void,
+                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5515,17 +5433,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         49 => {
-                            yyval.var = BoolVarCreate(
-                                (*yyvsp.offset(-1 as i32 as isize)).atom,
-                                true,
-                            );
+                            yyval.var =
+                                BoolVarCreate((*yyvsp.offset(-1 as i32 as isize)).atom, true);
                             c2rust_current_block = 9699707990742192723;
                         }
                         50 => {
-                            yyval.var = BoolVarCreate(
-                                (*yyvsp.offset(-1 as i32 as isize)).atom,
-                                false,
-                            );
+                            yyval.var =
+                                BoolVarCreate((*yyvsp.offset(-1 as i32 as isize)).atom, false);
                             c2rust_current_block = 9699707990742192723;
                         }
                         51 => {
@@ -5543,25 +5457,19 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         53 => {
-                            yyval.vmodList =
-                                (*yyvsp.offset(-1 as i32 as isize)).vmodList;
+                            yyval.vmodList = (*yyvsp.offset(-1 as i32 as isize)).vmodList;
                             c2rust_current_block = 9699707990742192723;
                         }
                         54 => {
-                            yyval.vmodList.head = (*yyvsp
-                                .offset(-2 as i32 as isize))
-                            .vmodList
-                            .head;
+                            yyval.vmodList.head = (*yyvsp.offset(-2 as i32 as isize)).vmodList.head;
                             (*yyval.vmodList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmod)
-                                    .common as *mut _ParseCommon;
-                            yyval.vmodList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).vmod;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmod).common
+                                    as *mut _ParseCommon;
+                            yyval.vmodList.last = (*yyvsp.offset(0 as i32 as isize)).vmod;
                             c2rust_current_block = 9699707990742192723;
                         }
                         55 => {
-                            yyval.vmodList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).vmod;
+                            yyval.vmodList.last = (*yyvsp.offset(0 as i32 as isize)).vmod;
                             yyval.vmodList.head = yyval.vmodList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5582,11 +5490,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         58 => {
                             let ref mut c2rust_fresh2 =
                                 (*(*yyvsp.offset(-4 as i32 as isize)).interp).def;
-                            *c2rust_fresh2 = (*yyvsp.offset(-2 as i32 as isize))
-                                .varList
-                                .head;
-                            yyval.interp =
-                                (*yyvsp.offset(-4 as i32 as isize)).interp;
+                            *c2rust_fresh2 = (*yyvsp.offset(-2 as i32 as isize)).varList.head;
+                            yyval.interp = (*yyvsp.offset(-4 as i32 as isize)).interp;
                             c2rust_current_block = 9699707990742192723;
                         }
                         59 => {
@@ -5604,29 +5509,16 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         61 => {
-                            if !(*yyvsp.offset(0 as i32 as isize))
-                                .var
-                                .is_null()
-                            {
-                                if !(*yyvsp.offset(-1 as i32 as isize))
-                                    .varList
-                                    .head
-                                    .is_null()
-                                {
-                                    yyval.varList.head = (*yyvsp
-                                        .offset(-1 as i32 as isize))
-                                    .varList
-                                    .head;
-                                    (*yyval.varList.last).common.next = &raw mut (*(*yyvsp
-                                        .offset(0 as i32 as isize))
-                                    .var)
-                                        .common
-                                        as *mut _ParseCommon;
-                                    yyval.varList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).var;
+                            if !(*yyvsp.offset(0 as i32 as isize)).var.is_null() {
+                                if !(*yyvsp.offset(-1 as i32 as isize)).varList.head.is_null() {
+                                    yyval.varList.head =
+                                        (*yyvsp.offset(-1 as i32 as isize)).varList.head;
+                                    (*yyval.varList.last).common.next =
+                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).var).common
+                                            as *mut _ParseCommon;
+                                    yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
                                 } else {
-                                    yyval.varList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).var;
+                                    yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
                                     yyval.varList.head = yyval.varList.last;
                                 }
                             }
@@ -5640,24 +5532,19 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         63 => {
                             yyval.keyType = KeyTypeCreate(
                                 (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .varList
-                                    .head,
+                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         64 => {
                             yyval.syms = SymbolsCreate(
                                 (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .varList
-                                    .head,
+                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         65 => {
-                            yyval.varList =
-                                (*yyvsp.offset(0 as i32 as isize)).varList;
+                            yyval.varList = (*yyvsp.offset(0 as i32 as isize)).varList;
                             c2rust_current_block = 9699707990742192723;
                         }
                         66 => {
@@ -5666,19 +5553,15 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         67 => {
-                            yyval.varList.head = (*yyvsp.offset(-2 as i32 as isize))
-                                .varList
-                                .head;
+                            yyval.varList.head = (*yyvsp.offset(-2 as i32 as isize)).varList.head;
                             (*yyval.varList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).var)
-                                    .common as *mut _ParseCommon;
-                            yyval.varList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).var;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).var).common
+                                    as *mut _ParseCommon;
+                            yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
                             c2rust_current_block = 9699707990742192723;
                         }
                         68 => {
-                            yyval.varList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).var;
+                            yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
                             yyval.varList.head = yyval.varList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5697,17 +5580,13 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         71 => {
-                            yyval.var = BoolVarCreate(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                                true,
-                            );
+                            yyval.var =
+                                BoolVarCreate((*yyvsp.offset(0 as i32 as isize)).atom, true);
                             c2rust_current_block = 9699707990742192723;
                         }
                         72 => {
-                            yyval.var = BoolVarCreate(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                                false,
-                            );
+                            yyval.var =
+                                BoolVarCreate((*yyvsp.offset(0 as i32 as isize)).atom, false);
                             c2rust_current_block = 9699707990742192723;
                         }
                         73 => {
@@ -5718,25 +5597,16 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         74 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize))
-                                .exprList
-                                .head;
+                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).exprList.head;
                             c2rust_current_block = 9699707990742192723;
                         }
                         75 => {
                             let mut list: C2Rust_Unnamed_9 = C2Rust_Unnamed_9 {
-                                head: (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head,
-                                last: (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .last,
+                                head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
+                                last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
                             };
                             let mut k: u32 = 0 as u32;
-                            while k
-                                < (*yyvsp.offset(-3 as i32 as isize))
-                                    .noSymbolOrActionList
-                            {
+                            while k < (*yyvsp.offset(-3 as i32 as isize)).noSymbolOrActionList {
                                 let syms: *mut ExprDef =
                                     ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t)
                                         as *mut ExprDef;
@@ -5753,28 +5623,18 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         76 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize))
-                                .exprList
-                                .head;
+                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).exprList.head;
                             c2rust_current_block = 9699707990742192723;
                         }
                         77 => {
                             let mut list_0: C2Rust_Unnamed_8 = C2Rust_Unnamed_8 {
-                                head: (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head,
-                                last: (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .last,
+                                head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
+                                last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
                             };
                             let mut k_0: u32 = 0 as u32;
-                            while k_0
-                                < (*yyvsp.offset(-3 as i32 as isize))
-                                    .noSymbolOrActionList
-                            {
+                            while k_0 < (*yyvsp.offset(-3 as i32 as isize)).noSymbolOrActionList {
                                 let acts: *mut ExprDef =
-                                    ExprCreateActionList(std::ptr::null_mut())
-                                        as *mut ExprDef;
+                                    ExprCreateActionList(std::ptr::null_mut()) as *mut ExprDef;
                                 if acts.is_null() {
                                     c2rust_current_block = 7267896227379959561;
                                     break 's_60;
@@ -5792,10 +5652,9 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         79 => {
-                            yyval.noSymbolOrActionList = (*yyvsp
-                                .offset(-3 as i32 as isize))
-                            .noSymbolOrActionList
-                            .wrapping_add(1 as u32);
+                            yyval.noSymbolOrActionList = (*yyvsp.offset(-3 as i32 as isize))
+                                .noSymbolOrActionList
+                                .wrapping_add(1 as u32);
                             c2rust_current_block = 9699707990742192723;
                         }
                         80 => {
@@ -5816,48 +5675,36 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         83 => {
                             yyval.modMask = ModMapCreate(
                                 (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .exprList
-                                    .head,
+                                (*yyvsp.offset(-2 as i32 as isize)).exprList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         84 => {
-                            yyval.exprList.head = (*yyvsp
-                                .offset(-2 as i32 as isize))
-                            .exprList
-                            .head;
+                            yyval.exprList.head = (*yyvsp.offset(-2 as i32 as isize)).exprList.head;
                             (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr)
-                                    .common as *mut _ParseCommon;
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
+                                    as *mut _ParseCommon;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             c2rust_current_block = 9699707990742192723;
                         }
                         85 => {
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
                         86 => {
-                            yyval.expr = ExprCreateKeyName(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                            );
+                            yyval.expr = ExprCreateKeyName((*yyvsp.offset(0 as i32 as isize)).atom);
                             c2rust_current_block = 9699707990742192723;
                         }
                         87 => {
-                            yyval.expr = ExprCreateKeySym(
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                            );
+                            yyval.expr =
+                                ExprCreateKeySym((*yyvsp.offset(0 as i32 as isize)).keysym);
                             c2rust_current_block = 9699707990742192723;
                         }
                         88 => {
                             yyval.ledMap = LedMapCreate(
                                 (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .varList
-                                    .head,
+                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5878,14 +5725,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         91 => {
-                            FreeStmt(
-                                (*yyvsp.offset(-3 as i32 as isize)).expr
-                                    as *mut ParseCommon,
-                            );
-                            FreeStmt(
-                                (*yyvsp.offset(-1 as i32 as isize)).expr
-                                    as *mut ParseCommon,
-                            );
+                            FreeStmt((*yyvsp.offset(-3 as i32 as isize)).expr as *mut ParseCommon);
+                            FreeStmt((*yyvsp.offset(-1 as i32 as isize)).expr as *mut ParseCommon);
                             yyval.unknown = UnknownStatementCreate(
                                 STMT_UNKNOWN_DECLARATION,
                                 (*yyvsp.offset(-4 as i32 as isize)).sval,
@@ -5893,14 +5734,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         92 => {
+                            FreeStmt((*yyvsp.offset(-4 as i32 as isize)).expr as *mut ParseCommon);
                             FreeStmt(
-                                (*yyvsp.offset(-4 as i32 as isize)).expr
+                                (*yyvsp.offset(-2 as i32 as isize)).varList.head
                                     as *mut ParseCommon,
-                            );
-                            FreeStmt(
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .varList
-                                    .head as *mut ParseCommon,
                             );
                             yyval.unknown = UnknownStatementCreate(
                                 STMT_UNKNOWN_COMPOUND,
@@ -5933,10 +5770,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         99 => {
-                            FreeStmt(
-                                (*yyvsp.offset(0 as i32 as isize)).var
-                                    as *mut ParseCommon,
-                            );
+                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon);
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5945,10 +5779,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         101 => {
-                            FreeStmt(
-                                (*yyvsp.offset(0 as i32 as isize)).ledMap
-                                    as *mut ParseCommon,
-                            );
+                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).ledMap as *mut ParseCommon);
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5969,10 +5800,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         106 => {
-                            FreeStmt(
-                                (*yyvsp.offset(0 as i32 as isize)).var
-                                    as *mut ParseCommon,
-                            );
+                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon);
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -5990,9 +5818,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         }
                         110 => {
                             FreeStmt(
-                                (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head as *mut ParseCommon,
+                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head
+                                    as *mut ParseCommon,
                             );
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
@@ -6030,10 +5857,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         119 => {
-                            FreeStmt(
-                                (*yyvsp.offset(0 as i32 as isize)).expr
-                                    as *mut ParseCommon,
-                            );
+                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).expr as *mut ParseCommon);
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6051,9 +5875,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         }
                         123 => {
                             FreeStmt(
-                                (*yyvsp.offset(-2 as i32 as isize))
-                                    .varList
-                                    .head as *mut ParseCommon,
+                                (*yyvsp.offset(-2 as i32 as isize)).varList.head
+                                    as *mut ParseCommon,
                             );
                             yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
                             c2rust_current_block = 9699707990742192723;
@@ -6086,8 +5909,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"action\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 7]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6095,8 +5917,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"interpret\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 10]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6104,8 +5925,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"type\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 5]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6113,8 +5933,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"key\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 4]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6122,8 +5941,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"group\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 6]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6131,8 +5949,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"modifier_map\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 13]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 13]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6140,8 +5957,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"indicator\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 10]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6149,8 +5965,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"shape\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 6]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6158,8 +5973,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"row\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 4]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6167,8 +5981,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"section\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 8]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6176,8 +5989,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"text\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 5]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6220,37 +6032,23 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         148 => {
-                            if !(*yyvsp.offset(0 as i32 as isize))
-                                .expr
-                                .is_null()
-                            {
-                                if !(*yyvsp.offset(-2 as i32 as isize))
-                                    .exprList
-                                    .head
-                                    .is_null()
-                                {
-                                    yyval.exprList.head = (*yyvsp
-                                        .offset(-2 as i32 as isize))
-                                    .exprList
-                                    .head;
-                                    (*yyval.exprList.last).common.next = &raw mut (*(*yyvsp
-                                        .offset(0 as i32 as isize))
-                                    .expr)
-                                        .common
-                                        as *mut _ParseCommon;
-                                    yyval.exprList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).expr;
+                            if !(*yyvsp.offset(0 as i32 as isize)).expr.is_null() {
+                                if !(*yyvsp.offset(-2 as i32 as isize)).exprList.head.is_null() {
+                                    yyval.exprList.head =
+                                        (*yyvsp.offset(-2 as i32 as isize)).exprList.head;
+                                    (*yyval.exprList.last).common.next =
+                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
+                                            as *mut _ParseCommon;
+                                    yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                                 } else {
-                                    yyval.exprList.last =
-                                        (*yyvsp.offset(0 as i32 as isize)).expr;
+                                    yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                                     yyval.exprList.head = yyval.exprList.last;
                                 }
                             }
                             c2rust_current_block = 9699707990742192723;
                         }
                         149 => {
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6338,9 +6136,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         162 => {
                             yyval.expr = ExprCreateAction(
                                 (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head,
+                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6357,60 +6153,49 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         166 => {
-                            let mut expr: *mut ExprDef = ExprCreateActionList(
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            yyval.exprList =
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList;
+                            let mut expr: *mut ExprDef =
+                                ExprCreateActionList((*yyvsp.offset(0 as i32 as isize)).expr);
+                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
                             (*yyval.exprList.last).common.next =
                                 &raw mut (*expr).common as *mut _ParseCommon;
                             yyval.exprList.last = expr;
                             c2rust_current_block = 9699707990742192723;
                         }
                         167 => {
-                            yyval.exprList =
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList;
+                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
                             (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr)
-                                    .common as *mut _ParseCommon;
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
+                                    as *mut _ParseCommon;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             c2rust_current_block = 9699707990742192723;
                         }
                         168 => {
-                            yyval.exprList.last = ExprCreateActionList(
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
+                            yyval.exprList.last =
+                                ExprCreateActionList((*yyvsp.offset(0 as i32 as isize)).expr);
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
                         169 => {
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
                         170 => {
-                            yyval.exprList =
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList;
+                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
                             (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr)
-                                    .common as *mut _ParseCommon;
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
+                                    as *mut _ParseCommon;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             c2rust_current_block = 9699707990742192723;
                         }
                         171 => {
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
                         172 => {
                             yyval.expr = ExprCreateActionList(
-                                (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head,
+                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6425,16 +6210,12 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         175 => {
                             yyval.expr = ExprCreateAction(
                                 (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize))
-                                    .exprList
-                                    .head,
+                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         176 => {
-                            yyval.expr = ExprCreateIdent(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                            );
+                            yyval.expr = ExprCreateIdent((*yyvsp.offset(0 as i32 as isize)).atom);
                             c2rust_current_block = 9699707990742192723;
                         }
                         177 => {
@@ -6469,15 +6250,11 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         182 => {
-                            yyval.expr = ExprCreateString(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                            );
+                            yyval.expr = ExprCreateString((*yyvsp.offset(0 as i32 as isize)).atom);
                             c2rust_current_block = 9699707990742192723;
                         }
                         183 => {
-                            yyval.expr = ExprCreateInteger(
-                                (*yyvsp.offset(0 as i32 as isize)).num,
-                            );
+                            yyval.expr = ExprCreateInteger((*yyvsp.offset(0 as i32 as isize)).num);
                             c2rust_current_block = 9699707990742192723;
                         }
                         184 => {
@@ -6485,42 +6262,34 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         185 => {
-                            yyval.expr = ExprCreateKeyName(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                            );
+                            yyval.expr = ExprCreateKeyName((*yyvsp.offset(0 as i32 as isize)).atom);
                             c2rust_current_block = 9699707990742192723;
                         }
                         186 => {
-                            let mut expr_0: *mut ExprDef = ExprCreateKeySymList(
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                            );
-                            yyval.exprList =
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList;
+                            let mut expr_0: *mut ExprDef =
+                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
+                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
                             (*yyval.exprList.last).common.next =
                                 &raw mut (*expr_0).common as *mut _ParseCommon;
                             yyval.exprList.last = expr_0;
                             c2rust_current_block = 9699707990742192723;
                         }
                         187 => {
-                            yyval.exprList =
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList;
+                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
                             (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr)
-                                    .common as *mut _ParseCommon;
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
+                                    as *mut _ParseCommon;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             c2rust_current_block = 9699707990742192723;
                         }
                         188 => {
-                            yyval.exprList.last = ExprCreateKeySymList(
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                            );
+                            yyval.exprList.last =
+                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
                         189 => {
-                            yyval.exprList.last =
-                                (*yyvsp.offset(0 as i32 as isize)).expr;
+                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
                             yyval.exprList.head = yyval.exprList.last;
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6538,8 +6307,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 (*yyvsp.offset(0 as i32 as isize)).str,
                             );
                             free(
-                                (*yyvsp.offset(0 as i32 as isize)).str
-                                    as *mut ::core::ffi::c_void,
+                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
                             );
                             if yyval.expr.is_null() {
                                 c2rust_current_block = 9017681648503218951;
@@ -6548,9 +6316,8 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             }
                         }
                         192 => {
-                            yyval.expr = ExprCreateKeySymList(
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                            );
+                            yyval.expr =
+                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
                             if yyval.expr.is_null() {
                                 c2rust_current_block = 9017681648503218951;
                             } else {
@@ -6621,8 +6388,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 (*yyvsp.offset(0 as i32 as isize)).str,
                             );
                             free(
-                                (*yyvsp.offset(0 as i32 as isize)).str
-                                    as *mut ::core::ffi::c_void,
+                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
                             );
                             if yyval.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
                                 c2rust_current_block = 9017681648503218951;
@@ -6662,15 +6428,12 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         }
                         202 => {
                             yyval.keysym = (XKB_KEY_0 as xkb_keysym_t).wrapping_add(
-                                (*yyvsp.offset(0 as i32 as isize)).num
-                                    as xkb_keysym_t,
+                                (*yyvsp.offset(0 as i32 as isize)).num as xkb_keysym_t,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
                         203 => {
-                            if (*yyvsp.offset(0 as i32 as isize)).num
-                                < XKB_KEYSYM_MIN as i64
-                            {
+                            if (*yyvsp.offset(0 as i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
                                 let mut loc_1: scanner_loc =
                                     scanner_token_location((*param).scanner);
                                 xkb_logf!(
@@ -6687,15 +6450,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 );
                                 yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
                             } else {
-                                if (*yyvsp.offset(0 as i32 as isize)).num
-                                    <= XKB_KEYSYM_MAX as i64
-                                {
-                                    yyval.keysym = (*yyvsp.offset(0 as i32 as isize))
-                                        .num
-                                        as xkb_keysym_t;
-                                    if ((*(*param).ctx).log_verbosity >= 2 as i32)
-                                        as i32
-                                        as i64
+                                if (*yyvsp.offset(0 as i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
+                                    yyval.keysym =
+                                        (*yyvsp.offset(0 as i32 as isize)).num as xkb_keysym_t;
+                                    if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64
                                         != 0
                                     {
                                         let mut ref_name: *const i8 = std::ptr::null();
@@ -6822,8 +6580,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyval.atom = xkb_atom_intern(
                                 (*param).ctx,
                                 b"default\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 8]>())
-                                    .wrapping_sub(1 as usize),
+                                (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6834,8 +6591,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 cstr_len((*yyvsp.offset(0 as i32 as isize)).str),
                             );
                             free(
-                                (*yyvsp.offset(0 as i32 as isize)).str
-                                    as *mut ::core::ffi::c_void,
+                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
                             );
                             c2rust_current_block = 9699707990742192723;
                         }
@@ -6870,15 +6626,11 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yylen = 0 as i32;
                             yyvsp = yyvsp.offset(1);
                             *yyvsp = yyval;
-                            let yylhs: i32 =
-                                yyr1[yyn as usize] as i32 - YYNTOKENS;
-                            let yyi: i32 = yypgoto[yylhs as usize]
-                                as i32
-                                + *yyssp as i32;
+                            let yylhs: i32 = yyr1[yyn as usize] as i32 - YYNTOKENS;
+                            let yyi: i32 = yypgoto[yylhs as usize] as i32 + *yyssp as i32;
                             yystate = (if 0 as i32 <= yyi
                                 && yyi <= YYLAST
-                                && yycheck[yyi as usize] as i32
-                                    == *yyssp as i32
+                                && yycheck[yyi as usize] as i32 == *yyssp as i32
                             {
                                 yytable[yyi as usize] as i32
                             } else {
@@ -6899,8 +6651,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             yyn += YYSYMBOL_YYerror as i32;
                             if 0 as i32 <= yyn
                                 && yyn <= YYLAST
-                                && yycheck[yyn as usize] as i32
-                                    == YYSYMBOL_YYerror as i32
+                                && yycheck[yyn as usize] as i32 == YYSYMBOL_YYerror as i32
                             {
                                 yyn = yytable[yyn as usize] as i32;
                                 if (0 as i32) < yyn {

@@ -2,7 +2,6 @@ use crate::xkb::context_priv::xkb_atom_intern;
 use crate::xkb::shared_types::*;
 use crate::xkb_logf;
 
-use crate::xkb::text::LookupEntry;
 pub mod parser_h {
     pub type yytokentype = i32;
     pub const ALTERNATE_GROUP: yytokentype = 77;
@@ -244,25 +243,24 @@ pub use crate::xkb::scanner_utils::{
     scanner_unicode_code_point, sval,
 };
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, C2Rust_Unnamed_1,
-    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
-    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
-    GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
-    ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
+    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction, ExprActionList,
+    ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
+    ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef, InterpDef,
+    KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
+    UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
+    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
+    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
+    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
+    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
+    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
@@ -274,11 +272,7 @@ pub use crate::xkb::utils::{
 };
 use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-unsafe fn number(
-    mut s: *mut scanner,
-    mut out: *mut i64,
-    mut out_tok: *mut i32,
-) -> bool {
+unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) -> bool {
     unsafe {
         if scanner_str(
             s,
@@ -364,10 +358,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
         (*s).token_pos = (*s).pos;
         (*s).buf_pos = 0 as usize;
         if scanner_chr(s, '"' as i32 as i8) {
-            while !scanner_eof(s)
-                && !scanner_eol(s)
-                && scanner_peek(s) as i32 != '"' as i32
-            {
+            while !scanner_eof(s) && !scanner_eol(s) && scanner_peek(s) as i32 != '"' as i32 {
                 if scanner_chr(s, '\\' as i32 as i8) {
                     let mut o: u8 = 0;
                     let start_pos: usize = (*s).pos;
@@ -468,9 +459,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             return STRING as i32;
         }
         if scanner_chr(s, '<' as i32 as i8) {
-            while is_graph(scanner_peek(s)) as i32 != 0
-                && scanner_peek(s) as i32 != '>' as i32
-            {
+            while is_graph(scanner_peek(s)) as i32 != 0 && scanner_peek(s) as i32 != '>' as i32 {
                 scanner_next(s);
             }
             if !scanner_chr(s, '>' as i32 as i8) {
@@ -546,12 +535,8 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             return INVERT as i32;
         }
         let mut tok: i32 = ERROR_TOK as i32;
-        if is_alpha(scanner_peek(s)) as i32 != 0
-            || scanner_peek(s) as i32 == '_' as i32
-        {
-            while is_alnum(scanner_peek(s)) as i32 != 0
-                || scanner_peek(s) as i32 == '_' as i32
-            {
+        if is_alpha(scanner_peek(s)) as i32 != 0 || scanner_peek(s) as i32 == '_' as i32 {
+            while is_alnum(scanner_peek(s)) as i32 != 0 || scanner_peek(s) as i32 == '_' as i32 {
                 scanner_next(s);
             }
             let mut start_0: *const i8 = (*s).s.offset((*s).token_pos as isize);

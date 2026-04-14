@@ -15,22 +15,21 @@ pub use crate::xkb::registry::{
     rxkb_iso3166_code, rxkb_iso3166_code_get_code, rxkb_iso3166_code_next, rxkb_iso639_code,
     rxkb_iso639_code_get_code, rxkb_iso639_code_next, rxkb_layout, rxkb_layout_first,
     rxkb_layout_get_brief, rxkb_layout_get_description, rxkb_layout_get_iso3166_first,
-    rxkb_layout_get_iso639_first, rxkb_layout_get_name, rxkb_layout_get_variant,
-    rxkb_layout_next, rxkb_model, rxkb_model_first, rxkb_model_get_description,
-    rxkb_model_get_name, rxkb_model_get_vendor, rxkb_model_next, rxkb_option,
-    rxkb_option_first, rxkb_option_get_brief, rxkb_option_get_description,
-    rxkb_option_get_name, rxkb_option_group, rxkb_option_group_allows_multiple,
-    rxkb_option_group_first, rxkb_option_group_get_description, rxkb_option_group_get_name,
-    rxkb_option_group_next, rxkb_option_is_layout_specific, rxkb_option_next,
+    rxkb_layout_get_iso639_first, rxkb_layout_get_name, rxkb_layout_get_variant, rxkb_layout_next,
+    rxkb_model, rxkb_model_first, rxkb_model_get_description, rxkb_model_get_name,
+    rxkb_model_get_vendor, rxkb_model_next, rxkb_option, rxkb_option_first, rxkb_option_get_brief,
+    rxkb_option_get_description, rxkb_option_get_name, rxkb_option_group,
+    rxkb_option_group_allows_multiple, rxkb_option_group_first, rxkb_option_group_get_description,
+    rxkb_option_group_get_name, rxkb_option_group_next, rxkb_option_is_layout_specific,
+    rxkb_option_next,
 };
-use crate::xkb::shared_types::*;
-use crate::xkb::utils::{optarg, optind};
-pub use crate::xkb::utils::getopt_long;
-pub use crate::xkb::shared_types::{no_argument, option, required_argument};
-pub use crate::xkb::utils::setlocale;
-pub use crate::xkb::shared_types::LC_ALL;
 pub use crate::xkb::shared_types::__LC_ALL;
 use crate::xkb::shared_types::DEFAULT_XKB_RULES;
+pub use crate::xkb::shared_types::LC_ALL;
+pub use crate::xkb::shared_types::{no_argument, option, required_argument};
+pub use crate::xkb::utils::getopt_long;
+pub use crate::xkb::utils::setlocale;
+use crate::xkb::utils::{optarg, optind};
 use libc::{EXIT_FAILURE, EXIT_SUCCESS, FILE};
 extern "C" {
     pub static stderr: *mut libc::FILE;
@@ -139,8 +138,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             }
         }
         if optind < argc {
-            flags = (flags as u32 | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32)
-                as rxkb_context_flags;
+            flags = (flags as u32 | RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32) as rxkb_context_flags;
         }
         ctx = rxkb_context_new(flags);
         if ctx.is_null() {
@@ -220,10 +218,8 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                         print!("layouts:\n");
                         l = rxkb_layout_first(ctx);
                         while !l.is_null() {
-                            let mut iso639: *mut rxkb_iso639_code =
-                                std::ptr::null_mut();
-                            let mut iso3166: *mut rxkb_iso3166_code =
-                                std::ptr::null_mut();
+                            let mut iso639: *mut rxkb_iso639_code = std::ptr::null_mut();
+                            let mut iso3166: *mut rxkb_iso3166_code = std::ptr::null_mut();
                             let mut variant: *const i8 = rxkb_layout_get_variant(l);
                             let mut brief: *const i8 = rxkb_layout_get_brief(l);
                             print!(

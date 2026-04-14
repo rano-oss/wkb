@@ -56,29 +56,27 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, scanner_token_location, sval};
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags,
-    C2Rust_Unnamed_1, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction,
+    ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
+    ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef,
+    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
+    ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES,
+    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
+    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
+    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
+    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
+    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
+    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
+    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
+    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{darray_append, darray_free};
 pub use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{
     ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
@@ -259,16 +257,10 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
         if expr.is_null() {
             return std::ptr::null_mut();
         }
-        (*expr).keysym_list.syms.item = std::ptr::null_mut();
-        (*expr).keysym_list.syms.size = 0 as darray_size_t;
-        (*expr).keysym_list.syms.alloc = 0 as darray_size_t;
+        let ksl = expr as *mut ExprKeysymList;
+        std::ptr::write(&raw mut (*ksl).syms, Vec::new());
         if !(sym == XKB_KEY_NoSymbol as xkb_keysym_t) {
-            darray_append(
-                &mut (*expr).keysym_list.syms.item,
-                &mut (*expr).keysym_list.syms.size,
-                &mut (*expr).keysym_list.syms.alloc,
-                sym,
-            );
+            (&mut (*ksl).syms).push(sym);
         }
         return expr;
     }
@@ -277,12 +269,8 @@ pub unsafe fn ExprCreateKeySymList(mut sym: xkb_keysym_t) -> *mut ExprDef {
 pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: xkb_keysym_t) -> *mut ExprDef {
     unsafe {
         if !(sym == XKB_KEY_NoSymbol as xkb_keysym_t) {
-            darray_append(
-                &mut (*expr).keysym_list.syms.item,
-                &mut (*expr).keysym_list.syms.size,
-                &mut (*expr).keysym_list.syms.alloc,
-                sym,
-            );
+            let ksl = expr as *mut ExprKeysymList;
+            (&mut (*ksl).syms).push(sym);
         }
         return expr;
     }
@@ -344,12 +332,8 @@ pub unsafe fn ExprKeySymListAppendString(
                     c2rust_current_block = 5140853804782746302;
                     break;
                 } else {
-                    darray_append(
-                        &mut (*expr).keysym_list.syms.item,
-                        &mut (*expr).keysym_list.syms.size,
-                        &mut (*expr).keysym_list.syms.alloc,
-                        sym,
-                    );
+                    let ksl = expr as *mut ExprKeysymList;
+                    (&mut (*ksl).syms).push(sym);
                     idx = idx.wrapping_add(count);
                     idx_cp = idx_cp.wrapping_add(1);
                 }
@@ -836,11 +820,9 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                     FreeStmt((*(stmt as *mut ExprArrayRef)).entry as *mut ParseCommon);
                 }
                 15 => {
-                    darray_free(
-                        &mut (*(stmt as *mut ExprKeysymList)).syms.item,
-                        &mut (*(stmt as *mut ExprKeysymList)).syms.size,
-                        &mut (*(stmt as *mut ExprKeysymList)).syms.alloc,
-                    );
+                    // Drop the Vec to free its buffer
+                    let ksl = stmt as *mut ExprKeysymList;
+                    std::ptr::drop_in_place(&raw mut (*ksl).syms);
                 }
                 26 => {
                     FreeStmt((*(stmt as *mut VarDef)).name as *mut ParseCommon);

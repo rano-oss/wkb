@@ -1,6 +1,3 @@
-extern "C" {
-    pub type xkb_compose_state;
-}
 pub type key_seq_state = u32;
 pub const FINISH: key_seq_state = 5;
 pub const NEXT: key_seq_state = 4;
@@ -131,6 +128,7 @@ use libc::{
     fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf,
     unsetenv, _IONBF, BUFSIZ, EXIT_SUCCESS, FILE,
 };
+use xkbcommon::xkb::ffi::compose::xkb_compose_state;
 extern "C" {
     pub static stdout: *mut libc::FILE;
 }

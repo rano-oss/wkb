@@ -840,7 +840,7 @@ use crate::xkb::utils::{__errno_location, _steal, cstr_dup};
 pub use crate::xkb::utils::{
     check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
 };
-use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, darray_append, darray_free};
+use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
 use libc::{free, getenv, qsort, strtol};
 extern "C" {
     fn vsnprintf(s: *mut i8, maxlen: usize, format: *const i8, ...) -> i32;
@@ -848,7 +848,6 @@ extern "C" {
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_context {
     pub base: rxkb_object,
@@ -858,17 +857,10 @@ pub struct rxkb_context {
     pub models: list,
     pub layouts: list,
     pub option_groups: list,
-    pub includes: C2Rust_Unnamed_0,
+    pub includes: Vec<*mut i8>,
     pub log_fn: Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>,
     pub log_level: rxkb_log_level,
     pub userdata: *mut ::core::ffi::c_void,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_0 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut *mut i8,
 }
 pub type context_state = u32;
 pub const CONTEXT_FAILED: context_state = 2;
@@ -1541,19 +1533,10 @@ unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
             ogtmp = ((*og).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                 as *mut rxkb_option_group as *mut rxkb_option_group;
         }
-        if !(*ctx).includes.item.is_null() {
-            path = (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8;
-            while path < (*ctx).includes.item.offset((*ctx).includes.size as isize) as *mut *mut i8
-            {
-                cstr_free(*path);
-                path = path.offset(1);
-            }
+        for &p in &(*ctx).includes {
+            cstr_free(p);
         }
-        darray_free(
-            &mut (*ctx).includes.item,
-            &mut (*ctx).includes.size,
-            &mut (*ctx).includes.alloc,
-        );
+        (*ctx).includes.clear();
     }
 }
 
@@ -1580,7 +1563,13 @@ pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_con
 #[inline]
 unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
     unsafe {
-        let mut t: *mut rxkb_context = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_context>()));
+        let layout = std::alloc::Layout::new::<rxkb_context>();
+        let ptr = std::alloc::alloc_zeroed(layout) as *mut rxkb_context;
+        if ptr.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+        std::ptr::write(&raw mut (*ptr).includes, Vec::new());
+        let t: *mut rxkb_context = Box::into_raw(Box::from_raw(ptr));
         rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
@@ -1858,12 +1847,7 @@ pub unsafe fn rxkb_context_include_path_append(
                     if tmp.is_null() {
                         err = ENOMEM;
                     } else {
-                        darray_append(
-                            &mut (*ctx).includes.item,
-                            &mut (*ctx).includes.size,
-                            &mut (*ctx).includes.alloc,
-                            tmp,
-                        );
+                        (&mut (*ctx).includes).push(tmp);
                         rxkb_logf!(
                             ctx,
                             RXKB_LOG_LEVEL_INFO,
@@ -1896,7 +1880,7 @@ unsafe extern "C" fn compare_str(
 unsafe fn add_direct_subdirectories(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
-    mut extensions: *mut darray_string,
+    extensions: &mut Vec<*mut i8>,
     mut versioned_count: darray_size_t,
     mut versioned_path_length: usize,
 ) -> i32 {
@@ -1986,8 +1970,8 @@ unsafe fn add_direct_subdirectories(
                         }
                         let mut i: darray_size_t = 0 as darray_size_t;
                         while i < versioned_count {
-                            let prev_name: *const i8 = (*(*extensions).item.offset(i as isize))
-                                .offset(versioned_path_length as isize);
+                            let prev_name: *const i8 =
+                                (extensions[i as usize]).offset(versioned_path_length as isize);
                             if cstr_cmp(name, prev_name) == 0 as i32 {
                                 continue 's_62;
                             }
@@ -1999,12 +1983,7 @@ unsafe fn add_direct_subdirectories(
                             c2rust_current_block = 17009998909239196508;
                             break;
                         } else {
-                            darray_append(
-                                &mut (*extensions).item,
-                                &mut (*extensions).size,
-                                &mut (*extensions).alloc,
-                                ext_path,
-                            );
+                            extensions.push(ext_path);
                         }
                     }
                 }
@@ -2012,11 +1991,11 @@ unsafe fn add_direct_subdirectories(
                     17009998909239196508 => {}
                     _ => {
                         closedir(dir);
-                        if (*extensions).size > versioned_count {
+                        if extensions.len() > versioned_count as usize {
                             qsort(
-                                (*extensions).item.offset(versioned_count as isize)
+                                extensions.as_mut_ptr().add(versioned_count as usize)
                                     as *mut ::core::ffi::c_void,
-                                (*extensions).size.wrapping_sub(versioned_count) as usize,
+                                extensions.len().wrapping_sub(versioned_count as usize),
                                 std::mem::size_of::<*mut i8>(),
                                 Some(
                                     compare_str
@@ -2027,18 +2006,8 @@ unsafe fn add_direct_subdirectories(
                                             -> i32,
                                 ),
                             );
-                            let mut ext_path_0: *mut *mut i8 = std::ptr::null_mut();
-                            if !(*extensions).item.is_null() {
-                                ext_path_0 = (*extensions).item.offset(versioned_count as isize)
-                                    as *mut *mut i8;
-                                while ext_path_0
-                                    < (*extensions).item.offset((*extensions).size as isize)
-                                        as *mut *mut i8
-                                {
-                                    ret |=
-                                        rxkb_context_include_path_append(ctx, *ext_path_0) as i32;
-                                    ext_path_0 = ext_path_0.offset(1);
-                                }
+                            for i in (versioned_count as usize)..extensions.len() {
+                                ret |= rxkb_context_include_path_append(ctx, extensions[i]) as i32;
                             }
                         }
                         return ret;
@@ -2116,11 +2085,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
                     DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
                 },
             ) as i32;
-        let mut extensions: darray_string = darray_string {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
-        };
+        let mut extensions: Vec<*mut i8> = Vec::new();
         let mut extensions_path: *const i8 = rxkb_context_getenv(
             ctx,
             b"XKB_CONFIG_VERSIONED_EXTENSIONS_PATH\0".as_ptr() as *const i8,
@@ -2134,7 +2099,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
-                    &raw mut extensions,
+                    &mut extensions,
                     0 as darray_size_t,
                     0 as usize,
                 );
@@ -2148,28 +2113,20 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
             extensions_path = DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.as_ptr();
         }
         if !extensions_path.is_null() {
+            let ext_count = extensions.len() as darray_size_t;
             ret = ret as i32
                 | add_direct_subdirectories(
                     ctx,
                     extensions_path,
-                    &raw mut extensions,
-                    extensions.size,
+                    &mut extensions,
+                    ext_count,
                     versioned_path_length,
                 );
         }
-        let mut ext_path: *mut *mut i8 = std::ptr::null_mut();
-        if !extensions.item.is_null() {
-            ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
-            while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
-                cstr_free(*ext_path);
-                ext_path = ext_path.offset(1);
-            }
+        for &p in &extensions {
+            cstr_free(p);
         }
-        darray_free(
-            &mut extensions.item,
-            &mut extensions.size,
-            &mut extensions.alloc,
-        );
+        drop(extensions);
         let root: *const i8 = rxkb_context_getenv(ctx, b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8);
         let has_root: bool = rxkb_context_include_path_append(
             ctx,
@@ -2207,7 +2164,7 @@ pub unsafe fn rxkb_context_parse_default_ruleset(mut ctx: *mut rxkb_context) -> 
 }
 pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const i8) -> bool {
     unsafe {
-        let mut path: *mut *mut i8 = std::ptr::null_mut();
+        let mut path: *mut i8;
         let mut success: bool = false;
         if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
             rxkb_logf!(
@@ -2217,22 +2174,18 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
             );
             return false;
         }
-        if !(*ctx).includes.item.is_null() && (*ctx).includes.size != 0 {
-            path = (*ctx)
-                .includes
-                .item
-                .offset((*ctx).includes.size.wrapping_sub(1 as darray_size_t) as isize)
-                as *mut *mut i8;
-            while (*ctx).includes.size > 0 as darray_size_t
-                && path >= (*ctx).includes.item.offset(0 as i32 as isize) as *mut *mut i8
-            {
+        if !(&(*ctx).includes).is_empty() {
+            let mut idx = (&(*ctx).includes).len();
+            while idx > 0 {
+                idx -= 1;
+                path = (&(*ctx).includes)[idx];
                 let mut rules: [i8; 4096] = [0; 4096];
                 let (_, _trunc) = crate::xkb::utils::snprintf_args(
                     &raw mut rules as *mut i8,
                     std::mem::size_of::<[i8; 4096]>(),
                     format_args!(
                         "{}/rules/{}.xml",
-                        crate::xkb::utils::CStrDisplay(*path),
+                        crate::xkb::utils::CStrDisplay(path),
                         crate::xkb::utils::CStrDisplay(ruleset)
                     ),
                 );
@@ -2253,7 +2206,7 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
                         std::mem::size_of::<[i8; 4096]>(),
                         format_args!(
                             "{}/rules/{}.extras.xml",
-                            crate::xkb::utils::CStrDisplay(*path),
+                            crate::xkb::utils::CStrDisplay(path),
                             crate::xkb::utils::CStrDisplay(ruleset)
                         ),
                     );
@@ -2269,7 +2222,6 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
                         }
                     }
                 }
-                path = path.offset(-1);
             }
         }
         (*ctx).context_state = (if success as i32 != 0 {
