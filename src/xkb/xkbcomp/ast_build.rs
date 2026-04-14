@@ -2,13 +2,6 @@ use crate::xkb_logf;
 
 use crate::xkb::utils::{cstr_free, cstr_ndup};
 
-pub mod utf8_decoding_h {
-    pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
-
-    pub use crate::xkb::utf8_decoding::utf8_next_code_point;
-}
-
-pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -75,6 +68,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
+pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
 pub use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{

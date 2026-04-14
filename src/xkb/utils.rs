@@ -908,6 +908,42 @@ pub unsafe fn parse_hex_to_uint64_t(mut s: *const i8, mut len: usize, mut out: *
     }
 }
 
+/// Parse leading decimal integer from a C string.  
+/// Returns `(value, bytes_consumed)`. On empty/non-digit input returns `(0, 0)`.
+pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
+    unsafe {
+        if s.is_null() {
+            return (0, 0);
+        }
+        let mut i: usize = 0;
+        let neg = *s.offset(0) as u8 == b'-';
+        let pos = *s.offset(0) as u8 == b'+';
+        if neg || pos {
+            i = 1;
+        }
+        let start = i;
+        let mut result: i64 = 0;
+        while (*s.offset(i as isize) as u8).is_ascii_digit() {
+            result = result
+                .wrapping_mul(10)
+                .wrapping_add((*s.offset(i as isize) as u8 - b'0') as i64);
+            i += 1;
+        }
+        if i == start {
+            return (0, 0); // no digits consumed
+        }
+        if neg {
+            result = -result;
+        }
+        (result, i)
+    }
+}
+
+/// Simple atoi replacement: parse entire C string as decimal i32, return 0 on failure.
+pub unsafe fn cstr_atoi(s: *const i8) -> i32 {
+    unsafe { cstr_parse_long(s).0 as i32 }
+}
+
 // ── Consolidated extern "C" declarations ──────────────────────────────
 // (previously scattered across per-file pub mod xxx_h blocks)
 

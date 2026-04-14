@@ -21791,11 +21791,7 @@ pub mod keysym_names_h {
 
     use crate::xkb::shared_types::xkb_keysym_t;
 }
-pub mod utf8_decoding_h {
-    pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
-
-    pub use crate::xkb::utf8_decoding::utf8_next_code_point;
-}
+pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 
 pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
@@ -21806,7 +21802,6 @@ pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
-pub use self::utf8_decoding_h::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};

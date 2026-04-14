@@ -24,7 +24,7 @@ use crate::xkb::utils::xkb_stat;
 pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
-use libc::{free, qsort, strtol};
+use libc::{free, qsort};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
@@ -499,15 +499,12 @@ unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mu
 }
 unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
     unsafe {
-        let mut endptr: *mut i8 = std::ptr::null_mut();
-        let mut lvl: xkb_log_level = 0 as xkb_log_level;
-        *__errno_location() = 0 as i32;
-        lvl = strtol(level, &raw mut endptr, 10 as i32) as xkb_log_level;
-        if *__errno_location() == 0 as i32
-            && (*endptr.offset(0 as i32 as isize) as i32 == '\0' as i32
-                || is_space(*endptr.offset(0 as i32 as isize)) as i32 != 0)
-        {
-            return lvl;
+        let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
+        if consumed > 0 {
+            let after = *level.offset(consumed as isize);
+            if after as i32 == '\0' as i32 || is_space(after) {
+                return val as xkb_log_level;
+            }
         }
         if istrneq(
             b"crit\0".as_ptr() as *const i8,
@@ -557,10 +554,9 @@ unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
 }
 unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
     unsafe {
-        *__errno_location() = 0 as i32;
-        let v: i64 = strtol(verbosity, std::ptr::null_mut(), 10 as i32) as i64;
-        if *__errno_location() == 0 as i32 {
-            return v as i32;
+        let (val, consumed) = crate::xkb::utils::cstr_parse_long(verbosity);
+        if consumed > 0 {
+            return val as i32;
         }
         return XKB_LOG_VERBOSITY_DEFAULT as i32;
     }

@@ -17,7 +17,7 @@ pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
 use c2rust_bitfields;
-use libc::{abort, atoi, realloc};
+use libc::{abort, realloc};
 #[derive(Clone)]
 pub struct SymbolsInfo {
     pub name: *mut i8,
@@ -1231,8 +1231,8 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 &raw mut included.mods,
             );
             if !(*stmt).modifier.is_null() {
-                next_incl.explicit_group =
-                    (atoi((*stmt).modifier) - 1 as i32) as xkb_layout_index_t;
+                next_incl.explicit_group = (crate::xkb::utils::cstr_atoi((*stmt).modifier)
+                    - 1 as i32) as xkb_layout_index_t;
                 if next_incl.explicit_group >= (*info).max_groups {
                     xkb_logf!(
                         (*info).ctx,

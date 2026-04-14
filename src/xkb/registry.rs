@@ -4,7 +4,7 @@ use crate::xkb::utils::{
     __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
     is_space, istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
 };
-use libc::{free, getenv, qsort, strtol};
+use libc::{free, getenv, qsort};
 
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
@@ -575,15 +575,12 @@ unsafe fn default_log_fn(
 }
 unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
     unsafe {
-        let mut endptr: *mut i8 = std::ptr::null_mut();
-        let mut lvl: rxkb_log_level = 0 as rxkb_log_level;
-        *__errno_location() = 0 as i32;
-        lvl = strtol(level, &raw mut endptr, 10 as i32) as rxkb_log_level;
-        if *__errno_location() == 0 as i32
-            && (*endptr.offset(0 as i32 as isize) as i32 == '\0' as i32
-                || is_space(*endptr.offset(0 as i32 as isize)) as i32 != 0)
-        {
-            return lvl;
+        let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
+        if consumed > 0 {
+            let after = *level.offset(consumed as isize);
+            if after as i32 == '\0' as i32 || is_space(after) {
+                return val as rxkb_log_level;
+            }
         }
         if istrneq(
             b"crit\0".as_ptr() as *const i8,
