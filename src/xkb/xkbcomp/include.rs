@@ -62,10 +62,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::scanner_utils::{
-    scanner, scanner_buf_append, scanner_buf_appends, scanner_chr, scanner_eof, scanner_eol,
-    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_token_location,
-};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
@@ -240,37 +237,16 @@ unsafe fn expand_percent(
     mut name_len: usize,
 ) -> usize {
     unsafe {
-        let mut s: scanner = scanner {
-            pos: 0,
-            len: 0,
-            s: std::ptr::null(),
-            buf: [0; 1024],
-            buf_pos: 0,
-            token_pos: 0,
-            cached_pos: 0,
-            cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: std::ptr::null(),
-            ctx: std::ptr::null_mut(),
-            priv_0: std::ptr::null_mut(),
-        };
-        scanner_init(
-            &raw mut s,
-            ctx,
-            name,
-            name_len,
-            parent_file_name,
-            std::ptr::null_mut::<core::ffi::c_void>(),
-        );
-        s.buf_pos = 0 as usize;
-        while !scanner_eof(&raw mut s) && !scanner_eol(&raw mut s) {
-            if scanner_chr(&raw mut s, '%' as i32 as i8) {
-                if scanner_chr(&raw mut s, '%' as i32 as i8) {
-                    scanner_buf_append(&raw mut s, '%' as i32 as i8);
-                } else if scanner_chr(&raw mut s, 'H' as i32 as i8) {
-                    let mut home: *const i8 =
-                        xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
+        let mut s = scanner::new(ctx, name, name_len, parent_file_name, std::ptr::null_mut());
+        s.buf_pos = 0;
+        while !s.eof() && !s.eol() {
+            if s.chr(b'%' as i8) {
+                if s.chr(b'%' as i8) {
+                    s.buf_append(b'%' as i8);
+                } else if s.chr(b'H' as i8) {
+                    let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
                     if home.is_null() {
-                        let mut loc: scanner_loc = scanner_token_location(&raw mut s);
+                        let loc = s.token_location();
                         xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -280,10 +256,10 @@ unsafe fn expand_percent(
                             loc.line,
                             loc.column,
                         );
-                        return 0 as usize;
+                        return 0;
                     }
-                    if !scanner_buf_appends(&raw mut s, home) {
-                        let mut loc_0: scanner_loc = scanner_token_location(&raw mut s);
+                    if !s.buf_appends(home) {
+                        let loc = s.token_location();
                         xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -291,18 +267,18 @@ unsafe fn expand_percent(
                             "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                             crate::xkb::utils::CStrDisplay(s.file_name),
-                            loc_0.line,
-                            loc_0.column,
+                            loc.line,
+                            loc.column,
                         );
-                        return 0 as usize;
+                        return 0;
                     }
-                } else if scanner_chr(&raw mut s, 'S' as i32 as i8) {
-                    let mut default_root: *const i8 = xkb_context_include_path_get_system_path(ctx);
-                    if !scanner_buf_appends(&raw mut s, default_root)
-                        || !scanner_buf_append(&raw mut s, '/' as i32 as i8)
-                        || !scanner_buf_appends(&raw mut s, typeDir)
+                } else if s.chr(b'S' as i8) {
+                    let default_root: *const i8 = xkb_context_include_path_get_system_path(ctx);
+                    if !s.buf_appends(default_root)
+                        || !s.buf_append(b'/' as i8)
+                        || !s.buf_appends(typeDir)
                     {
-                        let mut loc_1: scanner_loc = scanner_token_location(&raw mut s);
+                        let loc = s.token_location();
                         xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -310,19 +286,18 @@ unsafe fn expand_percent(
                             "[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                             crate::xkb::utils::CStrDisplay(s.file_name),
-                            loc_1.line,
-                            loc_1.column,
+                            loc.line,
+                            loc.column,
                         );
-                        return 0 as usize;
+                        return 0;
                     }
-                } else if scanner_chr(&raw mut s, 'E' as i32 as i8) {
-                    let mut default_root_0: *const i8 =
-                        xkb_context_include_path_get_extra_path(ctx);
-                    if !scanner_buf_appends(&raw mut s, default_root_0)
-                        || !scanner_buf_append(&raw mut s, '/' as i32 as i8)
-                        || !scanner_buf_appends(&raw mut s, typeDir)
+                } else if s.chr(b'E' as i8) {
+                    let default_root: *const i8 = xkb_context_include_path_get_extra_path(ctx);
+                    if !s.buf_appends(default_root)
+                        || !s.buf_append(b'/' as i8)
+                        || !s.buf_appends(typeDir)
                     {
-                        let mut loc_2: scanner_loc = scanner_token_location(&raw mut s);
+                        let loc = s.token_location();
                         xkb_logf!(
                             s.ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -330,13 +305,13 @@ unsafe fn expand_percent(
                             "[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                             crate::xkb::utils::CStrDisplay(s.file_name),
-                            loc_2.line,
-                            loc_2.column,
+                            loc.line,
+                            loc.column,
                         );
-                        return 0 as usize;
+                        return 0;
                     }
                 } else {
-                    let mut loc_3: scanner_loc = scanner_token_location(&raw mut s);
+                    let loc = s.token_location();
                     xkb_logf!(
                         s.ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -344,18 +319,19 @@ unsafe fn expand_percent(
                         "[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                         crate::xkb::utils::CStrDisplay(s.file_name),
-                        loc_3.line,
-                        loc_3.column,
-                        (scanner_peek(&raw mut s) as i32 as u8 as char),
+                        loc.line,
+                        loc.column,
+                        (s.peek() as u8 as char),
                     );
-                    return 0 as usize;
+                    return 0;
                 }
             } else {
-                scanner_buf_append(&raw mut s, scanner_next(&raw mut s));
+                let c = s.next_byte();
+                s.buf_append(c);
             }
         }
-        if !scanner_buf_append(&raw mut s, '\0' as i32 as i8) {
-            let mut loc_4: scanner_loc = scanner_token_location(&raw mut s);
+        if !s.buf_append(0) {
+            let loc = s.token_location();
             xkb_logf!(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -363,14 +339,14 @@ unsafe fn expand_percent(
                 "[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                 crate::xkb::utils::CStrDisplay(s.file_name),
-                loc_4.line,
-                loc_4.column,
+                loc.line,
+                loc.column,
                 std::mem::size_of::<[i8; 1024]>(),
             );
-            return 0 as usize;
+            return 0;
         }
-        if (s.buf_pos > buf_size) as i64 != 0 {
-            let mut loc_5: scanner_loc = scanner_token_location(&raw mut s);
+        if s.buf_pos > buf_size {
+            let loc = s.token_location();
             xkb_logf!(
                 s.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -378,12 +354,12 @@ unsafe fn expand_percent(
                 "[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                 crate::xkb::utils::CStrDisplay(s.file_name),
-                loc_5.line,
-                loc_5.column,
+                loc.line,
+                loc.column,
                 s.buf_pos,
                 buf_size,
             );
-            return 0 as usize;
+            return 0;
         }
         std::ptr::copy_nonoverlapping(&raw mut s.buf as *const u8, buf as *mut u8, s.buf_pos);
         return s.buf_pos;

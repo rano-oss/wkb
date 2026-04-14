@@ -8,6 +8,25 @@ pub struct sval {
     pub start: *const i8,
 }
 
+impl sval {
+    pub const EMPTY: sval = sval {
+        len: 0,
+        start: std::ptr::null(),
+    };
+
+    /// View the sval as a byte slice. Caller must ensure the pointer is valid.
+    #[inline]
+    pub unsafe fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            if self.start.is_null() || self.len == 0 {
+                &[]
+            } else {
+                std::slice::from_raw_parts(self.start as *const u8, self.len)
+            }
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct scanner_loc {
@@ -15,7 +34,7 @@ pub struct scanner_loc {
     pub column: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct scanner {
     pub pos: usize,
@@ -31,377 +50,340 @@ pub struct scanner {
     pub priv_0: *mut ::core::ffi::c_void,
 }
 
-pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
-    unsafe {
-        let mut line: usize = 0;
-        let mut column: usize = 0;
-        let mut line_pos: usize = 0 as usize;
-        if (*s).cached_pos > (*s).token_pos {
-            (*s).cached_pos = 0 as usize;
-            (*s).cached_loc.column = 1 as usize;
-            (*s).cached_loc.line = (*s).cached_loc.column;
+impl scanner {
+    pub fn new(
+        ctx: *mut xkb_context,
+        s: *const i8,
+        len: usize,
+        file_name: *const i8,
+        priv_0: *mut ::core::ffi::c_void,
+    ) -> Self {
+        scanner {
+            pos: 0,
+            len,
+            s,
+            buf: [0; 1024],
+            buf_pos: 0,
+            token_pos: 0,
+            cached_pos: 0,
+            cached_loc: scanner_loc { line: 1, column: 1 },
+            file_name,
+            ctx,
+            priv_0,
         }
-        line = (*s).cached_loc.line;
-        let mut ptr: *const i8 = (*s).s.offset((*s).cached_pos as isize);
-        let mut last: *const i8 = (*s).s.offset((*s).token_pos as isize);
-        loop {
-            ptr = {
-                let len = last.offset_from(ptr) as usize;
-                let slice = core::slice::from_raw_parts(ptr as *const u8, len);
-                match slice.iter().position(|&b| b == b'\n') {
-                    Some(i) => ptr.add(i),
-                    None => core::ptr::null(),
+    }
+
+    /// The remaining input as a byte slice.
+    #[inline]
+    unsafe fn remaining(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos)
+        }
+    }
+
+    /// The full input as a byte slice.
+    #[inline]
+    unsafe fn input(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self.s as *const u8, self.len) }
+    }
+
+    #[inline]
+    pub fn peek(&self) -> i8 {
+        if self.pos >= self.len {
+            return 0;
+        }
+        unsafe { *self.s.add(self.pos) }
+    }
+
+    #[inline]
+    pub fn eof(&self) -> bool {
+        self.pos >= self.len
+    }
+
+    #[inline]
+    pub fn eol(&self) -> bool {
+        self.peek() == b'\n' as i8
+    }
+
+    #[inline]
+    pub unsafe fn skip_to_eol(&mut self) {
+        unsafe {
+            let rem = self.remaining();
+            match rem.iter().position(|&b| b == b'\n') {
+                Some(i) => self.pos += i,
+                None => self.pos = self.len,
+            }
+        }
+    }
+
+    #[inline]
+    pub fn next_byte(&mut self) -> i8 {
+        if self.pos >= self.len {
+            return 0;
+        }
+        let c = unsafe { *self.s.add(self.pos) };
+        self.pos += 1;
+        c
+    }
+
+    #[inline]
+    pub fn chr(&mut self, ch: i8) -> bool {
+        if self.peek() != ch {
+            return false;
+        }
+        self.pos += 1;
+        true
+    }
+
+    #[inline]
+    pub unsafe fn str_match(&mut self, string: *const i8, len: usize) -> bool {
+        unsafe {
+            if self.len - self.pos < len {
+                return false;
+            }
+            let input = std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, len);
+            let target = std::slice::from_raw_parts(string as *const u8, len);
+            if input != target {
+                return false;
+            }
+            self.pos += len;
+            true
+        }
+    }
+
+    #[inline]
+    pub fn buf_append(&mut self, ch: i8) -> bool {
+        if self.buf_pos + 1 >= self.buf.len() {
+            return false;
+        }
+        self.buf[self.buf_pos] = ch;
+        self.buf_pos += 1;
+        true
+    }
+
+    #[inline]
+    pub unsafe fn buf_appends(&mut self, s: *const i8) -> bool {
+        unsafe {
+            let mut i = 0usize;
+            while *s.add(i) != 0 {
+                if !self.buf_append(*s.add(i)) {
+                    return false;
                 }
-            };
-            if ptr.is_null() {
-                break;
+                i += 1;
             }
-            line = line.wrapping_add(1);
-            ptr = ptr.offset(1);
-            line_pos = ptr.offset_from((*s).s) as i64 as usize;
+            true
         }
-        if line == (*s).cached_loc.line {
-            column = (*s)
-                .cached_loc
-                .column
-                .wrapping_add((*s).token_pos.wrapping_sub((*s).cached_pos));
-        } else {
-            column = (*s)
-                .token_pos
-                .wrapping_sub(line_pos)
-                .wrapping_add(1 as usize);
-        }
-        let mut loc: scanner_loc = scanner_loc {
-            line: line,
-            column: column,
-        };
-        (*s).cached_pos = (*s).token_pos;
-        (*s).cached_loc = loc;
-        return loc;
     }
-}
 
-#[inline]
-pub unsafe fn scanner_init(
-    mut s: *mut scanner,
-    mut ctx: *mut xkb_context,
-    mut string: *const i8,
-    mut len: usize,
-    mut file_name: *const i8,
-    mut priv_0: *mut ::core::ffi::c_void,
-) {
-    unsafe {
-        (*s).s = string;
-        (*s).len = len;
-        (*s).pos = 0 as usize;
-        (*s).token_pos = 0 as usize;
-        (*s).cached_pos = 0 as usize;
-        (*s).cached_loc.column = 1 as usize;
-        (*s).cached_loc.line = (*s).cached_loc.column;
-        (*s).file_name = file_name;
-        (*s).ctx = ctx;
-        (*s).priv_0 = priv_0;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_peek(mut s: *mut scanner) -> i8 {
-    unsafe {
-        if ((*s).pos >= (*s).len) as i64 != 0 {
-            return '\0' as i32 as i8;
-        }
-        return *(*s).s.offset((*s).pos as isize);
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_eof(mut s: *mut scanner) -> bool {
-    unsafe {
-        return (*s).pos >= (*s).len;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
-    unsafe {
-        return scanner_peek(s) as i32 == '\n' as i32;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
-    unsafe {
-        let mut nl: *const i8 = {
-            let p = (*s).s.offset((*s).pos as isize);
-            let len = (*s).len.wrapping_sub((*s).pos);
-            let slice = core::slice::from_raw_parts(p as *const u8, len);
-            match slice.iter().position(|&b| b == b'\n') {
-                Some(i) => p.add(i),
-                None => core::ptr::null(),
+    #[inline]
+    pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
+        if self.buf_pos + 5 <= self.buf.len() {
+            let mut count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(c, unsafe {
+                (&raw mut self.buf as *mut i8).add(self.buf_pos)
+            });
+            if count == 0 {
+                count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(0xfffd, unsafe {
+                    (&raw mut self.buf as *mut i8).add(self.buf_pos)
+                });
             }
-        };
-        let new_pos: usize = if !nl.is_null() {
-            nl.offset_from((*s).s) as i64 as usize
-        } else {
-            (*s).len
-        };
-        (*s).pos = new_pos;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
-    unsafe {
-        if scanner_eof(s) as i64 != 0 {
-            return '\0' as i32 as i8;
-        }
-        let c2rust_fresh0 = (*s).pos;
-        (*s).pos = (*s).pos.wrapping_add(1);
-        return *(*s).s.offset(c2rust_fresh0 as isize);
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
-    unsafe {
-        if (scanner_peek(s) as i32 != ch as i32) as i32 as i64 != 0 {
-            return false;
-        }
-        (*s).pos = (*s).pos.wrapping_add(1);
-        return true;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_str(mut s: *mut scanner, mut string: *const i8, mut len: usize) -> bool {
-    unsafe {
-        if (*s).len.wrapping_sub((*s).pos) < len {
-            return false;
-        }
-        if std::slice::from_raw_parts((*s).s.offset((*s).pos as isize) as *const u8, len)
-            != std::slice::from_raw_parts(string as *const u8, len)
-        {
-            return false;
-        }
-        (*s).pos = (*s).pos.wrapping_add(len);
-        return true;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_buf_append(mut s: *mut scanner, mut ch: i8) -> bool {
-    unsafe {
-        if (*s).buf_pos.wrapping_add(1 as usize) >= std::mem::size_of::<[i8; 1024]>() {
-            return false;
-        }
-        let c2rust_fresh1 = (*s).buf_pos;
-        (*s).buf_pos = (*s).buf_pos.wrapping_add(1);
-        (*s).buf[c2rust_fresh1 as usize] = ch;
-        return true;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_buf_appends(mut s: *mut scanner, mut str: *const i8) -> bool {
-    unsafe {
-        let mut i: usize = 0 as usize;
-        while *str.offset(i as isize) as i32 != 0 {
-            if !scanner_buf_append(s, *str.offset(i as isize)) {
+            if count == 0 {
                 return false;
             }
-            i = i.wrapping_add(1);
-        }
-        return true;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) -> bool {
-    unsafe {
-        if (*s).buf_pos.wrapping_add(5 as usize) <= std::mem::size_of::<[i8; 1024]>() {
-            let mut count: i32 = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
-                c,
-                (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
-            );
-            if count == 0 as i32 {
-                count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(
-                    0xfffd as u32,
-                    (&raw mut (*s).buf as *mut i8).offset((*s).buf_pos as isize),
-                );
-            }
-            if count == 0 as i32 {
-                return false;
-            }
-            (*s).buf_pos = (*s).buf_pos.wrapping_add((count - 1 as i32) as usize);
-            return true;
+            self.buf_pos += (count - 1) as usize;
+            true
         } else {
-            return false;
-        };
+            false
+        }
     }
-}
 
-#[inline]
-pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
-    unsafe {
-        let mut i: u8 = 0 as u8;
-        let mut c: u8 = 0 as u8;
-        while scanner_peek(s) as i32 >= '0' as i32
-            && scanner_peek(s) as i32 <= '7' as i32
-            && (i as i32) < 4 as i32
-        {
-            if (c as i32) < 0o40 as i32 {
-                c = (c as i32 * 8 as i32 + scanner_next(s) as i32 - '0' as i32) as u8;
+    #[inline]
+    pub fn oct(&mut self, out: &mut u8) -> bool {
+        let mut i: u8 = 0;
+        let mut c: u8 = 0;
+        while self.peek() as u8 >= b'0' && self.peek() as u8 <= b'7' && (i as i32) < 4 {
+            if (c as i32) < 0o40 {
+                c = (c as i32 * 8 + self.next_byte() as i32 - b'0' as i32) as u8;
             } else {
-                scanner_next(s);
+                self.next_byte();
                 *out = c;
                 return false;
             }
-            i = i.wrapping_add(1);
+            i += 1;
         }
         *out = c;
-        return i as i32 > 0 as i32;
+        i > 0
     }
-}
 
-#[inline]
-pub unsafe fn scanner_dec_int64(mut s: *mut scanner, mut out: *mut i64) -> i32 {
-    unsafe {
-        let mut val: u64 = 0 as u64;
-        let count: i32 = crate::xkb::utils::parse_dec_to_uint64_t(
-            (*s).s.offset((*s).pos as isize),
-            (*s).len.wrapping_sub((*s).pos),
-            &raw mut val,
-        ) as i32;
-        if count > 0 as i32 {
-            if val > i64::MAX as u64 {
-                return -1 as i32;
+    #[inline]
+    pub unsafe fn dec_int64(&mut self, out: *mut i64) -> i32 {
+        unsafe {
+            let mut val: u64 = 0;
+            let count = crate::xkb::utils::parse_dec_to_uint64_t(
+                self.s.add(self.pos),
+                self.len - self.pos,
+                &raw mut val,
+            ) as i32;
+            if count > 0 {
+                if val > i64::MAX as u64 {
+                    return -1;
+                }
+                self.pos += count as usize;
+                *out = val as i64;
             }
-            (*s).pos = (*s).pos.wrapping_add(count as usize);
-            *out = val as i64;
+            count
         }
-        return count;
     }
-}
 
-#[inline]
-pub unsafe fn scanner_hex_int64(mut s: *mut scanner, mut out: *mut i64) -> i32 {
-    unsafe {
-        let mut val: u64 = 0 as u64;
-        let count: i32 = crate::xkb::utils::parse_hex_to_uint64_t(
-            (*s).s.offset((*s).pos as isize),
-            (*s).len.wrapping_sub((*s).pos),
-            &raw mut val,
-        ) as i32;
-        if count > 0 as i32 {
-            if val > i64::MAX as u64 {
-                return -1 as i32;
+    #[inline]
+    pub unsafe fn hex_int64(&mut self, out: *mut i64) -> i32 {
+        unsafe {
+            let mut val: u64 = 0;
+            let count = crate::xkb::utils::parse_hex_to_uint64_t(
+                self.s.add(self.pos),
+                self.len - self.pos,
+                &raw mut val,
+            ) as i32;
+            if count > 0 {
+                if val > i64::MAX as u64 {
+                    return -1;
+                }
+                self.pos += count as usize;
+                *out = val as i64;
             }
-            (*s).pos = (*s).pos.wrapping_add(count as usize);
-            *out = val as i64;
+            count
         }
-        return count;
+    }
+
+    #[inline]
+    pub unsafe fn unicode_code_point(&mut self, out: *mut u32) -> bool {
+        unsafe {
+            if !self.chr(b'{' as i8) {
+                return false;
+            }
+            let mut cp: u32 = 0;
+            let count = crate::xkb::utils::parse_hex_to_uint32_t(
+                self.s.add(self.pos),
+                self.len - self.pos,
+                &raw mut cp,
+            ) as i32;
+            if count > 0 {
+                self.pos += count as usize;
+            }
+            let last_valid = self.pos;
+            while !self.eof()
+                && !self.eol()
+                && self.peek() != b'"' as i8
+                && self.peek() != b'}' as i8
+            {
+                self.next_byte();
+            }
+            if self.chr(b'}' as i8) {
+                *out = cp;
+                return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
+            }
+            self.pos = last_valid;
+            false
+        }
+    }
+
+    #[inline]
+    pub unsafe fn check_supported_char_encoding(&mut self) -> bool {
+        use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
+        unsafe {
+            if self.str_match(b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3) || self.len < 2 {
+                return true;
+            }
+            if *self.s == 0 || *self.s.add(1) == 0 {
+                let loc = self.token_location();
+                crate::xkb_logf!(
+                    self.ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
+                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
+                    crate::xkb::utils::CStrDisplay(self.file_name),
+                    loc.line,
+                    loc.column,
+                );
+                return false;
+            }
+            if !crate::xkb::utils::is_ascii(*self.s) {
+                let loc = self.token_location();
+                crate::xkb_logf!(
+                    self.ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
+                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
+                    crate::xkb::utils::CStrDisplay(self.file_name),
+                    loc.line,
+                    loc.column,
+                );
+                return false;
+            }
+            true
+        }
+    }
+
+    pub fn token_location(&mut self) -> scanner_loc {
+        let mut line: usize;
+        let mut column: usize;
+        let mut line_pos: usize = 0;
+
+        if self.cached_pos > self.token_pos {
+            self.cached_pos = 0;
+            self.cached_loc.column = 1;
+            self.cached_loc.line = 1;
+        }
+
+        line = self.cached_loc.line;
+        let input = unsafe { self.input() };
+        let start = self.cached_pos;
+        let end = self.token_pos;
+
+        // Count newlines between cached_pos and token_pos
+        let mut search_from = start;
+        loop {
+            match input[search_from..end].iter().position(|&b| b == b'\n') {
+                Some(i) => {
+                    line += 1;
+                    search_from = search_from + i + 1;
+                    line_pos = search_from;
+                }
+                None => break,
+            }
+        }
+
+        if line == self.cached_loc.line {
+            column = self.cached_loc.column + (self.token_pos - self.cached_pos);
+        } else {
+            column = self.token_pos - line_pos + 1;
+        }
+
+        let loc = scanner_loc { line, column };
+        self.cached_pos = self.token_pos;
+        self.cached_loc = loc;
+        loc
+    }
+}
+
+// ── sval comparison functions ──
+
+#[inline]
+pub unsafe fn svaleq(s1: sval, s2: sval) -> bool {
+    unsafe { s1.as_bytes() == s2.as_bytes() }
+}
+
+#[inline]
+pub unsafe fn svaleq_prefix(s1: sval, s2: sval) -> bool {
+    unsafe {
+        let b1 = s1.as_bytes();
+        let b2 = s2.as_bytes();
+        b1.len() <= b2.len() && b1 == &b2[..b1.len()]
     }
 }
 
 #[inline]
-pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32) -> bool {
-    unsafe {
-        if !scanner_chr(s, '{' as i32 as i8) {
-            return false;
-        }
-        let mut cp: u32 = 0 as u32;
-        let count: i32 = crate::xkb::utils::parse_hex_to_uint32_t(
-            (*s).s.offset((*s).pos as isize),
-            (*s).len.wrapping_sub((*s).pos),
-            &raw mut cp,
-        ) as i32;
-        if count > 0 as i32 {
-            (*s).pos = (*s).pos.wrapping_add(count as usize);
-        }
-        let last_valid: usize = (*s).pos;
-        while !scanner_eof(s)
-            && !scanner_eol(s)
-            && scanner_peek(s) as i32 != '"' as i32
-            && scanner_peek(s) as i32 != '}' as i32
-        {
-            scanner_next(s);
-        }
-        if scanner_chr(s, '}' as i32 as i8) {
-            *out = cp;
-            return count > 0 as i32
-                && (*s).pos == last_valid.wrapping_add(1 as usize)
-                && cp <= 0x10ffff as u32;
-        }
-        (*s).pos = last_valid;
-        return false;
-    }
-}
-
-#[inline]
-pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool {
-    use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
-    unsafe {
-        if scanner_str(s, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize) as i32 != 0
-            || (*s).len < 2 as usize
-        {
-            return true;
-        }
-        if *(*s).s.offset(0 as i32 as isize) as i32 == '\0' as i32
-            || *(*s).s.offset(1 as i32 as isize) as i32 == '\0' as i32
-        {
-            let mut loc: scanner_loc = scanner_token_location(s);
-            crate::xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
-                loc.line,
-                loc.column,
-            );
-            return false;
-        }
-        if !crate::xkb::utils::is_ascii(*(*s).s.offset(0 as i32 as isize)) {
-            let mut loc_0: scanner_loc = scanner_token_location(s);
-            crate::xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
-                loc_0.line,
-                loc_0.column,
-            );
-            return false;
-        }
-        return true;
-    }
-}
-
-#[inline]
-pub unsafe fn svaleq(mut s1: sval, mut s2: sval) -> bool {
-    unsafe {
-        return s1.len == s2.len
-            && std::slice::from_raw_parts(s1.start as *const u8, s1.len)
-                == std::slice::from_raw_parts(s2.start as *const u8, s1.len);
-    }
-}
-
-#[inline]
-pub unsafe fn svaleq_prefix(mut s1: sval, mut s2: sval) -> bool {
-    unsafe {
-        return s1.len <= s2.len
-            && std::slice::from_raw_parts(s1.start as *const u8, s1.len)
-                == std::slice::from_raw_parts(s2.start as *const u8, s1.len);
-    }
-}
-
-#[inline]
-pub unsafe fn isvaleq(mut s1: sval, mut s2: sval) -> bool {
-    unsafe {
-        return s1.len == s2.len
-            && crate::xkb::utils::istrncmp(s1.start, s2.start, s1.len) == 0 as i32;
-    }
+pub unsafe fn isvaleq(s1: sval, s2: sval) -> bool {
+    unsafe { s1.len == s2.len && crate::xkb::utils::istrncmp(s1.start, s2.start, s1.len) == 0 }
 }

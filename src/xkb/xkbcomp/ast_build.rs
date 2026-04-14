@@ -47,7 +47,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc, scanner_token_location, sval};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction,
     ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
@@ -280,7 +280,7 @@ pub unsafe fn ExprKeySymListAppendString(
                 &raw mut count,
             );
             if cp == INVALID_UTF8_CODE_POINT as u32 {
-                let mut loc: scanner_loc = scanner_token_location(scanner);
+                let mut loc: scanner_loc = (*scanner).token_location();
                 xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -298,7 +298,7 @@ pub unsafe fn ExprKeySymListAppendString(
             } else {
                 let sym: xkb_keysym_t = xkb_utf32_to_keysym(cp) as xkb_keysym_t;
                 if sym == XKB_KEY_NoSymbol as xkb_keysym_t {
-                    let mut loc_0: scanner_loc = scanner_token_location(scanner);
+                    let mut loc_0: scanner_loc = (*scanner).token_location();
                     xkb_logf!(
                         (*scanner).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -337,7 +337,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
     unsafe {
         let len: usize = cstr_len(string) as usize;
         if len == 0 as usize {
-            let mut loc: scanner_loc = scanner_token_location(scanner);
+            let mut loc: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -352,7 +352,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         let mut count: usize = 0 as usize;
         let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
         if cp == INVALID_UTF8_CODE_POINT as u32 {
-            let mut loc_0: scanner_loc = scanner_token_location(scanner);
+            let mut loc_0: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -365,7 +365,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
             );
             return XKB_KEY_NoSymbol as xkb_keysym_t;
         } else if count != len {
-            let mut loc_1: scanner_loc = scanner_token_location(scanner);
+            let mut loc_1: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -381,7 +381,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         }
         let sym: xkb_keysym_t = xkb_utf32_to_keysym(cp) as xkb_keysym_t;
         if sym == XKB_KEY_NoSymbol as xkb_keysym_t {
-            let mut loc_2: scanner_loc = scanner_token_location(scanner);
+            let mut loc_2: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,

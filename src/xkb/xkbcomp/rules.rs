@@ -51,11 +51,7 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
-pub use crate::xkb::scanner_utils::{
-    scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof, scanner_eol,
-    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol, scanner_str,
-    scanner_token_location, sval, svaleq, svaleq_prefix,
-};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval, svaleq, svaleq_prefix};
 pub use crate::xkb::shared_ast_types::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
@@ -240,29 +236,28 @@ unsafe fn is_ident(mut ch: i8) -> bool {
 unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
     unsafe {
         loop {
-            while scanner_chr(s, ' ' as i32 as i8) as i32 != 0
-                || scanner_chr(s, '\t' as i32 as i8) as i32 != 0
-                || scanner_chr(s, '\r' as i32 as i8) as i32 != 0
+            while (*s).chr(' ' as i32 as i8) as i32 != 0
+                || (*s).chr('\t' as i32 as i8) as i32 != 0
+                || (*s).chr('\r' as i32 as i8) as i32 != 0
             {}
-            if scanner_str(
-                s,
+            if (*s).str_match(
                 b"//\0".as_ptr() as *const i8,
                 (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1 as usize),
             ) {
-                scanner_skip_to_eol(s);
+                (*s).skip_to_eol();
             }
-            if scanner_eol(s) {
-                while scanner_eol(s) {
-                    scanner_next(s);
+            if (*s).eol() {
+                while (*s).eol() {
+                    (*s).next_byte();
                 }
                 return TOK_END_OF_LINE;
             }
-            if !scanner_chr(s, '\\' as i32 as i8) {
+            if !(*s).chr('\\' as i32 as i8) {
                 break;
             }
-            scanner_chr(s, '\r' as i32 as i8);
-            if !scanner_eol(s) {
-                let mut loc: scanner_loc = scanner_token_location(s);
+            (*s).chr('\r' as i32 as i8);
+            if !(*s).eol() {
+                let mut loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -275,51 +270,48 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                 );
                 return TOK_ERROR;
             }
-            scanner_next(s);
+            (*s).next_byte();
         }
-        if scanner_eof(s) {
+        if (*s).eof() {
             return TOK_END_OF_FILE;
         }
         (*s).token_pos = (*s).pos;
-        if scanner_chr(s, '!' as i32 as i8) {
+        if (*s).chr('!' as i32 as i8) {
             return TOK_BANG;
         }
-        if scanner_chr(s, '=' as i32 as i8) {
+        if (*s).chr('=' as i32 as i8) {
             return TOK_EQUALS;
         }
-        if scanner_chr(s, '*' as i32 as i8) {
+        if (*s).chr('*' as i32 as i8) {
             return TOK_WILD_CARD_STAR;
         }
-        if scanner_str(
-            s,
+        if (*s).str_match(
             b"<none>\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_NONE;
         }
-        if scanner_str(
-            s,
+        if (*s).str_match(
             b"<some>\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_SOME;
         }
-        if scanner_str(
-            s,
+        if (*s).str_match(
             b"<any>\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_WILD_CARD_ANY;
         }
-        if scanner_chr(s, '$' as i32 as i8) {
+        if (*s).chr('$' as i32 as i8) {
             (*val).string.start = (*s).s.offset((*s).pos as isize);
             (*val).string.len = 0 as usize;
-            while is_ident(scanner_peek(s)) {
-                scanner_next(s);
+            while is_ident((*s).peek()) {
+                (*s).next_byte();
                 (*val).string.len = (*val).string.len.wrapping_add(1);
             }
             if (*val).string.len == 0 as usize {
-                let mut loc_0: scanner_loc = scanner_token_location(s);
+                let mut loc_0: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -334,23 +326,22 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             }
             return TOK_GROUP_NAME;
         }
-        if scanner_str(
-            s,
+        if (*s).str_match(
             b"include\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             return TOK_INCLUDE;
         }
-        if is_ident(scanner_peek(s)) {
+        if is_ident((*s).peek()) {
             (*val).string.start = (*s).s.offset((*s).pos as isize);
             (*val).string.len = 0 as usize;
-            while is_ident(scanner_peek(s)) {
-                scanner_next(s);
+            while is_ident((*s).peek()) {
+                (*s).next_byte();
                 (*val).string.len = (*val).string.len.wrapping_add(1);
             }
             return TOK_IDENTIFIER;
         }
-        let mut loc_1: scanner_loc = scanner_token_location(s);
+        let mut loc_1: scanner_loc = (*s).token_location();
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -769,7 +760,7 @@ unsafe fn matcher_include(
 ) {
     unsafe {
         if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-            let mut loc: scanner_loc = scanner_token_location(parent_scanner);
+            let mut loc: scanner_loc = (*parent_scanner).token_location();
             xkb_logf!(
                 (*parent_scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5126,7 +5117,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             mlvo += 1;
         }
         if mlvo as u32 >= _MLVO_NUM_ENTRIES as u32 {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5142,7 +5133,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             return;
         }
         if is_mlvo_mask_defined(m, mlvo) {
-            let mut loc_0: scanner_loc = scanner_token_location(s);
+            let mut loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5165,7 +5156,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 &raw mut idx,
             );
             if ident.len.wrapping_sub(mlvo_sval.len) as i32 != consumed {
-                let mut loc_1: scanner_loc = scanner_token_location(s);
+                let mut loc_1: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -5185,7 +5176,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             } else if mlvo as u32 == MLVO_VARIANT as u32 {
                 (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = idx;
             } else {
-                let mut loc_2: scanner_loc = scanner_token_location(s);
+                let mut loc_2: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -5213,7 +5204,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             && (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
                 != (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
         {
-            let mut loc_3: scanner_loc = scanner_token_location(s);
+            let mut loc_3: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5323,7 +5314,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             kccgst += 1;
         }
         if kccgst as u32 >= _KCCGST_NUM_ENTRIES as u32 {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5339,7 +5330,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             return;
         }
         if (*m).mapping.defined_kccgst_mask as u32 & (1 as u32) << kccgst as u32 != 0 {
-            let mut loc_0: scanner_loc = scanner_token_location(s);
+            let mut loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5365,7 +5356,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
     unsafe {
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as i32 == 0 as i32 {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5377,7 +5368,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 loc.column,
             );
         } else if (*m).mapping.num_kccgst as i32 == 0 as i32 {
-            let mut loc_0: scanner_loc = scanner_token_location(s);
+            let mut loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5531,7 +5522,7 @@ unsafe fn matcher_rule_set_mlvo_common(
 ) {
     unsafe {
         if (*m).rule.num_mlvo_values as i32 >= (*m).mapping.num_mlvo as i32 {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5576,7 +5567,7 @@ unsafe fn matcher_rule_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut id
 unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
     unsafe {
         if (*m).rule.num_kccgst_values as i32 >= (*m).mapping.num_kccgst as i32 {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -5674,7 +5665,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                         == MERGE_REPLACE_PREFIX))
         {
             if layout_idx == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-                let mut loc: scanner_loc = scanner_token_location(s);
+                let mut loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -5748,7 +5739,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = scanner_token_location(s);
+                                    let mut loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -5902,7 +5893,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = scanner_token_location(s);
+                                    let mut loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -6056,7 +6047,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = scanner_token_location(s);
+                                    let mut loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -6196,7 +6187,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                 }
             }
         }
-        let mut loc_1: scanner_loc = scanner_token_location(s);
+        let mut loc_1: scanner_loc = (*s).token_location();
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -6234,7 +6225,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
             && *str.offset((*i).wrapping_add(2 as usize) as isize) as i32 == 'l' as i32
         {
             if has_layout_idx_range {
-                let mut loc: scanner_loc = scanner_token_location(s);
+                let mut loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -6459,7 +6450,7 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
         if (*m).rule.num_mlvo_values as i32 != (*m).mapping.num_mlvo as i32
             || (*m).rule.num_kccgst_values as i32 != (*m).mapping.num_kccgst as i32
         {
-            let mut loc: scanner_loc = scanner_token_location(s);
+            let mut loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -6942,7 +6933,7 @@ unsafe fn matcher_match(
                 match tok as u32 {
                     11 => {}
                     _ => {
-                        let mut loc: scanner_loc = scanner_token_location(s);
+                        let mut loc: scanner_loc = (*s).token_location();
                         xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -6969,19 +6960,13 @@ unsafe fn read_rules_file(
 ) -> bool {
     unsafe {
         let mut ret: bool = false;
-        let mut scanner: scanner = scanner {
-            pos: 0,
-            len: 0,
-            s: std::ptr::null(),
-            buf: [0; 1024],
-            buf_pos: 0,
-            token_pos: 0,
-            cached_pos: 0,
-            cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: std::ptr::null(),
-            ctx: std::ptr::null_mut(),
-            priv_0: std::ptr::null_mut(),
-        };
+        let mut scanner: scanner = scanner::new(
+            std::ptr::null_mut(),
+            std::ptr::null(),
+            0,
+            std::ptr::null(),
+            std::ptr::null_mut(),
+        );
 
         // Convert FILE* to Rust File and map it
         use crate::xkb::utils::MappedFile;
@@ -7018,16 +7003,15 @@ unsafe fn read_rules_file(
             }
         };
 
-        scanner_init(
-            &raw mut scanner,
+        scanner = scanner::new(
             (*matcher).ctx,
             mapped.as_ptr(),
             mapped.len(),
             path,
             std::ptr::null_mut::<core::ffi::c_void>(),
         );
-        if !scanner_check_supported_char_encoding(&raw mut scanner) {
-            let mut loc: scanner_loc = scanner_token_location(&raw mut scanner);
+        if !scanner.check_supported_char_encoding() {
+            let mut loc: scanner_loc = scanner.token_location();
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -7038,7 +7022,7 @@ unsafe fn read_rules_file(
                 loc.line,
                 loc.column,
             );
-            let mut loc_0: scanner_loc = scanner_token_location(&raw mut scanner);
+            let mut loc_0: scanner_loc = scanner.token_location();
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,

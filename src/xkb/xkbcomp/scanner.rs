@@ -234,13 +234,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::scanner_utils::{
-    scanner, scanner_buf_append, scanner_buf_appends_code_point,
-    scanner_check_supported_char_encoding, scanner_chr, scanner_dec_int64, scanner_eof,
-    scanner_eol, scanner_hex_int64, scanner_init, scanner_loc, scanner_next, scanner_oct,
-    scanner_peek, scanner_skip_to_eol, scanner_str, scanner_token_location,
-    scanner_unicode_code_point, sval,
-};
+pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
     _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction, ExprActionList,
     ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
@@ -272,12 +266,11 @@ use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) -> bool {
     unsafe {
-        if scanner_str(
-            s,
+        if (*s).str_match(
             b"0x\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1),
         ) {
-            match scanner_hex_int64(s, out) {
+            match (*s).hex_int64(out) {
                 -1 => {
                     *out_tok = ERROR_TOK as i32;
                     return true;
@@ -290,7 +283,7 @@ unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) 
             }
         } else {
             let mut is_digit_0: bool = false;
-            match scanner_dec_int64(s, out) {
+            match (*s).dec_int64(out) {
                 -1 => {
                     *out_tok = ERROR_TOK as i32;
                     return true;
@@ -301,9 +294,9 @@ unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) 
                 }
                 _ => {}
             }
-            if scanner_chr(s, DECIMAL_SEPARATOR) {
+            if (*s).chr(DECIMAL_SEPARATOR) {
                 let mut dec: i64 = 0;
-                if scanner_dec_int64(s, &raw mut dec) < 0 as i32 {
+                if (*s).dec_int64(&raw mut dec) < 0 {
                     *out_tok = ERROR_TOK as i32;
                     return true;
                 }
@@ -320,72 +313,61 @@ unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) 
 pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i32 {
     unsafe {
         loop {
-            while is_space(scanner_peek(s)) {
-                scanner_next(s);
+            while is_space((*s).peek()) {
+                (*s).next_byte();
             }
-            if scanner_str(
-                s,
+            if (*s).str_match(
                 b"\xE2\x80\x8E\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
-            ) as i32
-                != 0
-                || scanner_str(
-                    s,
-                    b"\xE2\x80\x8F\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
-                ) as i32
-                    != 0
-            {
+                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1),
+            ) || (*s).str_match(
+                b"\xE2\x80\x8F\0".as_ptr() as *const i8,
+                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1),
+            ) {
                 continue;
             }
-            if !(scanner_str(
-                s,
+            if !((*s).str_match(
                 b"//\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1 as usize),
-            ) as i32
-                != 0
-                || scanner_chr(s, '#' as i32 as i8) as i32 != 0)
+                (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1),
+            ) || (*s).chr(b'#' as i8))
             {
                 break;
             }
-            scanner_skip_to_eol(s);
+            (*s).skip_to_eol();
         }
-        if scanner_eof(s) {
+        if (*s).eof() {
             return END_OF_FILE as i32;
         }
         (*s).token_pos = (*s).pos;
-        (*s).buf_pos = 0 as usize;
-        if scanner_chr(s, '"' as i32 as i8) {
-            while !scanner_eof(s) && !scanner_eol(s) && scanner_peek(s) as i32 != '"' as i32 {
-                if scanner_chr(s, '\\' as i32 as i8) {
+        (*s).buf_pos = 0;
+        if (*s).chr(b'"' as i8) {
+            while !(*s).eof() && !(*s).eol() && (*s).peek() != b'"' as i8 {
+                if (*s).chr(b'\\' as i8) {
                     let mut o: u8 = 0;
                     let start_pos: usize = (*s).pos;
-                    if scanner_chr(s, '\\' as i32 as i8) {
-                        scanner_buf_append(s, '\\' as i32 as i8);
-                    } else if scanner_chr(s, '"' as i32 as i8) {
-                        scanner_buf_append(s, '"' as i32 as i8);
-                    } else if scanner_chr(s, 'n' as i32 as i8) {
-                        scanner_buf_append(s, '\n' as i32 as i8);
-                    } else if scanner_chr(s, 't' as i32 as i8) {
-                        scanner_buf_append(s, '\t' as i32 as i8);
-                    } else if scanner_chr(s, 'r' as i32 as i8) {
-                        scanner_buf_append(s, '\r' as i32 as i8);
-                    } else if scanner_chr(s, 'b' as i32 as i8) {
-                        scanner_buf_append(s, '\u{8}' as i32 as i8);
-                    } else if scanner_chr(s, 'f' as i32 as i8) {
-                        scanner_buf_append(s, '\u{c}' as i32 as i8);
-                    } else if scanner_chr(s, 'v' as i32 as i8) {
-                        scanner_buf_append(s, '\u{b}' as i32 as i8);
-                    } else if scanner_chr(s, 'e' as i32 as i8) {
-                        scanner_buf_append(s, '\u{1b}' as i32 as i8);
-                    } else if scanner_chr(s, 'u' as i32 as i8) {
-                        let mut cp: u32 = 0 as u32;
-                        if scanner_unicode_code_point(s, &raw mut cp) as i32 != 0
-                            && is_valid_char(cp) as i32 != 0
-                        {
-                            scanner_buf_appends_code_point(s, cp);
+                    if (*s).chr(b'\\' as i8) {
+                        (*s).buf_append(b'\\' as i8);
+                    } else if (*s).chr(b'"' as i8) {
+                        (*s).buf_append(b'"' as i8);
+                    } else if (*s).chr(b'n' as i8) {
+                        (*s).buf_append(b'\n' as i8);
+                    } else if (*s).chr(b't' as i8) {
+                        (*s).buf_append(b'\t' as i8);
+                    } else if (*s).chr(b'r' as i8) {
+                        (*s).buf_append(b'\r' as i8);
+                    } else if (*s).chr(b'b' as i8) {
+                        (*s).buf_append(b'\x08' as i8);
+                    } else if (*s).chr(b'f' as i8) {
+                        (*s).buf_append(b'\x0c' as i8);
+                    } else if (*s).chr(b'v' as i8) {
+                        (*s).buf_append(b'\x0b' as i8);
+                    } else if (*s).chr(b'e' as i8) {
+                        (*s).buf_append(b'\x1b' as i8);
+                    } else if (*s).chr(b'u' as i8) {
+                        let mut cp: u32 = 0;
+                        if (*s).unicode_code_point(&raw mut cp) && is_valid_char(cp) as i32 != 0 {
+                            (*s).buf_appends_code_point(cp);
                         } else {
-                            let mut loc: scanner_loc = scanner_token_location(s);
+                            let loc = (*s).token_location();
                             xkb_logf!(
                                 (*s).ctx,
                                 XKB_LOG_LEVEL_WARNING,
@@ -396,16 +378,14 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                                 crate::xkb::utils::CStrDisplay((*s).file_name),
                                 loc.line,
                                 loc.column,
-                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize), (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
+                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.offset(start_pos.wrapping_sub(1) as isize)
                                     as *const i8),
                             );
                         }
-                    } else if scanner_oct(s, &raw mut o) as i32 != 0
-                        && is_valid_char(o as u32) as i32 != 0
-                    {
-                        scanner_buf_append(s, o as i8);
+                    } else if (*s).oct(&mut o) && is_valid_char(o as u32) as i32 != 0 {
+                        (*s).buf_append(o as i8);
                     } else if (*s).pos > start_pos {
-                        let mut loc_0: scanner_loc = scanner_token_location(s);
+                        let loc_0 = (*s).token_location();
                         xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -415,11 +395,11 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                             crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc_0.line,
                             loc_0.column,
-                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1 as usize), (*s).s.offset(start_pos.wrapping_sub(1 as usize) as isize)
+                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.offset(start_pos.wrapping_sub(1) as isize)
                                 as *const i8),
                         );
                     } else {
-                        let mut loc_1: scanner_loc = scanner_token_location(s);
+                        let loc_1 = (*s).token_location();
                         xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -430,15 +410,16 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                             crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc_1.line,
                             loc_1.column,
-                            (scanner_peek(s) as i32 as u8 as char),
+                            ((*s).peek() as u8 as char),
                         );
                     }
                 } else {
-                    scanner_buf_append(s, scanner_next(s));
+                    let c = (*s).next_byte();
+                    (*s).buf_append(c);
                 }
             }
-            if !scanner_buf_append(s, '\0' as i32 as i8) || !scanner_chr(s, '"' as i32 as i8) {
-                let mut loc_2: scanner_loc = scanner_token_location(s);
+            if !(*s).buf_append(0) || !(*s).chr(b'"' as i8) {
+                let loc_2 = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -456,12 +437,12 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             }
             return STRING as i32;
         }
-        if scanner_chr(s, '<' as i32 as i8) {
-            while is_graph(scanner_peek(s)) as i32 != 0 && scanner_peek(s) as i32 != '>' as i32 {
-                scanner_next(s);
+        if (*s).chr(b'<' as i8) {
+            while is_graph((*s).peek()) as i32 != 0 && (*s).peek() != b'>' as i8 {
+                (*s).next_byte();
             }
-            if !scanner_chr(s, '>' as i32 as i8) {
-                let mut loc_3: scanner_loc = scanner_token_location(s);
+            if !(*s).chr(b'>' as i8) {
+                let loc_3 = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -473,74 +454,68 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                 );
                 return ERROR_TOK as i32;
             }
-            let mut start: *const i8 = (*s)
-                .s
-                .offset((*s).token_pos as isize)
-                .offset(1 as i32 as isize);
-            let len: usize = (*s)
-                .pos
-                .wrapping_sub((*s).token_pos)
-                .wrapping_sub(2 as usize);
+            let start: *const i8 = (*s).s.add((*s).token_pos + 1);
+            let len: usize = (*s).pos - (*s).token_pos - 2;
             (*yylval).atom = xkb_atom_intern((*s).ctx, start, len);
             return KEYNAME as i32;
         }
-        if scanner_chr(s, ';' as i32 as i8) {
+        if (*s).chr(b';' as i8) {
             return SEMI as i32;
         }
-        if scanner_chr(s, '{' as i32 as i8) {
+        if (*s).chr(b'{' as i8) {
             return OBRACE as i32;
         }
-        if scanner_chr(s, '}' as i32 as i8) {
+        if (*s).chr(b'}' as i8) {
             return CBRACE as i32;
         }
-        if scanner_chr(s, '=' as i32 as i8) {
+        if (*s).chr(b'=' as i8) {
             return EQUALS as i32;
         }
-        if scanner_chr(s, '[' as i32 as i8) {
+        if (*s).chr(b'[' as i8) {
             return OBRACKET as i32;
         }
-        if scanner_chr(s, ']' as i32 as i8) {
+        if (*s).chr(b']' as i8) {
             return CBRACKET as i32;
         }
-        if scanner_chr(s, '(' as i32 as i8) {
+        if (*s).chr(b'(' as i8) {
             return OPAREN as i32;
         }
-        if scanner_chr(s, ')' as i32 as i8) {
+        if (*s).chr(b')' as i8) {
             return CPAREN as i32;
         }
-        if scanner_chr(s, '.' as i32 as i8) {
+        if (*s).chr(b'.' as i8) {
             return DOT as i32;
         }
-        if scanner_chr(s, ',' as i32 as i8) {
+        if (*s).chr(b',' as i8) {
             return COMMA as i32;
         }
-        if scanner_chr(s, '+' as i32 as i8) {
+        if (*s).chr(b'+' as i8) {
             return PLUS as i32;
         }
-        if scanner_chr(s, '-' as i32 as i8) {
+        if (*s).chr(b'-' as i8) {
             return MINUS as i32;
         }
-        if scanner_chr(s, '*' as i32 as i8) {
+        if (*s).chr(b'*' as i8) {
             return TIMES as i32;
         }
-        if scanner_chr(s, '/' as i32 as i8) {
+        if (*s).chr(b'/' as i8) {
             return DIVIDE as i32;
         }
-        if scanner_chr(s, '!' as i32 as i8) {
+        if (*s).chr(b'!' as i8) {
             return EXCLAM as i32;
         }
-        if scanner_chr(s, '~' as i32 as i8) {
+        if (*s).chr(b'~' as i8) {
             return INVERT as i32;
         }
         let mut tok: i32 = ERROR_TOK as i32;
-        if is_alpha(scanner_peek(s)) as i32 != 0 || scanner_peek(s) as i32 == '_' as i32 {
-            while is_alnum(scanner_peek(s)) as i32 != 0 || scanner_peek(s) as i32 == '_' as i32 {
-                scanner_next(s);
+        if is_alpha((*s).peek()) as i32 != 0 || (*s).peek() == b'_' as i8 {
+            while is_alnum((*s).peek()) as i32 != 0 || (*s).peek() == b'_' as i8 {
+                (*s).next_byte();
             }
-            let mut start_0: *const i8 = (*s).s.offset((*s).token_pos as isize);
-            let len_0: usize = (*s).pos.wrapping_sub((*s).token_pos);
+            let start_0: *const i8 = (*s).s.add((*s).token_pos);
+            let len_0: usize = (*s).pos - (*s).token_pos;
             tok = keyword_to_token(start_0, len_0);
-            if tok >= 0 as i32 {
+            if tok >= 0 {
                 return tok;
             }
             (*yylval).sval = sval {
@@ -551,7 +526,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
         }
         if number(s, &raw mut (*yylval).num, &raw mut tok) {
             if tok == ERROR_TOK as i32 {
-                let mut loc_4: scanner_loc = scanner_token_location(s);
+                let loc_4 = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -566,7 +541,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             }
             return tok;
         }
-        let mut loc_5: scanner_loc = scanner_token_location(s);
+        let loc_5 = (*s).token_location();
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -581,41 +556,34 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
 }
 pub unsafe fn XkbParseStringInit(
     mut ctx: *mut xkb_context,
-    mut scanner: *mut scanner,
+    mut sc: *mut scanner,
     mut string: *const i8,
     mut len: usize,
     mut file_name: *const i8,
     mut map: *const i8,
 ) -> bool {
     unsafe {
-        scanner_init(
-            scanner,
-            ctx,
-            string,
-            len,
-            file_name,
-            std::ptr::null_mut::<core::ffi::c_void>(),
-        );
-        if !scanner_check_supported_char_encoding(scanner) {
-            let mut loc: scanner_loc = scanner_token_location(scanner);
+        *sc = scanner::new(ctx, string, len, file_name, std::ptr::null_mut());
+        if !(*sc).check_supported_char_encoding() {
+            let loc = (*sc).token_location();
             xkb_logf!(
-                (*scanner).ctx,
+                (*sc).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*scanner).file_name),
+                crate::xkb::utils::CStrDisplay((*sc).file_name),
                 loc.line,
                 loc.column,
             );
-            let mut loc_0: scanner_loc = scanner_token_location(scanner);
+            let loc_0 = (*sc).token_location();
             xkb_logf!(
-                (*scanner).ctx,
+                (*sc).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*scanner).file_name),
+                crate::xkb::utils::CStrDisplay((*sc).file_name),
                 loc_0.line,
                 loc_0.column,
             );
@@ -632,24 +600,18 @@ pub unsafe fn XkbParseString(
     mut map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
-        let mut scanner: scanner = scanner {
-            pos: 0,
-            len: 0,
-            s: std::ptr::null(),
-            buf: [0; 1024],
-            buf_pos: 0,
-            token_pos: 0,
-            cached_pos: 0,
-            cached_loc: scanner_loc { line: 0, column: 0 },
-            file_name: std::ptr::null(),
-            ctx: std::ptr::null_mut(),
-            priv_0: std::ptr::null_mut(),
-        };
-        if !XkbParseStringInit(ctx, &raw mut scanner, string, len, file_name, map) {
+        let mut sc = scanner::new(
+            std::ptr::null_mut(),
+            std::ptr::null(),
+            0,
+            std::ptr::null(),
+            std::ptr::null_mut(),
+        );
+        if !XkbParseStringInit(ctx, &raw mut sc, string, len, file_name, map) {
             return std::ptr::null_mut();
         }
         // Cast types between parser and scanner modules (same C struct, different Rust types)
-        return parse(ctx as *mut _, &raw mut scanner as *mut _, map) as *mut XkbFile;
+        return parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile;
     }
 }
 pub unsafe fn XkbParseStringNext(

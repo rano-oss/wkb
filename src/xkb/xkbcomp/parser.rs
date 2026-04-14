@@ -105,7 +105,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, scanner_token_location, sval};
+pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction,
     ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
@@ -324,7 +324,7 @@ pub union yyalloc {
 pub type C2Rust_Unnamed_10 = i32;
 unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
     unsafe {
-        let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+        let mut loc: scanner_loc = (*(*param).scanner).token_location();
         xkb_logf!(
             (*(*param).scanner).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -398,7 +398,7 @@ unsafe fn resolve_keysym(
                 let mut ref_name: *const i8 = std::ptr::null();
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
                     if ref_name.is_null() {
-                        let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+                        let mut loc: scanner_loc = (*(*param).scanner).token_location();
                         xkb_logf!(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -411,7 +411,7 @@ unsafe fn resolve_keysym(
                             crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
                         );
                     } else {
-                        let mut loc_0: scanner_loc = scanner_token_location((*param).scanner);
+                        let mut loc_0: scanner_loc = (*(*param).scanner).token_location();
                         xkb_logf!(
                             (*(*param).scanner).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -5555,7 +5555,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         147 => {
-                            let mut loc: scanner_loc = scanner_token_location((*param).scanner);
+                            let mut loc: scanner_loc = (*(*param).scanner).token_location();
                             xkb_logf!(
                                 (*(*param).scanner).ctx,
                                 XKB_LOG_LEVEL_WARNING,
@@ -5939,8 +5939,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                 (*yyvsp.offset(0 as i32 as isize)).sval,
                                 &raw mut yyval.keysym,
                             ) {
-                                let mut loc_0: scanner_loc =
-                                    scanner_token_location((*param).scanner);
+                                let mut loc_0: scanner_loc = (*(*param).scanner).token_location();
                                 xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
@@ -5971,8 +5970,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         }
                         203 => {
                             if (*yyvsp.offset(0 as i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
-                                let mut loc_1: scanner_loc =
-                                    scanner_token_location((*param).scanner);
+                                let mut loc_1: scanner_loc = (*(*param).scanner).token_location();
                                 xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
@@ -6001,7 +5999,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                         ) {
                                             if ref_name.is_null() {
                                                 let mut loc_2: scanner_loc =
-                                                    scanner_token_location((*param).scanner);
+                                                    (*(*param).scanner).token_location();
                                                 xkb_logf!(
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
@@ -6015,7 +6013,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                                 );
                                             } else {
                                                 let mut loc_3: scanner_loc =
-                                                    scanner_token_location((*param).scanner);
+                                                    (*(*param).scanner).token_location();
                                                 xkb_logf!(
                                                     (*(*param).scanner).ctx,
                                                     XKB_LOG_LEVEL_WARNING,
@@ -6033,7 +6031,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                     }
                                 } else {
                                     let mut loc_4: scanner_loc =
-                                        scanner_token_location((*param).scanner);
+                                        (*(*param).scanner).token_location();
                                     xkb_logf!(
                                         (*(*param).scanner).ctx,
                                         XKB_LOG_LEVEL_WARNING,
@@ -6048,8 +6046,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                     );
                                     yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
                                 }
-                                let mut loc_5: scanner_loc =
-                                    scanner_token_location((*param).scanner);
+                                let mut loc_5: scanner_loc = (*(*param).scanner).token_location();
                                 xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
