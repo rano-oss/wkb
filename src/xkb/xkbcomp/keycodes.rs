@@ -74,14 +74,14 @@ unsafe fn keycode_store_update_key(
     mut name: xkb_atom_t,
 ) {
     unsafe {
-        if (!match_0.c2rust_unnamed.found() || match_0.c2rust_unnamed.is_alias() as i32 != 0) as i64
+        if (!match_0.c2rust_unnamed.found || match_0.c2rust_unnamed.is_alias as i32 != 0) as i64
             != 0
         {
             return;
-        } else if match_0.key.low() {
-            (&mut (*store).low)[match_0.key.index() as usize] = name;
+        } else if match_0.key.low {
+            (&mut (*store).low)[match_0.key.index as usize] = name;
         } else {
-            (&mut (*store).high)[match_0.key.index() as usize].name = name;
+            (&mut (*store).high)[match_0.key.index as usize].name = name;
         }
         if name >= (&(*store).names).len() as xkb_atom_t {
             vec_resize_zero(&mut (*store).names, (name as usize).wrapping_add(1));
@@ -108,14 +108,12 @@ unsafe fn keycode_store_insert_key(
             }
             (&mut (*store).names)[name as usize] = KeycodeMatch {
                 key: {
-                    let mut init = C2Rust_Unnamed_7 {
-                        found_low_is_alias_index: [0; 4],
-                    };
-                    init.set_found(true);
-                    init.set_low(true);
-                    init.set_is_alias(false);
-                    init.set_index(kc as u32);
-                    init
+                    C2Rust_Unnamed_7 {
+                        found: true,
+                        low: true,
+                        is_alias: false,
+                        index: kc as u32,
+                    }
                 },
             };
         } else {
@@ -145,7 +143,7 @@ unsafe fn keycode_store_insert_key(
                     while entry_0 < high_ptr.offset(high_len as isize) {
                         let ref mut c2rust_fresh4 =
                             (&mut (*store).names)[(*entry_0).name as usize].key;
-                        (*c2rust_fresh4).set_index((*c2rust_fresh4).index() + 1 as u32);
+                        (*c2rust_fresh4).index = (*c2rust_fresh4).index + 1 as u32;
                         entry_0 = entry_0.offset(1);
                     }
                 }
@@ -159,14 +157,12 @@ unsafe fn keycode_store_insert_key(
                 );
                 (&mut (*store).names)[name as usize] = KeycodeMatch {
                     key: {
-                        let mut init = C2Rust_Unnamed_7 {
-                            found_low_is_alias_index: [0; 4],
-                        };
-                        init.set_found(true);
-                        init.set_low(false);
-                        init.set_is_alias(false);
-                        init.set_index(lower);
-                        init
+                        C2Rust_Unnamed_7 {
+                            found: true,
+                            low: false,
+                            is_alias: false,
+                            index: lower,
+                        }
                     },
                 };
             } else {
@@ -176,14 +172,12 @@ unsafe fn keycode_store_insert_key(
                 });
                 (&mut (*store).names)[name as usize] = KeycodeMatch {
                     key: {
-                        let mut init = C2Rust_Unnamed_7 {
-                            found_low_is_alias_index: [0; 4],
-                        };
-                        init.set_found(true);
-                        init.set_low(false);
-                        init.set_is_alias(false);
-                        init.set_index(idx);
-                        init
+                        C2Rust_Unnamed_7 {
+                            found: true,
+                            low: false,
+                            is_alias: false,
+                            index: idx,
+                        }
                     },
                 };
             }
@@ -206,14 +200,12 @@ unsafe fn keycode_store_insert_alias(
         }
         (&mut (*store).names)[alias as usize] = KeycodeMatch {
             alias: {
-                let mut init = C2Rust_Unnamed_6 {
-                    found_c2rust_unnamed_is_alias_real: [0; 4],
-                };
-                init.set_found(true);
-                init.set_c2rust_unnamed(true);
-                init.set_is_alias(real != 0);
-                init.set_real(real);
-                init
+                C2Rust_Unnamed_6 {
+                    found: true,
+                    c2rust_unnamed: true,
+                    is_alias: real != 0,
+                    real: real,
+                }
             },
         };
         return true;
@@ -225,25 +217,25 @@ unsafe fn keycode_store_delete_name(mut store: *const KeycodeStore, mut name: xk
         if (name as usize) < (&(*store).names).len() {
             let ref mut c2rust_fresh5 =
                 (&mut (*(store as *mut KeycodeStore)).names)[name as usize].c2rust_unnamed;
-            (*c2rust_fresh5).set_found((false) as bool);
+            (*c2rust_fresh5).found = false;
         }
     }
 }
 unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: KeycodeMatch) {
     unsafe {
-        if (!match_0.c2rust_unnamed.found() || match_0.c2rust_unnamed.is_alias() as i32 != 0) as i64
+        if (!match_0.c2rust_unnamed.found || match_0.c2rust_unnamed.is_alias as i32 != 0) as i64
             != 0
         {
             return;
-        } else if match_0.key.low() {
-            let low_name = (&(*store).low)[match_0.key.index() as usize];
+        } else if match_0.key.low {
+            let low_name = (&(*store).low)[match_0.key.index as usize];
             let ref mut c2rust_fresh1 = (&mut (*store).names)[low_name as usize].c2rust_unnamed;
-            (*c2rust_fresh1).set_found((false) as bool);
-            if match_0.key.index().wrapping_add(1 as u32) == (&(*store).low).len() as u32 {
-                if (*store).min == match_0.key.index() as xkb_keycode_t {
+            (*c2rust_fresh1).found = false;
+            if match_0.key.index.wrapping_add(1 as u32) == (&(*store).low).len() as u32 {
+                if (*store).min == match_0.key.index as xkb_keycode_t {
                     (&mut (*store).low).clear();
                 } else {
-                    let mut idx: u32 = match_0.key.index();
+                    let mut idx: u32 = match_0.key.index;
                     while idx > 0 as u32 {
                         if (&(*store).low)[(idx.wrapping_sub(1 as u32)) as usize]
                             != XKB_ATOM_NONE as xkb_atom_t
@@ -256,25 +248,25 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                     }
                 }
             } else {
-                (&mut (*store).low)[match_0.key.index() as usize] = XKB_ATOM_NONE as xkb_atom_t;
+                (&mut (*store).low)[match_0.key.index as usize] = XKB_ATOM_NONE as xkb_atom_t;
             }
         } else {
-            let high_name = (&(*store).high)[match_0.key.index() as usize].name;
+            let high_name = (&(*store).high)[match_0.key.index as usize].name;
             let ref mut c2rust_fresh2 = (&mut (*store).names)[high_name as usize].c2rust_unnamed;
-            (*c2rust_fresh2).set_found((false) as bool);
-            let __index: u32 = match_0.key.index();
+            (*c2rust_fresh2).found = false;
+            let __index: u32 = match_0.key.index;
             (&mut (*store).high).remove(__index as usize);
             {
                 let names_ptr = (*store).names.as_mut_ptr();
                 let names_len = (&(*store).names).len();
                 let mut entry: *mut KeycodeMatch = names_ptr;
                 while entry < names_ptr.add(names_len) {
-                    if (*entry).c2rust_unnamed.found() as i32 != 0
-                        && !(*entry).c2rust_unnamed.is_alias()
-                        && !(*entry).key.low()
-                        && (*entry).key.index() as i32 > match_0.key.index() as i32
+                    if (*entry).c2rust_unnamed.found as i32 != 0
+                        && !(*entry).c2rust_unnamed.is_alias
+                        && !(*entry).key.low
+                        && (*entry).key.index as i32 > match_0.key.index as i32
                     {
-                        (*entry).key.set_index((*entry).key.index() - 1 as u32);
+                        (*entry).key.index = (*entry).key.index - 1 as u32;
                     }
                     entry = entry.offset(1);
                 }
@@ -307,25 +299,23 @@ unsafe fn keycode_store_lookup_keycode(
         if kc < (&(*store).low).len() as xkb_keycode_t {
             return KeycodeMatch {
                 key: {
-                    let mut init = C2Rust_Unnamed_7 {
-                        found_low_is_alias_index: [0; 4],
-                    };
-                    init.set_found(true);
-                    init.set_low(true);
-                    init.set_is_alias(false);
-                    init.set_index(kc as u32);
-                    init
+                    C2Rust_Unnamed_7 {
+                        found: true,
+                        low: true,
+                        is_alias: false,
+                        index: kc as u32,
+                    }
                 },
             };
         } else if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as xkb_keycode_t {
             return KeycodeMatch {
                 c2rust_unnamed: {
-                    let mut init = C2Rust_Unnamed_8 {
-                        found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
-                    };
-                    init.set_found(false);
-                    init.set_c2rust_unnamed(false);
-                    init
+                    C2Rust_Unnamed_8 {
+                        found: false,
+                        c2rust_unnamed: false,
+                        is_alias: false,
+                        c2rust_unnamed_0: 0,
+                    }
                 },
             };
         }
@@ -346,26 +336,24 @@ unsafe fn keycode_store_lookup_keycode(
             } else {
                 return KeycodeMatch {
                     key: {
-                        let mut init = C2Rust_Unnamed_7 {
-                            found_low_is_alias_index: [0; 4],
-                        };
-                        init.set_found(true);
-                        init.set_low(false);
-                        init.set_is_alias(false);
-                        init.set_index(mid);
-                        init
+                        C2Rust_Unnamed_7 {
+                            found: true,
+                            low: false,
+                            is_alias: false,
+                            index: mid,
+                        }
                     },
                 };
             }
         }
         return KeycodeMatch {
             c2rust_unnamed: {
-                let mut init = C2Rust_Unnamed_8 {
-                    found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
-                };
-                init.set_found(false);
-                init.set_c2rust_unnamed(false);
-                init
+                C2Rust_Unnamed_8 {
+                    found: false,
+                    c2rust_unnamed: false,
+                    is_alias: false,
+                    c2rust_unnamed_0: 0,
+                }
             },
         };
     }
@@ -378,12 +366,12 @@ unsafe fn keycode_store_lookup_name(
         if name >= (&(*store).names).len() as xkb_atom_t {
             return KeycodeMatch {
                 c2rust_unnamed: {
-                    let mut init = C2Rust_Unnamed_8 {
-                        found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [0; 4],
-                    };
-                    init.set_found(false);
-                    init.set_c2rust_unnamed(false);
-                    init
+                    C2Rust_Unnamed_8 {
+                        found: false,
+                        c2rust_unnamed: false,
+                        is_alias: false,
+                        c2rust_unnamed_0: 0,
+                    }
                 },
             };
         } else {
@@ -524,9 +512,9 @@ unsafe fn AddKeyName(
     unsafe {
         let mut match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, name);
-        if match_name.c2rust_unnamed.found() {
+        if match_name.c2rust_unnamed.found {
             let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
-            if match_name.c2rust_unnamed.is_alias() {
+            if match_name.c2rust_unnamed.is_alias {
                 if report {
                     xkb_logf!(
                         (*info).ctx,
@@ -549,21 +537,21 @@ unsafe fn AddKeyName(
                 }
                 if clobber {
                     keycode_store_delete_name(&raw mut (*info).keycodes, name);
-                    match_name.c2rust_unnamed.set_found((false) as bool);
+                    match_name.c2rust_unnamed.found = false;
                 } else {
                     return true;
                 }
             } else {
                 let old_kc: xkb_keycode_t = {
                     let store = &raw mut (*info).keycodes;
-                    if !match_name.c2rust_unnamed.found()
-                        || match_name.c2rust_unnamed.is_alias() as i32 != 0
+                    if !match_name.c2rust_unnamed.found
+                        || match_name.c2rust_unnamed.is_alias as i32 != 0
                     {
                         XKB_KEYCODE_INVALID as xkb_keycode_t
-                    } else if match_name.key.low() {
-                        match_name.key.index() as xkb_keycode_t
+                    } else if match_name.key.low {
+                        match_name.key.index as xkb_keycode_t
                     } else {
-                        (&(*store).high)[match_name.key.index() as usize].keycode
+                        (&(*store).high)[match_name.key.index as usize].keycode
                     }
                 };
                 if old_kc != kc {
@@ -593,12 +581,12 @@ unsafe fn AddKeyName(
             keycode_store_lookup_keycode(&raw mut (*info).keycodes, kc) as KeycodeMatch;
         let old_name: xkb_atom_t = {
             let store = &raw mut (*info).keycodes;
-            if !match_kc.c2rust_unnamed.found() || match_kc.c2rust_unnamed.is_alias() as i32 != 0 {
+            if !match_kc.c2rust_unnamed.found || match_kc.c2rust_unnamed.is_alias as i32 != 0 {
                 XKB_ATOM_NONE as xkb_atom_t
-            } else if match_kc.key.low() {
-                (&(*store).low)[match_kc.key.index() as usize]
+            } else if match_kc.key.low {
+                (&(*store).low)[match_kc.key.index as usize]
             } else {
-                (&(*store).high)[match_kc.key.index() as usize].name
+                (&(*store).high)[match_kc.key.index as usize].name
             }
         };
         if old_name != XKB_ATOM_NONE as xkb_atom_t {
@@ -707,8 +695,8 @@ unsafe fn MergeKeycodeStores(
                     alias = 0 as xkb_atom_t;
                     match_0 = names_ptr;
                     while (alias as usize) < names_len {
-                        if !(!(*match_0).c2rust_unnamed.found()
-                            || !(*match_0).c2rust_unnamed.is_alias())
+                        if !(!(*match_0).c2rust_unnamed.found
+                            || !(*match_0).c2rust_unnamed.is_alias)
                         {
                             let def: KeyAliasDef = KeyAliasDef {
                                 common: _ParseCommon {
@@ -717,7 +705,7 @@ unsafe fn MergeKeycodeStores(
                                 },
                                 merge: merge,
                                 alias: alias,
-                                real: (*match_0).alias.real(),
+                                real: (*match_0).alias.real,
                             };
                             if !HandleAliasDef(into, &raw const def, report) {
                                 (*into).errorCount += 1;
@@ -853,10 +841,10 @@ unsafe fn HandleAliasDef(
     unsafe {
         let match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, (*def).alias) as KeycodeMatch;
-        if match_name.c2rust_unnamed.found() {
+        if match_name.c2rust_unnamed.found {
             let clobber: bool = (*def).merge as u32 != MERGE_AUGMENT as u32;
-            if match_name.c2rust_unnamed.is_alias() {
-                if (*def).real == match_name.alias.real() {
+            if match_name.c2rust_unnamed.is_alias {
+                if (*def).real == match_name.alias.real {
                     if report {
                         xkb_logf!(
                             (*info).ctx,
@@ -872,10 +860,10 @@ unsafe fn HandleAliasDef(
                     let use_0: xkb_atom_t = if clobber as i32 != 0 {
                         (*def).real
                     } else {
-                        match_name.alias.real()
+                        match_name.alias.real
                     };
                     let ignore: xkb_atom_t = if clobber as i32 != 0 {
-                        match_name.alias.real()
+                        match_name.alias.real
                     } else {
                         (*def).real
                     };
@@ -895,7 +883,7 @@ unsafe fn HandleAliasDef(
                         let store = &raw mut (*info).keycodes;
                         let ref mut c2rust_fresh3 =
                             (&mut (*store).names)[(*def).alias as usize].alias;
-                        (*c2rust_fresh3).set_real(use_0 as xkb_atom_t);
+                        (*c2rust_fresh3).real = use_0 as xkb_atom_t;
                     }
                 }
                 return true;
@@ -1190,14 +1178,14 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                 name = 0 as xkb_atom_t;
                 match_0 = names_ptr;
                 while (name as usize) < names_len {
-                    if (*match_0).c2rust_unnamed.found() {
-                        if (*match_0).c2rust_unnamed.is_alias() {
+                    if (*match_0).c2rust_unnamed.found {
+                        if (*match_0).c2rust_unnamed.is_alias {
                             let match_real: KeycodeMatch = keycode_store_lookup_name(
                                 &raw mut (*info).keycodes,
-                                (*match_0).alias.real(),
+                                (*match_0).alias.real,
                             )
                                 as KeycodeMatch;
-                            if !match_real.c2rust_unnamed.found() {
+                            if !match_real.c2rust_unnamed.found {
                                 xkb_logf!(
                                     (*info).ctx,
                                     XKB_LOG_LEVEL_WARNING,
@@ -1207,16 +1195,15 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                                     crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
                                     crate::xkb::utils::CStrDisplay(KeyNameText(
                                         (*info).ctx,
-                                        (*match_0).alias.real()
+                                        (*match_0).alias.real
                                     )),
                                 );
-                                (*match_0).c2rust_unnamed.set_found((false) as bool);
+                                (*match_0).c2rust_unnamed.found = false;
                             } else {
                             }
-                        } else if !(*match_0).key.low() {
-                            (*match_0).key.set_index(
-                                (*match_0).key.index() + (*keymap).num_keys_low as u32 as u32,
-                            );
+                        } else if !(*match_0).key.low {
+                            (*match_0).key.index =
+                                (*match_0).key.index + (*keymap).num_keys_low as u32;
                         }
                     }
                     name = name.wrapping_add(1);

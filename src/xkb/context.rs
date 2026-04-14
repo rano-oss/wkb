@@ -435,7 +435,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
             cstr_free(*path);
         }
         (*ctx).failed_includes.clear();
-        (*ctx).set_pending_default_includes((false) as bool);
+        (*ctx).pending_default_includes = false;
     }
 }
 
@@ -597,15 +597,10 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
             drop(Box::from_raw(ctx));
             return std::ptr::null_mut();
         }
-        (*ctx).set_use_environment_names(
-            (flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0) as bool,
-        );
-        (*ctx).set_use_secure_getenv(
-            (flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0) as bool,
-        );
-        (*ctx).set_pending_default_includes(
-            (flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0) as bool,
-        );
+        (*ctx).use_environment_names = flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0;
+        (*ctx).use_secure_getenv = flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
+        (*ctx).pending_default_includes =
+            flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0;
         env = xkb_context_getenv(ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
         if !env.is_null() {
             xkb_context_set_log_level(ctx, log_level(env));

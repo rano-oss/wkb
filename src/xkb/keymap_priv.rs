@@ -311,9 +311,9 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
         if !key.is_null() {
             layout = XkbWrapGroupIntoRange(
                 layout as i32,
-                (*key).num_groups(),
-                (*key).out_of_range_group_policy(),
-                (*key).out_of_range_group_number(),
+                (*key).num_groups,
+                (*key).out_of_range_group_policy,
+                (*key).out_of_range_group_number,
             );
             if !(layout == XKB_LAYOUT_INVALID as xkb_layout_index_t) {
                 if !(level >= XkbKeyNumLevels(key, layout)) {

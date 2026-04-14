@@ -77,7 +77,7 @@ macro_rules! xkb_logf {
 
 pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
-        if (*ctx).use_secure_getenv() {
+        if (*ctx).use_secure_getenv {
             return secure_getenv(name);
         } else {
             return getenv(name);
@@ -86,7 +86,7 @@ pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8)
 }
 pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
     unsafe {
-        if (*ctx).pending_default_includes() {
+        if (*ctx).pending_default_includes {
             if (*ctx).failed_includes.is_empty() {
                 if xkb_context_include_path_append_default(ctx) == 0 {
                     xkb_logf!(
@@ -101,7 +101,7 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
                     );
                     return false;
                 }
-                (*ctx).set_pending_default_includes((false) as bool);
+                (*ctx).pending_default_includes = false;
             } else {
                 return false;
             }
@@ -186,7 +186,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         if isempty((*rmlvo).rules) {
             // xkb_context_get_default_rules inlined
             let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names() {
+            if (*ctx).use_environment_names {
                 env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
             }
             (*rmlvo).rules = if !env.is_null() {
@@ -199,7 +199,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         if isempty((*rmlvo).model) {
             // xkb_context_get_default_model inlined
             let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names() {
+            if (*ctx).use_environment_names {
                 env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
             }
             (*rmlvo).model = if !env.is_null() {
@@ -213,7 +213,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
             // xkb_context_get_default_layout inlined
             {
                 let mut env: *const i8 = std::ptr::null();
-                if (*ctx).use_environment_names() {
+                if (*ctx).use_environment_names {
                     env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
                 }
                 (*rmlvo).layout = if !env.is_null() {
@@ -228,7 +228,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
                 let mut env: *const i8 = std::ptr::null();
                 let mut layout: *const i8 =
                     xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
-                if !layout.is_null() && (*ctx).use_environment_names() as i32 != 0 {
+                if !layout.is_null() && (*ctx).use_environment_names {
                     env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
                 }
                 if !env.is_null() {
@@ -258,7 +258,7 @@ pub unsafe fn xkb_context_sanitize_rule_names(
         if (*rmlvo).options.is_null() {
             // xkb_context_get_default_options inlined
             let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names() {
+            if (*ctx).use_environment_names {
                 env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
             }
             (*rmlvo).options = if !env.is_null() {

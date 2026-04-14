@@ -35,7 +35,8 @@ impl CompatInfo {
             merge: MERGE_DEFAULT,
             led: xkb_led {
                 name: 0,
-                which_groups_pending_groups: [0; 4],
+                which_groups: 0,
+                pending_groups: false,
                 groups: 0,
                 which_mods: 0 as xkb_state_component,
                 mods: xkb_mods { mods: 0, mask: 0 },
@@ -55,7 +56,8 @@ impl CompatInfo {
                     mods: 0,
                     virtual_mod: 0,
                     level_one_only: false,
-                    repeat_required: [0; 1],
+                    repeat: false,
+                    required: false,
                     num_actions: 0,
                     a: C2Rust_Unnamed_1 {
                         action: xkb_action {
@@ -341,7 +343,7 @@ unsafe fn MergeInterp(
             report,
             &raw mut collide,
         ) {
-            (*old).interp.set_repeat((*new).interp.repeat() as bool);
+            (*old).interp.repeat = (*new).interp.repeat;
             (*old).defined = ((*old).defined as u32 | SI_FIELD_AUTO_REPEAT as u32) as si_field;
         }
         if UseNewInterpField(
@@ -483,11 +485,11 @@ unsafe fn MergeLedMap(
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         if (*old).led.mods.mods == (*new).led.mods.mods
-            && (*old).led.pending_groups() as i32 == (*new).led.pending_groups() as i32
+            && (*old).led.pending_groups as i32 == (*new).led.pending_groups as i32
             && (*old).led.groups == (*new).led.groups
             && (*old).led.ctrls as u32 == (*new).led.ctrls as u32
             && (*old).led.which_mods as u32 == (*new).led.which_mods as u32
-            && (*old).led.which_groups() as i32 == (*new).led.which_groups() as i32
+            && (*old).led.which_groups as i32 == (*new).led.which_groups as i32
         {
             (*old).defined = ((*old).defined as u32 | (*new).defined as u32) as led_field;
             return true;
@@ -526,13 +528,9 @@ unsafe fn MergeLedMap(
             report,
             &raw mut collide,
         ) {
-            (*old)
-                .led
-                .set_which_groups((*new).led.which_groups() as xkb_state_component);
+            (*old).led.which_groups = (*new).led.which_groups;
             (*old).led.groups = (*new).led.groups;
-            (*old)
-                .led
-                .set_pending_groups((*new).led.pending_groups() as bool);
+            (*old).led.pending_groups = (*new).led.pending_groups as bool;
             (*old).defined = ((*old).defined as u32 | LED_FIELD_GROUPS as u32) as led_field;
         }
         if UseNewLEDField(
@@ -827,7 +825,7 @@ unsafe fn SetInterpField(
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
                 return ReportSIBadType(info, si, field, b"boolean\0".as_ptr() as *const i8);
             }
-            (*si).interp.set_repeat(set as bool);
+            (*si).interp.repeat = set;
             (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as u32) as si_field;
         } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
             xkb_logf!(
@@ -910,7 +908,7 @@ unsafe fn SetLedMapField(
             let mut pending: bool = false;
             if !ExprResolveGroupMask((*info).keymap_info, value, &raw mut mask, &raw mut pending) {
                 if pending {
-                    (*ledi).led.set_pending_groups((true) as bool);
+                    (*ledi).led.pending_groups = (true) as bool;
                     let pending_index: u32 =
                         (&*(*(*info).keymap_info).pending_computations).len() as u32;
                     (&mut *(*(*info).keymap_info).pending_computations).push(pending_computation {
@@ -929,7 +927,7 @@ unsafe fn SetLedMapField(
                     );
                 }
             } else {
-                (*ledi).led.set_pending_groups((false) as bool);
+                (*ledi).led.pending_groups = (false) as bool;
             }
             (*ledi).led.groups = mask;
             (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_GROUPS as u32) as led_field;
@@ -1002,9 +1000,7 @@ unsafe fn SetLedMapField(
                     b"mask of group state components\0".as_ptr() as *const i8,
                 );
             }
-            (*ledi)
-                .led
-                .set_which_groups(mask_2 as xkb_state_component as xkb_state_component);
+            (*ledi).led.which_groups = mask_2 as xkb_state_component;
         } else if istreq(field, b"driveskbd\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"driveskeyboard\0".as_ptr() as *const i8) as i32 != 0
             || istreq(field, b"leddriveskbd\0".as_ptr() as *const i8) as i32 != 0
@@ -1065,7 +1061,8 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                     mods: 0,
                     virtual_mod: 0,
                     level_one_only: false,
-                    repeat_required: [0; 1],
+                    repeat: false,
+                    required: false,
                     num_actions: 0,
                     a: C2Rust_Unnamed_1 {
                         action: xkb_action {
@@ -1097,7 +1094,8 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
                 merge: MERGE_DEFAULT,
                 led: xkb_led {
                     name: 0,
-                    which_groups_pending_groups: [0; 4],
+                    which_groups: 0,
+                    pending_groups: false,
                     groups: 0,
                     which_mods: 0 as xkb_state_component,
                     mods: xkb_mods { mods: 0, mask: 0 },
@@ -1193,7 +1191,8 @@ unsafe fn HandleInterpDef(mut info: *mut CompatInfo, mut def: *mut InterpDef) ->
                 mods: 0,
                 virtual_mod: 0,
                 level_one_only: false,
-                repeat_required: [0; 1],
+                repeat: false,
+                required: false,
                 num_actions: 0,
                 a: C2Rust_Unnamed_1 {
                     action: xkb_action {
@@ -1432,11 +1431,11 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
             match c2rust_current_block_11 {
                 17860125682698302841 => {
                     *led = (*ledi).led;
-                    if (*led).which_groups() as i32 == 0 as i32
+                    if (*led).which_groups as i32 == 0 as i32
                         && ((*led).groups != 0 as xkb_layout_mask_t
-                            || (*led).pending_groups() as i32 != 0)
+                            || (*led).pending_groups as i32 != 0)
                     {
-                        (*led).set_which_groups(XKB_STATE_LAYOUT_EFFECTIVE as xkb_state_component);
+                        (*led).which_groups = XKB_STATE_LAYOUT_EFFECTIVE as xkb_state_component;
                     }
                     if (*led).which_mods as u32 == 0 as u32
                         && (*led).mods.mods != 0 as xkb_mod_mask_t

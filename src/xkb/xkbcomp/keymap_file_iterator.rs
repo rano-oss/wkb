@@ -1,13 +1,10 @@
 use crate::xkb_logf;
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_file_include {
-    #[bitfield(name = "valid", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "explicit_section", ty = "bool", bits = "1..=1")]
-    pub valid_explicit_section: [u8; 1],
-    #[bitfield(padding)]
-    pub c2rust_padding: [u8; 3],
+    pub valid: bool,
+    pub explicit_section: bool,
     pub merge: merge_mode,
     pub path: u32,
     pub file: u32,
@@ -251,20 +248,15 @@ unsafe fn xkb_file_section_append_includes(
                 } else {
                     0 as u32
                 }) as xkb_map_flags;
-                let inc: xkb_file_include = {
-                    let mut init = xkb_file_include {
-                        valid_explicit_section: [0; 1],
-                        c2rust_padding: [0; 3],
-                        merge: (*stmt).merge,
-                        path: path,
-                        file: file,
-                        section: section_name,
-                        modifier: modifier,
-                        flags: section_flags,
-                    };
-                    init.set_valid(valid);
-                    init.set_explicit_section(!(*stmt).map.is_null());
-                    init
+                let inc = xkb_file_include {
+                    valid,
+                    explicit_section: !(*stmt).map.is_null(),
+                    merge: (*stmt).merge,
+                    path: path,
+                    file: file,
+                    section: section_name,
+                    modifier: modifier,
+                    flags: section_flags,
                 };
                 let idx: u32 = (&(*section).includes).len() as u32;
                 (&mut (*section).includes).push(inc);

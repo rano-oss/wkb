@@ -23,28 +23,37 @@ pub union C2Rust_Unnamed_2 {
     pub internal: C2Rust_Unnamed_4,
     pub leaf: C2Rust_Unnamed_3,
 }
-#[derive(Copy, Clone, BitfieldStruct)]
+/// Leaf node: bits 0..30 = utf8 index, bit 31 = is_leaf (always true).
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_3 {
-    #[bitfield(name = "utf8", ty = "u32", bits = "0..=30")]
-    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-    pub utf8_is_leaf: [u8; 4],
+    pub utf8_is_leaf: u32,
     pub keysym: xkb_keysym_t,
 }
-#[derive(Copy, Clone, BitfieldStruct)]
+impl C2Rust_Unnamed_3 {
+    #[inline]
+    pub fn utf8(&self) -> u32 {
+        self.utf8_is_leaf & 0x7FFF_FFFF
+    }
+}
+/// Internal node: bits 0..30 = pad, bit 31 = is_leaf (always false).
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_4 {
-    #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
-    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-    pub _pad_is_leaf: [u8; 4],
+    pub _pad_is_leaf: u32,
     pub eqkid: u32,
 }
-#[derive(Copy, Clone, BitfieldStruct)]
+/// Tag-only accessor: bit 31 = is_leaf discriminant.
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_5 {
-    #[bitfield(name = "_pad", ty = "u32", bits = "0..=30")]
-    #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
-    pub _pad_is_leaf: [u8; 4],
+    pub _pad_is_leaf: u32,
+}
+impl C2Rust_Unnamed_5 {
+    #[inline]
+    pub fn is_leaf(&self) -> bool {
+        (self._pad_is_leaf >> 31) != 0
+    }
 }
 #[derive(Copy, Clone)]
 #[repr(C)]

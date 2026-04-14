@@ -145,7 +145,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
                 if !(*key).groups.is_null() {
                     let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
-                    while i < (*key).num_groups() {
+                    while i < (*key).num_groups {
                         if !(*(*key).groups.offset(i as isize)).levels.is_null() {
                             let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
                             while j < XkbKeyNumLevels(key, i) {
@@ -166,7 +166,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
                     }
                     free((*key).groups as *mut ::core::ffi::c_void);
                 }
-                if !(*key).overlays_inline() && !(*key).c2rust_unnamed.overlays_keys.is_null() {
+                if !(*key).overlays_inline && !(*key).c2rust_unnamed.overlays_keys.is_null() {
                     free((*key).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
                 }
                 key = key.offset(1);
@@ -591,7 +591,7 @@ pub unsafe fn xkb_keymap_num_layouts_for_key(
         if key.is_null() {
             return 0 as xkb_layout_index_t;
         }
-        return (*key).num_groups();
+        return (*key).num_groups;
     }
 }
 #[c2rust::src_loc = "404:1"]
@@ -607,9 +607,9 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
         }
         layout = XkbWrapGroupIntoRange(
             layout as i32,
-            (*key).num_groups(),
-            (*key).out_of_range_group_policy(),
-            (*key).out_of_range_group_number(),
+            (*key).num_groups,
+            (*key).out_of_range_group_policy,
+            (*key).out_of_range_group_number,
         );
         if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
             return 0 as xkb_level_index_t;
@@ -669,9 +669,9 @@ pub unsafe fn xkb_keymap_key_get_level(
     unsafe {
         layout = XkbWrapGroupIntoRange(
             layout as i32,
-            (*key).num_groups(),
-            (*key).out_of_range_group_policy(),
-            (*key).out_of_range_group_number(),
+            (*key).num_groups,
+            (*key).out_of_range_group_policy,
+            (*key).out_of_range_group_number,
         );
         if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
             return std::ptr::null_mut();
@@ -795,7 +795,7 @@ pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_ke
         if key.is_null() {
             return 0 as i32;
         }
-        return (*key).repeats() as i32;
+        return (*key).repeats as i32;
     }
 }
 use crate::xkb::context::xkb_context_unref;

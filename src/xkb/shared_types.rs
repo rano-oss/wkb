@@ -74,10 +74,7 @@ pub use crate::xkb::atom::atom_table;
 
 // ── xkb_context ─────────────────────────────────────────────────────
 
-use c2rust_bitfields::BitfieldStruct;
-
-#[derive(Clone, BitfieldStruct)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_context {
     pub refcnt: i32,
     pub log_fn: Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>,
@@ -91,12 +88,9 @@ pub struct xkb_context {
     pub x11_atom_cache: *mut ::core::ffi::c_void,
     pub text_buffer: [i8; 2048],
     pub text_next: usize,
-    #[bitfield(name = "use_environment_names", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "use_secure_getenv", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "pending_default_includes", ty = "bool", bits = "2..=2")]
-    pub use_environment_names_use_secure_getenv_pending_default_includes: [u8; 1],
-    #[bitfield(padding)]
-    pub c2rust_padding: [u8; 7],
+    pub use_environment_names: bool,
+    pub use_secure_getenv: bool,
+    pub pending_default_includes: bool,
 }
 
 // ── __va_list_tag ───────────────────────────────────────────────────
@@ -164,7 +158,7 @@ pub const MOD_BOTH: mod_type = 3;
 pub const MOD_VIRT: mod_type = 2;
 pub const MOD_REAL: mod_type = 1;
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_sym_interpret {
     pub sym: xkb_keysym_t,
@@ -172,9 +166,8 @@ pub struct xkb_sym_interpret {
     pub mods: xkb_mod_mask_t,
     pub virtual_mod: xkb_mod_index_t,
     pub level_one_only: bool,
-    #[bitfield(name = "repeat", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "required", ty = "bool", bits = "1..=1")]
-    pub repeat_required: [u8; 1],
+    pub repeat: bool,
+    pub required: bool,
     pub num_actions: xkb_action_count_t,
     pub a: C2Rust_Unnamed_1,
 }
@@ -433,37 +426,34 @@ pub union KeycodeMatch {
     pub alias: C2Rust_Unnamed_6,
 }
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_6 {
-    #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "real", ty = "xkb_atom_t", bits = "3..=31")]
-    pub found_c2rust_unnamed_is_alias_real: [u8; 4],
+    pub found: bool,
+    pub c2rust_unnamed: bool,
+    pub is_alias: bool,
+    pub real: xkb_atom_t,
 }
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_7 {
-    #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "low", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "index", ty = "u32", bits = "3..=31")]
-    pub found_low_is_alias_index: [u8; 4],
+    pub found: bool,
+    pub low: bool,
+    pub is_alias: bool,
+    pub index: u32,
 }
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_8 {
-    #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "c2rust_unnamed_0", ty = "u32", bits = "3..=31")]
-    pub found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [u8; 4],
+    pub found: bool,
+    pub c2rust_unnamed: bool,
+    pub is_alias: bool,
+    pub c2rust_unnamed_0: u32,
 }
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_key {
     pub keycode: xkb_keycode_t,
@@ -472,23 +462,13 @@ pub struct xkb_key {
     pub modmap: xkb_mod_mask_t,
     pub vmodmap: xkb_mod_mask_t,
     pub overlays: xkb_overlay_mask_t,
-    #[bitfield(name = "overlays_inline", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "repeats", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "out_of_range_pending_group", ty = "bool", bits = "3..=3")]
-    #[bitfield(
-        name = "out_of_range_group_policy",
-        ty = "xkb_layout_out_of_range_policy",
-        bits = "4..=7"
-    )]
-    #[bitfield(
-        name = "out_of_range_group_number",
-        ty = "xkb_layout_index_t",
-        bits = "8..=15"
-    )]
-    #[bitfield(name = "num_groups", ty = "xkb_layout_index_t", bits = "16..=23")]
-    pub overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups:
-        [u8; 3],
+    pub overlays_inline: bool,
+    pub repeats: bool,
+    pub implicit_actions: bool,
+    pub out_of_range_pending_group: bool,
+    pub out_of_range_group_policy: xkb_layout_out_of_range_policy,
+    pub out_of_range_group_number: xkb_layout_index_t,
+    pub num_groups: xkb_layout_index_t,
     pub groups: *mut xkb_group,
     pub c2rust_unnamed: C2Rust_Unnamed_9,
 }
@@ -500,16 +480,13 @@ pub union C2Rust_Unnamed_9 {
     pub overlays_keys: *mut *const xkb_key,
 }
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_group {
-    #[bitfield(name = "explicit_symbols", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "explicit_actions", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "implicit_actions", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "explicit_type", ty = "bool", bits = "3..=3")]
-    pub explicit_symbols_explicit_actions_implicit_actions_explicit_type: [u8; 1],
-    #[bitfield(padding)]
-    pub c2rust_padding: [u8; 7],
+    pub explicit_symbols: bool,
+    pub explicit_actions: bool,
+    pub implicit_actions: bool,
+    pub explicit_type: bool,
     pub type_0: *const xkb_key_type,
     pub levels: *mut xkb_level,
 }
@@ -557,13 +534,12 @@ pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
 pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
 pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_led {
     pub name: xkb_atom_t,
-    #[bitfield(name = "which_groups", ty = "xkb_state_component", bits = "0..=30")]
-    #[bitfield(name = "pending_groups", ty = "bool", bits = "31..=31")]
-    pub which_groups_pending_groups: [u8; 4],
+    pub which_groups: xkb_state_component,
+    pub pending_groups: bool,
     pub groups: xkb_layout_mask_t,
     pub which_mods: xkb_state_component,
     pub mods: xkb_mods,
@@ -844,18 +820,18 @@ pub unsafe fn XkbKeyByName(
                 .c2rust_unnamed
                 .key_names
                 .offset(name as isize);
-            if match_0.c2rust_unnamed.found() {
-                if !match_0.c2rust_unnamed.is_alias() {
-                    return (*keymap).keys.offset(match_0.key.index() as isize) as *mut xkb_key;
+            if match_0.c2rust_unnamed.found {
+                if !match_0.c2rust_unnamed.is_alias {
+                    return (*keymap).keys.offset(match_0.key.index as isize) as *mut xkb_key;
                 } else if use_aliases {
                     return (*keymap).keys.offset(
                         (*(*keymap)
                             .c2rust_unnamed
                             .c2rust_unnamed
                             .key_names
-                            .offset(match_0.alias.real() as isize))
+                            .offset(match_0.alias.real as isize))
                         .key
-                        .index() as isize,
+                        .index as isize,
                     ) as *mut xkb_key;
                 }
             }

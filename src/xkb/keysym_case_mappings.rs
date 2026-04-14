@@ -1,19 +1,19 @@
 use crate::xkb::shared_types::*;
-use c2rust_bitfields;
 
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
 pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
 
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CaseMappings {
-    #[bitfield(name = "lower", ty = "bool", bits = "0..=0")]
-    #[bitfield(name = "upper", ty = "bool", bits = "1..=1")]
-    #[bitfield(name = "offset", ty = "i32", bits = "2..=31")]
-    pub lower_upper_offset: [u8; 4],
+    pub lower: bool,
+    pub upper: bool,
+    pub offset: i32,
 }
 static mut legacy_keysym_data: [CaseMappings; 47] = [CaseMappings {
-    lower_upper_offset: [0; 4],
+    lower: false,
+    upper: false,
+    offset: 0,
 }; 47];
 static mut legacy_keysym_offsets1: [u8; 540] = [
     0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
@@ -66,7 +66,9 @@ unsafe fn get_legacy_keysym_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
     }
 }
 static mut unicode_data: [CaseMappings; 1019] = [CaseMappings {
-    lower_upper_offset: [0; 4],
+    lower: false,
+    upper: false,
+    offset: 0,
 }; 1019];
 static mut unicode_offsets1: [u16; 908] = [
     0xa6, 0x9, 0xe, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9,
@@ -174,16 +176,16 @@ pub unsafe fn xkb_keysym_to_upper(mut ks: xkb_keysym_t) -> xkb_keysym_t {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
-            return if (*m).upper() as i32 != 0 {
-                ks.wrapping_sub((*m).offset() as xkb_keysym_t)
+            return if (*m).upper as i32 != 0 {
+                ks.wrapping_sub((*m).offset as xkb_keysym_t)
             } else {
                 ks
             };
         } else if XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t <= ks && ks <= 0x101f189 as xkb_keysym_t {
             let mut m_0: *const CaseMappings =
                 get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t));
-            if (*m_0).upper() {
-                ks = ks.wrapping_sub((*m_0).offset() as xkb_keysym_t);
+            if (*m_0).upper {
+                ks = ks.wrapping_sub((*m_0).offset as xkb_keysym_t);
                 return if ks < XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t {
                     ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t)
                 } else {
@@ -201,11 +203,11 @@ pub unsafe fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
             let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
-            return (*m).upper() as i32 != 0 && !(*m).lower();
+            return (*m).upper as i32 != 0 && !(*m).lower;
         } else if XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t <= ks && ks <= 0x101f189 as xkb_keysym_t {
             let mut m_0: *const CaseMappings =
                 get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t));
-            return (*m_0).upper() as i32 != 0 && !(*m_0).lower();
+            return (*m_0).upper as i32 != 0 && !(*m_0).lower;
         } else {
             return false;
         };
@@ -214,12 +216,12 @@ pub unsafe fn xkb_keysym_is_lower(mut ks: xkb_keysym_t) -> bool {
 pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> bool {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {
-            return (*get_legacy_keysym_entry(ks)).lower();
+            return (*get_legacy_keysym_entry(ks)).lower;
         } else if XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t <= ks && ks <= 0x101f189 as xkb_keysym_t {
             return (*get_unicode_entry(
                 ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t),
             ))
-            .lower();
+            .lower;
         } else {
             return false;
         };
@@ -228,9601 +230,5337 @@ pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: xkb_keysym_t) -> bool {
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
         unicode_data = [
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x80 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x80 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x70 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x70 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x7e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x7e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa515 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa512 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x61 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x38 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x1dbf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x64 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x64 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x4a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x4a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x79 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x2a1f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x2a1c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x2a1e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xce as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xcd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xcd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa54b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xcf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa567 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa528 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa544 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x2e7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x20bf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2046 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x89c2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x26 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x80 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x80 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x7e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x7e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x3e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x39 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x36 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa543 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8a38 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa641 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd5 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd6 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xc7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xe8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2a1c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x29fd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2a1f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x4f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa544 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa54f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa54b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa541 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa544 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xca as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xcb as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa54f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x3a0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2a3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2a3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x22 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xdb as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x54 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa528 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x3b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x1dbf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8a04 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xee6 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1c60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x82 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x74 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa567 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa512 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa52a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa515 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x3a0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x27 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x2a1e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x38 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x45 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x47 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x29e7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x8a38 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x29fd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd5 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd6 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2a2b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2a28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x2a3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xc3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x45 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x47 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xa641 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x1d5d as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xbc0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x30 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8a04 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x29f7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0xee6 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x29e7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2a2b as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2a28 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x79 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x12c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x8 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x70 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x70 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xc3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd2 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xce as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x4a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x4a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x64 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x64 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xcd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xcd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x4f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xca as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd9 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xdb as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x56 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x74 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x3c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x60 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa544 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x29f7 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa541 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xd3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa543 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0xda as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xa52a as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x186e as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x186d as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1864 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1862 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1862 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1863 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x185c as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1825 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x26 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x25 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x40 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x3f as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x50 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xcb as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xcd as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xcf as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x61 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd3 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0xd1 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
-            },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x97d0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x80 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x80 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x70 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x70 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x7e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x7e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa515 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa512 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x61 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x38 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x1dbf as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x64 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x64 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x4a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x4a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c25 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x79 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x2a1f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x2a1c as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x2a1e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd2 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xce as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xcd as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xcd as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa54b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xcf as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa567 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa528 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa544 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x2e7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xf as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x20bf as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2046 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x89c2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x26 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x80 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x80 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x7e as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x7e as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x3e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x39 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x36 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x30 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa543 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8a38 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa3 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa641 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd3 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd5 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd6 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xc7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xe8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xf as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2a1c as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x29fd as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2a1f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x7 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x4f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa544 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa54f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa54b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa541 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa544 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xca as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xcb as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa54f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x3a0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2a3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2a3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x22 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xdb as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x54 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa528 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x3f as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x3b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x1dbf as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8a04 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xee6 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1c60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x82 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x74 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa567 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1c as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa512 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa52a as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa515 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x3a0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x27 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x2a1e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x38 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x45 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x47 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x29e7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x8a38 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x29fd as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd5 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd6 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2a2b as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa3 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2a28 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x2a3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xc3 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x45 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x47 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xa641 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x1d5d as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xbc0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x30 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8a04 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x29f7 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0xee6 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x29e7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2a2b as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2a28 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x79 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x12c as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x9 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x8 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x70 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x70 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xc3 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd2 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xce as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x4a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x4a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x56 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x64 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x64 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xcd as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xcd as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x4f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xca as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd9 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd9 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xdb as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x56 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x74 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x3c as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x60 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd3 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa544 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x29f7 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa541 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xd3 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa543 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0xda as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xa52a as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x186e as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x186d as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1864 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1862 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1862 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1863 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x185c as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1825 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x26 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x25 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x40 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x3f as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x50 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xcb as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xcd as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xcf as i32,
+            },
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x61 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd3 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0xd1 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
+            },
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x97d0 as i32,
             },
         ];
         legacy_keysym_data = [
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x1001dbf as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x1001dbf as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x717 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x717 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x12bf as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x12bf as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0xfff89b as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0xfff89b as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x10 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x10 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x10 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x2 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x2 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x10 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x10 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x10 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x12bf as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x12bf as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x20 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x20 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(-0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: -0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(-0x240 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: -0x240 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x2 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x2 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(false);
-                init.set_offset(0 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: false,
+                offset: 0 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x270 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x270 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x20 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x20 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x21 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x21 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(true);
-                init.set_upper(false);
-                init.set_offset(0x1 as i32);
-                init
+            CaseMappings {
+                lower: true,
+                upper: false,
+                offset: 0x1 as i32,
             },
-            {
-                let mut init = CaseMappings {
-                    lower_upper_offset: [0; 4],
-                };
-                init.set_lower(false);
-                init.set_upper(true);
-                init.set_offset(0x1 as i32);
-                init
+            CaseMappings {
+                lower: false,
+                upper: true,
+                offset: 0x1 as i32,
             },
         ];
     }

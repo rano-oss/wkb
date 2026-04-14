@@ -1,5 +1,4 @@
 use crate::xkb_logf;
-use c2rust_bitfields;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -381,12 +380,11 @@ pub union group_latch_priv {
     pub priv_0: u32,
     pub c2rust_unnamed: C2Rust_Unnamed_22,
 }
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_22 {
-    #[bitfield(name = "latch", ty = "u32", bits = "0..=1")]
-    #[bitfield(name = "group_delta", ty = "i32", bits = "2..=31")]
-    pub latch_group_delta: [u8; 4],
+    pub latch: u32,
+    pub group_delta: i32,
 }
 
 pub type xkb_key_latch_state = u32;
@@ -405,8 +403,10 @@ pub type xkb_filter_result = u32;
 
 pub type C2Rust_Unnamed_24 = u32;
 static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
-    explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
-    c2rust_padding: [0; 7],
+    explicit_symbols: false,
+    explicit_actions: false,
+    implicit_actions: false,
+    explicit_type: false,
     type_0: std::ptr::null(),
     levels: std::ptr::null_mut(),
 };
@@ -417,7 +417,13 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
-    overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+    overlays_inline: false,
+    repeats: false,
+    implicit_actions: false,
+    out_of_range_pending_group: false,
+    out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+    out_of_range_group_number: 0,
+    num_groups: 1,
     groups: std::ptr::null_mut(),
     c2rust_unnamed: C2Rust_Unnamed_9 {
         overlay_key: std::ptr::null(),
@@ -484,7 +490,7 @@ unsafe fn state_key_get_level(
     mut layout: xkb_layout_index_t,
 ) -> xkb_level_index_t {
     unsafe {
-        if layout >= (*key).num_groups() {
+        if layout >= (*key).num_groups {
             return XKB_LEVEL_INVALID as xkb_level_index_t;
         }
         let entry: *const xkb_key_type_entry =
@@ -520,9 +526,9 @@ unsafe fn state_key_get_layout(
     unsafe {
         return XkbWrapGroupIntoRange(
             (*state).components.group as i32,
-            (*key).num_groups(),
-            (*key).out_of_range_group_policy(),
-            (*key).out_of_range_group_number(),
+            (*key).num_groups,
+            (*key).out_of_range_group_policy,
+            (*key).out_of_range_group_number,
         );
     }
 }
@@ -767,19 +773,15 @@ unsafe fn xkb_filter_group_latch_new(
 ) {
     unsafe {
         let priv_0: group_latch_priv = group_latch_priv {
-            c2rust_unnamed: {
-                let mut init = C2Rust_Unnamed_22 {
-                    latch_group_delta: [0; 4],
-                };
-                init.set_latch(LATCH_KEY_DOWN as u32);
-                init.set_group_delta(
-                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
-                        (*filter).action.group.group - (*state).components.base_group
-                    } else {
-                        (*filter).action.group.group
-                    },
-                );
-                init
+            c2rust_unnamed: C2Rust_Unnamed_22 {
+                latch: LATCH_KEY_DOWN as u32,
+                group_delta: if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32
+                    != 0
+                {
+                    (*filter).action.group.group - (*state).components.base_group
+                } else {
+                    (*filter).action.group.group
+                },
             },
         };
         (*filter).priv_0 = priv_0.priv_0;
@@ -802,7 +804,7 @@ unsafe fn xkb_filter_group_latch_func(
         let mut priv_0: group_latch_priv = group_latch_priv {
             priv_0: (*filter).priv_0,
         };
-        let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch() as xkb_key_latch_state;
+        let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch as xkb_key_latch_state;
         if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: xkb_action_count_t =
@@ -868,8 +870,7 @@ unsafe fn xkb_filter_group_latch_func(
                                     ) -> bool,
                                 >;
                             xkb_filter_group_lock_new(state, events, filter);
-                            (*state).components.latched_group -=
-                                priv_0.c2rust_unnamed.group_delta();
+                            (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
                             (*filter).key = key;
                             return XKB_FILTER_CONSUME as i32 != 0;
                         }
@@ -878,7 +879,7 @@ unsafe fn xkb_filter_group_latch_func(
                         INTERNAL_BREAKS_GROUP_LATCH,
                         0 as xkb_mod_mask_t,
                     ) {
-                        (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
+                        (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
                         (*filter).func = None;
                         return XKB_FILTER_CONTINUE as i32 != 0;
                     }
@@ -893,22 +894,22 @@ unsafe fn xkb_filter_group_latch_func(
                 && (*state).components.locked_group != 0
             {
                 if latch as u32 == LATCH_PENDING as u32 {
-                    (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta();
+                    (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
                 } else {
-                    (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
+                    (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
                 }
                 (*state).components.locked_group = 0 as i32 as i32;
                 (*filter).func = None;
             } else if latch as u32 == NO_LATCH as u32 {
-                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
+                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
                 (*filter).func = None;
             } else if latch as u32 == LATCH_KEY_DOWN as u32 {
                 latch = LATCH_PENDING;
-                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta();
-                (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta();
+                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
+                (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta;
             }
         }
-        priv_0.c2rust_unnamed.set_latch(latch as u32 as u32);
+        priv_0.c2rust_unnamed.latch = latch as u32;
         (*filter).priv_0 = priv_0.priv_0;
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
@@ -1772,26 +1773,25 @@ unsafe fn xkb_state_led_update_all(mut state: *mut xkb_state) {
             }
             match c2rust_current_block_23 {
                 13586036798005543211 => {
-                    if (*led).which_groups() as i32 != 0 as i32 {
+                    if (*led).which_groups as i32 != 0 as i32 {
                         if ((*led).groups != 0) as i64 != 0 as i64 {
                             let mut group_mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
-                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0
-                            {
+                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0 {
                                 group_mask = (group_mask as u32
                                     | (1 as u32) << (*state).components.group)
                                     as xkb_layout_mask_t;
                             }
-                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LOCKED as i32 != 0 {
+                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LOCKED as i32 != 0 {
                                 group_mask = (group_mask as u32
                                     | (1 as u32) << (*state).components.locked_group)
                                     as xkb_layout_mask_t;
                             }
-                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
+                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
                                 && (*state).components.base_group != 0 as i32
                             {
                                 group_mask |= (*led).groups;
                             }
-                            if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
                                 && (*state).components.latched_group != 0 as i32
                             {
                                 group_mask |= (*led).groups;
@@ -1804,10 +1804,10 @@ unsafe fn xkb_state_led_update_all(mut state: *mut xkb_state) {
                             } else {
                                 c2rust_current_block_23 = 14359455889292382949;
                             }
-                        } else if (*led).which_groups() as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32
+                        } else if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32
                             != 0
                             && (*state).components.base_group == 0 as i32
-                            || (*led).which_groups() as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                            || (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
                                 && (*state).components.latched_group == 0 as i32
                         {
                             (*state).components.leds = ((*state).components.leds as u32
@@ -1879,7 +1879,7 @@ pub unsafe fn xkb_state_update_key(
 ) -> xkb_state_component {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats() {
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats {
             return 0 as xkb_state_component;
         }
         let prev_components: state_components = (*state).components;
@@ -1947,7 +1947,13 @@ static mut synthetic_key: xkb_key = xkb_key {
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
-    overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
+    overlays_inline: false,
+    repeats: false,
+    implicit_actions: false,
+    out_of_range_pending_group: false,
+    out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+    out_of_range_group_number: 0,
+    num_groups: 0,
     groups: std::ptr::null_mut(),
     c2rust_unnamed: C2Rust_Unnamed_9 {
         overlay_key: std::ptr::null(),
@@ -1984,41 +1990,32 @@ unsafe fn update_latch_modifiers(
                 },
             },
         };
-        let mut synthetic_key_group_break_mod_latch: xkb_group = {
-            let mut init = xkb_group {
-                explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
-                c2rust_padding: [0; 7],
-                type_0: &raw mut synthetic_key_type,
-                levels: &raw mut synthetic_key_level_break_mod_latch,
-            };
-            init.set_explicit_symbols(false);
-            init.set_explicit_actions(false);
-            init.set_implicit_actions(false);
-            init.set_explicit_type(false);
-            init
+        let mut synthetic_key_group_break_mod_latch: xkb_group = xkb_group {
+            explicit_symbols: false,
+            explicit_actions: false,
+            implicit_actions: false,
+            explicit_type: false,
+            type_0: &raw mut synthetic_key_type,
+            levels: &raw mut synthetic_key_level_break_mod_latch,
         };
-        let synthetic_key_break_mod_latch: xkb_key = {
-            let mut init = xkb_key {
-                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
-                keycode: 0,
-                name: 0,
-                explicit: 0 as xkb_explicit_components,
-                modmap: 0,
-                vmodmap: 0,
-                overlays: 0,
-                groups: &raw mut synthetic_key_group_break_mod_latch,
-                c2rust_unnamed: C2Rust_Unnamed_9 {
-                    overlay_key: std::ptr::null(),
-                },
-            };
-            init.set_overlays_inline(false);
-            init.set_repeats(false);
-            init.set_implicit_actions(false);
-            init.set_out_of_range_pending_group(false);
-            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
-            init.set_out_of_range_group_number(0);
-            init.set_num_groups(1 as xkb_layout_index_t);
-            init
+        let synthetic_key_break_mod_latch = xkb_key {
+            keycode: 0,
+            name: 0,
+            explicit: 0 as xkb_explicit_components,
+            modmap: 0,
+            vmodmap: 0,
+            overlays: 0,
+            overlays_inline: false,
+            repeats: false,
+            implicit_actions: false,
+            out_of_range_pending_group: false,
+            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+            out_of_range_group_number: 0,
+            num_groups: 1,
+            groups: &raw mut synthetic_key_group_break_mod_latch,
+            c2rust_unnamed: C2Rust_Unnamed_9 {
+                overlay_key: std::ptr::null(),
+            },
         };
         xkb_filter_apply_all(
             state,
@@ -2992,64 +2989,51 @@ pub unsafe fn xkb_state_mod_index_is_consumed(
 
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
-        synthetic_key_group_break_group_latch = {
-            let mut init = xkb_group {
-                explicit_symbols_explicit_actions_implicit_actions_explicit_type: [0; 1],
-                c2rust_padding: [0; 7],
-                type_0: &raw mut synthetic_key_type,
-                levels: &raw mut synthetic_key_level_break_group_latch,
-            };
-            init.set_explicit_symbols(false);
-            init.set_explicit_actions(false);
-            init.set_implicit_actions(false);
-            init.set_explicit_type(false);
-            init
+        synthetic_key_group_break_group_latch = xkb_group {
+            explicit_symbols: false,
+            explicit_actions: false,
+            implicit_actions: false,
+            explicit_type: false,
+            type_0: &raw mut synthetic_key_type,
+            levels: &raw mut synthetic_key_level_break_group_latch,
         };
-        synthetic_key_break_group_latch = {
-            let mut init = xkb_key {
-                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
-                keycode: 0,
-                name: 0,
-                explicit: 0 as xkb_explicit_components,
-                modmap: 0,
-                vmodmap: 0,
-                overlays: 0,
-                groups: &raw mut synthetic_key_group_break_group_latch,
-                c2rust_unnamed: C2Rust_Unnamed_9 {
-                    overlay_key: std::ptr::null(),
-                },
-            };
-            init.set_overlays_inline(false);
-            init.set_repeats(false);
-            init.set_implicit_actions(false);
-            init.set_out_of_range_pending_group(false);
-            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
-            init.set_out_of_range_group_number(0);
-            init.set_num_groups(1 as xkb_layout_index_t);
-            init
+        synthetic_key_break_group_latch = xkb_key {
+            keycode: 0,
+            name: 0,
+            explicit: 0 as xkb_explicit_components,
+            modmap: 0,
+            vmodmap: 0,
+            overlays: 0,
+            overlays_inline: false,
+            repeats: false,
+            implicit_actions: false,
+            out_of_range_pending_group: false,
+            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+            out_of_range_group_number: 0,
+            num_groups: 1,
+            groups: &raw mut synthetic_key_group_break_group_latch,
+            c2rust_unnamed: C2Rust_Unnamed_9 {
+                overlay_key: std::ptr::null(),
+            },
         };
-        synthetic_key = {
-            let mut init = xkb_key {
-                overlays_inline_repeats_implicit_actions_out_of_range_pending_group_out_of_range_group_policy_out_of_range_group_number_num_groups: [0; 3],
-                keycode: 0 as xkb_keycode_t,
-                name: 0,
-                explicit: 0 as xkb_explicit_components,
-                modmap: 0,
-                vmodmap: 0,
-                overlays: 0,
-                groups: std::ptr::null_mut(),
-                c2rust_unnamed: C2Rust_Unnamed_9 {
-                    overlay_key: std::ptr::null(),
-                },
-            };
-            init.set_overlays_inline(false);
-            init.set_repeats(false);
-            init.set_implicit_actions(false);
-            init.set_out_of_range_pending_group(false);
-            init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
-            init.set_out_of_range_group_number(0);
-            init.set_num_groups(0);
-            init
+        synthetic_key = xkb_key {
+            keycode: 0 as xkb_keycode_t,
+            name: 0,
+            explicit: 0 as xkb_explicit_components,
+            modmap: 0,
+            vmodmap: 0,
+            overlays: 0,
+            overlays_inline: false,
+            repeats: false,
+            implicit_actions: false,
+            out_of_range_pending_group: false,
+            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+            out_of_range_group_number: 0,
+            num_groups: 0,
+            groups: std::ptr::null_mut(),
+            c2rust_unnamed: C2Rust_Unnamed_9 {
+                overlay_key: std::ptr::null(),
+            },
         };
     }
 }

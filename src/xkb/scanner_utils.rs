@@ -45,7 +45,14 @@ pub unsafe fn scanner_token_location(mut s: *mut scanner) -> scanner_loc {
         let mut ptr: *const i8 = (*s).s.offset((*s).cached_pos as isize);
         let mut last: *const i8 = (*s).s.offset((*s).token_pos as isize);
         loop {
-            ptr = crate::xkb::utils::byte_memchr(ptr, b'\n', last.offset_from(ptr) as i64 as usize);
+            ptr = {
+                let len = last.offset_from(ptr) as usize;
+                let slice = core::slice::from_raw_parts(ptr as *const u8, len);
+                match slice.iter().position(|&b| b == b'\n') {
+                    Some(i) => ptr.add(i),
+                    None => core::ptr::null(),
+                }
+            };
             if ptr.is_null() {
                 break;
             }
@@ -124,11 +131,15 @@ pub unsafe fn scanner_eol(mut s: *mut scanner) -> bool {
 #[inline]
 pub unsafe fn scanner_skip_to_eol(mut s: *mut scanner) {
     unsafe {
-        let mut nl: *const i8 = crate::xkb::utils::byte_memchr(
-            (*s).s.offset((*s).pos as isize),
-            b'\n',
-            (*s).len.wrapping_sub((*s).pos),
-        );
+        let mut nl: *const i8 = {
+            let p = (*s).s.offset((*s).pos as isize);
+            let len = (*s).len.wrapping_sub((*s).pos);
+            let slice = core::slice::from_raw_parts(p as *const u8, len);
+            match slice.iter().position(|&b| b == b'\n') {
+                Some(i) => p.add(i),
+                None => core::ptr::null(),
+            }
+        };
         let new_pos: usize = if !nl.is_null() {
             nl.offset_from((*s).s) as i64 as usize
         } else {

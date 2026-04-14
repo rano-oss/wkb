@@ -85,7 +85,6 @@ extern "C" {
 use memmap2::Mmap;
 use std::fs::File;
 use std::io;
-use std::path::Path;
 
 /// Memory-mapped file wrapper with automatic cleanup
 pub struct MappedFile {
@@ -118,78 +117,6 @@ impl MappedFile {
     pub fn is_empty(&self) -> bool {
         self.mmap.is_empty()
     }
-}
-
-/// Open a file and verify it's a regular file
-pub fn open_regular_file(path: &Path) -> io::Result<File> {
-    let file = File::open(path)?;
-    let metadata = file.metadata()?;
-    if !metadata.is_file() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "not a regular file",
-        ));
-    }
-    Ok(file)
-}
-
-// Safe Rust string utilities
-
-/// Convert a character to lowercase using the same lookup table as the C code
-#[inline]
-pub fn to_lower_char(c: u8) -> u8 {
-    LOWER_MAP[c as usize]
-}
-
-/// Case-insensitive string comparison (safe Rust version)
-/// Returns 0 if strings are equal, negative if a < b, positive if a > b
-pub fn str_case_cmp(a: &str, b: &str) -> i32 {
-    let a_bytes = a.as_bytes();
-    let b_bytes = b.as_bytes();
-    let min_len = a_bytes.len().min(b_bytes.len());
-
-    for i in 0..min_len {
-        let diff = to_lower_char(a_bytes[i]) as i32 - to_lower_char(b_bytes[i]) as i32;
-        if diff != 0 {
-            return diff;
-        }
-    }
-
-    // If one string is a prefix of the other, the shorter one is "less"
-    (a_bytes.len() as i32) - (b_bytes.len() as i32)
-}
-
-/// Case-insensitive string equality check (safe Rust version)
-pub fn str_case_eq(a: &str, b: &str) -> bool {
-    str_case_cmp(a, b) == 0
-}
-
-/// Case-insensitive string comparison with length limit (safe Rust version)
-/// Returns 0 if first n characters are equal, negative if a < b, positive if a > b
-pub fn str_case_ncmp(a: &str, b: &str, n: usize) -> i32 {
-    let a_bytes = a.as_bytes();
-    let b_bytes = b.as_bytes();
-    let min_len = a_bytes.len().min(b_bytes.len()).min(n);
-
-    for i in 0..min_len {
-        let diff = to_lower_char(a_bytes[i]) as i32 - to_lower_char(b_bytes[i]) as i32;
-        if diff != 0 {
-            return diff;
-        }
-    }
-
-    // If we've compared n chars and they're all equal, strings are equal for this comparison
-    if min_len == n {
-        return 0;
-    }
-
-    // Otherwise, if one string is shorter, it's "less"
-    (a_bytes.len() as i32) - (b_bytes.len() as i32)
-}
-
-/// Case-insensitive string equality check with length limit (safe Rust version)
-pub fn str_case_neq(a: &str, b: &str, n: usize) -> bool {
-    str_case_ncmp(a, b, n) == 0
 }
 
 // --- libc replacement helpers ---
@@ -428,62 +355,6 @@ pub unsafe fn cstr_free(s: *mut i8) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_str_case_cmp() {
-        assert_eq!(str_case_cmp("hello", "hello"), 0);
-        assert_eq!(str_case_cmp("hello", "HELLO"), 0);
-        assert_eq!(str_case_cmp("Hello", "hElLo"), 0);
-        assert!(str_case_cmp("abc", "abd") < 0);
-        assert!(str_case_cmp("abd", "abc") > 0);
-        assert!(str_case_cmp("abc", "abcd") < 0);
-        assert!(str_case_cmp("abcd", "abc") > 0);
-    }
-
-    #[test]
-    fn test_str_case_eq() {
-        assert!(str_case_eq("hello", "hello"));
-        assert!(str_case_eq("hello", "HELLO"));
-        assert!(str_case_eq("Hello", "hElLo"));
-        assert!(!str_case_eq("abc", "abd"));
-        assert!(!str_case_eq("abc", "abcd"));
-    }
-
-    #[test]
-    fn test_str_case_ncmp() {
-        assert_eq!(str_case_ncmp("hello", "hello", 5), 0);
-        assert_eq!(str_case_ncmp("hello", "HELLO", 5), 0);
-        assert_eq!(str_case_ncmp("helloworld", "HELLO", 5), 0);
-        assert_eq!(str_case_ncmp("hello", "helloworld", 5), 0);
-        assert!(str_case_ncmp("abc", "abd", 3) < 0);
-        assert!(str_case_ncmp("abd", "abc", 3) > 0);
-        assert_eq!(str_case_ncmp("abc", "abd", 2), 0);
-    }
-
-    #[test]
-    fn test_str_case_neq() {
-        assert!(str_case_neq("hello", "hello", 5));
-        assert!(str_case_neq("hello", "HELLO", 5));
-        assert!(str_case_neq("helloworld", "HELLO", 5));
-        assert!(str_case_neq("hello", "helloworld", 5));
-        assert!(!str_case_neq("abc", "abd", 3));
-        assert!(str_case_neq("abc", "abd", 2));
-    }
-
-    #[test]
-    fn test_to_lower_char() {
-        assert_eq!(to_lower_char(b'A'), b'a');
-        assert_eq!(to_lower_char(b'Z'), b'z');
-        assert_eq!(to_lower_char(b'a'), b'a');
-        assert_eq!(to_lower_char(b'z'), b'z');
-        assert_eq!(to_lower_char(b'0'), b'0');
-        assert_eq!(to_lower_char(b'9'), b'9');
-    }
-}
-
 /// Like C `strchr`: find first occurrence of byte `c` in C string `s`.
 /// Returns pointer to the byte, or null if not found.
 ///
@@ -563,17 +434,6 @@ impl core::fmt::Display for StrerrorDisplay {
             }
             CStrDisplay(p as *const i8).fmt(f)
         }
-    }
-}
-
-/// Safe replacement for C `memchr`. Searches `len` bytes starting at `ptr` for byte `c`.
-/// Returns pointer to first occurrence, or null if not found.
-#[inline]
-pub unsafe fn byte_memchr(ptr: *const i8, c: u8, len: usize) -> *const i8 {
-    let slice = unsafe { core::slice::from_raw_parts(ptr as *const u8, len) };
-    match slice.iter().position(|&b| b == c) {
-        Some(i) => unsafe { ptr.add(i) },
-        None => core::ptr::null(),
     }
 }
 
