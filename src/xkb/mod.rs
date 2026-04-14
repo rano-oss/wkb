@@ -24,7 +24,6 @@
 
 // Core XKB modules
 pub mod atom;
-pub mod compile_keymap;
 pub mod context;
 pub mod context_priv;
 pub mod features;
@@ -41,13 +40,11 @@ pub mod keysym_case_mappings;
 pub mod keysym_utf;
 
 // Parsing and text processing
-pub mod custom_parsers;
 pub mod scanner_utils;
 pub mod text;
 
 // Utilities
 pub mod utf8_decoding;
-pub mod util_list;
 pub mod utils;
 pub mod utils_paths;
 
@@ -55,14 +52,12 @@ pub mod utils_paths;
 pub mod xkbcomp; // XKB compiler with all submodules
 
 // Compose support
-pub mod compile_compose;
 pub mod compose_iter;
 pub mod compose_parse;
 pub mod xkb_compose_map;
 
 // Rules and registry
 pub mod registry;
-pub mod registry_list;
 pub mod rmlvo;
 
 // Messages and logging

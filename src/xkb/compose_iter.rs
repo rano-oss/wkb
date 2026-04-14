@@ -128,3 +128,12 @@ pub unsafe fn xkb_compose_table_for_each(
     }
 }
 use crate::xkb::shared_types::*;
+
+extern "C" {
+    pub fn xkb_compose_table_new_from_locale(
+        context: *mut xkb_context,
+        locale: *const i8,
+        flags: xkb_compose_compile_flags,
+    ) -> *mut xkb_compose_table;
+    pub fn xkb_compose_table_unref(table: *mut xkb_compose_table);
+}

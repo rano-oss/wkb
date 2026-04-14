@@ -626,15 +626,14 @@ impl Drop for State {
 
 /// Safe wrapper around rxkb_context for keyboard layout registry
 pub struct RxkbContext {
-    ptr: *mut super::registry_list::rxkb_context,
+    ptr: *mut super::registry::rxkb_context,
 }
 
 impl RxkbContext {
     /// Create a new registry context
     pub fn new() -> Option<Self> {
         unsafe {
-            let ptr =
-                super::registry_list::rxkb_context_new(super::registry_list::RXKB_CONTEXT_NO_FLAGS);
+            let ptr = super::registry::rxkb_context_new(super::registry::RXKB_CONTEXT_NO_FLAGS);
             if ptr.is_null() {
                 None
             } else {
@@ -646,7 +645,7 @@ impl RxkbContext {
     /// Load default registry paths
     pub fn include_path_append_default(&self) {
         unsafe {
-            super::registry_list::rxkb_context_include_path_append_default(self.ptr);
+            super::registry::rxkb_context_include_path_append_default(self.ptr);
         }
     }
 
@@ -654,14 +653,14 @@ impl RxkbContext {
     pub fn parse(&self, ruleset: &str) -> bool {
         unsafe {
             let ruleset_cstr = std::ffi::CString::new(ruleset).unwrap_or_default();
-            super::registry_list::rxkb_context_parse(self.ptr, ruleset_cstr.as_ptr())
+            super::registry::rxkb_context_parse(self.ptr, ruleset_cstr.as_ptr())
         }
     }
 
     /// Get the first layout in the registry
     pub fn layout_first(&self) -> Option<RxkbLayout> {
         unsafe {
-            let ptr = super::registry_list::rxkb_layout_first(self.ptr);
+            let ptr = super::registry::rxkb_layout_first(self.ptr);
             if ptr.is_null() {
                 None
             } else {
@@ -674,21 +673,21 @@ impl RxkbContext {
 impl Drop for RxkbContext {
     fn drop(&mut self) {
         unsafe {
-            super::registry_list::rxkb_context_unref(self.ptr);
+            super::registry::rxkb_context_unref(self.ptr);
         }
     }
 }
 
 /// Safe wrapper around rxkb_layout for keyboard layout information
 pub struct RxkbLayout {
-    ptr: *mut super::registry_list::rxkb_layout,
+    ptr: *mut super::registry::rxkb_layout,
 }
 
 impl RxkbLayout {
     /// Get the layout name (e.g., "us", "de", "fr")
     pub fn get_name(&self) -> Option<String> {
         unsafe {
-            let name_ptr = super::registry_list::rxkb_layout_get_name(self.ptr);
+            let name_ptr = super::registry::rxkb_layout_get_name(self.ptr);
             if name_ptr.is_null() {
                 None
             } else {
@@ -704,7 +703,7 @@ impl RxkbLayout {
     /// Get the layout variant (e.g., "dvorak", "colemak"), returns None for base layout
     pub fn get_variant(&self) -> Option<String> {
         unsafe {
-            let variant_ptr = super::registry_list::rxkb_layout_get_variant(self.ptr);
+            let variant_ptr = super::registry::rxkb_layout_get_variant(self.ptr);
             if variant_ptr.is_null() {
                 None
             } else {
@@ -723,7 +722,7 @@ impl RxkbLayout {
     /// Get the next layout in the registry
     pub fn next(&self) -> Option<RxkbLayout> {
         unsafe {
-            let ptr = super::registry_list::rxkb_layout_next(self.ptr);
+            let ptr = super::registry::rxkb_layout_next(self.ptr);
             if ptr.is_null() {
                 None
             } else {
@@ -751,10 +750,10 @@ impl ComposeTable {
             let locale_cstr = std::ffi::CString::new(locale).ok()?;
             let ctx_cast = ctx.as_ptr() as *mut crate::xkb::shared_types::xkb_context;
 
-            let ptr = super::compile_compose::xkb_compose_table_new_from_locale(
+            let ptr = super::compose_iter::xkb_compose_table_new_from_locale(
                 ctx_cast,
                 locale_cstr.as_ptr(),
-                super::compile_compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
+                super::compose_iter::XKB_COMPOSE_COMPILE_NO_FLAGS,
             );
 
             if ptr.is_null() {
@@ -776,7 +775,7 @@ impl ComposeTable {
 impl Drop for ComposeTable {
     fn drop(&mut self) {
         unsafe {
-            super::compile_compose::xkb_compose_table_unref(self.ptr as *mut _);
+            super::compose_iter::xkb_compose_table_unref(self.ptr as *mut _);
         }
     }
 }

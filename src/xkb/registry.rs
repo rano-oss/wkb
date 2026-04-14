@@ -1,6 +1,5 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::rmlvo::strdup_safe;
-use crate::xkb::util_list::{list, list_append, list_empty, list_init, list_is_last, list_remove};
 use crate::xkb::utils::{
     __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
     is_space, istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
@@ -30,9 +29,9 @@ pub struct rxkb_context {
     pub context_state: context_state,
     pub load_extra_rules_files: bool,
     pub use_secure_getenv: bool,
-    pub models: list,
-    pub layouts: list,
-    pub option_groups: list,
+    pub models: Vec<*mut rxkb_model>,
+    pub layouts: Vec<*mut rxkb_layout>,
+    pub option_groups: Vec<*mut rxkb_option_group>,
     pub includes: Vec<*mut i8>,
     pub log_fn: Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>,
     pub log_level: rxkb_log_level,
@@ -47,7 +46,6 @@ pub const CONTEXT_NEW: context_state = 0;
 pub struct rxkb_object {
     pub parent: *mut rxkb_object,
     pub refcount: u32,
-    pub link: list,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -58,7 +56,6 @@ pub struct rxkb_model {
     pub description: *mut i8,
     pub popularity: rxkb_popularity,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_layout {
     pub base: rxkb_object,
@@ -67,15 +64,14 @@ pub struct rxkb_layout {
     pub description: *mut i8,
     pub variant: *mut i8,
     pub popularity: rxkb_popularity,
-    pub iso639s: list,
-    pub iso3166s: list,
+    pub iso639s: Vec<*mut rxkb_iso639_code>,
+    pub iso3166s: Vec<*mut rxkb_iso3166_code>,
 }
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct rxkb_option_group {
     pub base: rxkb_object,
     pub allow_multiple: bool,
-    pub options: list,
+    pub options: Vec<*mut rxkb_option>,
     pub name: *mut i8,
     pub description: *mut i8,
     pub popularity: rxkb_popularity,
@@ -136,7 +132,6 @@ unsafe fn rxkb_object_init(mut object: *mut rxkb_object, mut parent: *mut rxkb_o
     unsafe {
         (*object).refcount = 1 as u32;
         (*object).parent = parent;
-        list_init(&raw mut (*object).link);
     }
 }
 unsafe fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_void {
@@ -147,26 +142,22 @@ unsafe fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_v
 }
 pub unsafe fn rxkb_layout_get_iso639_first(mut layout: *mut rxkb_layout) -> *mut rxkb_iso639_code {
     unsafe {
-        let mut code: *mut rxkb_iso639_code = std::ptr::null_mut();
-        if !list_empty(&raw mut (*layout).iso639s) {
-            code = ((*layout).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
-        }
-        return code;
+        (*layout)
+            .iso639s
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 pub unsafe fn rxkb_iso639_code_next(mut code: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code {
     unsafe {
-        let mut next: *mut rxkb_iso639_code = std::ptr::null_mut();
-        let mut layout: *mut rxkb_layout = std::ptr::null_mut();
-        layout = ((*code).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        if list_is_last(&raw mut (*layout).iso639s, &raw mut (*code).base.link) {
-            return std::ptr::null_mut();
+        let layout = (*code).base.parent as *mut rxkb_layout;
+        let vec = &(*layout).iso639s;
+        if let Some(idx) = vec.iter().position(|&p| p == code) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        next = ((*code).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
-        return next;
     }
 }
 
@@ -178,7 +169,6 @@ pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut 
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
             free((*object).code as *mut ::core::ffi::c_void);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -202,26 +192,22 @@ pub unsafe fn rxkb_layout_get_iso3166_first(
     mut layout: *mut rxkb_layout,
 ) -> *mut rxkb_iso3166_code {
     unsafe {
-        let mut code: *mut rxkb_iso3166_code = std::ptr::null_mut();
-        if !list_empty(&raw mut (*layout).iso3166s) {
-            code = ((*layout).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
-        }
-        return code;
+        (*layout)
+            .iso3166s
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 pub unsafe fn rxkb_iso3166_code_next(mut code: *mut rxkb_iso3166_code) -> *mut rxkb_iso3166_code {
     unsafe {
-        let mut next: *mut rxkb_iso3166_code = std::ptr::null_mut();
-        let mut layout: *mut rxkb_layout = std::ptr::null_mut();
-        layout = ((*code).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        if list_is_last(&raw mut (*layout).iso3166s, &raw mut (*code).base.link) {
-            return std::ptr::null_mut();
+        let layout = (*code).base.parent as *mut rxkb_layout;
+        let vec = &(*layout).iso3166s;
+        if let Some(idx) = vec.iter().position(|&p| p == code) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        next = ((*code).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
-        return next;
     }
 }
 
@@ -235,7 +221,6 @@ pub unsafe fn rxkb_iso3166_code_unref(
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
             free((*object).code as *mut ::core::ffi::c_void);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -268,7 +253,6 @@ pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_optio
             free((*object).name as *mut ::core::ffi::c_void);
             free((*object).brief as *mut ::core::ffi::c_void);
             free((*object).description as *mut ::core::ffi::c_void);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -298,62 +282,38 @@ pub unsafe fn rxkb_option_is_layout_specific(mut object: *mut rxkb_option) -> bo
 }
 pub unsafe fn rxkb_option_next(mut o: *mut rxkb_option) -> *mut rxkb_option {
     unsafe {
-        let mut parent: *mut rxkb_option_group = std::ptr::null_mut();
-        let mut next: *mut rxkb_option = std::ptr::null_mut();
-        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize))
-            as *mut rxkb_option_group as *mut rxkb_option_group;
-        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
-            as *mut rxkb_option;
-        if list_is_last(&raw mut (*parent).options, &raw mut (*o).base.link) {
-            return std::ptr::null_mut();
+        let parent = (*o).base.parent as *mut rxkb_option_group;
+        let vec = &(*parent).options;
+        if let Some(idx) = vec.iter().position(|&p| p == o) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        return next;
     }
 }
 pub unsafe fn rxkb_option_first(mut parent: *mut rxkb_option_group) -> *mut rxkb_option {
     unsafe {
-        let mut o: *mut rxkb_option = std::ptr::null_mut();
-        if !list_empty(&raw mut (*parent).options) {
-            o = ((*parent).options.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_option as *mut rxkb_option;
-        }
-        return o;
+        (*parent)
+            .options
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 unsafe fn rxkb_layout_destroy(mut l: *mut rxkb_layout) {
     unsafe {
-        let mut iso639: *mut rxkb_iso639_code = std::ptr::null_mut();
-        let mut tmp_639: *mut rxkb_iso639_code = std::ptr::null_mut();
-        let mut iso3166: *mut rxkb_iso3166_code = std::ptr::null_mut();
-        let mut tmp_3166: *mut rxkb_iso3166_code = std::ptr::null_mut();
         free((*l).name as *mut ::core::ffi::c_void);
         free((*l).brief as *mut ::core::ffi::c_void);
         free((*l).description as *mut ::core::ffi::c_void);
         free((*l).variant as *mut ::core::ffi::c_void);
-        iso639 = std::ptr::null_mut();
-        tmp_639 = std::ptr::null_mut();
-        iso639 = ((*l).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
-        tmp_639 = ((*iso639).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
-        while &raw mut (*iso639).base.link != &raw mut (*l).iso639s {
-            rxkb_iso639_code_unref(iso639);
-            iso639 = tmp_639;
-            tmp_639 = ((*iso639).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_iso639_code as *mut rxkb_iso639_code;
+        for &code in &(*l).iso639s {
+            rxkb_iso639_code_unref(code);
         }
-        iso3166 = std::ptr::null_mut();
-        tmp_3166 = std::ptr::null_mut();
-        iso3166 = ((*l).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
-        tmp_3166 = ((*iso3166).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
-        while &raw mut (*iso3166).base.link != &raw mut (*l).iso3166s {
-            rxkb_iso3166_code_unref(iso3166);
-            iso3166 = tmp_3166;
-            tmp_3166 = ((*iso3166).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_iso3166_code as *mut rxkb_iso3166_code;
+        (*l).iso639s.clear();
+        for &code in &(*l).iso3166s {
+            rxkb_iso3166_code_unref(code);
         }
+        (*l).iso3166s.clear();
     }
 }
 
@@ -365,7 +325,6 @@ pub unsafe fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut rxkb_layou
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
             rxkb_layout_destroy(object);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -374,7 +333,14 @@ pub unsafe fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut rxkb_layou
 #[inline]
 unsafe fn rxkb_layout_create(mut parent: *mut rxkb_object) -> *mut rxkb_layout {
     unsafe {
-        let mut t: *mut rxkb_layout = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_layout>()));
+        let layout = std::alloc::Layout::new::<rxkb_layout>();
+        let ptr = std::alloc::alloc_zeroed(layout) as *mut rxkb_layout;
+        if ptr.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+        std::ptr::write(&raw mut (*ptr).iso639s, Vec::new());
+        std::ptr::write(&raw mut (*ptr).iso3166s, Vec::new());
+        let t: *mut rxkb_layout = Box::into_raw(Box::from_raw(ptr));
         rxkb_object_init(&raw mut (*t).base, parent);
         return t;
     }
@@ -402,26 +368,22 @@ pub unsafe fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -> *const i8
 
 pub unsafe fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mut rxkb_layout {
     unsafe {
-        let mut o: *mut rxkb_layout = std::ptr::null_mut();
-        if !list_empty(&raw mut (*parent).layouts) {
-            o = ((*parent).layouts.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_layout as *mut rxkb_layout;
-        }
-        return o;
+        (*parent)
+            .layouts
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 pub unsafe fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_layout {
     unsafe {
-        let mut parent: *mut rxkb_context = std::ptr::null_mut();
-        let mut next: *mut rxkb_layout = std::ptr::null_mut();
-        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
-            as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        if list_is_last(&raw mut (*parent).layouts, &raw mut (*o).base.link) {
-            return std::ptr::null_mut();
+        let parent = (*o).base.parent as *mut rxkb_context;
+        let vec = &(*parent).layouts;
+        if let Some(idx) = vec.iter().position(|&p| p == o) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        return next;
     }
 }
 
@@ -436,7 +398,6 @@ pub unsafe fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut rxkb_model {
             free((*object).name as *mut ::core::ffi::c_void);
             free((*object).vendor as *mut ::core::ffi::c_void);
             free((*object).description as *mut ::core::ffi::c_void);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -460,26 +421,22 @@ pub unsafe fn rxkb_model_get_description(mut object: *mut rxkb_model) -> *const 
 
 pub unsafe fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_model {
     unsafe {
-        let mut parent: *mut rxkb_context = std::ptr::null_mut();
-        let mut next: *mut rxkb_model = std::ptr::null_mut();
-        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
-            as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-            as *mut rxkb_model;
-        if list_is_last(&raw mut (*parent).models, &raw mut (*o).base.link) {
-            return std::ptr::null_mut();
+        let parent = (*o).base.parent as *mut rxkb_context;
+        let vec = &(*parent).models;
+        if let Some(idx) = vec.iter().position(|&p| p == o) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        return next;
     }
 }
 pub unsafe fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut rxkb_model {
     unsafe {
-        let mut o: *mut rxkb_model = std::ptr::null_mut();
-        if !list_empty(&raw mut (*parent).models) {
-            o = ((*parent).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-                as *mut rxkb_model;
-        }
-        return o;
+        (*parent)
+            .models
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 pub unsafe fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_option_group) -> bool {
@@ -498,23 +455,12 @@ pub unsafe fn rxkb_option_group_unref(
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
             // rxkb_option_group_destroy inlined
-            {
-                let mut o: *mut rxkb_option = std::ptr::null_mut();
-                let mut otmp: *mut rxkb_option = std::ptr::null_mut();
-                free((*object).name as *mut ::core::ffi::c_void);
-                free((*object).description as *mut ::core::ffi::c_void);
-                o = ((*object).options.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_option as *mut rxkb_option;
-                otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_option as *mut rxkb_option;
-                while &raw mut (*o).base.link != &raw mut (*object).options {
-                    rxkb_option_unref(o);
-                    o = otmp;
-                    otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                        as *mut rxkb_option as *mut rxkb_option;
-                }
+            free((*object).name as *mut ::core::ffi::c_void);
+            free((*object).description as *mut ::core::ffi::c_void);
+            for &o in &(*object).options {
+                rxkb_option_unref(o);
             }
-            list_remove(&raw mut (*object).base.link);
+            (*object).options.clear();
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -533,73 +479,38 @@ pub unsafe fn rxkb_option_group_get_description(mut object: *mut rxkb_option_gro
 
 pub unsafe fn rxkb_option_group_first(mut parent: *mut rxkb_context) -> *mut rxkb_option_group {
     unsafe {
-        let mut o: *mut rxkb_option_group = std::ptr::null_mut();
-        if !list_empty(&raw mut (*parent).option_groups) {
-            o = ((*parent).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_option_group as *mut rxkb_option_group;
-        }
-        return o;
+        (*parent)
+            .option_groups
+            .first()
+            .copied()
+            .unwrap_or(std::ptr::null_mut())
     }
 }
 pub unsafe fn rxkb_option_group_next(mut o: *mut rxkb_option_group) -> *mut rxkb_option_group {
     unsafe {
-        let mut parent: *mut rxkb_context = std::ptr::null_mut();
-        let mut next: *mut rxkb_option_group = std::ptr::null_mut();
-        parent = ((*o).base.parent as *mut i8).offset(-(0 as u64 as isize)) as *mut rxkb_context
-            as *mut rxkb_context;
-        next = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_option_group as *mut rxkb_option_group;
-        if list_is_last(&raw mut (*parent).option_groups, &raw mut (*o).base.link) {
-            return std::ptr::null_mut();
+        let parent = (*o).base.parent as *mut rxkb_context;
+        let vec = &(*parent).option_groups;
+        if let Some(idx) = vec.iter().position(|&p| p == o) {
+            vec.get(idx + 1).copied().unwrap_or(std::ptr::null_mut())
+        } else {
+            std::ptr::null_mut()
         }
-        return next;
     }
 }
 unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
     unsafe {
-        let mut m: *mut rxkb_model = std::ptr::null_mut();
-        let mut mtmp: *mut rxkb_model = std::ptr::null_mut();
-        let mut l: *mut rxkb_layout = std::ptr::null_mut();
-        let mut ltmp: *mut rxkb_layout = std::ptr::null_mut();
-        let mut og: *mut rxkb_option_group = std::ptr::null_mut();
-        let mut ogtmp: *mut rxkb_option_group = std::ptr::null_mut();
-        let mut path: *mut *mut i8 = std::ptr::null_mut();
-        m = std::ptr::null_mut();
-        mtmp = std::ptr::null_mut();
-        m = ((*ctx).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-            as *mut rxkb_model;
-        mtmp = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-            as *mut rxkb_model;
-        while &raw mut (*m).base.link != &raw mut (*ctx).models {
+        for &m in &(*ctx).models {
             rxkb_model_unref(m);
-            m = mtmp;
-            mtmp = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-                as *mut rxkb_model;
         }
-        l = std::ptr::null_mut();
-        ltmp = std::ptr::null_mut();
-        l = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        ltmp = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        while &raw mut (*l).base.link != &raw mut (*ctx).layouts {
+        (*ctx).models.clear();
+        for &l in &(*ctx).layouts {
             rxkb_layout_unref(l);
-            l = ltmp;
-            ltmp = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_layout as *mut rxkb_layout;
         }
-        og = std::ptr::null_mut();
-        ogtmp = std::ptr::null_mut();
-        og = ((*ctx).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_option_group as *mut rxkb_option_group;
-        ogtmp = ((*og).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_option_group as *mut rxkb_option_group;
-        while &raw mut (*og).base.link != &raw mut (*ctx).option_groups {
+        (*ctx).layouts.clear();
+        for &og in &(*ctx).option_groups {
             rxkb_option_group_unref(og);
-            og = ogtmp;
-            ogtmp = ((*og).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_option_group as *mut rxkb_option_group;
         }
+        (*ctx).option_groups.clear();
         for &p in &(*ctx).includes {
             cstr_free(p);
         }
@@ -615,7 +526,6 @@ pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_con
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
             rxkb_context_destroy(object);
-            list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
@@ -765,9 +675,9 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
             drop(Box::from_raw(ctx));
             return std::ptr::null_mut();
         }
-        list_init(&raw mut (*ctx).models);
-        list_init(&raw mut (*ctx).layouts);
-        list_init(&raw mut (*ctx).option_groups);
+        std::ptr::write(&raw mut (*ctx).models, Vec::new());
+        std::ptr::write(&raw mut (*ctx).layouts, Vec::new());
+        std::ptr::write(&raw mut (*ctx).option_groups, Vec::new());
         if flags as u32 & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0
             && !rxkb_context_include_path_append_default(ctx)
         {
@@ -1375,19 +1285,13 @@ unsafe fn parse_model(
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, model, &raw mut config) {
-            let mut m: *mut rxkb_model = std::ptr::null_mut();
-            m = std::ptr::null_mut();
-            m = ((*ctx).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
-                as *mut rxkb_model;
-            while &raw mut (*m).base.link != &raw mut (*ctx).models {
+            for &m in &(*ctx).models {
                 if streq((*m).name, config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
-                m = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_model as *mut rxkb_model;
             }
-            m = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_model>()));
+            let m = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_model>()));
             rxkb_object_init(&raw mut (*m).base, &raw mut (*ctx).base);
             (*m).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
@@ -1396,7 +1300,7 @@ unsafe fn parse_model(
             (*m).vendor =
                 _steal(&raw mut config.vendor as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*m).popularity = config.popularity;
-            list_append(&raw mut (*ctx).models, &raw mut (*m).base.link);
+            (*ctx).models.push(m);
         }
     }
 }
@@ -1406,18 +1310,16 @@ unsafe fn parse_language_list(
     mut layout: *mut rxkb_layout,
 ) {
     unsafe {
-        let mut code: *mut rxkb_iso639_code = std::ptr::null_mut();
         for node in doc.children(language_list) {
             if is_node(doc, node, "iso639Id") {
                 let mut str: *mut i8 = extract_text(doc, node);
-                let mut parent: *mut rxkb_object = std::ptr::null_mut();
                 if str.is_null() || cstr_len(str) != 3 as usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
-                    parent = &raw mut (*layout).base;
-                    code = rxkb_iso639_code_create(parent);
+                    let parent: *mut rxkb_object = &raw mut (*layout).base;
+                    let code = rxkb_iso639_code_create(parent);
                     (*code).code = str;
-                    list_append(&raw mut (*layout).iso639s, &raw mut (*code).base.link);
+                    (*layout).iso639s.push(code);
                 }
             }
         }
@@ -1429,18 +1331,16 @@ unsafe fn parse_country_list(
     mut layout: *mut rxkb_layout,
 ) {
     unsafe {
-        let mut code: *mut rxkb_iso3166_code = std::ptr::null_mut();
         for node in doc.children(country_list) {
             if is_node(doc, node, "iso3166Id") {
                 let mut str: *mut i8 = extract_text(doc, node);
-                let mut parent: *mut rxkb_object = std::ptr::null_mut();
                 if str.is_null() || cstr_len(str) != 2 as usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
-                    parent = &raw mut (*layout).base;
-                    code = rxkb_iso3166_code_create(parent);
+                    let parent: *mut rxkb_object = &raw mut (*layout).base;
+                    let code = rxkb_iso3166_code_create(parent);
                     (*code).code = str;
-                    list_append(&raw mut (*layout).iso3166s, &raw mut (*code).base.link);
+                    (*layout).iso3166s.push(code);
                 }
             }
         }
@@ -1463,26 +1363,17 @@ unsafe fn parse_variant(
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, variant, &raw mut config) {
-            let mut v: *mut rxkb_layout = std::ptr::null_mut();
             let mut exists: bool = false;
-            v = std::ptr::null_mut();
-            v = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
-                as *mut rxkb_layout;
-            while &raw mut (*v).base.link != &raw mut (*ctx).layouts {
+            for &v in &(*ctx).layouts {
                 if streq_null((*v).variant, config.name) as i32 != 0
                     && streq((*v).name, (*l).name) as i32 != 0
                 {
                     exists = true;
                     break;
-                } else {
-                    v = ((*v).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                        as *mut rxkb_layout as *mut rxkb_layout;
                 }
             }
             if !exists {
-                v = rxkb_layout_create(&raw mut (*ctx).base);
-                list_init(&raw mut (*v).iso639s);
-                list_init(&raw mut (*v).iso3166s);
+                let v = rxkb_layout_create(&raw mut (*ctx).base);
                 (*v).name = cstr_dup((*l).name);
                 (*v).variant =
                     _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
@@ -1494,7 +1385,7 @@ unsafe fn parse_variant(
                     _steal(&raw mut config.brief as *mut ::core::ffi::c_void) as *mut i8
                 };
                 (*v).popularity = config.popularity;
-                list_append(&raw mut (*ctx).layouts, &raw mut (*v).base.link);
+                (*ctx).layouts.push(v);
                 for ci in doc.children(variant) {
                     if is_node(doc, ci, "configItem") {
                         let mut found_language_list: bool = false;
@@ -1510,36 +1401,19 @@ unsafe fn parse_variant(
                             }
                         }
                         if !found_language_list {
-                            let mut x: *mut rxkb_iso639_code = std::ptr::null_mut();
-                            x = std::ptr::null_mut();
-                            x = ((*l).iso639s.next as *mut i8).offset(-(16 as u64 as isize))
-                                as *mut rxkb_iso639_code
-                                as *mut rxkb_iso639_code;
-                            while &raw mut (*x).base.link != &raw mut (*l).iso639s {
-                                let mut code: *mut rxkb_iso639_code =
+                            for &x in &(*l).iso639s {
+                                let code: *mut rxkb_iso639_code =
                                     rxkb_iso639_code_create(&raw mut (*v).base);
                                 (*code).code = cstr_dup((*x).code);
-                                list_append(&raw mut (*v).iso639s, &raw mut (*code).base.link);
-                                x = ((*x).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                                    as *mut rxkb_iso639_code
-                                    as *mut rxkb_iso639_code;
+                                (*v).iso639s.push(code);
                             }
                         }
                         if !found_country_list {
-                            let mut x_0: *mut rxkb_iso3166_code = std::ptr::null_mut();
-                            x_0 = std::ptr::null_mut();
-                            x_0 = ((*l).iso3166s.next as *mut i8).offset(-(16 as u64 as isize))
-                                as *mut rxkb_iso3166_code
-                                as *mut rxkb_iso3166_code;
-                            while &raw mut (*x_0).base.link != &raw mut (*l).iso3166s {
-                                let mut code_0: *mut rxkb_iso3166_code =
+                            for &x in &(*l).iso3166s {
+                                let code: *mut rxkb_iso3166_code =
                                     rxkb_iso3166_code_create(&raw mut (*v).base);
-                                (*code_0).code = cstr_dup((*x_0).code);
-                                list_append(&raw mut (*v).iso3166s, &raw mut (*code_0).base.link);
-                                x_0 = ((*x_0).base.link.next as *mut i8)
-                                    .offset(-(16 as u64 as isize))
-                                    as *mut rxkb_iso3166_code
-                                    as *mut rxkb_iso3166_code;
+                                (*code).code = cstr_dup((*x).code);
+                                (*v).iso3166s.push(code);
                             }
                         }
                     }
@@ -1570,22 +1444,15 @@ unsafe fn parse_layout(
         if !parse_config_item(ctx, doc, layout, &raw mut config) {
             return;
         }
-        l = std::ptr::null_mut();
-        l = ((*ctx).layouts.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_layout
-            as *mut rxkb_layout;
-        while &raw mut (*l).base.link != &raw mut (*ctx).layouts {
-            if streq((*l).name, config.name) as i32 != 0 && (*l).variant.is_null() {
+        for &el in &(*ctx).layouts {
+            if streq((*el).name, config.name) as i32 != 0 && (*el).variant.is_null() {
                 exists = true;
+                l = el;
                 break;
-            } else {
-                l = ((*l).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_layout as *mut rxkb_layout;
             }
         }
         if !exists {
             l = rxkb_layout_create(&raw mut (*ctx).base);
-            list_init(&raw mut (*l).iso639s);
-            list_init(&raw mut (*l).iso3166s);
             (*l).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*l).variant = std::ptr::null_mut();
@@ -1594,7 +1461,7 @@ unsafe fn parse_layout(
             (*l).brief =
                 _steal(&raw mut config.brief as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*l).popularity = config.popularity;
-            list_append(&raw mut (*ctx).layouts, &raw mut (*l).base.link);
+            (*ctx).layouts.push(l);
         } else {
             config_item_free(&raw mut config);
         }
@@ -1637,19 +1504,13 @@ unsafe fn parse_option(
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, option, &raw mut config) {
-            let mut o: *mut rxkb_option = std::ptr::null_mut();
-            o = std::ptr::null_mut();
-            o = ((*group).options.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
-                as *mut rxkb_option;
-            while &raw mut (*o).base.link != &raw mut (*group).options {
+            for &o in &(*group).options {
                 if streq((*o).name, config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
-                o = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_option as *mut rxkb_option;
             }
-            o = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option>()));
+            let o = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option>()));
             rxkb_object_init(&raw mut (*o).base, &raw mut (*group).base);
             (*o).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
@@ -1657,7 +1518,7 @@ unsafe fn parse_option(
                 as *mut i8 as *mut i8;
             (*o).popularity = config.popularity;
             (*o).layout_specific = config.layout_specific;
-            list_append(&raw mut (*group).options, &raw mut (*o).base.link);
+            (*group).options.push(o);
         }
     }
 }
@@ -1681,20 +1542,23 @@ unsafe fn parse_group(
         if !parse_config_item(ctx, doc, group, &raw mut config) {
             return;
         }
-        g = std::ptr::null_mut();
-        g = ((*ctx).option_groups.next as *mut i8).offset(-(16 as u64 as isize))
-            as *mut rxkb_option_group as *mut rxkb_option_group;
-        while &raw mut (*g).base.link != &raw mut (*ctx).option_groups {
-            if streq((*g).name, config.name) {
+        for &el in &(*ctx).option_groups {
+            if streq((*el).name, config.name) {
                 exists = true;
+                g = el;
                 break;
-            } else {
-                g = ((*g).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                    as *mut rxkb_option_group as *mut rxkb_option_group;
             }
         }
         if !exists {
-            g = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option_group>()));
+            g = {
+                let layout = std::alloc::Layout::new::<rxkb_option_group>();
+                let ptr = std::alloc::alloc_zeroed(layout) as *mut rxkb_option_group;
+                if ptr.is_null() {
+                    std::alloc::handle_alloc_error(layout);
+                }
+                std::ptr::write(&raw mut (*ptr).options, Vec::new());
+                Box::into_raw(Box::from_raw(ptr))
+            };
             rxkb_object_init(&raw mut (*g).base, &raw mut (*ctx).base);
             (*g).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
@@ -1706,8 +1570,7 @@ unsafe fn parse_group(
                     (*g).allow_multiple = true;
                 }
             }
-            list_init(&raw mut (*g).options);
-            list_append(&raw mut (*ctx).option_groups, &raw mut (*g).base.link);
+            (*ctx).option_groups.push(g);
         } else {
             config_item_free(&raw mut config);
         }
