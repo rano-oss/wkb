@@ -177,73 +177,6 @@ pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize)
         return rtrn;
     }
 }
-unsafe fn xkb_context_get_default_rules(mut ctx: *mut xkb_context) -> *const i8 {
-    unsafe {
-        let mut env: *const i8 = std::ptr::null();
-        if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
-        }
-        return if !env.is_null() {
-            env
-        } else {
-            DEFAULT_XKB_RULES.as_ptr()
-        };
-    }
-}
-unsafe fn xkb_context_get_default_model(mut ctx: *mut xkb_context) -> *const i8 {
-    unsafe {
-        let mut env: *const i8 = std::ptr::null();
-        if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
-        }
-        return if !env.is_null() {
-            env
-        } else {
-            DEFAULT_XKB_MODEL.as_ptr()
-        };
-    }
-}
-unsafe fn xkb_context_get_default_layout(mut ctx: *mut xkb_context) -> *const i8 {
-    unsafe {
-        let mut env: *const i8 = std::ptr::null();
-        if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
-        }
-        return if !env.is_null() {
-            env
-        } else {
-            DEFAULT_XKB_LAYOUT.as_ptr()
-        };
-    }
-}
-unsafe fn xkb_context_get_default_variant(mut ctx: *mut xkb_context) -> *const i8 {
-    unsafe {
-        let mut env: *const i8 = std::ptr::null();
-        let mut layout: *const i8 =
-            xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
-        if !layout.is_null() && (*ctx).use_environment_names() as i32 != 0 {
-            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
-        }
-        return if !env.is_null() {
-            env
-        } else {
-            std::ptr::null()
-        };
-    }
-}
-unsafe fn xkb_context_get_default_options(mut ctx: *mut xkb_context) -> *const i8 {
-    unsafe {
-        let mut env: *const i8 = std::ptr::null();
-        if (*ctx).use_environment_names() {
-            env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
-        }
-        return if !env.is_null() {
-            env
-        } else {
-            std::ptr::null()
-        };
-    }
-}
 pub unsafe fn xkb_context_sanitize_rule_names(
     mut ctx: *mut xkb_context,
     mut rmlvo: *mut xkb_rule_names,
@@ -251,17 +184,59 @@ pub unsafe fn xkb_context_sanitize_rule_names(
     unsafe {
         let mut modified: RMLVO = 0 as RMLVO;
         if isempty((*rmlvo).rules) {
-            (*rmlvo).rules = xkb_context_get_default_rules(ctx);
+            // xkb_context_get_default_rules inlined
+            let mut env: *const i8 = std::ptr::null();
+            if (*ctx).use_environment_names() {
+                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
+            }
+            (*rmlvo).rules = if !env.is_null() {
+                env
+            } else {
+                DEFAULT_XKB_RULES.as_ptr()
+            };
             modified = (modified as u32 | RMLVO_RULES as u32) as RMLVO;
         }
         if isempty((*rmlvo).model) {
-            (*rmlvo).model = xkb_context_get_default_model(ctx);
+            // xkb_context_get_default_model inlined
+            let mut env: *const i8 = std::ptr::null();
+            if (*ctx).use_environment_names() {
+                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
+            }
+            (*rmlvo).model = if !env.is_null() {
+                env
+            } else {
+                DEFAULT_XKB_MODEL.as_ptr()
+            };
             modified = (modified as u32 | RMLVO_MODEL as u32) as RMLVO;
         }
         if isempty((*rmlvo).layout) {
-            (*rmlvo).layout = xkb_context_get_default_layout(ctx);
+            // xkb_context_get_default_layout inlined
+            {
+                let mut env: *const i8 = std::ptr::null();
+                if (*ctx).use_environment_names() {
+                    env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
+                }
+                (*rmlvo).layout = if !env.is_null() {
+                    env
+                } else {
+                    DEFAULT_XKB_LAYOUT.as_ptr()
+                };
+            }
             modified = (modified as u32 | RMLVO_LAYOUT as u32) as RMLVO;
-            let variant: *const i8 = xkb_context_get_default_variant(ctx) as *const i8;
+            // xkb_context_get_default_variant inlined
+            let variant: *const i8 = {
+                let mut env: *const i8 = std::ptr::null();
+                let mut layout: *const i8 =
+                    xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
+                if !layout.is_null() && (*ctx).use_environment_names() as i32 != 0 {
+                    env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
+                }
+                if !env.is_null() {
+                    env
+                } else {
+                    std::ptr::null()
+                }
+            };
             if !isempty((*rmlvo).variant) {
                 xkb_logf!(
                     ctx,
@@ -281,7 +256,16 @@ pub unsafe fn xkb_context_sanitize_rule_names(
             modified = (modified as u32 | RMLVO_VARIANT as u32) as RMLVO;
         }
         if (*rmlvo).options.is_null() {
-            (*rmlvo).options = xkb_context_get_default_options(ctx);
+            // xkb_context_get_default_options inlined
+            let mut env: *const i8 = std::ptr::null();
+            if (*ctx).use_environment_names() {
+                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
+            }
+            (*rmlvo).options = if !env.is_null() {
+                env
+            } else {
+                std::ptr::null()
+            };
             modified = (modified as u32 | RMLVO_OPTIONS as u32) as RMLVO;
         }
         return modified;

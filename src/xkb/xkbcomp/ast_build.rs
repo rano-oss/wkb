@@ -121,17 +121,6 @@ pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateBoolean(mut set: bool) -> *mut ExprDef {
-    unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).boolean.set = set;
-        return expr;
-    }
-}
-
 pub unsafe fn ExprCreateKeyName(mut key_name: xkb_atom_t) -> *mut ExprDef {
     unsafe {
         let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYNAME_LITERAL);
@@ -467,7 +456,10 @@ pub unsafe fn BoolVarCreate(mut ident: xkb_atom_t, mut set: bool) -> *mut VarDef
         if name.is_null() {
             return std::ptr::null_mut();
         }
-        value = ExprCreateBoolean(set);
+        value = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
+        if !value.is_null() {
+            (*value).boolean.set = set;
+        }
         if value.is_null() {
             FreeStmt(name as *mut ParseCommon);
             return std::ptr::null_mut();

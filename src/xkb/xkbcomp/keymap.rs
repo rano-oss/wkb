@@ -26,23 +26,6 @@ pub const GROUP_INDEX_NAME_LAST: C2Rust_Unnamed_20 = 1;
 pub type compile_file_fn = Option<unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
 pub type C2Rust_Unnamed_20 = u32;
 pub type C2Rust_Unnamed_21 = u32;
-unsafe fn has_unbound_vmods(mut keymap: *mut xkb_keymap, mut mask: xkb_mod_mask_t) -> bool {
-    unsafe {
-        let mut k: xkb_mod_index_t = 0;
-        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
-        k = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
-        mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-            .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize) as *mut xkb_mod;
-        while k < (*keymap).mods.num_mods {
-            if mask & (1 as xkb_mod_mask_t) << k != 0 && (*mod_0).mapping == 0 as xkb_mod_mask_t {
-                return true;
-            }
-            k = k.wrapping_add(1);
-            mod_0 = mod_0.offset(1);
-        }
-        return false;
-    }
-}
 #[inline]
 unsafe fn ComputeEffectiveMask(mut keymap: *mut xkb_keymap, mut mods: *mut xkb_mods) {
     unsafe {
@@ -542,33 +525,6 @@ unsafe fn update_pending_action_fields(
         };
     }
 }
-unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mut xkb_led) -> bool {
-    unsafe {
-        if (*led).pending_groups() {
-            let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
-                [(*led).groups as usize]
-                as *mut pending_computation;
-            if !(*pc).computed {
-                let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
-                if !ExprResolveGroupMask(info, (*pc).expr, &raw mut mask, std::ptr::null_mut()) {
-                    xkb_logf!(
-                        (*info).keymap.ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Invalid LED group mask\n",
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
-                    );
-                    return false;
-                }
-                (*pc).computed = true;
-                (*pc).value = mask as u32;
-            }
-            (*led).set_pending_groups((false) as bool);
-            (*led).groups = (*pc).value as xkb_layout_mask_t;
-        }
-        return true;
-    }
-}
 unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = &raw mut (*info).keymap;
@@ -802,14 +758,31 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             );
             let mut j: u32 = 0 as u32;
             while j < (*(*keymap).types.offset(i_0 as isize)).num_entries {
-                if has_unbound_vmods(
-                    keymap,
-                    (*(*(*keymap).types.offset(i_0 as isize))
+                if {
+                    // has_unbound_vmods inlined
+                    let entry_mods = (*(*(*keymap).types.offset(i_0 as isize))
                         .entries
                         .offset(j as isize))
                     .mods
-                    .mods,
-                ) {
+                    .mods;
+                    let mut unbound = false;
+                    let mut k: xkb_mod_index_t =
+                        _XKB_MOD_INDEX_NUM_ENTRIES as i32 as xkb_mod_index_t;
+                    let mut mod_0: *mut xkb_mod = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
+                        .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
+                        as *mut xkb_mod;
+                    while k < (*keymap).mods.num_mods {
+                        if entry_mods & (1 as xkb_mod_mask_t) << k != 0
+                            && (*mod_0).mapping == 0 as xkb_mod_mask_t
+                        {
+                            unbound = true;
+                            break;
+                        }
+                        k = k.wrapping_add(1);
+                        mod_0 = mod_0.offset(1);
+                    }
+                    unbound
+                } {
                     (*(*(*keymap).types.offset(i_0 as isize))
                         .entries
                         .offset(j as isize))
@@ -904,7 +877,42 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while led < (&raw mut (*keymap).leds as *mut xkb_led).offset((*keymap).num_leds as isize) {
             ComputeEffectiveMask(keymap, &raw mut (*led).mods);
-            if pending_computations as i32 != 0 && !update_pending_led_fields(info, led) {
+            if pending_computations as i32 != 0 && {
+                // update_pending_led_fields inlined
+                let mut led_ok = true;
+                if (*led).pending_groups() {
+                    let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
+                        [(*led).groups as usize]
+                        as *mut pending_computation;
+                    if !(*pc).computed {
+                        let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
+                        if !ExprResolveGroupMask(
+                            info,
+                            (*pc).expr,
+                            &raw mut mask,
+                            std::ptr::null_mut(),
+                        ) {
+                            xkb_logf!(
+                                (*info).keymap.ctx,
+                                XKB_LOG_LEVEL_ERROR,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                "[XKB-{:03}] Invalid LED group mask\n",
+                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
+                            );
+                            led_ok = false;
+                        }
+                        if led_ok {
+                            (*pc).computed = true;
+                            (*pc).value = mask as u32;
+                        }
+                    }
+                    if led_ok {
+                        (*led).set_pending_groups((false) as bool);
+                        (*led).groups = (*pc).value as xkb_layout_mask_t;
+                    }
+                }
+                !led_ok
+            } {
                 return false;
             }
             led = led.offset(1);

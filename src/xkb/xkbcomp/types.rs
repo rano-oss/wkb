@@ -82,12 +82,6 @@ unsafe fn TypeTxt(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> 
     }
 }
 #[inline]
-unsafe fn TypeMaskTxt(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> *const i8 {
-    unsafe {
-        return ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, (*type_0).mods);
-    }
-}
-#[inline]
 unsafe fn ReportTypeShouldBeArray(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
@@ -154,19 +148,6 @@ unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
         (*info).types.clear();
     }
 }
-unsafe fn FindMatchingKeyType(
-    mut info: *mut KeyTypesInfo,
-    mut name: xkb_atom_t,
-) -> *mut KeyTypeInfo {
-    unsafe {
-        for type_0 in (*info).types.iter_mut() {
-            if type_0.name == name {
-                return type_0 as *mut KeyTypeInfo;
-            }
-        }
-        return std::ptr::null_mut();
-    }
-}
 unsafe fn AddKeyType(
     mut info: *mut KeyTypesInfo,
     mut new: *mut KeyTypeInfo,
@@ -175,7 +156,13 @@ unsafe fn AddKeyType(
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
-        old = FindMatchingKeyType(info, (*new).name);
+        // FindMatchingKeyType inlined
+        for type_0 in (*info).types.iter_mut() {
+            if type_0.name == (*new).name {
+                old = type_0 as *mut KeyTypeInfo;
+                break;
+            }
+        }
         if !old.is_null() {
             if (*new).merge as u32 != MERGE_AUGMENT as u32 {
                 if same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32 {
@@ -339,7 +326,12 @@ unsafe fn SetModifiers(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
-                crate::xkb::utils::CStrDisplay(TypeMaskTxt(info, type_0)),
+                crate::xkb::utils::CStrDisplay(ModMaskText(
+                    (*info).ctx,
+                    MOD_BOTH,
+                    &raw mut (*info).mods,
+                    (*type_0).mods
+                )),
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
@@ -353,19 +345,6 @@ unsafe fn SetModifiers(
         return true;
     }
 }
-unsafe fn FindMatchingMapEntry(
-    mut type_0: *mut KeyTypeInfo,
-    mut mods: xkb_mod_mask_t,
-) -> *mut xkb_key_type_entry {
-    unsafe {
-        for entry in (*type_0).entries.iter_mut() {
-            if entry.mods.mods == mods {
-                return entry as *mut xkb_key_type_entry;
-            }
-        }
-        return std::ptr::null_mut();
-    }
-}
 unsafe fn AddMapEntry(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
@@ -375,7 +354,13 @@ unsafe fn AddMapEntry(
 ) -> bool {
     unsafe {
         let mut old: *mut xkb_key_type_entry = std::ptr::null_mut();
-        old = FindMatchingMapEntry(type_0, (*new).mods.mods);
+        // FindMatchingMapEntry inlined
+        for entry in (*type_0).entries.iter_mut() {
+            if entry.mods.mods == (*new).mods.mods {
+                old = entry as *mut xkb_key_type_entry;
+                break;
+            }
+        }
         if !old.is_null() {
             if report as i32 != 0 && (*old).level != (*new).level {
                 xkb_logf!(
@@ -831,27 +816,6 @@ unsafe fn HandleKeyTypeBody(
         return ok;
     }
 }
-unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef) -> bool {
-    unsafe {
-        let mut type_0: KeyTypeInfo = KeyTypeInfo {
-            defined: 0 as type_field,
-            merge: (*def).merge,
-            name: (*def).name,
-            mods: 0 as xkb_mod_mask_t,
-            num_levels: 1 as xkb_level_index_t,
-            entries: Vec::new(),
-            level_names: Vec::new(),
-        };
-        if !HandleKeyTypeBody(info, (*def).body, &raw mut type_0)
-            || !AddKeyType(info, &raw mut type_0, true)
-        {
-            (*info).errorCount += 1;
-            ClearKeyTypeInfo(&raw mut type_0);
-            return false;
-        }
-        return true;
-    }
-}
 unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: *const i8 = std::ptr::null();
@@ -914,7 +878,26 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                     ok = HandleIncludeKeyTypes(info, stmt as *mut IncludeStmt);
                 }
                 27 => {
-                    ok = HandleKeyTypeDef(info, stmt as *mut KeyTypeDef);
+                    // HandleKeyTypeDef inlined
+                    let def = stmt as *mut KeyTypeDef;
+                    let mut type_0: KeyTypeInfo = KeyTypeInfo {
+                        defined: 0 as type_field,
+                        merge: (*def).merge,
+                        name: (*def).name,
+                        mods: 0 as xkb_mod_mask_t,
+                        num_levels: 1 as xkb_level_index_t,
+                        entries: Vec::new(),
+                        level_names: Vec::new(),
+                    };
+                    if !HandleKeyTypeBody(info, (*def).body, &raw mut type_0)
+                        || !AddKeyType(info, &raw mut type_0, true)
+                    {
+                        (*info).errorCount += 1;
+                        ClearKeyTypeInfo(&raw mut type_0);
+                        ok = false;
+                    } else {
+                        ok = true;
+                    }
                 }
                 26 => {
                     ok = HandleGlobalVar(info, stmt as *mut VarDef);

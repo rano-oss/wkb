@@ -1688,28 +1688,6 @@ unsafe fn xkb_filter_apply_all(
         }
     }
 }
-#[inline]
-
-unsafe fn xkb_state_init(
-    mut state: *mut xkb_state,
-    mut keymap: *mut xkb_keymap,
-    mut a11y_affect: xkb_a11y_flags,
-    mut a11y_flags: xkb_a11y_flags,
-) {
-    unsafe {
-        (*state).flags = a11y_flags;
-        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as u32
-            && a11y_affect as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 == 0
-        {
-            (*state).flags =
-                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32) as xkb_a11y_flags;
-        }
-        (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-        (*state).refcnt = 1 as i32;
-        (*state).keymap = xkb_keymap_ref(keymap);
-        xkb_state_update_derived(state);
-    }
-}
 pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
         let state: *mut xkb_state = Box::into_raw(Box::new(xkb_state {
@@ -1723,19 +1701,22 @@ pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
             filters: Vec::new(),
             keymap: std::ptr::null_mut(),
         }));
-        xkb_state_init(state, keymap, XKB_A11Y_NO_FLAGS, XKB_A11Y_NO_FLAGS);
+        // xkb_state_init inlined
+        (*state).flags = XKB_A11Y_NO_FLAGS;
+        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as u32
+            && XKB_A11Y_NO_FLAGS as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 == 0
+        {
+            (*state).flags =
+                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32) as xkb_a11y_flags;
+        }
+        (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
+        (*state).refcnt = 1 as i32;
+        (*state).keymap = xkb_keymap_ref(keymap);
+        xkb_state_update_derived(state);
         return state;
     }
 }
 
-#[inline]
-
-unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
-    unsafe {
-        xkb_keymap_unref((*state).keymap);
-        // Vec<xkb_filter> will be dropped when the owning struct is dropped
-    }
-}
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
@@ -1744,7 +1725,9 @@ pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
         } {
             return;
         }
-        xkb_state_destroy(state);
+        // xkb_state_destroy inlined
+        xkb_keymap_unref((*state).keymap);
+        // Vec<xkb_filter> will be dropped when the owning struct is dropped
         drop(Box::from_raw(state));
     }
 }
@@ -2197,31 +2180,6 @@ unsafe fn clear_all_latches_and_locks(mut state: *mut xkb_state, mut events: *mu
     }
 }
 
-unsafe fn state_update_enabled_controls(
-    mut state: *mut xkb_state,
-    mut affect: xkb_keyboard_control_flags,
-    mut controls: xkb_keyboard_control_flags,
-    mut events: *mut xkb_events,
-) {
-    unsafe {
-        let had_sticky_keys: bool =
-            (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
-        affect = (affect as xkb_action_controls as u32 & CONTROL_ALL_BOOLEAN as u32)
-            as xkb_keyboard_control_flags;
-        (*state).components.controls =
-            ((*state).components.controls as u32 & !(affect as u32)) as xkb_action_controls;
-        (*state).components.controls = ((*state).components.controls as u32
-            | controls as xkb_action_controls as u32 & affect as u32)
-            as xkb_action_controls;
-        if had_sticky_keys as i32 != 0
-            && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
-        {
-            clear_all_latches_and_locks(state, events);
-        }
-        xkb_state_update_derived(state);
-    }
-}
-
 unsafe fn state_update_layout_policy(
     mut state: *mut xkb_state,
     mut update: *const xkb_layout_policy_update,
@@ -2366,12 +2324,25 @@ pub unsafe fn xkb_state_update_synthetic(
         }
         if !(*update).components.is_null() {
             let components: *const xkb_state_components_update = (*update).components;
-            state_update_enabled_controls(
-                state,
-                (*components).affect_controls,
-                (*components).controls,
-                std::ptr::null_mut(),
-            );
+            // state_update_enabled_controls inlined
+            {
+                let had_sticky_keys: bool =
+                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
+                let mut affect = ((*components).affect_controls as xkb_action_controls as u32
+                    & CONTROL_ALL_BOOLEAN as u32)
+                    as xkb_keyboard_control_flags;
+                (*state).components.controls =
+                    ((*state).components.controls as u32 & !(affect as u32)) as xkb_action_controls;
+                (*state).components.controls = ((*state).components.controls as u32
+                    | (*components).controls as xkb_action_controls as u32 & affect as u32)
+                    as xkb_action_controls;
+                if had_sticky_keys as i32 != 0
+                    && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
+                {
+                    clear_all_latches_and_locks(state, std::ptr::null_mut());
+                }
+                xkb_state_update_derived(state);
+            }
             state_update_latched_locked(state, components, std::ptr::null_mut());
         }
         xkb_state_update_derived(state);
@@ -2485,22 +2456,6 @@ pub unsafe fn xkb_state_key_get_syms(
         *syms_out = std::ptr::null();
         return 0 as i32;
     }
-}
-
-unsafe fn XkbToControl(mut ch: i8) -> i8 {
-    let mut c: i8 = ch;
-    if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32 || c as i32 == ' ' as i32 {
-        c = (c as i32 & 0x1f as i32) as i8;
-    } else if c as i32 == '2' as i32 {
-        c = '\0' as i32 as i8;
-    } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
-        c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
-    } else if c as i32 == '8' as i32 {
-        c = '\u{7f}' as i32 as i8;
-    } else if c as i32 == '/' as i32 {
-        c = ('_' as i32 & 0x1f as i32) as i8;
-    }
-    return c;
 }
 
 pub unsafe fn xkb_state_key_get_one_sym(
@@ -2623,8 +2578,24 @@ pub unsafe fn xkb_state_key_get_utf8(
                             && *buffer.offset(0 as i32 as isize) as u32 <= 127 as u32
                             && should_do_ctrl_transformation(state, kc) as i32 != 0
                         {
-                            *buffer.offset(0 as i32 as isize) =
-                                XkbToControl(*buffer.offset(0 as i32 as isize));
+                            // XkbToControl inlined
+                            *buffer.offset(0 as i32 as isize) = {
+                                let mut c: i8 = *buffer.offset(0 as i32 as isize);
+                                if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
+                                    || c as i32 == ' ' as i32
+                                {
+                                    c = (c as i32 & 0x1f as i32) as i8;
+                                } else if c as i32 == '2' as i32 {
+                                    c = '\0' as i32 as i8;
+                                } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
+                                    c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
+                                } else if c as i32 == '8' as i32 {
+                                    c = '\u{7f}' as i32 as i8;
+                                } else if c as i32 == '/' as i32 {
+                                    c = ('_' as i32 & 0x1f as i32) as i8;
+                                }
+                                c
+                            };
                         }
                         return offset;
                     }

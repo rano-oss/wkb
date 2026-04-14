@@ -186,27 +186,6 @@ unsafe fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
     }
 }
 
-unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
-    unsafe {
-        clear_level(into);
-        if (*from).num_syms as i32 > 1 as i32 {
-            (*into).s.syms = _steal(&raw mut (*from).s.syms as *mut ::core::ffi::c_void)
-                as *mut xkb_keysym_t as *mut xkb_keysym_t;
-        } else {
-            (*into).s.sym = (*from).s.sym;
-        }
-        (*into).num_syms = (*from).num_syms;
-        (*from).num_syms = 0 as xkb_keysym_count_t;
-        if (*from).num_actions as i32 > 1 as i32 {
-            (*into).a.actions = _steal(&raw mut (*from).a.actions as *mut ::core::ffi::c_void)
-                as *mut xkb_action as *mut xkb_action;
-        } else {
-            (*into).a.action = (*from).a.action;
-        }
-        (*into).num_actions = (*from).num_actions;
-        (*from).num_actions = 0 as xkb_action_count_t;
-    }
-}
 unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
         std::ptr::write(
@@ -399,7 +378,27 @@ unsafe fn MergeGroups(
                 let intoHasNoKeysym: bool = (*intoLevel).num_syms as i32 == 0 as i32;
                 let intoHasNoAction: bool = (*intoLevel).num_actions as i32 == 0 as i32;
                 if intoHasNoKeysym as i32 != 0 && intoHasNoAction as i32 != 0 {
-                    StealLevelInfo(intoLevel, fromLevel);
+                    // StealLevelInfo inlined
+                    clear_level(intoLevel);
+                    if (*fromLevel).num_syms as i32 > 1 as i32 {
+                        (*intoLevel).s.syms =
+                            _steal(&raw mut (*fromLevel).s.syms as *mut ::core::ffi::c_void)
+                                as *mut xkb_keysym_t
+                                as *mut xkb_keysym_t;
+                    } else {
+                        (*intoLevel).s.sym = (*fromLevel).s.sym;
+                    }
+                    (*intoLevel).num_syms = (*fromLevel).num_syms;
+                    (*fromLevel).num_syms = 0 as xkb_keysym_count_t;
+                    if (*fromLevel).num_actions as i32 > 1 as i32 {
+                        (*intoLevel).a.actions =
+                            _steal(&raw mut (*fromLevel).a.actions as *mut ::core::ffi::c_void)
+                                as *mut xkb_action as *mut xkb_action;
+                    } else {
+                        (*intoLevel).a.action = (*fromLevel).a.action;
+                    }
+                    (*intoLevel).num_actions = (*fromLevel).num_actions;
+                    (*fromLevel).num_actions = 0 as xkb_action_count_t;
                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                     fromActionsCount = fromActionsCount.wrapping_add(1);
                 } else {
@@ -1043,30 +1042,29 @@ unsafe fn MergeKeys(
         return true;
     }
 }
-unsafe fn XkbResolveKeyAlias(mut keymap: *const xkb_keymap, mut name: xkb_atom_t) -> xkb_atom_t {
-    unsafe {
-        if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-            let match_0: KeycodeMatch = *(*keymap)
-                .c2rust_unnamed
-                .c2rust_unnamed
-                .key_names
-                .offset(name as isize);
-            if match_0.c2rust_unnamed.found() as i32 != 0
-                && match_0.c2rust_unnamed.is_alias() as i32 != 0
-            {
-                return match_0.alias.real();
-            }
-        }
-        return name;
-    }
-}
 unsafe fn AddKeySymbols(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        (*keyi).name = XkbResolveKeyAlias(&raw const (*(*info).keymap_info).keymap, (*keyi).name);
+        // XkbResolveKeyAlias inlined
+        {
+            let keymap = &raw const (*(*info).keymap_info).keymap;
+            let name = (*keyi).name;
+            if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
+                let match_0: KeycodeMatch = *(*keymap)
+                    .c2rust_unnamed
+                    .c2rust_unnamed
+                    .key_names
+                    .offset(name as isize);
+                if match_0.c2rust_unnamed.found() as i32 != 0
+                    && match_0.c2rust_unnamed.is_alias() as i32 != 0
+                {
+                    (*keyi).name = match_0.alias.real();
+                }
+            }
+        }
         for iter in (*info).keys.iter_mut() {
             if iter.name == (*keyi).name {
                 return MergeKeys(info, iter as *mut KeyInfo, keyi, same_file);

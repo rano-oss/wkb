@@ -254,23 +254,6 @@ unsafe fn ClearCompatInfo(mut info: *mut CompatInfo) {
         (*info).interps.clear();
     }
 }
-unsafe fn FindMatchingInterp(
-    mut info: *mut CompatInfo,
-    mut new: *mut SymInterpInfo,
-) -> *mut SymInterpInfo {
-    unsafe {
-        for i in 0..(*info).interps.len() {
-            let old = (&mut (*info).interps)[i..].as_mut_ptr();
-            if (*old).interp.sym == (*new).interp.sym
-                && (*old).interp.mods == (*new).interp.mods
-                && (*old).interp.match_0 as u32 == (*new).interp.match_0 as u32
-            {
-                return old;
-            }
-        }
-        return std::ptr::null_mut();
-    }
-}
 unsafe fn UseNewInterpField(
     mut field: si_field,
     mut old: si_field,
@@ -395,7 +378,18 @@ unsafe fn AddInterp(
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        let mut old: *mut SymInterpInfo = FindMatchingInterp(info, new);
+        // FindMatchingInterp inlined
+        let mut old: *mut SymInterpInfo = std::ptr::null_mut();
+        for i in 0..(*info).interps.len() {
+            let candidate = (&mut (*info).interps)[i..].as_mut_ptr();
+            if (*candidate).interp.sym == (*new).interp.sym
+                && (*candidate).interp.mods == (*new).interp.mods
+                && (*candidate).interp.match_0 as u32 == (*new).interp.match_0 as u32
+            {
+                old = candidate;
+                break;
+            }
+        }
         if !old.is_null() {
             return MergeInterp(info, old, new, same_file);
         }

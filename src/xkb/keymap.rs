@@ -1,17 +1,11 @@
 use crate::xkb::context_priv::{xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names};
-use crate::xkb_logf;
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_size_t.h:19"]
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
-
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
-unsafe fn text_v1_keymap_format_ops_ptr() -> *const xkb_keymap_format_ops {
-    &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
-        as *const xkb_keymap_format_ops
-}
 pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -110,6 +104,7 @@ pub use crate::xkb::shared_types::{
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
 use crate::xkb::utils::{cstr_free, cstr_len};
+use crate::xkb_logf;
 use libc::{free, FILE};
 #[c2rust::src_loc = "26:1"]
 pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
@@ -126,14 +121,6 @@ pub unsafe fn clear_level(mut leveli: *mut xkb_level) {
         }
         if (*leveli).num_actions as i32 > 1 as i32 {
             free((*leveli).a.actions as *mut ::core::ffi::c_void);
-        }
-    }
-}
-#[c2rust::src_loc = "43:1"]
-unsafe fn clear_interpret(mut interp: *mut xkb_sym_interpret) {
-    unsafe {
-        if (*interp).num_actions as i32 > 1 as i32 {
-            free((*interp).a.actions as *mut ::core::ffi::c_void);
         }
     }
 }
@@ -199,7 +186,11 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         }
         let mut k: u32 = 0 as u32;
         while k < (*keymap).num_sym_interprets {
-            clear_interpret((*keymap).sym_interprets.offset(k as isize) as *mut xkb_sym_interpret);
+            // clear_interpret inlined
+            let interp = (*keymap).sym_interprets.offset(k as isize) as *mut xkb_sym_interpret;
+            if (*interp).num_actions as i32 > 1 as i32 {
+                free((*interp).a.actions as *mut ::core::ffi::c_void);
+            }
             k = k.wrapping_add(1);
         }
         free((*keymap).sym_interprets as *mut ::core::ffi::c_void);
@@ -220,7 +211,8 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
             [std::ptr::null(), std::ptr::null(), std::ptr::null()];
         // Initialize lazily to bridge the type difference with xkbcomp's local type
         if keymap_format_ops[1].is_null() {
-            let ptr = text_v1_keymap_format_ops_ptr();
+            let ptr = &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
+                as *const xkb_keymap_format_ops;
             keymap_format_ops[1] = ptr;
             keymap_format_ops[2] = ptr;
         }

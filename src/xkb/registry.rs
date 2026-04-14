@@ -145,11 +145,6 @@ unsafe fn rxkb_object_ref(mut object: *mut rxkb_object) -> *mut ::core::ffi::c_v
         return object as *mut ::core::ffi::c_void;
     }
 }
-unsafe fn rxkb_iso639_code_destroy(mut code: *mut rxkb_iso639_code) {
-    unsafe {
-        free((*code).code as *mut ::core::ffi::c_void);
-    }
-}
 pub unsafe fn rxkb_layout_get_iso639_first(mut layout: *mut rxkb_layout) -> *mut rxkb_iso639_code {
     unsafe {
         let mut code: *mut rxkb_iso639_code = std::ptr::null_mut();
@@ -182,7 +177,7 @@ pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut 
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
-            rxkb_iso639_code_destroy(object);
+            free((*object).code as *mut ::core::ffi::c_void);
             list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
@@ -201,11 +196,6 @@ unsafe fn rxkb_iso639_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso
 pub unsafe fn rxkb_iso639_code_get_code(mut object: *mut rxkb_iso639_code) -> *const i8 {
     unsafe {
         return (*object).code;
-    }
-}
-unsafe fn rxkb_iso3166_code_destroy(mut code: *mut rxkb_iso3166_code) {
-    unsafe {
-        free((*code).code as *mut ::core::ffi::c_void);
     }
 }
 pub unsafe fn rxkb_layout_get_iso3166_first(
@@ -244,7 +234,7 @@ pub unsafe fn rxkb_iso3166_code_unref(
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
-            rxkb_iso3166_code_destroy(object);
+            free((*object).code as *mut ::core::ffi::c_void);
             list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
@@ -266,13 +256,6 @@ pub unsafe fn rxkb_iso3166_code_get_code(mut object: *mut rxkb_iso3166_code) -> 
         return (*object).code;
     }
 }
-unsafe fn rxkb_option_destroy(mut o: *mut rxkb_option) {
-    unsafe {
-        free((*o).name as *mut ::core::ffi::c_void);
-        free((*o).brief as *mut ::core::ffi::c_void);
-        free((*o).description as *mut ::core::ffi::c_void);
-    }
-}
 
 pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_option {
     unsafe {
@@ -281,7 +264,10 @@ pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_optio
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
-            rxkb_option_destroy(object);
+            // rxkb_option_destroy inlined
+            free((*object).name as *mut ::core::ffi::c_void);
+            free((*object).brief as *mut ::core::ffi::c_void);
+            free((*object).description as *mut ::core::ffi::c_void);
             list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
@@ -289,14 +275,6 @@ pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_optio
     }
 }
 
-#[inline]
-unsafe fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
-    unsafe {
-        let mut t: *mut rxkb_option = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option>()));
-        rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
-    }
-}
 pub unsafe fn rxkb_option_get_name(mut object: *mut rxkb_option) -> *const i8 {
     unsafe {
         return (*object).name;
@@ -446,13 +424,6 @@ pub unsafe fn rxkb_layout_next(mut o: *mut rxkb_layout) -> *mut rxkb_layout {
         return next;
     }
 }
-unsafe fn rxkb_model_destroy(mut m: *mut rxkb_model) {
-    unsafe {
-        free((*m).name as *mut ::core::ffi::c_void);
-        free((*m).vendor as *mut ::core::ffi::c_void);
-        free((*m).description as *mut ::core::ffi::c_void);
-    }
-}
 
 pub unsafe fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut rxkb_model {
     unsafe {
@@ -461,19 +432,14 @@ pub unsafe fn rxkb_model_unref(mut object: *mut rxkb_model) -> *mut rxkb_model {
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
-            rxkb_model_destroy(object);
+            // rxkb_model_destroy inlined
+            free((*object).name as *mut ::core::ffi::c_void);
+            free((*object).vendor as *mut ::core::ffi::c_void);
+            free((*object).description as *mut ::core::ffi::c_void);
             list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
-    }
-}
-#[inline]
-unsafe fn rxkb_model_create(mut parent: *mut rxkb_object) -> *mut rxkb_model {
-    unsafe {
-        let mut t: *mut rxkb_model = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_model>()));
-        rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
     }
 }
 pub unsafe fn rxkb_model_get_name(mut object: *mut rxkb_model) -> *const i8 {
@@ -516,26 +482,6 @@ pub unsafe fn rxkb_model_first(mut parent: *mut rxkb_context) -> *mut rxkb_model
         return o;
     }
 }
-unsafe fn rxkb_option_group_destroy(mut og: *mut rxkb_option_group) {
-    unsafe {
-        let mut o: *mut rxkb_option = std::ptr::null_mut();
-        let mut otmp: *mut rxkb_option = std::ptr::null_mut();
-        free((*og).name as *mut ::core::ffi::c_void);
-        free((*og).description as *mut ::core::ffi::c_void);
-        o = std::ptr::null_mut();
-        otmp = std::ptr::null_mut();
-        o = ((*og).options.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
-            as *mut rxkb_option;
-        otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
-            as *mut rxkb_option;
-        while &raw mut (*o).base.link != &raw mut (*og).options {
-            rxkb_option_unref(o);
-            o = otmp;
-            otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
-                as *mut rxkb_option as *mut rxkb_option;
-        }
-    }
-}
 pub unsafe fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_option_group) -> bool {
     unsafe {
         return (*g).allow_multiple;
@@ -551,20 +497,27 @@ pub unsafe fn rxkb_option_group_unref(
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
         if (*object).base.refcount == 0 as u32 {
-            rxkb_option_group_destroy(object);
+            // rxkb_option_group_destroy inlined
+            {
+                let mut o: *mut rxkb_option = std::ptr::null_mut();
+                let mut otmp: *mut rxkb_option = std::ptr::null_mut();
+                free((*object).name as *mut ::core::ffi::c_void);
+                free((*object).description as *mut ::core::ffi::c_void);
+                o = ((*object).options.next as *mut i8).offset(-(16 as u64 as isize))
+                    as *mut rxkb_option as *mut rxkb_option;
+                otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
+                    as *mut rxkb_option as *mut rxkb_option;
+                while &raw mut (*o).base.link != &raw mut (*object).options {
+                    rxkb_option_unref(o);
+                    o = otmp;
+                    otmp = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
+                        as *mut rxkb_option as *mut rxkb_option;
+                }
+            }
             list_remove(&raw mut (*object).base.link);
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
-    }
-}
-#[inline]
-unsafe fn rxkb_option_group_create(mut parent: *mut rxkb_object) -> *mut rxkb_option_group {
-    unsafe {
-        let mut t: *mut rxkb_option_group =
-            Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option_group>()));
-        rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
     }
 }
 pub unsafe fn rxkb_option_group_get_name(mut object: *mut rxkb_option_group) -> *const i8 {
@@ -666,20 +619,6 @@ pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_con
             drop(Box::from_raw(object));
         }
         return std::ptr::null_mut();
-    }
-}
-#[inline]
-unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context {
-    unsafe {
-        let layout = std::alloc::Layout::new::<rxkb_context>();
-        let ptr = std::alloc::alloc_zeroed(layout) as *mut rxkb_context;
-        if ptr.is_null() {
-            std::alloc::handle_alloc_error(layout);
-        }
-        std::ptr::write(&raw mut (*ptr).includes, Vec::new());
-        let t: *mut rxkb_context = Box::into_raw(Box::from_raw(ptr));
-        rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
     }
 }
 
@@ -784,7 +723,18 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
 }
 pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_context {
     unsafe {
-        let mut ctx: *mut rxkb_context = rxkb_context_create(std::ptr::null_mut());
+        // rxkb_context_create inlined
+        let mut ctx: *mut rxkb_context = {
+            let layout = std::alloc::Layout::new::<rxkb_context>();
+            let ptr = std::alloc::alloc_zeroed(layout) as *mut rxkb_context;
+            if ptr.is_null() {
+                std::alloc::handle_alloc_error(layout);
+            }
+            std::ptr::write(&raw mut (*ptr).includes, Vec::new());
+            let t: *mut rxkb_context = Box::into_raw(Box::from_raw(ptr));
+            rxkb_object_init(&raw mut (*t).base, std::ptr::null_mut());
+            t
+        };
         let mut env: *const i8 = std::ptr::null();
         if ctx.is_null() {
             return std::ptr::null_mut();
@@ -1318,14 +1268,6 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
     }
 }
 
-/// Convert a Rust &str to a malloc'd C string (*mut i8).
-fn cstr_dup_str(s: &str) -> *mut i8 {
-    match std::ffi::CString::new(s) {
-        Ok(cs) => cs.into_raw(),
-        Err(_) => std::ptr::null_mut(), // s contained interior NUL
-    }
-}
-
 /// Get an attribute value by name from an xmloxide element node.
 fn get_attr<'a>(
     doc: &'a xmloxide::Document,
@@ -1346,7 +1288,10 @@ fn extract_text(doc: &xmloxide::Document, node: xmloxide::tree::NodeId) -> *mut 
     for child in doc.children(node) {
         if let Some(text) = doc.node_text(child) {
             if !text.is_empty() {
-                return cstr_dup_str(text);
+                return match std::ffi::CString::new(text) {
+                    Ok(cs) => cs.into_raw(),
+                    Err(_) => std::ptr::null_mut(),
+                };
             }
         }
     }
@@ -1442,7 +1387,8 @@ unsafe fn parse_model(
                 m = ((*m).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_model as *mut rxkb_model;
             }
-            m = rxkb_model_create(&raw mut (*ctx).base);
+            m = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_model>()));
+            rxkb_object_init(&raw mut (*m).base, &raw mut (*ctx).base);
             (*m).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*m).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
@@ -1451,20 +1397,6 @@ unsafe fn parse_model(
                 _steal(&raw mut config.vendor as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*m).popularity = config.popularity;
             list_append(&raw mut (*ctx).models, &raw mut (*m).base.link);
-        }
-    }
-}
-unsafe fn parse_model_list(
-    mut ctx: *mut rxkb_context,
-    doc: &xmloxide::Document,
-    model_list: xmloxide::tree::NodeId,
-    mut popularity: rxkb_popularity,
-) {
-    unsafe {
-        for node in doc.children(model_list) {
-            if is_node(doc, node, "model") {
-                parse_model(ctx, doc, node, popularity);
-            }
         }
     }
 }
@@ -1618,21 +1550,6 @@ unsafe fn parse_variant(
         }
     }
 }
-unsafe fn parse_variant_list(
-    mut ctx: *mut rxkb_context,
-    mut l: *mut rxkb_layout,
-    doc: &xmloxide::Document,
-    variant_list: xmloxide::tree::NodeId,
-    mut popularity: rxkb_popularity,
-) {
-    unsafe {
-        for node in doc.children(variant_list) {
-            if is_node(doc, node, "variant") {
-                parse_variant(ctx, l, doc, node, popularity);
-            }
-        }
-    }
-}
 unsafe fn parse_layout(
     mut ctx: *mut rxkb_context,
     doc: &xmloxide::Document,
@@ -1683,7 +1600,12 @@ unsafe fn parse_layout(
         }
         for node in doc.children(layout) {
             if is_node(doc, node, "variantList") {
-                parse_variant_list(ctx, l, doc, node, popularity);
+                // parse_variant_list inlined
+                for vnode in doc.children(node) {
+                    if is_node(doc, vnode, "variant") {
+                        parse_variant(ctx, l, doc, vnode, popularity);
+                    }
+                }
             }
             if !exists && is_node(doc, node, "configItem") {
                 for ll in doc.children(node) {
@@ -1694,20 +1616,6 @@ unsafe fn parse_layout(
                         parse_country_list(doc, ll, l);
                     }
                 }
-            }
-        }
-    }
-}
-unsafe fn parse_layout_list(
-    mut ctx: *mut rxkb_context,
-    doc: &xmloxide::Document,
-    layout_list: xmloxide::tree::NodeId,
-    mut popularity: rxkb_popularity,
-) {
-    unsafe {
-        for node in doc.children(layout_list) {
-            if is_node(doc, node, "layout") {
-                parse_layout(ctx, doc, node, popularity);
             }
         }
     }
@@ -1741,7 +1649,8 @@ unsafe fn parse_option(
                 o = ((*o).base.link.next as *mut i8).offset(-(16 as u64 as isize))
                     as *mut rxkb_option as *mut rxkb_option;
             }
-            o = rxkb_option_create(&raw mut (*group).base);
+            o = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option>()));
+            rxkb_object_init(&raw mut (*o).base, &raw mut (*group).base);
             (*o).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*o).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
@@ -1785,7 +1694,8 @@ unsafe fn parse_group(
             }
         }
         if !exists {
-            g = rxkb_option_group_create(&raw mut (*ctx).base);
+            g = Box::into_raw(Box::new(std::mem::zeroed::<rxkb_option_group>()));
+            rxkb_object_init(&raw mut (*g).base, &raw mut (*ctx).base);
             (*g).name =
                 _steal(&raw mut config.name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
             (*g).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
@@ -1804,38 +1714,6 @@ unsafe fn parse_group(
         for node in doc.children(group) {
             if is_node(doc, node, "option") {
                 parse_option(ctx, g, doc, node, popularity);
-            }
-        }
-    }
-}
-unsafe fn parse_option_list(
-    mut ctx: *mut rxkb_context,
-    doc: &xmloxide::Document,
-    option_list: xmloxide::tree::NodeId,
-    mut popularity: rxkb_popularity,
-) {
-    unsafe {
-        for node in doc.children(option_list) {
-            if is_node(doc, node, "group") {
-                parse_group(ctx, doc, node, popularity);
-            }
-        }
-    }
-}
-unsafe fn parse_rules_xml(
-    mut ctx: *mut rxkb_context,
-    doc: &xmloxide::Document,
-    root: xmloxide::tree::NodeId,
-    mut popularity: rxkb_popularity,
-) {
-    unsafe {
-        for node in doc.children(root) {
-            if is_node(doc, node, "modelList") {
-                parse_model_list(ctx, doc, node, popularity);
-            } else if is_node(doc, node, "layoutList") {
-                parse_layout_list(ctx, doc, node, popularity);
-            } else if is_node(doc, node, "optionList") {
-                parse_option_list(ctx, doc, node, popularity);
             }
         }
     }
@@ -1867,19 +1745,6 @@ const XKBCONFIG_DTD: &str = "\
 <!ELEMENT hwList (hwId+)>\n\
 <!ELEMENT hwId (#PCDATA)>";
 
-fn validate_xml(ctx: *mut rxkb_context, doc: &mut xmloxide::Document) -> bool {
-    let dtd = match xmloxide::validation::dtd::parse_dtd(XKBCONFIG_DTD) {
-        Ok(dtd) => dtd,
-        Err(_) => {
-            unsafe {
-                rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n",);
-            }
-            return false;
-        }
-    };
-    let result = xmloxide::validation::dtd::validate(doc, &dtd);
-    result.is_valid
-}
 unsafe fn parse(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
@@ -1899,20 +1764,52 @@ unsafe fn parse(
             Ok(d) => d,
             Err(_) => return false,
         };
-        if !validate_xml(ctx, &mut doc) {
-            rxkb_logf!(
-                ctx,
-                RXKB_LOG_LEVEL_ERROR,
-                "XML error: failed to validate document at {}\n",
-                crate::xkb::utils::CStrDisplay(path),
-            );
-            return false;
+        // validate_xml inlined
+        {
+            let dtd = match xmloxide::validation::dtd::parse_dtd(XKBCONFIG_DTD) {
+                Ok(dtd) => dtd,
+                Err(_) => {
+                    rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n",);
+                    return false;
+                }
+            };
+            let result = xmloxide::validation::dtd::validate(&mut doc, &dtd);
+            if !result.is_valid {
+                rxkb_logf!(
+                    ctx,
+                    RXKB_LOG_LEVEL_ERROR,
+                    "XML error: failed to validate document at {}\n",
+                    crate::xkb::utils::CStrDisplay(path),
+                );
+                return false;
+            }
         }
         let root = match doc.root_element() {
             Some(r) => r,
             None => return false,
         };
-        parse_rules_xml(ctx, &doc, root, popularity);
+        // parse_rules_xml inlined (with parse_model_list, parse_layout_list, parse_option_list inlined)
+        for node in doc.children(root) {
+            if is_node(&doc, node, "modelList") {
+                for mnode in doc.children(node) {
+                    if is_node(&doc, mnode, "model") {
+                        parse_model(ctx, &doc, mnode, popularity);
+                    }
+                }
+            } else if is_node(&doc, node, "layoutList") {
+                for lnode in doc.children(node) {
+                    if is_node(&doc, lnode, "layout") {
+                        parse_layout(ctx, &doc, lnode, popularity);
+                    }
+                }
+            } else if is_node(&doc, node, "optionList") {
+                for onode in doc.children(node) {
+                    if is_node(&doc, onode, "group") {
+                        parse_group(ctx, &doc, onode, popularity);
+                    }
+                }
+            }
+        }
         return true;
     }
 }

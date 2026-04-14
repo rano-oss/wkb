@@ -39,10 +39,6 @@ fn lookup_compose_dir(locale: &str) -> Option<String> {
     lookup_locale_file("compose.dir", 1, 0, locale)
 }
 
-fn resolve_locale_alias(locale: &str) -> Option<String> {
-    lookup_locale_file("locale.alias", 0, 1, locale)
-}
-
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
 ///
@@ -60,7 +56,7 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
         return Some(compose_file);
     }
 
-    if let Some(resolved) = resolve_locale_alias(locale) {
+    if let Some(resolved) = lookup_locale_file("locale.alias", 0, 1, locale) {
         if let Some(dot_pos) = resolved.find('.') {
             let base = &resolved[..dot_pos];
             if !resolved[dot_pos..].eq_ignore_ascii_case(".UTF-8") {
