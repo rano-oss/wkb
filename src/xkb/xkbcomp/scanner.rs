@@ -256,9 +256,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 use crate::xkb::utils::cstr_dup;
-pub use crate::xkb::utils::{
-    digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
-};
 /// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
 /// Matches C `isspace()` for ASCII range.
 #[inline]

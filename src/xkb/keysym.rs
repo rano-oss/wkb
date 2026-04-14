@@ -21804,7 +21804,6 @@ pub use self::keysym_names_h::{
 };
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
-pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 pub use crate::xkb::utils::{istrcmp, istrncmp};
 fn find_keysym_index(mut ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
@@ -21873,8 +21872,15 @@ pub unsafe fn xkb_keysym_get_name(
 
 unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
     unsafe {
-        let count: i32 = parse_hex_to_uint32_t(s, 8 as usize, out as *mut u32) as i32;
-        return count > 0 as i32 && *s.offset(count as isize) as i32 == '\0' as i32;
+        let s_bytes = std::ffi::CStr::from_ptr(s).to_bytes();
+        let slice = if s_bytes.len() > 8 {
+            &s_bytes[..8]
+        } else {
+            s_bytes
+        };
+        let (val, count) = crate::xkb::utils::parse_hex_u32(slice);
+        *out = val;
+        return count > 0 && *s.offset(count as isize) as i32 == '\0' as i32;
     }
 }
 pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_flags) -> u32 {

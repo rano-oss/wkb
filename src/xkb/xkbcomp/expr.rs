@@ -6,7 +6,6 @@ extern "C" {
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
 pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
-pub use crate::xkb::utils::parse_dec_to_uint32_t;
 pub use crate::xkb::utils::{istrncmp, istrneq};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -130,11 +129,11 @@ unsafe fn NamedIntegerPatternLookup(
         let str: *const i8 = xkb_atom_text(ctx, field) as *const i8;
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
         let count: i32 = if istrneq(str, (*pattern).prefix, (*pattern).prefix_length) as i32 != 0 {
-            parse_dec_to_uint32_t(
-                str.offset((*pattern).prefix_length as isize),
-                usize::MAX as usize,
-                val_rtrn as *mut u32,
-            ) as i32
+            let s_ptr = str.offset((*pattern).prefix_length as isize);
+            let s_bytes = std::ffi::CStr::from_ptr(s_ptr).to_bytes();
+            let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(s_bytes);
+            *(val_rtrn as *mut u32) = val_parsed;
+            c
         } else {
             0 as i32
         };

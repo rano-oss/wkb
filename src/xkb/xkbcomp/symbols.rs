@@ -11,7 +11,6 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::parse_dec_to_uint64_t;
 pub use crate::xkb::utils::{istrncmp, istrneq, memdup};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
@@ -704,9 +703,11 @@ unsafe fn overlays_insert(
         } else {
             let overlays_0: xkb_overlay_mask_t =
                 ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t = (overlays_0 as u32).count_ones() as xkb_overlay_index_t;
+            let count: xkb_overlay_index_t =
+                (overlays_0 as u32).count_ones() as xkb_overlay_index_t;
             if count as i32 > (*keyi).overlays_alloc as i32 {
-                let alloc_0: xkb_overlay_index_t = (count as u32).next_power_of_two() as xkb_overlay_index_t;
+                let alloc_0: xkb_overlay_index_t =
+                    (count as u32).next_power_of_two() as xkb_overlay_index_t;
                 let tmp_0: *mut *const xkb_key = realloc(
                     (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
                     (alloc_0 as usize).wrapping_mul(std::mem::size_of::<*const xkb_key>()),
@@ -1661,11 +1662,11 @@ unsafe fn ExprResolveOverlayEntry(
         let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize);
         let len: usize = cstr_len(field.offset(prefix as isize)) as usize;
         let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
-        if parse_dec_to_uint64_t(
-            field.offset(prefix as isize),
-            len,
-            &raw mut raw_overlay as *mut u64,
-        ) != len as i32
+        let parse_slice =
+            std::slice::from_raw_parts(field.offset(prefix as isize) as *const u8, len);
+        let (val_parsed, parse_count) = crate::xkb::utils::parse_dec_u64(parse_slice);
+        raw_overlay = val_parsed as i64;
+        if parse_count != len as i32
             || raw_overlay < 1 as i64
             || raw_overlay > (*keymap_info).features.max_overlays as i64
         {

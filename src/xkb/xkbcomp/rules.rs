@@ -67,7 +67,6 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use crate::xkb::utils::parse_dec_to_uint32_t;
 use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp, isempty};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
@@ -441,7 +440,10 @@ unsafe fn split_comma_separated_mlvo(
                 s = s.offset(1);
                 let layout_start: *const i8 = s;
                 let mut layout: xkb_layout_index_t = XKB_LAYOUT_INVALID as xkb_layout_index_t;
-                let mut count: i32 = parse_dec_to_uint32_t(s, usize::MAX as usize, &raw mut layout);
+                let (val_parsed, count) =
+                    crate::xkb::utils::parse_dec_u32(std::ffi::CStr::from_ptr(s).to_bytes());
+                layout = val_parsed;
+                let mut count: i32 = count;
                 if count > 0 as i32 {
                     s = s.offset(count as isize);
                     if layout == 0 as xkb_layout_index_t
@@ -5009,12 +5011,9 @@ unsafe fn parse_layout_int_index(
     mut out: *mut xkb_layout_index_t,
 ) -> i32 {
     unsafe {
-        let mut val: u32 = 0 as u32;
-        let count: i32 = parse_dec_to_uint32_t(
-            s.offset(1 as i32 as isize) as *const i8,
-            max_len.wrapping_sub(2 as usize),
-            &raw mut val,
-        ) as i32;
+        let slice = std::slice::from_raw_parts(s.offset(1) as *const u8, max_len.wrapping_sub(2));
+        let (val, count) = crate::xkb::utils::parse_dec_u32(slice);
+        let count: i32 = count;
         if count <= 0 as i32
             || *s.offset((1 as i32 + count) as isize) as i32 != ']' as i32
             || val == 0 as u32
@@ -7340,11 +7339,11 @@ unsafe fn xkb_resolve_rules(
                                     }
                                     let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
                                     symbols = symbols.offset(1);
-                                    let count: i32 = parse_dec_to_uint32_t(
-                                        symbols,
-                                        usize::MAX as usize,
-                                        &raw mut group,
-                                    ) as i32;
+                                    let (val_parsed, count) = crate::xkb::utils::parse_dec_u32(
+                                        std::ffi::CStr::from_ptr(symbols).to_bytes(),
+                                    );
+                                    group = val_parsed;
+                                    let count: i32 = count;
                                     if count > 0 as i32
                                         && (*symbols.offset(count as isize) as i32 == '\0' as i32
                                             || (*symbols.offset(count as isize) as i32

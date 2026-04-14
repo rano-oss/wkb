@@ -217,12 +217,9 @@ impl scanner {
     #[inline]
     pub unsafe fn dec_int64(&mut self, out: *mut i64) -> i32 {
         unsafe {
-            let mut val: u64 = 0;
-            let count = crate::xkb::utils::parse_dec_to_uint64_t(
-                self.s.add(self.pos),
-                self.len - self.pos,
-                &raw mut val,
-            ) as i32;
+            let remaining =
+                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
+            let (val, count) = crate::xkb::utils::parse_dec_u64(remaining);
             if count > 0 {
                 if val > i64::MAX as u64 {
                     return -1;
@@ -237,12 +234,9 @@ impl scanner {
     #[inline]
     pub unsafe fn hex_int64(&mut self, out: *mut i64) -> i32 {
         unsafe {
-            let mut val: u64 = 0;
-            let count = crate::xkb::utils::parse_hex_to_uint64_t(
-                self.s.add(self.pos),
-                self.len - self.pos,
-                &raw mut val,
-            ) as i32;
+            let remaining =
+                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
+            let (val, count) = crate::xkb::utils::parse_hex_u64(remaining);
             if count > 0 {
                 if val > i64::MAX as u64 {
                     return -1;
@@ -260,12 +254,9 @@ impl scanner {
             if !self.chr(b'{' as i8) {
                 return false;
             }
-            let mut cp: u32 = 0;
-            let count = crate::xkb::utils::parse_hex_to_uint32_t(
-                self.s.add(self.pos),
-                self.len - self.pos,
-                &raw mut cp,
-            ) as i32;
+            let remaining =
+                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
+            let (cp, count) = crate::xkb::utils::parse_hex_u32(remaining);
             if count > 0 {
                 self.pos += count as usize;
             }

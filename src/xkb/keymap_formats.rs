@@ -1,6 +1,5 @@
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::cstr_cmp;
-pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct format_label {
@@ -55,7 +54,10 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
             return 0 as xkb_keymap_format;
         }
         let mut format: u32 = 0 as u32;
-        if parse_hex_to_uint32_t(raw, usize::MAX as usize, &raw mut format) > 0 as i32 {
+        let raw_bytes = std::ffi::CStr::from_ptr(raw).to_bytes();
+        let (val_parsed, count) = crate::xkb::utils::parse_hex_u32(raw_bytes);
+        format = val_parsed;
+        if count > 0 as i32 {
             return (if xkb_keymap_is_supported_format(format as xkb_keymap_format) as i32 != 0 {
                 format
             } else {
