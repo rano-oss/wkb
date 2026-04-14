@@ -6,14 +6,7 @@ pub struct xkb_compose_table {
     pub ctx: *mut xkb_context,
     pub locale: *mut i8,
     pub utf8: Vec<i8>,
-    pub nodes: C2Rust_Unnamed_1,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_1 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut compose_node,
+    pub nodes: Vec<compose_node>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -53,7 +46,6 @@ pub struct C2Rust_Unnamed_5 {
     #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
     pub _pad_is_leaf: [u8; 4],
 }
-use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::xkb_context;
 use crate::xkb::shared_types::xkb_keysym_t;
 use libc::FILE;

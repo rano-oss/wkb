@@ -6,14 +6,7 @@ pub struct xkb_compose_table {
     pub ctx: *mut xkb_context,
     pub locale: *mut i8,
     pub utf8: Vec<i8>,
-    pub nodes: C2Rust_Unnamed_1,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_1 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut compose_node,
+    pub nodes: Vec<compose_node>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -62,7 +55,6 @@ pub struct xkb_compose_table_entry {
     pub utf8: *const i8,
 }
 
-use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::xkb_keysym_t;
 pub type xkb_compose_compile_flags = u32;
 pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
@@ -83,8 +75,7 @@ unsafe fn for_each_helper(
         if p == 0 {
             return;
         }
-        let mut node: *const compose_node =
-            (*table).nodes.item.offset(p as isize) as *mut compose_node;
+        let mut node: *const compose_node = (&(*table).nodes).as_ptr().offset(p as isize);
         for_each_helper(table, iter, data, syms, nsyms, (*node).lokid);
         let c2rust_fresh0 = nsyms;
         nsyms = nsyms.wrapping_add(1);
@@ -122,7 +113,7 @@ pub unsafe fn xkb_compose_table_for_each(
     mut data: *mut ::core::ffi::c_void,
 ) {
     unsafe {
-        if (*table).nodes.size <= 1 as darray_size_t {
+        if (&(*table).nodes).len() <= 1 {
             return;
         }
         let mut syms: [xkb_keysym_t; 10] = [0; 10];
