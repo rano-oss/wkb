@@ -113,14 +113,11 @@ pub use crate::xkb::shared_types::{
     XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS,
 };
 pub use crate::xkb::utils::_steal;
-use crate::xkb::utils::{
-    cstr_free, darray_append, darray_free, darray_growalloc, darray_resize_zero,
-};
+use crate::xkb::utils::cstr_free;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-use libc::{calloc, realloc};
-#[derive(Copy, Clone)]
-#[repr(C)]
+use libc::calloc;
+#[derive(Clone)]
 pub struct KeyNamesInfo {
     pub name: *mut i8,
     pub errorCount: i32,
@@ -137,27 +134,12 @@ pub struct LedNameInfo {
     pub merge: merge_mode,
     pub name: xkb_atom_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct KeycodeStore {
     pub min: xkb_keycode_t,
-    pub low: C2Rust_Unnamed_18,
-    pub high: C2Rust_Unnamed_17,
-    pub names: C2Rust_Unnamed_16,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_16 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut KeycodeMatch,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_17 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut HighKeycodeEntry,
+    pub low: Vec<xkb_atom_t>,
+    pub high: Vec<HighKeycodeEntry>,
+    pub names: Vec<KeycodeMatch>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -165,46 +147,32 @@ pub struct HighKeycodeEntry {
     pub keycode: xkb_keycode_t,
     pub name: xkb_atom_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_18 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_atom_t,
+unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+    if new_len > v.len() {
+        v.reserve(new_len - v.len());
+        let old_len = v.len();
+        let ptr = v.as_mut_ptr().add(old_len);
+        std::ptr::write_bytes(ptr, 0, new_len - old_len);
+        v.set_len(new_len);
+    } else if new_len < v.len() {
+        v.truncate(new_len);
+    }
 }
 #[inline]
 unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
     unsafe {
-        (*store).low.item = std::ptr::null_mut();
-        (*store).low.size = 0 as darray_size_t;
-        (*store).low.alloc = 0 as darray_size_t;
-        (*store).high.item = std::ptr::null_mut();
-        (*store).high.size = 0 as darray_size_t;
-        (*store).high.alloc = 0 as darray_size_t;
-        (*store).names.item = std::ptr::null_mut();
-        (*store).names.size = 0 as darray_size_t;
-        (*store).names.alloc = 0 as darray_size_t;
+        (*store).low = Vec::new();
+        (*store).high = Vec::new();
+        (*store).names = Vec::new();
         (*store).min = XKB_KEYCODE_INVALID as xkb_keycode_t;
     }
 }
 #[inline]
 unsafe fn keycode_store_free(mut store: *mut KeycodeStore) {
     unsafe {
-        darray_free(
-            &mut (*store).low.item,
-            &mut (*store).low.size,
-            &mut (*store).low.alloc,
-        );
-        darray_free(
-            &mut (*store).high.item,
-            &mut (*store).high.size,
-            &mut (*store).high.alloc,
-        );
-        darray_free(
-            &mut (*store).names.item,
-            &mut (*store).names.size,
-            &mut (*store).names.alloc,
-        );
+        (&mut (*store).low).clear();
+        (&mut (*store).high).clear();
+        (&mut (*store).names).clear();
     }
 }
 #[inline]
@@ -219,19 +187,14 @@ unsafe fn keycode_store_update_key(
         {
             return;
         } else if match_0.key.low() {
-            *(*store).low.item.offset(match_0.key.index() as isize) = name;
+            (&mut (*store).low)[match_0.key.index() as usize] = name;
         } else {
-            (*(*store).high.item.offset(match_0.key.index() as isize)).name = name;
+            (&mut (*store).high)[match_0.key.index() as usize].name = name;
         }
-        if name >= (*store).names.size {
-            darray_resize_zero(
-                &mut (*store).names.item,
-                &mut (*store).names.size,
-                &mut (*store).names.alloc,
-                (name as darray_size_t).wrapping_add(1 as darray_size_t),
-            );
+        if name >= (&(*store).names).len() as xkb_atom_t {
+            darray_resize_zero_vec(&mut (*store).names, (name as usize).wrapping_add(1));
         }
-        *(*store).names.item.offset(name as isize) = match_0;
+        (&mut (*store).names)[name as usize] = match_0;
     }
 }
 unsafe fn keycode_store_insert_key(
@@ -240,28 +203,18 @@ unsafe fn keycode_store_insert_key(
     mut name: xkb_atom_t,
 ) -> bool {
     unsafe {
-        if name >= (*store).names.size {
-            darray_resize_zero(
-                &mut (*store).names.item,
-                &mut (*store).names.size,
-                &mut (*store).names.alloc,
-                (name as darray_size_t).wrapping_add(1 as darray_size_t),
-            );
+        if name >= (&(*store).names).len() as xkb_atom_t {
+            darray_resize_zero_vec(&mut (*store).names, (name as usize).wrapping_add(1));
         }
         if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as xkb_keycode_t {
-            if kc >= (*store).low.size as xkb_keycode_t {
-                darray_resize_zero(
-                    &mut (*store).low.item,
-                    &mut (*store).low.size,
-                    &mut (*store).low.alloc,
-                    (kc as darray_size_t).wrapping_add(1 as darray_size_t),
-                );
+            if kc >= (&(*store).low).len() as xkb_keycode_t {
+                darray_resize_zero_vec(&mut (*store).low, (kc as usize).wrapping_add(1));
             }
-            *(*store).low.item.offset(kc as isize) = name;
+            (&mut (*store).low)[kc as usize] = name;
             if kc < (*store).min {
                 (*store).min = kc;
             }
-            *(*store).names.item.offset(name as isize) = KeycodeMatch {
+            (&mut (*store).names)[name as usize] = KeycodeMatch {
                 key: {
                     let mut init = C2Rust_Unnamed_7 {
                         found_low_is_alias_index: [0; 4],
@@ -274,14 +227,9 @@ unsafe fn keycode_store_insert_key(
                 },
             };
         } else {
-            let idx: darray_size_t = (*store).high.size;
+            let idx: darray_size_t = (&(*store).high).len() as darray_size_t;
             if idx != 0
-                && (*(*store)
-                    .high
-                    .item
-                    .offset(idx.wrapping_sub(1 as darray_size_t) as isize))
-                .keycode
-                    > kc
+                && (&(*store).high)[(idx.wrapping_sub(1 as darray_size_t)) as usize].keycode > kc
             {
                 let mut lower: darray_size_t = 0 as darray_size_t;
                 let mut upper: darray_size_t = idx;
@@ -292,53 +240,34 @@ unsafe fn keycode_store_insert_key(
                             .wrapping_sub(lower)
                             .wrapping_div(2 as darray_size_t),
                     );
-                    let entry: *const HighKeycodeEntry =
-                        (*store).high.item.offset(mid as isize) as *mut HighKeycodeEntry;
-                    if (*entry).keycode < kc {
+                    let entry: &HighKeycodeEntry = &(&(*store).high)[mid as usize];
+                    if entry.keycode < kc {
                         lower = mid.wrapping_add(1 as darray_size_t);
-                    } else if (*entry).keycode > kc {
+                    } else if entry.keycode > kc {
                         upper = mid;
                     } else {
                     }
                 }
-                let mut entry_0: *mut HighKeycodeEntry = std::ptr::null_mut();
-                if !(*store).high.item.is_null() {
-                    entry_0 = (*store).high.item.offset(lower as isize) as *mut HighKeycodeEntry;
-                    while entry_0
-                        < (*store).high.item.offset((*store).high.size as isize)
-                            as *mut HighKeycodeEntry
-                    {
+                {
+                    let high_ptr = (*store).high.as_mut_ptr();
+                    let high_len = (&(*store).high).len() as darray_size_t;
+                    let mut entry_0: *mut HighKeycodeEntry = high_ptr.offset(lower as isize);
+                    while entry_0 < high_ptr.offset(high_len as isize) {
                         let ref mut c2rust_fresh4 =
-                            (*(*store).names.item.offset((*entry_0).name as isize)).key;
+                            (&mut (*store).names)[(*entry_0).name as usize].key;
                         (*c2rust_fresh4).set_index((*c2rust_fresh4).index() + 1 as darray_size_t);
                         entry_0 = entry_0.offset(1);
                     }
                 }
-                let mut __index: darray_size_t = lower;
-                (*store).high.size = (*store).high.size.wrapping_add(1 as darray_size_t);
-                darray_growalloc(
-                    &mut (*store).high.item,
-                    &mut (*store).high.alloc,
-                    (*store).high.size,
+                let __index: darray_size_t = lower;
+                (&mut (*store).high).insert(
+                    __index as usize,
+                    HighKeycodeEntry {
+                        keycode: kc,
+                        name: name,
+                    },
                 );
-                std::ptr::copy(
-                    (*store).high.item.offset(__index as isize),
-                    (*store)
-                        .high
-                        .item
-                        .offset(__index as isize)
-                        .offset(1 as i32 as isize),
-                    (*store)
-                        .high
-                        .size
-                        .wrapping_sub(__index)
-                        .wrapping_sub(1 as darray_size_t) as usize,
-                );
-                *(*store).high.item.offset(__index as isize) = HighKeycodeEntry {
-                    keycode: kc,
-                    name: name,
-                };
-                *(*store).names.item.offset(name as isize) = KeycodeMatch {
+                (&mut (*store).names)[name as usize] = KeycodeMatch {
                     key: {
                         let mut init = C2Rust_Unnamed_7 {
                             found_low_is_alias_index: [0; 4],
@@ -351,16 +280,11 @@ unsafe fn keycode_store_insert_key(
                     },
                 };
             } else {
-                darray_append(
-                    &mut (*store).high.item,
-                    &mut (*store).high.size,
-                    &mut (*store).high.alloc,
-                    HighKeycodeEntry {
-                        keycode: kc,
-                        name: name,
-                    },
-                );
-                *(*store).names.item.offset(name as isize) = KeycodeMatch {
+                (&mut (*store).high).push(HighKeycodeEntry {
+                    keycode: kc,
+                    name: name,
+                });
+                (&mut (*store).names)[name as usize] = KeycodeMatch {
                     key: {
                         let mut init = C2Rust_Unnamed_7 {
                             found_low_is_alias_index: [0; 4],
@@ -373,8 +297,8 @@ unsafe fn keycode_store_insert_key(
                     },
                 };
             }
-            if (*store).low.size == 0 as darray_size_t {
-                (*store).min = (*(*store).high.item.offset(0 as i32 as isize)).keycode;
+            if (&(*store).low).len() == 0 {
+                (*store).min = (&(*store).high)[0].keycode;
             }
         }
         return true;
@@ -387,15 +311,10 @@ unsafe fn keycode_store_insert_alias(
     mut real: xkb_atom_t,
 ) -> bool {
     unsafe {
-        if alias >= (*store).names.size {
-            darray_resize_zero(
-                &mut (*store).names.item,
-                &mut (*store).names.size,
-                &mut (*store).names.alloc,
-                (alias as darray_size_t).wrapping_add(1 as darray_size_t),
-            );
+        if alias >= (&(*store).names).len() as xkb_atom_t {
+            darray_resize_zero_vec(&mut (*store).names, (alias as usize).wrapping_add(1));
         }
-        *(*store).names.item.offset(alias as isize) = KeycodeMatch {
+        (&mut (*store).names)[alias as usize] = KeycodeMatch {
             alias: {
                 let mut init = C2Rust_Unnamed_6 {
                     found_c2rust_unnamed_is_alias_real: [0; 4],
@@ -417,7 +336,7 @@ unsafe fn keycode_store_update_alias(
     mut real: xkb_atom_t,
 ) -> bool {
     unsafe {
-        let ref mut c2rust_fresh3 = (*(*store).names.item.offset(alias as isize)).alias;
+        let ref mut c2rust_fresh3 = (&mut (*store).names)[alias as usize].alias;
         (*c2rust_fresh3).set_real(real as xkb_atom_t);
         return true;
     }
@@ -425,8 +344,9 @@ unsafe fn keycode_store_update_alias(
 #[inline]
 unsafe fn keycode_store_delete_name(mut store: *const KeycodeStore, mut name: xkb_atom_t) {
     unsafe {
-        if name < (*store).names.size {
-            let ref mut c2rust_fresh5 = (*(*store).names.item.offset(name as isize)).c2rust_unnamed;
+        if (name as usize) < (&(*store).names).len() {
+            let ref mut c2rust_fresh5 =
+                (&mut (*(store as *mut KeycodeStore)).names)[name as usize].c2rust_unnamed;
             (*c2rust_fresh5).set_found((false) as bool);
         }
     }
@@ -438,25 +358,20 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
         {
             return;
         } else if match_0.key.low() {
-            let ref mut c2rust_fresh1 = (*(*store)
-                .names
-                .item
-                .offset(*(*store).low.item.offset(match_0.key.index() as isize) as isize))
-            .c2rust_unnamed;
+            let low_name = (&(*store).low)[match_0.key.index() as usize];
+            let ref mut c2rust_fresh1 = (&mut (*store).names)[low_name as usize].c2rust_unnamed;
             (*c2rust_fresh1).set_found((false) as bool);
-            if match_0.key.index().wrapping_add(1 as u32) == (*store).low.size {
+            if match_0.key.index().wrapping_add(1 as u32) == (&(*store).low).len() as darray_size_t
+            {
                 if (*store).min == match_0.key.index() as xkb_keycode_t {
-                    (*store).low.size = 0 as darray_size_t;
+                    (&mut (*store).low).clear();
                 } else {
                     let mut idx: darray_size_t = match_0.key.index();
                     while idx > 0 as darray_size_t {
-                        if *(*store)
-                            .low
-                            .item
-                            .offset(idx.wrapping_sub(1 as darray_size_t) as isize)
+                        if (&(*store).low)[(idx.wrapping_sub(1 as darray_size_t)) as usize]
                             != XKB_ATOM_NONE as xkb_atom_t
                         {
-                            (*store).low.size = idx;
+                            (&mut (*store).low).truncate(idx as usize);
                             break;
                         } else {
                             idx = idx.wrapping_sub(1);
@@ -464,38 +379,19 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                     }
                 }
             } else {
-                *(*store).low.item.offset(match_0.key.index() as isize) =
-                    XKB_ATOM_NONE as xkb_atom_t;
+                (&mut (*store).low)[match_0.key.index() as usize] = XKB_ATOM_NONE as xkb_atom_t;
             }
         } else {
-            let ref mut c2rust_fresh2 = (*(*store)
-                .names
-                .item
-                .offset((*(*store).high.item.offset(match_0.key.index() as isize)).name as isize))
-            .c2rust_unnamed;
+            let high_name = (&(*store).high)[match_0.key.index() as usize].name;
+            let ref mut c2rust_fresh2 = (&mut (*store).names)[high_name as usize].c2rust_unnamed;
             (*c2rust_fresh2).set_found((false) as bool);
-            let mut __index: darray_size_t = match_0.key.index();
-            if __index < (*store).high.size.wrapping_sub(1 as darray_size_t) {
-                std::ptr::copy(
-                    (*store)
-                        .high
-                        .item
-                        .offset(__index.wrapping_add(1 as darray_size_t) as isize),
-                    (*store).high.item.offset(__index as isize),
-                    (*store)
-                        .high
-                        .size
-                        .wrapping_sub(1 as darray_size_t)
-                        .wrapping_sub(__index) as usize,
-                );
-            }
-            (*store).high.size = (*store).high.size.wrapping_sub(1);
-            let mut entry: *mut KeycodeMatch = std::ptr::null_mut();
-            if !(*store).names.item.is_null() {
-                entry = (*store).names.item.offset(0 as i32 as isize) as *mut KeycodeMatch;
-                while entry
-                    < (*store).names.item.offset((*store).names.size as isize) as *mut KeycodeMatch
-                {
+            let __index: darray_size_t = match_0.key.index();
+            (&mut (*store).high).remove(__index as usize);
+            {
+                let names_ptr = (*store).names.as_mut_ptr();
+                let names_len = (&(*store).names).len();
+                let mut entry: *mut KeycodeMatch = names_ptr;
+                while entry < names_ptr.add(names_len) {
                     if (*entry).c2rust_unnamed.found() as i32 != 0
                         && !(*entry).c2rust_unnamed.is_alias()
                         && !(*entry).key.low()
@@ -509,16 +405,16 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                 }
             }
         }
-        if (*store).low.size == 0 as darray_size_t {
-            (*store).min = if (*store).high.size == 0 as darray_size_t {
+        if (&(*store).low).len() == 0 {
+            (*store).min = if (&(*store).high).len() == 0 {
                 XKB_KEYCODE_INVALID as xkb_keycode_t
             } else {
-                (*(*store).high.item.offset(0 as i32 as isize)).keycode
+                (&(*store).high)[0].keycode
             };
         } else {
             let mut kc: xkb_keycode_t = (*store).min;
-            while kc < (*store).low.size as xkb_keycode_t {
-                if *(*store).low.item.offset(kc as isize) != XKB_ATOM_NONE as xkb_atom_t {
+            while kc < (&(*store).low).len() as xkb_keycode_t {
+                if (&(*store).low)[kc as usize] != XKB_ATOM_NONE as xkb_atom_t {
                     (*store).min = kc;
                     break;
                 } else {
@@ -539,7 +435,7 @@ unsafe fn keycode_store_get_keycode(
         } else if match_0.key.low() {
             return match_0.key.index() as xkb_keycode_t;
         } else {
-            return (*(*store).high.item.offset(match_0.key.index() as isize)).keycode;
+            return (&(*store).high)[match_0.key.index() as usize].keycode;
         };
     }
 }
@@ -552,9 +448,9 @@ unsafe fn keycode_store_get_key_name(
         if !match_0.c2rust_unnamed.found() || match_0.c2rust_unnamed.is_alias() as i32 != 0 {
             return XKB_ATOM_NONE as xkb_atom_t;
         } else if match_0.key.low() {
-            return *(*store).low.item.offset(match_0.key.index() as isize);
+            return (&(*store).low)[match_0.key.index() as usize];
         } else {
-            return (*(*store).high.item.offset(match_0.key.index() as isize)).name;
+            return (&(*store).high)[match_0.key.index() as usize].name;
         };
     }
 }
@@ -563,7 +459,7 @@ unsafe fn keycode_store_lookup_keycode(
     mut kc: xkb_keycode_t,
 ) -> KeycodeMatch {
     unsafe {
-        if kc < (*store).low.size as xkb_keycode_t {
+        if kc < (&(*store).low).len() as xkb_keycode_t {
             return KeycodeMatch {
                 key: {
                     let mut init = C2Rust_Unnamed_7 {
@@ -589,7 +485,7 @@ unsafe fn keycode_store_lookup_keycode(
             };
         }
         let mut lower: darray_size_t = 0 as darray_size_t;
-        let mut upper: darray_size_t = (*store).high.size;
+        let mut upper: darray_size_t = (&(*store).high).len() as darray_size_t;
         while lower < upper {
             let mid: darray_size_t = lower.wrapping_add(
                 upper
@@ -597,11 +493,10 @@ unsafe fn keycode_store_lookup_keycode(
                     .wrapping_sub(lower)
                     .wrapping_div(2 as darray_size_t),
             );
-            let entry: *mut HighKeycodeEntry =
-                (*store).high.item.offset(mid as isize) as *mut HighKeycodeEntry;
-            if (*entry).keycode < kc {
+            let entry: &HighKeycodeEntry = &(&(*store).high)[mid as usize];
+            if entry.keycode < kc {
                 lower = mid.wrapping_add(1 as darray_size_t);
-            } else if (*entry).keycode > kc {
+            } else if entry.keycode > kc {
                 upper = mid;
             } else {
                 return KeycodeMatch {
@@ -635,7 +530,7 @@ unsafe fn keycode_store_lookup_name(
     mut name: xkb_atom_t,
 ) -> KeycodeMatch {
     unsafe {
-        if name >= (*store).names.size {
+        if name >= (&(*store).names).len() as xkb_atom_t {
             return KeycodeMatch {
                 c2rust_unnamed: {
                     let mut init = C2Rust_Unnamed_8 {
@@ -647,7 +542,7 @@ unsafe fn keycode_store_lookup_name(
                 },
             };
         } else {
-            return *(*store).names.item.offset(name as isize);
+            return (&(*store).names)[name as usize];
         };
     }
 }
@@ -771,11 +666,30 @@ unsafe fn InitKeyNamesInfo(
     mut include_depth: u32,
 ) {
     unsafe {
-        std::ptr::write_bytes::<KeyNamesInfo>(info as *mut KeyNamesInfo, 0u8, 1);
+        std::ptr::write(
+            info,
+            KeyNamesInfo {
+                name: std::ptr::null_mut(),
+                errorCount: 0,
+                include_depth: 0,
+                keycodes: KeycodeStore {
+                    min: XKB_KEYCODE_INVALID as xkb_keycode_t,
+                    low: Vec::new(),
+                    high: Vec::new(),
+                    names: Vec::new(),
+                },
+                led_names: [LedNameInfo {
+                    merge: MERGE_DEFAULT,
+                    name: 0,
+                }; 32],
+                num_led_names: 0,
+                ctx: std::ptr::null_mut(),
+                keymap_info: std::ptr::null(),
+            },
+        );
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;
-        keycode_store_init(&raw mut (*info).keycodes);
     }
 }
 unsafe fn AddKeyName(
@@ -910,24 +824,23 @@ unsafe fn MergeKeycodeStores(
     mut report: bool,
 ) {
     unsafe {
-        if (*into).keycodes.low.size == 0 as darray_size_t
-            && (*into).keycodes.high.size == 0 as darray_size_t
-            && (*into).keycodes.names.size == 0 as darray_size_t
+        if (&(*into).keycodes.low).len() == 0
+            && (&(*into).keycodes.high).len() == 0
+            && (&(*into).keycodes.names).len() == 0
         {
-            (*into).keycodes = (*from).keycodes;
-            (*from).keycodes.low.item = std::ptr::null_mut();
-            (*from).keycodes.low.size = 0 as darray_size_t;
-            (*from).keycodes.low.alloc = 0 as darray_size_t;
-            (*from).keycodes.high.item = std::ptr::null_mut();
-            (*from).keycodes.high.size = 0 as darray_size_t;
-            (*from).keycodes.high.alloc = 0 as darray_size_t;
-            (*from).keycodes.names.item = std::ptr::null_mut();
-            (*from).keycodes.names.size = 0 as darray_size_t;
-            (*from).keycodes.names.alloc = 0 as darray_size_t;
+            (*into).keycodes = std::mem::replace(
+                &mut (*from).keycodes,
+                KeycodeStore {
+                    min: XKB_KEYCODE_INVALID as xkb_keycode_t,
+                    low: Vec::new(),
+                    high: Vec::new(),
+                    names: Vec::new(),
+                },
+            );
         } else {
             let mut kc: xkb_keycode_t = (*from).keycodes.min;
-            while kc < (*from).keycodes.low.size as xkb_keycode_t {
-                let name: xkb_atom_t = *(*from).keycodes.low.item.offset(kc as isize);
+            while kc < (&(*from).keycodes.low).len() as xkb_keycode_t {
+                let name: xkb_atom_t = (&(*from).keycodes.low)[kc as usize];
                 if !(name == XKB_ATOM_NONE as xkb_atom_t) {
                     if !AddKeyName(into, kc, name, merge, report) {
                         (*into).errorCount += 1;
@@ -935,48 +848,45 @@ unsafe fn MergeKeycodeStores(
                 }
                 kc = kc.wrapping_add(1);
             }
-            let mut new: *const HighKeycodeEntry = std::ptr::null();
-            if !(*from).keycodes.high.item.is_null() {
-                new = (*from).keycodes.high.item.offset(0 as i32 as isize) as *mut HighKeycodeEntry;
-                while new
-                    < (*from)
-                        .keycodes
-                        .high
-                        .item
-                        .offset((*from).keycodes.high.size as isize)
-                        as *mut HighKeycodeEntry as *const HighKeycodeEntry
-                {
+            {
+                let high_ptr = (*from).keycodes.high.as_ptr();
+                let high_len = (&(*from).keycodes.high).len();
+                let mut new: *const HighKeycodeEntry = high_ptr;
+                while new < high_ptr.add(high_len) {
                     if !AddKeyName(into, (*new).keycode, (*new).name, merge, report) {
                         (*into).errorCount += 1;
                     }
                     new = new.offset(1);
                 }
             }
-            let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
-            let mut alias: xkb_atom_t = 0;
-            if !(*from).keycodes.names.item.is_null() {
-                alias = 0 as xkb_atom_t;
-                match_0 =
-                    (*from).keycodes.names.item.offset(0 as i32 as isize) as *mut KeycodeMatch;
-                while alias < (*from).keycodes.names.size {
-                    if !(!(*match_0).c2rust_unnamed.found()
-                        || !(*match_0).c2rust_unnamed.is_alias())
-                    {
-                        let def: KeyAliasDef = KeyAliasDef {
-                            common: _ParseCommon {
-                                next: std::ptr::null_mut(),
-                                type_0: STMT_UNKNOWN,
-                            },
-                            merge: merge,
-                            alias: alias,
-                            real: (*match_0).alias.real(),
-                        };
-                        if !HandleAliasDef(into, &raw const def, report) {
-                            (*into).errorCount += 1;
+            {
+                let names_ptr = (*from).keycodes.names.as_ptr();
+                let names_len = (&(*from).keycodes.names).len();
+                let mut match_0: *const KeycodeMatch = std::ptr::null();
+                let mut alias: xkb_atom_t = 0;
+                if names_len > 0 {
+                    alias = 0 as xkb_atom_t;
+                    match_0 = names_ptr;
+                    while (alias as usize) < names_len {
+                        if !(!(*match_0).c2rust_unnamed.found()
+                            || !(*match_0).c2rust_unnamed.is_alias())
+                        {
+                            let def: KeyAliasDef = KeyAliasDef {
+                                common: _ParseCommon {
+                                    next: std::ptr::null_mut(),
+                                    type_0: STMT_UNKNOWN,
+                                },
+                                merge: merge,
+                                alias: alias,
+                                real: (*match_0).alias.real(),
+                            };
+                            if !HandleAliasDef(into, &raw const def, report) {
+                                (*into).errorCount += 1;
+                            }
                         }
+                        alias = alias.wrapping_add(1);
+                        match_0 = match_0.offset(1);
                     }
-                    alias = alias.wrapping_add(1);
-                    match_0 = match_0.offset(1);
                 }
             }
         };
@@ -1035,21 +945,9 @@ unsafe fn HandleIncludeKeycodes(
             include_depth: 0,
             keycodes: KeycodeStore {
                 min: 0,
-                low: C2Rust_Unnamed_18 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
-                high: C2Rust_Unnamed_17 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
-                names: C2Rust_Unnamed_16 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                low: Vec::new(),
+                high: Vec::new(),
+                names: Vec::new(),
             },
             led_names: [LedNameInfo {
                 merge: MERGE_DEFAULT,
@@ -1074,21 +972,9 @@ unsafe fn HandleIncludeKeycodes(
                 include_depth: 0,
                 keycodes: KeycodeStore {
                     min: 0,
-                    low: C2Rust_Unnamed_18 {
-                        size: 0,
-                        alloc: 0,
-                        item: std::ptr::null_mut(),
-                    },
-                    high: C2Rust_Unnamed_17 {
-                        size: 0,
-                        alloc: 0,
-                        item: std::ptr::null_mut(),
-                    },
-                    names: C2Rust_Unnamed_16 {
-                        size: 0,
-                        alloc: 0,
-                        item: std::ptr::null_mut(),
-                    },
+                    low: Vec::new(),
+                    high: Vec::new(),
+                    names: Vec::new(),
                 },
                 led_names: [LedNameInfo {
                     merge: MERGE_DEFAULT,
@@ -1432,28 +1318,22 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
 }
 unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNamesInfo) -> bool {
     unsafe {
-        if (*info).keycodes.low.size == 0 as darray_size_t
-            && (*info).keycodes.high.size == 0 as darray_size_t
-        {
+        if (&(*info).keycodes.low).len() == 0 && (&(*info).keycodes.high).len() == 0 {
             (*keymap).min_key_code = 8 as xkb_keycode_t;
             (*keymap).max_key_code = 255 as xkb_keycode_t;
             (*keymap).num_keys_low = (*keymap).max_key_code.wrapping_add(1 as xkb_keycode_t);
             (*keymap).num_keys = (*keymap).num_keys_low;
         } else {
             (*keymap).min_key_code = (*info).keycodes.min;
-            (*keymap).max_key_code =
-                if (*info).keycodes.high.size == 0 as darray_size_t {
-                    ((*info).keycodes.low.size as xkb_keycode_t).wrapping_sub(1 as xkb_keycode_t)
-                } else {
-                    (*(*info).keycodes.high.item.offset(
-                        (*info).keycodes.high.size.wrapping_sub(1 as darray_size_t) as isize,
-                    ))
-                    .keycode
-                };
-            (*keymap).num_keys_low = (*info).keycodes.low.size as xkb_keycode_t;
+            (*keymap).max_key_code = if (&(*info).keycodes.high).len() == 0 {
+                ((&(*info).keycodes.low).len() as xkb_keycode_t).wrapping_sub(1 as xkb_keycode_t)
+            } else {
+                (&(*info).keycodes.high)[(&(*info).keycodes.high).len().wrapping_sub(1)].keycode
+            };
+            (*keymap).num_keys_low = (&(*info).keycodes.low).len() as xkb_keycode_t;
             (*keymap).num_keys = (*keymap)
                 .num_keys_low
-                .wrapping_add((*info).keycodes.high.size as xkb_keycode_t);
+                .wrapping_add((&(*info).keycodes.high).len() as xkb_keycode_t);
         }
         let keys: *mut xkb_key =
             calloc((*keymap).num_keys as usize, std::mem::size_of::<xkb_key>()) as *mut xkb_key;
@@ -1469,22 +1349,16 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             kc = kc.wrapping_add(1);
         }
         let mut kc_0: xkb_keycode_t = (*info).keycodes.min;
-        while kc_0 < (*info).keycodes.low.size as xkb_keycode_t {
-            (*keys.offset(kc_0 as isize)).name = *(*info).keycodes.low.item.offset(kc_0 as isize);
+        while kc_0 < (&(*info).keycodes.low).len() as xkb_keycode_t {
+            (*keys.offset(kc_0 as isize)).name = (&(*info).keycodes.low)[kc_0 as usize];
             kc_0 = kc_0.wrapping_add(1);
         }
         let mut idx: xkb_keycode_t = (*keymap).num_keys_low;
-        let mut entry: *const HighKeycodeEntry = std::ptr::null();
-        if !(*info).keycodes.high.item.is_null() {
-            entry = (*info).keycodes.high.item.offset(0 as i32 as isize) as *mut HighKeycodeEntry;
-            while entry
-                < (*info)
-                    .keycodes
-                    .high
-                    .item
-                    .offset((*info).keycodes.high.size as isize)
-                    as *mut HighKeycodeEntry as *const HighKeycodeEntry
-            {
+        {
+            let high_ptr = (*info).keycodes.high.as_ptr();
+            let high_len = (&(*info).keycodes.high).len();
+            let mut entry: *const HighKeycodeEntry = high_ptr;
+            while entry < high_ptr.add(high_len) {
                 (*keys.offset(idx as isize)).keycode = (*entry).keycode;
                 (*keys.offset(idx as isize)).name = (*entry).name;
                 idx = idx.wrapping_add(1);
@@ -1497,63 +1371,63 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
 }
 unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyNamesInfo) -> bool {
     unsafe {
-        let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
-        let mut name: xkb_atom_t = 0;
-        if !(*info).keycodes.names.item.is_null() {
-            name = 0 as xkb_atom_t;
-            match_0 = (*info).keycodes.names.item.offset(0 as i32 as isize) as *mut KeycodeMatch;
-            while name < (*info).keycodes.names.size {
-                if (*match_0).c2rust_unnamed.found() {
-                    if (*match_0).c2rust_unnamed.is_alias() {
-                        let match_real: KeycodeMatch = keycode_store_lookup_name(
-                            &raw mut (*info).keycodes,
-                            (*match_0).alias.real(),
-                        ) as KeycodeMatch;
-                        if !match_real.c2rust_unnamed.found() {
-                            xkb_logf!(
-                                (*info).ctx,
-                                XKB_LOG_LEVEL_WARNING,
-                                XKB_LOG_VERBOSITY_DETAILED as i32,
-                                "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
-                                XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
-                                crate::xkb::utils::CStrDisplay(KeyNameText(
+        let names_len = (&(*info).keycodes.names).len();
+        let names_ptr = (*info).keycodes.names.as_mut_ptr();
+        {
+            let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
+            let mut name: xkb_atom_t = 0;
+            if names_len > 0 {
+                name = 0 as xkb_atom_t;
+                match_0 = names_ptr;
+                while (name as usize) < names_len {
+                    if (*match_0).c2rust_unnamed.found() {
+                        if (*match_0).c2rust_unnamed.is_alias() {
+                            let match_real: KeycodeMatch = keycode_store_lookup_name(
+                                &raw mut (*info).keycodes,
+                                (*match_0).alias.real(),
+                            )
+                                as KeycodeMatch;
+                            if !match_real.c2rust_unnamed.found() {
+                                xkb_logf!(
                                     (*info).ctx,
-                                    (*match_0).alias.real()
-                                )),
+                                    XKB_LOG_LEVEL_WARNING,
+                                    XKB_LOG_VERBOSITY_DETAILED as i32,
+                                    "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
+                                    XKB_WARNING_UNDEFINED_KEYCODE as i32,
+                                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
+                                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                                        (*info).ctx,
+                                        (*match_0).alias.real()
+                                    )),
+                                );
+                                (*match_0).c2rust_unnamed.set_found((false) as bool);
+                            } else {
+                            }
+                        } else if !(*match_0).key.low() {
+                            (*match_0).key.set_index(
+                                (*match_0).key.index()
+                                    + (*keymap).num_keys_low as u32 as darray_size_t,
                             );
-                            (*match_0).c2rust_unnamed.set_found((false) as bool);
-                        } else {
                         }
-                    } else if !(*match_0).key.low() {
-                        (*match_0).key.set_index(
-                            (*match_0).key.index() + (*keymap).num_keys_low as u32 as darray_size_t,
-                        );
                     }
+                    name = name.wrapping_add(1);
+                    match_0 = match_0.offset(1);
                 }
-                name = name.wrapping_add(1);
-                match_0 = match_0.offset(1);
             }
         }
-        if (*info).keycodes.names.size > 0 as darray_size_t {
-            (*info).keycodes.names.alloc = (*info).keycodes.names.size;
-            (*info).keycodes.names.item = realloc(
-                (*info).keycodes.names.item as *mut ::core::ffi::c_void,
-                ((*info).keycodes.names.alloc as usize)
-                    .wrapping_mul(std::mem::size_of::<KeycodeMatch>()),
-            ) as *mut KeycodeMatch;
+        if names_len > 0 {
+            // Shrink the Vec to exact size, then steal the allocation
+            (&mut (*info).keycodes.names).shrink_to_fit();
+            let stolen_ptr = (*info).keycodes.names.as_mut_ptr();
+            let stolen_len = (&(*info).keycodes.names).len();
+            // Prevent Vec from freeing the allocation
+            std::mem::forget(std::mem::replace(&mut (*info).keycodes.names, Vec::new()));
+            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = stolen_len as darray_size_t;
+            (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = stolen_ptr;
+        } else {
+            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = 0 as darray_size_t;
+            (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = std::ptr::null_mut();
         }
-        (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = (*info).keycodes.names.size;
-        (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = (*info).keycodes.names.item;
-        if !std::ptr::null_mut::<u8>().is_null() {
-            *(std::ptr::null_mut() as *mut darray_size_t) = (*info).keycodes.names.size;
-        }
-        (*info).keycodes.names.item = std::ptr::null_mut();
-        (*info).keycodes.names.size = 0 as darray_size_t;
-        (*info).keycodes.names.alloc = 0 as darray_size_t;
-        (*info).keycodes.names.item = std::ptr::null_mut();
-        (*info).keycodes.names.size = 0 as darray_size_t;
-        (*info).keycodes.names.alloc = 0 as darray_size_t;
         return true;
     }
 }
@@ -1621,21 +1495,9 @@ pub unsafe fn CompileKeycodes(
             include_depth: 0,
             keycodes: KeycodeStore {
                 min: 0,
-                low: C2Rust_Unnamed_18 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
-                high: C2Rust_Unnamed_17 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
-                names: C2Rust_Unnamed_16 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                low: Vec::new(),
+                high: Vec::new(),
+                names: Vec::new(),
             },
             led_names: [LedNameInfo {
                 merge: MERGE_DEFAULT,

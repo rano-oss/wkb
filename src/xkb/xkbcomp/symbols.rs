@@ -133,9 +133,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{
-    darray_append, darray_appends, darray_free, darray_growalloc, darray_resize_zero,
-};
+use crate::xkb::utils::darray_append;
 pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 pub use crate::xkb::xkbcomp::action::{
@@ -144,29 +142,21 @@ pub use crate::xkb::xkbcomp::action::{
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 use libc::{abort, atoi, calloc, free, realloc};
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct SymbolsInfo {
     pub name: *mut i8,
     pub errorCount: i32,
     pub include_depth: u32,
     pub explicit_group: xkb_layout_index_t,
     pub max_groups: xkb_layout_index_t,
-    pub keys: C2Rust_Unnamed_24,
+    pub keys: Vec<KeyInfo>,
     pub default_key: KeyInfo,
     pub default_actions: ActionsInfo,
-    pub group_names: C2Rust_Unnamed_20,
-    pub modmaps: C2Rust_Unnamed_18,
+    pub group_names: Vec<xkb_atom_t>,
+    pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
     pub ctx: *mut xkb_context,
     pub keymap_info: *const xkb_keymap_info,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_18 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut ModMapEntry,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -182,21 +172,14 @@ pub union C2Rust_Unnamed_19 {
     pub keyName: xkb_atom_t,
     pub keySym: xkb_keysym_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_20 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_atom_t,
-}
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct KeyInfo {
     pub name: xkb_atom_t,
     pub vmodmap: xkb_mod_mask_t,
     pub default_type: xkb_atom_t,
     pub out_of_range_group_number: xkb_layout_index_t,
-    pub groups: C2Rust_Unnamed_22,
+    pub groups: Vec<GroupInfo>,
     #[bitfield(
         name = "out_of_range_group_policy",
         ty = "xkb_layout_out_of_range_policy",
@@ -231,17 +214,9 @@ pub const KEY_FIELD_VMODMAP: key_field = 8;
 pub const KEY_FIELD_GROUPINFO: key_field = 4;
 pub const KEY_FIELD_DEFAULT_TYPE: key_field = 2;
 pub const KEY_FIELD_REPEAT: key_field = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_22 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut GroupInfo,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct GroupInfo {
-    pub levels: C2Rust_Unnamed_23,
+    pub levels: Vec<xkb_level>,
     pub defined: group_field,
     pub type_0: xkb_atom_t,
 }
@@ -249,27 +224,42 @@ pub type group_field = u32;
 pub const GROUP_FIELD_TYPE: group_field = 4;
 pub const GROUP_FIELD_ACTS: group_field = 2;
 pub const GROUP_FIELD_SYMS: group_field = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_23 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_level,
+
+/// Resize a Vec<T> to `new_len`, zero-initializing any new elements.
+/// If `new_len` < current len, the Vec is truncated.
+/// WARNING: Only safe for types where all-zeros is a valid representation.
+/// For types containing Vec/String/Box, use resize_groups_zero or similar.
+unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+    if new_len > v.len() {
+        v.reserve(new_len - v.len());
+        let old_len = v.len();
+        let ptr = v.as_mut_ptr().add(old_len);
+        std::ptr::write_bytes(ptr, 0, new_len - old_len);
+        v.set_len(new_len);
+    } else if new_len < v.len() {
+        v.truncate(new_len);
+    }
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_24 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut KeyInfo,
+
+/// Resize a Vec<GroupInfo> to `new_len`, properly initializing new elements.
+/// Unlike darray_resize_zero_vec, this correctly initializes Vec fields in GroupInfo.
+unsafe fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
+    if new_len > v.len() {
+        v.reserve(new_len - v.len());
+        let old_len = v.len();
+        // Zero-fill the raw memory first (for scalar fields)
+        let ptr = v.as_mut_ptr().add(old_len);
+        std::ptr::write_bytes(ptr, 0, new_len - old_len);
+        v.set_len(new_len);
+        // Now properly initialize Vec fields in new elements
+        for i in old_len..new_len {
+            std::ptr::write(&raw mut (*v.as_mut_ptr().add(i)).levels, Vec::new());
+        }
+    } else if new_len < v.len() {
+        v.truncate(new_len);
+    }
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_25 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_action,
-}
+
 unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
     unsafe {
         clear_level(into);
@@ -293,60 +283,47 @@ unsafe fn StealLevelInfo(mut into: *mut xkb_level, mut from: *mut xkb_level) {
 }
 unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        std::ptr::write_bytes::<GroupInfo>(groupi as *mut GroupInfo, 0u8, 1);
+        std::ptr::write(
+            groupi,
+            GroupInfo {
+                levels: Vec::new(),
+                defined: 0 as group_field,
+                type_0: 0,
+            },
+        );
     }
 }
 unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        let mut leveli: *mut xkb_level = std::ptr::null_mut();
-        if !(*groupi).levels.item.is_null() {
-            leveli = (*groupi).levels.item.offset(0 as i32 as isize) as *mut xkb_level;
-            while leveli
-                < (*groupi).levels.item.offset((*groupi).levels.size as isize) as *mut xkb_level
-            {
-                clear_level(leveli);
-                leveli = leveli.offset(1);
-            }
+        for leveli in (*groupi).levels.iter_mut() {
+            clear_level(leveli as *mut xkb_level);
         }
-        darray_free(
-            &mut (*groupi).levels.item,
-            &mut (*groupi).levels.size,
-            &mut (*groupi).levels.alloc,
-        );
+        (*groupi).levels.clear();
     }
 }
 unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
     unsafe {
         (*to).defined = (*from).defined;
         (*to).type_0 = (*from).type_0;
-        (*to).levels.item = std::ptr::null_mut();
-        (*to).levels.size = 0 as darray_size_t;
-        (*to).levels.alloc = 0 as darray_size_t;
-        if (*from).levels.size != 0 as darray_size_t {
-            darray_appends(
-                &mut (*to).levels.item,
-                &mut (*to).levels.size,
-                &mut (*to).levels.alloc,
-                (*from).levels.item,
-                (*from).levels.size,
-            );
+        (*to).levels = Vec::new();
+        if !(*from).levels.is_empty() {
+            (*to).levels.extend_from_slice(&(*from).levels);
         }
         let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
-        while j < (*to).levels.size as xkb_level_index_t {
-            if (*(*from).levels.item.offset(j as isize)).num_syms as i32 > 1 as i32 {
-                let ref mut c2rust_fresh0 = (*(*to).levels.item.offset(j as isize)).s.syms;
+        while j < (&(*to).levels).len() as xkb_level_index_t {
+            if (&(*from).levels)[j as usize].num_syms as i32 > 1 as i32 {
+                let ref mut c2rust_fresh0 = (&mut (*to).levels)[j as usize].s.syms;
                 *c2rust_fresh0 = memdup(
-                    (*(*from).levels.item.offset(j as isize)).s.syms as *const ::core::ffi::c_void,
-                    (*(*from).levels.item.offset(j as isize)).num_syms as usize,
+                    (&(*from).levels)[j as usize].s.syms as *const ::core::ffi::c_void,
+                    (&(*from).levels)[j as usize].num_syms as usize,
                     std::mem::size_of::<xkb_keysym_t>(),
                 ) as *mut xkb_keysym_t;
             }
-            if (*(*from).levels.item.offset(j as isize)).num_actions as i32 > 1 as i32 {
-                let ref mut c2rust_fresh1 = (*(*to).levels.item.offset(j as isize)).a.actions;
+            if (&(*from).levels)[j as usize].num_actions as i32 > 1 as i32 {
+                let ref mut c2rust_fresh1 = (&mut (*to).levels)[j as usize].a.actions;
                 *c2rust_fresh1 = memdup(
-                    (*(*from).levels.item.offset(j as isize)).a.actions
-                        as *const ::core::ffi::c_void,
-                    (*(*from).levels.item.offset(j as isize)).num_actions as usize,
+                    (&(*from).levels)[j as usize].a.actions as *const ::core::ffi::c_void,
+                    (&(*from).levels)[j as usize].num_actions as usize,
                     std::mem::size_of::<xkb_action>(),
                 ) as *mut xkb_action;
             }
@@ -365,29 +342,16 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
         (*keyi).set_out_of_range_group_policy(
             XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy,
         );
-        (*keyi).groups.item = std::ptr::null_mut();
-        (*keyi).groups.size = 0 as darray_size_t;
-        (*keyi).groups.alloc = 0 as darray_size_t;
+        std::ptr::write(&raw mut (*keyi).groups, Vec::new());
         (*keyi).c2rust_unnamed.overlay_key = std::ptr::null();
     }
 }
 unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
     unsafe {
-        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
-        if !(*keyi).groups.item.is_null() {
-            groupi = (*keyi).groups.item.offset(0 as i32 as isize) as *mut GroupInfo;
-            while groupi
-                < (*keyi).groups.item.offset((*keyi).groups.size as isize) as *mut GroupInfo
-            {
-                ClearGroupInfo(groupi);
-                groupi = groupi.offset(1);
-            }
+        for groupi in (*keyi).groups.iter_mut() {
+            ClearGroupInfo(groupi as *mut GroupInfo);
         }
-        darray_free(
-            &mut (*keyi).groups.item,
-            &mut (*keyi).groups.size,
-            &mut (*keyi).groups.alloc,
-        );
+        (*keyi).groups.clear();
         if (*keyi).overlays_alloc != 0 {
             free((*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
         }
@@ -401,6 +365,9 @@ unsafe fn InitSymbolsInfo(
 ) {
     unsafe {
         std::ptr::write_bytes::<SymbolsInfo>(info as *mut SymbolsInfo, 0u8, 1);
+        std::ptr::write(&raw mut (*info).keys, Vec::new());
+        std::ptr::write(&raw mut (*info).group_names, Vec::new());
+        std::ptr::write(&raw mut (*info).modmaps, Vec::new());
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).include_depth = include_depth;
         (*info).keymap_info = keymap_info;
@@ -416,30 +383,13 @@ unsafe fn InitSymbolsInfo(
 }
 unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
     unsafe {
-        let mut keyi: *mut KeyInfo = std::ptr::null_mut();
         cstr_free((*info).name);
-        if !(*info).keys.item.is_null() {
-            keyi = (*info).keys.item.offset(0 as i32 as isize) as *mut KeyInfo;
-            while keyi < (*info).keys.item.offset((*info).keys.size as isize) as *mut KeyInfo {
-                ClearKeyInfo(keyi);
-                keyi = keyi.offset(1);
-            }
+        for keyi in (*info).keys.iter_mut() {
+            ClearKeyInfo(keyi as *mut KeyInfo);
         }
-        darray_free(
-            &mut (*info).keys.item,
-            &mut (*info).keys.size,
-            &mut (*info).keys.alloc,
-        );
-        darray_free(
-            &mut (*info).group_names.item,
-            &mut (*info).group_names.size,
-            &mut (*info).group_names.alloc,
-        );
-        darray_free(
-            &mut (*info).modmaps.item,
-            &mut (*info).modmaps.size,
-            &mut (*info).modmaps.alloc,
-        );
+        (*info).keys.clear();
+        (*info).group_names.clear();
+        (*info).modmaps.clear();
         ClearKeyInfo(&raw mut (*info).default_key);
     }
 }
@@ -494,29 +444,29 @@ unsafe fn MergeGroups(
         (*into).defined = ((*into).defined as u32
             | (*from).defined as u32 & GROUP_FIELD_TYPE as u32)
             as group_field;
-        if (*from).levels.size == 0 as darray_size_t {
+        if (*from).levels.len() == 0 {
             InitGroupInfo(from);
             return true;
         }
-        if (*into).levels.size == 0 as darray_size_t {
+        if (*into).levels.len() == 0 {
             (*from).type_0 = (*into).type_0;
-            *into = *from;
+            std::ptr::write(into, std::ptr::read(from));
             InitGroupInfo(from);
             return true;
         }
-        let levels_in_both: darray_size_t = if (*into).levels.size < (*from).levels.size {
-            (*into).levels.size
+        let levels_in_both: darray_size_t = if (*into).levels.len() < (*from).levels.len() {
+            (*into).levels.len()
         } else {
-            (*from).levels.size
-        };
+            (*from).levels.len()
+        } as darray_size_t;
         let mut fromKeysymsCount: darray_size_t = 0 as darray_size_t;
         let mut fromActionsCount: darray_size_t = 0 as darray_size_t;
         let mut i: darray_size_t = 0 as darray_size_t;
         while i < levels_in_both {
             let intoLevel: *mut xkb_level =
-                (*into).levels.item.offset(i as isize) as *mut xkb_level;
+                &mut (&mut (*into).levels)[i as usize] as *mut xkb_level;
             let fromLevel: *mut xkb_level =
-                (*from).levels.item.offset(i as isize) as *mut xkb_level;
+                &mut (&mut (*from).levels)[i as usize] as *mut xkb_level;
             let fromHasNoKeysym: bool = (*fromLevel).num_syms as i32 == 0 as i32;
             let fromHasNoAction: bool = (*fromLevel).num_actions as i32 == 0 as i32;
             if !(fromHasNoKeysym as i32 != 0 && fromHasNoAction as i32 != 0) {
@@ -686,26 +636,18 @@ unsafe fn MergeGroups(
             }
             i = i.wrapping_add(1);
         }
-        let mut level: *mut xkb_level = std::ptr::null_mut();
-        if !(*from).levels.item.is_null() {
-            level = (*from).levels.item.offset(levels_in_both as isize) as *mut xkb_level;
-            while level < (*from).levels.item.offset((*from).levels.size as isize) as *mut xkb_level
-            {
-                darray_append(
-                    &mut (*into).levels.item,
-                    &mut (*into).levels.size,
-                    &mut (*into).levels.alloc,
-                    *level,
-                );
-                (*level).num_syms = 0 as xkb_keysym_count_t;
-                (*level).num_actions = 0 as xkb_action_count_t;
-                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                fromActionsCount = fromActionsCount.wrapping_add(1);
-                level = level.offset(1);
-            }
+        let mut level_idx: darray_size_t = levels_in_both;
+        while level_idx < (&(*from).levels).len() as darray_size_t {
+            let level_val = (&(*from).levels)[level_idx as usize];
+            (&mut (*into).levels).push(level_val);
+            (&mut (*from).levels)[level_idx as usize].num_syms = 0 as xkb_keysym_count_t;
+            (&mut (*from).levels)[level_idx as usize].num_actions = 0 as xkb_action_count_t;
+            fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+            fromActionsCount = fromActionsCount.wrapping_add(1);
+            level_idx = level_idx.wrapping_add(1);
         }
         if fromKeysymsCount != 0 {
-            if fromKeysymsCount == (*into).levels.size {
+            if fromKeysymsCount == (*into).levels.len() as darray_size_t {
                 (*into).defined =
                     ((*into).defined as u32 & !(GROUP_FIELD_SYMS as i32) as u32) as group_field;
             }
@@ -714,7 +656,7 @@ unsafe fn MergeGroups(
                 as group_field;
         }
         if fromActionsCount != 0 {
-            if fromActionsCount == (*into).levels.size {
+            if fromActionsCount == (*into).levels.len() as darray_size_t {
                 (*into).defined =
                     ((*into).defined as u32 & !(GROUP_FIELD_ACTS as i32) as u32) as group_field;
             }
@@ -1075,21 +1017,21 @@ unsafe fn MergeKeys(
         let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
         if (*from).merge() as i32 == MERGE_REPLACE as i32 {
             ClearKeyInfo(into);
-            *into = *from;
+            std::ptr::write(into, std::ptr::read(from));
             InitKeyInfo((*info).ctx, from);
             return true;
         }
-        groups_in_both = (if (*into).groups.size < (*from).groups.size {
-            (*into).groups.size
+        groups_in_both = (if (*into).groups.len() < (*from).groups.len() {
+            (*into).groups.len()
         } else {
-            (*from).groups.size
+            (*from).groups.len()
         }) as xkb_layout_index_t;
         i = 0 as xkb_layout_index_t;
         while i < groups_in_both {
             MergeGroups(
                 info,
-                (*into).groups.item.offset(i as isize) as *mut GroupInfo,
-                (*from).groups.item.offset(i as isize) as *mut GroupInfo,
+                &mut (&mut (*into).groups)[i as usize] as *mut GroupInfo,
+                &mut (&mut (*from).groups)[i as usize] as *mut GroupInfo,
                 clobber,
                 report,
                 i,
@@ -1098,14 +1040,10 @@ unsafe fn MergeKeys(
             i = i.wrapping_add(1);
         }
         i = groups_in_both;
-        while i < (*from).groups.size as xkb_layout_index_t {
-            darray_append(
-                &mut (*into).groups.item,
-                &mut (*into).groups.size,
-                &mut (*into).groups.alloc,
-                *(*from).groups.item.offset(i as isize),
-            );
-            InitGroupInfo((*from).groups.item.offset(i as isize) as *mut GroupInfo);
+        while i < (&(*from).groups).len() as xkb_layout_index_t {
+            let group_val = std::ptr::read(&(&(*from).groups)[i as usize]);
+            (&mut (*into).groups).push(group_val);
+            InitGroupInfo(&mut (&mut (*from).groups)[i as usize] as *mut GroupInfo);
             i = i.wrapping_add(1);
         }
         if UseNewKeyField(
@@ -1203,90 +1141,66 @@ unsafe fn AddKeySymbols(
 ) -> bool {
     unsafe {
         (*keyi).name = XkbResolveKeyAlias(&raw const (*(*info).keymap_info).keymap, (*keyi).name);
-        let mut iter: *mut KeyInfo = std::ptr::null_mut();
-        if !(*info).keys.item.is_null() {
-            iter = (*info).keys.item.offset(0 as i32 as isize) as *mut KeyInfo;
-            while iter < (*info).keys.item.offset((*info).keys.size as isize) as *mut KeyInfo {
-                if (*iter).name == (*keyi).name {
-                    return MergeKeys(info, iter, keyi, same_file);
-                }
-                iter = iter.offset(1);
+        for iter in (*info).keys.iter_mut() {
+            if iter.name == (*keyi).name {
+                return MergeKeys(info, iter as *mut KeyInfo, keyi, same_file);
             }
         }
-        darray_append(
-            &mut (*info).keys.item,
-            &mut (*info).keys.size,
-            &mut (*info).keys.alloc,
-            *keyi,
-        );
+        (*info).keys.push(std::ptr::read(keyi));
         InitKeyInfo((*info).ctx, keyi);
         return true;
     }
 }
 unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
     unsafe {
-        let mut old: *mut ModMapEntry = std::ptr::null_mut();
         let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
-        if !(*info).modmaps.item.is_null() {
-            old = (*info).modmaps.item.offset(0 as i32 as isize) as *mut ModMapEntry;
-            while old
-                < (*info).modmaps.item.offset((*info).modmaps.size as isize) as *mut ModMapEntry
+        for old in (*info).modmaps.iter_mut() {
+            if (*new).haveSymbol as i32 != old.haveSymbol as i32
+                || (*new).haveSymbol as i32 != 0 && (*new).u.keySym != old.u.keySym
+                || !(*new).haveSymbol && (*new).u.keyName != old.u.keyName
             {
-                let mut use_0: xkb_mod_index_t = 0;
-                let mut ignore: xkb_mod_index_t = 0;
-                if (*new).haveSymbol as i32 != (*old).haveSymbol as i32
-                    || (*new).haveSymbol as i32 != 0 && (*new).u.keySym != (*old).u.keySym
-                    || !(*new).haveSymbol && (*new).u.keyName != (*old).u.keyName
-                {
-                    old = old.offset(1);
-                } else {
-                    if (*new).modifier == (*old).modifier {
-                        return true;
-                    }
-                    use_0 = if clobber as i32 != 0 {
-                        (*new).modifier
-                    } else {
-                        (*old).modifier
-                    };
-                    ignore = if clobber as i32 != 0 {
-                        (*old).modifier
-                    } else {
-                        (*new).modifier
-                    };
-                    if (*new).haveSymbol {
-                        xkb_logf!(
-                            (*info).ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_MODMAP as i32,
-                            crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*new).u.keySym)),
-                            crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                            crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
-                        );
-                    } else {
-                        xkb_logf!(
-                            (*info).ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Key \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_MODMAP as i32,
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*new).u.keyName)),
-                            crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                            crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
-                        );
-                    }
-                    (*old).modifier = use_0;
-                    return true;
-                }
+                continue;
             }
+            if (*new).modifier == old.modifier {
+                return true;
+            }
+            let use_0: xkb_mod_index_t = if clobber as i32 != 0 {
+                (*new).modifier
+            } else {
+                old.modifier
+            };
+            let ignore: xkb_mod_index_t = if clobber as i32 != 0 {
+                old.modifier
+            } else {
+                (*new).modifier
+            };
+            if (*new).haveSymbol {
+                xkb_logf!(
+                    (*info).ctx,
+                    XKB_LOG_LEVEL_WARNING,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
+                    XKB_WARNING_CONFLICTING_MODMAP as i32,
+                    crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*new).u.keySym)),
+                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
+                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                );
+            } else {
+                xkb_logf!(
+                    (*info).ctx,
+                    XKB_LOG_LEVEL_WARNING,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "[XKB-{:03}] Key \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
+                    XKB_WARNING_CONFLICTING_MODMAP as i32,
+                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*new).u.keyName)),
+                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
+                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                );
+            }
+            old.modifier = use_0;
+            return true;
         }
-        darray_append(
-            &mut (*info).modmaps.item,
-            &mut (*info).modmaps.size,
-            &mut (*info).modmaps.alloc,
-            *new,
-        );
+        (*info).modmaps.push(*new);
         return true;
     }
 }
@@ -1296,7 +1210,6 @@ unsafe fn MergeIncludedSymbols(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let mut group_name: *mut xkb_atom_t = std::ptr::null_mut();
         let mut group_names_in_both: xkb_layout_index_t = 0;
         if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
@@ -1312,78 +1225,44 @@ unsafe fn MergeIncludedSymbols(
             (*into).name =
                 _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
-        group_names_in_both = (if (*into).group_names.size < (*from).group_names.size {
-            (*into).group_names.size
+        group_names_in_both = (if (&(*into).group_names).len() < (&(*from).group_names).len() {
+            (&(*into).group_names).len()
         } else {
-            (*from).group_names.size
+            (&(*from).group_names).len()
         }) as xkb_layout_index_t;
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while i < group_names_in_both {
-            if !(*(*from).group_names.item.offset(i as isize) == 0) {
+            if !((&(*from).group_names)[i as usize] == 0) {
                 if !(merge as u32 == MERGE_AUGMENT as u32
-                    && *(*into).group_names.item.offset(i as isize) != 0)
+                    && (&(*into).group_names)[i as usize] != 0)
                 {
-                    *(*into).group_names.item.offset(i as isize) =
-                        *(*from).group_names.item.offset(i as isize);
+                    (&mut (*into).group_names)[i as usize] = (&(*from).group_names)[i as usize];
                 }
             }
             i = i.wrapping_add(1);
         }
-        if !(*from).group_names.item.is_null() {
-            group_name = (*from)
-                .group_names
-                .item
-                .offset(group_names_in_both as isize) as *mut xkb_atom_t;
-            while group_name
-                < (*from)
-                    .group_names
-                    .item
-                    .offset((*from).group_names.size as isize) as *mut xkb_atom_t
-            {
-                darray_append(
-                    &mut (*into).group_names.item,
-                    &mut (*into).group_names.size,
-                    &mut (*into).group_names.alloc,
-                    *group_name,
-                );
-                group_name = group_name.offset(1);
+        if group_names_in_both < (&(*from).group_names).len() as xkb_layout_index_t {
+            for gn_idx in group_names_in_both as usize..(&(*from).group_names).len() {
+                (&mut (*into).group_names).push((&(*from).group_names)[gn_idx]);
             }
         }
-        if (*into).keys.size == 0 as darray_size_t {
-            (*into).keys = (*from).keys;
-            (*from).keys.item = std::ptr::null_mut();
-            (*from).keys.size = 0 as darray_size_t;
-            (*from).keys.alloc = 0 as darray_size_t;
+        if (*into).keys.is_empty() {
+            std::mem::swap(&mut (*into).keys, &mut (*from).keys);
         } else {
-            let mut keyi: *mut KeyInfo = std::ptr::null_mut();
-            if !(*from).keys.item.is_null() {
-                keyi = (*from).keys.item.offset(0 as i32 as isize) as *mut KeyInfo;
-                while keyi < (*from).keys.item.offset((*from).keys.size as isize) as *mut KeyInfo {
-                    (*keyi).set_merge(merge as merge_mode);
-                    if !AddKeySymbols(into, keyi, false) {
-                        (*into).errorCount += 1;
-                    }
-                    keyi = keyi.offset(1);
+            for keyi in (*from).keys.iter_mut() {
+                keyi.set_merge(merge as merge_mode);
+                if !AddKeySymbols(into, keyi as *mut KeyInfo, false) {
+                    (*into).errorCount += 1;
                 }
             }
         }
-        if (*into).modmaps.size == 0 as darray_size_t {
-            (*into).modmaps = (*from).modmaps;
-            (*from).modmaps.item = std::ptr::null_mut();
-            (*from).modmaps.size = 0 as darray_size_t;
-            (*from).modmaps.alloc = 0 as darray_size_t;
+        if (*into).modmaps.is_empty() {
+            std::mem::swap(&mut (*into).modmaps, &mut (*from).modmaps);
         } else {
-            let mut mm: *mut ModMapEntry = std::ptr::null_mut();
-            if !(*from).modmaps.item.is_null() {
-                mm = (*from).modmaps.item.offset(0 as i32 as isize) as *mut ModMapEntry;
-                while mm
-                    < (*from).modmaps.item.offset((*from).modmaps.size as isize) as *mut ModMapEntry
-                {
-                    (*mm).merge = merge;
-                    if !AddModMapEntry(into, mm) {
-                        (*into).errorCount += 1;
-                    }
-                    mm = mm.offset(1);
+            for mm in (*from).modmaps.iter_mut() {
+                mm.merge = merge;
+                if !AddModMapEntry(into, mm as *mut ModMapEntry) {
+                    (*into).errorCount += 1;
                 }
             }
         };
@@ -1397,21 +1276,13 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             include_depth: 0,
             explicit_group: 0,
             max_groups: 0,
-            keys: C2Rust_Unnamed_24 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            keys: Vec::new(),
             default_key: KeyInfo {
                 name: 0,
                 vmodmap: 0,
                 default_type: 0,
                 out_of_range_group_number: 0,
-                groups: C2Rust_Unnamed_22 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                groups: Vec::new(),
                 out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                 overlays_alloc: 0,
                 overlays: 0,
@@ -1424,16 +1295,8 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                     type_0: ACTION_TYPE_NONE,
                 }; 21],
             },
-            group_names: C2Rust_Unnamed_20 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
-            modmaps: C2Rust_Unnamed_18 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            group_names: Vec::new(),
+            modmaps: Vec::new(),
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,
@@ -1466,21 +1329,13 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 include_depth: 0,
                 explicit_group: 0,
                 max_groups: 0,
-                keys: C2Rust_Unnamed_24 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                keys: Vec::new(),
                 default_key: KeyInfo {
                     name: 0,
                     vmodmap: 0,
                     default_type: 0,
                     out_of_range_group_number: 0,
-                    groups: C2Rust_Unnamed_22 {
-                        size: 0,
-                        alloc: 0,
-                        item: std::ptr::null_mut(),
-                    },
+                    groups: Vec::new(),
                     out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                     overlays_alloc: 0,
                     overlays: 0,
@@ -1493,16 +1348,8 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                         type_0: ACTION_TYPE_NONE,
                     }; 21],
                 },
-                group_names: C2Rust_Unnamed_20 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
-                modmaps: C2Rust_Unnamed_18 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                group_names: Vec::new(),
+                modmaps: Vec::new(),
                 mods: xkb_mod_set {
                     mods: [xkb_mod {
                         name: 0,
@@ -1584,10 +1431,10 @@ unsafe fn GetGroupIndex(
         if arrayNdx.is_null() {
             let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut groupi: *mut GroupInfo = std::ptr::null_mut();
-            if !(*keyi).groups.item.is_null() {
+            if !(*keyi).groups.is_empty() {
                 i = 0 as xkb_layout_index_t;
-                groupi = (*keyi).groups.item.offset(0 as i32 as isize) as *mut GroupInfo;
-                while i < (*keyi).groups.size as xkb_layout_index_t {
+                groupi = (*keyi).groups.as_mut_ptr();
+                while i < (*keyi).groups.len() as xkb_layout_index_t {
                     if (*groupi).defined as u32 & field as u32 == 0 {
                         *ndx_rtrn = i;
                         return true;
@@ -1610,13 +1457,8 @@ unsafe fn GetGroupIndex(
                 );
                 return false;
             }
-            darray_resize_zero(
-                &mut (*keyi).groups.item,
-                &mut (*keyi).groups.size,
-                &mut (*keyi).groups.alloc,
-                (*keyi).groups.size.wrapping_add(1 as darray_size_t),
-            );
-            *ndx_rtrn = (*keyi).groups.size.wrapping_sub(1 as darray_size_t) as xkb_layout_index_t;
+            resize_groups_zero(&mut (*keyi).groups, (*keyi).groups.len().wrapping_add(1));
+            *ndx_rtrn = (*keyi).groups.len().wrapping_sub(1) as xkb_layout_index_t;
             return true;
         }
         if ExprResolveGroup(
@@ -1640,13 +1482,8 @@ unsafe fn GetGroupIndex(
             return false;
         }
         *ndx_rtrn = (*ndx_rtrn).wrapping_sub(1);
-        if *ndx_rtrn >= (*keyi).groups.size as xkb_layout_index_t {
-            darray_resize_zero(
-                &mut (*keyi).groups.item,
-                &mut (*keyi).groups.size,
-                &mut (*keyi).groups.alloc,
-                (*ndx_rtrn).wrapping_add(1 as darray_size_t),
-            );
+        if *ndx_rtrn >= (*keyi).groups.len() as xkb_layout_index_t {
+            resize_groups_zero(&mut (*keyi).groups, (*ndx_rtrn).wrapping_add(1) as usize);
         }
         return true;
     }
@@ -1662,7 +1499,7 @@ unsafe fn AddSymbolsToKey(
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_SYMS, &raw mut ndx) {
             return false;
         }
-        let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
+        let mut groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
             return true;
@@ -1705,20 +1542,15 @@ unsafe fn AddSymbolsToKey(
         if nonEmptyLevels < nLevels {
             nLevels = nonEmptyLevels;
         }
-        if ((*groupi).levels.size as xkb_level_index_t) < nLevels {
-            darray_resize_zero(
-                &mut (*groupi).levels.item,
-                &mut (*groupi).levels.size,
-                &mut (*groupi).levels.alloc,
-                nLevels as darray_size_t,
-            );
+        if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
+            darray_resize_zero_vec(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
         let mut keysymList_0: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
-                (*groupi).levels.item.offset(level as isize) as *mut xkb_level;
+                &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             if ((*keysymList_0).syms.size > 65535 as darray_size_t) as i64 != 0 {
                 xkb_logf!(
                     (*info).ctx,
@@ -1780,7 +1612,7 @@ unsafe fn AddActionsToKey(
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_ACTS, &raw mut ndx) {
             return false;
         }
-        let mut groupi: *mut GroupInfo = (*keyi).groups.item.offset(ndx as isize) as *mut GroupInfo;
+        let mut groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
             return true;
@@ -1816,13 +1648,8 @@ unsafe fn AddActionsToKey(
             nLevels = nLevels.wrapping_add(1);
             p = (*p).next as *mut ParseCommon;
         }
-        if ((*groupi).levels.size as xkb_level_index_t) < nLevels {
-            darray_resize_zero(
-                &mut (*groupi).levels.item,
-                &mut (*groupi).levels.size,
-                &mut (*groupi).levels.alloc,
-                nLevels as darray_size_t,
-            );
+        if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
+            darray_resize_zero_vec(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -1831,7 +1658,7 @@ unsafe fn AddActionsToKey(
         while !actionList.is_null() {
             let mut c2rust_current_block_102: u64;
             let mut leveli: *mut xkb_level =
-                (*groupi).levels.item.offset(level as isize) as *mut xkb_level;
+                &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             let mut num_actions: u32 = 0 as u32;
             let mut act: *mut ExprDef = (*actionList).actions as *mut ExprDef;
             while !act.is_null() {
@@ -1852,11 +1679,7 @@ unsafe fn AddActionsToKey(
                 );
                 return false;
             }
-            let mut actions: C2Rust_Unnamed_25 = C2Rust_Unnamed_25 {
-                size: 0 as darray_size_t,
-                alloc: 0 as darray_size_t,
-                item: std::ptr::null_mut(),
-            };
+            let mut actions: Vec<xkb_action> = Vec::new();
             let mut act_0: *mut ExprDef = (*actionList).actions as *mut ExprDef;
             loop {
                 if act_0.is_null() {
@@ -1885,7 +1708,7 @@ unsafe fn AddActionsToKey(
                         level.wrapping_add(1 as xkb_level_index_t),
                     );
                     if r as u32 == PARSER_FATAL_ERROR as u32 {
-                        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
+                        drop(actions);
                         return false;
                     } else {
                         toAct.type_0 = ACTION_TYPE_NONE;
@@ -1898,45 +1721,29 @@ unsafe fn AddActionsToKey(
                         c2rust_current_block_102 = 1829140360157350833;
                         break;
                     } else {
-                        darray_append(
-                            &mut actions.item,
-                            &mut actions.size,
-                            &mut actions.alloc,
-                            toAct,
-                        );
+                        actions.push(toAct);
                     }
                 }
                 act_0 = (*act_0).common.next as *mut ExprDef;
             }
             match c2rust_current_block_102 {
                 1134115459065347084 => {
-                    if actions.size == 0 as darray_size_t {
+                    if actions.is_empty() {
                         (*leveli).num_actions = 0 as xkb_action_count_t;
-                    } else if (actions.size > 1 as darray_size_t) as i64 != 0 {
-                        (*leveli).num_actions = actions.size as xkb_action_count_t;
-                        if actions.size > 0 as darray_size_t {
-                            actions.alloc = actions.size;
-                            actions.item = realloc(
-                                actions.item as *mut ::core::ffi::c_void,
-                                (actions.alloc as usize)
-                                    .wrapping_mul(std::mem::size_of::<xkb_action>() as usize),
-                            ) as *mut xkb_action;
-                        }
-                        (*leveli).a.actions = actions.item;
-                        if !std::ptr::null_mut::<u8>().is_null() {
-                            *(std::ptr::null_mut() as *mut darray_size_t) = actions.size;
-                        }
-                        actions.item = std::ptr::null_mut();
-                        actions.size = 0 as darray_size_t;
-                        actions.alloc = 0 as darray_size_t;
-                        let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
-                        while (k as i32) < (*leveli).num_actions as i32 {
-                            k = k.wrapping_add(1);
-                        }
+                    } else if (actions.len() > 1) as i64 != 0 {
+                        (*leveli).num_actions = actions.len() as xkb_action_count_t;
+                        // Shrink to fit and steal the buffer
+                        actions.shrink_to_fit();
+                        let ptr = actions.as_mut_ptr();
+                        let len = actions.len();
+                        std::mem::forget(actions);
+                        (*leveli).a.actions = ptr;
+                        actions = Vec::new();
                     } else {
                         (*leveli).num_actions = 1 as xkb_action_count_t;
-                        (*leveli).a.action = *actions.item.offset(0 as i32 as isize);
-                        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
+                        (*leveli).a.action = actions[0];
+                        drop(actions);
+                        actions = Vec::new();
                     }
                 }
                 _ => {}
@@ -1948,22 +1755,10 @@ unsafe fn AddActionsToKey(
             level = level.wrapping_add(1);
         }
         if nonEmptyLevels < nLevels {
-            (*groupi).levels.size = nonEmptyLevels as darray_size_t;
             if nonEmptyLevels > 0 as xkb_level_index_t {
-                if (*groupi).levels.size > 0 as darray_size_t {
-                    (*groupi).levels.alloc = (*groupi).levels.size;
-                    (*groupi).levels.item = realloc(
-                        (*groupi).levels.item as *mut ::core::ffi::c_void,
-                        ((*groupi).levels.alloc as usize)
-                            .wrapping_mul(std::mem::size_of::<xkb_level>()),
-                    ) as *mut xkb_level;
-                }
+                (*groupi).levels.truncate(nonEmptyLevels as usize);
             } else {
-                darray_free(
-                    &mut (*groupi).levels.item,
-                    &mut (*groupi).levels.size,
-                    &mut (*groupi).levels.alloc,
-                );
+                (*groupi).levels.clear();
             }
         }
         return true;
@@ -2173,16 +1968,11 @@ unsafe fn SetSymbolsField(
                 return false;
             } else {
                 ndx = ndx.wrapping_sub(1);
-                if ndx >= (*keyi).groups.size as xkb_layout_index_t {
-                    darray_resize_zero(
-                        &mut (*keyi).groups.item,
-                        &mut (*keyi).groups.size,
-                        &mut (*keyi).groups.alloc,
-                        (ndx as darray_size_t).wrapping_add(1 as darray_size_t),
-                    );
+                if ndx >= (*keyi).groups.len() as xkb_layout_index_t {
+                    resize_groups_zero(&mut (*keyi).groups, (ndx as usize).wrapping_add(1));
                 }
-                (*(*keyi).groups.item.offset(ndx as isize)).type_0 = val;
-                let ref mut c2rust_fresh8 = (*(*keyi).groups.item.offset(ndx as isize)).defined;
+                (&mut (*keyi).groups)[ndx as usize].type_0 = val;
+                let ref mut c2rust_fresh8 = (&mut (*keyi).groups)[ndx as usize].defined;
                 *c2rust_fresh8 = (*c2rust_fresh8 as u32 | GROUP_FIELD_TYPE as u32) as group_field;
             }
         } else if istreq(field, b"symbols\0".as_ptr() as *const i8) {
@@ -2549,15 +2339,12 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        if group_to_use >= (*info).group_names.size as xkb_layout_index_t {
-            darray_resize_zero(
-                &mut (*info).group_names.item,
-                &mut (*info).group_names.size,
-                &mut (*info).group_names.alloc,
-                (group_to_use as darray_size_t).wrapping_add(1 as darray_size_t),
-            );
+        if group_to_use >= (*info).group_names.len() as xkb_layout_index_t {
+            (*info)
+                .group_names
+                .resize((group_to_use as usize).wrapping_add(1), 0 as xkb_atom_t);
         } else {
-            let old_name: xkb_atom_t = *(*info).group_names.item.offset(group_to_use as isize);
+            let old_name: xkb_atom_t = (&(*info).group_names)[group_to_use as usize];
             if old_name != XKB_ATOM_NONE as xkb_atom_t && old_name != name {
                 let replace: bool = merge as u32 != MERGE_AUGMENT as u32;
                 let use_0: xkb_atom_t = if replace as i32 != 0 { name } else { old_name };
@@ -2575,7 +2362,7 @@ unsafe fn SetGroupName(
                 name = use_0;
             }
         }
-        *(*info).group_names.item.offset(group_to_use as isize) = name;
+        (&mut (*info).group_names)[group_to_use as usize] = name;
         return true;
     }
 }
@@ -2602,11 +2389,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                     vmodmap: 0,
                     default_type: 0,
                     out_of_range_group_number: 0,
-                    groups: C2Rust_Unnamed_22 {
-                        size: 0,
-                        alloc: 0,
-                        item: std::ptr::null_mut(),
-                    },
+                    groups: Vec::new(),
                     overlays_alloc: 0,
                     overlays: 0,
                     c2rust_unnamed: C2Rust_Unnamed_21 {
@@ -2780,17 +2563,15 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
         if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
             return true;
         }
-        if !(*keyi).groups.item.is_null() {
+        if !(&(*keyi).groups).is_empty() {
             i = 1 as xkb_layout_index_t;
-            groupi = (*keyi).groups.item.offset(1 as i32 as isize) as *mut GroupInfo;
-            while i < (*keyi).groups.size as xkb_layout_index_t {
-                if (*groupi).defined as u64 != 0 {
+            while i < (&(*keyi).groups).len() as xkb_layout_index_t {
+                if (&(*keyi).groups)[i as usize].defined as u64 != 0 {
                     warn = true;
-                    ClearGroupInfo(groupi);
-                    InitGroupInfo(groupi);
+                    ClearGroupInfo(&mut (&mut (*keyi).groups)[i as usize] as *mut GroupInfo);
+                    InitGroupInfo(&mut (&mut (*keyi).groups)[i as usize] as *mut GroupInfo);
                 }
                 i = i.wrapping_add(1);
-                groupi = groupi.offset(1);
             }
         }
         if warn {
@@ -2805,16 +2586,17 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
         }
-        darray_resize_zero(
-            &mut (*keyi).groups.item,
-            &mut (*keyi).groups.size,
-            &mut (*keyi).groups.alloc,
-            ((*info).explicit_group as darray_size_t).wrapping_add(1 as darray_size_t),
+        darray_resize_zero_vec(
+            &mut (*keyi).groups,
+            ((*info).explicit_group as usize).wrapping_add(1),
         );
         if (*info).explicit_group > 0 as xkb_layout_index_t {
-            *(*keyi).groups.item.offset((*info).explicit_group as isize) =
-                *(*keyi).groups.item.offset(0 as i32 as isize);
-            InitGroupInfo((*keyi).groups.item.offset(0 as i32 as isize) as *mut GroupInfo);
+            let swapped = std::ptr::read(&(&(*keyi).groups)[0]);
+            std::ptr::write(
+                &mut (&mut (*keyi).groups)[(*info).explicit_group as usize],
+                swapped,
+            );
+            InitGroupInfo(&mut (&mut (*keyi).groups)[0] as *mut GroupInfo);
         }
         return true;
     }
@@ -2826,11 +2608,7 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
             vmodmap: 0,
             default_type: 0,
             out_of_range_group_number: 0,
-            groups: C2Rust_Unnamed_22 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            groups: Vec::new(),
             out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
             overlays_alloc: 0,
             overlays: 0,
@@ -2838,24 +2616,18 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
                 overlay_key: std::ptr::null(),
             },
         };
-        keyi = (*info).default_key;
-        keyi.groups.item = std::ptr::null_mut();
-        keyi.groups.size = 0 as darray_size_t;
-        keyi.groups.alloc = 0 as darray_size_t;
-        if (*info).default_key.groups.size != 0 as darray_size_t {
-            darray_appends(
-                &mut keyi.groups.item,
-                &mut keyi.groups.size,
-                &mut keyi.groups.alloc,
-                (*info).default_key.groups.item,
-                (*info).default_key.groups.size,
-            );
+        keyi = (*info).default_key.clone();
+        keyi.groups = Vec::new();
+        if !(*info).default_key.groups.is_empty() {
+            // Shallow copy the GroupInfo structs (bitwise), then deep-copy inner pointers
+            keyi.groups
+                .extend_from_slice(&(&(*info).default_key.groups));
         }
         let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
-        while i < keyi.groups.size as xkb_layout_index_t {
+        while i < keyi.groups.len() as xkb_layout_index_t {
             CopyGroupInfo(
-                keyi.groups.item.offset(i as isize) as *mut GroupInfo,
-                (*info).default_key.groups.item.offset(i as isize) as *mut GroupInfo,
+                &mut keyi.groups[i as usize] as *mut GroupInfo,
+                &(&(*info).default_key.groups)[i as usize] as *const GroupInfo,
             );
             i = i.wrapping_add(1);
         }
@@ -3084,7 +2856,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
     unsafe {
         let mut sym0: xkb_keysym_t = 0;
         let mut sym1: xkb_keysym_t = 0;
-        let width: xkb_level_index_t = (*groupi).levels.size as xkb_level_index_t;
+        let width: xkb_level_index_t = (*groupi).levels.len() as xkb_level_index_t;
         if width == 1 as xkb_level_index_t || width <= 0 as xkb_level_index_t {
             return xkb_atom_intern(
                 ctx,
@@ -3092,22 +2864,26 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
-        sym0 = if (*(*groupi).levels.item.offset(0 as i32 as isize)).num_syms as i32 == 0 as i32 {
+        sym0 = if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 0 as i32
+        {
             XKB_KEY_NoSymbol as xkb_keysym_t
-        } else if (*(*groupi).levels.item.offset(0 as i32 as isize)).num_syms as i32 == 1 as i32 {
-            (*(*groupi).levels.item.offset(0 as i32 as isize)).s.sym
+        } else if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 1 as i32
+        {
+            (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).s.sym
         } else {
-            *(*(*groupi).levels.item.offset(0 as i32 as isize))
+            *(*(*groupi).levels.as_ptr().offset(0 as i32 as isize))
                 .s
                 .syms
                 .offset(0 as i32 as isize)
         };
-        sym1 = if (*(*groupi).levels.item.offset(1 as i32 as isize)).num_syms as i32 == 0 as i32 {
+        sym1 = if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 0 as i32
+        {
             XKB_KEY_NoSymbol as xkb_keysym_t
-        } else if (*(*groupi).levels.item.offset(1 as i32 as isize)).num_syms as i32 == 1 as i32 {
-            (*(*groupi).levels.item.offset(1 as i32 as isize)).s.sym
+        } else if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 1 as i32
+        {
+            (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).s.sym
         } else {
-            *(*(*groupi).levels.item.offset(1 as i32 as isize))
+            *(*(*groupi).levels.as_ptr().offset(1 as i32 as isize))
                 .s
                 .syms
                 .offset(0 as i32 as isize)
@@ -3141,31 +2917,31 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
             {
                 let mut sym2: xkb_keysym_t = 0;
                 let mut sym3: xkb_keysym_t = 0;
-                sym2 = if (*(*groupi).levels.item.offset(2 as i32 as isize)).num_syms as i32
+                sym2 = if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
                     == 0 as i32
                 {
                     XKB_KEY_NoSymbol as xkb_keysym_t
-                } else if (*(*groupi).levels.item.offset(2 as i32 as isize)).num_syms as i32
+                } else if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
                     == 1 as i32
                 {
-                    (*(*groupi).levels.item.offset(2 as i32 as isize)).s.sym
+                    (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).s.sym
                 } else {
-                    *(*(*groupi).levels.item.offset(2 as i32 as isize))
+                    *(*(*groupi).levels.as_ptr().offset(2 as i32 as isize))
                         .s
                         .syms
                         .offset(0 as i32 as isize)
                 };
                 sym3 = if width == 4 as xkb_level_index_t {
-                    if (*(*groupi).levels.item.offset(3 as i32 as isize)).num_syms as i32
+                    if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
                         == 0 as i32
                     {
                         XKB_KEY_NoSymbol as xkb_keysym_t
-                    } else if (*(*groupi).levels.item.offset(3 as i32 as isize)).num_syms as i32
+                    } else if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
                         == 1 as i32
                     {
-                        (*(*groupi).levels.item.offset(3 as i32 as isize)).s.sym
+                        (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).s.sym
                     } else {
-                        *(*(*groupi).levels.item.offset(3 as i32 as isize))
+                        *(*(*groupi).levels.as_ptr().offset(3 as i32 as isize))
                             .s
                             .syms
                             .offset(0 as i32 as isize)
@@ -3213,7 +2989,7 @@ unsafe fn FindTypeForGroup(
     unsafe {
         let mut i: darray_size_t = 0;
         let mut groupi: *mut GroupInfo =
-            (*keyi).groups.item.offset(group as isize) as *mut GroupInfo;
+            &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
         let mut type_name: xkb_atom_t = (*groupi).type_0;
         *explicit_type = true;
         if type_name == XKB_ATOM_NONE as xkb_atom_t {
@@ -3235,7 +3011,7 @@ unsafe fn FindTypeForGroup(
                 XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
                 crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
                 group.wrapping_add(1 as xkb_layout_index_t),
-                (*groupi).levels.size,
+                (*groupi).levels.len(),
             );
         } else {
             i = 0;
@@ -3274,7 +3050,6 @@ unsafe fn CopySymbolsDefToKeymap(
     unsafe {
         let mut key: *mut xkb_key = std::ptr::null_mut();
         let mut groupi: *mut GroupInfo = std::ptr::null_mut();
-        let mut group0: *const GroupInfo = std::ptr::null();
         let mut i: xkb_layout_index_t = 0;
 
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
@@ -3293,15 +3068,15 @@ unsafe fn CopySymbolsDefToKeymap(
 
         // Find the range of groups we need
         (*key).set_num_groups(0);
-        if !(*keyi).groups.item.is_null() {
+        if !(*keyi).groups.is_empty() {
             i = 0;
-            groupi = (*keyi).groups.item.offset(0) as *mut GroupInfo;
-            while i < (*keyi).groups.size as xkb_layout_index_t {
+            groupi = (*keyi).groups.as_mut_ptr();
+            while i < (*keyi).groups.len() as xkb_layout_index_t {
                 // Skip groups that have no levels and no explicit type
                 let has_explicit_type = ((*keyi).defined() as i32 & KEY_FIELD_DEFAULT_TYPE as i32
                     != 0)
                     || ((*groupi).defined as u32 & GROUP_FIELD_TYPE as u32 != 0);
-                if (*groupi).levels.size > 0 || has_explicit_type {
+                if (*groupi).levels.len() > 0 || has_explicit_type {
                     (*key).set_num_groups(i.wrapping_add(1));
                 }
                 if has_explicit_type {
@@ -3322,27 +3097,20 @@ unsafe fn CopySymbolsDefToKeymap(
             }
         } else {
             // Resize groups array
-            let __need: darray_size_t = (*key).num_groups() as darray_size_t;
-            darray_growalloc(&mut (*keyi).groups.item, &mut (*keyi).groups.alloc, __need);
-            if __need < (*keyi).groups.size {
-                // Zero out elements being added
-                let start_ptr = (*keyi).groups.item.offset((*keyi).groups.size as isize);
-                let count = (__need - (*keyi).groups.size) as usize;
-                ::core::ptr::write_bytes(start_ptr, 0, count);
-            }
-            (*keyi).groups.size = __need;
+            let __need: usize = (*key).num_groups() as usize;
+            resize_groups_zero(&mut (*keyi).groups, __need);
 
             // If there are empty groups between non-empty ones, fill them with data from the first group
-            group0 = (*keyi).groups.item.offset(0) as *const GroupInfo;
-            if !(*keyi).groups.item.is_null() {
+            if !(*keyi).groups.is_empty() {
+                // Must use raw pointers because CopyGroupInfo takes ptrs and we need group0 as const while mutating others
+                let groups_ptr = (*keyi).groups.as_mut_ptr();
+                let groups_len = (*keyi).groups.len();
                 i = 1;
-                groupi = (*keyi).groups.item.offset(1) as *mut GroupInfo;
-                while i < (*keyi).groups.size as xkb_layout_index_t {
-                    if (*groupi).defined == 0 {
-                        CopyGroupInfo(groupi, group0);
+                while i < groups_len as xkb_layout_index_t {
+                    if (*groups_ptr.add(i as usize)).defined == 0 {
+                        CopyGroupInfo(groups_ptr.add(i as usize), groups_ptr as *const GroupInfo);
                     }
                     i = i.wrapping_add(1);
-                    groupi = groupi.offset(1);
                 }
             }
 
@@ -3352,17 +3120,16 @@ unsafe fn CopySymbolsDefToKeymap(
             ) as *mut xkb_group;
 
             // Find and assign the groups' types in the keymap
-            if !(*keyi).groups.item.is_null() {
+            if !(*keyi).groups.is_empty() {
                 i = 0;
-                groupi = (*keyi).groups.item.offset(0) as *mut GroupInfo;
-                while i < (*keyi).groups.size as xkb_layout_index_t {
+                groupi = (*keyi).groups.as_mut_ptr();
+                while i < (*keyi).groups.len() as xkb_layout_index_t {
                     let mut explicit_type = false;
                     let type_0: *const xkb_key_type =
                         FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
 
                     // Always have as many levels as the type specifies
-                    if (*type_0).num_levels < (*groupi).levels.size {
-                        let mut leveli: *mut xkb_level = std::ptr::null_mut();
+                    if (*type_0).num_levels < (*groupi).levels.len() as darray_size_t {
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
@@ -3372,30 +3139,17 @@ unsafe fn CopySymbolsDefToKeymap(
                             crate::xkb::utils::CStrDisplay(xkb_atom_text((*keymap).ctx, (*type_0).name)),
                             (*type_0).num_levels,
                             crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
-                            (*groupi).levels.size,
+                            (*groupi).levels.len(),
                         );
 
-                        if !(*groupi).levels.item.is_null() {
-                            leveli = (*groupi).levels.item.offset((*type_0).num_levels as isize)
-                                as *mut xkb_level;
-                            while leveli
-                                < (*groupi).levels.item.offset((*groupi).levels.size as isize)
-                                    as *mut xkb_level
-                            {
-                                clear_level(leveli);
-                                leveli = leveli.offset(1);
-                            }
+                        for lvl_idx in (*type_0).num_levels as usize..(*groupi).levels.len() {
+                            clear_level(&mut (&mut (*groupi).levels)[lvl_idx] as *mut xkb_level);
                         }
                     }
 
                     // Resize levels array to match type
-                    let __need_levels: darray_size_t = (*type_0).num_levels;
-                    darray_resize_zero(
-                        &mut (*groupi).levels.item,
-                        &mut (*groupi).levels.size,
-                        &mut (*groupi).levels.alloc,
-                        __need_levels,
-                    );
+                    let __need_levels: usize = (*type_0).num_levels as usize;
+                    darray_resize_zero_vec(&mut (*groupi).levels, __need_levels);
 
                     (*(*key).groups.offset(i as isize)).set_explicit_type(explicit_type);
                     (*(*key).groups.offset(i as isize)).type_0 = type_0;
@@ -3406,18 +3160,15 @@ unsafe fn CopySymbolsDefToKeymap(
             }
 
             // Copy levels
-            if !(*keyi).groups.item.is_null() {
+            if !(*keyi).groups.is_empty() {
                 i = 0;
-                groupi = (*keyi).groups.item.offset(0) as *mut GroupInfo;
-                while i < (*keyi).groups.size as xkb_layout_index_t {
+                groupi = (*keyi).groups.as_mut_ptr();
+                while i < (*keyi).groups.len() as xkb_layout_index_t {
                     // Compute the capitalization transformation of the keysyms
                     let mut leveli: *mut xkb_level = std::ptr::null_mut();
-                    if !(*groupi).levels.item.is_null() {
-                        leveli = (*groupi).levels.item.offset(0) as *mut xkb_level;
-                        while leveli
-                            < (*groupi).levels.item.offset((*groupi).levels.size as isize)
-                                as *mut xkb_level
-                        {
+                    if !(*groupi).levels.is_empty() {
+                        leveli = (*groupi).levels.as_mut_ptr();
+                        while leveli < (*groupi).levels.as_mut_ptr().add((*groupi).levels.len()) {
                             match (*leveli).num_syms {
                                 0 => {
                                     (*leveli).c2rust_unnamed.upper =
@@ -3470,14 +3221,16 @@ unsafe fn CopySymbolsDefToKeymap(
                         }
                     }
 
-                    // Copy the level (darray_steal)
-                    (*(*key).groups.offset(i as isize)).levels = (*groupi).levels.item;
-                    if !std::ptr::null_mut::<u8>().is_null() {
-                        *(std::ptr::null_mut() as *mut darray_size_t) = (*groupi).levels.size;
+                    // Copy the level (steal from Vec)
+                    if (*groupi).levels.is_empty() {
+                        (*(*key).groups.offset(i as isize)).levels = std::ptr::null_mut();
+                    } else {
+                        let levels_ptr = (*groupi).levels.as_mut_ptr();
+                        let levels_len = (*groupi).levels.len();
+                        // Forget the Vec so it doesn't free the buffer
+                        std::ptr::write(&raw mut (*groupi).levels, Vec::new());
+                        (*(*key).groups.offset(i as isize)).levels = levels_ptr;
                     }
-                    (*groupi).levels.item = std::ptr::null_mut();
-                    (*groupi).levels.size = 0;
-                    (*groupi).levels.alloc = 0;
 
                     if (*(*(*key).groups.offset(i as isize)).type_0).num_levels > 1
                         || (*(*(*key).groups.offset(i as isize)).levels.offset(0)).num_syms > 0
@@ -3607,26 +3360,22 @@ unsafe fn CopyModMapDefToKeymap(
 }
 unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
     unsafe {
-        let mut keyi: *mut KeyInfo = std::ptr::null_mut();
-        let mut mm: *mut ModMapEntry = std::ptr::null_mut();
         (*keymap).symbols_section_name = strdup_safe((*info).name);
         XkbEscapeMapName((*keymap).symbols_section_name);
         (*keymap).mods = (*info).mods;
-        (*keymap).num_group_names = (*info).group_names.size as xkb_layout_index_t;
-        (*keymap).group_names = (*info).group_names.item;
-        if !std::ptr::null_mut::<u8>().is_null() {
-            *(std::ptr::null_mut() as *mut darray_size_t) = (*info).group_names.size;
+        (*keymap).num_group_names = (*info).group_names.len() as xkb_layout_index_t;
+        // Steal the group_names Vec's buffer
+        let mut gn = std::mem::take(&mut (*info).group_names);
+        if gn.is_empty() {
+            (*keymap).group_names = std::ptr::null_mut();
+        } else {
+            gn.shrink_to_fit();
+            (*keymap).group_names = gn.as_mut_ptr();
+            std::mem::forget(gn);
         }
-        (*info).group_names.item = std::ptr::null_mut();
-        (*info).group_names.size = 0 as darray_size_t;
-        (*info).group_names.alloc = 0 as darray_size_t;
-        if !(*info).keys.item.is_null() {
-            keyi = (*info).keys.item.offset(0 as i32 as isize) as *mut KeyInfo;
-            while keyi < (*info).keys.item.offset((*info).keys.size as isize) as *mut KeyInfo {
-                if !CopySymbolsDefToKeymap(keymap, info, keyi) {
-                    (*info).errorCount += 1;
-                }
-                keyi = keyi.offset(1);
+        for keyi in (*info).keys.iter_mut() {
+            if !CopySymbolsDefToKeymap(keymap, info, keyi as *mut KeyInfo) {
+                (*info).errorCount += 1;
             }
         }
         if xkb_context_get_log_verbosity((*keymap).ctx) > 3 as i32 {
@@ -3653,15 +3402,9 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                 key = key.offset(1);
             }
         }
-        if !(*info).modmaps.item.is_null() {
-            mm = (*info).modmaps.item.offset(0 as i32 as isize) as *mut ModMapEntry;
-            while mm
-                < (*info).modmaps.item.offset((*info).modmaps.size as isize) as *mut ModMapEntry
-            {
-                if !CopyModMapDefToKeymap(keymap, info, mm) {
-                    (*info).errorCount += 1;
-                }
-                mm = mm.offset(1);
+        for mm in (*info).modmaps.iter_mut() {
+            if !CopyModMapDefToKeymap(keymap, info, mm as *mut ModMapEntry) {
+                (*info).errorCount += 1;
             }
         }
         return true;
@@ -3678,21 +3421,13 @@ pub unsafe fn CompileSymbols(
             include_depth: 0,
             explicit_group: 0,
             max_groups: 0,
-            keys: C2Rust_Unnamed_24 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            keys: Vec::new(),
             default_key: KeyInfo {
                 name: 0,
                 vmodmap: 0,
                 default_type: 0,
                 out_of_range_group_number: 0,
-                groups: C2Rust_Unnamed_22 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                groups: Vec::new(),
                 out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
                 overlays_alloc: 0,
                 overlays: 0,
@@ -3705,16 +3440,8 @@ pub unsafe fn CompileSymbols(
                     type_0: ACTION_TYPE_NONE,
                 }; 21],
             },
-            group_names: C2Rust_Unnamed_20 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
-            modmaps: C2Rust_Unnamed_18 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            group_names: Vec::new(),
+            modmaps: Vec::new(),
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,

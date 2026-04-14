@@ -123,22 +123,21 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_free;
-use crate::xkb::utils::{darray_append, darray_free};
+use crate::xkb::utils::darray_append;
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-use libc::{free, realloc};
-#[derive(Copy, Clone)]
-#[repr(C)]
+use libc::free;
+#[derive(Clone)]
 pub struct CompatInfo {
     pub name: *mut i8,
     pub errorCount: i32,
     pub include_depth: u32,
     pub default_interp: SymInterpInfo,
-    pub interps: C2Rust_Unnamed_18,
+    pub interps: Vec<SymInterpInfo>,
     pub default_led: LedInfo,
     pub leds: [LedInfo; 32],
     pub num_leds: xkb_led_index_t,
@@ -158,13 +157,7 @@ pub type led_field = u32;
 pub const LED_FIELD_CTRLS: led_field = 4;
 pub const LED_FIELD_GROUPS: led_field = 2;
 pub const LED_FIELD_MODS: led_field = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_18 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut SymInterpInfo,
-}
+// C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymInterpInfo {
@@ -177,25 +170,11 @@ pub const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
 pub const SI_FIELD_AUTO_REPEAT: si_field = 4;
 pub const SI_FIELD_ACTION: si_field = 2;
 pub const SI_FIELD_VIRTUAL_MOD: si_field = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_19 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_sym_interpret,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
+// C2Rust_Unnamed_19 removed: replaced by Vec<xkb_sym_interpret>
 pub struct collect {
-    pub sym_interprets: C2Rust_Unnamed_19,
+    pub sym_interprets: Vec<xkb_sym_interpret>,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_20 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_action,
-}
+// C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
 unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *const i8 {
     unsafe {
         let mut buf: *mut i8 = xkb_context_get_buffer((*info).ctx, 128 as usize);
@@ -331,11 +310,7 @@ unsafe fn InitCompatInfo(
 unsafe fn ClearCompatInfo(mut info: *mut CompatInfo) {
     unsafe {
         cstr_free((*info).name);
-        darray_free(
-            &mut (*info).interps.item,
-            &mut (*info).interps.size,
-            &mut (*info).interps.alloc,
-        );
+        (*info).interps.clear();
     }
 }
 unsafe fn FindMatchingInterp(
@@ -343,19 +318,13 @@ unsafe fn FindMatchingInterp(
     mut new: *mut SymInterpInfo,
 ) -> *mut SymInterpInfo {
     unsafe {
-        let mut old: *mut SymInterpInfo = std::ptr::null_mut();
-        if !(*info).interps.item.is_null() {
-            old = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
-            while old
-                < (*info).interps.item.offset((*info).interps.size as isize) as *mut SymInterpInfo
+        for i in 0..(*info).interps.len() {
+            let old = (&mut (*info).interps)[i..].as_mut_ptr();
+            if (*old).interp.sym == (*new).interp.sym
+                && (*old).interp.mods == (*new).interp.mods
+                && (*old).interp.match_0 as u32 == (*new).interp.match_0 as u32
             {
-                if (*old).interp.sym == (*new).interp.sym
-                    && (*old).interp.mods == (*new).interp.mods
-                    && (*old).interp.match_0 as u32 == (*new).interp.match_0 as u32
-                {
-                    return old;
-                }
-                old = old.offset(1);
+                return old;
             }
         }
         return std::ptr::null_mut();
@@ -489,12 +458,7 @@ unsafe fn AddInterp(
         if !old.is_null() {
             return MergeInterp(info, old, new, same_file);
         }
-        darray_append(
-            &mut (*info).interps.item,
-            &mut (*info).interps.size,
-            &mut (*info).interps.alloc,
-            *new,
-        );
+        (*info).interps.push(*new);
         return true;
     }
 }
@@ -712,24 +676,14 @@ unsafe fn MergeIncludedCompatMaps(
             (*into).name =
                 _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
-        if (*into).interps.size == 0 as darray_size_t {
-            (*into).interps = (*from).interps;
-            (*from).interps.item = std::ptr::null_mut();
-            (*from).interps.size = 0 as darray_size_t;
-            (*from).interps.alloc = 0 as darray_size_t;
+        if (*into).interps.is_empty() {
+            (*into).interps = std::mem::take(&mut (*from).interps);
         } else {
-            let mut si: *mut SymInterpInfo = std::ptr::null_mut();
-            if !(*from).interps.item.is_null() {
-                si = (*from).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
-                while si
-                    < (*from).interps.item.offset((*from).interps.size as isize)
-                        as *mut SymInterpInfo
-                {
-                    (*si).merge = merge;
-                    if !AddInterp(into, si, false) {
-                        (*into).errorCount += 1;
-                    }
-                    si = si.offset(1);
+            for i in 0..(*from).interps.len() {
+                (&mut (*from).interps)[i].merge = merge;
+                let si = (&mut (*from).interps)[i..].as_mut_ptr();
+                if !AddInterp(into, si, false) {
+                    (*into).errorCount += 1;
                 }
             }
         }
@@ -779,11 +733,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                     },
                 },
             },
-            interps: C2Rust_Unnamed_18 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            interps: Vec::new(),
             default_led: LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,
@@ -862,11 +812,7 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
                         },
                     },
                 },
-                interps: C2Rust_Unnamed_18 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                interps: Vec::new(),
                 default_led: LedInfo {
                     defined: 0 as led_field,
                     merge: MERGE_DEFAULT,
@@ -975,11 +921,7 @@ unsafe fn SetInterpField(
                 }
                 (*si).interp.num_actions = 0 as xkb_action_count_t;
                 (*si).interp.a.action.type_0 = ACTION_TYPE_NONE;
-                let mut actions: C2Rust_Unnamed_20 = C2Rust_Unnamed_20 {
-                    size: 0 as darray_size_t,
-                    alloc: 0 as darray_size_t,
-                    item: std::ptr::null_mut(),
-                };
+                let mut actions: Vec<xkb_action> = Vec::new();
                 let mut act_0: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
                 while !act_0.is_null() {
                     let mut toAct: xkb_action = xkb_action {
@@ -997,7 +939,7 @@ unsafe fn SetInterpField(
                             toAct.type_0 = ACTION_TYPE_NONE;
                         }
                         2 => {
-                            darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
+                            drop(actions);
                             return false;
                         }
                         _ => {}
@@ -1007,40 +949,22 @@ unsafe fn SetInterpField(
                             (*si).interp.num_actions = 1 as xkb_action_count_t;
                             (*si).interp.a.action = toAct;
                         } else {
-                            darray_append(
-                                &mut actions.item,
-                                &mut actions.size,
-                                &mut actions.alloc,
-                                toAct,
-                            );
+                            actions.push(toAct);
                         }
                     }
                     act_0 = (*act_0).common.next as *mut ExprDef;
                 }
-                match actions.size {
+                match actions.len() as darray_size_t {
                     0 => {}
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;
-                        (*si).interp.a.action = *actions.item.offset(1 as i32 as isize);
-                        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
+                        (*si).interp.a.action = actions[1];
                     }
                     _ => {
-                        if actions.size > 0 as darray_size_t {
-                            actions.alloc = actions.size;
-                            actions.item = realloc(
-                                actions.item as *mut ::core::ffi::c_void,
-                                (actions.alloc as usize)
-                                    .wrapping_mul(std::mem::size_of::<xkb_action>() as usize),
-                            ) as *mut xkb_action;
-                        }
-                        (*si).interp.num_actions = actions.size as xkb_action_count_t;
-                        (*si).interp.a.actions = actions.item;
-                        if !std::ptr::null_mut::<u8>().is_null() {
-                            *(std::ptr::null_mut() as *mut darray_size_t) = actions.size;
-                        }
-                        actions.item = std::ptr::null_mut();
-                        actions.size = 0 as darray_size_t;
-                        actions.alloc = 0 as darray_size_t;
+                        actions.shrink_to_fit();
+                        (*si).interp.num_actions = actions.len() as xkb_action_count_t;
+                        (*si).interp.a.actions = actions.as_mut_ptr();
+                        std::mem::forget(actions);
                     }
                 }
             } else {
@@ -1632,24 +1556,12 @@ unsafe fn CopyInterps(
     mut collect: *mut collect,
 ) {
     unsafe {
-        let mut si: *mut SymInterpInfo = std::ptr::null_mut();
-        if !(*info).interps.item.is_null() {
-            si = (*info).interps.item.offset(0 as i32 as isize) as *mut SymInterpInfo;
-            while si
-                < (*info).interps.item.offset((*info).interps.size as isize) as *mut SymInterpInfo
+        for i in 0..(*info).interps.len() {
+            let si = &(&(*info).interps)[i];
+            if si.interp.match_0 as u32 == pred as u32
+                && (si.interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as i32 == needSymbol as i32
             {
-                if (*si).interp.match_0 as u32 == pred as u32
-                    && ((*si).interp.sym != XKB_KEY_NoSymbol as xkb_keysym_t) as i32
-                        == needSymbol as i32
-                {
-                    darray_append(
-                        &mut (*collect).sym_interprets.item,
-                        &mut (*collect).sym_interprets.size,
-                        &mut (*collect).sym_interprets.alloc,
-                        (*si).interp,
-                    );
-                }
-                si = si.offset(1);
+                (*collect).sym_interprets.push(si.interp);
             }
         }
     }
@@ -1741,17 +1653,10 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
         (*keymap).compat_section_name = strdup_safe((*info).name);
         XkbEscapeMapName((*keymap).compat_section_name);
         (*keymap).mods = (*info).mods;
-        if !((*info).interps.size == 0 as darray_size_t) {
+        if !(*info).interps.is_empty() {
             let mut collect: collect = collect {
-                sym_interprets: C2Rust_Unnamed_19 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                sym_interprets: Vec::new(),
             };
-            collect.sym_interprets.item = std::ptr::null_mut();
-            collect.sym_interprets.size = 0 as darray_size_t;
-            collect.sym_interprets.alloc = 0 as darray_size_t;
             CopyInterps(info, true, MATCH_EXACTLY, &raw mut collect);
             CopyInterps(info, true, MATCH_ALL, &raw mut collect);
             CopyInterps(info, true, MATCH_NONE, &raw mut collect);
@@ -1762,13 +1667,16 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             CopyInterps(info, false, MATCH_NONE, &raw mut collect);
             CopyInterps(info, false, MATCH_ANY, &raw mut collect);
             CopyInterps(info, false, MATCH_ANY_OR_NONE, &raw mut collect);
-            (*keymap).sym_interprets = collect.sym_interprets.item;
-            if !(&raw mut (*keymap).num_sym_interprets).is_null() {
-                *&raw mut (*keymap).num_sym_interprets = collect.sym_interprets.size;
+            if collect.sym_interprets.is_empty() {
+                (*keymap).sym_interprets = std::ptr::null_mut();
+                *&raw mut (*keymap).num_sym_interprets = 0 as darray_size_t;
+            } else {
+                collect.sym_interprets.shrink_to_fit();
+                *&raw mut (*keymap).num_sym_interprets =
+                    collect.sym_interprets.len() as darray_size_t;
+                (*keymap).sym_interprets = collect.sym_interprets.as_mut_ptr();
+                std::mem::forget(collect.sym_interprets);
             }
-            collect.sym_interprets.item = std::ptr::null_mut();
-            collect.sym_interprets.size = 0 as darray_size_t;
-            collect.sym_interprets.alloc = 0 as darray_size_t;
         }
         CopyLedMapDefsToKeymap(keymap, info);
         return true;
@@ -1801,11 +1709,7 @@ pub unsafe fn CompileCompatMap(
                     },
                 },
             },
-            interps: C2Rust_Unnamed_18 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            interps: Vec::new(),
             default_led: LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,

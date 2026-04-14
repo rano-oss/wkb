@@ -121,53 +121,41 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_free;
-use crate::xkb::utils::{darray_append, darray_free, darray_resize_zero};
+// darray_resize_zero_vec is used instead of darray_resize_zero for Vec fields
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
 use libc::calloc;
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct KeyTypesInfo {
     pub name: *mut i8,
     pub errorCount: i32,
     pub include_depth: u32,
-    pub types: C2Rust_Unnamed_16,
+    pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
     pub ctx: *mut xkb_context,
     pub keymap_info: *const xkb_keymap_info,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_16 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut KeyTypeInfo,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct KeyTypeInfo {
     pub defined: type_field,
     pub merge: merge_mode,
     pub name: xkb_atom_t,
     pub mods: xkb_mod_mask_t,
     pub num_levels: xkb_level_index_t,
-    pub entries: C2Rust_Unnamed_18,
-    pub level_names: C2Rust_Unnamed_17,
+    pub entries: Vec<xkb_key_type_entry>,
+    pub level_names: Vec<xkb_atom_t>,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_17 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_atom_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_18 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_key_type_entry,
+unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+    if new_len > v.len() {
+        v.reserve(new_len - v.len());
+        let old_len = v.len();
+        let ptr = v.as_mut_ptr().add(old_len);
+        std::ptr::write_bytes(ptr, 0, new_len - old_len);
+        v.set_len(new_len);
+    } else if new_len < v.len() {
+        v.truncate(new_len);
+    }
 }
 pub type type_field = u32;
 pub const TYPE_FIELD_LEVEL_NAME: type_field = 8;
@@ -241,7 +229,11 @@ unsafe fn InitKeyTypesInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        std::ptr::write_bytes::<KeyTypesInfo>(info as *mut KeyTypesInfo, 0u8, 1);
+        (*info).name = std::ptr::null_mut();
+        (*info).errorCount = 0;
+        (*info).include_depth = 0;
+        (*info).types = Vec::new();
+        (*info).mods = std::mem::zeroed();
         (*info).ctx = (*keymap_info).keymap.ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;
@@ -250,36 +242,17 @@ unsafe fn InitKeyTypesInfo(
 }
 unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
     unsafe {
-        darray_free(
-            &mut (*type_0).entries.item,
-            &mut (*type_0).entries.size,
-            &mut (*type_0).entries.alloc,
-        );
-        darray_free(
-            &mut (*type_0).level_names.item,
-            &mut (*type_0).level_names.size,
-            &mut (*type_0).level_names.alloc,
-        );
+        (*type_0).entries.clear();
+        (*type_0).level_names.clear();
     }
 }
 unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
     unsafe {
         cstr_free((*info).name);
-        let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
-        if !(*info).types.item.is_null() {
-            type_0 = (*info).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
-            while type_0
-                < (*info).types.item.offset((*info).types.size as isize) as *mut KeyTypeInfo
-            {
-                ClearKeyTypeInfo(type_0);
-                type_0 = type_0.offset(1);
-            }
+        for type_0 in (*info).types.iter_mut() {
+            ClearKeyTypeInfo(type_0 as *mut KeyTypeInfo);
         }
-        darray_free(
-            &mut (*info).types.item,
-            &mut (*info).types.size,
-            &mut (*info).types.alloc,
-        );
+        (*info).types.clear();
     }
 }
 unsafe fn FindMatchingKeyType(
@@ -287,14 +260,9 @@ unsafe fn FindMatchingKeyType(
     mut name: xkb_atom_t,
 ) -> *mut KeyTypeInfo {
     unsafe {
-        let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
-        if !(*info).types.item.is_null() {
-            old = (*info).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
-            while old < (*info).types.item.offset((*info).types.size as isize) as *mut KeyTypeInfo {
-                if (*old).name == name {
-                    return old;
-                }
-                old = old.offset(1);
+        for type_0 in (*info).types.iter_mut() {
+            if type_0.name == name {
+                return type_0 as *mut KeyTypeInfo;
             }
         }
         return std::ptr::null_mut();
@@ -323,13 +291,9 @@ unsafe fn AddKeyType(
                     );
                 }
                 ClearKeyTypeInfo(old);
-                *old = *new;
-                (*new).entries.item = std::ptr::null_mut();
-                (*new).entries.size = 0 as darray_size_t;
-                (*new).entries.alloc = 0 as darray_size_t;
-                (*new).level_names.item = std::ptr::null_mut();
-                (*new).level_names.size = 0 as darray_size_t;
-                (*new).level_names.alloc = 0 as darray_size_t;
+                *old = (*new).clone();
+                (*new).entries = Vec::new();
+                (*new).level_names = Vec::new();
                 return true;
             }
             if same_file {
@@ -345,12 +309,7 @@ unsafe fn AddKeyType(
             ClearKeyTypeInfo(new);
             return true;
         }
-        darray_append(
-            &mut (*info).types.item,
-            &mut (*info).types.size,
-            &mut (*info).types.alloc,
-            *new,
-        );
+        (*info).types.push((*new).clone());
         return true;
     }
 }
@@ -374,30 +333,18 @@ unsafe fn MergeIncludedKeyTypes(
             (*into).name =
                 _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         }
-        if (*into).types.size == 0 as darray_size_t {
-            (*into).types = (*from).types;
-            (*from).types.item = std::ptr::null_mut();
-            (*from).types.size = 0 as darray_size_t;
-            (*from).types.alloc = 0 as darray_size_t;
+        if (*into).types.len() == 0 {
+            (*into).types = std::mem::take(&mut (*from).types);
         } else {
             let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
-            if !(*from).types.item.is_null() {
-                type_0 = (*from).types.item.offset(0 as i32 as isize) as *mut KeyTypeInfo;
-                while type_0
-                    < (*from).types.item.offset((*from).types.size as isize) as *mut KeyTypeInfo
-                {
-                    (*type_0).merge = merge;
-                    if !AddKeyType(into, type_0, false) {
-                        (*into).errorCount += 1;
-                    }
-                    type_0 = type_0.offset(1);
+            for i in 0..(*from).types.len() {
+                type_0 = (*from).types.as_mut_ptr().add(i);
+                (*type_0).merge = merge;
+                if !AddKeyType(into, type_0, false) {
+                    (*into).errorCount += 1;
                 }
             }
-            darray_free(
-                &mut (*from).types.item,
-                &mut (*from).types.size,
-                &mut (*from).types.alloc,
-            );
+            (*from).types.clear();
         };
     }
 }
@@ -410,11 +357,7 @@ unsafe fn HandleIncludeKeyTypes(
             name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
-            types: C2Rust_Unnamed_16 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            types: Vec::new(),
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,
@@ -445,11 +388,7 @@ unsafe fn HandleIncludeKeyTypes(
                 name: std::ptr::null_mut(),
                 errorCount: 0,
                 include_depth: 0,
-                types: C2Rust_Unnamed_16 {
-                    size: 0,
-                    alloc: 0,
-                    item: std::ptr::null_mut(),
-                },
+                types: Vec::new(),
                 mods: xkb_mod_set {
                     mods: [xkb_mod {
                         name: 0,
@@ -552,20 +491,9 @@ unsafe fn FindMatchingMapEntry(
     mut mods: xkb_mod_mask_t,
 ) -> *mut xkb_key_type_entry {
     unsafe {
-        let mut entry: *mut xkb_key_type_entry = std::ptr::null_mut();
-        if !(*type_0).entries.item.is_null() {
-            entry = (*type_0).entries.item.offset(0 as i32 as isize) as *mut xkb_key_type_entry;
-            while entry
-                < (*type_0)
-                    .entries
-                    .item
-                    .offset((*type_0).entries.size as isize)
-                    as *mut xkb_key_type_entry
-            {
-                if (*entry).mods.mods == mods {
-                    return entry;
-                }
-                entry = entry.offset(1);
+        for entry in (*type_0).entries.iter_mut() {
+            if entry.mods.mods == mods {
+                return entry as *mut xkb_key_type_entry;
             }
         }
         return std::ptr::null_mut();
@@ -628,12 +556,7 @@ unsafe fn AddMapEntry(
         if (*new).level >= (*type_0).num_levels {
             (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
         }
-        darray_append(
-            &mut (*type_0).entries.item,
-            &mut (*type_0).entries.size,
-            &mut (*type_0).entries.alloc,
-            *new,
-        );
+        (*type_0).entries.push(*new);
         return true;
     }
 }
@@ -712,75 +635,61 @@ unsafe fn AddPreserve(
             mods: xkb_mods { mods: 0, mask: 0 },
             preserve: xkb_mods { mods: 0, mask: 0 },
         };
-        if !(*type_0).entries.item.is_null() {
-            entry = (*type_0).entries.item.offset(0 as i32 as isize) as *mut xkb_key_type_entry;
-            while entry
-                < (*type_0)
-                    .entries
-                    .item
-                    .offset((*type_0).entries.size as isize)
-                    as *mut xkb_key_type_entry
-            {
-                if (*entry).mods.mods != mods {
-                    entry = entry.offset(1);
-                } else {
-                    if (*entry).preserve.mods == 0 as xkb_mod_mask_t {
-                        (*entry).preserve.mods = preserve_mods;
-                        return true;
-                    }
-                    if (*entry).preserve.mods == preserve_mods {
-                        xkb_logf!(
-                            (*info).ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_VERBOSE as i32,
-                            "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
-                            XKB_WARNING_DUPLICATE_ENTRY as i32,
-                            crate::xkb::utils::CStrDisplay(ModMaskText(
-                                (*info).ctx,
-                                MOD_BOTH,
-                                &raw mut (*info).mods,
-                                mods
-                            )),
-                            crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
-                        );
-                        return true;
-                    }
+        for e in (*type_0).entries.iter_mut() {
+            if e.mods.mods != mods {
+                continue;
+            } else {
+                if e.preserve.mods == 0 as xkb_mod_mask_t {
+                    e.preserve.mods = preserve_mods;
+                    return true;
+                }
+                if e.preserve.mods == preserve_mods {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_BRIEF as i32,
-                        "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
-                        XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
-                            as i32,
-                        crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                        XKB_LOG_VERBOSITY_VERBOSE as i32,
+                        "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
+                        XKB_WARNING_DUPLICATE_ENTRY as i32,
+                        crate::xkb::utils::CStrDisplay(ModMaskText(
+                            (*info).ctx,
+                            MOD_BOTH,
+                            &raw mut (*info).mods,
+                            mods
+                        )),
                         crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(
-                            (*info).ctx,
-                            MOD_BOTH,
-                            &raw mut (*info).mods,
-                            preserve_mods,
-                        )),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(
-                            (*info).ctx,
-                            MOD_BOTH,
-                            &raw mut (*info).mods,
-                            (*entry).preserve.mods,
-                        )),
                     );
-                    (*entry).preserve.mods = preserve_mods;
                     return true;
                 }
+                xkb_logf!(
+                    (*info).ctx,
+                    XKB_LOG_LEVEL_WARNING,
+                    XKB_LOG_VERBOSITY_BRIEF as i32,
+                    "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
+                    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
+                        as i32,
+                    crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::CStrDisplay(ModMaskText(
+                        (*info).ctx,
+                        MOD_BOTH,
+                        &raw mut (*info).mods,
+                        preserve_mods,
+                    )),
+                    crate::xkb::utils::CStrDisplay(ModMaskText(
+                        (*info).ctx,
+                        MOD_BOTH,
+                        &raw mut (*info).mods,
+                        e.preserve.mods,
+                    )),
+                );
+                e.preserve.mods = preserve_mods;
+                return true;
             }
         }
         new.level = 0 as xkb_level_index_t;
         new.mods.mods = mods;
         new.preserve.mods = preserve_mods;
-        darray_append(
-            &mut (*type_0).entries.item,
-            &mut (*type_0).entries.size,
-            &mut (*type_0).entries.alloc,
-            new,
-        );
+        (*type_0).entries.push(new);
         return true;
     }
 }
@@ -884,15 +793,10 @@ unsafe fn AddLevelName(
     mut clobber: bool,
 ) -> bool {
     unsafe {
-        if level >= (*type_0).level_names.size as xkb_level_index_t {
-            darray_resize_zero(
-                &mut (*type_0).level_names.item,
-                &mut (*type_0).level_names.size,
-                &mut (*type_0).level_names.alloc,
-                (level as darray_size_t).wrapping_add(1 as darray_size_t),
-            );
+        if level >= (*type_0).level_names.len() as xkb_level_index_t {
+            darray_resize_zero_vec(&mut (*type_0).level_names, (level as usize).wrapping_add(1));
         } else {
-            if *(*type_0).level_names.item.offset(level as isize) == name {
+            if *(*type_0).level_names.as_ptr().add(level as usize) == name {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -904,12 +808,12 @@ unsafe fn AddLevelName(
                 );
                 return true;
             }
-            if *(*type_0).level_names.item.offset(level as isize) != XKB_ATOM_NONE as xkb_atom_t {
+            if *(*type_0).level_names.as_ptr().add(level as usize) != XKB_ATOM_NONE as xkb_atom_t {
                 let mut old: *const i8 = std::ptr::null();
                 let mut new: *const i8 = std::ptr::null();
                 old = xkb_atom_text(
                     (*info).ctx,
-                    *(*type_0).level_names.item.offset(level as isize),
+                    *(*type_0).level_names.as_ptr().add(level as usize),
                 );
                 new = xkb_atom_text((*info).ctx, name);
                 xkb_logf!(
@@ -928,7 +832,7 @@ unsafe fn AddLevelName(
                 }
             }
         }
-        *(*type_0).level_names.item.offset(level as isize) = name;
+        *(*type_0).level_names.as_mut_ptr().add(level as usize) = name;
         return true;
     }
 }
@@ -1068,16 +972,8 @@ unsafe fn HandleKeyTypeDef(mut info: *mut KeyTypesInfo, mut def: *mut KeyTypeDef
             name: (*def).name,
             mods: 0 as xkb_mod_mask_t,
             num_levels: 1 as xkb_level_index_t,
-            entries: C2Rust_Unnamed_18 {
-                size: 0 as darray_size_t,
-                alloc: 0 as darray_size_t,
-                item: std::ptr::null_mut(),
-            },
-            level_names: C2Rust_Unnamed_17 {
-                size: 0 as darray_size_t,
-                alloc: 0 as darray_size_t,
-                item: std::ptr::null_mut(),
-            },
+            entries: Vec::new(),
+            level_names: Vec::new(),
         };
         if !HandleKeyTypeBody(info, (*def).body, &raw mut type_0)
             || !AddKeyType(info, &raw mut type_0, true)
@@ -1211,17 +1107,17 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
 }
 unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTypesInfo) -> bool {
     unsafe {
-        let num_types: darray_size_t = if (*info).types.size == 0 as darray_size_t {
+        let num_types: darray_size_t = if (*info).types.len() == 0 {
             1 as darray_size_t
         } else {
-            (*info).types.size
+            (*info).types.len() as darray_size_t
         };
         let mut types: *mut xkb_key_type =
             calloc(num_types as usize, std::mem::size_of::<xkb_key_type>()) as *mut xkb_key_type;
         if types.is_null() {
             return false;
         }
-        if (*info).types.size == 0 as darray_size_t {
+        if (*info).types.len() == 0 {
             let mut type_0: *mut xkb_key_type =
                 types.offset(0 as i32 as isize) as *mut xkb_key_type;
             (*type_0).mods.mods = 0 as xkb_mod_mask_t;
@@ -1261,27 +1157,31 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             ];
             let mut i: darray_size_t = 0 as darray_size_t;
             while i < num_types {
-                let mut def: *mut KeyTypeInfo =
-                    (*info).types.item.offset(i as isize) as *mut KeyTypeInfo;
+                let mut def: *mut KeyTypeInfo = (*info).types.as_mut_ptr().add(i as usize);
                 let mut type_1: *mut xkb_key_type = types.offset(i as isize) as *mut xkb_key_type;
                 (*type_1).name = (*def).name;
                 (*type_1).mods.mods = (*def).mods;
                 (*type_1).num_levels = (*def).num_levels;
-                (*type_1).num_level_names = (*def).level_names.size as xkb_level_index_t;
-                (*type_1).level_names = (*def).level_names.item;
-                if !std::ptr::null_mut::<u8>().is_null() {
-                    *(std::ptr::null_mut() as *mut darray_size_t) = (*def).level_names.size;
+                // Steal level_names Vec buffer
+                let mut ln_vec = std::mem::take(&mut (*def).level_names);
+                (*type_1).num_level_names = ln_vec.len() as xkb_level_index_t;
+                if ln_vec.is_empty() {
+                    (*type_1).level_names = std::ptr::null_mut();
+                } else {
+                    ln_vec.shrink_to_fit();
+                    (*type_1).level_names = ln_vec.as_mut_ptr();
+                    std::mem::forget(ln_vec);
                 }
-                (*def).level_names.item = std::ptr::null_mut();
-                (*def).level_names.size = 0 as darray_size_t;
-                (*def).level_names.alloc = 0 as darray_size_t;
-                (*type_1).entries = (*def).entries.item;
-                if !(&raw mut (*type_1).num_entries).is_null() {
-                    *&raw mut (*type_1).num_entries = (*def).entries.size;
+                // Steal entries Vec buffer
+                let mut ent_vec = std::mem::take(&mut (*def).entries);
+                (*type_1).num_entries = ent_vec.len() as darray_size_t;
+                if ent_vec.is_empty() {
+                    (*type_1).entries = std::ptr::null_mut();
+                } else {
+                    ent_vec.shrink_to_fit();
+                    (*type_1).entries = ent_vec.as_mut_ptr();
+                    std::mem::forget(ent_vec);
                 }
-                (*def).entries.item = std::ptr::null_mut();
-                (*def).entries.size = 0 as darray_size_t;
-                (*def).entries.alloc = 0 as darray_size_t;
                 (*type_1).required = false;
                 if (*type_1).num_levels <= 2 as xkb_level_index_t {
                     let mut t: u8 = 0 as u8;
@@ -1318,11 +1218,7 @@ pub unsafe fn CompileKeyTypes(
             name: std::ptr::null_mut(),
             errorCount: 0,
             include_depth: 0,
-            types: C2Rust_Unnamed_16 {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            types: Vec::new(),
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,
