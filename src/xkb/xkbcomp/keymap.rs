@@ -1,10 +1,9 @@
 use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 use crate::xkb::text::{
-    format_control_names_offset, ActionTypeText,
-    KeyNameText, KeysymText, LookupEntry,
+    format_control_names_offset, ActionTypeText, KeyNameText, KeysymText, LookupEntry,
     GROUP_LAST_INDEX_NAME,
 };
-use crate::xkb::utils::{darray_append, darray_appends, darray_free};
+
 use crate::xkb_logf;
 
 pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
@@ -136,20 +135,7 @@ pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
 pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 use libc::{calloc, free, realloc};
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct xkb_sym_interprets {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut *const xkb_sym_interpret,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_19 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_action,
-}
+
 pub const GROUP_MASK_NAME_LAST: C2Rust_Unnamed_21 = 3;
 pub const GROUP_INDEX_NAME_LAST: C2Rust_Unnamed_20 = 1;
 pub type compile_file_fn = Option<unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
@@ -216,7 +202,7 @@ unsafe fn FindInterpForKey(
     mut key: *const xkb_key,
     mut group: xkb_layout_index_t,
     mut level: xkb_level_index_t,
-    mut interprets: *mut xkb_sym_interprets,
+    interprets: &mut Vec<*const xkb_sym_interpret>,
 ) -> bool {
     unsafe {
         let mut syms: *const xkb_keysym_t = std::ptr::null();
@@ -270,16 +256,9 @@ unsafe fn FindInterpForKey(
                         && i > 0 as darray_size_t
                         && (*interp).sym == XKB_KEY_NoSymbol as xkb_keysym_t
                     {
-                        let mut previous_interp: *mut *const xkb_sym_interpret =
-                            std::ptr::null_mut();
-                        if !(*interprets).item.is_null() {
-                            previous_interp = (*interprets).item.offset(0 as i32 as isize)
-                                as *mut *const xkb_sym_interpret;
-                            while previous_interp
-                                < (*interprets).item.offset((*interprets).size as isize)
-                                    as *mut *const xkb_sym_interpret
-                            {
-                                if *previous_interp == interp as *const xkb_sym_interpret {
+                        if !interprets.is_empty() {
+                            for previous in interprets.iter() {
+                                if *previous == interp as *const xkb_sym_interpret {
                                     found = false;
                                     xkb_logf!(
                                         (*keymap).ctx,
@@ -294,19 +273,12 @@ unsafe fn FindInterpForKey(
                                     );
                                     c2rust_current_block_34 = 2209838995503123840;
                                     break 's_26;
-                                } else {
-                                    previous_interp = previous_interp.offset(1);
                                 }
                             }
                         }
                     }
                     if found {
-                        darray_append(
-                            &mut (*interprets).item,
-                            &mut (*interprets).size,
-                            &mut (*interprets).alloc,
-                            interp,
-                        );
+                        interprets.push(interp as *const xkb_sym_interpret);
                         (*interp).set_required((true) as bool);
                         c2rust_current_block_34 = 7659304154607701039;
                         break;
@@ -326,12 +298,7 @@ unsafe fn FindInterpForKey(
             }
             match c2rust_current_block_34 {
                 2209838995503123840 => {
-                    darray_append(
-                        &mut (*interprets).item,
-                        &mut (*interprets).size,
-                        &mut (*interprets).alloc,
-                        &raw const default_interpret,
-                    );
+                    interprets.push(&raw const default_interpret);
                 }
                 _ => {}
             }
@@ -344,78 +311,51 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
     unsafe {
         let mut vmodmap: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         let mut level: xkb_level_index_t = 0;
-        let mut interprets: xkb_sym_interprets = xkb_sym_interprets {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
-        };
-        let mut actions: C2Rust_Unnamed_19 = C2Rust_Unnamed_19 {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
-        };
+        let mut interprets: Vec<*const xkb_sym_interpret> = Vec::new();
+        let mut actions: Vec<xkb_action> = Vec::new();
         let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while group < (*key).num_groups() {
             if !(*(*key).groups.offset(group as isize)).explicit_actions() {
                 level = 0 as xkb_level_index_t;
                 while level < XkbKeyNumLevels(key, group) {
-                    let mut interp_iter: *mut *const xkb_sym_interpret = std::ptr::null_mut();
                     let mut interp: *const xkb_sym_interpret = std::ptr::null();
-                    let mut k: usize = 0;
-                    interprets.size = 0 as darray_size_t;
+                    interprets.clear();
                     let found: bool =
-                        FindInterpForKey(keymap, key, group, level, &raw mut interprets) as bool;
+                        FindInterpForKey(keymap, key, group, level, &mut interprets) as bool;
                     if found {
-                        if !interprets.item.is_null() {
-                            k = 0 as usize;
-                            interp_iter = interprets.item.offset(0 as i32 as isize)
-                                as *mut *const xkb_sym_interpret;
-                            while k < interprets.size as usize {
-                                interp = *interp_iter;
-                                if group == 0 as xkb_layout_index_t
-                                    && level == 0 as xkb_level_index_t
+                        for &interp_ptr in interprets.iter() {
+                            interp = interp_ptr;
+                            if group == 0 as xkb_layout_index_t && level == 0 as xkb_level_index_t {
+                                if (*key).explicit as u32 & EXPLICIT_REPEAT as u32 == 0
+                                    && (*interp).repeat() as i32 != 0
                                 {
-                                    if (*key).explicit as u32 & EXPLICIT_REPEAT as u32 == 0
-                                        && (*interp).repeat() as i32 != 0
-                                    {
-                                        (*key).set_repeats((true) as bool);
-                                    }
+                                    (*key).set_repeats((true) as bool);
                                 }
-                                if group == 0 as xkb_layout_index_t
-                                    && level == 0 as xkb_level_index_t
-                                    || !(*interp).level_one_only
-                                {
-                                    if (*interp).virtual_mod != XKB_MOD_INVALID as xkb_mod_index_t {
-                                        vmodmap = (vmodmap as u32
-                                            | (1 as u32) << (*interp).virtual_mod)
-                                            as xkb_mod_mask_t;
-                                    }
+                            }
+                            if group == 0 as xkb_layout_index_t && level == 0 as xkb_level_index_t
+                                || !(*interp).level_one_only
+                            {
+                                if (*interp).virtual_mod != XKB_MOD_INVALID as xkb_mod_index_t {
+                                    vmodmap = (vmodmap as u32 | (1 as u32) << (*interp).virtual_mod)
+                                        as xkb_mod_mask_t;
                                 }
-                                match (*interp).num_actions as i32 {
-                                    0 => {}
-                                    1 => {
-                                        darray_append(
-                                            &mut actions.item,
-                                            &mut actions.size,
-                                            &mut actions.alloc,
-                                            (*interp).a.action,
-                                        );
-                                    }
-                                    _ => {
-                                        darray_appends(
-                                            &mut actions.item,
-                                            &mut actions.size,
-                                            &mut actions.alloc,
-                                            (*interp).a.actions,
-                                            (*interp).num_actions as u32,
-                                        );
-                                    }
+                            }
+                            match (*interp).num_actions as i32 {
+                                0 => {}
+                                1 => {
+                                    actions.push((*interp).a.action);
                                 }
-                                k = k.wrapping_add(1);
-                                interp_iter = interp_iter.offset(1);
+                                _ => {
+                                    actions.extend_from_slice(std::slice::from_raw_parts(
+                                        (*interp).a.actions,
+                                        (*interp).num_actions as usize,
+                                    ));
+                                }
                             }
                         }
-                        if (actions.size != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
+                        if (actions.len() as darray_size_t != 0) as i64
+                            > MAX_ACTIONS_PER_LEVEL as i64
+                        {
                             xkb_logf!(
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
@@ -423,7 +363,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                 65535 as i32,
-                                actions.size,
+                                actions.len() as darray_size_t,
                             );
                             (*(*(*key).groups.offset(group as isize))
                                 .levels
@@ -433,9 +373,9 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                             (*(*(*key).groups.offset(group as isize))
                                 .levels
                                 .offset(level as isize))
-                            .num_actions = actions.size as xkb_action_count_t;
+                            .num_actions = actions.len() as xkb_action_count_t;
                         }
-                        match actions.size {
+                        match actions.len() as darray_size_t {
                             0 => {
                                 (*(*(*key).groups.offset(group as isize))
                                     .levels
@@ -450,7 +390,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                     .levels
                                     .offset(level as isize))
                                 .a
-                                .action = *actions.item.offset(0 as i32 as isize);
+                                .action = actions[0];
                             }
                             _ => {
                                 let ref mut c2rust_fresh0 =
@@ -460,7 +400,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                     .a
                                     .actions;
                                 *c2rust_fresh0 = memdup(
-                                    actions.item as *const ::core::ffi::c_void,
+                                    actions.as_ptr() as *const ::core::ffi::c_void,
                                     (*(*(*key).groups.offset(group as isize))
                                         .levels
                                         .offset(level as isize))
@@ -482,25 +422,15 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                         "[XKB-{:03}] Could not allocate interpret actions\n",
                                         XKB_ERROR_ALLOCATION_ERROR as i32,
                                     );
-                                    darray_free(
-                                        &mut actions.item,
-                                        &mut actions.size,
-                                        &mut actions.alloc,
-                                    );
-                                    darray_free(
-                                        &mut interprets.item,
-                                        &mut interprets.size,
-                                        &mut interprets.alloc,
-                                    );
                                     return false;
                                 }
                             }
                         }
-                        if !(actions.size == 0 as darray_size_t) {
+                        if !actions.is_empty() {
                             let ref mut c2rust_fresh1 = *(*key).groups.offset(group as isize);
                             (*c2rust_fresh1).set_implicit_actions((true) as bool);
                         }
-                        actions.size = 0 as darray_size_t;
+                        actions.clear();
                     }
                     level = level.wrapping_add(1);
                 }
@@ -510,12 +440,6 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
             }
             group = group.wrapping_add(1);
         }
-        darray_free(&mut actions.item, &mut actions.size, &mut actions.alloc);
-        darray_free(
-            &mut interprets.item,
-            &mut interprets.size,
-            &mut interprets.alloc,
-        );
         if (*key).explicit as u32 & EXPLICIT_VMODMAP as u32 == 0 {
             (*key).vmodmap = vmodmap;
         }

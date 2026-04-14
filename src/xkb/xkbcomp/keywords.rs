@@ -1,4 +1,3 @@
-
 pub use super::scanner::parser_h::{
     yytokentype, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
     AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
@@ -329,12 +328,7 @@ static mut gperf_downcase: [::core::ffi::c_uchar; 256] = [
     254 as i32 as ::core::ffi::c_uchar,
     255 as i32 as ::core::ffi::c_uchar,
 ];
-use crate::xkb::shared_types::*;
-unsafe fn gperf_case_memcmp(
-    mut s1: *const i8,
-    mut s2: *const i8,
-    mut n: usize,
-) -> i32 {
+unsafe fn gperf_case_memcmp(mut s1: *const i8, mut s2: *const i8, mut n: usize) -> i32 {
     unsafe {
         while n > 0 as usize {
             let c2rust_fresh0 = s1;
@@ -626,8 +620,8 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
             }
             _ => {
                 hval = hval.wrapping_add(
-                    asso_values[*str.offset(4 as i32 as isize)
-                        as ::core::ffi::c_uchar as usize] as u32,
+                    asso_values[*str.offset(4 as i32 as isize) as ::core::ffi::c_uchar as usize]
+                        as u32,
                 );
                 c2rust_current_block_2 = 14734602837567950927;
             }
@@ -635,16 +629,14 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
         match c2rust_current_block_2 {
             14734602837567950927 => {
                 hval = hval.wrapping_add(
-                    asso_values[*str.offset(1 as i32 as isize)
-                        as ::core::ffi::c_uchar as usize] as u32,
+                    asso_values[*str.offset(1 as i32 as isize) as ::core::ffi::c_uchar as usize]
+                        as u32,
                 );
             }
             _ => {}
         }
         hval = hval.wrapping_add(
-            asso_values
-                [*str.offset(0 as i32 as isize) as ::core::ffi::c_uchar as usize]
-                as u32,
+            asso_values[*str.offset(0 as i32 as isize) as ::core::ffi::c_uchar as usize] as u32,
         );
         return hval;
     }
@@ -784,16 +776,13 @@ unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const key
             5 as i32 as ::core::ffi::c_uchar,
             7 as i32 as ::core::ffi::c_uchar,
         ];
-        if len <= MAX_WORD_LENGTH as usize
-            && len >= MIN_WORD_LENGTH as usize
-        {
+        if len <= MAX_WORD_LENGTH as usize && len >= MIN_WORD_LENGTH as usize {
             let mut key: u32 = keyword_gperf_hash(str, len);
             if key <= MAX_HASH_VALUE as u32 {
                 if len == lengthtable[key as usize] as usize {
                     let mut s: *const i8 = (&raw const stringpool_contents as *const i8)
                         .offset(wordlist[key as usize].name as isize);
-                    if (*str as ::core::ffi::c_uchar as i32
-                        ^ *s as ::core::ffi::c_uchar as i32)
+                    if (*str as ::core::ffi::c_uchar as i32 ^ *s as ::core::ffi::c_uchar as i32)
                         & !(32 as i32)
                         == 0 as i32
                         && gperf_case_memcmp(str, s, len) == 0

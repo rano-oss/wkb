@@ -4,7 +4,6 @@ use std::{
     path::Path,
 };
 
-use crate::xkb::shared_types::*;
 use crate::composer::{ListComposer, Token};
 
 use super::xkb_compose_map::XKB_COMPOSE_MAP;

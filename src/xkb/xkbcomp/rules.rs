@@ -74,7 +74,7 @@ pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
-use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp, darray_append, darray_growalloc};
+use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp};
 pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
@@ -94,7 +94,7 @@ pub struct matcher {
     pub ctx: *mut xkb_context,
     pub rmlvo: rule_names,
     pub val: lvalue,
-    pub groups: C2Rust_Unnamed_6,
+    pub groups: Vec<group>,
     pub mapping: mapping,
     pub rule: rule,
     pub pending_kccgst: kccgst_buffer,
@@ -103,14 +103,7 @@ pub struct matcher {
 #[derive(Clone)]
 pub struct kccgst_buffer {
     pub buffer: Vec<i8>,
-    pub slices: C2Rust_Unnamed_1,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_1 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut kccgst_buffer_slice,
+    pub slices: Vec<kccgst_buffer_slice>,
 }
 #[derive(Copy, Clone, BitfieldStruct)]
 #[repr(C)]
@@ -191,13 +184,6 @@ pub const MLVO_OPTION: rules_mlvo = 3;
 pub const MLVO_VARIANT: rules_mlvo = 2;
 pub const MLVO_LAYOUT: rules_mlvo = 1;
 pub const MLVO_MODEL: rules_mlvo = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_6 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut group,
-}
 #[derive(Clone)]
 pub struct group {
     pub name: sval,
@@ -554,6 +540,8 @@ unsafe fn matcher_new_from_rmlvo(
         std::ptr::write(&raw mut (*m).rmlvo.variants, Vec::new());
         std::ptr::write(&raw mut (*m).rmlvo.options, Vec::new());
         std::ptr::write(&raw mut (*m).pending_kccgst.buffer, Vec::new());
+        std::ptr::write(&raw mut (*m).pending_kccgst.slices, Vec::new());
+        std::ptr::write(&raw mut (*m).groups, Vec::new());
         std::ptr::write(&raw mut (*m).kccgst, std::array::from_fn(|_| Vec::new()));
         (*m).ctx = (*rmlvo).ctx;
         let mut names: xkb_rule_names = xkb_rule_names {
@@ -702,6 +690,8 @@ unsafe fn matcher_new_from_names(
         std::ptr::write(&raw mut (*m).rmlvo.variants, Vec::new());
         std::ptr::write(&raw mut (*m).rmlvo.options, Vec::new());
         std::ptr::write(&raw mut (*m).pending_kccgst.buffer, Vec::new());
+        std::ptr::write(&raw mut (*m).pending_kccgst.slices, Vec::new());
+        std::ptr::write(&raw mut (*m).groups, Vec::new());
         std::ptr::write(&raw mut (*m).kccgst, std::array::from_fn(|_| Vec::new()));
         (*m).ctx = ctx;
         (*m).rmlvo.model.sval.start = (*rmlvo).model;
@@ -759,26 +749,9 @@ unsafe fn matcher_free(mut m: *mut matcher) {
         if m.is_null() {
             return;
         }
-        // Vec fields are dropped automatically by Box::from_raw
-        let mut group: *mut group = std::ptr::null_mut();
-        if !(*m).groups.item.is_null() {
-            group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
-            while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
-                std::ptr::drop_in_place(&mut (*group).elements);
-                group = group.offset(1);
-            }
-        }
-        crate::xkb::utils::darray_free(
-            &mut (*m).pending_kccgst.slices.item,
-            &mut (*m).pending_kccgst.slices.size,
-            &mut (*m).pending_kccgst.slices.alloc,
-        );
-        crate::xkb::utils::darray_free(
-            &mut (*m).groups.item,
-            &mut (*m).groups.size,
-            &mut (*m).groups.alloc,
-        );
         // Drop Vec fields manually before deallocating
+        std::ptr::drop_in_place(&raw mut (*m).groups);
+        std::ptr::drop_in_place(&raw mut (*m).pending_kccgst.slices);
         std::ptr::drop_in_place(&raw mut (*m).rmlvo.layouts);
         std::ptr::drop_in_place(&raw mut (*m).rmlvo.variants);
         std::ptr::drop_in_place(&raw mut (*m).rmlvo.options);
@@ -791,31 +764,17 @@ unsafe fn matcher_free(mut m: *mut matcher) {
 }
 unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
     unsafe {
-        let mut group: group = group {
+        let group: group = group {
             name: name,
             elements: Vec::new(),
         };
-        (*m).groups.size = (*m).groups.size.wrapping_add(1);
-        darray_growalloc(
-            &mut (*m).groups.item,
-            &mut (*m).groups.alloc,
-            (*m).groups.size,
-        );
-        std::ptr::write(
-            (*m).groups
-                .item
-                .offset((*m).groups.size.wrapping_sub(1) as isize),
-            group,
-        );
+        (&mut (*m).groups).push(group);
     }
 }
 unsafe fn matcher_group_add_element(mut m: *mut matcher, mut s: *mut scanner, mut element: sval) {
     unsafe {
-        let last_group = &mut *(*m)
-            .groups
-            .item
-            .offset((*m).groups.size.wrapping_sub(1) as isize);
-        (&mut last_group.elements).push(element);
+        let last_group = (&mut (*m).groups).last_mut().unwrap();
+        last_group.elements.push(element);
     }
 }
 unsafe fn matcher_include(
@@ -5653,30 +5612,18 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
 }
 unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
     unsafe {
-        let mut group: *mut group = std::ptr::null_mut();
-        let mut found: bool = false;
-        if !(*m).groups.item.is_null() {
-            group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
-            while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
-                if svaleq((*group).name, group_name) {
-                    found = true;
-                    break;
-                } else {
-                    group = group.offset(1);
+        let found_group = (&(*m).groups).iter().find(|g| svaleq(g.name, group_name));
+        match found_group {
+            None => false,
+            Some(group) => {
+                for elem in group.elements.iter() {
+                    if svaleq(to, *elem) {
+                        return true;
+                    }
                 }
+                false
             }
         }
-        if !found {
-            return false;
-        }
-        if !(&(*group).elements).is_empty() {
-            for elem in (&(*group).elements).iter() {
-                if svaleq(to, *elem) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
 unsafe fn match_value(
@@ -6500,20 +6447,19 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
                 let buf: *const kccgst_buffer = &raw mut (*m).pending_kccgst;
                 let mut offset: usize = 0 as usize;
                 let mut k: darray_size_t = 0;
-                while k < (*buf).slices.size {
-                    let slice: *const kccgst_buffer_slice =
-                        (*buf).slices.item.offset(k as isize) as *mut kccgst_buffer_slice;
-                    if (*slice).kccgst() as u32 == kccgst as u32
-                        && (*slice).layout == layout
-                        && (*slice).length() as i32 != 0
+                while k < (&(*buf).slices).len() as darray_size_t {
+                    let slice: &kccgst_buffer_slice = &(&(*buf).slices)[k as usize];
+                    if slice.kccgst() as u32 == kccgst as u32
+                        && slice.layout == layout
+                        && slice.length() as i32 != 0
                     {
                         concat_kccgst(
                             &mut (*m).kccgst[kccgst as usize],
-                            (*slice).length(),
+                            slice.length(),
                             (*buf).buffer.as_ptr().offset(offset as isize),
                         );
                     }
-                    offset = offset.wrapping_add((*slice).length() as usize);
+                    offset = offset.wrapping_add(slice.length() as usize);
                     k = k.wrapping_add(1);
                 }
                 layout = layout.wrapping_add(1);
@@ -6725,12 +6671,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                             init.set_kccgst(kccgst);
                             init
                         };
-                        darray_append(
-                            &mut (*buf).slices.item,
-                            &mut (*buf).slices.size,
-                            &mut (*buf).slices.alloc,
-                            slice,
-                        );
+                        (&mut (*buf).slices).push(slice);
                         i_0 = i_0.wrapping_add(1);
                     }
                 }
@@ -6870,7 +6811,7 @@ unsafe fn matcher_match(
                             matcher_mapping_set_layout_bounds(m);
                             if (*m).mapping.has_layout_idx_range {
                                 (*m).pending_kccgst.buffer.clear();
-                                (*m).pending_kccgst.slices.size = 0;
+                                (*m).pending_kccgst.slices.clear();
                             }
                         }
                         loop {

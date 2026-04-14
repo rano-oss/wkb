@@ -25,15 +25,14 @@ extern "C" {
     pub fn predictPerturbed(t1: *const bench_time, t2: *const bench_time, est: *mut estimate);
 }
 
-use crate::xkb::shared_types::*;
-use crate::xkb::utils::optarg;
-pub use crate::xkb::utils::getopt_long;
 pub use crate::xkb::shared_types::{no_argument, option, required_argument};
+pub use crate::xkb::utils::getopt_long;
 pub use crate::xkb::utils::is_xdigit;
-use libc::{EXIT_SUCCESS, FILE, atof, exit, fclose, fopen, strtol};
+use crate::xkb::utils::optarg;
 pub use crate::xkb::utils::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
 };
+use libc::{atof, exit, fclose, fopen, strtol, EXIT_SUCCESS, FILE};
 pub const OPT_STDEV: options = 0;
 pub type options = u32;
 pub static mut DEFAULT_STDEV: ::core::ffi::c_double = 0.05f64;
