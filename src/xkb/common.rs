@@ -1,3 +1,6 @@
+extern "C" {
+    pub type xkb_compose_state;
+}
 pub type key_seq_state = u32;
 pub const FINISH: key_seq_state = 5;
 pub const NEXT: key_seq_state = 4;
@@ -21,7 +24,6 @@ pub type test_third_party_compile_buffer_t =
     Option<unsafe fn(*const i8, usize, *mut ::core::ffi::c_void, *mut *mut i8, *mut usize) -> i32>;
 pub const EVDEV_OFFSET: i32 = 8 as i32;
 
-use crate::xkb::shared_types::{xkb_context, xkb_keymap_format};
 pub type print_state_options = u32;
 pub const DEFAULT_PRINT_OPTIONS: print_state_options = 15;
 pub const PRINT_UNILINE: print_state_options = 8;
@@ -30,7 +32,9 @@ pub const PRINT_VERBOSE_ONE_LINE_FIELDS: print_state_options = 3;
 pub const PRINT_ALL_FIELDS: print_state_options = 3;
 pub const PRINT_UNICODE: print_state_options = 2;
 pub const PRINT_LAYOUT: print_state_options = 1;
-use crate::xkb::shared_types::{xkb_consumed_mode, xkb_key_direction, xkb_keycode_t};
+pub use crate::xkb::shared_types::{
+    xkb_consumed_mode, xkb_context, xkb_key_direction, xkb_keycode_t, xkb_keymap_format,
+};
 extern "C" {
     pub fn tools_print_keycode_state(
         prefix: *const i8,
@@ -123,12 +127,11 @@ use crate::xkb::state::{
 };
 
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_dup, darray_append, darray_free, darray_resize_zero};
+use crate::xkb::utils::{cstr_dup, darray_append, darray_free};
 use libc::{
     fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf,
     unsetenv, _IONBF, BUFSIZ, EXIT_SUCCESS, FILE,
 };
-use xkbcommon::xkb::ffi::compose::xkb_compose_state;
 extern "C" {
     pub static stdout: *mut libc::FILE;
 }
@@ -137,13 +140,7 @@ pub const UNTIL_KEY_EVENT: events_consume_flags = 1;
 pub const ALL_EVENTS: events_consume_flags = 0;
 pub const MAX_FILE_SIZE: C2Rust_Unnamed_14 = 1048576;
 pub type C2Rust_Unnamed_14 = u32;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_15 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut darray_string,
-}
+
 pub unsafe fn test_init() {
     unsafe {
         setvbuf(stdout, std::ptr::null_mut(), _IONBF, BUFSIZ as usize);
@@ -1943,11 +1940,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
             0,
             0,
         ];
-        let mut loptions: C2Rust_Unnamed_15 = C2Rust_Unnamed_15 {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
-        };
+        let mut loptions: Vec<darray_string> = Vec::new();
         if !isempty((*names).options) {
             let mut o: *const i8 = (*names).options;
             loop {
@@ -1997,18 +1990,20 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         c2rust_current_block = 4427821232739340156;
                         break;
                     }
-                    darray_resize_zero(
-                        &mut loptions.item,
-                        &mut loptions.size,
-                        &mut loptions.alloc,
-                        (layout as darray_size_t).wrapping_add(1 as darray_size_t),
-                    );
-                    darray_append(
-                        &mut (*loptions.item.offset(layout as isize)).item,
-                        &mut (*loptions.item.offset(layout as isize)).size,
-                        &mut (*loptions.item.offset(layout as isize)).alloc,
-                        opt,
-                    );
+                    if loptions.len() <= layout as usize {
+                        loptions.resize(
+                            (layout as darray_size_t).wrapping_add(1 as darray_size_t) as usize,
+                            darray_string {
+                                size: 0,
+                                alloc: 0,
+                                item: std::ptr::null_mut(),
+                            },
+                        );
+                    }
+                    {
+                        let entry = &mut loptions[layout as usize];
+                        darray_append(&mut entry.item, &mut entry.size, &mut entry.alloc, opt);
+                    }
                 } else if !xkb_rmlvo_builder_append_option(rmlvo, &raw mut buf as *mut i8) {
                     c2rust_current_block = 4427821232739340156;
                     break;
@@ -2071,10 +2066,9 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         *start.offset(len_0 as isize) = '\0' as i32 as i8;
                         let mut opts: *mut *mut i8 = std::ptr::null_mut();
                         let mut opts_count: usize = 0 as usize;
-                        if layout_count < loptions.size as xkb_layout_index_t {
-                            opts = (*loptions.item.offset(layout_count as isize)).item;
-                            opts_count =
-                                (*loptions.item.offset(layout_count as isize)).size as usize;
+                        if (layout_count as usize) < loptions.len() {
+                            opts = loptions[layout_count as usize].item;
+                            opts_count = loptions[layout_count as usize].size as usize;
                         }
                         if !xkb_rmlvo_builder_append_layout(
                             rmlvo,
@@ -2113,27 +2107,17 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
             }
             _ => {}
         }
-        let mut opts_0: *mut darray_string = std::ptr::null_mut();
-        if !loptions.item.is_null() {
-            opts_0 = loptions.item.offset(0 as i32 as isize) as *mut darray_string;
-            while opts_0 < loptions.item.offset(loptions.size as isize) as *mut darray_string {
-                let mut opt_0: *mut *mut i8 = std::ptr::null_mut();
-                if !(*opts_0).item.is_null() {
-                    opt_0 = (*opts_0).item.offset(0 as i32 as isize) as *mut *mut i8;
-                    while opt_0 < (*opts_0).item.offset((*opts_0).size as isize) as *mut *mut i8 {
-                        free(*opt_0 as *mut ::core::ffi::c_void);
-                        opt_0 = opt_0.offset(1);
-                    }
+        for opts_0 in loptions.iter_mut() {
+            if !opts_0.item.is_null() {
+                let mut opt_0 = opts_0.item.offset(0 as i32 as isize) as *mut *mut i8;
+                while opt_0 < opts_0.item.offset(opts_0.size as isize) as *mut *mut i8 {
+                    free(*opt_0 as *mut ::core::ffi::c_void);
+                    opt_0 = opt_0.offset(1);
                 }
-                darray_free(
-                    &mut (*opts_0).item,
-                    &mut (*opts_0).size,
-                    &mut (*opts_0).alloc,
-                );
-                opts_0 = opts_0.offset(1);
             }
+            darray_free(&mut opts_0.item, &mut opts_0.size, &mut opts_0.alloc);
         }
-        darray_free(&mut loptions.item, &mut loptions.size, &mut loptions.alloc);
+        drop(loptions);
         return rmlvo;
     }
 }

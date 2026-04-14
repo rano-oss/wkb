@@ -10,14 +10,6 @@ pub struct sval {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct darray_sval {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut sval,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
 pub struct scanner_loc {
     pub line: usize,
     pub column: usize,
@@ -161,10 +153,7 @@ pub unsafe fn scanner_next(mut s: *mut scanner) -> i8 {
 #[inline]
 pub unsafe fn scanner_chr(mut s: *mut scanner, mut ch: i8) -> bool {
     unsafe {
-        if (scanner_peek(s) as i32 != ch as i32) as i32
-            as i64
-            != 0
-        {
+        if (scanner_peek(s) as i32 != ch as i32) as i32 as i64 != 0 {
             return false;
         }
         (*s).pos = (*s).pos.wrapping_add(1);
@@ -232,9 +221,7 @@ pub unsafe fn scanner_buf_appends_code_point(mut s: *mut scanner, mut c: u32) ->
             if count == 0 as i32 {
                 return false;
             }
-            (*s).buf_pos = (*s)
-                .buf_pos
-                .wrapping_add((count - 1 as i32) as usize);
+            (*s).buf_pos = (*s).buf_pos.wrapping_add((count - 1 as i32) as usize);
             return true;
         } else {
             return false;
@@ -252,9 +239,7 @@ pub unsafe fn scanner_oct(mut s: *mut scanner, mut out: *mut u8) -> bool {
             && (i as i32) < 4 as i32
         {
             if (c as i32) < 0o40 as i32 {
-                c = (c as i32 * 8 as i32
-                    + scanner_next(s) as i32
-                    - '0' as i32) as u8;
+                c = (c as i32 * 8 as i32 + scanner_next(s) as i32 - '0' as i32) as u8;
             } else {
                 scanner_next(s);
                 *out = c;
@@ -345,8 +330,7 @@ pub unsafe fn scanner_unicode_code_point(mut s: *mut scanner, mut out: *mut u32)
 pub unsafe fn scanner_check_supported_char_encoding(mut s: *mut scanner) -> bool {
     use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
     unsafe {
-        if scanner_str(s, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize) as i32
-            != 0
+        if scanner_str(s, b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3 as usize) as i32 != 0
             || (*s).len < 2 as usize
         {
             return true;

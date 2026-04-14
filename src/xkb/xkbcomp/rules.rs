@@ -53,9 +53,9 @@ pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
 pub use crate::xkb::scanner_utils::{
-    darray_sval, scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof,
-    scanner_eol, scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol,
-    scanner_str, scanner_token_location, sval, svaleq, svaleq_prefix,
+    scanner, scanner_check_supported_char_encoding, scanner_chr, scanner_eof, scanner_eol,
+    scanner_init, scanner_loc, scanner_next, scanner_peek, scanner_skip_to_eol, scanner_str,
+    scanner_token_location, sval, svaleq, svaleq_prefix,
 };
 pub use crate::xkb::shared_ast_types::{
     xkb_file_type, _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
@@ -195,11 +195,10 @@ pub struct C2Rust_Unnamed_6 {
     pub alloc: darray_size_t,
     pub item: *mut group,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct group {
     pub name: sval,
-    pub elements: darray_sval,
+    pub elements: Vec<sval>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -262,9 +261,7 @@ pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
 pub const MAX_INCLUDE_DEPTH: i32 = 5 as i32;
 #[inline]
 unsafe fn is_ident(mut ch: i8) -> bool {
-    unsafe {
-        return is_graph(ch) as i32 != 0 && ch as i32 != '\\' as i32;
-    }
+    return is_graph(ch) as i32 != 0 && ch as i32 != '\\' as i32;
 }
 unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
     unsafe {
@@ -789,11 +786,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
             while group < (*m).groups.item.offset((*m).groups.size as isize) as *mut group {
-                crate::xkb::utils::darray_free(
-                    &mut (*group).elements.item,
-                    &mut (*group).elements.size,
-                    &mut (*group).elements.alloc,
-                );
+                std::ptr::drop_in_place(&mut (*group).elements);
                 group = group.offset(1);
             }
         }
@@ -828,16 +821,18 @@ unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
     unsafe {
         let mut group: group = group {
             name: name,
-            elements: darray_sval {
-                size: 0 as darray_size_t,
-                alloc: 0 as darray_size_t,
-                item: std::ptr::null_mut(),
-            },
+            elements: Vec::new(),
         };
-        darray_append(
+        (*m).groups.size = (*m).groups.size.wrapping_add(1);
+        darray_growalloc(
             &mut (*m).groups.item,
-            &mut (*m).groups.size,
             &mut (*m).groups.alloc,
+            (*m).groups.size,
+        );
+        std::ptr::write(
+            (*m).groups
+                .item
+                .offset((*m).groups.size.wrapping_sub(1) as isize),
             group,
         );
     }
@@ -848,12 +843,7 @@ unsafe fn matcher_group_add_element(mut m: *mut matcher, mut s: *mut scanner, mu
             .groups
             .item
             .offset((*m).groups.size.wrapping_sub(1 as darray_size_t) as isize);
-        darray_append(
-            &mut last_group.elements.item,
-            &mut last_group.elements.size,
-            &mut last_group.elements.alloc,
-            element,
-        );
+        (&mut last_group.elements).push(element);
     }
 }
 unsafe fn matcher_include(
@@ -5692,7 +5682,6 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
 unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
     unsafe {
         let mut group: *mut group = std::ptr::null_mut();
-        let mut element: *mut sval = std::ptr::null_mut();
         let mut found: bool = false;
         if !(*m).groups.item.is_null() {
             group = (*m).groups.item.offset(0 as i32 as isize) as *mut group;
@@ -5708,18 +5697,11 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
         if !found {
             return false;
         }
-        if !(*group).elements.item.is_null() {
-            element = (*group).elements.item.offset(0 as i32 as isize) as *mut sval;
-            while element
-                < (*group)
-                    .elements
-                    .item
-                    .offset((*group).elements.size as isize) as *mut sval
-            {
-                if svaleq(to, *element) {
+        if !(&(*group).elements).is_empty() {
+            for elem in (&(*group).elements).iter() {
+                if svaleq(to, *elem) {
                     return true;
                 }
-                element = element.offset(1);
             }
         }
         return false;
