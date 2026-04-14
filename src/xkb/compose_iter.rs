@@ -1,12 +1,11 @@
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_compose_table {
     pub refcnt: i32,
     pub format: xkb_compose_format,
     pub flags: xkb_compose_compile_flags,
     pub ctx: *mut xkb_context,
     pub locale: *mut i8,
-    pub utf8: darray_char,
+    pub utf8: Vec<i8>,
     pub nodes: C2Rust_Unnamed_1,
 }
 #[derive(Copy, Clone)]
@@ -63,8 +62,8 @@ pub struct xkb_compose_table_entry {
     pub utf8: *const i8,
 }
 
+use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::xkb_keysym_t;
-use crate::xkb::shared_types::{darray_char, darray_size_t};
 pub type xkb_compose_compile_flags = u32;
 pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
 pub type xkb_compose_format = u32;
@@ -97,7 +96,7 @@ unsafe fn for_each_helper(
                 keysym: (*node).c2rust_unnamed.leaf.keysym,
                 utf8: (*table)
                     .utf8
-                    .item
+                    .as_ptr()
                     .offset((*node).c2rust_unnamed.leaf.utf8() as isize)
                     as *mut i8,
             };

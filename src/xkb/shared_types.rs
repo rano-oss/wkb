@@ -68,25 +68,13 @@ pub struct xkb_rule_names {
     pub options: *const i8,
 }
 
-// ── Darray helper structs (used in rules, compose, keymap_file_iterator) ─────
+// ── Darray type aliases (Vec replacements) ──────────────────────────────────
 
-/// Char darray (used in rules, compose, keymap_file_iterator)
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct darray_char {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut i8,
-}
+/// Char darray — now a Vec<i8>
+pub type darray_char = Vec<i8>;
 
-/// String pointer darray (used in common, context, registry)
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct darray_string {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut *mut i8,
-}
+/// String pointer darray — now a Vec<*mut i8>
+pub type darray_string = Vec<*mut i8>;
 
 // ── Opaque types ────────────────────────────────────────────────────
 

@@ -126,8 +126,8 @@ use crate::xkb::state::{
     xkb_state_serialize_mods, xkb_state_unref, xkb_state_update_event, xkb_state_update_key,
 };
 
+use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_dup, darray_append, darray_free};
 use libc::{
     fclose, feof, ferror, fileno, fopen, fread, free, fwrite, getenv, malloc, mkdtemp, setvbuf,
     unsetenv, _IONBF, BUFSIZ, EXIT_SUCCESS, FILE,
@@ -1940,7 +1940,7 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
             0,
             0,
         ];
-        let mut loptions: Vec<darray_string> = Vec::new();
+        let mut loptions: Vec<Vec<*mut i8>> = Vec::new();
         if !isempty((*names).options) {
             let mut o: *const i8 = (*names).options;
             loop {
@@ -1993,16 +1993,12 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                     if loptions.len() <= layout as usize {
                         loptions.resize(
                             (layout as darray_size_t).wrapping_add(1 as darray_size_t) as usize,
-                            darray_string {
-                                size: 0,
-                                alloc: 0,
-                                item: std::ptr::null_mut(),
-                            },
+                            Vec::new(),
                         );
                     }
                     {
                         let entry = &mut loptions[layout as usize];
-                        darray_append(&mut entry.item, &mut entry.size, &mut entry.alloc, opt);
+                        entry.push(opt);
                     }
                 } else if !xkb_rmlvo_builder_append_option(rmlvo, &raw mut buf as *mut i8) {
                     c2rust_current_block = 4427821232739340156;
@@ -2067,8 +2063,8 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         let mut opts: *mut *mut i8 = std::ptr::null_mut();
                         let mut opts_count: usize = 0 as usize;
                         if (layout_count as usize) < loptions.len() {
-                            opts = loptions[layout_count as usize].item;
-                            opts_count = loptions[layout_count as usize].size as usize;
+                            opts = loptions[layout_count as usize].as_mut_ptr();
+                            opts_count = loptions[layout_count as usize].len();
                         }
                         if !xkb_rmlvo_builder_append_layout(
                             rmlvo,
@@ -2108,14 +2104,9 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
             _ => {}
         }
         for opts_0 in loptions.iter_mut() {
-            if !opts_0.item.is_null() {
-                let mut opt_0 = opts_0.item.offset(0 as i32 as isize) as *mut *mut i8;
-                while opt_0 < opts_0.item.offset(opts_0.size as isize) as *mut *mut i8 {
-                    free(*opt_0 as *mut ::core::ffi::c_void);
-                    opt_0 = opt_0.offset(1);
-                }
+            for opt_0 in opts_0.iter() {
+                free(*opt_0 as *mut ::core::ffi::c_void);
             }
-            darray_free(&mut opts_0.item, &mut opts_0.size, &mut opts_0.alloc);
         }
         drop(loptions);
         return rmlvo;

@@ -1,12 +1,11 @@
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_compose_table {
     pub refcnt: i32,
     pub format: xkb_compose_format,
     pub flags: xkb_compose_compile_flags,
     pub ctx: *mut xkb_context,
     pub locale: *mut i8,
-    pub utf8: darray_char,
+    pub utf8: Vec<i8>,
     pub nodes: C2Rust_Unnamed_1,
 }
 #[derive(Copy, Clone)]
@@ -54,9 +53,9 @@ pub struct C2Rust_Unnamed_5 {
     #[bitfield(name = "is_leaf", ty = "bool", bits = "31..=31")]
     pub _pad_is_leaf: [u8; 4],
 }
+use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::xkb_context;
 use crate::xkb::shared_types::xkb_keysym_t;
-use crate::xkb::shared_types::{darray_char, darray_size_t};
 use libc::FILE;
 pub type xkb_compose_compile_flags = u32;
 pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
@@ -239,8 +238,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
             tools_enable_verbose_logging(ctx);
         }
         let mut ret: i32 = EXIT_FAILURE;
-        let mut compose_table: *mut xkb_compose_table =
-            std::ptr::null_mut();
+        let mut compose_table: *mut xkb_compose_table = std::ptr::null_mut();
         if !path.is_null() {
             let mut file: *mut FILE = std::ptr::null_mut();
             if isempty(path) as i32 != 0 || cstr_cmp(path, b"-\0".as_ptr() as *const i8) == 0 as i32

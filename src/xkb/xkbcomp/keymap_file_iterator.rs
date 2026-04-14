@@ -28,7 +28,7 @@ pub struct xkb_file_section {
     pub flags: xkb_map_flags,
     pub include_groups: Vec<xkb_file_include_group>,
     pub includes: Vec<xkb_file_include>,
-    pub buffer: darray_char,
+    pub buffer: Vec<i8>,
 }
 pub type xkb_file_iterator_flags = u32;
 pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
@@ -49,8 +49,8 @@ pub struct xkb_file_iterator {
 }
 use crate::xkb::scanner_utils::scanner;
 use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
+use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::xkb_context;
-use crate::xkb::shared_types::{darray_char, darray_size_t};
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -115,8 +115,8 @@ pub use crate::xkb::shared_ast_types::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD,
 };
+use crate::xkb::utils::cstr_len;
 pub use crate::xkb::utils::strcpy_safe;
-use crate::xkb::utils::{cstr_len, darray_append, darray_appends, darray_free};
 use crate::xkb::utils_paths::is_absolute_path;
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, FindFileInXkbPath, ProcessIncludeFile};
 use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseStringInit, XkbParseStringNext};
@@ -378,22 +378,14 @@ pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
     unsafe {
         std::ptr::write(&raw mut (*section).include_groups, Vec::new());
         std::ptr::write(&raw mut (*section).includes, Vec::new());
-        (*section).buffer.item = std::ptr::null_mut();
-        (*section).buffer.size = 0 as darray_size_t;
-        (*section).buffer.alloc = 0 as darray_size_t;
-        darray_append(
-            &mut (*section).buffer.item,
-            &mut (*section).buffer.size,
-            &mut (*section).buffer.alloc,
-            '\0' as i32 as i8,
-        );
+        std::ptr::write(&raw mut (*section).buffer, vec!['\0' as i32 as i8]);
     }
 }
 unsafe fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
     unsafe {
         (&mut (*section).include_groups).clear();
         (&mut (*section).includes).clear();
-        (*section).buffer.size = 1 as darray_size_t;
+        (&mut (*section).buffer).truncate(1);
     }
 }
 
@@ -404,11 +396,7 @@ pub unsafe fn xkb_file_section_free(mut section: *mut xkb_file_section) {
         }
         std::ptr::drop_in_place(&raw mut (*section).include_groups);
         std::ptr::drop_in_place(&raw mut (*section).includes);
-        darray_free(
-            &mut (*section).buffer.item,
-            &mut (*section).buffer.size,
-            &mut (*section).buffer.alloc,
-        );
+        std::ptr::drop_in_place(&raw mut (*section).buffer);
     }
 }
 unsafe fn xkb_file_section_set_meta_data(
@@ -420,14 +408,10 @@ unsafe fn xkb_file_section_set_meta_data(
         (*section).file_type = (*xkb_file).file_type;
         (*section).flags = (*xkb_file).flags;
         if !(*xkb_file).name.is_null() {
-            let mut idx: darray_size_t = (*section).buffer.size;
-            darray_appends(
-                &mut (*section).buffer.item,
-                &mut (*section).buffer.size,
-                &mut (*section).buffer.alloc,
-                (*xkb_file).name,
-                cstr_len((*xkb_file).name).wrapping_add(1) as u32,
-            );
+            let mut idx: darray_size_t = (&(*section).buffer).len() as darray_size_t;
+            let name_len = cstr_len((*xkb_file).name).wrapping_add(1) as usize;
+            (&mut (*section).buffer)
+                .extend_from_slice(std::slice::from_raw_parts((*xkb_file).name, name_len));
             (*section).name = idx;
         } else {
             (*section).name = 0 as darray_size_t;
@@ -459,26 +443,18 @@ unsafe fn xkb_file_section_append_includes(
             if valid as i32 != 0
                 || flags as u32 & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as u32 == 0
             {
-                let path: darray_size_t = (*section).buffer.size;
+                let path: darray_size_t = (&(*section).buffer).len() as darray_size_t;
                 let buf_ptr: *const i8 = &raw mut buf as *const i8;
-                darray_appends(
-                    &mut (*section).buffer.item,
-                    &mut (*section).buffer.size,
-                    &mut (*section).buffer.alloc,
-                    buf_ptr,
-                    cstr_len(buf_ptr).wrapping_add(1) as u32,
-                );
-                let file: darray_size_t = (*section).buffer.size;
-                darray_appends(
-                    &mut (*section).buffer.item,
-                    &mut (*section).buffer.size,
-                    &mut (*section).buffer.alloc,
-                    (*stmt).file,
-                    cstr_len((*stmt).file).wrapping_add(1) as u32,
-                );
+                let buf_len = cstr_len(buf_ptr).wrapping_add(1) as usize;
+                (&mut (*section).buffer)
+                    .extend_from_slice(std::slice::from_raw_parts(buf_ptr, buf_len));
+                let file: darray_size_t = (&(*section).buffer).len() as darray_size_t;
+                let file_len = cstr_len((*stmt).file).wrapping_add(1) as usize;
+                (&mut (*section).buffer)
+                    .extend_from_slice(std::slice::from_raw_parts((*stmt).file, file_len));
                 let section_name: darray_size_t =
                     if !(*stmt).map.is_null() || valid as i32 != 0 && !(*xkb_file).name.is_null() {
-                        (*section).buffer.size
+                        (&(*section).buffer).len() as darray_size_t
                     } else {
                         0 as darray_size_t
                     };
@@ -488,27 +464,19 @@ unsafe fn xkb_file_section_append_includes(
                     } else {
                         (*xkb_file).name
                     };
-                    darray_appends(
-                        &mut (*section).buffer.item,
-                        &mut (*section).buffer.size,
-                        &mut (*section).buffer.alloc,
-                        src,
-                        cstr_len(src).wrapping_add(1) as u32,
-                    );
+                    let src_len = cstr_len(src).wrapping_add(1) as usize;
+                    (&mut (*section).buffer)
+                        .extend_from_slice(std::slice::from_raw_parts(src, src_len));
                 }
                 let modifier: darray_size_t = if !(*stmt).modifier.is_null() {
-                    (*section).buffer.size
+                    (&(*section).buffer).len() as darray_size_t
                 } else {
                     0 as darray_size_t
                 };
                 if modifier != 0 {
-                    darray_appends(
-                        &mut (*section).buffer.item,
-                        &mut (*section).buffer.size,
-                        &mut (*section).buffer.alloc,
-                        (*stmt).modifier,
-                        cstr_len((*stmt).modifier).wrapping_add(1) as u32,
-                    );
+                    let mod_len = cstr_len((*stmt).modifier).wrapping_add(1) as usize;
+                    (&mut (*section).buffer)
+                        .extend_from_slice(std::slice::from_raw_parts((*stmt).modifier, mod_len));
                 }
                 let section_flags: xkb_map_flags = (if valid as i32 != 0 {
                     (*xkb_file).flags as u32
@@ -840,7 +808,7 @@ pub unsafe fn xkb_file_section_get_string(
     mut idx: darray_size_t,
 ) -> *const i8 {
     unsafe {
-        return (*section).buffer.item.offset(idx as isize) as *mut i8;
+        return (&(*section).buffer).as_ptr().offset(idx as isize) as *mut i8;
     }
 }
 use crate::xkb::shared_types::*;
