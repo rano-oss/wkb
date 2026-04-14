@@ -29,18 +29,18 @@ extern "C" {
     pub fn xkb_keymap_parse_format(raw: *const i8) -> xkb_keymap_format;
     pub fn xkb_keymap_get_format_label(format: xkb_keymap_format) -> *const i8;
 }
-use crate::xkb::utils::open;
-pub use crate::xkb::shared_types::O_WRONLY;
-use crate::xkb::utils::optarg;
-pub use crate::xkb::utils::getopt_long;
-pub use crate::xkb::shared_types::{no_argument, option, required_argument};
-pub use crate::xkb::utils::{close, dup, dup2};
-pub use crate::xkb::shared_types::{STDERR_FILENO, STDOUT_FILENO};
 use crate::xkb::context::{xkb_context_new, xkb_context_unref};
 use crate::xkb::keymap::{
     xkb_keymap_get_as_string2, xkb_keymap_new_from_file, xkb_keymap_new_from_names2,
     xkb_keymap_unref,
 };
+pub use crate::xkb::shared_types::O_WRONLY;
+pub use crate::xkb::shared_types::{no_argument, option, required_argument};
+pub use crate::xkb::shared_types::{STDERR_FILENO, STDOUT_FILENO};
+pub use crate::xkb::utils::getopt_long;
+use crate::xkb::utils::open;
+use crate::xkb::utils::optarg;
+pub use crate::xkb::utils::{close, dup, dup2};
 use libc::{
     atof, atoi, exit, fclose, fflush, fopen, free, perror, EXIT_FAILURE, EXIT_SUCCESS, FILE,
 };
@@ -300,8 +300,7 @@ unsafe fn main_0(mut argc: i32, mut argv: *mut *mut i8) -> i32 {
                     }
                 }
                 2 => {
-                    serialize_flags = (serialize_flags as u32
-                        | XKB_KEYMAP_SERIALIZE_PRETTY as u32)
+                    serialize_flags = (serialize_flags as u32 | XKB_KEYMAP_SERIALIZE_PRETTY as u32)
                         as xkb_keymap_serialize_flags;
                 }
                 3 => {

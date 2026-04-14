@@ -106,6 +106,3 @@ pub struct xkb_message_entry {
     pub code: xkb_message_code,
     pub label: *const i8,
 }
-extern "C" {
-    pub fn xkb_message_get(code: xkb_message_code) -> *const xkb_message_entry;
-}

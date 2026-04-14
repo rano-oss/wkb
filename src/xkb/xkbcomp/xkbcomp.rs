@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::{xkb_context_get_buffer, xkb_context_sanitize_rule_names};
+use crate::xkb::context_priv::xkb_context_get_buffer;
 use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;
@@ -145,36 +145,6 @@ pub use crate::xkb::shared_types::{
 };
 use libc::{free, FILE};
 
-pub unsafe fn xkb_components_names_from_rules(
-    mut ctx: *mut xkb_context,
-    mut rmlvo_in: *const xkb_rule_names,
-    mut rmlvo_out: *mut xkb_rule_names,
-    mut components_out: *mut xkb_component_names,
-) -> bool {
-    unsafe {
-        let mut rmlvo: xkb_rule_names = *rmlvo_in;
-        xkb_context_sanitize_rule_names(ctx, &raw mut rmlvo);
-        if !rmlvo_out.is_null() {
-            *rmlvo_out = rmlvo;
-        }
-        if components_out.is_null() {
-            return !rmlvo_out.is_null();
-        }
-        *components_out = xkb_component_names {
-            keycodes: std::ptr::null_mut(),
-            compatibility: std::ptr::null_mut(),
-            geometry: std::ptr::null_mut(),
-            symbols: std::ptr::null_mut(),
-            types: std::ptr::null_mut(),
-        };
-        return xkb_components_from_rules_names(
-            ctx,
-            &raw mut rmlvo,
-            components_out,
-            std::ptr::null_mut(),
-        );
-    }
-}
 unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFile) -> bool {
     unsafe {
         if (*file).file_type as u32 != FILE_TYPE_KEYMAP as u32 {

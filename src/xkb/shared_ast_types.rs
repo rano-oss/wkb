@@ -5,8 +5,8 @@
 //! can share the same Rust types.
 
 use crate::xkb::shared_types::{
-    xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t,
-    xkb_log_level, xkb_overlay_index_t,
+    xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t, xkb_log_level,
+    xkb_overlay_index_t,
 };
 use crate::xkb::text::LookupEntry;
 use crate::xkb_logf;

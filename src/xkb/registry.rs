@@ -999,13 +999,6 @@ pub unsafe fn rxkb_iso639_code_next(mut code: *mut rxkb_iso639_code) -> *mut rxk
     }
 }
 
-pub unsafe fn rxkb_iso639_code_ref(mut object: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
-
 pub unsafe fn rxkb_iso639_code_unref(mut object: *mut rxkb_iso639_code) -> *mut rxkb_iso639_code {
     unsafe {
         if object.is_null() {
@@ -1083,12 +1076,6 @@ pub unsafe fn rxkb_iso3166_code_unref(
     }
 }
 
-pub unsafe fn rxkb_iso3166_code_ref(mut object: *mut rxkb_iso3166_code) -> *mut rxkb_iso3166_code {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
 #[inline]
 unsafe fn rxkb_iso3166_code_create(mut parent: *mut rxkb_object) -> *mut rxkb_iso3166_code {
     unsafe {
@@ -1126,12 +1113,6 @@ pub unsafe fn rxkb_option_unref(mut object: *mut rxkb_option) -> *mut rxkb_optio
     }
 }
 
-pub unsafe fn rxkb_option_ref(mut object: *mut rxkb_option) -> *mut rxkb_option {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
 #[inline]
 unsafe fn rxkb_option_create(mut parent: *mut rxkb_object) -> *mut rxkb_option {
     unsafe {
@@ -1156,11 +1137,6 @@ pub unsafe fn rxkb_option_get_description(mut object: *mut rxkb_option) -> *cons
     }
 }
 
-pub unsafe fn rxkb_option_get_popularity(mut object: *mut rxkb_option) -> rxkb_popularity {
-    unsafe {
-        return (*object).popularity;
-    }
-}
 pub unsafe fn rxkb_option_is_layout_specific(mut object: *mut rxkb_option) -> bool {
     unsafe {
         return (*object).layout_specific;
@@ -1227,13 +1203,6 @@ unsafe fn rxkb_layout_destroy(mut l: *mut rxkb_layout) {
     }
 }
 
-pub unsafe fn rxkb_layout_ref(mut object: *mut rxkb_layout) -> *mut rxkb_layout {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
-
 pub unsafe fn rxkb_layout_unref(mut object: *mut rxkb_layout) -> *mut rxkb_layout {
     unsafe {
         if object.is_null() {
@@ -1277,11 +1246,6 @@ pub unsafe fn rxkb_layout_get_variant(mut object: *mut rxkb_layout) -> *const i8
     }
 }
 
-pub unsafe fn rxkb_layout_get_popularity(mut object: *mut rxkb_layout) -> rxkb_popularity {
-    unsafe {
-        return (*object).popularity;
-    }
-}
 pub unsafe fn rxkb_layout_first(mut parent: *mut rxkb_context) -> *mut rxkb_layout {
     unsafe {
         let mut o: *mut rxkb_layout = std::ptr::null_mut();
@@ -1311,13 +1275,6 @@ unsafe fn rxkb_model_destroy(mut m: *mut rxkb_model) {
         free((*m).name as *mut ::core::ffi::c_void);
         free((*m).vendor as *mut ::core::ffi::c_void);
         free((*m).description as *mut ::core::ffi::c_void);
-    }
-}
-
-pub unsafe fn rxkb_model_ref(mut object: *mut rxkb_model) -> *mut rxkb_model {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
     }
 }
 
@@ -1359,11 +1316,6 @@ pub unsafe fn rxkb_model_get_description(mut object: *mut rxkb_model) -> *const 
     }
 }
 
-pub unsafe fn rxkb_model_get_popularity(mut object: *mut rxkb_model) -> rxkb_popularity {
-    unsafe {
-        return (*object).popularity;
-    }
-}
 pub unsafe fn rxkb_model_next(mut o: *mut rxkb_model) -> *mut rxkb_model {
     unsafe {
         let mut parent: *mut rxkb_context = std::ptr::null_mut();
@@ -1414,13 +1366,6 @@ pub unsafe fn rxkb_option_group_allows_multiple(mut g: *mut rxkb_option_group) -
     }
 }
 
-pub unsafe fn rxkb_option_group_ref(mut object: *mut rxkb_option_group) -> *mut rxkb_option_group {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
-
 pub unsafe fn rxkb_option_group_unref(
     mut object: *mut rxkb_option_group,
 ) -> *mut rxkb_option_group {
@@ -1457,13 +1402,6 @@ pub unsafe fn rxkb_option_group_get_description(mut object: *mut rxkb_option_gro
     }
 }
 
-pub unsafe fn rxkb_option_group_get_popularity(
-    mut object: *mut rxkb_option_group,
-) -> rxkb_popularity {
-    unsafe {
-        return (*object).popularity;
-    }
-}
 pub unsafe fn rxkb_option_group_first(mut parent: *mut rxkb_context) -> *mut rxkb_option_group {
     unsafe {
         let mut o: *mut rxkb_option_group = std::ptr::null_mut();
@@ -1540,12 +1478,6 @@ unsafe fn rxkb_context_destroy(mut ctx: *mut rxkb_context) {
     }
 }
 
-pub unsafe fn rxkb_context_ref(mut object: *mut rxkb_context) -> *mut rxkb_context {
-    unsafe {
-        rxkb_object_ref(&raw mut (*object).base);
-        return object;
-    }
-}
 pub unsafe fn rxkb_context_unref(mut object: *mut rxkb_context) -> *mut rxkb_context {
     unsafe {
         if object.is_null() {
@@ -1575,11 +1507,6 @@ unsafe fn rxkb_context_create(mut parent: *mut rxkb_object) -> *mut rxkb_context
     }
 }
 
-pub unsafe fn rxkb_context_get_log_level(mut object: *mut rxkb_context) -> rxkb_log_level {
-    unsafe {
-        return (*object).log_level;
-    }
-}
 unsafe fn rxkb_context_getenv(mut ctx: *mut rxkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv {
@@ -1734,19 +1661,6 @@ pub unsafe fn rxkb_context_new(mut flags: rxkb_context_flags) -> *mut rxkb_conte
     }
 }
 
-pub unsafe fn rxkb_context_set_log_fn(
-    mut ctx: *mut rxkb_context,
-    mut log_fn: Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>,
-) {
-    unsafe {
-        (*ctx).log_fn = (if log_fn.is_some() {
-            log_fn as Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>
-        } else {
-            Some(default_log_fn as unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ())
-        })
-            as Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>;
-    }
-}
 pub unsafe fn rxkb_context_include_path_append(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
@@ -2157,11 +2071,6 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
     }
 }
 
-pub unsafe fn rxkb_context_parse_default_ruleset(mut ctx: *mut rxkb_context) -> bool {
-    unsafe {
-        return rxkb_context_parse(ctx, DEFAULT_XKB_RULES.as_ptr());
-    }
-}
 pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const i8) -> bool {
     unsafe {
         let mut path: *mut i8;
@@ -2233,20 +2142,6 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
     }
 }
 
-pub unsafe fn rxkb_context_set_user_data(
-    mut ctx: *mut rxkb_context,
-    mut userdata: *mut ::core::ffi::c_void,
-) {
-    unsafe {
-        (*ctx).userdata = userdata;
-    }
-}
-
-pub unsafe fn rxkb_context_get_user_data(mut ctx: *mut rxkb_context) -> *mut ::core::ffi::c_void {
-    unsafe {
-        return (*ctx).userdata;
-    }
-}
 #[inline]
 unsafe fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
     unsafe {

@@ -43,12 +43,6 @@ fn resolve_locale_alias(locale: &str) -> Option<String> {
     lookup_locale_file("locale.alias", 0, 1, locale)
 }
 
-pub(crate) fn load_compose_table(locale: &str) -> ListComposer {
-    let compose_file_path = resolve_compose_file(locale).expect("compose file is missing");
-    let full_path = Path::new(LOCALE_DIR).join(&compose_file_path);
-    load_compose_from_path(&full_path)
-}
-
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
 ///

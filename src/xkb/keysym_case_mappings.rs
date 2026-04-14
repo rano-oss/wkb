@@ -170,34 +170,6 @@ unsafe fn get_unicode_entry(mut ks: xkb_keysym_t) -> *const CaseMappings {
         ) as *const CaseMappings;
     }
 }
-
-pub unsafe fn xkb_keysym_to_lower(mut ks: xkb_keysym_t) -> xkb_keysym_t {
-    unsafe {
-        if ks <= 0x13be as xkb_keysym_t {
-            let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
-            return if (*m).lower() as i32 != 0 {
-                ks.wrapping_add((*m).offset() as xkb_keysym_t)
-            } else {
-                ks
-            };
-        } else if XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t <= ks && ks <= 0x101f189 as xkb_keysym_t {
-            let mut m_0: *const CaseMappings =
-                get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t));
-            if (*m_0).lower() {
-                ks = ks.wrapping_add((*m_0).offset() as xkb_keysym_t);
-                return if ks < XKB_KEYSYM_UNICODE_MIN as xkb_keysym_t {
-                    ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as xkb_keysym_t)
-                } else {
-                    ks
-                };
-            } else {
-                return ks;
-            }
-        } else {
-            return ks;
-        };
-    }
-}
 pub unsafe fn xkb_keysym_to_upper(mut ks: xkb_keysym_t) -> xkb_keysym_t {
     unsafe {
         if ks <= 0x13be as xkb_keysym_t {

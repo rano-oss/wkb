@@ -159,15 +159,6 @@ fn codepoint_to_keysym(ucs: u32) -> Option<Keysym> {
     Some(ucs | XKB_KEYSYM_UNICODE_OFFSET)
 }
 
-/// Convert a keysym to a UTF-8 string
-///
-/// Returns the UTF-8 encoded string, or an empty string if conversion fails.
-pub fn keysym_to_utf8(keysym: Keysym) -> String {
-    keysym_to_char(keysym)
-        .map(|ch| ch.to_string())
-        .unwrap_or_default()
-}
-
 // ====================================================================================
 // FFI compatibility layer for internal C code (state.rs, scanner.rs, etc.)
 // These wrappers maintain the old C API while using native Rust implementation

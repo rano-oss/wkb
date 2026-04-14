@@ -9,61 +9,13 @@ extern "C" {
         __fd: i32,
         __offset: i64,
     ) -> *mut ::core::ffi::c_void;
-    pub fn munmap(__addr: *mut ::core::ffi::c_void, __len: usize) -> i32;
 }
 pub const PROT_READ: i32 = 0x1 as i32;
 pub const MAP_SHARED: i32 = 0x1 as i32;
 
 pub use crate::xkb::shared_types::timespec;
 use crate::xkb::shared_types::xkb_error_code;
-pub use crate::xkb::shared_types::__S_IFMT;
-pub unsafe fn open_file(mut path: *const i8) -> *mut FILE {
-    unsafe {
-        if path.is_null() {
-            return std::ptr::null_mut();
-        }
-        let mut fd: i32 = open(path, O_RDONLY);
-        if fd < 0 as i32 {
-            return std::ptr::null_mut();
-        }
-        let mut stat_buf: stat = stat {
-            st_dev: 0,
-            st_ino: 0,
-            st_nlink: 0,
-            st_mode: 0,
-            st_uid: 0,
-            st_gid: 0,
-            __pad0: 0,
-            st_rdev: 0,
-            st_size: 0,
-            st_blksize: 0,
-            st_blocks: 0,
-            st_atim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_mtim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_ctim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            __glibc_reserved: [0; 3],
-        };
-        let mut err: i32 = fstat(fd, &raw mut stat_buf);
-        if err != 0 as i32 || !(stat_buf.st_mode & __S_IFMT as u32 == 0o100000 as u32) {
-            close(fd);
-            return std::ptr::null_mut();
-        }
-        let mut fp: *mut FILE = fdopen(fd, b"rb\0".as_ptr() as *const i8);
-        if fp.is_null() {
-            close(fd);
-        }
-        return fp;
-    }
-}
+
 static LOWER_MAP: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
     26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
@@ -130,7 +82,6 @@ extern "C" {
     pub fn __errno_location() -> *mut i32;
 }
 
-use libc::{fdopen, FILE};
 use memmap2::Mmap;
 use std::fs::File;
 use std::io;
@@ -180,17 +131,6 @@ pub fn open_regular_file(path: &Path) -> io::Result<File> {
         ));
     }
     Ok(file)
-}
-
-/// Open a file from a C string path
-pub unsafe fn open_file_from_cstr(path: *const i8) -> io::Result<File> {
-    if path.is_null() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "null path"));
-    }
-    let path_str = std::ffi::CStr::from_ptr(path)
-        .to_str()
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid UTF-8 in path"))?;
-    open_regular_file(Path::new(path_str))
 }
 
 // Safe Rust string utilities
@@ -971,7 +911,7 @@ pub unsafe fn parse_hex_to_uint64_t(mut s: *const i8, mut len: usize, mut out: *
 // ── Consolidated extern "C" declarations ──────────────────────────────
 // (previously scattered across per-file pub mod xxx_h blocks)
 
-use crate::xkb::shared_types::{dirent, stat, O_RDONLY};
+use crate::xkb::shared_types::{dirent, stat};
 
 // stat_h
 extern "C" {

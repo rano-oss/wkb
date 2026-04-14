@@ -1,4 +1,4 @@
-use crate::xkb::atom::{atom_intern, atom_table_size, atom_text};
+use crate::xkb::atom::{atom_intern, atom_text};
 use crate::xkb::context::xkb_context_include_path_get_system_path;
 
 pub use crate::xkb::messages::{
@@ -130,11 +130,6 @@ pub unsafe fn xkb_context_failed_include_path_get(
     }
 }
 
-pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> u32 {
-    unsafe {
-        return atom_table_size((*ctx).atom_table);
-    }
-}
 pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
     unsafe {
         return atom_intern((*ctx).atom_table, string, cstr_len(string), false);

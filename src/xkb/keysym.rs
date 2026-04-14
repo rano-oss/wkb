@@ -8,7 +8,6 @@ pub const XKB_KEY_Hyper_R: i32 = 0xffee as i32;
 pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
 pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
 use crate::xkb::shared_types::*;
-pub type ssize_t = isize;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
@@ -21812,13 +21811,6 @@ use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct xkb_keysym_iterator {
-    pub explicit: bool,
-    pub index: i32,
-    pub keysym: xkb_keysym_t,
-}
 fn find_keysym_index(mut ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1 as i32 as isize;
@@ -21884,159 +21876,6 @@ pub unsafe fn xkb_keysym_get_name(
     }
 }
 
-pub fn xkb_keysym_is_assigned(mut ks: u32) -> bool {
-    return XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= XKB_KEYSYM_UNICODE_MAX as u32
-        || find_keysym_index(ks) != -1 as i32 as isize;
-}
-
-pub unsafe fn xkb_keysym_get_explicit_names(
-    mut ks: xkb_keysym_t,
-    mut buffer: *mut *const i8,
-    mut size: usize,
-) -> i32 {
-    unsafe {
-        if ks > XKB_KEYSYM_MAX as u32 {
-            return -1 as i32;
-        }
-        let index: isize = find_keysym_index(ks) as isize;
-        if index < 0 as isize {
-            return 0 as i32;
-        }
-        let canonical: u16 = keysym_to_name[index as usize].offset;
-        if size > 0 as usize {
-            let ref mut c2rust_fresh0 = *buffer.offset(0 as i32 as isize);
-            *c2rust_fresh0 = get_name(
-                (&raw const keysym_to_name as *const name_keysym).offset(index as isize)
-                    as *const name_keysym,
-            );
-        }
-        let mut count: i32 = 1 as i32;
-        let mut pos: usize = 0 as usize;
-        while pos
-            < (std::mem::size_of::<[name_keysym; 2635]>())
-                .wrapping_div(std::mem::size_of::<name_keysym>())
-        {
-            if name_to_keysym[pos as usize].keysym == ks
-                && name_to_keysym[pos as usize].offset as i32 != canonical as i32
-            {
-                if (count as usize) < size {
-                    let ref mut c2rust_fresh1 = *buffer.offset(count as isize);
-                    *c2rust_fresh1 = get_name(
-                        (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
-                            as *const name_keysym,
-                    );
-                }
-                count += 1;
-            }
-            pos = pos.wrapping_add(1);
-        }
-        return count;
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_new(
-    mut iterate_only_explicit_keysyms: bool,
-) -> *mut xkb_keysym_iterator {
-    unsafe {
-        let mut iter: *mut xkb_keysym_iterator =
-            Box::into_raw(Box::new(std::mem::zeroed::<xkb_keysym_iterator>()));
-        (*iter).explicit = iterate_only_explicit_keysyms;
-        (*iter).index = -1 as i32 as i32;
-        (*iter).keysym = XKB_KEYSYM_UNICODE_MAX as u32;
-        return iter;
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_unref(
-    mut iter: *mut xkb_keysym_iterator,
-) -> *mut xkb_keysym_iterator {
-    unsafe {
-        if !iter.is_null() {
-            drop(Box::from_raw(iter));
-        }
-        return std::ptr::null_mut();
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_get_keysym(mut iter: *mut xkb_keysym_iterator) -> xkb_keysym_t {
-    unsafe {
-        return (*iter).keysym;
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_is_explicitly_named(mut iter: *mut xkb_keysym_iterator) -> bool {
-    unsafe {
-        return (*iter).index >= 0 as i32
-            && (*iter).index
-                < (std::mem::size_of::<[name_keysym; 2502]>())
-                    .wrapping_div(std::mem::size_of::<name_keysym>()) as i32
-            && ((*iter).explicit as i32 != 0
-                || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym);
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_get_name(
-    mut iter: *mut xkb_keysym_iterator,
-    mut buffer: *mut i8,
-    mut size: usize,
-) -> i32 {
-    unsafe {
-        if (*iter).index < 0 as i32
-            || (*iter).index
-                >= (std::mem::size_of::<[name_keysym; 2502]>())
-                    .wrapping_div(std::mem::size_of::<name_keysym>()) as i32
-        {
-            return -1 as i32;
-        }
-        if (*iter).explicit as i32 != 0
-            || (*iter).keysym == keysym_to_name[(*iter).index as usize].keysym
-        {
-            return crate::xkb::utils::snprintf_c(
-                buffer,
-                size,
-                format_args!(
-                    "{}",
-                    crate::xkb::utils::CStrDisplay(get_name(
-                        (&raw const keysym_to_name as *const name_keysym)
-                            .offset((*iter).index as isize)
-                            as *const name_keysym,
-                    ))
-                ),
-            );
-        }
-        return get_unicode_name((*iter).keysym, buffer, size);
-    }
-}
-
-pub unsafe fn xkb_keysym_iterator_next(mut iter: *mut xkb_keysym_iterator) -> bool {
-    unsafe {
-        if (*iter).index
-            >= (std::mem::size_of::<[name_keysym; 2502]>())
-                .wrapping_div(std::mem::size_of::<name_keysym>()) as i32
-                - 1 as i32
-        {
-            return false;
-        }
-        if (*iter).explicit as i32 != 0
-            || (*iter).keysym >= XKB_KEYSYM_UNICODE_MAX as u32
-            || keysym_to_name[((*iter).index + 1 as i32) as usize].keysym
-                < XKB_KEYSYM_UNICODE_MIN as u32
-        {
-            (*iter).index += 1;
-            (*iter).keysym = keysym_to_name[(*iter).index as usize].keysym;
-        } else {
-            if (*iter).keysym >= keysym_to_name[(*iter).index as usize].keysym {
-                (*iter).index += 1;
-            }
-            if (*iter).keysym >= XKB_KEYSYM_UNICODE_MIN as u32 {
-                (*iter).keysym = (*iter).keysym.wrapping_add(1);
-            } else {
-                (*iter).keysym = XKB_KEYSYM_UNICODE_MIN as u32;
-            }
-        }
-        return true;
-    }
-}
 unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
     unsafe {
         let count: i32 = parse_hex_to_uint32_t(s, 8 as usize, out as *mut u32) as i32;
@@ -22153,30 +21992,10 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
     }
 }
 
-pub unsafe fn xkb_utf8_to_keysym(mut buffer: *const i8, mut size: usize) -> xkb_keysym_t {
-    unsafe {
-        if buffer.is_null() || size == 0 {
-            return 0;
-        }
-        let mut length: usize = 0 as usize;
-        let codepoint: u32 = utf8_next_code_point(buffer, size, &raw mut length) as u32;
-        return if codepoint == INVALID_UTF8_CODE_POINT as u32 || length == 0 as usize {
-            XKB_KEY_NoSymbol as u32
-        } else {
-            xkb_utf32_to_keysym(codepoint)
-        };
-    }
-}
 pub fn xkb_keysym_is_keypad(mut keysym: u32) -> bool {
     return keysym >= XKB_KEY_KP_Space as u32 && keysym <= XKB_KEY_KP_Equal as u32;
 }
 
-pub fn xkb_keysym_is_modifier(mut keysym: u32) -> bool {
-    return keysym >= XKB_KEY_Shift_L as u32 && keysym <= XKB_KEY_Hyper_R as u32
-        || keysym >= XKB_KEY_ISO_Lock as u32 && keysym <= XKB_KEY_ISO_Level5_Lock as u32
-        || keysym == XKB_KEY_Mode_switch as u32
-        || keysym == XKB_KEY_Num_Lock as u32;
-}
 pub unsafe fn xkb_keysym_is_deprecated(
     mut _keysym: xkb_keysym_t,
     mut _name: *const i8,

@@ -269,11 +269,6 @@ impl Keymap {
         }
     }
 
-    /// Get keycode range as a Range
-    pub fn keycode_range(&self) -> std::ops::RangeInclusive<u32> {
-        self.min_keycode()..=self.max_keycode()
-    }
-
     /// Convert keysym to character using the keysym_utf module
     pub fn keysym_to_char(keysym: u32) -> Option<char> {
         super::keysym_utf::keysym_to_char(keysym)
@@ -515,17 +510,12 @@ impl State {
 
     /// Press a key (convenience wrapper for update_key with KEY_DOWN)
     pub fn key_down(&mut self, keycode: u32) {
-        self.update_key(keycode, super::common::XKB_KEY_DOWN);
+        self.update_key(keycode, super::shared_types::XKB_KEY_DOWN);
     }
 
     /// Release a key (convenience wrapper for update_key with KEY_UP)
     pub fn key_up(&mut self, keycode: u32) {
-        self.update_key(keycode, super::common::XKB_KEY_UP);
-    }
-
-    /// Get the character for a key as Option<char>
-    pub fn key_get_char(&self, keycode: u32) -> Option<char> {
-        self.key_get_utf8(keycode).chars().next()
+        self.update_key(keycode, super::shared_types::XKB_KEY_UP);
     }
 
     /// Get keysym for a key in the current state

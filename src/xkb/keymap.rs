@@ -4,8 +4,6 @@ use crate::xkb_logf;
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
 #[c2rust::header_src = "/usr/lib/clang/21/include/__stddef_size_t.h:19"]
-#[c2rust::src_loc = "18:1"]
-pub type size_t = usize;
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
@@ -113,17 +111,6 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::{cstr_free, cstr_len};
 use libc::{free, FILE};
-#[derive(Copy, Clone)]
-#[repr(C)]
-#[c2rust::src_loc = "591:1"]
-pub struct xkb_keymap_key_iterator {
-    pub increment: i8,
-    pub skip_unbound: bool,
-    pub min: *const xkb_key,
-    pub max: *const xkb_key,
-    pub next: *const xkb_key,
-    pub keymap: *mut xkb_keymap,
-}
 #[c2rust::src_loc = "26:1"]
 pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
@@ -563,19 +550,6 @@ pub unsafe fn xkb_keymap_mod_get_mask(
         };
     }
 }
-#[c2rust::src_loc = "339:1"]
-pub unsafe fn xkb_keymap_mod_get_mask2(
-    mut keymap: *mut xkb_keymap,
-    mut idx: xkb_mod_index_t,
-) -> xkb_mod_mask_t {
-    unsafe {
-        return if idx >= (*keymap).mods.num_mods {
-            0 as xkb_mod_mask_t
-        } else {
-            (*keymap).mods.mods[idx as usize].mapping
-        };
-    }
-}
 #[c2rust::src_loc = "350:1"]
 pub unsafe fn xkb_keymap_num_layouts(mut keymap: *mut xkb_keymap) -> xkb_layout_index_t {
     unsafe {
@@ -693,72 +667,6 @@ pub unsafe fn xkb_keymap_led_get_index(
         return XKB_LED_INVALID as xkb_led_index_t;
     }
 }
-#[c2rust::src_loc = "464:1"]
-pub unsafe fn xkb_keymap_key_get_mods_for_level(
-    mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-    mut layout: xkb_layout_index_t,
-    mut level: xkb_level_index_t,
-    mut masks_out: *mut xkb_mod_mask_t,
-    mut masks_size: usize,
-) -> usize {
-    unsafe {
-        let mut key: *const xkb_key = XkbKey(keymap, kc);
-        if key.is_null() {
-            return 0 as usize;
-        }
-        layout = XkbWrapGroupIntoRange(
-            layout as i32,
-            (*key).num_groups(),
-            (*key).out_of_range_group_policy(),
-            (*key).out_of_range_group_number(),
-        );
-        if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return 0 as usize;
-        }
-        if level >= XkbKeyNumLevels(key, layout) {
-            return 0 as usize;
-        }
-        let mut type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
-        let mut count: usize = 0 as usize;
-        if level == 0 as xkb_level_index_t {
-            let mut empty_mapped: bool = false;
-            let mut i: u32 = 0 as u32;
-            while i < (*type_0).num_entries && count < masks_size {
-                if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
-                    as i32
-                    != 0
-                    && (*(*type_0).entries.offset(i as isize)).mods.mask == 0 as xkb_mod_mask_t
-                {
-                    empty_mapped = true;
-                    break;
-                } else {
-                    i = i.wrapping_add(1);
-                }
-            }
-            if !empty_mapped && count < masks_size {
-                let c2rust_fresh0 = count;
-                count = count.wrapping_add(1);
-                *masks_out.offset(c2rust_fresh0 as isize) = 0 as xkb_mod_mask_t;
-            }
-        }
-        let mut i_0: u32 = 0 as u32;
-        while i_0 < (*type_0).num_entries && count < masks_size {
-            if entry_is_active((*type_0).entries.offset(i_0 as isize) as *mut xkb_key_type_entry)
-                as i32
-                != 0
-                && (*(*type_0).entries.offset(i_0 as isize)).level == level
-            {
-                let c2rust_fresh1 = count;
-                count = count.wrapping_add(1);
-                *masks_out.offset(c2rust_fresh1 as isize) =
-                    (*(*type_0).entries.offset(i_0 as isize)).mods.mask;
-            }
-            i_0 = i_0.wrapping_add(1);
-        }
-        return count;
-    }
-}
 #[c2rust::src_loc = "525:1"]
 pub unsafe fn xkb_keymap_key_get_level(
     mut keymap: *mut xkb_keymap,
@@ -824,120 +732,6 @@ pub unsafe fn xkb_keymap_min_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode
 pub unsafe fn xkb_keymap_max_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode_t {
     unsafe {
         return (*keymap).max_key_code;
-    }
-}
-#[c2rust::src_loc = "600:1"]
-pub unsafe fn xkb_keymap_key_iterator_new(
-    mut keymap: *mut xkb_keymap,
-    mut flags: xkb_keymap_key_iterator_flags,
-) -> *mut xkb_keymap_key_iterator {
-    unsafe {
-        static mut XKB_KEYMAP_KEY_ITERATOR_FLAGS: xkb_keymap_key_iterator_flags =
-            (XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as i32
-                | XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as i32)
-                as xkb_keymap_key_iterator_flags;
-        if flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32) != 0 {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "unrecognized keymap iterator flags: {:#x}\n",
-                flags as u32 & !(XKB_KEYMAP_KEY_ITERATOR_FLAGS as u32),
-            );
-            return std::ptr::null_mut();
-        }
-        let iter: *mut xkb_keymap_key_iterator =
-            Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap_key_iterator>()));
-        (*iter).keymap = xkb_keymap_ref(keymap);
-        if (*keymap).num_keys == 0 as xkb_keycode_t {
-            (*iter).next = std::ptr::null();
-            (*iter).min = std::ptr::null();
-            (*iter).max = std::ptr::null();
-            return iter;
-        }
-        (*iter).skip_unbound = flags as u32 & XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND as u32 != 0;
-        (*iter).increment = (if flags as u32 & XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER as u32 != 0
-        {
-            -1 as i32
-        } else {
-            1 as i32
-        }) as i8;
-        (*iter).min = if (*keymap).num_keys_low != 0 {
-            (*(*iter).keymap)
-                .keys
-                .offset((*keymap).min_key_code as isize) as *mut xkb_key
-        } else {
-            (*(*iter).keymap).keys.offset(0 as i32 as isize) as *mut xkb_key
-        };
-        (*iter).max = (*(*iter).keymap)
-            .keys
-            .offset((*(*iter).keymap).num_keys.wrapping_sub(1 as xkb_keycode_t) as isize)
-            as *mut xkb_key;
-        if ((*iter).increment as i32) < 0 as i32 {
-            (*iter).next = (*iter).max;
-        } else {
-            (*iter).next = (*iter).min;
-        }
-        return iter;
-    }
-}
-#[c2rust::src_loc = "649:1"]
-pub unsafe fn xkb_keymap_key_iterator_destroy(mut iter: *mut xkb_keymap_key_iterator) {
-    unsafe {
-        if iter.is_null() {
-            return;
-        }
-        xkb_keymap_unref((*iter).keymap);
-        drop(Box::from_raw(iter));
-    }
-}
-#[c2rust::src_loc = "659:1"]
-pub unsafe fn xkb_keymap_key_iterator_next(
-    mut iter: *mut xkb_keymap_key_iterator,
-) -> xkb_keycode_t {
-    unsafe {
-        if (*iter).next.is_null() {
-            return XKB_KEYCODE_INVALID as xkb_keycode_t;
-        }
-        let mut next: *const xkb_key = (*iter).next;
-        while (*next).name == XKB_ATOM_NONE as xkb_atom_t
-            || (*iter).skip_unbound as i32 != 0 && (*next).num_groups() as i32 == 0 as i32
-        {
-            next = next.offset((*iter).increment as i32 as isize);
-            if next < (*iter).min || next > (*iter).max {
-                (*iter).next = std::ptr::null();
-                return XKB_KEYCODE_INVALID as xkb_keycode_t;
-            }
-        }
-        let ret: xkb_keycode_t = (*next).keycode;
-        next = next.offset((*iter).increment as i32 as isize);
-        (*iter).next = if next < (*iter).min || next > (*iter).max {
-            std::ptr::null()
-        } else {
-            next
-        };
-        return ret;
-    }
-}
-#[c2rust::src_loc = "686:1"]
-pub unsafe fn xkb_keymap_key_for_each(
-    mut keymap: *mut xkb_keymap,
-    mut iter: xkb_keymap_key_iter_t,
-    mut data: *mut ::core::ffi::c_void,
-) {
-    unsafe {
-        let mut key: *mut xkb_key = std::ptr::null_mut();
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
-                0 as xkb_keycode_t
-            } else {
-                (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            iter.expect("non-null function pointer")(keymap, (*key).keycode, data);
-            key = key.offset(1);
-        }
     }
 }
 #[c2rust::src_loc = "696:1"]

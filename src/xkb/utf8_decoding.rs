@@ -61,16 +61,6 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
 // FFI wrappers for raw pointer callers (no longer extern "C")
 // ============================================================================
 
-pub unsafe fn utf8_sequence_length(s: *const i8) -> u8 {
-    if s.is_null() {
-        return 0;
-    }
-    unsafe {
-        let leading_byte = *s as u8;
-        utf8_sequence_length_safe(leading_byte)
-    }
-}
-
 pub unsafe fn utf8_next_code_point(s: *const i8, max_size: usize, size_out: *mut usize) -> u32 {
     if s.is_null() || size_out.is_null() || max_size == 0 {
         if !size_out.is_null() {

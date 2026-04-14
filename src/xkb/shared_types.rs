@@ -110,11 +110,6 @@ pub struct __va_list_tag {
     pub reg_save_area: *mut ::core::ffi::c_void,
 }
 
-// ── C stdint type aliases ───────────────────────────────────────────
-
-pub type uint16_t = u16;
-pub type uint8_t = u8;
-
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 
 #[derive(Copy, Clone)]

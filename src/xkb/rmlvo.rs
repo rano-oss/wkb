@@ -244,12 +244,6 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
     }
 }
 
-pub unsafe fn xkb_rmlvo_builder_ref(mut rmlvo: *mut xkb_rmlvo_builder) -> *mut xkb_rmlvo_builder {
-    unsafe {
-        (*rmlvo).refcnt += 1;
-        return rmlvo;
-    }
-}
 pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
     unsafe {
         if rmlvo.is_null() || {

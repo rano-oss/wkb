@@ -1,8 +1,7 @@
-
-pub use crate::xkb::utils::is_xdigit;
-pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::cstr_cmp;
+pub use crate::xkb::utils::is_xdigit;
+pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct format_label {
@@ -29,14 +28,6 @@ static mut keymap_formats_labels: [format_label; 4] = [
         format: XKB_KEYMAP_FORMAT_TEXT_V2,
     },
 ];
-
-pub unsafe fn xkb_keymap_supported_formats(mut formats: *mut *const xkb_keymap_format) -> usize {
-    unsafe {
-        *formats = &raw const keymap_formats as *const xkb_keymap_format;
-        return (std::mem::size_of::<[xkb_keymap_format; 2]>())
-            .wrapping_div(std::mem::size_of::<xkb_keymap_format>());
-    }
-}
 
 pub unsafe fn xkb_keymap_is_supported_format(mut format: xkb_keymap_format) -> bool {
     unsafe {

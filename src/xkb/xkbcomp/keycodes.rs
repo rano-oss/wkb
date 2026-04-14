@@ -157,15 +157,7 @@ unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
         v.truncate(new_len);
     }
 }
-#[inline]
-unsafe fn keycode_store_init(mut store: *mut KeycodeStore) {
-    unsafe {
-        (*store).low = Vec::new();
-        (*store).high = Vec::new();
-        (*store).names = Vec::new();
-        (*store).min = XKB_KEYCODE_INVALID as xkb_keycode_t;
-    }
-}
+
 #[inline]
 unsafe fn keycode_store_free(mut store: *mut KeycodeStore) {
     unsafe {

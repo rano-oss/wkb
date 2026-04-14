@@ -24,13 +24,11 @@
 
 // Core XKB modules
 pub mod atom;
-pub mod common;
 pub mod compile_keymap;
 pub mod context;
 pub mod context_priv;
 pub mod features;
 pub mod keymap;
-pub mod keymap_compare;
 pub mod keymap_formats;
 pub mod keymap_priv;
 pub mod shared_ast_types;
@@ -52,7 +50,6 @@ pub mod utf8_decoding;
 pub mod util_list;
 pub mod utils;
 pub mod utils_paths;
-pub mod utils_text;
 
 // Compilation modules
 pub mod xkbcomp; // XKB compiler with all submodules
@@ -216,58 +213,58 @@ fn build_wkb_from_keymap(
                 1 => {
                     // Level2 (Shift)
                     if let Some(kc) = level2_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 2 => {
                     // Level3
                     if let Some(kc) = level3_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 3 => {
                     // Level3 + Level2 (order matters!)
                     if let Some(kc) = level3_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 4 => {
                     // Level5
                     if let Some(kc) = level5_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 5 => {
                     // Level5 + Level2
                     if let Some(kc) = level5_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 6 => {
                     // Level5 + Level3
                     if let Some(kc) = level5_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level3_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 7 => {
                     // Level5 + Level3 + Level2
                     if let Some(kc) = level5_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level3_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                     if let Some(kc) = level2_keycode {
-                        state.update_key(kc, common::XKB_KEY_DOWN);
+                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
                     }
                 }
                 _ => {
@@ -335,58 +332,58 @@ fn build_wkb_from_keymap(
                     1 => {
                         // Level2 (Shift) + Caps
                         if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     2 => {
                         // Level3 + Caps
                         if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     3 => {
                         // Level3 + Level2 + Caps (order matters!)
                         if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     4 => {
                         // Level5 + Caps
                         if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     5 => {
                         // Level5 + Level2 + Caps
                         if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     6 => {
                         // Level5 + Level3 + Caps
                         if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     7 => {
                         // Level5 + Level3 + Level2 + Caps
                         if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, common::XKB_KEY_DOWN);
+                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     _ => {
@@ -398,7 +395,7 @@ fn build_wkb_from_keymap(
                 // NOW press Caps Lock (after level modifiers)
                 // Keep it pressed down - don't release!
                 // This is key: caps lock acts as a level shift key in some layouts.
-                caps_state.update_key(caps_lock_keycode, common::XKB_KEY_DOWN);
+                caps_state.update_key(caps_lock_keycode, shared_types::XKB_KEY_DOWN);
 
                 // Test each key at this level with Caps Lock active
                 for keycode in min_keycode..=max_keycode {
@@ -441,8 +438,8 @@ fn build_wkb_from_keymap(
                 };
 
                 // Activate Num Lock
-                num_state.update_key(num_lock_keycode, common::XKB_KEY_DOWN);
-                num_state.update_key(num_lock_keycode, common::XKB_KEY_UP);
+                num_state.update_key(num_lock_keycode, shared_types::XKB_KEY_DOWN);
+                num_state.update_key(num_lock_keycode, shared_types::XKB_KEY_UP);
 
                 // Set up modifiers for this level
                 match level {
@@ -450,58 +447,58 @@ fn build_wkb_from_keymap(
                     1 => {
                         // Num + Level2 (Shift)
                         if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     2 => {
                         // Num + Level3
                         if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     3 => {
                         // Num + Level3 + Level2 (order matters!)
                         if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     4 => {
                         // Num + Level5
                         if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     5 => {
                         // Num + Level5 + Level2
                         if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     6 => {
                         // Num + Level5 + Level3
                         if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     7 => {
                         // Num + Level5 + Level3 + Level2
                         if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                         if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, common::XKB_KEY_DOWN);
+                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
                         }
                     }
                     _ => {

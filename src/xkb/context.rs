@@ -439,12 +439,6 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
     }
 }
 
-pub unsafe fn xkb_context_include_path_reset_defaults(mut ctx: *mut xkb_context) -> i32 {
-    unsafe {
-        xkb_context_include_path_clear(ctx);
-        return xkb_context_include_path_append_default(ctx);
-    }
-}
 pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
@@ -634,26 +628,6 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context 
     }
 }
 
-pub unsafe fn xkb_context_set_log_fn(
-    mut ctx: *mut xkb_context,
-    mut log_fn: Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>,
-) {
-    unsafe {
-        (*ctx).log_fn = (if log_fn.is_some() {
-            log_fn as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>
-        } else {
-            Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
-        })
-            as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>;
-    }
-}
-
-pub unsafe fn xkb_context_get_log_level(mut ctx: *mut xkb_context) -> xkb_log_level {
-    unsafe {
-        return (*ctx).log_level;
-    }
-}
-
 pub unsafe fn xkb_context_set_log_level(mut ctx: *mut xkb_context, mut level: xkb_log_level) {
     unsafe {
         (*ctx).log_level = level;
@@ -671,21 +645,4 @@ pub unsafe fn xkb_context_set_log_verbosity(mut ctx: *mut xkb_context, mut verbo
     }
 }
 
-pub unsafe fn xkb_context_get_user_data(mut ctx: *mut xkb_context) -> *mut ::core::ffi::c_void {
-    unsafe {
-        if !ctx.is_null() {
-            return (*ctx).user_data;
-        }
-        return std::ptr::null_mut::<core::ffi::c_void>();
-    }
-}
-
-pub unsafe fn xkb_context_set_user_data(
-    mut ctx: *mut xkb_context,
-    mut user_data: *mut ::core::ffi::c_void,
-) {
-    unsafe {
-        (*ctx).user_data = user_data;
-    }
-}
 use crate::xkb::shared_types::*;
