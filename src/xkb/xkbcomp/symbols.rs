@@ -11,7 +11,7 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::{istrncmp, istrneq, memdup};
+use crate::xkb::utils::{istrneq, memdup};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };

@@ -19,10 +19,9 @@ pub use crate::xkb::shared_types::{EACCES, ENOMEM, ENOTDIR};
 pub use crate::xkb::shared_types::{R_OK, X_OK};
 use crate::xkb::utils::__errno_location;
 use crate::xkb::utils::cstr_dup;
-pub use crate::xkb::utils::eaccess;
 use crate::xkb::utils::xkb_stat;
-pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
-pub use crate::xkb::utils::{check_eaccess, istrncmp, istrneq, strdup_safe};
+use crate::xkb::utils::{check_eaccess, istrneq, strdup_safe};
+use crate::xkb::utils::{closedir, opendir, readdir, DIR};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
 use libc::{free, qsort};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {

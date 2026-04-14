@@ -50,7 +50,7 @@ pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::isempty;
+use crate::xkb::utils::isempty;
 use libc::getenv;
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;

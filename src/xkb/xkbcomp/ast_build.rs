@@ -70,7 +70,7 @@ pub use crate::xkb::shared_ast_types::{
 };
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::{isempty, strdup_safe};
+use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{
     ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
 };

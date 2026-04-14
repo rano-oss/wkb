@@ -128,7 +128,7 @@ pub use crate::xkb::shared_ast_types::{
 };
 pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
+use crate::xkb::utils::streq_not_null;
 use libc::{free, malloc};
 #[derive(Copy, Clone)]
 #[repr(C)]

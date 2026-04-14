@@ -6,7 +6,7 @@ extern "C" {
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
 pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
-pub use crate::xkb::utils::{istrncmp, istrneq};
+use crate::xkb::utils::istrneq;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LookupModMaskPriv {

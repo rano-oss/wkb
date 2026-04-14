@@ -681,36 +681,12 @@ pub unsafe fn cstr_atoi(s: *const i8) -> i32 {
 }
 
 // ── Consolidated extern "C" declarations ──────────────────────────────
-// (previously scattered across per-file pub mod xxx_h blocks)
 
 use crate::xkb::shared_types::{dirent, stat};
 
-// stat_h
-extern "C" {
-    pub fn fstat(__fd: i32, __buf: *mut stat) -> i32;
-    pub fn mkdir(__path: *const i8, __mode: u32) -> i32;
-}
 extern "C" {
     #[link_name = "stat"]
     pub fn xkb_stat(__file: *const i8, __buf: *mut stat) -> i32;
-}
-
-// include_locale_h
-extern "C" {
-    pub fn setlocale(__category: i32, __locale: *const i8) -> *mut i8;
-}
-
-// unistd_h
-extern "C" {
-    pub fn eaccess(__name: *const i8, __type: i32) -> i32;
-    pub fn close(__fd: i32) -> i32;
-    pub fn dup(__fd: i32) -> i32;
-    pub fn dup2(__fd: i32, __fd2: i32) -> i32;
-}
-
-// fcntl_h (variadic — must stay extern "C")
-extern "C" {
-    pub fn open(__file: *const i8, __oflag: i32, ...) -> i32;
 }
 
 // include_dirent_h
@@ -722,22 +698,4 @@ extern "C" {
     pub fn closedir(__dirp: *mut DIR) -> i32;
     pub fn opendir(__name: *const i8) -> *mut DIR;
     pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
-}
-
-// getopt_core_h
-extern "C" {
-    pub static mut optarg: *mut i8;
-    pub static mut optind: i32;
-}
-
-// getopt_ext_h
-use crate::xkb::shared_types::option;
-extern "C" {
-    pub fn getopt_long(
-        ___argc: i32,
-        ___argv: *const *mut i8,
-        __shortopts: *const i8,
-        __longopts: *const option,
-        __longind: *mut i32,
-    ) -> i32;
 }

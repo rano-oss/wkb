@@ -75,7 +75,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::cstr_cmp;
 use crate::xkb::utils::cstr_free;
-pub use crate::xkb::utils::strdup_safe;
+use crate::xkb::utils::strdup_safe;
 pub unsafe fn xkb_rmlvo_builder_new(
     mut context: *mut xkb_context,
     mut rules: *const i8,

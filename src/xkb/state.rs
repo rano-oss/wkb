@@ -227,7 +227,7 @@ pub use crate::xkb::shared_types::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
+use crate::xkb::utils::xkb_check_versioned_struct_size_;
 
 unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {

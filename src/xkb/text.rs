@@ -41,7 +41,7 @@ pub use crate::xkb::shared_types::{
     MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
 use crate::xkb::utils::cstr_len_safe;
-pub use crate::xkb::utils::{istrcmp, istreq, strempty};
+use crate::xkb::utils::{istreq, strempty};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,

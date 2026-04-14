@@ -1002,18 +1002,6 @@ pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
 pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
 pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 
-// ── getopt_ext_h ──────────────────────────────────────────────────────
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct option {
-    pub name: *const i8,
-    pub has_arg: i32,
-    pub flag: *mut i32,
-    pub val: i32,
-}
-pub const no_argument: i32 = 0;
-pub const required_argument: i32 = 1;
-
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
 pub type RMLVO = u32;
 pub const RMLVO_OPTIONS: RMLVO = 16;

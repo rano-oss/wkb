@@ -1,8 +1,7 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
-use crate::xkb::rmlvo::strdup_safe;
 use crate::xkb::utils::{
     __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
-    istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
+    istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
 };
 use libc::{free, getenv, qsort};
 
