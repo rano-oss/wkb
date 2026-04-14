@@ -190,7 +190,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     entry_is_active, format_max_overlays, mod_type, real_mod_index, xkb_action, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
@@ -274,7 +273,7 @@ pub struct machine_shortcuts_config {
 
 pub struct machine_modifiers_config {
     pub mask: xkb_mod_mask_t,
-    pub mappings_num: darray_size_t,
+    pub mappings_num: u32,
     pub mappings: *mut machine_mods_mapping,
 }
 #[derive(Copy, Clone)]
@@ -335,7 +334,7 @@ pub struct xkb_filter {
 #[derive(Clone)]
 
 pub struct xkb_events {
-    pub next: darray_size_t,
+    pub next: u32,
     pub queue: Vec<xkb_event>,
     pub ctx: *mut xkb_context,
 }
@@ -469,7 +468,7 @@ unsafe fn get_entry_for_mods(
     mut mods: xkb_mod_mask_t,
 ) -> *const xkb_key_type_entry {
     unsafe {
-        let mut i: darray_size_t = 0 as darray_size_t;
+        let mut i: u32 = 0 as u32;
         while i < (*type_0).num_entries {
             if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
                 as i32
@@ -1977,7 +1976,7 @@ static mut synthetic_key_type: xkb_key_type = {
         num_levels: 1 as xkb_level_index_t,
         num_level_names: 0,
         level_names: std::ptr::null_mut(),
-        num_entries: 1 as darray_size_t,
+        num_entries: 1 as u32,
         entries: &raw const synthetic_key_level_entry as *mut xkb_key_type_entry,
     }
 };
@@ -3058,7 +3057,7 @@ unsafe fn key_get_consumed(
                     .levels
                     .offset(no_mods_leveli as isize)
                     as *mut xkb_level;
-                let mut i: darray_size_t = 0 as darray_size_t;
+                let mut i: u32 = 0 as u32;
                 while i < (*type_0).num_entries {
                     let entry: *const xkb_key_type_entry =
                         (*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry;
@@ -3252,10 +3251,10 @@ pub unsafe fn xkb_machine_options_remap_mods(
             }
         }
         let mut mapping: *mut machine_mods_mapping = std::ptr::null_mut();
-        let mut m: darray_size_t = 0 as darray_size_t;
-        let mods_len = (&(*options).mods.items).len() as darray_size_t;
+        let mut m: u32 = 0 as u32;
+        let mods_len = (&(*options).mods.items).len() as u32;
         if mods_len > 0 {
-            m = 0 as darray_size_t;
+            m = 0 as u32;
             mapping = (*options).mods.items.as_mut_ptr();
             while m < mods_len {
                 if (*mapping).source == source {
@@ -3400,13 +3399,13 @@ unsafe fn machine_set_mods(
                 mappings.as_mut_ptr()
             };
             if !(&raw mut (*sm).config.modifiers.mappings_num).is_null() {
-                *&raw mut (*sm).config.modifiers.mappings_num = mappings.len() as darray_size_t;
+                *&raw mut (*sm).config.modifiers.mappings_num = mappings.len() as u32;
             }
             (*sm).config.modifiers.mask = mask;
         } else {
             (*sm).config.modifiers = machine_modifiers_config {
                 mask: 0 as xkb_mod_mask_t,
-                mappings_num: 0 as darray_size_t,
+                mappings_num: 0 as u32,
                 mappings: std::ptr::null_mut(),
             } as machine_modifiers_config;
         }
@@ -3679,7 +3678,7 @@ unsafe fn do_remap_modifiers(
         let type_0: *const xkb_key_type = (*(*key).groups.offset(layout as isize)).type_0;
         let mut affect: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-        let mut m: darray_size_t = 0 as darray_size_t;
+        let mut m: u32 = 0 as u32;
         while m < (*mappings).mappings_num {
             let mapping: *const machine_mods_mapping =
                 (*mappings).mappings.offset(m as isize) as *mut machine_mods_mapping;
@@ -3913,7 +3912,7 @@ pub unsafe fn xkb_machine_process_key(
 ) -> xkb_error_code {
     unsafe {
         (&mut (*events).queue).clear();
-        (*events).next = 0 as darray_size_t;
+        (*events).next = 0 as u32;
         let state: *mut xkb_state = &raw mut (*sm).state;
         let mut key: *const xkb_key = XkbKey((*state).keymap, kc);
         if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats() {
@@ -4032,7 +4031,7 @@ pub unsafe fn xkb_events_new_batch(
             return std::ptr::null_mut();
         }
         let mut events: *mut xkb_events = Box::into_raw(Box::new(xkb_events {
-            next: 0 as darray_size_t,
+            next: 0 as u32,
             queue: Vec::new(),
             ctx: xkb_context_ref(context),
         }));
@@ -4052,11 +4051,11 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
 }
 pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
     unsafe {
-        let queue_len = (&(*events).queue).len() as darray_size_t;
+        let queue_len = (&(*events).queue).len() as u32;
         if (*events).next < queue_len {
             let c2rust_fresh0 = (*events).next;
             (*events).next = (*events).next.wrapping_add(1);
-            let index: darray_size_t = c2rust_fresh0;
+            let index: u32 = c2rust_fresh0;
             return &(&(*events).queue)[index as usize] as *const xkb_event;
         } else {
             return std::ptr::null();

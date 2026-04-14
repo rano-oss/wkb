@@ -83,7 +83,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS,
     PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -1107,10 +1106,10 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
 }
 unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTypesInfo) -> bool {
     unsafe {
-        let num_types: darray_size_t = if (*info).types.len() == 0 {
-            1 as darray_size_t
+        let num_types: u32 = if (*info).types.len() == 0 {
+            1 as u32
         } else {
-            (*info).types.len() as darray_size_t
+            (*info).types.len() as u32
         };
         let mut types: *mut xkb_key_type =
             calloc(num_types as usize, std::mem::size_of::<xkb_key_type>()) as *mut xkb_key_type;
@@ -1123,7 +1122,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             (*type_0).mods.mods = 0 as xkb_mod_mask_t;
             (*type_0).num_levels = 1 as xkb_level_index_t;
             (*type_0).entries = std::ptr::null_mut();
-            (*type_0).num_entries = 0 as darray_size_t;
+            (*type_0).num_entries = 0 as u32;
             (*type_0).name = xkb_atom_intern(
                 (*keymap).ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
@@ -1155,7 +1154,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                     (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 ),
             ];
-            let mut i: darray_size_t = 0 as darray_size_t;
+            let mut i: u32 = 0 as u32;
             while i < num_types {
                 let mut def: *mut KeyTypeInfo = (*info).types.as_mut_ptr().add(i as usize);
                 let mut type_1: *mut xkb_key_type = types.offset(i as isize) as *mut xkb_key_type;
@@ -1174,7 +1173,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 }
                 // Steal entries Vec buffer
                 let mut ent_vec = std::mem::take(&mut (*def).entries);
-                (*type_1).num_entries = ent_vec.len() as darray_size_t;
+                (*type_1).num_entries = ent_vec.len() as u32;
                 if ent_vec.is_empty() {
                     (*type_1).entries = std::ptr::null_mut();
                 } else {

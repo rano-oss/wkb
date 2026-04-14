@@ -62,7 +62,6 @@ pub use crate::xkb::shared_ast_types::{
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -6233,7 +6232,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     mut expanded: *mut darray_char,
     mut has_layout_idx_range: bool,
     mut has_separator: bool,
-    mut prefix_idx: darray_size_t,
+    mut prefix_idx: u32,
     mut i: *mut usize,
 ) {
     unsafe {
@@ -6311,7 +6310,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: darray_size_t, mut from: *const i8) {
+unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: u32, mut from: *const i8) {
     unsafe {
         let from_plus: bool = *from.offset(0 as i32 as isize) as i32 == MERGE_OVERRIDE_PREFIX
             || *from.offset(0 as i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
@@ -6360,7 +6359,7 @@ unsafe fn append_expanded_kccgst_value(
         let mut c2rust_current_block: u64;
         let mut str: *const i8 = value.start;
         let mut expanded: darray_char = Vec::new();
-        let mut last_item_idx: darray_size_t = 0;
+        let mut last_item_idx: u32 = 0;
         let mut has_separator: bool = false;
         let mut i: usize = 0 as usize;
         loop {
@@ -6404,7 +6403,7 @@ unsafe fn append_expanded_kccgst_value(
                     let c2rust_fresh5 = i;
                     i = i.wrapping_add(1);
                     darray_appends_nul_vec(&mut expanded, str.offset(c2rust_fresh5 as isize), 1);
-                    last_item_idx = expanded.len().wrapping_sub(1) as darray_size_t;
+                    last_item_idx = expanded.len().wrapping_sub(1) as u32;
                     has_separator = true;
                 }
                 _ => {
@@ -6422,7 +6421,7 @@ unsafe fn append_expanded_kccgst_value(
             _ => {
                 if merge {
                     if !(expanded.len() == 0) {
-                        concat_kccgst(to, expanded.len() as darray_size_t, expanded.as_ptr());
+                        concat_kccgst(to, expanded.len() as u32, expanded.as_ptr());
                     }
                 } else if expanded.len() > 0 {
                     (*to).extend_from_slice(&expanded);
@@ -6446,8 +6445,8 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
             while layout < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
                 let buf: *const kccgst_buffer = &raw mut (*m).pending_kccgst;
                 let mut offset: usize = 0 as usize;
-                let mut k: darray_size_t = 0;
-                while k < (&(*buf).slices).len() as darray_size_t {
+                let mut k: u32 = 0;
+                while k < (&(*buf).slices).len() as u32 {
                     let slice: &kccgst_buffer_slice = &(&(*buf).slices)[k as usize];
                     if slice.kccgst() as u32 == kccgst as u32
                         && slice.layout == layout
@@ -6649,8 +6648,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                         let kccgst: rules_kccgst = (*m).mapping.kccgst_at_pos[i_0 as usize];
                         let value_0: sval = (*m).rule.kccgst_value_at_pos[i_0 as usize];
                         let buf: *mut kccgst_buffer = &raw mut (*m).pending_kccgst;
-                        let prev_buffer_length: darray_size_t =
-                            (*buf).buffer.len() as darray_size_t;
+                        let prev_buffer_length: u32 = (*buf).buffer.len() as u32;
                         append_expanded_kccgst_value(
                             m,
                             s,
@@ -6659,9 +6657,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                             value_0,
                             idx,
                         );
-                        let length: u32 = ((*buf).buffer.len() as darray_size_t)
-                            .wrapping_sub(prev_buffer_length)
-                            as u32;
+                        let length: u32 =
+                            ((*buf).buffer.len() as u32).wrapping_sub(prev_buffer_length) as u32;
                         let slice: kccgst_buffer_slice = {
                             let mut init = kccgst_buffer_slice {
                                 length_kccgst: [0; 4],

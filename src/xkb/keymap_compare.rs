@@ -16,7 +16,6 @@ pub use crate::xkb::messages::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -209,14 +208,14 @@ unsafe fn keymap_compare_keycodes(
             }
             k = k.wrapping_add(1);
         }
-        let a_max: darray_size_t = if (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
+        let a_max: u32 = if (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
             < (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
         {
             (*keymap1).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
         } else {
             (*keymap2).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases
         };
-        let mut a: darray_size_t = 0 as darray_size_t;
+        let mut a: u32 = 0 as u32;
         while a < a_max {
             let entry1: *const xkb_key_alias = (*keymap1)
                 .c2rust_unnamed
@@ -484,7 +483,7 @@ unsafe fn compare_types(
             );
             identical = false;
         } else {
-            let mut e: darray_size_t = 0 as darray_size_t;
+            let mut e: u32 = 0 as u32;
             while e < (*type1).num_entries {
                 let entry1: *const xkb_key_type_entry =
                     (*type1).entries.offset(e as isize) as *mut xkb_key_type_entry;
@@ -542,12 +541,12 @@ unsafe fn keymap_compare_types(
 ) -> bool {
     unsafe {
         let mut identical: bool = true;
-        let t_max: darray_size_t = if (*keymap1).num_types < (*keymap2).num_types {
+        let t_max: u32 = if (*keymap1).num_types < (*keymap2).num_types {
             (*keymap1).num_types
         } else {
             (*keymap2).num_types
         };
-        let mut t: darray_size_t = 0 as darray_size_t;
+        let mut t: u32 = 0 as u32;
         while t < t_max {
             identical = compare_types(
                 ctx,

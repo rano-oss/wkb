@@ -81,7 +81,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_V1_LAX_FLAGS, PARSER_V1_STRICT_FLAGS,
     PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -222,27 +221,25 @@ unsafe fn keycode_store_insert_key(
                     init.set_found(true);
                     init.set_low(true);
                     init.set_is_alias(false);
-                    init.set_index(kc as darray_size_t);
+                    init.set_index(kc as u32);
                     init
                 },
             };
         } else {
-            let idx: darray_size_t = (&(*store).high).len() as darray_size_t;
-            if idx != 0
-                && (&(*store).high)[(idx.wrapping_sub(1 as darray_size_t)) as usize].keycode > kc
-            {
-                let mut lower: darray_size_t = 0 as darray_size_t;
-                let mut upper: darray_size_t = idx;
+            let idx: u32 = (&(*store).high).len() as u32;
+            if idx != 0 && (&(*store).high)[(idx.wrapping_sub(1 as u32)) as usize].keycode > kc {
+                let mut lower: u32 = 0 as u32;
+                let mut upper: u32 = idx;
                 while lower < upper {
-                    let mid: darray_size_t = lower.wrapping_add(
+                    let mid: u32 = lower.wrapping_add(
                         upper
-                            .wrapping_sub(1 as darray_size_t)
+                            .wrapping_sub(1 as u32)
                             .wrapping_sub(lower)
-                            .wrapping_div(2 as darray_size_t),
+                            .wrapping_div(2 as u32),
                     );
                     let entry: &HighKeycodeEntry = &(&(*store).high)[mid as usize];
                     if entry.keycode < kc {
-                        lower = mid.wrapping_add(1 as darray_size_t);
+                        lower = mid.wrapping_add(1 as u32);
                     } else if entry.keycode > kc {
                         upper = mid;
                     } else {
@@ -250,16 +247,16 @@ unsafe fn keycode_store_insert_key(
                 }
                 {
                     let high_ptr = (*store).high.as_mut_ptr();
-                    let high_len = (&(*store).high).len() as darray_size_t;
+                    let high_len = (&(*store).high).len() as u32;
                     let mut entry_0: *mut HighKeycodeEntry = high_ptr.offset(lower as isize);
                     while entry_0 < high_ptr.offset(high_len as isize) {
                         let ref mut c2rust_fresh4 =
                             (&mut (*store).names)[(*entry_0).name as usize].key;
-                        (*c2rust_fresh4).set_index((*c2rust_fresh4).index() + 1 as darray_size_t);
+                        (*c2rust_fresh4).set_index((*c2rust_fresh4).index() + 1 as u32);
                         entry_0 = entry_0.offset(1);
                     }
                 }
-                let __index: darray_size_t = lower;
+                let __index: u32 = lower;
                 (&mut (*store).high).insert(
                     __index as usize,
                     HighKeycodeEntry {
@@ -361,14 +358,13 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
             let low_name = (&(*store).low)[match_0.key.index() as usize];
             let ref mut c2rust_fresh1 = (&mut (*store).names)[low_name as usize].c2rust_unnamed;
             (*c2rust_fresh1).set_found((false) as bool);
-            if match_0.key.index().wrapping_add(1 as u32) == (&(*store).low).len() as darray_size_t
-            {
+            if match_0.key.index().wrapping_add(1 as u32) == (&(*store).low).len() as u32 {
                 if (*store).min == match_0.key.index() as xkb_keycode_t {
                     (&mut (*store).low).clear();
                 } else {
-                    let mut idx: darray_size_t = match_0.key.index();
-                    while idx > 0 as darray_size_t {
-                        if (&(*store).low)[(idx.wrapping_sub(1 as darray_size_t)) as usize]
+                    let mut idx: u32 = match_0.key.index();
+                    while idx > 0 as u32 {
+                        if (&(*store).low)[(idx.wrapping_sub(1 as u32)) as usize]
                             != XKB_ATOM_NONE as xkb_atom_t
                         {
                             (&mut (*store).low).truncate(idx as usize);
@@ -385,7 +381,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
             let high_name = (&(*store).high)[match_0.key.index() as usize].name;
             let ref mut c2rust_fresh2 = (&mut (*store).names)[high_name as usize].c2rust_unnamed;
             (*c2rust_fresh2).set_found((false) as bool);
-            let __index: darray_size_t = match_0.key.index();
+            let __index: u32 = match_0.key.index();
             (&mut (*store).high).remove(__index as usize);
             {
                 let names_ptr = (*store).names.as_mut_ptr();
@@ -397,9 +393,7 @@ unsafe fn keycode_store_delete_key(mut store: *mut KeycodeStore, match_0: Keycod
                         && !(*entry).key.low()
                         && (*entry).key.index() as i32 > match_0.key.index() as i32
                     {
-                        (*entry)
-                            .key
-                            .set_index((*entry).key.index() - 1 as darray_size_t);
+                        (*entry).key.set_index((*entry).key.index() - 1 as u32);
                     }
                     entry = entry.offset(1);
                 }
@@ -468,7 +462,7 @@ unsafe fn keycode_store_lookup_keycode(
                     init.set_found(true);
                     init.set_low(true);
                     init.set_is_alias(false);
-                    init.set_index(kc as darray_size_t);
+                    init.set_index(kc as u32);
                     init
                 },
             };
@@ -484,18 +478,18 @@ unsafe fn keycode_store_lookup_keycode(
                 },
             };
         }
-        let mut lower: darray_size_t = 0 as darray_size_t;
-        let mut upper: darray_size_t = (&(*store).high).len() as darray_size_t;
+        let mut lower: u32 = 0 as u32;
+        let mut upper: u32 = (&(*store).high).len() as u32;
         while lower < upper {
-            let mid: darray_size_t = lower.wrapping_add(
+            let mid: u32 = lower.wrapping_add(
                 upper
-                    .wrapping_sub(1 as darray_size_t)
+                    .wrapping_sub(1 as u32)
                     .wrapping_sub(lower)
-                    .wrapping_div(2 as darray_size_t),
+                    .wrapping_div(2 as u32),
             );
             let entry: &HighKeycodeEntry = &(&(*store).high)[mid as usize];
             if entry.keycode < kc {
-                lower = mid.wrapping_add(1 as darray_size_t);
+                lower = mid.wrapping_add(1 as u32);
             } else if entry.keycode > kc {
                 upper = mid;
             } else {
@@ -1405,8 +1399,7 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                             }
                         } else if !(*match_0).key.low() {
                             (*match_0).key.set_index(
-                                (*match_0).key.index()
-                                    + (*keymap).num_keys_low as u32 as darray_size_t,
+                                (*match_0).key.index() + (*keymap).num_keys_low as u32 as u32,
                             );
                         }
                     }
@@ -1422,10 +1415,10 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
             let stolen_len = (&(*info).keycodes.names).len();
             // Prevent Vec from freeing the allocation
             std::mem::forget(std::mem::replace(&mut (*info).keycodes.names, Vec::new()));
-            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = stolen_len as darray_size_t;
+            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = stolen_len as u32;
             (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = stolen_ptr;
         } else {
-            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = 0 as darray_size_t;
+            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = 0 as u32;
             (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = std::ptr::null_mut();
         }
         return true;

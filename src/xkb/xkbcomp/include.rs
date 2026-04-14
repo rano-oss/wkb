@@ -84,7 +84,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_free, cstr_len};
 use crate::xkb::utils_paths::is_absolute_path;
@@ -207,7 +206,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
             );
         }
-        if xkb_context_num_failed_include_paths(ctx) > 0 as darray_size_t {
+        if xkb_context_num_failed_include_paths(ctx) > 0 as u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -216,7 +215,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                 xkb_context_num_failed_include_paths(ctx),
             );
-            let mut i_0: darray_size_t = 0 as darray_size_t;
+            let mut i_0: u32 = 0 as u32;
             while i_0 < xkb_context_num_failed_include_paths(ctx) {
                 xkb_logf!(
                     ctx,

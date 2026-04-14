@@ -62,7 +62,6 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
@@ -201,7 +200,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             free((*keymap).keys as *mut ::core::ffi::c_void);
         }
         if !(*keymap).types.is_null() {
-            let mut i_0: darray_size_t = 0 as darray_size_t;
+            let mut i_0: u32 = 0 as u32;
             while i_0 < (*keymap).num_types {
                 free((*(*keymap).types.offset(i_0 as isize)).entries as *mut ::core::ffi::c_void);
                 free(
@@ -211,7 +210,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             }
             free((*keymap).types as *mut ::core::ffi::c_void);
         }
-        let mut k: darray_size_t = 0 as darray_size_t;
+        let mut k: u32 = 0 as u32;
         while k < (*keymap).num_sym_interprets {
             clear_interpret((*keymap).sym_interprets.offset(k as isize) as *mut xkb_sym_interpret);
             k = k.wrapping_add(1);
@@ -724,7 +723,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
         let mut count: usize = 0 as usize;
         if level == 0 as xkb_level_index_t {
             let mut empty_mapped: bool = false;
-            let mut i: darray_size_t = 0 as darray_size_t;
+            let mut i: u32 = 0 as u32;
             while i < (*type_0).num_entries && count < masks_size {
                 if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
                     as i32
@@ -743,7 +742,7 @@ pub unsafe fn xkb_keymap_key_get_mods_for_level(
                 *masks_out.offset(c2rust_fresh0 as isize) = 0 as xkb_mod_mask_t;
             }
         }
-        let mut i_0: darray_size_t = 0 as darray_size_t;
+        let mut i_0: u32 = 0 as u32;
         while i_0 < (*type_0).num_entries && count < masks_size {
             if entry_is_active((*type_0).entries.offset(i_0 as isize) as *mut xkb_key_type_entry)
                 as i32
@@ -964,7 +963,7 @@ pub unsafe fn xkb_keymap_key_by_name(
         let mut atom: xkb_atom_t = 0;
         atom = xkb_atom_lookup((*keymap).ctx, name);
         if atom != 0 {
-            let mut i: darray_size_t = 0 as darray_size_t;
+            let mut i: u32 = 0 as u32;
             while i < (*keymap).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases {
                 if (*(*keymap)
                     .c2rust_unnamed

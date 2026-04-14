@@ -23,7 +23,6 @@ pub use crate::xkb::messages::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -80,8 +79,7 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
         ];
         let mut i: xkb_mod_index_t = 0 as xkb_mod_index_t;
         while (i as usize)
-            < (std::mem::size_of::<[*const i8; 8]>())
-                .wrapping_div(std::mem::size_of::<*const i8>())
+            < (std::mem::size_of::<[*const i8; 8]>()).wrapping_div(std::mem::size_of::<*const i8>())
         {
             (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
                 (*keymap).ctx,
@@ -175,8 +173,7 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
             return (*a).s.sym == (*b).s.sym;
         }
         {
-            let n = (std::mem::size_of::<xkb_keysym_t>())
-                .wrapping_mul((*a).num_syms as usize);
+            let n = (std::mem::size_of::<xkb_keysym_t>()).wrapping_mul((*a).num_syms as usize);
             return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
                 == std::slice::from_raw_parts((*b).s.syms as *const u8, n);
         }

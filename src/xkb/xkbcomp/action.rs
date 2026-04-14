@@ -88,7 +88,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action_controls, xkb_action_count_t, xkb_action_flags, xkb_action_type,
     xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
@@ -792,8 +791,7 @@ unsafe fn CheckGroupField(
         }
         if pending {
             flags = (flags as u32 | ACTION_PENDING_COMPUTATION as u32) as xkb_action_flags;
-            let pending_index: darray_size_t =
-                (&*(*keymap_info).pending_computations).len() as darray_size_t;
+            let pending_index: u32 = (&*(*keymap_info).pending_computations).len() as u32;
             (&mut *(*keymap_info).pending_computations).push(pending_computation {
                 expr: *value_ptr,
                 computed: false,

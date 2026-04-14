@@ -58,12 +58,12 @@ extern "C" {
 pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
+pub use crate::xkb::shared_types::darray_string;
 pub use crate::xkb::shared_types::stat;
 pub use crate::xkb::shared_types::timespec;
 pub use crate::xkb::shared_types::__LC_ALL;
 pub use crate::xkb::shared_types::LC_ALL;
 pub use crate::xkb::shared_types::*;
-pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -1991,10 +1991,8 @@ unsafe fn xkb_rules_names_to_rmlvo_builder(
                         break;
                     }
                     if loptions.len() <= layout as usize {
-                        loptions.resize(
-                            (layout as darray_size_t).wrapping_add(1 as darray_size_t) as usize,
-                            Vec::new(),
-                        );
+                        loptions
+                            .resize((layout as u32).wrapping_add(1 as u32) as usize, Vec::new());
                     }
                     {
                         let entry = &mut loptions[layout as usize];

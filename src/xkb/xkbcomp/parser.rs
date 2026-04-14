@@ -127,7 +127,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::utils::cstr_len;
 pub use crate::xkb::utils::{istrncmp, streq, streq_not_null};
 use libc::{free, malloc};

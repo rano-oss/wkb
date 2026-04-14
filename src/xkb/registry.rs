@@ -1881,7 +1881,7 @@ unsafe fn add_direct_subdirectories(
     mut ctx: *mut rxkb_context,
     mut path: *const i8,
     extensions: &mut Vec<*mut i8>,
-    mut versioned_count: darray_size_t,
+    mut versioned_count: u32,
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
@@ -1968,7 +1968,7 @@ unsafe fn add_direct_subdirectories(
                         {
                             continue;
                         }
-                        let mut i: darray_size_t = 0 as darray_size_t;
+                        let mut i: u32 = 0 as u32;
                         while i < versioned_count {
                             let prev_name: *const i8 =
                                 (extensions[i as usize]).offset(versioned_path_length as isize);
@@ -2100,7 +2100,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
                     ctx,
                     extensions_path,
                     &mut extensions,
-                    0 as darray_size_t,
+                    0 as u32,
                     0 as usize,
                 );
             versioned_path_length = cstr_len(extensions_path);
@@ -2113,7 +2113,7 @@ pub unsafe fn rxkb_context_include_path_append_default(mut ctx: *mut rxkb_contex
             extensions_path = DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.as_ptr();
         }
         if !extensions_path.is_null() {
-            let ext_count = extensions.len() as darray_size_t;
+            let ext_count = extensions.len() as u32;
             ret = ret as i32
                 | add_direct_subdirectories(
                     ctx,

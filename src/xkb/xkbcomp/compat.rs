@@ -87,7 +87,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
     xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
@@ -952,7 +951,7 @@ unsafe fn SetInterpField(
                     }
                     act_0 = (*act_0).common.next as *mut ExprDef;
                 }
-                match actions.len() as darray_size_t {
+                match actions.len() as u32 {
                     0 => {}
                     1 => {
                         (*si).interp.num_actions = 1 as xkb_action_count_t;
@@ -1102,8 +1101,8 @@ unsafe fn SetLedMapField(
             if !ExprResolveGroupMask((*info).keymap_info, value, &raw mut mask, &raw mut pending) {
                 if pending {
                     (*ledi).led.set_pending_groups((true) as bool);
-                    let pending_index: darray_size_t =
-                        (&*(*(*info).keymap_info).pending_computations).len() as darray_size_t;
+                    let pending_index: u32 =
+                        (&*(*(*info).keymap_info).pending_computations).len() as u32;
                     (&mut *(*(*info).keymap_info).pending_computations).push(pending_computation {
                         expr: *value_ptr,
                         computed: false,
@@ -1662,11 +1661,10 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             CopyInterps(info, false, MATCH_ANY_OR_NONE, &raw mut collect);
             if collect.sym_interprets.is_empty() {
                 (*keymap).sym_interprets = std::ptr::null_mut();
-                *&raw mut (*keymap).num_sym_interprets = 0 as darray_size_t;
+                *&raw mut (*keymap).num_sym_interprets = 0 as u32;
             } else {
                 collect.sym_interprets.shrink_to_fit();
-                *&raw mut (*keymap).num_sym_interprets =
-                    collect.sym_interprets.len() as darray_size_t;
+                *&raw mut (*keymap).num_sym_interprets = collect.sym_interprets.len() as u32;
                 (*keymap).sym_interprets = collect.sym_interprets.as_mut_ptr();
                 std::mem::forget(collect.sym_interprets);
             }

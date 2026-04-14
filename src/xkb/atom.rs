@@ -2,8 +2,6 @@
 //!
 //! Fully safe internals. Functions are normal Rust — no FFI wrappers.
 
-pub use crate::xkb::shared_types::darray_size_t;
-
 use std::ffi::CString;
 
 /// Atom table - string interning system
@@ -52,8 +50,8 @@ pub unsafe fn atom_table_free(table: *mut atom_table) {
 }
 
 /// Get number of atoms in table
-pub unsafe fn atom_table_size(table: *mut atom_table) -> darray_size_t {
-    unsafe { (*table).strings.len() as darray_size_t }
+pub unsafe fn atom_table_size(table: *mut atom_table) -> u32 {
+    unsafe { (*table).strings.len() as u32 }
 }
 
 /// Get text for an atom (returns pointer to interned string)

@@ -7,11 +7,11 @@ pub use crate::xkb::messages::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
+pub use crate::xkb::shared_types::darray_string;
 pub use crate::xkb::shared_types::dirent;
 pub use crate::xkb::shared_types::stat;
 pub use crate::xkb::shared_types::timespec;
 pub use crate::xkb::shared_types::__S_IFMT;
-pub use crate::xkb::shared_types::{darray_size_t, darray_string};
 use crate::xkb::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
@@ -183,7 +183,7 @@ unsafe fn add_direct_subdirectories(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
     mut extensions: *mut Vec<*mut i8>,
-    mut versioned_count: darray_size_t,
+    mut versioned_count: u32,
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
@@ -270,7 +270,7 @@ unsafe fn add_direct_subdirectories(
                         {
                             continue;
                         }
-                        let mut i: darray_size_t = 0 as darray_size_t;
+                        let mut i: u32 = 0 as u32;
                         while i < versioned_count {
                             let prev_name: *const i8 =
                                 ((&*extensions)[i as usize]).offset(versioned_path_length as isize);
@@ -293,12 +293,11 @@ unsafe fn add_direct_subdirectories(
                     9563249396912231495 => {}
                     _ => {
                         closedir(dir);
-                        if (&*extensions).len() as darray_size_t > versioned_count {
+                        if (&*extensions).len() as u32 > versioned_count {
                             qsort(
                                 (*extensions).as_mut_ptr().offset(versioned_count as isize)
                                     as *mut ::core::ffi::c_void,
-                                ((&*extensions).len() as darray_size_t)
-                                    .wrapping_sub(versioned_count)
+                                ((&*extensions).len() as u32).wrapping_sub(versioned_count)
                                     as usize,
                                 std::mem::size_of::<*mut i8>(),
                                 Some(
@@ -390,7 +389,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ctx,
                 extensions_path,
                 &raw mut extensions,
-                0 as darray_size_t,
+                0 as u32,
                 0 as usize,
             );
             versioned_path_length = cstr_len(extensions_path);
@@ -401,7 +400,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ctx,
                 extensions_path,
                 &raw mut extensions,
-                extensions.len() as darray_size_t,
+                extensions.len() as u32,
                 versioned_path_length,
             );
         }

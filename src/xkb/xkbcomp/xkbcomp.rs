@@ -112,7 +112,6 @@ unsafe fn text_v1_keymap_get_as_string(
 ) -> *mut i8 {
     ::core::ptr::null_mut()
 }
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     format_max_groups, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
     xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,

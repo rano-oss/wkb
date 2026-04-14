@@ -45,7 +45,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::shared_types::{DEFAULT_XKB_LAYOUT, DEFAULT_XKB_MODEL, DEFAULT_XKB_RULES};
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
@@ -110,18 +109,18 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
         return true;
     }
 }
-pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> darray_size_t {
+pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> u32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
-            (*ctx).failed_includes.len() as darray_size_t
+            (*ctx).failed_includes.len() as u32
         } else {
-            0 as darray_size_t
+            0 as u32
         };
     }
 }
 pub unsafe fn xkb_context_failed_include_path_get(
     mut ctx: *mut xkb_context,
-    mut idx: darray_size_t,
+    mut idx: u32,
 ) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_failed_include_paths(ctx) {
@@ -131,7 +130,7 @@ pub unsafe fn xkb_context_failed_include_path_get(
     }
 }
 
-pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> darray_size_t {
+pub unsafe fn xkb_atom_table_size(mut ctx: *mut xkb_context) -> u32 {
     unsafe {
         return atom_table_size((*ctx).atom_table);
     }

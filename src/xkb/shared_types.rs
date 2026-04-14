@@ -7,8 +7,7 @@
 
 // ── Leaf type aliases ────────────────────────────────────────────────
 
-pub type darray_size_t = u32;
-pub type xkb_atom_t = darray_size_t;
+pub type xkb_atom_t = u32;
 
 // ── xkbcommon public types ───────────────────────────────────────────
 
@@ -142,8 +141,8 @@ pub struct xkb_keymap {
     pub keys: *mut xkb_key,
     pub c2rust_unnamed: C2Rust_Unnamed_3,
     pub types: *mut xkb_key_type,
-    pub num_types: darray_size_t,
-    pub num_sym_interprets: darray_size_t,
+    pub num_types: u32,
+    pub num_sym_interprets: u32,
     pub sym_interprets: *mut xkb_sym_interpret,
     pub mods: xkb_mod_set,
     pub canonical_state_mask: xkb_mod_mask_t,
@@ -399,7 +398,7 @@ pub struct xkb_key_type {
     pub num_levels: xkb_level_index_t,
     pub num_level_names: xkb_level_index_t,
     pub level_names: *mut xkb_atom_t,
-    pub num_entries: darray_size_t,
+    pub num_entries: u32,
     pub entries: *mut xkb_key_type_entry,
 }
 
@@ -421,7 +420,7 @@ pub union C2Rust_Unnamed_3 {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_4 {
-    pub num_key_aliases: darray_size_t,
+    pub num_key_aliases: u32,
     pub key_aliases: *mut xkb_key_alias,
 }
 
@@ -435,7 +434,7 @@ pub struct xkb_key_alias {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct C2Rust_Unnamed_5 {
-    pub num_key_names: darray_size_t,
+    pub num_key_names: u32,
     pub key_names: *mut KeycodeMatch,
 }
 
@@ -463,7 +462,7 @@ pub struct C2Rust_Unnamed_7 {
     #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
     #[bitfield(name = "low", ty = "bool", bits = "1..=1")]
     #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "index", ty = "darray_size_t", bits = "3..=31")]
+    #[bitfield(name = "index", ty = "u32", bits = "3..=31")]
     pub found_low_is_alias_index: [u8; 4],
 }
 
@@ -473,7 +472,7 @@ pub struct C2Rust_Unnamed_8 {
     #[bitfield(name = "found", ty = "bool", bits = "0..=0")]
     #[bitfield(name = "c2rust_unnamed", ty = "bool", bits = "1..=1")]
     #[bitfield(name = "is_alias", ty = "bool", bits = "2..=2")]
-    #[bitfield(name = "c2rust_unnamed_0", ty = "darray_size_t", bits = "3..=31")]
+    #[bitfield(name = "c2rust_unnamed_0", ty = "u32", bits = "3..=31")]
     pub found_c2rust_unnamed_is_alias_c2rust_unnamed_0: [u8; 4],
 }
 

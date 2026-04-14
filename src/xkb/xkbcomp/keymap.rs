@@ -83,7 +83,6 @@ pub use crate::xkb::shared_ast_types::{
     PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
     PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
 };
-pub use crate::xkb::shared_types::darray_size_t;
 pub use crate::xkb::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
     isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
@@ -216,7 +215,7 @@ unsafe fn FindInterpForKey(
         while s < num_syms {
             let mut c2rust_current_block_34: u64;
             let mut found: bool = false;
-            let mut i: darray_size_t = 0 as darray_size_t;
+            let mut i: u32 = 0 as u32;
             's_26: loop {
                 if !(i < (*keymap).num_sym_interprets) {
                     c2rust_current_block_34 = 7659304154607701039;
@@ -253,7 +252,7 @@ unsafe fn FindInterpForKey(
                         _ => {}
                     }
                     if found as i32 != 0
-                        && i > 0 as darray_size_t
+                        && i > 0 as u32
                         && (*interp).sym == XKB_KEY_NoSymbol as xkb_keysym_t
                     {
                         if !interprets.is_empty() {
@@ -353,9 +352,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 }
                             }
                         }
-                        if (actions.len() as darray_size_t != 0) as i64
-                            > MAX_ACTIONS_PER_LEVEL as i64
-                        {
+                        if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
                             xkb_logf!(
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
@@ -363,7 +360,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                 65535 as i32,
-                                actions.len() as darray_size_t,
+                                actions.len() as u32,
                             );
                             (*(*(*key).groups.offset(group as isize))
                                 .levels
@@ -375,7 +372,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 .offset(level as isize))
                             .num_actions = actions.len() as xkb_action_count_t;
                         }
-                        match actions.len() as darray_size_t {
+                        match actions.len() as u32 {
                             0 => {
                                 (*(*(*key).groups.offset(group as isize))
                                     .levels
@@ -527,12 +524,12 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
 }
 unsafe fn add_key_aliases(
     mut keymap: *mut xkb_keymap,
-    mut min: darray_size_t,
-    mut max: darray_size_t,
+    mut min: u32,
+    mut max: u32,
     mut aliases: *mut xkb_key_alias,
 ) {
     unsafe {
-        let mut alias: darray_size_t = min;
+        let mut alias: u32 = min;
         while alias <= max {
             let entry: KeycodeMatch = *(*keymap)
                 .c2rust_unnamed
@@ -689,9 +686,9 @@ unsafe fn update_pending_led_fields(mut info: *mut xkb_keymap_info, mut led: *mu
 unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = &raw mut (*info).keymap;
-        let mut num_key_aliases: darray_size_t = 0 as darray_size_t;
-        let mut min_alias: darray_size_t = 0 as darray_size_t;
-        let mut max_alias: darray_size_t = 0 as darray_size_t;
+        let mut num_key_aliases: u32 = 0 as u32;
+        let mut min_alias: u32 = 0 as u32;
+        let mut max_alias: u32 = 0 as u32;
         let mut alias: xkb_atom_t = 0 as xkb_atom_t;
         while alias < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
             let entry: KeycodeMatch = *(*keymap)
@@ -703,18 +700,18 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 && entry.c2rust_unnamed.found() as i32 != 0
             {
                 if num_key_aliases == 0 {
-                    min_alias = alias as darray_size_t;
+                    min_alias = alias as u32;
                 }
-                max_alias = alias as darray_size_t;
+                max_alias = alias as u32;
                 num_key_aliases = num_key_aliases.wrapping_add(1);
             }
             alias = alias.wrapping_add(1);
         }
         if num_key_aliases != 0 {
-            let required_space: darray_size_t = (std::mem::size_of::<xkb_key_alias>())
+            let required_space: u32 = (std::mem::size_of::<xkb_key_alias>())
                 .wrapping_div(std::mem::size_of::<KeycodeMatch>())
                 .wrapping_mul(num_key_aliases as usize)
-                as darray_size_t;
+                as u32;
             if min_alias >= required_space {
                 add_key_aliases(
                     keymap,
@@ -736,7 +733,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 .c2rust_unnamed
                 .num_key_names
                 .wrapping_sub(max_alias)
-                .wrapping_sub(1 as darray_size_t)
+                .wrapping_sub(1 as u32)
                 > required_space
             {
                 let aliases: *mut xkb_key_alias = (*keymap)
@@ -816,7 +813,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 name: GROUP_LAST_INDEX_NAME.as_ptr(),
                 value: (1 as u32) << num_groups.wrapping_sub(1 as xkb_layout_index_t),
             };
-            let mut i: darray_size_t = 0 as darray_size_t;
+            let mut i: u32 = 0 as u32;
             while i < (*keymap).num_sym_interprets {
                 let interp: *mut xkb_sym_interpret =
                     (*keymap).sym_interprets.offset(i as isize) as *mut xkb_sym_interpret;
@@ -911,13 +908,13 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             mod_0 = mod_0.offset(1);
         }
         (*keymap).canonical_state_mask |= extra_canonical_mods;
-        let mut i_0: darray_size_t = 0 as darray_size_t;
+        let mut i_0: u32 = 0 as u32;
         while i_0 < (*keymap).num_types {
             ComputeEffectiveMask(
                 keymap,
                 &raw mut (*(*keymap).types.offset(i_0 as isize)).mods,
             );
-            let mut j: darray_size_t = 0 as darray_size_t;
+            let mut j: u32 = 0 as u32;
             while j < (*(*keymap).types.offset(i_0 as isize)).num_entries {
                 if has_unbound_vmods(
                     keymap,

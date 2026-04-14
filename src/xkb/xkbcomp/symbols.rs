@@ -4,7 +4,6 @@ use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_
 use crate::xkb_logf;
 use c2rust_bitfields;
 
-pub use crate::xkb::shared_types::darray_size_t;
 use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
 use crate::xkb::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
@@ -453,14 +452,14 @@ unsafe fn MergeGroups(
             InitGroupInfo(from);
             return true;
         }
-        let levels_in_both: darray_size_t = if (*into).levels.len() < (*from).levels.len() {
+        let levels_in_both: u32 = if (*into).levels.len() < (*from).levels.len() {
             (*into).levels.len()
         } else {
             (*from).levels.len()
-        } as darray_size_t;
-        let mut fromKeysymsCount: darray_size_t = 0 as darray_size_t;
-        let mut fromActionsCount: darray_size_t = 0 as darray_size_t;
-        let mut i: darray_size_t = 0 as darray_size_t;
+        } as u32;
+        let mut fromKeysymsCount: u32 = 0 as u32;
+        let mut fromActionsCount: u32 = 0 as u32;
+        let mut i: u32 = 0 as u32;
         while i < levels_in_both {
             let intoLevel: *mut xkb_level =
                 &mut (&mut (*into).levels)[i as usize] as *mut xkb_level;
@@ -486,7 +485,7 @@ unsafe fn MergeGroups(
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] Multiple symbols for level {}/group {} on key {}; Using {}, ignoring {}\n",
                                 XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
-                                i.wrapping_add(1 as darray_size_t),
+                                i.wrapping_add(1 as u32),
                                 group.wrapping_add(1 as xkb_layout_index_t),
                                 crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
                                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
@@ -550,7 +549,7 @@ unsafe fn MergeGroups(
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Multiple actions for level {}/group {} on key {}; {}\n",
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                    i.wrapping_add(1 as darray_size_t),
+                                    i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as xkb_layout_index_t),
                                     crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
@@ -580,7 +579,7 @@ unsafe fn MergeGroups(
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Multiple actions for level {}/group {} on key {}; Using {}, ignoring {}\n",
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                    i.wrapping_add(1 as darray_size_t),
+                                    i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as xkb_layout_index_t),
                                     crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::CStrDisplay(ActionTypeText((*use_1).type_0)),
@@ -635,8 +634,8 @@ unsafe fn MergeGroups(
             }
             i = i.wrapping_add(1);
         }
-        let mut level_idx: darray_size_t = levels_in_both;
-        while level_idx < (&(*from).levels).len() as darray_size_t {
+        let mut level_idx: u32 = levels_in_both;
+        while level_idx < (&(*from).levels).len() as u32 {
             let level_val = (&(*from).levels)[level_idx as usize];
             (&mut (*into).levels).push(level_val);
             (&mut (*from).levels)[level_idx as usize].num_syms = 0 as xkb_keysym_count_t;
@@ -646,7 +645,7 @@ unsafe fn MergeGroups(
             level_idx = level_idx.wrapping_add(1);
         }
         if fromKeysymsCount != 0 {
-            if fromKeysymsCount == (*into).levels.len() as darray_size_t {
+            if fromKeysymsCount == (*into).levels.len() as u32 {
                 (*into).defined =
                     ((*into).defined as u32 & !(GROUP_FIELD_SYMS as i32) as u32) as group_field;
             }
@@ -655,7 +654,7 @@ unsafe fn MergeGroups(
                 as group_field;
         }
         if fromActionsCount != 0 {
-            if fromActionsCount == (*into).levels.len() as darray_size_t {
+            if fromActionsCount == (*into).levels.len() as u32 {
                 (*into).defined =
                     ((*into).defined as u32 & !(GROUP_FIELD_ACTS as i32) as u32) as group_field;
             }
@@ -1533,7 +1532,7 @@ unsafe fn AddSymbolsToKey(
         let mut keysymList: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList.is_null() {
             nLevels = nLevels.wrapping_add(1);
-            if (&(*keysymList).syms).len() as darray_size_t > 0 as darray_size_t {
+            if (&(*keysymList).syms).len() as u32 > 0 as u32 {
                 nonEmptyLevels = nLevels;
             }
             keysymList = (*keysymList).common.next as *mut ExprKeysymList;
@@ -1550,8 +1549,8 @@ unsafe fn AddSymbolsToKey(
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
-            let syms_len = (&(*keysymList_0).syms).len() as darray_size_t;
-            if (syms_len > 65535 as darray_size_t) as i64 != 0 {
+            let syms_len = (&(*keysymList_0).syms).len() as u32;
+            if (syms_len > 65535 as u32) as i64 != 0 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -2231,8 +2230,8 @@ unsafe fn SetSymbolsField(
             }
             if pending {
                 (*keyi).set_out_of_range_pending_group((true) as bool);
-                let pending_index: darray_size_t =
-                    (&*(*(*info).keymap_info).pending_computations).len() as darray_size_t;
+                let pending_index: u32 =
+                    (&*(*(*info).keymap_info).pending_computations).len() as u32;
                 (&mut *(*(*info).keymap_info).pending_computations).push(pending_computation {
                     expr: *value_ptr,
                     computed: false,
@@ -2976,7 +2975,7 @@ unsafe fn FindTypeForGroup(
     mut explicit_type: *mut bool,
 ) -> *const xkb_key_type {
     unsafe {
-        let mut i: darray_size_t = 0;
+        let mut i: u32 = 0;
         let mut groupi: *mut GroupInfo =
             &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
         let mut type_name: xkb_atom_t = (*groupi).type_0;
@@ -3004,7 +3003,7 @@ unsafe fn FindTypeForGroup(
             );
         } else {
             i = 0;
-            i = 0 as darray_size_t;
+            i = 0 as u32;
             while i < (*keymap).num_types {
                 if (*(*keymap).types.offset(i as isize)).name == type_name {
                     break;
@@ -3118,7 +3117,7 @@ unsafe fn CopySymbolsDefToKeymap(
                         FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
 
                     // Always have as many levels as the type specifies
-                    if (*type_0).num_levels < (*groupi).levels.len() as darray_size_t {
+                    if (*type_0).num_levels < (*groupi).levels.len() as u32 {
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
