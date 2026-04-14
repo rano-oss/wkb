@@ -1,746 +1,12 @@
-pub type xmlChar = ::core::ffi::c_uchar;
-extern "C" {
-    pub fn xmlStrdup(cur: *const xmlChar) -> *mut xmlChar;
-    pub fn xmlStrEqual(str1: *const xmlChar, str2: *const xmlChar) -> i32;
-}
-pub type xmlFreeFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
-extern "C" {
-    pub static mut xmlFree: xmlFreeFunc;
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlParserInputBuffer {
-    pub context: *mut ::core::ffi::c_void,
-    pub readcallback: xmlInputReadCallback,
-    pub closecallback: xmlInputCloseCallback,
-    pub encoder: xmlCharEncodingHandlerPtr,
-    pub buffer: xmlBufPtr,
-    pub raw: xmlBufPtr,
-    pub compressed: i32,
-    pub error: i32,
-    pub rawconsumed: u64,
-}
-pub type xmlInputCloseCallback = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
-pub type xmlInputReadCallback = Option<unsafe fn(*mut ::core::ffi::c_void, *mut i8, i32) -> i32>;
-extern "C" {
-    pub fn xmlParserInputBufferCreateMem(
-        mem: *const i8,
-        size: i32,
-        enc: xmlCharEncoding,
-    ) -> xmlParserInputBufferPtr;
-}
-pub type xmlBufPtr = *mut xmlBuf;
-pub type xmlBuf = _xmlBuf;
-pub type xmlParserInputBuffer = _xmlParserInputBuffer;
-pub type xmlParserInputBufferPtr = *mut xmlParserInputBuffer;
-pub type xmlEntityPtr = *mut xmlEntity;
-pub type xmlEntity = _xmlEntity;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlDoc {
-    pub _private: *mut ::core::ffi::c_void,
-    pub type_0: xmlElementType,
-    pub name: *mut i8,
-    pub children: *mut _xmlNode,
-    pub last: *mut _xmlNode,
-    pub parent: *mut _xmlNode,
-    pub next: *mut _xmlNode,
-    pub prev: *mut _xmlNode,
-    pub doc: *mut _xmlDoc,
-    pub compression: i32,
-    pub standalone: i32,
-    pub intSubset: *mut _xmlDtd,
-    pub extSubset: *mut _xmlDtd,
-    pub oldNs: *mut _xmlNs,
-    pub version: *const xmlChar,
-    pub encoding: *const xmlChar,
-    pub ids: *mut ::core::ffi::c_void,
-    pub refs: *mut ::core::ffi::c_void,
-    pub URL: *const xmlChar,
-    pub charset: i32,
-    pub dict: *mut _xmlDict,
-    pub psvi: *mut ::core::ffi::c_void,
-    pub parseFlags: i32,
-    pub properties: i32,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlNs {
-    pub next: *mut _xmlNs,
-    pub type_0: xmlNsType,
-    pub href: *const xmlChar,
-    pub prefix: *const xmlChar,
-    pub _private: *mut ::core::ffi::c_void,
-    pub context: *mut _xmlDoc,
-}
-pub type xmlElementType = xmlNsType;
-pub type xmlNsType = u32;
-pub const XML_XINCLUDE_END: xmlNsType = 20;
-pub const XML_XINCLUDE_START: xmlNsType = 19;
-pub const XML_NAMESPACE_DECL: xmlNsType = 18;
-pub const XML_ENTITY_DECL: xmlNsType = 17;
-pub const XML_ATTRIBUTE_DECL: xmlNsType = 16;
-pub const XML_ELEMENT_DECL: xmlNsType = 15;
-pub const XML_DTD_NODE: xmlNsType = 14;
-pub const XML_HTML_DOCUMENT_NODE: xmlNsType = 13;
-pub const XML_NOTATION_NODE: xmlNsType = 12;
-pub const XML_DOCUMENT_FRAG_NODE: xmlNsType = 11;
-pub const XML_DOCUMENT_TYPE_NODE: xmlNsType = 10;
-pub const XML_DOCUMENT_NODE: xmlNsType = 9;
-pub const XML_COMMENT_NODE: xmlNsType = 8;
-pub const XML_PI_NODE: xmlNsType = 7;
-pub const XML_ENTITY_NODE: xmlNsType = 6;
-pub const XML_ENTITY_REF_NODE: xmlNsType = 5;
-pub const XML_CDATA_SECTION_NODE: xmlNsType = 4;
-pub const XML_TEXT_NODE: xmlNsType = 3;
-pub const XML_ATTRIBUTE_NODE: xmlNsType = 2;
-pub const XML_ELEMENT_NODE: xmlNsType = 1;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlDtd {
-    pub _private: *mut ::core::ffi::c_void,
-    pub type_0: xmlElementType,
-    pub name: *const xmlChar,
-    pub children: *mut _xmlNode,
-    pub last: *mut _xmlNode,
-    pub parent: *mut _xmlDoc,
-    pub next: *mut _xmlNode,
-    pub prev: *mut _xmlNode,
-    pub doc: *mut _xmlDoc,
-    pub notations: *mut ::core::ffi::c_void,
-    pub elements: *mut ::core::ffi::c_void,
-    pub attributes: *mut ::core::ffi::c_void,
-    pub entities: *mut ::core::ffi::c_void,
-    pub ExternalID: *const xmlChar,
-    pub SystemID: *const xmlChar,
-    pub pentities: *mut ::core::ffi::c_void,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlNode {
-    pub _private: *mut ::core::ffi::c_void,
-    pub type_0: xmlElementType,
-    pub name: *const xmlChar,
-    pub children: *mut _xmlNode,
-    pub last: *mut _xmlNode,
-    pub parent: *mut _xmlNode,
-    pub next: *mut _xmlNode,
-    pub prev: *mut _xmlNode,
-    pub doc: *mut _xmlDoc,
-    pub ns: *mut xmlNs,
-    pub content: *mut xmlChar,
-    pub properties: *mut _xmlAttr,
-    pub nsDef: *mut xmlNs,
-    pub psvi: *mut ::core::ffi::c_void,
-    pub line: u16,
-    pub extra: u16,
-}
-pub type xmlNs = _xmlNs;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlAttr {
-    pub _private: *mut ::core::ffi::c_void,
-    pub type_0: xmlElementType,
-    pub name: *const xmlChar,
-    pub children: *mut _xmlNode,
-    pub last: *mut _xmlNode,
-    pub parent: *mut _xmlNode,
-    pub next: *mut _xmlAttr,
-    pub prev: *mut _xmlAttr,
-    pub doc: *mut _xmlDoc,
-    pub ns: *mut xmlNs,
-    pub atype: xmlAttributeType,
-    pub psvi: *mut ::core::ffi::c_void,
-}
-pub type xmlAttributeType = u32;
-pub const XML_ATTRIBUTE_NOTATION: xmlAttributeType = 10;
-pub const XML_ATTRIBUTE_ENUMERATION: xmlAttributeType = 9;
-pub const XML_ATTRIBUTE_NMTOKENS: xmlAttributeType = 8;
-pub const XML_ATTRIBUTE_NMTOKEN: xmlAttributeType = 7;
-pub const XML_ATTRIBUTE_ENTITIES: xmlAttributeType = 6;
-pub const XML_ATTRIBUTE_ENTITY: xmlAttributeType = 5;
-pub const XML_ATTRIBUTE_IDREFS: xmlAttributeType = 4;
-pub const XML_ATTRIBUTE_IDREF: xmlAttributeType = 3;
-pub const XML_ATTRIBUTE_ID: xmlAttributeType = 2;
-pub const XML_ATTRIBUTE_CDATA: xmlAttributeType = 1;
-pub type xmlParserInput = _xmlParserInput;
-pub type xmlParserInputPtr = *mut xmlParserInput;
-pub type xmlAttrPtr = *mut xmlAttr;
-pub type xmlAttr = _xmlAttr;
-pub type xmlNodePtr = *mut xmlNode;
-pub type xmlNode = _xmlNode;
-pub type xmlDocPtr = *mut xmlDoc;
-pub type xmlDoc = _xmlDoc;
-pub type xmlSAXLocatorPtr = *mut xmlSAXLocator;
-pub type xmlSAXLocator = _xmlSAXLocator;
-pub type xmlElementContentPtr = *mut xmlElementContent;
-pub type xmlElementContent = _xmlElementContent;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlElementContent {
-    pub type_0: xmlElementContentType,
-    pub ocur: xmlElementContentOccur,
-    pub name: *const xmlChar,
-    pub c1: *mut _xmlElementContent,
-    pub c2: *mut _xmlElementContent,
-    pub parent: *mut _xmlElementContent,
-    pub prefix: *const xmlChar,
-}
-pub type xmlElementContentOccur = u32;
-pub const XML_ELEMENT_CONTENT_PLUS: xmlElementContentOccur = 4;
-pub const XML_ELEMENT_CONTENT_MULT: xmlElementContentOccur = 3;
-pub const XML_ELEMENT_CONTENT_OPT: xmlElementContentOccur = 2;
-pub const XML_ELEMENT_CONTENT_ONCE: xmlElementContentOccur = 1;
-pub type xmlElementContentType = u32;
-pub const XML_ELEMENT_CONTENT_OR: xmlElementContentType = 4;
-pub const XML_ELEMENT_CONTENT_SEQ: xmlElementContentType = 3;
-pub const XML_ELEMENT_CONTENT_ELEMENT: xmlElementContentType = 2;
-pub const XML_ELEMENT_CONTENT_PCDATA: xmlElementContentType = 1;
-pub type xmlEnumerationPtr = *mut xmlEnumeration;
-pub type xmlEnumeration = _xmlEnumeration;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlEnumeration {
-    pub next: *mut _xmlEnumeration,
-    pub name: *const xmlChar,
-}
-pub type xmlParserCtxt = _xmlParserCtxt;
-pub type xmlParserCtxtPtr = *mut xmlParserCtxt;
-pub type xmlSAXHandler = _xmlSAXHandler;
-pub type xmlSAXHandlerPtr = *mut xmlSAXHandler;
-pub type xmlDtd = _xmlDtd;
-pub type xmlDtdPtr = *mut xmlDtd;
-extern "C" {
-    pub type _xmlBuf;
-    pub type _xmlDict;
-    pub fn xmlFreeDtd(cur: xmlDtdPtr);
-    pub fn xmlFreeDoc(cur: xmlDocPtr);
-    pub fn xmlDocGetRootElement(doc: *const xmlDoc) -> xmlNodePtr;
-    pub fn xmlGetProp(node: *const xmlNode, name: *const xmlChar) -> *mut xmlChar;
-}
-pub type xmlCharEncodingHandlerPtr = *mut xmlCharEncodingHandler;
-pub type xmlCharEncodingHandler = _xmlCharEncodingHandler;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlCharEncodingHandler {
-    pub name: *mut i8,
-    pub input: xmlCharEncodingInputFunc,
-    pub output: xmlCharEncodingOutputFunc,
-    pub iconv_in: iconv_t,
-    pub iconv_out: iconv_t,
-}
-pub type xmlCharEncodingOutputFunc = Option<
-    unsafe fn(*mut ::core::ffi::c_uchar, *mut i32, *const ::core::ffi::c_uchar, *mut i32) -> i32,
->;
-pub type xmlCharEncodingInputFunc = Option<
-    unsafe fn(*mut ::core::ffi::c_uchar, *mut i32, *const ::core::ffi::c_uchar, *mut i32) -> i32,
->;
-pub type xmlCharEncoding = i32;
-pub const XML_CHAR_ENCODING_ASCII: xmlCharEncoding = 22;
-pub const XML_CHAR_ENCODING_EUC_JP: xmlCharEncoding = 21;
-pub const XML_CHAR_ENCODING_SHIFT_JIS: xmlCharEncoding = 20;
-pub const XML_CHAR_ENCODING_2022_JP: xmlCharEncoding = 19;
-pub const XML_CHAR_ENCODING_8859_9: xmlCharEncoding = 18;
-pub const XML_CHAR_ENCODING_8859_8: xmlCharEncoding = 17;
-pub const XML_CHAR_ENCODING_8859_7: xmlCharEncoding = 16;
-pub const XML_CHAR_ENCODING_8859_6: xmlCharEncoding = 15;
-pub const XML_CHAR_ENCODING_8859_5: xmlCharEncoding = 14;
-pub const XML_CHAR_ENCODING_8859_4: xmlCharEncoding = 13;
-pub const XML_CHAR_ENCODING_8859_3: xmlCharEncoding = 12;
-pub const XML_CHAR_ENCODING_8859_2: xmlCharEncoding = 11;
-pub const XML_CHAR_ENCODING_8859_1: xmlCharEncoding = 10;
-pub const XML_CHAR_ENCODING_UCS2: xmlCharEncoding = 9;
-pub const XML_CHAR_ENCODING_UCS4_3412: xmlCharEncoding = 8;
-pub const XML_CHAR_ENCODING_UCS4_2143: xmlCharEncoding = 7;
-pub const XML_CHAR_ENCODING_EBCDIC: xmlCharEncoding = 6;
-pub const XML_CHAR_ENCODING_UCS4BE: xmlCharEncoding = 5;
-pub const XML_CHAR_ENCODING_UCS4LE: xmlCharEncoding = 4;
-pub const XML_CHAR_ENCODING_UTF16BE: xmlCharEncoding = 3;
-pub const XML_CHAR_ENCODING_UTF16LE: xmlCharEncoding = 2;
-pub const XML_CHAR_ENCODING_UTF8: xmlCharEncoding = 1;
-pub const XML_CHAR_ENCODING_NONE: xmlCharEncoding = 0;
-pub const XML_CHAR_ENCODING_ERROR: xmlCharEncoding = -1;
-pub type iconv_t = *mut ::core::ffi::c_void;
-pub mod parser_h {
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlParserInput {
-        pub buf: xmlParserInputBufferPtr,
-        pub filename: *const i8,
-        pub directory: *const i8,
-        pub base: *const xmlChar,
-        pub cur: *const xmlChar,
-        pub end: *const xmlChar,
-        pub length: i32,
-        pub line: i32,
-        pub col: i32,
-        pub consumed: u64,
-        pub free: xmlParserInputDeallocate,
-        pub encoding: *const xmlChar,
-        pub version: *const xmlChar,
-        pub flags: i32,
-        pub id: i32,
-        pub parentConsumed: u64,
-        pub entity: xmlEntityPtr,
-    }
-    pub type xmlParserInputDeallocate = Option<unsafe extern "C" fn(*mut xmlChar) -> ()>;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlParserCtxt {
-        pub sax: *mut _xmlSAXHandler,
-        pub userData: *mut ::core::ffi::c_void,
-        pub myDoc: xmlDocPtr,
-        pub wellFormed: i32,
-        pub replaceEntities: i32,
-        pub version: *const xmlChar,
-        pub encoding: *const xmlChar,
-        pub standalone: i32,
-        pub html: i32,
-        pub input: xmlParserInputPtr,
-        pub inputNr: i32,
-        pub inputMax: i32,
-        pub inputTab: *mut xmlParserInputPtr,
-        pub node: xmlNodePtr,
-        pub nodeNr: i32,
-        pub nodeMax: i32,
-        pub nodeTab: *mut xmlNodePtr,
-        pub record_info: i32,
-        pub node_seq: xmlParserNodeInfoSeq,
-        pub errNo: i32,
-        pub hasExternalSubset: i32,
-        pub hasPErefs: i32,
-        pub external: i32,
-        pub valid: i32,
-        pub validate: i32,
-        pub vctxt: xmlValidCtxt,
-        pub instate: xmlParserInputState,
-        pub token: i32,
-        pub directory: *mut i8,
-        pub name: *const xmlChar,
-        pub nameNr: i32,
-        pub nameMax: i32,
-        pub nameTab: *mut *const xmlChar,
-        pub nbChars: i64,
-        pub checkIndex: i64,
-        pub keepBlanks: i32,
-        pub disableSAX: i32,
-        pub inSubset: i32,
-        pub intSubName: *const xmlChar,
-        pub extSubURI: *mut xmlChar,
-        pub extSubSystem: *mut xmlChar,
-        pub space: *mut i32,
-        pub spaceNr: i32,
-        pub spaceMax: i32,
-        pub spaceTab: *mut i32,
-        pub depth: i32,
-        pub entity: xmlParserInputPtr,
-        pub charset: i32,
-        pub nodelen: i32,
-        pub nodemem: i32,
-        pub pedantic: i32,
-        pub _private: *mut ::core::ffi::c_void,
-        pub loadsubset: i32,
-        pub linenumbers: i32,
-        pub catalogs: *mut ::core::ffi::c_void,
-        pub recovery: i32,
-        pub progressive: i32,
-        pub dict: xmlDictPtr,
-        pub atts: *mut *const xmlChar,
-        pub maxatts: i32,
-        pub docdict: i32,
-        pub str_xml: *const xmlChar,
-        pub str_xmlns: *const xmlChar,
-        pub str_xml_ns: *const xmlChar,
-        pub sax2: i32,
-        pub nsNr: i32,
-        pub nsMax: i32,
-        pub nsTab: *mut *const xmlChar,
-        pub attallocs: *mut u32,
-        pub pushTab: *mut xmlStartTag,
-        pub attsDefault: xmlHashTablePtr,
-        pub attsSpecial: xmlHashTablePtr,
-        pub nsWellFormed: i32,
-        pub options: i32,
-        pub dictNames: i32,
-        pub freeElemsNr: i32,
-        pub freeElems: xmlNodePtr,
-        pub freeAttrsNr: i32,
-        pub freeAttrs: xmlAttrPtr,
-        pub lastError: xmlError,
-        pub parseMode: xmlParserMode,
-        pub nbentities: u64,
-        pub sizeentities: u64,
-        pub nodeInfo: *mut xmlParserNodeInfo,
-        pub nodeInfoNr: i32,
-        pub nodeInfoMax: i32,
-        pub nodeInfoTab: *mut xmlParserNodeInfo,
-        pub input_id: i32,
-        pub sizeentcopy: u64,
-        pub endCheckState: i32,
-        pub nbErrors: u16,
-        pub nbWarnings: u16,
-        pub maxAmpl: u32,
-        pub nsdb: *mut xmlParserNsData,
-        pub attrHashMax: u32,
-        pub attrHash: *mut xmlAttrHashBucket,
-    }
-    pub type xmlAttrHashBucket = _xmlAttrHashBucket;
-    pub type xmlParserNsData = _xmlParserNsData;
-    pub type xmlParserNodeInfo = _xmlParserNodeInfo;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlParserNodeInfo {
-        pub node: *const _xmlNode,
-        pub begin_pos: u64,
-        pub begin_line: u64,
-        pub end_pos: u64,
-        pub end_line: u64,
-    }
-    pub type xmlParserMode = u32;
-    pub const XML_PARSE_READER: xmlParserMode = 5;
-    pub const XML_PARSE_PUSH_SAX: xmlParserMode = 4;
-    pub const XML_PARSE_PUSH_DOM: xmlParserMode = 3;
-    pub const XML_PARSE_SAX: xmlParserMode = 2;
-    pub const XML_PARSE_DOM: xmlParserMode = 1;
-    pub const XML_PARSE_UNKNOWN: xmlParserMode = 0;
-    pub type xmlStartTag = _xmlStartTag;
-    pub type xmlParserInputState = i32;
-    pub const XML_PARSER_XML_DECL: xmlParserInputState = 17;
-    pub const XML_PARSER_PUBLIC_LITERAL: xmlParserInputState = 16;
-    pub const XML_PARSER_IGNORE: xmlParserInputState = 15;
-    pub const XML_PARSER_EPILOG: xmlParserInputState = 14;
-    pub const XML_PARSER_SYSTEM_LITERAL: xmlParserInputState = 13;
-    pub const XML_PARSER_ATTRIBUTE_VALUE: xmlParserInputState = 12;
-    pub const XML_PARSER_ENTITY_VALUE: xmlParserInputState = 11;
-    pub const XML_PARSER_ENTITY_DECL: xmlParserInputState = 10;
-    pub const XML_PARSER_END_TAG: xmlParserInputState = 9;
-    pub const XML_PARSER_CDATA_SECTION: xmlParserInputState = 8;
-    pub const XML_PARSER_CONTENT: xmlParserInputState = 7;
-    pub const XML_PARSER_START_TAG: xmlParserInputState = 6;
-    pub const XML_PARSER_COMMENT: xmlParserInputState = 5;
-    pub const XML_PARSER_PROLOG: xmlParserInputState = 4;
-    pub const XML_PARSER_DTD: xmlParserInputState = 3;
-    pub const XML_PARSER_PI: xmlParserInputState = 2;
-    pub const XML_PARSER_MISC: xmlParserInputState = 1;
-    pub const XML_PARSER_START: xmlParserInputState = 0;
-    pub const XML_PARSER_EOF: xmlParserInputState = -1;
-    pub type xmlParserNodeInfoSeq = _xmlParserNodeInfoSeq;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlParserNodeInfoSeq {
-        pub maximum: u64,
-        pub length: u64,
-        pub buffer: *mut xmlParserNodeInfo,
-    }
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlSAXHandler {
-        pub internalSubset: internalSubsetSAXFunc,
-        pub isStandalone: isStandaloneSAXFunc,
-        pub hasInternalSubset: hasInternalSubsetSAXFunc,
-        pub hasExternalSubset: hasExternalSubsetSAXFunc,
-        pub resolveEntity: resolveEntitySAXFunc,
-        pub getEntity: getEntitySAXFunc,
-        pub entityDecl: entityDeclSAXFunc,
-        pub notationDecl: notationDeclSAXFunc,
-        pub attributeDecl: attributeDeclSAXFunc,
-        pub elementDecl: elementDeclSAXFunc,
-        pub unparsedEntityDecl: unparsedEntityDeclSAXFunc,
-        pub setDocumentLocator: setDocumentLocatorSAXFunc,
-        pub startDocument: startDocumentSAXFunc,
-        pub endDocument: endDocumentSAXFunc,
-        pub startElement: startElementSAXFunc,
-        pub endElement: endElementSAXFunc,
-        pub reference: referenceSAXFunc,
-        pub characters: charactersSAXFunc,
-        pub ignorableWhitespace: ignorableWhitespaceSAXFunc,
-        pub processingInstruction: processingInstructionSAXFunc,
-        pub comment: commentSAXFunc,
-        pub warning: warningSAXFunc,
-        pub error: errorSAXFunc,
-        pub fatalError: fatalErrorSAXFunc,
-        pub getParameterEntity: getParameterEntitySAXFunc,
-        pub cdataBlock: cdataBlockSAXFunc,
-        pub externalSubset: externalSubsetSAXFunc,
-        pub initialized: u32,
-        pub _private: *mut ::core::ffi::c_void,
-        pub startElementNs: startElementNsSAX2Func,
-        pub endElementNs: endElementNsSAX2Func,
-        pub serror: xmlStructuredErrorFunc,
-    }
-    pub type endElementNsSAX2Func = Option<
-        unsafe extern "C" fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            *const xmlChar,
-            *const xmlChar,
-        ) -> (),
-    >;
-    pub type startElementNsSAX2Func = Option<
-        unsafe extern "C" fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            *const xmlChar,
-            *const xmlChar,
-            i32,
-            *mut *const xmlChar,
-            i32,
-            i32,
-            *mut *const xmlChar,
-        ) -> (),
-    >;
-    pub type externalSubsetSAXFunc = Option<
-        unsafe extern "C" fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            *const xmlChar,
-            *const xmlChar,
-        ) -> (),
-    >;
-    pub type cdataBlockSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
-    pub type getParameterEntitySAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlChar) -> xmlEntityPtr>;
-    pub type fatalErrorSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    pub type errorSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    pub type warningSAXFunc =
-        Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-    pub type commentSAXFunc = Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
-    pub type processingInstructionSAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar) -> ()>;
-    pub type ignorableWhitespaceSAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
-    pub type charactersSAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, i32) -> ()>;
-    pub type referenceSAXFunc = Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
-    pub type endElementSAXFunc = Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> ()>;
-    pub type startElementSAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *mut *const xmlChar) -> ()>;
-    pub type endDocumentSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
-    pub type startDocumentSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> ()>;
-    pub type setDocumentLocatorSAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, xmlSAXLocatorPtr) -> ()>;
-    #[derive(Copy, Clone)]
-    #[repr(C)]
-    pub struct _xmlSAXLocator {
-        pub getPublicId: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> *const xmlChar>,
-        pub getSystemId: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> *const xmlChar>,
-        pub getLineNumber: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>,
-        pub getColumnNumber: Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>,
-    }
-    pub type unparsedEntityDeclSAXFunc = Option<
-        unsafe fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            *const xmlChar,
-            *const xmlChar,
-            *const xmlChar,
-        ) -> (),
-    >;
-    pub type elementDeclSAXFunc = Option<
-        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, i32, xmlElementContentPtr) -> (),
-    >;
-    pub type attributeDeclSAXFunc = Option<
-        unsafe fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            *const xmlChar,
-            i32,
-            i32,
-            *const xmlChar,
-            xmlEnumerationPtr,
-        ) -> (),
-    >;
-    pub type notationDeclSAXFunc = Option<
-        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar, *const xmlChar) -> (),
-    >;
-    pub type entityDeclSAXFunc = Option<
-        unsafe fn(
-            *mut ::core::ffi::c_void,
-            *const xmlChar,
-            i32,
-            *const xmlChar,
-            *const xmlChar,
-            *mut xmlChar,
-        ) -> (),
-    >;
-    pub type getEntitySAXFunc =
-        Option<unsafe fn(*mut ::core::ffi::c_void, *const xmlChar) -> xmlEntityPtr>;
-    pub type resolveEntitySAXFunc = Option<
-        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar) -> xmlParserInputPtr,
-    >;
-    pub type hasExternalSubsetSAXFunc = Option<unsafe fn(*mut ::core::ffi::c_void) -> i32>;
-    pub type hasInternalSubsetSAXFunc = Option<unsafe fn(*mut ::core::ffi::c_void) -> i32>;
-    pub type isStandaloneSAXFunc = Option<unsafe extern "C" fn(*mut ::core::ffi::c_void) -> i32>;
-    pub type internalSubsetSAXFunc = Option<
-        unsafe fn(*mut ::core::ffi::c_void, *const xmlChar, *const xmlChar, *const xmlChar) -> (),
-    >;
-    pub type C2Rust_Unnamed = u32;
-    pub const XML_PARSE_BIG_LINES: C2Rust_Unnamed = 4194304;
-    pub const XML_PARSE_IGNORE_ENC: C2Rust_Unnamed = 2097152;
-    pub const XML_PARSE_OLDSAX: C2Rust_Unnamed = 1048576;
-    pub const XML_PARSE_HUGE: C2Rust_Unnamed = 524288;
-    pub const XML_PARSE_NOBASEFIX: C2Rust_Unnamed = 262144;
-    pub const XML_PARSE_OLD10: C2Rust_Unnamed = 131072;
-    pub const XML_PARSE_COMPACT: C2Rust_Unnamed = 65536;
-    pub const XML_PARSE_NOXINCNODE: C2Rust_Unnamed = 32768;
-    pub const XML_PARSE_NOCDATA: C2Rust_Unnamed = 16384;
-    pub const XML_PARSE_NSCLEAN: C2Rust_Unnamed = 8192;
-    pub const XML_PARSE_NODICT: C2Rust_Unnamed = 4096;
-    pub const XML_PARSE_NONET: C2Rust_Unnamed = 2048;
-    pub const XML_PARSE_XINCLUDE: C2Rust_Unnamed = 1024;
-    pub const XML_PARSE_SAX1: C2Rust_Unnamed = 512;
-    pub const XML_PARSE_NOBLANKS: C2Rust_Unnamed = 256;
-    pub const XML_PARSE_PEDANTIC: C2Rust_Unnamed = 128;
-    pub const XML_PARSE_NOWARNING: C2Rust_Unnamed = 64;
-    pub const XML_PARSE_NOERROR: C2Rust_Unnamed = 32;
-    pub const XML_PARSE_DTDVALID: C2Rust_Unnamed = 16;
-    pub const XML_PARSE_DTDATTR: C2Rust_Unnamed = 8;
-    pub const XML_PARSE_DTDLOAD: C2Rust_Unnamed = 4;
-    pub const XML_PARSE_NOENT: C2Rust_Unnamed = 2;
-    pub const XML_PARSE_RECOVER: C2Rust_Unnamed = 1;
-    use super::xmlChar;
-    use super::xmlCharEncoding;
-    use super::xmlDictPtr;
-    use super::xmlHashTablePtr;
-    use super::xmlValidCtxt;
-    use super::{
-        _xmlNode, xmlAttrPtr, xmlDocPtr, xmlDtdPtr, xmlElementContentPtr, xmlEntityPtr,
-        xmlEnumerationPtr, xmlNodePtr, xmlParserCtxtPtr, xmlParserInputBufferPtr,
-        xmlParserInputPtr, xmlSAXHandlerPtr, xmlSAXLocatorPtr,
-    };
-    use super::{xmlError, xmlStructuredErrorFunc};
-    extern "C" {
-        pub type _xmlAttrHashBucket;
-        pub type _xmlParserNsData;
-        pub type _xmlStartTag;
-        pub fn xmlIOParseDTD(
-            sax: xmlSAXHandlerPtr,
-            input: xmlParserInputBufferPtr,
-            enc: xmlCharEncoding,
-        ) -> xmlDtdPtr;
-        pub fn xmlNewParserCtxt() -> xmlParserCtxtPtr;
-        pub fn xmlFreeParserCtxt(ctxt: xmlParserCtxtPtr);
-        pub fn xmlCtxtUseOptions(ctxt: xmlParserCtxtPtr, options: i32) -> i32;
-        pub fn xmlCtxtReadFile(
-            ctxt: xmlParserCtxtPtr,
-            filename: *const i8,
-            encoding: *const i8,
-            options: i32,
-        ) -> xmlDocPtr;
-    }
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlEntity {
-    pub _private: *mut ::core::ffi::c_void,
-    pub type_0: xmlElementType,
-    pub name: *const xmlChar,
-    pub children: *mut _xmlNode,
-    pub last: *mut _xmlNode,
-    pub parent: *mut _xmlDtd,
-    pub next: *mut _xmlNode,
-    pub prev: *mut _xmlNode,
-    pub doc: *mut _xmlDoc,
-    pub orig: *mut xmlChar,
-    pub content: *mut xmlChar,
-    pub length: i32,
-    pub etype: xmlEntityType,
-    pub ExternalID: *const xmlChar,
-    pub SystemID: *const xmlChar,
-    pub nexte: *mut _xmlEntity,
-    pub URI: *const xmlChar,
-    pub owner: i32,
-    pub flags: i32,
-    pub expandedSize: u64,
-}
-pub type xmlEntityType = u32;
-pub const XML_INTERNAL_PREDEFINED_ENTITY: xmlEntityType = 6;
-pub const XML_EXTERNAL_PARAMETER_ENTITY: xmlEntityType = 5;
-pub const XML_INTERNAL_PARAMETER_ENTITY: xmlEntityType = 4;
-pub const XML_EXTERNAL_GENERAL_UNPARSED_ENTITY: xmlEntityType = 3;
-pub const XML_EXTERNAL_GENERAL_PARSED_ENTITY: xmlEntityType = 2;
-pub const XML_INTERNAL_GENERAL_ENTITY: xmlEntityType = 1;
-pub type xmlError = _xmlError;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlError {
-    pub domain: i32,
-    pub code: i32,
-    pub message: *mut i8,
-    pub level: xmlErrorLevel,
-    pub file: *mut i8,
-    pub line: i32,
-    pub str1: *mut i8,
-    pub str2: *mut i8,
-    pub str3: *mut i8,
-    pub int1: i32,
-    pub int2: i32,
-    pub ctxt: *mut ::core::ffi::c_void,
-    pub node: *mut ::core::ffi::c_void,
-}
-pub type xmlErrorLevel = u32;
-pub const XML_ERR_FATAL: xmlErrorLevel = 3;
-pub const XML_ERR_ERROR: xmlErrorLevel = 2;
-pub const XML_ERR_WARNING: xmlErrorLevel = 1;
-pub const XML_ERR_NONE: xmlErrorLevel = 0;
-pub type xmlStructuredErrorFunc =
-    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const xmlError) -> ()>;
-pub type xmlGenericErrorFunc =
-    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-extern "C" {
-    pub fn xmlSetGenericErrorFunc(ctx: *mut ::core::ffi::c_void, handler: xmlGenericErrorFunc);
-}
-pub type xmlHashTablePtr = *mut xmlHashTable;
-pub type xmlHashTable = _xmlHashTable;
-extern "C" {
-    pub type _xmlHashTable;
-}
-pub type xmlDictPtr = *mut xmlDict;
-pub type xmlDict = _xmlDict;
-pub type xmlValidCtxt = _xmlValidCtxt;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _xmlValidCtxt {
-    pub userData: *mut ::core::ffi::c_void,
-    pub error: xmlValidityErrorFunc,
-    pub warning: xmlValidityWarningFunc,
-    pub node: xmlNodePtr,
-    pub nodeNr: i32,
-    pub nodeMax: i32,
-    pub nodeTab: *mut xmlNodePtr,
-    pub flags: u32,
-    pub doc: xmlDocPtr,
-    pub valid: i32,
-    pub vstate: *mut xmlValidState,
-    pub vstateNr: i32,
-    pub vstateMax: i32,
-    pub vstateTab: *mut xmlValidState,
-    pub am: xmlAutomataPtr,
-    pub state: xmlAutomataStatePtr,
-}
-pub type xmlValidState = _xmlValidState;
-pub type xmlValidityWarningFunc =
-    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-pub type xmlValidityErrorFunc =
-    Option<unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> ()>;
-pub type xmlValidCtxtPtr = *mut xmlValidCtxt;
-extern "C" {
-    pub type _xmlValidState;
-    pub fn xmlNewValidCtxt() -> xmlValidCtxtPtr;
-    pub fn xmlFreeValidCtxt(_: xmlValidCtxtPtr);
-    pub fn xmlValidateDtd(ctxt: xmlValidCtxtPtr, doc: xmlDocPtr, dtd: xmlDtdPtr) -> i32;
-}
-pub type xmlAutomataStatePtr = *mut xmlAutomataState;
-pub type xmlAutomataState = _xmlAutomataState;
-pub type xmlAutomataPtr = *mut xmlAutomata;
-pub type xmlAutomata = _xmlAutomata;
-extern "C" {
-    pub type _xmlAutomataState;
-    pub type _xmlAutomata;
-}
+use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
+use crate::xkb::rmlvo::strdup_safe;
+use crate::xkb::util_list::{list, list_append, list_empty, list_init, list_is_last, list_remove};
+use crate::xkb::utils::{
+    __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
+    is_space, istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
+};
+use libc::{free, getenv, qsort, strtol};
+
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
 pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
@@ -755,96 +21,6 @@ pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
 pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
 pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
 pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
-
-pub use crate::xkb::util_list::{
-    list, list_append, list_empty, list_init, list_is_last, list_remove,
-};
-extern "C" {
-    pub fn xmlCheckVersion(version: i32);
-}
-
-pub use self::parser_h::{
-    _xmlAttrHashBucket, _xmlParserCtxt, _xmlParserInput, _xmlParserNodeInfo, _xmlParserNodeInfoSeq,
-    _xmlParserNsData, _xmlSAXHandler, _xmlSAXLocator, _xmlStartTag, attributeDeclSAXFunc,
-    cdataBlockSAXFunc, charactersSAXFunc, commentSAXFunc, elementDeclSAXFunc, endDocumentSAXFunc,
-    endElementNsSAX2Func, endElementSAXFunc, entityDeclSAXFunc, errorSAXFunc,
-    externalSubsetSAXFunc, fatalErrorSAXFunc, getEntitySAXFunc, getParameterEntitySAXFunc,
-    hasExternalSubsetSAXFunc, hasInternalSubsetSAXFunc, ignorableWhitespaceSAXFunc,
-    internalSubsetSAXFunc, isStandaloneSAXFunc, notationDeclSAXFunc, processingInstructionSAXFunc,
-    referenceSAXFunc, resolveEntitySAXFunc, setDocumentLocatorSAXFunc, startDocumentSAXFunc,
-    startElementNsSAX2Func, startElementSAXFunc, unparsedEntityDeclSAXFunc, warningSAXFunc,
-    xmlAttrHashBucket, xmlCtxtReadFile, xmlCtxtUseOptions, xmlFreeParserCtxt, xmlIOParseDTD,
-    xmlNewParserCtxt, xmlParserInputDeallocate, xmlParserInputState, xmlParserMode,
-    xmlParserNodeInfo, xmlParserNodeInfoSeq, xmlParserNsData, xmlStartTag, C2Rust_Unnamed,
-    XML_PARSER_ATTRIBUTE_VALUE, XML_PARSER_CDATA_SECTION, XML_PARSER_COMMENT, XML_PARSER_CONTENT,
-    XML_PARSER_DTD, XML_PARSER_END_TAG, XML_PARSER_ENTITY_DECL, XML_PARSER_ENTITY_VALUE,
-    XML_PARSER_EOF, XML_PARSER_EPILOG, XML_PARSER_IGNORE, XML_PARSER_MISC, XML_PARSER_PI,
-    XML_PARSER_PROLOG, XML_PARSER_PUBLIC_LITERAL, XML_PARSER_START, XML_PARSER_START_TAG,
-    XML_PARSER_SYSTEM_LITERAL, XML_PARSER_XML_DECL, XML_PARSE_BIG_LINES, XML_PARSE_COMPACT,
-    XML_PARSE_DOM, XML_PARSE_DTDATTR, XML_PARSE_DTDLOAD, XML_PARSE_DTDVALID, XML_PARSE_HUGE,
-    XML_PARSE_IGNORE_ENC, XML_PARSE_NOBASEFIX, XML_PARSE_NOBLANKS, XML_PARSE_NOCDATA,
-    XML_PARSE_NODICT, XML_PARSE_NOENT, XML_PARSE_NOERROR, XML_PARSE_NONET, XML_PARSE_NOWARNING,
-    XML_PARSE_NOXINCNODE, XML_PARSE_NSCLEAN, XML_PARSE_OLD10, XML_PARSE_OLDSAX, XML_PARSE_PEDANTIC,
-    XML_PARSE_PUSH_DOM, XML_PARSE_PUSH_SAX, XML_PARSE_READER, XML_PARSE_RECOVER, XML_PARSE_SAX,
-    XML_PARSE_SAX1, XML_PARSE_UNKNOWN, XML_PARSE_XINCLUDE,
-};
-pub use crate::xkb::messages::{
-    xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
-    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
-    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
-    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
-    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
-    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
-    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
-    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
-    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
-    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
-    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
-    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
-    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
-    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
-    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
-    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
-    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
-    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
-    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
-    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
-    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
-    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
-    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
-    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
-    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
-    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
-    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
-    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
-    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
-};
-pub use crate::xkb::shared_types::dirent;
-pub use crate::xkb::shared_types::stat;
-pub use crate::xkb::shared_types::timespec;
-pub use crate::xkb::utils::eaccess;
-use crate::xkb::utils::xkb_stat;
-pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
-use crate::xkb::utils::{__errno_location, _steal, cstr_dup};
-pub use crate::xkb::utils::{
-    check_eaccess, is_space, istrncmp, istrneq, strdup_safe, streq, streq_null,
-};
-use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
-use libc::{free, getenv, qsort, strtol};
-extern "C" {
-    fn vsnprintf(s: *mut i8, maxlen: usize, format: *const i8, ...) -> i32;
-}
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
@@ -2142,25 +1318,39 @@ pub unsafe fn rxkb_context_parse(mut ctx: *mut rxkb_context, mut ruleset: *const
     }
 }
 
-#[inline]
-unsafe fn is_node(mut node: *mut xmlNode, mut name: *const i8) -> bool {
-    unsafe {
-        return (*node).type_0 as u32 == XML_ELEMENT_NODE as u32
-            && xmlStrEqual((*node).name, name as *const xmlChar) != 0;
+/// Convert a Rust &str to a malloc'd C string (*mut i8).
+fn cstr_dup_str(s: &str) -> *mut i8 {
+    match std::ffi::CString::new(s) {
+        Ok(cs) => cs.into_raw(),
+        Err(_) => std::ptr::null_mut(), // s contained interior NUL
     }
 }
-unsafe fn extract_text(mut node: *mut xmlNode) -> *mut i8 {
-    unsafe {
-        let mut n: *mut xmlNode = std::ptr::null_mut();
-        n = (*node).children as *mut xmlNode;
-        while !n.is_null() {
-            if (*n).type_0 as u32 == XML_TEXT_NODE as u32 {
-                return xmlStrdup((*n).content) as *mut i8;
+
+/// Get an attribute value by name from an xmloxide element node.
+fn get_attr<'a>(
+    doc: &'a xmloxide::Document,
+    node: xmloxide::tree::NodeId,
+    name: &str,
+) -> Option<&'a str> {
+    doc.attributes(node)
+        .iter()
+        .find(|a| a.name == name)
+        .map(|a| a.value.as_str())
+}
+
+#[inline]
+fn is_node(doc: &xmloxide::Document, node: xmloxide::tree::NodeId, name: &str) -> bool {
+    doc.is_element(node) && doc.node_name(node) == Some(name)
+}
+fn extract_text(doc: &xmloxide::Document, node: xmloxide::tree::NodeId) -> *mut i8 {
+    for child in doc.children(node) {
+        if let Some(text) = doc.node_text(child) {
+            if !text.is_empty() {
+                return cstr_dup_str(text);
             }
-            n = (*n).next as *mut xmlNode;
         }
-        return std::ptr::null_mut();
     }
+    std::ptr::null_mut()
 }
 unsafe fn config_item_free(mut config: *mut config_item) {
     unsafe {
@@ -2172,91 +1362,62 @@ unsafe fn config_item_free(mut config: *mut config_item) {
 }
 unsafe fn parse_config_item(
     mut ctx: *mut rxkb_context,
-    mut parent: *mut xmlNode,
+    doc: &xmloxide::Document,
+    parent: xmloxide::tree::NodeId,
     mut config: *mut config_item,
 ) -> bool {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        let mut ci: *mut xmlNode = std::ptr::null_mut();
-        ci = (*parent).children as *mut xmlNode;
-        while !ci.is_null() {
-            if is_node(ci, b"configItem\0".as_ptr() as *const i8) {
-                let mut raw_popularity: *mut xmlChar =
-                    xmlGetProp(ci, b"popularity\0".as_ptr() as *const i8 as *const xmlChar);
-                if !raw_popularity.is_null() {
-                    if xmlStrEqual(
-                        raw_popularity,
-                        b"standard\0".as_ptr() as *const i8 as *const xmlChar,
-                    ) != 0
-                    {
+        for ci in doc.children(parent) {
+            if is_node(doc, ci, "configItem") {
+                if let Some(raw_popularity) = get_attr(doc, ci, "popularity") {
+                    if raw_popularity == "standard" {
                         (*config).popularity = RXKB_POPULARITY_STANDARD;
-                    } else if xmlStrEqual(
-                        raw_popularity,
-                        b"exotic\0".as_ptr() as *const i8 as *const xmlChar,
-                    ) != 0
-                    {
+                    } else if raw_popularity == "exotic" {
                         (*config).popularity = RXKB_POPULARITY_EXOTIC;
                     } else {
                         rxkb_logf!(
                             ctx,
                             RXKB_LOG_LEVEL_ERROR,
-                            "xml:{}: invalid popularity attribute: expected 'standard' or 'exotic', got: '{}'\n",
-                            (*ci).line as i32,
-                            crate::xkb::utils::CStrDisplay(raw_popularity as *const i8),
+                            "xml: invalid popularity attribute: expected 'standard' or 'exotic', got: '{}'\n",
+                            raw_popularity,
                         );
                     }
                 }
-                xmlFree.expect("non-null function pointer")(
-                    raw_popularity as *mut ::core::ffi::c_void,
-                );
-                let mut raw_layout_specific: *mut xmlChar = xmlGetProp(
-                    ci,
-                    b"layout-specific\0".as_ptr() as *const i8 as *const xmlChar,
-                );
-                if !raw_layout_specific.is_null()
-                    && xmlStrEqual(
-                        raw_layout_specific,
-                        b"true\0".as_ptr() as *const i8 as *const xmlChar,
-                    ) != 0
-                {
-                    (*config).layout_specific = true;
-                }
-                xmlFree.expect("non-null function pointer")(
-                    raw_layout_specific as *mut ::core::ffi::c_void,
-                );
-                node = (*ci).children as *mut xmlNode;
-                while !node.is_null() {
-                    if is_node(node, b"name\0".as_ptr() as *const i8) {
-                        (*config).name = extract_text(node);
-                    } else if is_node(node, b"description\0".as_ptr() as *const i8) {
-                        (*config).description = extract_text(node);
-                    } else if is_node(node, b"shortDescription\0".as_ptr() as *const i8) {
-                        (*config).brief = extract_text(node);
-                    } else if is_node(node, b"vendor\0".as_ptr() as *const i8) {
-                        (*config).vendor = extract_text(node);
+                if let Some(raw_layout_specific) = get_attr(doc, ci, "layout-specific") {
+                    if raw_layout_specific == "true" {
+                        (*config).layout_specific = true;
                     }
-                    node = (*node).next as *mut xmlNode;
+                }
+                for node in doc.children(ci) {
+                    if is_node(doc, node, "name") {
+                        (*config).name = extract_text(doc, node);
+                    } else if is_node(doc, node, "description") {
+                        (*config).description = extract_text(doc, node);
+                    } else if is_node(doc, node, "shortDescription") {
+                        (*config).brief = extract_text(doc, node);
+                    } else if is_node(doc, node, "vendor") {
+                        (*config).vendor = extract_text(doc, node);
+                    }
                 }
                 if (*config).name.is_null() || cstr_len((*config).name) == 0 {
                     rxkb_logf!(
                         ctx,
                         RXKB_LOG_LEVEL_ERROR,
-                        "xml:{}: missing required element 'name'\n",
-                        (*ci).line as i32,
+                        "xml: missing required element 'name'\n",
                     );
                     config_item_free(config);
                     return false;
                 }
                 return true;
             }
-            ci = (*ci).next as *mut xmlNode;
         }
         return false;
     }
 }
 unsafe fn parse_model(
     mut ctx: *mut rxkb_context,
-    mut model: *mut xmlNode,
+    doc: &xmloxide::Document,
+    model: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
@@ -2268,7 +1429,7 @@ unsafe fn parse_model(
             popularity: popularity,
             layout_specific: false,
         };
-        if parse_config_item(ctx, model, &raw mut config) {
+        if parse_config_item(ctx, doc, model, &raw mut config) {
             let mut m: *mut rxkb_model = std::ptr::null_mut();
             m = std::ptr::null_mut();
             m = ((*ctx).models.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_model
@@ -2295,28 +1456,28 @@ unsafe fn parse_model(
 }
 unsafe fn parse_model_list(
     mut ctx: *mut rxkb_context,
-    mut model_list: *mut xmlNode,
+    doc: &xmloxide::Document,
+    model_list: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        node = (*model_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"model\0".as_ptr() as *const i8) {
-                parse_model(ctx, node, popularity);
+        for node in doc.children(model_list) {
+            if is_node(doc, node, "model") {
+                parse_model(ctx, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
-unsafe fn parse_language_list(mut language_list: *mut xmlNode, mut layout: *mut rxkb_layout) {
+unsafe fn parse_language_list(
+    doc: &xmloxide::Document,
+    language_list: xmloxide::tree::NodeId,
+    mut layout: *mut rxkb_layout,
+) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
         let mut code: *mut rxkb_iso639_code = std::ptr::null_mut();
-        node = (*language_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"iso639Id\0".as_ptr() as *const i8) {
-                let mut str: *mut i8 = extract_text(node);
+        for node in doc.children(language_list) {
+            if is_node(doc, node, "iso639Id") {
+                let mut str: *mut i8 = extract_text(doc, node);
                 let mut parent: *mut rxkb_object = std::ptr::null_mut();
                 if str.is_null() || cstr_len(str) != 3 as usize {
                     free(str as *mut ::core::ffi::c_void);
@@ -2327,18 +1488,19 @@ unsafe fn parse_language_list(mut language_list: *mut xmlNode, mut layout: *mut 
                     list_append(&raw mut (*layout).iso639s, &raw mut (*code).base.link);
                 }
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
-unsafe fn parse_country_list(mut country_list: *mut xmlNode, mut layout: *mut rxkb_layout) {
+unsafe fn parse_country_list(
+    doc: &xmloxide::Document,
+    country_list: xmloxide::tree::NodeId,
+    mut layout: *mut rxkb_layout,
+) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
         let mut code: *mut rxkb_iso3166_code = std::ptr::null_mut();
-        node = (*country_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"iso3166Id\0".as_ptr() as *const i8) {
-                let mut str: *mut i8 = extract_text(node);
+        for node in doc.children(country_list) {
+            if is_node(doc, node, "iso3166Id") {
+                let mut str: *mut i8 = extract_text(doc, node);
                 let mut parent: *mut rxkb_object = std::ptr::null_mut();
                 if str.is_null() || cstr_len(str) != 2 as usize {
                     free(str as *mut ::core::ffi::c_void);
@@ -2349,18 +1511,17 @@ unsafe fn parse_country_list(mut country_list: *mut xmlNode, mut layout: *mut rx
                     list_append(&raw mut (*layout).iso3166s, &raw mut (*code).base.link);
                 }
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_variant(
     mut ctx: *mut rxkb_context,
     mut l: *mut rxkb_layout,
-    mut variant: *mut xmlNode,
+    doc: &xmloxide::Document,
+    variant: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut ci: *mut xmlNode = std::ptr::null_mut();
         let mut config: config_item = config_item {
             name: std::ptr::null_mut(),
             description: std::ptr::null_mut(),
@@ -2369,7 +1530,7 @@ unsafe fn parse_variant(
             popularity: popularity,
             layout_specific: false,
         };
-        if parse_config_item(ctx, variant, &raw mut config) {
+        if parse_config_item(ctx, doc, variant, &raw mut config) {
             let mut v: *mut rxkb_layout = std::ptr::null_mut();
             let mut exists: bool = false;
             v = std::ptr::null_mut();
@@ -2402,23 +1563,19 @@ unsafe fn parse_variant(
                 };
                 (*v).popularity = config.popularity;
                 list_append(&raw mut (*ctx).layouts, &raw mut (*v).base.link);
-                ci = (*variant).children as *mut xmlNode;
-                while !ci.is_null() {
-                    let mut node: *mut xmlNode = std::ptr::null_mut();
-                    if is_node(ci, b"configItem\0".as_ptr() as *const i8) {
+                for ci in doc.children(variant) {
+                    if is_node(doc, ci, "configItem") {
                         let mut found_language_list: bool = false;
                         let mut found_country_list: bool = false;
-                        node = (*ci).children as *mut xmlNode;
-                        while !node.is_null() {
-                            if is_node(node, b"languageList\0".as_ptr() as *const i8) {
-                                parse_language_list(node, v);
+                        for node in doc.children(ci) {
+                            if is_node(doc, node, "languageList") {
+                                parse_language_list(doc, node, v);
                                 found_language_list = true;
                             }
-                            if is_node(node, b"countryList\0".as_ptr() as *const i8) {
-                                parse_country_list(node, v);
+                            if is_node(doc, node, "countryList") {
+                                parse_country_list(doc, node, v);
                                 found_country_list = true;
                             }
-                            node = (*node).next as *mut xmlNode;
                         }
                         if !found_language_list {
                             let mut x: *mut rxkb_iso639_code = std::ptr::null_mut();
@@ -2454,7 +1611,6 @@ unsafe fn parse_variant(
                             }
                         }
                     }
-                    ci = (*ci).next as *mut xmlNode;
                 }
             } else {
                 config_item_free(&raw mut config);
@@ -2465,23 +1621,22 @@ unsafe fn parse_variant(
 unsafe fn parse_variant_list(
     mut ctx: *mut rxkb_context,
     mut l: *mut rxkb_layout,
-    mut variant_list: *mut xmlNode,
+    doc: &xmloxide::Document,
+    variant_list: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        node = (*variant_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"variant\0".as_ptr() as *const i8) {
-                parse_variant(ctx, l, node, popularity);
+        for node in doc.children(variant_list) {
+            if is_node(doc, node, "variant") {
+                parse_variant(ctx, l, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_layout(
     mut ctx: *mut rxkb_context,
-    mut layout: *mut xmlNode,
+    doc: &xmloxide::Document,
+    layout: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
@@ -2494,9 +1649,8 @@ unsafe fn parse_layout(
             layout_specific: false,
         };
         let mut l: *mut rxkb_layout = std::ptr::null_mut();
-        let mut node: *mut xmlNode = std::ptr::null_mut();
         let mut exists: bool = false;
-        if !parse_config_item(ctx, layout, &raw mut config) {
+        if !parse_config_item(ctx, doc, layout, &raw mut config) {
             return;
         }
         l = std::ptr::null_mut();
@@ -2527,48 +1681,42 @@ unsafe fn parse_layout(
         } else {
             config_item_free(&raw mut config);
         }
-        node = (*layout).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"variantList\0".as_ptr() as *const i8) {
-                parse_variant_list(ctx, l, node, popularity);
+        for node in doc.children(layout) {
+            if is_node(doc, node, "variantList") {
+                parse_variant_list(ctx, l, doc, node, popularity);
             }
-            if !exists && is_node(node, b"configItem\0".as_ptr() as *const i8) as i32 != 0 {
-                let mut ll: *mut xmlNode = std::ptr::null_mut();
-                ll = (*node).children as *mut xmlNode;
-                while !ll.is_null() {
-                    if is_node(ll, b"languageList\0".as_ptr() as *const i8) {
-                        parse_language_list(ll, l);
+            if !exists && is_node(doc, node, "configItem") {
+                for ll in doc.children(node) {
+                    if is_node(doc, ll, "languageList") {
+                        parse_language_list(doc, ll, l);
                     }
-                    if is_node(ll, b"countryList\0".as_ptr() as *const i8) {
-                        parse_country_list(ll, l);
+                    if is_node(doc, ll, "countryList") {
+                        parse_country_list(doc, ll, l);
                     }
-                    ll = (*ll).next as *mut xmlNode;
                 }
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_layout_list(
     mut ctx: *mut rxkb_context,
-    mut layout_list: *mut xmlNode,
+    doc: &xmloxide::Document,
+    layout_list: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        node = (*layout_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"layout\0".as_ptr() as *const i8) {
-                parse_layout(ctx, node, popularity);
+        for node in doc.children(layout_list) {
+            if is_node(doc, node, "layout") {
+                parse_layout(ctx, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_option(
     mut ctx: *mut rxkb_context,
     mut group: *mut rxkb_option_group,
-    mut option: *mut xmlNode,
+    doc: &xmloxide::Document,
+    option: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
@@ -2580,7 +1728,7 @@ unsafe fn parse_option(
             popularity: popularity,
             layout_specific: false,
         };
-        if parse_config_item(ctx, option, &raw mut config) {
+        if parse_config_item(ctx, doc, option, &raw mut config) {
             let mut o: *mut rxkb_option = std::ptr::null_mut();
             o = std::ptr::null_mut();
             o = ((*group).options.next as *mut i8).offset(-(16 as u64 as isize)) as *mut rxkb_option
@@ -2606,7 +1754,8 @@ unsafe fn parse_option(
 }
 unsafe fn parse_group(
     mut ctx: *mut rxkb_context,
-    mut group: *mut xmlNode,
+    doc: &xmloxide::Document,
+    group: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
@@ -2619,10 +1768,8 @@ unsafe fn parse_group(
             layout_specific: false,
         };
         let mut g: *mut rxkb_option_group = std::ptr::null_mut();
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        let mut multiple: *mut xmlChar = std::ptr::null_mut();
         let mut exists: bool = false;
-        if !parse_config_item(ctx, group, &raw mut config) {
+        if !parse_config_item(ctx, doc, group, &raw mut config) {
             return;
         }
         g = std::ptr::null_mut();
@@ -2644,149 +1791,94 @@ unsafe fn parse_group(
             (*g).description = _steal(&raw mut config.description as *mut ::core::ffi::c_void)
                 as *mut i8 as *mut i8;
             (*g).popularity = config.popularity;
-            multiple = xmlGetProp(
-                group,
-                b"allowMultipleSelection\0".as_ptr() as *const i8 as *const xmlChar,
-            );
-            if !multiple.is_null()
-                && xmlStrEqual(multiple, b"true\0".as_ptr() as *const i8 as *const xmlChar) != 0
-            {
-                (*g).allow_multiple = true;
+            if let Some(multiple) = get_attr(doc, group, "allowMultipleSelection") {
+                if multiple == "true" {
+                    (*g).allow_multiple = true;
+                }
             }
-            xmlFree.expect("non-null function pointer")(multiple as *mut ::core::ffi::c_void);
             list_init(&raw mut (*g).options);
             list_append(&raw mut (*ctx).option_groups, &raw mut (*g).base.link);
         } else {
             config_item_free(&raw mut config);
         }
-        node = (*group).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"option\0".as_ptr() as *const i8) {
-                parse_option(ctx, g, node, popularity);
+        for node in doc.children(group) {
+            if is_node(doc, node, "option") {
+                parse_option(ctx, g, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_option_list(
     mut ctx: *mut rxkb_context,
-    mut option_list: *mut xmlNode,
+    doc: &xmloxide::Document,
+    option_list: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        node = (*option_list).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"group\0".as_ptr() as *const i8) {
-                parse_group(ctx, node, popularity);
+        for node in doc.children(option_list) {
+            if is_node(doc, node, "group") {
+                parse_group(ctx, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
 unsafe fn parse_rules_xml(
     mut ctx: *mut rxkb_context,
-    mut root: *mut xmlNode,
+    doc: &xmloxide::Document,
+    root: xmloxide::tree::NodeId,
     mut popularity: rxkb_popularity,
 ) {
     unsafe {
-        let mut node: *mut xmlNode = std::ptr::null_mut();
-        node = (*root).children as *mut xmlNode;
-        while !node.is_null() {
-            if is_node(node, b"modelList\0".as_ptr() as *const i8) {
-                parse_model_list(ctx, node, popularity);
-            } else if is_node(node, b"layoutList\0".as_ptr() as *const i8) {
-                parse_layout_list(ctx, node, popularity);
-            } else if is_node(node, b"optionList\0".as_ptr() as *const i8) {
-                parse_option_list(ctx, node, popularity);
+        for node in doc.children(root) {
+            if is_node(doc, node, "modelList") {
+                parse_model_list(ctx, doc, node, popularity);
+            } else if is_node(doc, node, "layoutList") {
+                parse_layout_list(ctx, doc, node, popularity);
+            } else if is_node(doc, node, "optionList") {
+                parse_option_list(ctx, doc, node, popularity);
             }
-            node = (*node).next as *mut xmlNode;
         }
     }
 }
-unsafe extern "C" fn xml_error_func(
-    mut ctx: *mut ::core::ffi::c_void,
-    mut msg: *const i8,
-    mut c2rust_args: ...
-) {
-    unsafe {
-        static mut buf: [i8; 4096] = [0; 4096];
-        static mut slen: i32 = 0 as i32;
-        let mut args: ::core::ffi::VaList;
-        let mut rc: i32 = 0;
-        args = c2rust_args.clone();
-        rc = vsnprintf(
-            (&raw mut buf as *mut i8).offset(slen as isize) as *mut i8,
-            (std::mem::size_of::<[i8; 4096]>()).wrapping_sub(slen as usize),
-            msg,
-            args,
-        );
-        if rc < 0 as i32 {
-            rxkb_logf!(
-                ctx as *mut rxkb_context,
-                RXKB_LOG_LEVEL_ERROR,
-                "[XKB-{:03}] +++ out of cheese error. redo from start +++\n",
-                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-            );
-            slen = 0 as i32;
-            std::ptr::write_bytes::<[i8; 4096]>(&raw mut buf as *mut i8 as *mut [i8; 4096], 0u8, 1);
-            return;
-        }
-        slen += rc;
-        if slen >= std::mem::size_of::<[i8; 4096]>() as i32 {
-            buf[(std::mem::size_of::<[i8; 4096]>()).wrapping_sub(1 as usize) as usize] =
-                '\n' as i32 as i8;
-            slen = std::mem::size_of::<[i8; 4096]>() as i32;
-        }
-        if buf[(slen - 1 as i32) as usize] as i32 == '\n' as i32 {
-            rxkb_logf!(
-                ctx as *mut rxkb_context,
-                RXKB_LOG_LEVEL_ERROR,
-                "{}",
-                crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
-            );
-            std::ptr::write_bytes::<[i8; 4096]>(&raw mut buf as *mut i8 as *mut [i8; 4096], 0u8, 1);
-            slen = 0 as i32;
-        }
-    }
-}
-unsafe fn validate(mut ctx: *mut rxkb_context, mut doc: *mut xmlDoc) -> bool {
-    unsafe {
-        let mut dtd: *mut xmlDtd = std::ptr::null_mut();
-        let mut dtdvalid: *mut xmlValidCtxt = std::ptr::null_mut();
-        let mut success: bool = false;
-        let dtdstr: [i8; 1061] = ::core::mem::transmute::<
-            [u8; 1061],
-            [i8; 1061],
-        >(
-            *b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!ELEMENT xkbConfigRegistry (modelList?, layoutList?, optionList?)>\n<!ATTLIST xkbConfigRegistry version CDATA \"1.1\">\n<!ELEMENT modelList (model*)>\n<!ELEMENT model (configItem)>\n<!ELEMENT layoutList (layout*)>\n<!ELEMENT layout (configItem,  variantList?)>\n<!ELEMENT optionList (group*)>\n<!ELEMENT variantList (variant*)>\n<!ELEMENT variant (configItem)>\n<!ELEMENT group (configItem, option*)>\n<!ATTLIST group allowMultipleSelection (true|false) \"false\">\n<!ELEMENT option (configItem)>\n<!ELEMENT configItem (name, shortDescription?, description?, vendor?, countryList?, languageList?, hwList?)>\n<!ATTLIST configItem layout-specific (true|false) \"false\">\n<!ATTLIST configItem popularity (standard|exotic) #IMPLIED>\n<!ELEMENT name (#PCDATA)>\n<!ELEMENT shortDescription (#PCDATA)>\n<!ELEMENT description (#PCDATA)>\n<!ELEMENT vendor (#PCDATA)>\n<!ELEMENT countryList (iso3166Id+)>\n<!ELEMENT iso3166Id (#PCDATA)>\n<!ELEMENT languageList (iso639Id+)>\n<!ELEMENT iso639Id (#PCDATA)>\n<!ELEMENT hwList (hwId+)>\n<!ELEMENT hwId (#PCDATA)>\n\0",
-        );
-        let mut buf: xmlParserInputBufferPtr = xmlParserInputBufferCreateMem(
-            &raw const dtdstr as *const i8,
-            (std::mem::size_of::<[i8; 1061]>())
-                .wrapping_div(std::mem::size_of::<i8>())
-                .wrapping_sub(1 as usize) as i32,
-            XML_CHAR_ENCODING_NONE,
-        );
-        if !buf.is_null() {
-            dtd = xmlIOParseDTD(std::ptr::null_mut(), buf, XML_CHAR_ENCODING_UTF8) as *mut xmlDtd;
-            if dtd.is_null() {
+const XKBCONFIG_DTD: &str = "\
+<!ELEMENT xkbConfigRegistry (modelList?, layoutList?, optionList?)>\n\
+<!ATTLIST xkbConfigRegistry version CDATA \"1.1\">\n\
+<!ELEMENT modelList (model*)>\n\
+<!ELEMENT model (configItem)>\n\
+<!ELEMENT layoutList (layout*)>\n\
+<!ELEMENT layout (configItem,  variantList?)>\n\
+<!ELEMENT optionList (group*)>\n\
+<!ELEMENT variantList (variant*)>\n\
+<!ELEMENT variant (configItem)>\n\
+<!ELEMENT group (configItem, option*)>\n\
+<!ATTLIST group allowMultipleSelection (true|false) \"false\">\n\
+<!ELEMENT option (configItem)>\n\
+<!ELEMENT configItem (name, shortDescription?, description?, vendor?, countryList?, languageList?, hwList?)>\n\
+<!ATTLIST configItem layout-specific (true|false) \"false\">\n\
+<!ATTLIST configItem popularity (standard|exotic) #IMPLIED>\n\
+<!ELEMENT name (#PCDATA)>\n\
+<!ELEMENT shortDescription (#PCDATA)>\n\
+<!ELEMENT description (#PCDATA)>\n\
+<!ELEMENT vendor (#PCDATA)>\n\
+<!ELEMENT countryList (iso3166Id+)>\n\
+<!ELEMENT iso3166Id (#PCDATA)>\n\
+<!ELEMENT languageList (iso639Id+)>\n\
+<!ELEMENT iso639Id (#PCDATA)>\n\
+<!ELEMENT hwList (hwId+)>\n\
+<!ELEMENT hwId (#PCDATA)>";
+
+fn validate_xml(ctx: *mut rxkb_context, doc: &mut xmloxide::Document) -> bool {
+    let dtd = match xmloxide::validation::dtd::parse_dtd(XKBCONFIG_DTD) {
+        Ok(dtd) => dtd,
+        Err(_) => {
+            unsafe {
                 rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n",);
-            } else {
-                dtdvalid = xmlNewValidCtxt() as *mut xmlValidCtxt;
-                success = xmlValidateDtd(
-                    dtdvalid as xmlValidCtxtPtr,
-                    doc as xmlDocPtr,
-                    dtd as xmlDtdPtr,
-                ) != 0;
-                if !dtdvalid.is_null() {
-                    xmlFreeValidCtxt(dtdvalid as xmlValidCtxtPtr);
-                }
-                xmlFreeDtd(dtd as xmlDtdPtr);
             }
+            return false;
         }
-        return success;
-    }
+    };
+    let result = xmloxide::validation::dtd::validate(doc, &dtd);
+    result.is_valid
 }
 unsafe fn parse(
     mut ctx: *mut rxkb_context,
@@ -2794,44 +1886,34 @@ unsafe fn parse(
     mut popularity: rxkb_popularity,
 ) -> bool {
     unsafe {
-        let mut success: bool = false;
-        let mut doc: *mut xmlDoc = std::ptr::null_mut();
-        let mut root: *mut xmlNode = std::ptr::null_mut();
         if !check_eaccess(path, R_OK) {
             return false;
         }
-        xmlCheckVersion(21210 as i32);
-        let mut xmlCtxt: xmlParserCtxtPtr = xmlNewParserCtxt();
-        if xmlCtxt.is_null() {
+        // Convert C path to Rust &str
+        let path_cstr = std::ffi::CStr::from_ptr(path);
+        let path_str = match path_cstr.to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let mut doc = match xmloxide::Document::parse_file(path_str) {
+            Ok(d) => d,
+            Err(_) => return false,
+        };
+        if !validate_xml(ctx, &mut doc) {
+            rxkb_logf!(
+                ctx,
+                RXKB_LOG_LEVEL_ERROR,
+                "XML error: failed to validate document at {}\n",
+                crate::xkb::utils::CStrDisplay(path),
+            );
             return false;
         }
-        xmlCtxtUseOptions(xmlCtxt, XML_PARSE_NONET as i32);
-        xmlSetGenericErrorFunc(
-            ctx as *mut ::core::ffi::c_void,
-            Some(
-                xml_error_func
-                    as unsafe extern "C" fn(*mut ::core::ffi::c_void, *const i8, ...) -> (),
-            ),
-        );
-        doc = xmlCtxtReadFile(xmlCtxt, path, std::ptr::null(), 0 as i32) as *mut xmlDoc;
-        if !doc.is_null() {
-            if !validate(ctx, doc) {
-                rxkb_logf!(
-                    ctx,
-                    RXKB_LOG_LEVEL_ERROR,
-                    "XML error: failed to validate document at {}\n",
-                    crate::xkb::utils::CStrDisplay(path),
-                );
-            } else {
-                root = xmlDocGetRootElement(doc) as *mut xmlNode;
-                parse_rules_xml(ctx, root, popularity);
-                success = true;
-            }
-            xmlFreeDoc(doc as xmlDocPtr);
-        }
-        xmlSetGenericErrorFunc(std::ptr::null_mut::<core::ffi::c_void>(), None);
-        xmlFreeParserCtxt(xmlCtxt);
-        return success;
+        let root = match doc.root_element() {
+            Some(r) => r,
+            None => return false,
+        };
+        parse_rules_xml(ctx, &doc, root, popularity);
+        return true;
     }
 }
 use crate::xkb::shared_types::*;

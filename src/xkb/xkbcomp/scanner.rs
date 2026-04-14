@@ -3,74 +3,73 @@ use crate::xkb::shared_types::*;
 use crate::xkb_logf;
 
 pub mod parser_h {
-    pub type yytokentype = i32;
-    pub const ALTERNATE_GROUP: yytokentype = 77;
-    pub const FUNCTION_KEYS: yytokentype = 76;
-    pub const KEYPAD_KEYS: yytokentype = 75;
-    pub const MODIFIER_KEYS: yytokentype = 74;
-    pub const ALPHANUMERIC_KEYS: yytokentype = 73;
-    pub const HIDDEN: yytokentype = 72;
-    pub const DEFAULT: yytokentype = 71;
-    pub const PARTIAL: yytokentype = 70;
-    pub const KEYNAME: yytokentype = 65;
-    pub const IDENT: yytokentype = 64;
-    pub const FLOAT: yytokentype = 63;
-    pub const INTEGER: yytokentype = 62;
-    pub const DECIMAL_DIGIT: yytokentype = 61;
-    pub const STRING: yytokentype = 60;
-    pub const INVERT: yytokentype = 55;
-    pub const EXCLAM: yytokentype = 54;
-    pub const SEMI: yytokentype = 53;
-    pub const COMMA: yytokentype = 52;
-    pub const DOT: yytokentype = 51;
-    pub const CBRACKET: yytokentype = 50;
-    pub const OBRACKET: yytokentype = 49;
-    pub const CPAREN: yytokentype = 48;
-    pub const OPAREN: yytokentype = 47;
-    pub const CBRACE: yytokentype = 46;
-    pub const OBRACE: yytokentype = 45;
-    pub const TIMES: yytokentype = 44;
-    pub const DIVIDE: yytokentype = 43;
-    pub const MINUS: yytokentype = 42;
-    pub const PLUS: yytokentype = 41;
-    pub const EQUALS: yytokentype = 40;
-    pub const VIRTUAL: yytokentype = 38;
-    pub const LOGO: yytokentype = 37;
-    pub const SOLID: yytokentype = 36;
-    pub const OUTLINE: yytokentype = 35;
-    pub const TEXT: yytokentype = 34;
-    pub const OVERLAY: yytokentype = 33;
-    pub const SECTION: yytokentype = 32;
-    pub const ROW: yytokentype = 31;
-    pub const KEYS: yytokentype = 30;
-    pub const SHAPE: yytokentype = 29;
-    pub const INDICATOR: yytokentype = 28;
-    pub const MODIFIER_MAP: yytokentype = 27;
-    pub const GROUP: yytokentype = 26;
-    pub const ALIAS: yytokentype = 25;
-    pub const KEY: yytokentype = 24;
-    pub const ACTION_TOK: yytokentype = 23;
-    pub const INTERPRET: yytokentype = 22;
-    pub const TYPE: yytokentype = 21;
-    pub const VIRTUAL_MODS: yytokentype = 20;
-    pub const ALTERNATE: yytokentype = 14;
-    pub const REPLACE: yytokentype = 13;
-    pub const AUGMENT: yytokentype = 12;
-    pub const OVERRIDE: yytokentype = 11;
-    pub const INCLUDE: yytokentype = 10;
-    pub const XKB_LAYOUT: yytokentype = 8;
-    pub const XKB_SEMANTICS: yytokentype = 7;
-    pub const XKB_GEOMETRY: yytokentype = 6;
-    pub const XKB_COMPATMAP: yytokentype = 5;
-    pub const XKB_SYMBOLS: yytokentype = 4;
-    pub const XKB_TYPES: yytokentype = 3;
-    pub const XKB_KEYCODES: yytokentype = 2;
-    pub const XKB_KEYMAP: yytokentype = 1;
-    pub const ERROR_TOK: yytokentype = 255;
-    pub const YYUNDEF: yytokentype = 257;
-    pub const YYerror: yytokentype = 256;
-    pub const END_OF_FILE: yytokentype = 0;
-    pub const YYEMPTY: yytokentype = -2;
+    pub const ALTERNATE_GROUP: i32 = 77;
+    pub const FUNCTION_KEYS: i32 = 76;
+    pub const KEYPAD_KEYS: i32 = 75;
+    pub const MODIFIER_KEYS: i32 = 74;
+    pub const ALPHANUMERIC_KEYS: i32 = 73;
+    pub const HIDDEN: i32 = 72;
+    pub const DEFAULT: i32 = 71;
+    pub const PARTIAL: i32 = 70;
+    pub const KEYNAME: i32 = 65;
+    pub const IDENT: i32 = 64;
+    pub const FLOAT: i32 = 63;
+    pub const INTEGER: i32 = 62;
+    pub const DECIMAL_DIGIT: i32 = 61;
+    pub const STRING: i32 = 60;
+    pub const INVERT: i32 = 55;
+    pub const EXCLAM: i32 = 54;
+    pub const SEMI: i32 = 53;
+    pub const COMMA: i32 = 52;
+    pub const DOT: i32 = 51;
+    pub const CBRACKET: i32 = 50;
+    pub const OBRACKET: i32 = 49;
+    pub const CPAREN: i32 = 48;
+    pub const OPAREN: i32 = 47;
+    pub const CBRACE: i32 = 46;
+    pub const OBRACE: i32 = 45;
+    pub const TIMES: i32 = 44;
+    pub const DIVIDE: i32 = 43;
+    pub const MINUS: i32 = 42;
+    pub const PLUS: i32 = 41;
+    pub const EQUALS: i32 = 40;
+    pub const VIRTUAL: i32 = 38;
+    pub const LOGO: i32 = 37;
+    pub const SOLID: i32 = 36;
+    pub const OUTLINE: i32 = 35;
+    pub const TEXT: i32 = 34;
+    pub const OVERLAY: i32 = 33;
+    pub const SECTION: i32 = 32;
+    pub const ROW: i32 = 31;
+    pub const KEYS: i32 = 30;
+    pub const SHAPE: i32 = 29;
+    pub const INDICATOR: i32 = 28;
+    pub const MODIFIER_MAP: i32 = 27;
+    pub const GROUP: i32 = 26;
+    pub const ALIAS: i32 = 25;
+    pub const KEY: i32 = 24;
+    pub const ACTION_TOK: i32 = 23;
+    pub const INTERPRET: i32 = 22;
+    pub const TYPE: i32 = 21;
+    pub const VIRTUAL_MODS: i32 = 20;
+    pub const ALTERNATE: i32 = 14;
+    pub const REPLACE: i32 = 13;
+    pub const AUGMENT: i32 = 12;
+    pub const OVERRIDE: i32 = 11;
+    pub const INCLUDE: i32 = 10;
+    pub const XKB_LAYOUT: i32 = 8;
+    pub const XKB_SEMANTICS: i32 = 7;
+    pub const XKB_GEOMETRY: i32 = 6;
+    pub const XKB_COMPATMAP: i32 = 5;
+    pub const XKB_SYMBOLS: i32 = 4;
+    pub const XKB_TYPES: i32 = 3;
+    pub const XKB_KEYCODES: i32 = 2;
+    pub const XKB_KEYMAP: i32 = 1;
+    pub const ERROR_TOK: i32 = 255;
+    pub const YYUNDEF: i32 = 257;
+    pub const YYerror: i32 = 256;
+    pub const END_OF_FILE: i32 = 0;
+    pub const YYEMPTY: i32 = -2;
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub union YYSTYPE {
@@ -181,15 +180,15 @@ pub use super::parser::{parse, parse_next};
 pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
-    yytokentype, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5,
-    C2Rust_Unnamed_6, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP,
-    AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE,
-    EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR,
-    INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS,
-    MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE,
-    ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS,
-    XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS,
-    XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
+    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
+    YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
+    CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
+    EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET,
+    INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE,
+    OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI,
+    SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY,
+    XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE,
+    YYUNDEF,
 };
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
