@@ -24,7 +24,7 @@ pub use crate::xkb::utils::eaccess;
 use crate::xkb::utils::xkb_stat;
 pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
 pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
-use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, darray_append, darray_free};
+use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
 use libc::{free, qsort, strtol};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
@@ -182,7 +182,7 @@ unsafe extern "C" fn compare_str(
 unsafe fn add_direct_subdirectories(
     mut ctx: *mut xkb_context,
     mut path: *const i8,
-    mut extensions: *mut darray_string,
+    mut extensions: *mut Vec<*mut i8>,
     mut versioned_count: darray_size_t,
     mut versioned_path_length: usize,
 ) -> i32 {
@@ -272,8 +272,8 @@ unsafe fn add_direct_subdirectories(
                         }
                         let mut i: darray_size_t = 0 as darray_size_t;
                         while i < versioned_count {
-                            let prev_name: *const i8 = (*(*extensions).item.offset(i as isize))
-                                .offset(versioned_path_length as isize);
+                            let prev_name: *const i8 =
+                                ((&*extensions)[i as usize]).offset(versioned_path_length as isize);
                             if cstr_cmp(name, prev_name) == 0 as i32 {
                                 continue 's_62;
                             }
@@ -285,12 +285,7 @@ unsafe fn add_direct_subdirectories(
                             c2rust_current_block = 9563249396912231495;
                             break;
                         } else {
-                            darray_append(
-                                &mut (*extensions).item,
-                                &mut (*extensions).size,
-                                &mut (*extensions).alloc,
-                                ext_path,
-                            );
+                            (&mut *extensions).push(ext_path);
                         }
                     }
                 }
@@ -298,11 +293,13 @@ unsafe fn add_direct_subdirectories(
                     9563249396912231495 => {}
                     _ => {
                         closedir(dir);
-                        if (*extensions).size > versioned_count {
+                        if (&*extensions).len() as darray_size_t > versioned_count {
                             qsort(
-                                (*extensions).item.offset(versioned_count as isize)
+                                (*extensions).as_mut_ptr().offset(versioned_count as isize)
                                     as *mut ::core::ffi::c_void,
-                                (*extensions).size.wrapping_sub(versioned_count) as usize,
+                                ((&*extensions).len() as darray_size_t)
+                                    .wrapping_sub(versioned_count)
+                                    as usize,
                                 std::mem::size_of::<*mut i8>(),
                                 Some(
                                     compare_str
@@ -314,11 +311,14 @@ unsafe fn add_direct_subdirectories(
                                 ),
                             );
                             let mut ext_path_0: *mut *mut i8 = std::ptr::null_mut();
-                            if !(*extensions).item.is_null() {
-                                ext_path_0 = (*extensions).item.offset(versioned_count as isize)
-                                    as *mut *mut i8;
+                            if !(*extensions).is_empty() {
+                                ext_path_0 =
+                                    (*extensions).as_mut_ptr().offset(versioned_count as isize)
+                                        as *mut *mut i8;
                                 while ext_path_0
-                                    < (*extensions).item.offset((*extensions).size as isize)
+                                    < (*extensions)
+                                        .as_mut_ptr()
+                                        .offset((&*extensions).len() as isize)
                                         as *mut *mut i8
                                 {
                                     ret |= context_include_path_append(ctx, *ext_path_0);
@@ -381,11 +381,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
         }
         let extra: *const i8 = xkb_context_include_path_get_extra_path(ctx) as *const i8;
         ret |= context_include_path_append(ctx, extra);
-        let mut extensions: darray_string = darray_string {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
-        };
+        let mut extensions: Vec<*mut i8> = Vec::new();
         let mut extensions_path: *const i8 =
             xkb_context_include_path_get_versioned_extensions_path(ctx);
         let mut versioned_path_length: usize = 0 as usize;
@@ -405,23 +401,14 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
                 ctx,
                 extensions_path,
                 &raw mut extensions,
-                extensions.size,
+                extensions.len() as darray_size_t,
                 versioned_path_length,
             );
         }
-        let mut ext_path: *mut *mut i8 = std::ptr::null_mut();
-        if !extensions.item.is_null() {
-            ext_path = extensions.item.offset(0 as i32 as isize) as *mut *mut i8;
-            while ext_path < extensions.item.offset(extensions.size as isize) as *mut *mut i8 {
-                cstr_free(*ext_path);
-                ext_path = ext_path.offset(1);
-            }
+        for ext_item in &extensions {
+            cstr_free(*ext_item);
         }
-        darray_free(
-            &mut extensions.item,
-            &mut extensions.size,
-            &mut extensions.alloc,
-        );
+        drop(extensions);
         let root: *const i8 = xkb_context_include_path_get_system_path(ctx) as *const i8;
         let has_root: bool = context_include_path_append(ctx, root) != 0;
         ret |= has_root as i32;

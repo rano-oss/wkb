@@ -1,4 +1,4 @@
-use crate::xkb::utils::{darray_append, darray_free, darray_resize, darray_resize_zero};
+// darray helpers removed: using Vec<T> instead
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -234,7 +234,20 @@ pub use crate::xkb::utils::one_bit_set;
 pub use crate::xkb::utils::popcount32;
 pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 use libc::{calloc, free, qsort};
-#[derive(Copy, Clone)]
+
+unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+    if new_len > v.len() {
+        v.reserve(new_len - v.len());
+        let old_len = v.len();
+        let ptr = v.as_mut_ptr().add(old_len);
+        std::ptr::write_bytes(ptr, 0, new_len - old_len);
+        v.set_len(new_len);
+    } else if new_len < v.len() {
+        v.truncate(new_len);
+    }
+}
+
+#[derive(Clone)]
 #[repr(C)]
 
 pub struct xkb_machine {
@@ -271,22 +284,14 @@ pub struct machine_mods_mapping {
     pub source: xkb_mod_mask_t,
     pub target: xkb_mod_mask_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 
 pub struct C2Rust_Unnamed_13 {
     pub enabled: xkb_overlay_mask_t,
     pub order: u32,
-    pub keys: C2Rust_Unnamed_14,
+    pub keys: Vec<xkb_overlaid_key>,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct C2Rust_Unnamed_14 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_overlaid_key,
-}
+// C2Rust_Unnamed_14 removed: replaced by Vec<xkb_overlaid_key>
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -295,8 +300,7 @@ pub struct xkb_overlaid_key {
     pub new: *const xkb_key,
     pub refcnt: i32,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 
 pub struct xkb_state {
     pub components: state_components,
@@ -306,17 +310,10 @@ pub struct xkb_state {
     pub mod_key_count: [i16; 32],
     pub flags: xkb_a11y_flags,
     pub refcnt: i32,
-    pub filters: C2Rust_Unnamed_15,
+    pub filters: Vec<xkb_filter>,
     pub keymap: *mut xkb_keymap,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct C2Rust_Unnamed_15 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_filter,
-}
+// C2Rust_Unnamed_15 removed: replaced by Vec<xkb_filter>
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -335,22 +332,14 @@ pub struct xkb_filter {
     pub priv_0: u32,
     pub refcnt: i32,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 
 pub struct xkb_events {
     pub next: darray_size_t,
-    pub queue: C2Rust_Unnamed_16,
+    pub queue: Vec<xkb_event>,
     pub ctx: *mut xkb_context,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct C2Rust_Unnamed_16 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_event,
-}
+// C2Rust_Unnamed_16 removed: replaced by Vec<xkb_event>
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -364,8 +353,7 @@ pub struct C2Rust_Unnamed_19 {
     pub policy: xkb_layout_out_of_range_policy,
     pub redirect_group: xkb_layout_index_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 
 pub struct xkb_machine_options {
     pub a11y_affect: xkb_a11y_flags,
@@ -374,28 +362,17 @@ pub struct xkb_machine_options {
     pub shortcuts: xkb_shortcuts_config_options,
     pub ctx: *mut xkb_context,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 
 pub struct xkb_shortcuts_config_options {
     pub mask: xkb_mod_mask_t,
-    pub targets: C2Rust_Unnamed_20,
+    pub targets: Vec<xkb_layout_index_t>,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct C2Rust_Unnamed_20 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_layout_index_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
+// C2Rust_Unnamed_20 removed: replaced by Vec<xkb_layout_index_t>
+#[derive(Clone)]
 
 pub struct machine_mods_mappings {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut machine_mods_mapping,
+    pub items: Vec<machine_mods_mapping>,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -611,32 +588,18 @@ unsafe fn xkb_key_get_actions(
 unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
     unsafe {
         let mut filter: *mut xkb_filter = std::ptr::null_mut();
-        let mut iter: *mut xkb_filter = std::ptr::null_mut();
-        if !(*state).filters.item.is_null() {
-            iter = (*state).filters.item.offset(0 as i32 as isize) as *mut xkb_filter;
-            while iter
-                < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
-            {
-                if (*iter).func.is_some() {
-                    iter = iter.offset(1);
-                } else {
-                    filter = iter;
-                    break;
-                }
+        let filters = &mut (*state).filters;
+        for i in 0..filters.len() {
+            if filters[i].func.is_none() {
+                filter = &mut filters[i] as *mut xkb_filter;
+                break;
             }
         }
         if filter.is_null() {
-            darray_resize_zero(
-                &mut (*state).filters.item,
-                &mut (*state).filters.size,
-                &mut (*state).filters.alloc,
-                (*state).filters.size.wrapping_add(1 as darray_size_t),
-            );
-            filter = (*state)
-                .filters
-                .item
-                .offset((*state).filters.size.wrapping_sub(1 as darray_size_t) as isize)
-                as *mut xkb_filter;
+            let new_len = (&(*state).filters).len().wrapping_add(1);
+            darray_resize_zero_vec(&mut (*state).filters, new_len);
+            let last = (&(*state).filters).len() - 1;
+            filter = (&mut (*state).filters).as_mut_ptr().add(last);
         }
         (*filter).refcnt = 1 as i32;
         return filter;
@@ -829,9 +792,7 @@ unsafe fn xkb_filter_group_latch_new(
                 };
                 init.set_latch(LATCH_KEY_DOWN as u32);
                 init.set_group_delta(
-                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32
-                        != 0
-                    {
+                    if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
                         (*filter).action.group.group - (*state).components.base_group
                     } else {
                         (*filter).action.group.group
@@ -902,8 +863,7 @@ unsafe fn xkb_filter_group_latch_func(
                             && sticky_keys as i32 != 0
                             && (*actions.offset(k_0 as isize)).group.flags as u32 == flags as u32
                     {
-                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as u32
-                            != 0
+                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as u32 != 0
                             && (*filter).action.group.group != 0 as i32
                         {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
@@ -1168,9 +1128,7 @@ unsafe fn xkb_filter_mod_latch_func(
                         && (*actions.offset(k_0 as isize)).mods.mods.mask
                             == (*filter).action.mods.mods.mask
                     {
-                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as u32
-                            != 0
-                        {
+                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as u32 != 0 {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
                             (*filter).func = Some(
                                 xkb_filter_mod_lock_func
@@ -1253,9 +1211,7 @@ unsafe fn xkb_filter_mod_latch_func(
                 } else if latch as u32 == NO_LATCH as u32 {
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32
-                    == 0
-                {
+                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32 == 0 {
                     latch = LATCH_PENDING;
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
@@ -1344,22 +1300,20 @@ unsafe fn append_redirect_key_events(
     unsafe {
         let mut changed: xkb_state_component = 0 as xkb_state_component;
         let mask: xkb_mod_mask_t = (*redirect).affect;
-        let mut event: *mut xkb_event = std::ptr::null_mut();
         let mut last_components: state_components = (*state).components;
-        if !(*events).queue.item.is_null() && (*events).queue.size != 0 {
-            event = (*events)
-                .queue
-                .item
-                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize)
-                as *mut xkb_event;
-            while (*events).queue.size > 0 as darray_size_t
-                && event >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
-            {
-                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
-                    last_components = (*event).c2rust_unnamed.components.components;
-                    break;
-                } else {
-                    event = event.offset(-1);
+        {
+            let queue = &(*events).queue;
+            if !queue.is_empty() {
+                let mut idx = queue.len() - 1;
+                loop {
+                    if queue[idx].type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
+                        last_components = queue[idx].c2rust_unnamed.components.components;
+                        break;
+                    }
+                    if idx == 0 {
+                        break;
+                    }
+                    idx -= 1;
                 }
             }
         }
@@ -1371,54 +1325,39 @@ unsafe fn append_redirect_key_events(
             new.mods = new.mods & !mask | (*redirect).mods;
             changed = get_state_component_changes(&raw mut last_components, &raw mut new);
             if changed as u64 != 0 {
-                darray_append(
-                    &mut (*events).queue.item,
-                    &mut (*events).queue.size,
-                    &mut (*events).queue.alloc,
-                    xkb_event {
-                        type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                        c2rust_unnamed: C2Rust_Unnamed_17 {
-                            components: C2Rust_Unnamed_18 {
-                                components: new,
-                                changed: changed,
-                            },
-                        },
-                    },
-                );
-            }
-        }
-        darray_append(
-            &mut (*events).queue.item,
-            &mut (*events).queue.size,
-            &mut (*events).queue.alloc,
-            xkb_event {
-                type_0: (if direction as u32 == XKB_KEY_UP as u32 {
-                    XKB_EVENT_TYPE_KEY_UP as i32
-                } else if direction as u32 == XKB_KEY_REPEATED as u32 {
-                    XKB_EVENT_TYPE_KEY_REPEATED as i32
-                } else {
-                    XKB_EVENT_TYPE_KEY_DOWN as i32
-                }) as xkb_event_type,
-                c2rust_unnamed: C2Rust_Unnamed_17 {
-                    keycode: (*redirect).keycode,
-                },
-            },
-        );
-        if mask != 0 && changed as u32 != 0 {
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
+                (&mut (*events).queue).push(xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     c2rust_unnamed: C2Rust_Unnamed_17 {
                         components: C2Rust_Unnamed_18 {
-                            components: last_components,
+                            components: new,
                             changed: changed,
                         },
                     },
+                });
+            }
+        }
+        (&mut (*events).queue).push(xkb_event {
+            type_0: (if direction as u32 == XKB_KEY_UP as u32 {
+                XKB_EVENT_TYPE_KEY_UP as i32
+            } else if direction as u32 == XKB_KEY_REPEATED as u32 {
+                XKB_EVENT_TYPE_KEY_REPEATED as i32
+            } else {
+                XKB_EVENT_TYPE_KEY_DOWN as i32
+            }) as xkb_event_type,
+            c2rust_unnamed: C2Rust_Unnamed_17 {
+                keycode: (*redirect).keycode,
+            },
+        });
+        if mask != 0 && changed as u32 != 0 {
+            (&mut (*events).queue).push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    components: C2Rust_Unnamed_18 {
+                        components: last_components,
+                        changed: changed,
+                    },
                 },
-            );
+            });
         }
         return true;
     }
@@ -1471,8 +1410,7 @@ unsafe fn xkb_filter_redirect_key_func(
                 xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
             let mut a: xkb_action_count_t = 0 as xkb_action_count_t;
             while (a as i32) < count as i32 {
-                if (*actions.offset(a as isize)).type_0 as u32
-                    == ACTION_TYPE_REDIRECT_KEY as u32
+                if (*actions.offset(a as isize)).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32
                     && (*actions.offset(a as isize)).redirect.keycode
                         != (*filter).action.redirect.keycode
                 {
@@ -1699,11 +1637,11 @@ unsafe fn xkb_filter_apply_all(
     unsafe {
         let mut consumed: bool = false;
         let mut filter: *mut xkb_filter = std::ptr::null_mut();
-        if !(*state).filters.item.is_null() {
-            filter = (*state).filters.item.offset(0 as i32 as isize) as *mut xkb_filter;
-            while filter
-                < (*state).filters.item.offset((*state).filters.size as isize) as *mut xkb_filter
-            {
+        let filters_len = (&(*state).filters).len();
+        if filters_len > 0 {
+            filter = (*state).filters.as_mut_ptr();
+            let end = filter.add(filters_len);
+            while filter < end {
                 if !(*filter).func.is_none() {
                     if (*filter).func.expect("non-null function pointer")(
                         state, events, filter, key, direction,
@@ -1724,9 +1662,7 @@ unsafe fn xkb_filter_apply_all(
             xkb_key_get_actions(state, key, &raw mut actions) as xkb_action_count_t;
         let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
         while (k as i32) < count as i32 {
-            if !((*actions.offset(k as isize)).type_0 as u32
-                >= _ACTION_TYPE_NUM_ENTRIES as u32)
-            {
+            if !((*actions.offset(k as isize)).type_0 as u32 >= _ACTION_TYPE_NUM_ENTRIES as u32) {
                 if !filter_action_funcs[(*actions.offset(k as isize)).type_0 as usize]
                     .new
                     .is_none()
@@ -1734,8 +1670,7 @@ unsafe fn xkb_filter_apply_all(
                     filter = xkb_filter_new(state);
                     (*filter).key = key;
                     (*filter).action = *actions.offset(k as isize);
-                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0
-                    {
+                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0 {
                         if (*filter).action.type_0 as u32 == ACTION_TYPE_MOD_SET as u32 {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
                             if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
@@ -1743,9 +1678,7 @@ unsafe fn xkb_filter_apply_all(
                                     | ACTION_LATCH_TO_LOCK as u32)
                                     as xkb_action_flags;
                             }
-                        } else if (*filter).action.type_0 as u32
-                            == ACTION_TYPE_GROUP_SET as u32
-                        {
+                        } else if (*filter).action.type_0 as u32 == ACTION_TYPE_GROUP_SET as u32 {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
                             if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
                                 (*filter).action.group.flags = ((*filter).action.group.flags as u32
@@ -1787,9 +1720,8 @@ unsafe fn xkb_state_init(
         if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as u32
             && a11y_affect as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 == 0
         {
-            (*state).flags = ((*state).flags as u32
-                | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32)
-                as xkb_a11y_flags;
+            (*state).flags =
+                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32) as xkb_a11y_flags;
         }
         (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
         (*state).refcnt = 1 as i32;
@@ -1799,7 +1731,17 @@ unsafe fn xkb_state_init(
 }
 pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
     unsafe {
-        let state: *mut xkb_state = Box::into_raw(Box::new(std::mem::zeroed::<xkb_state>()));
+        let state: *mut xkb_state = Box::into_raw(Box::new(xkb_state {
+            components: std::mem::zeroed(),
+            controls: std::mem::zeroed(),
+            set_mods: 0,
+            clear_mods: 0,
+            mod_key_count: [0; 32],
+            flags: std::mem::zeroed(),
+            refcnt: 0,
+            filters: Vec::new(),
+            keymap: std::ptr::null_mut(),
+        }));
         xkb_state_init(state, keymap, XKB_A11Y_NO_FLAGS, XKB_A11Y_NO_FLAGS);
         return state;
     }
@@ -1816,11 +1758,7 @@ pub unsafe fn xkb_state_ref(mut state: *mut xkb_state) -> *mut xkb_state {
 unsafe fn xkb_state_destroy(mut state: *mut xkb_state) {
     unsafe {
         xkb_keymap_unref((*state).keymap);
-        darray_free(
-            &mut (*state).filters.item,
-            &mut (*state).filters.size,
-            &mut (*state).filters.alloc,
-        );
+        // Vec<xkb_filter> will be dropped when the owning struct is dropped
     }
 }
 pub unsafe fn xkb_state_unref(mut state: *mut xkb_state) {
@@ -1983,8 +1921,7 @@ pub unsafe fn xkb_state_update_key(
 ) -> xkb_state_component {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats()
-        {
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats() {
             return 0 as xkb_state_component;
         }
         let prev_components: state_components = (*state).components;
@@ -2303,11 +2240,7 @@ pub unsafe fn xkb_state_update_latched_locked(
             affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
             controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
         };
-        state_update_latched_locked(
-            state,
-            &raw const update,
-            std::ptr::null_mut(),
-        );
+        state_update_latched_locked(state, &raw const update, std::ptr::null_mut());
         xkb_state_update_derived(state);
         return get_state_component_changes(
             &raw const previous_components,
@@ -2925,9 +2858,7 @@ unsafe fn match_mod_masks(
 ) -> bool {
     unsafe {
         let active: xkb_mod_mask_t = xkb_state_serialize_mods(state, type_0) as xkb_mod_mask_t;
-        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as u32 == 0
-            && active & !wanted != 0
-        {
+        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as u32 == 0 && active & !wanted != 0 {
             return false;
         }
         if match_0 as u32 & XKB_STATE_MATCH_ANY as u32 != 0 {
@@ -3236,47 +3167,31 @@ pub unsafe fn xkb_state_key_get_consumed_mods(
     }
 }
 
-static mut default_machine_options: xkb_machine_options = xkb_machine_options {
-    a11y_affect: XKB_A11Y_NO_FLAGS,
-    a11y_flags: XKB_A11Y_NO_FLAGS,
-    mods: machine_mods_mappings {
-        size: 0,
-        alloc: 0,
-        item: std::ptr::null_mut(),
-    },
-    shortcuts: xkb_shortcuts_config_options {
-        mask: 0 as xkb_mod_mask_t,
-        targets: C2Rust_Unnamed_20 {
-            size: 0 as darray_size_t,
-            alloc: 0 as darray_size_t,
-            item: std::ptr::null_mut(),
+fn default_machine_options() -> xkb_machine_options {
+    xkb_machine_options {
+        a11y_affect: XKB_A11Y_NO_FLAGS,
+        a11y_flags: XKB_A11Y_NO_FLAGS,
+        mods: machine_mods_mappings { items: Vec::new() },
+        shortcuts: xkb_shortcuts_config_options {
+            mask: 0 as xkb_mod_mask_t,
+            targets: Vec::new(),
         },
-    },
-    ctx: std::ptr::null_mut(),
-};
+        ctx: std::ptr::null_mut(),
+    }
+}
 
 pub unsafe fn xkb_machine_options_new(mut context: *mut xkb_context) -> *mut xkb_machine_options {
     unsafe {
-        let opt: *mut xkb_machine_options =
-            Box::into_raw(Box::new(std::mem::zeroed::<xkb_machine_options>()));
-        *opt = xkb_machine_options {
+        let opt: *mut xkb_machine_options = Box::into_raw(Box::new(xkb_machine_options {
             a11y_affect: XKB_A11Y_NO_FLAGS,
             a11y_flags: XKB_A11Y_NO_FLAGS,
-            mods: machine_mods_mappings {
-                size: 0,
-                alloc: 0,
-                item: std::ptr::null_mut(),
-            },
+            mods: machine_mods_mappings { items: Vec::new() },
             shortcuts: xkb_shortcuts_config_options {
                 mask: 0 as xkb_mod_mask_t,
-                targets: C2Rust_Unnamed_20 {
-                    size: 0 as darray_size_t,
-                    alloc: 0 as darray_size_t,
-                    item: std::ptr::null_mut(),
-                },
+                targets: Vec::new(),
             },
             ctx: xkb_context_ref(context),
-        };
+        }));
         return opt;
     }
 }
@@ -3286,16 +3201,7 @@ pub unsafe fn xkb_machine_options_destroy(mut options: *mut xkb_machine_options)
         if options.is_null() {
             return;
         }
-        darray_free(
-            &mut (*options).shortcuts.targets.item,
-            &mut (*options).shortcuts.targets.size,
-            &mut (*options).shortcuts.targets.alloc,
-        );
-        darray_free(
-            &mut (*options).mods.item,
-            &mut (*options).mods.size,
-            &mut (*options).mods.alloc,
-        );
+        // Vec fields (targets, mods.items) are dropped automatically by Box::from_raw
         xkb_context_unref((*options).ctx);
         drop(Box::from_raw(options));
     }
@@ -3339,37 +3245,22 @@ pub unsafe fn xkb_machine_options_remap_mods(
     unsafe {
         if source == 0 {
             if target == 0 {
-                (*options).mods.size = 0 as darray_size_t;
+                (&mut (*options).mods.items).clear();
                 return XKB_SUCCESS;
             } else {
                 return XKB_ERROR_UNSUPPORTED_MODIFIER_MASK;
             }
         }
-        let mut mapping: *mut machine_mods_mapping =
-            std::ptr::null_mut();
+        let mut mapping: *mut machine_mods_mapping = std::ptr::null_mut();
         let mut m: darray_size_t = 0 as darray_size_t;
-        if !(*options).mods.item.is_null() {
+        let mods_len = (&(*options).mods.items).len() as darray_size_t;
+        if mods_len > 0 {
             m = 0 as darray_size_t;
-            mapping = (*options).mods.item.offset(0 as i32 as isize) as *mut machine_mods_mapping;
-            while m < (*options).mods.size {
+            mapping = (*options).mods.items.as_mut_ptr();
+            while m < mods_len {
                 if (*mapping).source == source {
                     if target == 0 {
-                        let mut __index: darray_size_t = m;
-                        if __index < (*options).mods.size.wrapping_sub(1 as darray_size_t) {
-                            std::ptr::copy(
-                                (*options)
-                                    .mods
-                                    .item
-                                    .offset(__index.wrapping_add(1 as darray_size_t) as isize),
-                                (*options).mods.item.offset(__index as isize),
-                                (*options)
-                                    .mods
-                                    .size
-                                    .wrapping_sub(1 as darray_size_t)
-                                    .wrapping_sub(__index) as usize,
-                            );
-                        }
-                        (*options).mods.size = (*options).mods.size.wrapping_sub(1);
+                        (&mut (*options).mods.items).remove(m as usize);
                     } else {
                         (*mapping).target = target;
                     }
@@ -3380,15 +3271,10 @@ pub unsafe fn xkb_machine_options_remap_mods(
             }
         }
         if target != 0 {
-            darray_append(
-                &mut (*options).mods.item,
-                &mut (*options).mods.size,
-                &mut (*options).mods.alloc,
-                machine_mods_mapping {
-                    source: source,
-                    target: target,
-                },
-            );
+            (&mut (*options).mods.items).push(machine_mods_mapping {
+                source: source,
+                target: target,
+            });
         }
         return XKB_SUCCESS;
     }
@@ -3421,21 +3307,17 @@ pub unsafe fn xkb_machine_options_remap_shortcut_layout(
             return XKB_SUCCESS;
         }
         let mut config: *mut xkb_shortcuts_config_options = &raw mut (*options).shortcuts;
-        if source >= (*config).targets.size as xkb_layout_index_t {
-            let mut new: xkb_layout_index_t = (*config).targets.size as xkb_layout_index_t;
-            darray_resize(
-                &mut (*config).targets.item,
-                &mut (*config).targets.size,
-                &mut (*config).targets.alloc,
-                source.wrapping_add(1 as xkb_layout_index_t) as u32,
-            );
+        let targets_len = (&(*config).targets).len();
+        if source >= targets_len as xkb_layout_index_t {
+            let mut new: xkb_layout_index_t = targets_len as xkb_layout_index_t;
+            let new_len = source.wrapping_add(1 as xkb_layout_index_t) as usize;
+            (&mut (*config).targets).resize(new_len, 0);
             while new < source {
-                *(*config).targets.item.offset(new as isize) =
-                    XKB_LAYOUT_INVALID as xkb_layout_index_t;
+                (&mut (*config).targets)[new as usize] = XKB_LAYOUT_INVALID as xkb_layout_index_t;
                 new = new.wrapping_add(1);
             }
         }
-        *(*config).targets.item.offset(source as isize) = if source == target {
+        (&mut (*config).targets)[source as usize] = if source == target {
             XKB_LAYOUT_INVALID as xkb_layout_index_t
         } else {
             target
@@ -3484,43 +3366,23 @@ unsafe fn machine_set_mods(
     mut raw_mappings: *const machine_mods_mappings,
 ) -> bool {
     unsafe {
-        if !((*raw_mappings).size == 0 as darray_size_t) {
-            let mut mappings: machine_mods_mappings = machine_mods_mappings {
-                size: 0 as darray_size_t,
-                alloc: 0 as darray_size_t,
-                item: std::ptr::null_mut(),
-            };
+        if !((&(*raw_mappings).items).is_empty()) {
+            let mut mappings: Vec<machine_mods_mapping> = Vec::new();
             let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
-            let mut mapping: *const machine_mods_mapping =
-                std::ptr::null();
             let invalid: xkb_mod_mask_t = !(*(*sm).state.keymap).canonical_state_mask;
-            if !(*raw_mappings).item.is_null() {
-                mapping =
-                    (*raw_mappings).item.offset(0 as i32 as isize) as *mut machine_mods_mapping;
-                while mapping
-                    < (*raw_mappings).item.offset((*raw_mappings).size as isize)
-                        as *mut machine_mods_mapping
-                        as *const machine_mods_mapping
+            for item in (&(*raw_mappings).items).iter() {
+                if !(item.source == 0
+                    || item.target == 0
+                    || item.source & invalid != 0
+                    || item.target & invalid != 0)
                 {
-                    if !((*mapping).source == 0
-                        || (*mapping).target == 0
-                        || (*mapping).source & invalid != 0
-                        || (*mapping).target & invalid != 0)
-                    {
-                        darray_append(
-                            &mut mappings.item,
-                            &mut mappings.size,
-                            &mut mappings.alloc,
-                            *mapping,
-                        );
-                        mask |= (*mapping).source;
-                    }
-                    mapping = mapping.offset(1);
+                    mappings.push(*item);
+                    mask |= item.source;
                 }
             }
             qsort(
-                mappings.item as *mut ::core::ffi::c_void,
-                mappings.size as usize,
+                mappings.as_mut_ptr() as *mut ::core::ffi::c_void,
+                mappings.len(),
                 std::mem::size_of::<machine_mods_mapping>(),
                 Some(
                     cmp_mod_masks
@@ -3530,13 +3392,16 @@ unsafe fn machine_set_mods(
                         ) -> i32,
                 ),
             );
-            (*sm).config.modifiers.mappings = mappings.item as *mut machine_mods_mapping;
+            // Steal buffer from Vec into raw pointer for config
+            let mut mappings = std::mem::ManuallyDrop::new(mappings);
+            (*sm).config.modifiers.mappings = if mappings.is_empty() {
+                std::ptr::null_mut()
+            } else {
+                mappings.as_mut_ptr()
+            };
             if !(&raw mut (*sm).config.modifiers.mappings_num).is_null() {
-                *&raw mut (*sm).config.modifiers.mappings_num = mappings.size;
+                *&raw mut (*sm).config.modifiers.mappings_num = mappings.len() as darray_size_t;
             }
-            mappings.item = std::ptr::null_mut();
-            mappings.size = 0 as darray_size_t;
-            mappings.alloc = 0 as darray_size_t;
             (*sm).config.modifiers.mask = mask;
         } else {
             (*sm).config.modifiers = machine_modifiers_config {
@@ -3554,7 +3419,8 @@ unsafe fn machine_set_shortcuts(
     mut options: *const xkb_shortcuts_config_options,
 ) -> bool {
     unsafe {
-        if (*options).targets.size == 0 as darray_size_t {
+        let targets_len = (&(*options).targets).len();
+        if targets_len == 0 {
             (*sm).config.shortcuts = machine_shortcuts_config {
                 mask: 0 as xkb_mod_mask_t,
                 targets: std::ptr::null_mut(),
@@ -3563,16 +3429,13 @@ unsafe fn machine_set_shortcuts(
         }
         let keymap: *mut xkb_keymap = (*sm).state.keymap;
         let mut count: xkb_layout_index_t =
-            if (*keymap).num_groups < (*options).targets.size as xkb_layout_index_t {
+            if (*keymap).num_groups < targets_len as xkb_layout_index_t {
                 (*keymap).num_groups
             } else {
-                (*options).targets.size as xkb_layout_index_t
+                targets_len as xkb_layout_index_t
             };
         while count > 1 as xkb_layout_index_t {
-            if *(*options)
-                .targets
-                .item
-                .offset(count.wrapping_sub(1 as xkb_layout_index_t) as isize)
+            if (&(*options).targets)[count.wrapping_sub(1 as xkb_layout_index_t) as usize]
                 < (*keymap).num_groups
             {
                 break;
@@ -3600,8 +3463,8 @@ unsafe fn machine_set_shortcuts(
         let mut l: xkb_layout_index_t = 0 as xkb_layout_index_t;
         while l < count {
             *targets.offset(l as isize) =
-                if *(*options).targets.item.offset(l as isize) < (*keymap).num_groups {
-                    *(*options).targets.item.offset(l as isize)
+                if (&(*options).targets)[l as usize] < (*keymap).num_groups {
+                    (&(*options).targets)[l as usize]
                 } else {
                     XKB_LAYOUT_INVALID as xkb_layout_index_t
                 };
@@ -3625,9 +3488,29 @@ pub unsafe fn xkb_machine_new(
     mut options: *const xkb_machine_options,
 ) -> *mut xkb_machine {
     unsafe {
-        let machine: *mut xkb_machine = Box::into_raw(Box::new(std::mem::zeroed::<xkb_machine>()));
+        let machine: *mut xkb_machine = Box::into_raw(Box::new(xkb_machine {
+            state: xkb_state {
+                components: std::mem::zeroed(),
+                controls: std::mem::zeroed(),
+                set_mods: 0,
+                clear_mods: 0,
+                mod_key_count: [0; 32],
+                flags: std::mem::zeroed(),
+                refcnt: 0,
+                filters: Vec::new(),
+                keymap: std::ptr::null_mut(),
+            },
+            overlays: C2Rust_Unnamed_13 {
+                enabled: 0,
+                order: 0,
+                keys: Vec::new(),
+            },
+            config: std::mem::zeroed(),
+        }));
+        let default_opts;
         if options.is_null() {
-            options = &raw const default_machine_options;
+            default_opts = default_machine_options();
+            options = &raw const default_opts;
         }
         xkb_state_init(
             &raw mut (*machine).state,
@@ -3641,9 +3524,7 @@ pub unsafe fn xkb_machine_new(
             xkb_machine_unref(machine);
             return std::ptr::null_mut();
         } else {
-            (*machine).overlays.keys.item = std::ptr::null_mut();
-            (*machine).overlays.keys.size = 0 as darray_size_t;
-            (*machine).overlays.keys.alloc = 0 as darray_size_t;
+            // keys Vec already initialized as empty above
             return machine;
         };
     }
@@ -3665,11 +3546,7 @@ pub unsafe fn xkb_machine_unref(mut sm: *mut xkb_machine) {
             return;
         }
         xkb_state_destroy(&raw mut (*sm).state);
-        darray_free(
-            &mut (*sm).overlays.keys.item,
-            &mut (*sm).overlays.keys.size,
-            &mut (*sm).overlays.keys.alloc,
-        );
+        // Vec<xkb_overlaid_key> (overlays.keys) dropped automatically by Box::from_raw
         free((*sm).config.shortcuts.targets as *mut ::core::ffi::c_void);
         free((*sm).config.modifiers.mappings as *mut ::core::ffi::c_void);
         drop(Box::from_raw(sm));
@@ -3771,20 +3648,15 @@ pub unsafe fn xkb_machine_process_synthetic(
             if changed as u32 & XKB_STATE_CONTROLS as u32 != 0 {
                 machine_update_overlays(sm);
             }
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
-                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        components: C2Rust_Unnamed_18 {
-                            components: (*state).components,
-                            changed: changed,
-                        },
+            (&mut (*events).queue).push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    components: C2Rust_Unnamed_18 {
+                        components: (*state).components,
+                        changed: changed,
                     },
                 },
-            );
+            });
         }
         return XKB_SUCCESS;
     }
@@ -3823,31 +3695,27 @@ unsafe fn do_remap_modifiers(
         if affect == 0 {
             return -1 as isize;
         }
-        let mut new: xkb_state = *state;
+        let mut new: std::mem::ManuallyDrop<xkb_state> =
+            std::mem::ManuallyDrop::new(std::ptr::read(state));
         new.components.base_mods = new.components.base_mods & !affect | mods;
         new.components.latched_mods = new.components.latched_mods & !affect;
         new.components.locked_mods = new.components.locked_mods & !affect;
-        xkb_state_update_derived(&raw mut new);
+        xkb_state_update_derived(&raw mut *new);
         let mut event_idx: isize = -1 as isize;
         let changed: xkb_state_component =
             get_state_component_changes(&raw mut (*state).components, &raw mut new.components)
                 as xkb_state_component;
         if changed as u64 != 0 {
-            event_idx = (*events).queue.size as isize;
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
-                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        components: C2Rust_Unnamed_18 {
-                            components: new.components,
-                            changed: changed,
-                        },
+            event_idx = (&(*events).queue).len() as isize;
+            (&mut (*events).queue).push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    components: C2Rust_Unnamed_18 {
+                        components: new.components,
+                        changed: changed,
                     },
                 },
-            );
+            });
         }
         (*state).components.mods = new.components.mods;
         return event_idx;
@@ -3867,36 +3735,32 @@ unsafe fn do_shortcuts_tweak(
             && *(*config).targets.offset((*state).components.group as isize)
                 != XKB_LAYOUT_INVALID as xkb_layout_index_t
         {
-            let mut new: xkb_state = *state;
+            let mut new: std::mem::ManuallyDrop<xkb_state> =
+                std::mem::ManuallyDrop::new(std::ptr::read(state));
             if remap_event < 0 as isize {
-                remap_event = (*events).queue.size as isize;
-                darray_append(
-                    &mut (*events).queue.item,
-                    &mut (*events).queue.size,
-                    &mut (*events).queue.alloc,
-                    xkb_event {
-                        type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                        c2rust_unnamed: C2Rust_Unnamed_17 {
-                            components: C2Rust_Unnamed_18 {
-                                components: state_components {
-                                    base_group: 0 as i32,
-                                    latched_group: 0,
-                                    locked_group: 0,
-                                    group: 0,
-                                    base_mods: 0,
-                                    latched_mods: 0,
-                                    locked_mods: 0,
-                                    mods: 0,
-                                    leds: 0,
-                                    controls: 0 as xkb_action_controls,
-                                },
-                                changed: 0 as xkb_state_component,
+                remap_event = (&(*events).queue).len() as isize;
+                (&mut (*events).queue).push(xkb_event {
+                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                    c2rust_unnamed: C2Rust_Unnamed_17 {
+                        components: C2Rust_Unnamed_18 {
+                            components: state_components {
+                                base_group: 0 as i32,
+                                latched_group: 0,
+                                locked_group: 0,
+                                group: 0,
+                                base_mods: 0,
+                                latched_mods: 0,
+                                locked_mods: 0,
+                                mods: 0,
+                                leds: 0,
+                                controls: 0 as xkb_action_controls,
                             },
+                            changed: 0 as xkb_state_component,
                         },
                     },
-                );
+                });
             } else {
-                new.components = (*(*events).queue.item.offset(remap_event as isize))
+                new.components = (&(*events).queue)[remap_event as usize]
                     .c2rust_unnamed
                     .components
                     .components;
@@ -3905,15 +3769,15 @@ unsafe fn do_shortcuts_tweak(
                 *(*config).targets.offset((*state).components.group as isize) as i32
                     - (*state).components.latched_group
                     - (*state).components.locked_group;
-            xkb_state_update_derived(&raw mut new);
+            xkb_state_update_derived(&raw mut *new);
             let changed: xkb_state_component =
                 get_state_component_changes(previous_components, &raw mut new.components)
                     as xkb_state_component;
-            (*(*events).queue.item.offset(remap_event as isize))
+            (&mut (*events).queue)[remap_event as usize]
                 .c2rust_unnamed
                 .components
                 .changed = changed;
-            (*(*events).queue.item.offset(remap_event as isize))
+            (&mut (*events).queue)[remap_event as usize]
                 .c2rust_unnamed
                 .components
                 .components = new.components;
@@ -3929,46 +3793,40 @@ unsafe fn undo_tweaks(
     mut events: *mut xkb_events,
 ) {
     unsafe {
-        let mut event: *const xkb_event = std::ptr::null();
-        if !(*events).queue.item.is_null() && (*events).queue.size != 0 {
-            event = (*events)
-                .queue
-                .item
-                .offset((*events).queue.size.wrapping_sub(1 as darray_size_t) as isize)
-                as *mut xkb_event;
-            while (*events).queue.size > 0 as darray_size_t
-                && event
-                    >= (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event
-                        as *const xkb_event
-            {
-                if (*event).type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
-                    break;
+        let mut found_event: *const xkb_event = std::ptr::null();
+        {
+            let queue = &(*events).queue;
+            if !queue.is_empty() {
+                let mut idx = queue.len() - 1;
+                loop {
+                    if queue[idx].type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
+                        found_event = &queue[idx] as *const xkb_event;
+                        break;
+                    }
+                    if idx == 0 {
+                        break;
+                    }
+                    idx -= 1;
                 }
-                event = event.offset(-1);
             }
         }
-        if event.is_null() {
+        if found_event.is_null() {
             return;
         }
         let changed: xkb_state_component = get_state_component_changes(
             previous_components,
-            &raw const (*event).c2rust_unnamed.components.components,
+            &raw const (*found_event).c2rust_unnamed.components.components,
         ) as xkb_state_component;
         if changed as u64 != 0 {
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
-                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        components: C2Rust_Unnamed_18 {
-                            components: *previous_components,
-                            changed: changed,
-                        },
+            (&mut (*events).queue).push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    components: C2Rust_Unnamed_18 {
+                        components: *previous_components,
+                        changed: changed,
                     },
                 },
-            );
+            });
         }
     }
 }
@@ -3980,18 +3838,12 @@ unsafe fn process_overlayable_key(
 ) -> *const xkb_key {
     unsafe {
         let mut entry: *mut xkb_overlaid_key = std::ptr::null_mut();
-        let mut available_entry: *mut xkb_overlaid_key =
-            std::ptr::null_mut();
-        if !(*sm).overlays.keys.item.is_null() {
-            entry = (*sm).overlays.keys.item.offset(0 as i32 as isize) as *mut xkb_overlaid_key;
-            while entry
-                < (*sm)
-                    .overlays
-                    .keys
-                    .item
-                    .offset((*sm).overlays.keys.size as isize)
-                    as *mut xkb_overlaid_key
-            {
+        let mut available_entry: *mut xkb_overlaid_key = std::ptr::null_mut();
+        let keys_len = (&(*sm).overlays.keys).len();
+        if keys_len > 0 {
+            entry = (*sm).overlays.keys.as_mut_ptr();
+            let end = entry.add(keys_len);
+            while entry < end {
                 if (*entry).old == key {
                     match direction as u32 {
                         1 => {
@@ -4041,14 +3893,9 @@ unsafe fn process_overlayable_key(
             if !available_entry.is_null() {
                 entry = available_entry;
             } else {
-                let idx: darray_size_t = (*sm).overlays.keys.size;
-                darray_append(
-                    &mut (*sm).overlays.keys.item,
-                    &mut (*sm).overlays.keys.size,
-                    &mut (*sm).overlays.keys.alloc,
-                    core::mem::zeroed::<xkb_overlaid_key>(),
-                );
-                entry = (*sm).overlays.keys.item.offset(idx as isize) as *mut xkb_overlaid_key;
+                let idx = (&(*sm).overlays.keys).len();
+                (&mut (*sm).overlays.keys).push(core::mem::zeroed::<xkb_overlaid_key>());
+                entry = (&mut (*sm).overlays.keys).as_mut_ptr().add(idx);
             }
             (*entry).old = key;
             (*entry).new = new;
@@ -4065,12 +3912,11 @@ pub unsafe fn xkb_machine_process_key(
     mut events: *mut xkb_events,
 ) -> xkb_error_code {
     unsafe {
-        (*events).queue.size = 0 as darray_size_t;
+        (&mut (*events).queue).clear();
         (*events).next = 0 as darray_size_t;
         let state: *mut xkb_state = &raw mut (*sm).state;
         let mut key: *const xkb_key = XkbKey((*state).keymap, kc);
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats()
-        {
+        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats() {
             return XKB_SUCCESS;
         }
         let previous_components: state_components = (*state).components;
@@ -4118,40 +3964,30 @@ pub unsafe fn xkb_machine_process_key(
         }
         xkb_state_update_derived(state);
         let mut has_key_event: bool = false;
-        let mut event: *const xkb_event = std::ptr::null();
-        if !(*events).queue.item.is_null() {
-            event = (*events).queue.item.offset(0 as i32 as isize) as *mut xkb_event;
-            while event
-                < (*events).queue.item.offset((*events).queue.size as isize) as *mut xkb_event
-                    as *const xkb_event
-            {
-                match (*event).type_0 as u32 {
+        {
+            let queue = &(*events).queue;
+            for evt in queue.iter() {
+                match evt.type_0 as u32 {
                     1 | 2 | 3 => {
                         has_key_event = true;
                     }
                     _ => {}
                 }
-                event = event.offset(1);
             }
         }
         if !has_key_event {
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
-                    type_0: (if direction as u32 == XKB_KEY_UP as u32 {
-                        XKB_EVENT_TYPE_KEY_UP as i32
-                    } else if direction as u32 == XKB_KEY_REPEATED as u32 {
-                        XKB_EVENT_TYPE_KEY_REPEATED as i32
-                    } else {
-                        XKB_EVENT_TYPE_KEY_DOWN as i32
-                    }) as xkb_event_type,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        keycode: (*key).keycode,
-                    },
+            (&mut (*events).queue).push(xkb_event {
+                type_0: (if direction as u32 == XKB_KEY_UP as u32 {
+                    XKB_EVENT_TYPE_KEY_UP as i32
+                } else if direction as u32 == XKB_KEY_REPEATED as u32 {
+                    XKB_EVENT_TYPE_KEY_REPEATED as i32
+                } else {
+                    XKB_EVENT_TYPE_KEY_DOWN as i32
+                }) as xkb_event_type,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    keycode: (*key).keycode,
                 },
-            );
+            });
         }
         if remap_event >= 0 as isize {
             undo_tweaks(state, &raw const previous_components, events);
@@ -4164,20 +4000,15 @@ pub unsafe fn xkb_machine_process_key(
             if changed as u32 & XKB_STATE_CONTROLS as u32 != 0 {
                 machine_update_overlays(sm);
             }
-            darray_append(
-                &mut (*events).queue.item,
-                &mut (*events).queue.size,
-                &mut (*events).queue.alloc,
-                xkb_event {
-                    type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        components: C2Rust_Unnamed_18 {
-                            components: (*state).components,
-                            changed: changed,
-                        },
+            (&mut (*events).queue).push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                c2rust_unnamed: C2Rust_Unnamed_17 {
+                    components: C2Rust_Unnamed_18 {
+                        components: (*state).components,
+                        changed: changed,
                     },
                 },
-            );
+            });
         }
         return XKB_SUCCESS;
     }
@@ -4200,12 +4031,11 @@ pub unsafe fn xkb_events_new_batch(
             );
             return std::ptr::null_mut();
         }
-        let mut events: *mut xkb_events = Box::into_raw(Box::new(std::mem::zeroed::<xkb_events>()));
-        (*events).queue.item = std::ptr::null_mut();
-        (*events).queue.size = 0 as darray_size_t;
-        (*events).queue.alloc = 0 as darray_size_t;
-        (*events).next = 0 as darray_size_t;
-        (*events).ctx = xkb_context_ref(context);
+        let mut events: *mut xkb_events = Box::into_raw(Box::new(xkb_events {
+            next: 0 as darray_size_t,
+            queue: Vec::new(),
+            ctx: xkb_context_ref(context),
+        }));
         return events;
     }
 }
@@ -4215,22 +4045,19 @@ pub unsafe fn xkb_events_destroy(mut events: *mut xkb_events) {
         if events.is_null() {
             return;
         }
-        darray_free(
-            &mut (*events).queue.item,
-            &mut (*events).queue.size,
-            &mut (*events).queue.alloc,
-        );
+        // Vec<xkb_event> (queue) dropped automatically by Box::from_raw
         xkb_context_unref((*events).ctx);
         drop(Box::from_raw(events));
     }
 }
 pub unsafe fn xkb_events_next(mut events: *mut xkb_events) -> *const xkb_event {
     unsafe {
-        if (*events).next < (*events).queue.size {
+        let queue_len = (&(*events).queue).len() as darray_size_t;
+        if (*events).next < queue_len {
             let c2rust_fresh0 = (*events).next;
             (*events).next = (*events).next.wrapping_add(1);
             let index: darray_size_t = c2rust_fresh0;
-            return (*events).queue.item.offset(index as isize) as *mut xkb_event;
+            return &(&(*events).queue)[index as usize] as *const xkb_event;
         } else {
             return std::ptr::null();
         };

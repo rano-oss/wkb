@@ -21,36 +21,20 @@ pub struct xkb_file_include_group {
     pub start: darray_size_t,
     pub end: darray_size_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_file_section {
     pub name: darray_size_t,
     pub file_type: xkb_file_type,
     pub flags: xkb_map_flags,
-    pub include_groups: C2Rust_Unnamed_3,
-    pub includes: C2Rust_Unnamed_2,
+    pub include_groups: Vec<xkb_file_include_group>,
+    pub includes: Vec<xkb_file_include>,
     pub buffer: darray_char,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_2 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_file_include,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_3 {
-    pub size: darray_size_t,
-    pub alloc: darray_size_t,
-    pub item: *mut xkb_file_include_group,
 }
 pub type xkb_file_iterator_flags = u32;
 pub const XKB_FILE_ITERATOR_NO_INCLUDES: xkb_file_iterator_flags = 2;
 pub const XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR: xkb_file_iterator_flags = 1;
 pub const XKB_FILE_ITERATOR_NO_FLAG: xkb_file_iterator_flags = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_file_iterator {
     pub flags: xkb_file_iterator_flags,
     pub finished: bool,
@@ -285,13 +269,11 @@ pub unsafe fn xkb_resolve_file(
                         crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(
                             (*xkb_file).file_type
                         )),
-                        crate::xkb::utils::CStrDisplay(
-                            if absolute_path as i32 != 0 {
-                                path
-                            } else {
-                                resolved_path as *const i8
-                            }
-                        ),
+                        crate::xkb::utils::CStrDisplay(if absolute_path as i32 != 0 {
+                            path
+                        } else {
+                            resolved_path as *const i8
+                        }),
                     );
                     c2rust_current_block = 6705605813258909411;
                 } else if !map.is_null()
@@ -394,12 +376,8 @@ pub unsafe fn xkb_resolve_file(
 
 pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
     unsafe {
-        (*section).include_groups.item = std::ptr::null_mut();
-        (*section).include_groups.size = 0 as darray_size_t;
-        (*section).include_groups.alloc = 0 as darray_size_t;
-        (*section).includes.item = std::ptr::null_mut();
-        (*section).includes.size = 0 as darray_size_t;
-        (*section).includes.alloc = 0 as darray_size_t;
+        std::ptr::write(&raw mut (*section).include_groups, Vec::new());
+        std::ptr::write(&raw mut (*section).includes, Vec::new());
         (*section).buffer.item = std::ptr::null_mut();
         (*section).buffer.size = 0 as darray_size_t;
         (*section).buffer.alloc = 0 as darray_size_t;
@@ -413,8 +391,8 @@ pub unsafe fn xkb_file_section_init(mut section: *mut xkb_file_section) {
 }
 unsafe fn xkb_file_section_reset(mut section: *mut xkb_file_section) {
     unsafe {
-        (*section).include_groups.size = 0 as darray_size_t;
-        (*section).includes.size = 0 as darray_size_t;
+        (&mut (*section).include_groups).clear();
+        (&mut (*section).includes).clear();
         (*section).buffer.size = 1 as darray_size_t;
     }
 }
@@ -424,16 +402,8 @@ pub unsafe fn xkb_file_section_free(mut section: *mut xkb_file_section) {
         if section.is_null() {
             return;
         }
-        darray_free(
-            &mut (*section).include_groups.item,
-            &mut (*section).include_groups.size,
-            &mut (*section).include_groups.alloc,
-        );
-        darray_free(
-            &mut (*section).includes.item,
-            &mut (*section).includes.size,
-            &mut (*section).includes.alloc,
-        );
+        std::ptr::drop_in_place(&raw mut (*section).include_groups);
+        std::ptr::drop_in_place(&raw mut (*section).includes);
         darray_free(
             &mut (*section).buffer.item,
             &mut (*section).buffer.size,
@@ -474,8 +444,7 @@ unsafe fn xkb_file_section_append_includes(
     mut include: *mut IncludeStmt,
 ) -> bool {
     unsafe {
-        let mut group: *mut xkb_file_include_group =
-            std::ptr::null_mut();
+        let mut group: *mut xkb_file_include_group = std::ptr::null_mut();
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut buf: [i8; 4096] = [0; 4096];
@@ -488,9 +457,7 @@ unsafe fn xkb_file_section_append_includes(
             );
             let valid: bool = !xkb_file.is_null();
             if valid as i32 != 0
-                || flags as u32
-                    & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as u32
-                    == 0
+                || flags as u32 & XKB_FILE_ITERATOR_FAIL_ON_INCLUDE_ERROR as u32 == 0
             {
                 let path: darray_size_t = (*section).buffer.size;
                 let buf_ptr: *const i8 = &raw mut buf as *const i8;
@@ -509,13 +476,12 @@ unsafe fn xkb_file_section_append_includes(
                     (*stmt).file,
                     cstr_len((*stmt).file).wrapping_add(1) as u32,
                 );
-                let section_name: darray_size_t = if !(*stmt).map.is_null()
-                    || valid as i32 != 0 && !(*xkb_file).name.is_null()
-                {
-                    (*section).buffer.size
-                } else {
-                    0 as darray_size_t
-                };
+                let section_name: darray_size_t =
+                    if !(*stmt).map.is_null() || valid as i32 != 0 && !(*xkb_file).name.is_null() {
+                        (*section).buffer.size
+                    } else {
+                        0 as darray_size_t
+                    };
                 if section_name != 0 {
                     let src = if !(*stmt).map.is_null() {
                         (*stmt).map
@@ -564,25 +530,18 @@ unsafe fn xkb_file_section_append_includes(
                     init.set_explicit_section(!(*stmt).map.is_null());
                     init
                 };
-                let idx: darray_size_t = (*section).includes.size;
-                darray_append(
-                    &mut (*section).includes.item,
-                    &mut (*section).includes.size,
-                    &mut (*section).includes.alloc,
-                    inc,
-                );
+                let idx: darray_size_t = (&(*section).includes).len() as darray_size_t;
+                (&mut (*section).includes).push(inc);
                 if group.is_null() {
-                    let group_idx: darray_size_t = (*section).include_groups.size;
-                    darray_append(
-                        &mut (*section).include_groups.item,
-                        &mut (*section).include_groups.size,
-                        &mut (*section).include_groups.alloc,
-                        xkb_file_include_group {
-                            start: idx,
-                            end: idx,
-                        },
-                    );
-                    group = (*section).include_groups.item.offset(group_idx as isize)
+                    let group_idx: darray_size_t =
+                        (&(*section).include_groups).len() as darray_size_t;
+                    (&mut (*section).include_groups).push(xkb_file_include_group {
+                        start: idx,
+                        end: idx,
+                    });
+                    group = (&mut (*section).include_groups)
+                        .as_mut_ptr()
+                        .offset(group_idx as isize)
                         as *mut xkb_file_include_group;
                 } else {
                     (*group).end = idx;
@@ -692,13 +651,10 @@ pub unsafe fn xkb_file_section_parse(
             return false;
         }
         xkb_file_section_reset(section);
-        let no_includes: bool =
-            iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as u32 != 0;
-        let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as i32
-            != 0
+        let no_includes: bool = iterator_flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as u32 != 0;
+        let ok: bool = xkb_file_section_set_meta_data(ctx, section, xkb_file) as i32 != 0
             && (no_includes as i32 != 0
-                || xkb_file_section_process(ctx, iterator_flags, path, section, xkb_file)
-                    as i32
+                || xkb_file_section_process(ctx, iterator_flags, path, section, xkb_file) as i32
                     != 0);
         FreeXkbFile(xkb_file);
         return ok;
@@ -717,8 +673,12 @@ pub unsafe fn xkb_file_iterator_new_from_buffer(
     mut length: usize,
 ) -> *mut xkb_file_iterator {
     unsafe {
-        let iter: *mut xkb_file_iterator =
-            Box::into_raw(Box::new(std::mem::zeroed::<xkb_file_iterator>()));
+        let layout = std::alloc::Layout::new::<xkb_file_iterator>();
+        let ptr = std::alloc::alloc_zeroed(layout);
+        if ptr.is_null() {
+            std::alloc::handle_alloc_error(layout);
+        }
+        let iter: *mut xkb_file_iterator = ptr as *mut xkb_file_iterator;
         (*iter).flags = iterator_flags;
         (*iter).ctx = ctx;
         (*iter).path = path;
@@ -747,7 +707,8 @@ pub unsafe fn xkb_file_iterator_free(mut iter: *mut xkb_file_iterator) {
         }
         xkb_file_section_free(&raw mut (*iter).section);
         FreeXkbFile((*iter).pending_xkb_file);
-        drop(Box::from_raw(iter));
+        let layout = std::alloc::Layout::new::<xkb_file_iterator>();
+        std::alloc::dealloc(iter as *mut u8, layout);
     }
 }
 
@@ -838,9 +799,7 @@ pub unsafe fn xkb_file_iterator_next(
                 if !(*iter).map.is_null() {
                     (*iter).finished = true;
                 }
-                process_includes = (*iter).flags as u32
-                    & XKB_FILE_ITERATOR_NO_INCLUDES as u32
-                    == 0;
+                process_includes = (*iter).flags as u32 & XKB_FILE_ITERATOR_NO_INCLUDES as u32 == 0;
                 if process_includes as i32 != 0
                     && !xkb_file_section_process(
                         (*iter).ctx,
