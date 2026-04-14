@@ -67,14 +67,6 @@ pub struct xkb_rule_names {
     pub options: *const i8,
 }
 
-// ── Darray type aliases (Vec replacements) ──────────────────────────────────
-
-/// Char darray — now a Vec<i8>
-pub type darray_char = Vec<i8>;
-
-/// String pointer darray — now a Vec<*mut i8>
-pub type darray_string = Vec<*mut i8>;
-
 // ── Opaque types ────────────────────────────────────────────────────
 
 // atom_table is defined in atom.rs — re-export it here for unified access

@@ -7,7 +7,6 @@ pub use crate::xkb::messages::{
     XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
     XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
 };
-pub use crate::xkb::shared_types::darray_string;
 pub use crate::xkb::shared_types::dirent;
 pub use crate::xkb::shared_types::stat;
 pub use crate::xkb::shared_types::timespec;

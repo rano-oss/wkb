@@ -200,7 +200,6 @@ pub struct rule_names {
     pub variants: Vec<matched_sval>,
     pub options: Vec<matched_sval>,
 }
-pub type darray_matched_sval = Vec<matched_sval>;
 #[derive(Copy, Clone, BitfieldStruct)]
 #[repr(C)]
 pub struct matched_sval {
@@ -5667,7 +5666,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
     mut s: *mut scanner,
     mut value: sval,
     mut layout_idx: xkb_layout_index_t,
-    mut expanded: *mut darray_char,
+    mut expanded: *mut Vec<i8>,
     mut i: *mut usize,
 ) -> bool {
     unsafe {
@@ -6229,7 +6228,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut value: sval,
-    mut expanded: *mut darray_char,
+    mut expanded: *mut Vec<i8>,
     mut has_layout_idx_range: bool,
     mut has_separator: bool,
     mut prefix_idx: u32,
@@ -6310,7 +6309,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe fn concat_kccgst(mut into: *mut darray_char, mut size: u32, mut from: *const i8) {
+unsafe fn concat_kccgst(mut into: *mut Vec<i8>, mut size: u32, mut from: *const i8) {
     unsafe {
         let from_plus: bool = *from.offset(0 as i32 as isize) as i32 == MERGE_OVERRIDE_PREFIX
             || *from.offset(0 as i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
@@ -6351,14 +6350,14 @@ unsafe fn append_expanded_kccgst_value(
     mut m: *mut matcher,
     mut s: *mut scanner,
     mut merge: bool,
-    mut to: *mut darray_char,
+    mut to: *mut Vec<i8>,
     mut value: sval,
     mut layout_idx: xkb_layout_index_t,
 ) -> bool {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut str: *const i8 = value.start;
-        let mut expanded: darray_char = Vec::new();
+        let mut expanded: Vec<i8> = Vec::new();
         let mut last_item_idx: u32 = 0;
         let mut has_separator: bool = false;
         let mut i: usize = 0 as usize;

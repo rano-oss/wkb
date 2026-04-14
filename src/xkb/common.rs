@@ -58,7 +58,6 @@ extern "C" {
 pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
-pub use crate::xkb::shared_types::darray_string;
 pub use crate::xkb::shared_types::stat;
 pub use crate::xkb::shared_types::timespec;
 pub use crate::xkb::shared_types::__LC_ALL;
