@@ -1,4 +1,3 @@
-// darray helpers removed: using Vec<T> instead
 use crate::xkb_logf;
 use c2rust_bitfields;
 
@@ -234,7 +233,7 @@ pub use crate::xkb::utils::popcount32;
 pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 use libc::{calloc, free, qsort};
 
-unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
@@ -596,7 +595,7 @@ unsafe fn xkb_filter_new(mut state: *mut xkb_state) -> *mut xkb_filter {
         }
         if filter.is_null() {
             let new_len = (&(*state).filters).len().wrapping_add(1);
-            darray_resize_zero_vec(&mut (*state).filters, new_len);
+            vec_resize_zero(&mut (*state).filters, new_len);
             let last = (&(*state).filters).len() - 1;
             filter = (&mut (*state).filters).as_mut_ptr().add(last);
         }

@@ -146,7 +146,7 @@ pub struct HighKeycodeEntry {
     pub keycode: xkb_keycode_t,
     pub name: xkb_atom_t,
 }
-unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
@@ -191,7 +191,7 @@ unsafe fn keycode_store_update_key(
             (&mut (*store).high)[match_0.key.index() as usize].name = name;
         }
         if name >= (&(*store).names).len() as xkb_atom_t {
-            darray_resize_zero_vec(&mut (*store).names, (name as usize).wrapping_add(1));
+            vec_resize_zero(&mut (*store).names, (name as usize).wrapping_add(1));
         }
         (&mut (*store).names)[name as usize] = match_0;
     }
@@ -203,11 +203,11 @@ unsafe fn keycode_store_insert_key(
 ) -> bool {
     unsafe {
         if name >= (&(*store).names).len() as xkb_atom_t {
-            darray_resize_zero_vec(&mut (*store).names, (name as usize).wrapping_add(1));
+            vec_resize_zero(&mut (*store).names, (name as usize).wrapping_add(1));
         }
         if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as xkb_keycode_t {
             if kc >= (&(*store).low).len() as xkb_keycode_t {
-                darray_resize_zero_vec(&mut (*store).low, (kc as usize).wrapping_add(1));
+                vec_resize_zero(&mut (*store).low, (kc as usize).wrapping_add(1));
             }
             (&mut (*store).low)[kc as usize] = name;
             if kc < (*store).min {
@@ -309,7 +309,7 @@ unsafe fn keycode_store_insert_alias(
 ) -> bool {
     unsafe {
         if alias >= (&(*store).names).len() as xkb_atom_t {
-            darray_resize_zero_vec(&mut (*store).names, (alias as usize).wrapping_add(1));
+            vec_resize_zero(&mut (*store).names, (alias as usize).wrapping_add(1));
         }
         (&mut (*store).names)[alias as usize] = KeycodeMatch {
             alias: {

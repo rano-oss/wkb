@@ -81,10 +81,9 @@ pub use crate::xkb::xkbcomp::include::{
 };
 use libc::{fclose, fopen, FILE};
 
-/// Replacement for `darray_appends_nul` + `size -= 1` pattern on Vec<i8>.
-/// Appends `count` bytes from `src` to the Vec (without the trailing nul that `darray_appends_nul` would add then remove).
+/// Appends `count` bytes from `src` to the Vec.
 #[inline]
-unsafe fn darray_appends_nul_vec(v: &mut Vec<i8>, src: *const i8, count: u32) {
+unsafe fn vec_append_nul_terminated(v: &mut Vec<i8>, src: *const i8, count: u32) {
     v.extend_from_slice(std::slice::from_raw_parts(src, count as usize));
 }
 
@@ -395,7 +394,7 @@ unsafe fn strip_spaces(mut v: sval) -> sval {
 }
 
 /// Resize a Vec<matched_sval>, zero-filling new elements.
-fn darray_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
+fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
     if new_len > v.len() {
         v.resize(new_len, unsafe { std::mem::zeroed::<matched_sval>() });
     } else {
@@ -600,7 +599,7 @@ unsafe fn matcher_new_from_rmlvo(
                         }),
                     );
                 }
-                darray_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
+                vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
             } else if (*m).rmlvo.layouts.len() < (*m).rmlvo.variants.len() {
                 xkb_logf!(
                     (*m).ctx,
@@ -719,7 +718,7 @@ unsafe fn matcher_new_from_names(
                     }),
                 );
             }
-            darray_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
+            vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
         } else if (*m).rmlvo.layouts.len() < (*m).rmlvo.variants.len() {
             xkb_logf!(
                 ctx,
@@ -5872,19 +5871,19 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 return true;
                                             }
                                             if pfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const pfx as *const i8,
                                                     1,
                                                 );
                                             }
-                                            darray_appends_nul_vec(
+                                            vec_append_nul_terminated(
                                                 &mut *expanded,
                                                 (*expanded_value).sval.start,
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             if sfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const sfx as *const i8,
                                                     1,
@@ -6026,19 +6025,19 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 return true;
                                             }
                                             if pfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const pfx as *const i8,
                                                     1,
                                                 );
                                             }
-                                            darray_appends_nul_vec(
+                                            vec_append_nul_terminated(
                                                 &mut *expanded,
                                                 (*expanded_value).sval.start,
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             if sfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const sfx as *const i8,
                                                     1,
@@ -6180,19 +6179,19 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                                 return true;
                                             }
                                             if pfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const pfx as *const i8,
                                                     1,
                                                 );
                                             }
-                                            darray_appends_nul_vec(
+                                            vec_append_nul_terminated(
                                                 &mut *expanded,
                                                 (*expanded_value).sval.start,
                                                 (*expanded_value).sval.len as u32,
                                             );
                                             if sfx as i32 != 0 as i32 {
-                                                darray_appends_nul_vec(
+                                                vec_append_nul_terminated(
                                                     &mut *expanded,
                                                     &raw const sfx as *const i8,
                                                     1,
@@ -6259,7 +6258,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     loc.column,
                 );
             }
-            darray_appends_nul_vec(&mut *expanded, b"1\0".as_ptr() as *const i8, 1);
+            vec_append_nul_terminated(&mut *expanded, b"1\0".as_ptr() as *const i8, 1);
             if (*m).rmlvo.layouts.len() > 1 {
                 let mut layout_index: [i8; 12] = [0; 12];
                 let prefix_length = (*expanded)
@@ -6296,7 +6295,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                         std::mem::size_of::<[i8; 12]>(),
                         format_args!("{}", l.wrapping_add(1 as xkb_layout_index_t)),
                     );
-                    darray_appends_nul_vec(
+                    vec_append_nul_terminated(
                         &mut *expanded,
                         &raw mut layout_index as *mut i8 as *const i8,
                         count as u32,
@@ -6315,7 +6314,7 @@ unsafe fn concat_kccgst(mut into: *mut Vec<i8>, mut size: u32, mut from: *const 
             || *from.offset(0 as i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
             || *from.offset(0 as i32 as isize) as i32 == MERGE_REPLACE_PREFIX;
         if from_plus as i32 != 0 || (*into).len() == 0 {
-            darray_appends_nul_vec(&mut *into, from, size as u32);
+            vec_append_nul_terminated(&mut *into, from, size as u32);
         } else {
             let ch: i8 = (if (*into).len() == 0 {
                 '\0' as i32
@@ -6370,7 +6369,7 @@ unsafe fn append_expanded_kccgst_value(
                 58 => {
                     let c2rust_fresh4 = i;
                     i = i.wrapping_add(1);
-                    darray_appends_nul_vec(&mut expanded, str.offset(c2rust_fresh4 as isize), 1);
+                    vec_append_nul_terminated(&mut expanded, str.offset(c2rust_fresh4 as isize), 1);
                     expand_qualifier_in_kccgst_value(
                         m,
                         s,
@@ -6401,14 +6400,14 @@ unsafe fn append_expanded_kccgst_value(
                 MERGE_OVERRIDE_PREFIX | MERGE_AUGMENT_PREFIX | MERGE_REPLACE_PREFIX => {
                     let c2rust_fresh5 = i;
                     i = i.wrapping_add(1);
-                    darray_appends_nul_vec(&mut expanded, str.offset(c2rust_fresh5 as isize), 1);
+                    vec_append_nul_terminated(&mut expanded, str.offset(c2rust_fresh5 as isize), 1);
                     last_item_idx = expanded.len().wrapping_sub(1) as u32;
                     has_separator = true;
                 }
                 _ => {
                     let c2rust_fresh6 = i;
                     i = i.wrapping_add(1);
-                    darray_appends_nul_vec(&mut expanded, str.offset(c2rust_fresh6 as isize), 1);
+                    vec_append_nul_terminated(&mut expanded, str.offset(c2rust_fresh6 as isize), 1);
                 }
             }
         }

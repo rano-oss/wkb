@@ -120,7 +120,7 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::utils::_steal;
 use crate::xkb::utils::cstr_free;
-// darray_resize_zero_vec is used instead of darray_resize_zero for Vec fields
+// vec_resize_zero is used to resize Vec fields with zero-fill
 pub use crate::xkb::utils::{istrcmp, istreq, strdup_safe};
 use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
@@ -145,7 +145,7 @@ pub struct KeyTypeInfo {
     pub entries: Vec<xkb_key_type_entry>,
     pub level_names: Vec<xkb_atom_t>,
 }
-unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
@@ -793,7 +793,7 @@ unsafe fn AddLevelName(
 ) -> bool {
     unsafe {
         if level >= (*type_0).level_names.len() as xkb_level_index_t {
-            darray_resize_zero_vec(&mut (*type_0).level_names, (level as usize).wrapping_add(1));
+            vec_resize_zero(&mut (*type_0).level_names, (level as usize).wrapping_add(1));
         } else {
             if *(*type_0).level_names.as_ptr().add(level as usize) == name {
                 xkb_logf!(

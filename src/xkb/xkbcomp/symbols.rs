@@ -227,7 +227,7 @@ pub const GROUP_FIELD_SYMS: group_field = 1;
 /// If `new_len` < current len, the Vec is truncated.
 /// WARNING: Only safe for types where all-zeros is a valid representation.
 /// For types containing Vec/String/Box, use resize_groups_zero or similar.
-unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
+unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
@@ -240,7 +240,7 @@ unsafe fn darray_resize_zero_vec<T>(v: &mut Vec<T>, new_len: usize) {
 }
 
 /// Resize a Vec<GroupInfo> to `new_len`, properly initializing new elements.
-/// Unlike darray_resize_zero_vec, this correctly initializes Vec fields in GroupInfo.
+/// Unlike vec_resize_zero, this correctly initializes Vec fields in GroupInfo.
 unsafe fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
@@ -1541,7 +1541,7 @@ unsafe fn AddSymbolsToKey(
             nLevels = nonEmptyLevels;
         }
         if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
-            darray_resize_zero_vec(&mut (*groupi).levels, nLevels as usize);
+            vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -1642,7 +1642,7 @@ unsafe fn AddActionsToKey(
             p = (*p).next as *mut ParseCommon;
         }
         if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
-            darray_resize_zero_vec(&mut (*groupi).levels, nLevels as usize);
+            vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
@@ -2574,7 +2574,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
         }
-        darray_resize_zero_vec(
+        vec_resize_zero(
             &mut (*keyi).groups,
             ((*info).explicit_group as usize).wrapping_add(1),
         );
@@ -3137,7 +3137,7 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     // Resize levels array to match type
                     let __need_levels: usize = (*type_0).num_levels as usize;
-                    darray_resize_zero_vec(&mut (*groupi).levels, __need_levels);
+                    vec_resize_zero(&mut (*groupi).levels, __need_levels);
 
                     (*(*key).groups.offset(i as isize)).set_explicit_type(explicit_type);
                     (*(*key).groups.offset(i as isize)).type_0 = type_0;
