@@ -1,6 +1,8 @@
 // XKB compiler modules from libxkbcommon
 // These provide the actual keymap compilation functionality
 
+pub mod prelude;
+
 pub mod action;
 pub mod ast_build;
 pub mod compat;

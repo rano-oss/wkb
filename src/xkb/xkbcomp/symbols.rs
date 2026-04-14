@@ -1,145 +1,23 @@
-use crate::xkb::context_priv::{xkb_atom_intern, xkb_atom_text};
+use super::prelude::*;
+use crate::xkb::context_priv::xkb_atom_intern;
+pub use crate::xkb::keymap::clear_level;
+pub use crate::xkb::keymap_priv::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use crate::xkb_logf;
-use c2rust_bitfields;
-
-use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText, LookupEntry, ModIndexText};
-use crate::xkb::xkbcomp::expr::{
-    ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
-    ExprResolveString,
-};
-
-pub use crate::xkb::keymap::clear_level;
-pub use crate::xkb::keymap_priv::{
-    XkbEscapeMapName, XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex,
-};
-pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
-    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
-    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
-    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
-    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
-    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
-    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
-    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
-    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
-    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
-    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
-    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
-    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
-    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
-    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
-    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
-    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
-    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
-    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
-    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
-    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
-    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
-    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
-    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
-    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
-    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
-    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
-};
-pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, stmt_type_to_string, xkb_file_type,
-    xkb_map_flags, ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef,
-    ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString,
-    ExprUnary, IncludeStmt, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD,
-};
-pub use crate::xkb::shared_ast_types::{
-    pending_computation, safe_map_name, xkb_keymap_info, xkb_parser_error, xkb_parser_strict_flags,
-    FreeXkbFile, XkbcompFeatures, XkbcompLookup, PARSER_FATAL_ERROR, PARSER_NO_FIELD_TYPE_MISMATCH,
-    PARSER_NO_FIELD_VALUE_MISMATCH, PARSER_NO_ILLEGAL_ACTION_FIELDS, PARSER_NO_STRICT_FLAGS,
-    PARSER_NO_UNKNOWN_ACTION, PARSER_NO_UNKNOWN_ACTION_FIELDS,
-    PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_INTERPRET_FIELDS,
-    PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_KEY_FIELDS,
-    PARSER_NO_UNKNOWN_LED_FIELDS, PARSER_NO_UNKNOWN_STATEMENTS,
-    PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS, PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS,
-    PARSER_NO_UNKNOWN_TYPE_FIELDS, PARSER_RECOVERABLE_ERROR, PARSER_SUCCESS, PARSER_V1_LAX_FLAGS,
-    PARSER_V1_STRICT_FLAGS, PARSER_V2_LAX_FLAGS, PARSER_V2_STRICT_FLAGS,
-};
+pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use crate::xkb::shared_types::{
-    mod_type, xkb_action, xkb_action_controls, xkb_action_count_t, xkb_action_flags,
-    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
-    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
-    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
-    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_14, C2Rust_Unnamed_15,
-    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
-    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKeyByName,
-    XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
-    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
-    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
-    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
-    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
-    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
-    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
-    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
-    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
-    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
-    DEFAULT_INTERPRET_KEY_REPEAT, DEFAULT_INTERPRET_VMOD, DEFAULT_INTERPRET_VMODMAP,
-    DEFAULT_KEY_REPEAT, DEFAULT_KEY_VMODMAP, EXPLICIT_INTERP, EXPLICIT_OVERLAY, EXPLICIT_REPEAT,
-    EXPLICIT_SYMBOLS, EXPLICIT_TYPES, EXPLICIT_VMODMAP, FALLBACK_INTERPRET_KEY_REPEAT,
-    FALLBACK_INTERPRET_VMODMAP, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MATCH_ALL,
-    MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT,
-    XKB_MOD_NONE, XKB_OVERLAY_INVALID,
+    C2Rust_Unnamed_15, XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
-pub use crate::xkb::shared_types::{
-    xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
-};
-pub use crate::xkb::utils::_steal;
+use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::{istrcmp, istreq, istrncmp, istrneq, memdup, strdup_safe};
+pub use crate::xkb::utils::{istrncmp, istrneq, memdup};
 pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
-use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-use libc::{abort, atoi, calloc, free, realloc};
+use c2rust_bitfields;
+use libc::{abort, atoi, realloc};
 #[derive(Clone)]
 pub struct SymbolsInfo {
     pub name: *mut i8,
@@ -222,6 +100,56 @@ pub type group_field = u32;
 pub const GROUP_FIELD_TYPE: group_field = 4;
 pub const GROUP_FIELD_ACTS: group_field = 2;
 pub const GROUP_FIELD_SYMS: group_field = 1;
+
+impl KeyInfo {
+    pub fn new_zeroed() -> Self {
+        Self {
+            name: 0,
+            vmodmap: 0,
+            default_type: 0,
+            out_of_range_group_number: 0,
+            groups: Vec::new(),
+            out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
+            overlays_alloc: 0,
+            overlays: 0,
+            c2rust_unnamed: C2Rust_Unnamed_21 {
+                overlay_key: std::ptr::null(),
+            },
+        }
+    }
+}
+
+impl SymbolsInfo {
+    pub fn new_zeroed() -> Self {
+        Self {
+            name: std::ptr::null_mut(),
+            errorCount: 0,
+            include_depth: 0,
+            explicit_group: 0,
+            max_groups: 0,
+            keys: Vec::new(),
+            default_key: KeyInfo::new_zeroed(),
+            default_actions: ActionsInfo {
+                actions: [xkb_action {
+                    type_0: ACTION_TYPE_NONE,
+                }; 21],
+            },
+            group_names: Vec::new(),
+            modmaps: Vec::new(),
+            mods: xkb_mod_set {
+                mods: [xkb_mod {
+                    name: 0,
+                    type_0: 0 as mod_type,
+                    mapping: 0,
+                }; 32],
+                num_mods: 0,
+                explicit_vmods: 0,
+            },
+            ctx: std::ptr::null_mut(),
+            keymap_info: std::ptr::null(),
+        }
+    }
+}
 
 /// Resize a Vec<T> to `new_len`, zero-initializing any new elements.
 /// If `new_len` < current len, the Vec is truncated.
@@ -1268,45 +1196,7 @@ unsafe fn MergeIncludedSymbols(
 }
 unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut IncludeStmt) -> bool {
     unsafe {
-        let mut included: SymbolsInfo = SymbolsInfo {
-            name: std::ptr::null_mut(),
-            errorCount: 0,
-            include_depth: 0,
-            explicit_group: 0,
-            max_groups: 0,
-            keys: Vec::new(),
-            default_key: KeyInfo {
-                name: 0,
-                vmodmap: 0,
-                default_type: 0,
-                out_of_range_group_number: 0,
-                groups: Vec::new(),
-                out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
-                overlays_alloc: 0,
-                overlays: 0,
-                c2rust_unnamed: C2Rust_Unnamed_21 {
-                    overlay_key: std::ptr::null(),
-                },
-            },
-            default_actions: ActionsInfo {
-                actions: [xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                }; 21],
-            },
-            group_names: Vec::new(),
-            modmaps: Vec::new(),
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
-                    name: 0,
-                    type_0: 0 as mod_type,
-                    mapping: 0,
-                }; 32],
-                num_mods: 0,
-                explicit_vmods: 0,
-            },
-            ctx: std::ptr::null_mut(),
-            keymap_info: std::ptr::null(),
-        };
+        let mut included: SymbolsInfo = SymbolsInfo::new_zeroed();
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
             (*info).errorCount += 10 as i32;
             return false;
@@ -1321,45 +1211,7 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
-            let mut next_incl: SymbolsInfo = SymbolsInfo {
-                name: std::ptr::null_mut(),
-                errorCount: 0,
-                include_depth: 0,
-                explicit_group: 0,
-                max_groups: 0,
-                keys: Vec::new(),
-                default_key: KeyInfo {
-                    name: 0,
-                    vmodmap: 0,
-                    default_type: 0,
-                    out_of_range_group_number: 0,
-                    groups: Vec::new(),
-                    out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
-                    overlays_alloc: 0,
-                    overlays: 0,
-                    c2rust_unnamed: C2Rust_Unnamed_21 {
-                        overlay_key: std::ptr::null(),
-                    },
-                },
-                default_actions: ActionsInfo {
-                    actions: [xkb_action {
-                        type_0: ACTION_TYPE_NONE,
-                    }; 21],
-                },
-                group_names: Vec::new(),
-                modmaps: Vec::new(),
-                mods: xkb_mod_set {
-                    mods: [xkb_mod {
-                        name: 0,
-                        type_0: 0 as mod_type,
-                        mapping: 0,
-                    }; 32],
-                    num_mods: 0,
-                    explicit_vmods: 0,
-                },
-                ctx: std::ptr::null_mut(),
-                keymap_info: std::ptr::null(),
-            };
+            let mut next_incl: SymbolsInfo = SymbolsInfo::new_zeroed();
             let mut file: *mut XkbFile = std::ptr::null_mut();
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
@@ -2371,19 +2223,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
         }
         if !elem.is_null() && istreq(elem, b"key\0".as_ptr() as *const i8) as i32 != 0 {
             let mut temp: KeyInfo = {
-                let mut init = KeyInfo {
-                    out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
-                    name: 0 as xkb_atom_t,
-                    vmodmap: 0,
-                    default_type: 0,
-                    out_of_range_group_number: 0,
-                    groups: Vec::new(),
-                    overlays_alloc: 0,
-                    overlays: 0,
-                    c2rust_unnamed: C2Rust_Unnamed_21 {
-                        overlay_key: std::ptr::null(),
-                    },
-                };
+                let mut init = KeyInfo::new_zeroed();
                 init.set_out_of_range_group_policy(XKB_LAYOUT_OUT_OF_RANGE_WRAP);
                 init.set_defined(0 as key_field);
                 init.set_merge(MERGE_DEFAULT);
@@ -2591,19 +2431,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
 }
 unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef) -> bool {
     unsafe {
-        let mut keyi: KeyInfo = KeyInfo {
-            name: 0,
-            vmodmap: 0,
-            default_type: 0,
-            out_of_range_group_number: 0,
-            groups: Vec::new(),
-            out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
-            overlays_alloc: 0,
-            overlays: 0,
-            c2rust_unnamed: C2Rust_Unnamed_21 {
-                overlay_key: std::ptr::null(),
-            },
-        };
+        let mut keyi: KeyInfo = KeyInfo::new_zeroed();
         keyi = (*info).default_key.clone();
         keyi.groups = Vec::new();
         if !(*info).default_key.groups.is_empty() {
@@ -3403,45 +3231,7 @@ pub unsafe fn CompileSymbols(
     mut keymap_info: *mut xkb_keymap_info,
 ) -> bool {
     unsafe {
-        let mut info: SymbolsInfo = SymbolsInfo {
-            name: std::ptr::null_mut(),
-            errorCount: 0,
-            include_depth: 0,
-            explicit_group: 0,
-            max_groups: 0,
-            keys: Vec::new(),
-            default_key: KeyInfo {
-                name: 0,
-                vmodmap: 0,
-                default_type: 0,
-                out_of_range_group_number: 0,
-                groups: Vec::new(),
-                out_of_range_group_policy_defined_merge_repeat_out_of_range_pending_group_overlays_clear: [0; 6],
-                overlays_alloc: 0,
-                overlays: 0,
-                c2rust_unnamed: C2Rust_Unnamed_21 {
-                    overlay_key: std::ptr::null(),
-                },
-            },
-            default_actions: ActionsInfo {
-                actions: [xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                }; 21],
-            },
-            group_names: Vec::new(),
-            modmaps: Vec::new(),
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
-                    name: 0,
-                    type_0: 0 as mod_type,
-                    mapping: 0,
-                }; 32],
-                num_mods: 0,
-                explicit_vmods: 0,
-            },
-            ctx: std::ptr::null_mut(),
-            keymap_info: std::ptr::null(),
-        };
+        let mut info: SymbolsInfo = SymbolsInfo::new_zeroed();
         InitSymbolsInfo(
             &raw mut info,
             keymap_info,
