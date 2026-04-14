@@ -2,7 +2,7 @@ use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_IN
 use crate::xkb::rmlvo::strdup_safe;
 use crate::xkb::utils::{
     __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
-    is_space, istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
+    istrneq, opendir, readdir, streq, streq_null, xkb_stat, DIR,
 };
 use libc::{free, getenv, qsort};
 
@@ -578,7 +578,9 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
         let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
         if consumed > 0 {
             let after = *level.offset(consumed as isize);
-            if after as i32 == '\0' as i32 || is_space(after) {
+            if after as i32 == '\0' as i32
+                || matches!(after as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
+            {
                 return val as rxkb_log_level;
             }
         }

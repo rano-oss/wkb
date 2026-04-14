@@ -112,7 +112,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_VAR, STMT_VMOD,
 };
 use crate::xkb::utils::cstr_len;
-pub use crate::xkb::utils::strcpy_safe;
 use crate::xkb::xkbcomp::include::ProcessIncludeFile;
 #[derive(Copy, Clone)]
 #[repr(C)]

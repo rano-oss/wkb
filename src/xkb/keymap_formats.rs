@@ -1,6 +1,5 @@
 use crate::xkb::shared_types::*;
 use crate::xkb::utils::cstr_cmp;
-pub use crate::xkb::utils::is_xdigit;
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
 #[derive(Copy, Clone)]
 #[repr(C)]

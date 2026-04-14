@@ -22,7 +22,7 @@ use crate::xkb::utils::cstr_dup;
 pub use crate::xkb::utils::eaccess;
 use crate::xkb::utils::xkb_stat;
 pub use crate::xkb::utils::{__dirstream, closedir, opendir, readdir, DIR};
-pub use crate::xkb::utils::{check_eaccess, is_space, istrncmp, istrneq, strdup_safe};
+pub use crate::xkb::utils::{check_eaccess, istrncmp, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
 use libc::{free, qsort};
 unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
@@ -502,7 +502,9 @@ unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
         let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
         if consumed > 0 {
             let after = *level.offset(consumed as isize);
-            if after as i32 == '\0' as i32 || is_space(after) {
+            if after as i32 == '\0' as i32
+                || matches!(after as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
+            {
                 return val as xkb_log_level;
             }
         }

@@ -68,8 +68,7 @@ pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 pub use crate::xkb::utils::parse_dec_to_uint32_t;
-use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp};
-pub use crate::xkb::utils::{is_ascii, is_graph, is_space, isempty};
+use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp, isempty};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -230,8 +229,12 @@ pub const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
 pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
 pub const MAX_INCLUDE_DEPTH: i32 = 5 as i32;
 #[inline]
+fn is_space(ch: i8) -> bool {
+    matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
+}
+#[inline]
 unsafe fn is_ident(mut ch: i8) -> bool {
-    return is_graph(ch) as i32 != 0 && ch as i32 != '\\' as i32;
+    return (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32;
 }
 unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
     unsafe {

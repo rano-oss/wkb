@@ -227,8 +227,6 @@ pub use crate::xkb::shared_types::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use crate::xkb::utils::one_bit_set;
-pub use crate::xkb::utils::popcount32;
 pub use crate::xkb::utils::xkb_check_versioned_struct_size_;
 
 unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
@@ -2943,7 +2941,8 @@ unsafe fn key_get_consumed(
                             as *mut xkb_level;
                         if !XkbLevelsSameSyms(level, no_mods_level) {
                             if entry == matching_entry
-                                || one_bit_set((*entry).mods.mask as u32) != 0
+                                || ((*entry).mods.mask as u32 != 0
+                                    && ((*entry).mods.mask as u32).is_power_of_two())
                             {
                                 consumed |= (*entry).mods.mask & !(*entry).preserve.mask;
                             }

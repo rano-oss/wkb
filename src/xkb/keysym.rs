@@ -21805,7 +21805,7 @@ pub use self::keysym_names_h::{
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
 pub use crate::xkb::utils::{digits__, parse_hex_to_uint32_t};
-pub use crate::xkb::utils::{is_xdigit, istrcmp, istrncmp};
+pub use crate::xkb::utils::{istrcmp, istrncmp};
 fn find_keysym_index(mut ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1 as i32 as isize;

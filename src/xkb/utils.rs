@@ -16,23 +16,9 @@ pub const MAP_SHARED: i32 = 0x1 as i32;
 pub use crate::xkb::shared_types::timespec;
 use crate::xkb::shared_types::xkb_error_code;
 
-static LOWER_MAP: [u8; 256] = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-    26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
-    50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99, 100, 101, 102, 103,
-    104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
-    91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-    112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
-    131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168,
-    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187,
-    188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206,
-    207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225,
-    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
-    245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
-];
-pub fn to_lower(mut c: i8) -> i8 {
-    return LOWER_MAP[c as usize] as i8;
+#[inline]
+fn to_lower(c: i8) -> i8 {
+    (c as u8).to_ascii_lowercase() as i8
 }
 pub unsafe fn istrcmp(mut a: *const i8, mut b: *const i8) -> i32 {
     unsafe {
@@ -491,56 +477,8 @@ pub unsafe fn strempty(s: *const i8) -> *const i8 {
 }
 
 #[inline]
-pub fn is_space(ch: i8) -> bool {
-    ch as i32 == ' ' as i32 || (ch as i32 >= '\t' as i32 && ch as i32 <= '\r' as i32)
-}
-
-#[inline]
-pub fn is_ascii(ch: i8) -> bool {
-    ch as i32 & !(0x7f) == 0
-}
-
-#[inline]
-pub fn is_graph(ch: i8) -> bool {
-    ch as i32 > ' ' as i32 && (ch as i32) < 0x7f
-}
-
-#[inline]
-pub fn is_alpha(ch: i8) -> bool {
-    (ch as i32 >= 'a' as i32 && ch as i32 <= 'z' as i32)
-        || (ch as i32 >= 'A' as i32 && ch as i32 <= 'Z' as i32)
-}
-
-#[inline]
-pub fn is_digit(ch: i8) -> bool {
-    ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32
-}
-
-#[inline]
-pub fn is_alnum(ch: i8) -> bool {
-    is_alpha(ch) || is_digit(ch)
-}
-
-#[inline]
-pub fn is_xdigit(ch: i8) -> bool {
-    (ch as i32 >= '0' as i32 && ch as i32 <= '9' as i32)
-        || (ch as i32 >= 'a' as i32 && ch as i32 <= 'f' as i32)
-        || (ch as i32 >= 'A' as i32 && ch as i32 <= 'F' as i32)
-}
-
-#[inline]
-pub fn is_valid_char(cp: u32) -> bool {
-    cp != 0
-}
-
-#[inline]
 pub fn is_aligned(pointer: *const ::core::ffi::c_void, byte_count: usize) -> bool {
     (pointer as usize).wrapping_rem(byte_count) == 0
-}
-
-#[inline]
-pub fn one_bit_set(x: u32) -> i32 {
-    (x != 0 && x & x.wrapping_sub(1) == 0) as i32
 }
 
 #[inline]
@@ -554,27 +492,6 @@ pub unsafe fn memdup(
         std::ptr::copy_nonoverlapping(mem as *const u8, p as *mut u8, nmemb.wrapping_mul(size));
     }
     p
-}
-
-#[inline]
-pub unsafe fn strcpy_safe(mut dest: *mut i8, size: usize, src: *const i8) -> *mut i8 {
-    if dest.is_null() || size == 0 || src.is_null() {
-        return std::ptr::null_mut();
-    }
-    let limit: *const i8 = dest.offset(size as isize).offset(-1);
-    let mut s = src;
-    while dest < limit as *mut i8 && *s != 0 {
-        let c = *s;
-        s = s.offset(1);
-        *dest = c;
-        dest = dest.offset(1);
-    }
-    *dest = 0;
-    if *s != 0 {
-        std::ptr::null_mut()
-    } else {
-        dest
-    }
 }
 
 #[inline]
@@ -622,22 +539,6 @@ pub unsafe fn xkb_check_versioned_struct_size_(
 }
 
 // === Number parsing utilities (consolidated from utils_numbers_h) ===
-
-#[inline]
-pub unsafe fn popcount32(mut x: u32) -> u32 {
-    (x as u64).count_ones() as u32
-}
-
-#[inline]
-pub unsafe fn next_pow2(mut x: u32) -> u32 {
-    if x <= 1 as u32 {
-        return 1 as u32;
-    }
-    (1 as u32)
-        << (std::mem::size_of::<u32>())
-            .wrapping_mul(8 as usize)
-            .wrapping_sub(x.wrapping_sub(1 as u32).leading_zeros() as usize)
-}
 
 #[inline]
 pub unsafe fn parse_dec_to_uint32_t(mut s: *const i8, mut len: usize, mut out: *mut u32) -> i32 {
@@ -737,7 +638,7 @@ pub unsafe fn parse_hex_to_uint32_t(mut s: *const i8, mut len: usize, mut out: *
             i = i.wrapping_add(1);
         }
         *out = result as u32;
-        return if i >= len || !is_xdigit(*s.offset(i as isize)) {
+        return if i >= len || !(*s.offset(i as isize) as u8).is_ascii_hexdigit() {
             i as i32
         } else {
             -1 as i32
@@ -760,7 +661,7 @@ pub unsafe fn parse_hex_to_uint64_t(mut s: *const i8, mut len: usize, mut out: *
             i = i.wrapping_add(1);
         }
         *out = result as u64;
-        return if i >= len || !is_xdigit(*s.offset(i as isize)) {
+        return if i >= len || !(*s.offset(i as isize) as u8).is_ascii_hexdigit() {
             i as i32
         } else {
             -1 as i32

@@ -11,8 +11,8 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
+pub use crate::xkb::utils::parse_dec_to_uint64_t;
 pub use crate::xkb::utils::{istrncmp, istrneq, memdup};
-pub use crate::xkb::utils::{next_pow2, parse_dec_to_uint64_t, popcount32};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -632,7 +632,7 @@ unsafe fn overlays_get(
                 let low: xkb_overlay_mask_t = ((*info).overlays as u32
                     & (mask as u32).wrapping_sub(1 as u32))
                     as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = popcount32(low as u32) as xkb_overlay_index_t;
+                let index: xkb_overlay_index_t = (low as u32).count_ones() as xkb_overlay_index_t;
                 *key_out = *(*info).c2rust_unnamed.overlays_keys.offset(index as isize);
             }
         }
@@ -662,7 +662,7 @@ unsafe fn overlays_insert(
                 let low: xkb_overlay_mask_t = ((*keyi).overlays as i32
                     & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
                     as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = popcount32(low as u32) as xkb_overlay_index_t;
+                let index: xkb_overlay_index_t = (low as u32).count_ones() as xkb_overlay_index_t;
                 let ref mut c2rust_fresh4 =
                     *(*keyi).c2rust_unnamed.overlays_keys.offset(index as isize);
                 *c2rust_fresh4 = key;
@@ -676,7 +676,7 @@ unsafe fn overlays_insert(
         } else if (*keyi).overlays_alloc == 0 {
             let overlays: xkb_overlay_mask_t =
                 ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            let alloc: xkb_overlay_index_t = popcount32(overlays as u32) as xkb_overlay_index_t;
+            let alloc: xkb_overlay_index_t = (overlays as u32).count_ones() as xkb_overlay_index_t;
             let tmp: *mut *const xkb_key =
                 calloc(alloc as usize, std::mem::size_of::<*const xkb_key>())
                     as *mut *const xkb_key;
@@ -687,14 +687,14 @@ unsafe fn overlays_insert(
                 let low_0: xkb_overlay_mask_t = (overlays as i32
                     & ((*keyi).overlays as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
                     as xkb_overlay_mask_t;
-                let idx: xkb_overlay_index_t = popcount32(low_0 as u32) as xkb_overlay_index_t;
+                let idx: xkb_overlay_index_t = (low_0 as u32).count_ones() as xkb_overlay_index_t;
                 let ref mut c2rust_fresh5 = *tmp.offset(idx as isize);
                 *c2rust_fresh5 = (*keyi).c2rust_unnamed.overlay_key;
             }
             let low_1: xkb_overlay_mask_t = (overlays as i32
                 & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
                 as xkb_overlay_mask_t;
-            let idx_0: xkb_overlay_index_t = popcount32(low_1 as u32) as xkb_overlay_index_t;
+            let idx_0: xkb_overlay_index_t = (low_1 as u32).count_ones() as xkb_overlay_index_t;
             let ref mut c2rust_fresh6 = *tmp.offset(idx_0 as isize);
             *c2rust_fresh6 = key;
             (*keyi).c2rust_unnamed.overlays_keys = tmp;
@@ -704,9 +704,9 @@ unsafe fn overlays_insert(
         } else {
             let overlays_0: xkb_overlay_mask_t =
                 ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t = popcount32(overlays_0 as u32) as xkb_overlay_index_t;
+            let count: xkb_overlay_index_t = (overlays_0 as u32).count_ones() as xkb_overlay_index_t;
             if count as i32 > (*keyi).overlays_alloc as i32 {
-                let alloc_0: xkb_overlay_index_t = next_pow2(count as u32) as xkb_overlay_index_t;
+                let alloc_0: xkb_overlay_index_t = (count as u32).next_power_of_two() as xkb_overlay_index_t;
                 let tmp_0: *mut *const xkb_key = realloc(
                     (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
                     (alloc_0 as usize).wrapping_mul(std::mem::size_of::<*const xkb_key>()),
@@ -720,7 +720,7 @@ unsafe fn overlays_insert(
             let low_2: xkb_overlay_mask_t = (overlays_0 as i32
                 & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
                 as xkb_overlay_mask_t;
-            let index_0: xkb_overlay_index_t = popcount32(low_2 as u32) as xkb_overlay_index_t;
+            let index_0: xkb_overlay_index_t = (low_2 as u32).count_ones() as xkb_overlay_index_t;
             if index_0 as i32 >= (*keyi).overlays_alloc as i32 {
                 eprintln!(
                     "Critical Error: Reached unreachable line in {} at {}",
@@ -778,7 +778,7 @@ unsafe fn merge_overlays(
                 let result_mask: xkb_overlay_mask_t =
                     ((*into).overlays as i32 | (*from).overlays as i32) as xkb_overlay_mask_t;
                 let count: xkb_overlay_index_t =
-                    popcount32(result_mask as u32) as xkb_overlay_index_t;
+                    (result_mask as u32).count_ones() as xkb_overlay_index_t;
                 if count as i32 == 0 as i32 {
                     eprintln!(
                         "Critical Error: Reached unreachable line in {} at {}",
@@ -843,7 +843,7 @@ unsafe fn merge_overlays(
                             as i32)
                         as xkb_overlay_mask_t;
                     let bit: xkb_overlay_index_t =
-                        popcount32((lsb as u32).wrapping_sub(1 as u32)) as xkb_overlay_index_t;
+                        ((lsb as u32).wrapping_sub(1 as u32).count_ones()) as xkb_overlay_index_t;
                     remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
                     if !(*src).overlays_clear && (*src).overlays_alloc == 0 && remaining as i32 != 0
                     {

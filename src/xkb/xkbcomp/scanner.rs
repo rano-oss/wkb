@@ -259,9 +259,12 @@ use crate::xkb::utils::cstr_dup;
 pub use crate::xkb::utils::{
     digits__, parse_dec_to_uint64_t, parse_hex_to_uint32_t, parse_hex_to_uint64_t,
 };
-pub use crate::xkb::utils::{
-    is_alnum, is_alpha, is_ascii, is_digit, is_graph, is_space, is_valid_char, is_xdigit,
-};
+/// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
+/// Matches C `isspace()` for ASCII range.
+#[inline]
+fn is_space(ch: i8) -> bool {
+    matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
+}
 use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) -> bool {
@@ -364,7 +367,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                         (*s).buf_append(b'\x1b' as i8);
                     } else if (*s).chr(b'u' as i8) {
                         let mut cp: u32 = 0;
-                        if (*s).unicode_code_point(&raw mut cp) && is_valid_char(cp) as i32 != 0 {
+                        if (*s).unicode_code_point(&raw mut cp) && cp != 0 {
                             (*s).buf_appends_code_point(cp);
                         } else {
                             let loc = (*s).token_location();
@@ -382,7 +385,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                                     as *const i8),
                             );
                         }
-                    } else if (*s).oct(&mut o) && is_valid_char(o as u32) as i32 != 0 {
+                    } else if (*s).oct(&mut o) && o != 0 {
                         (*s).buf_append(o as i8);
                     } else if (*s).pos > start_pos {
                         let loc_0 = (*s).token_location();
@@ -438,7 +441,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             return STRING as i32;
         }
         if (*s).chr(b'<' as i8) {
-            while is_graph((*s).peek()) as i32 != 0 && (*s).peek() != b'>' as i8 {
+            while ((*s).peek() as u8).is_ascii_graphic() && (*s).peek() != b'>' as i8 {
                 (*s).next_byte();
             }
             if !(*s).chr(b'>' as i8) {
@@ -508,8 +511,8 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
             return INVERT as i32;
         }
         let mut tok: i32 = ERROR_TOK as i32;
-        if is_alpha((*s).peek()) as i32 != 0 || (*s).peek() == b'_' as i8 {
-            while is_alnum((*s).peek()) as i32 != 0 || (*s).peek() == b'_' as i8 {
+        if ((*s).peek() as u8).is_ascii_alphabetic() || (*s).peek() == b'_' as i8 {
+            while ((*s).peek() as u8).is_ascii_alphanumeric() || (*s).peek() == b'_' as i8 {
                 (*s).next_byte();
             }
             let start_0: *const i8 = (*s).s.add((*s).token_pos);

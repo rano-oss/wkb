@@ -307,7 +307,7 @@ impl scanner {
                 );
                 return false;
             }
-            if !crate::xkb::utils::is_ascii(*self.s) {
+            if !(*self.s as u8).is_ascii() {
                 let loc = self.token_location();
                 crate::xkb_logf!(
                     self.ctx,
