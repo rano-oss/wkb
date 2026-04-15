@@ -141,29 +141,6 @@ pub unsafe fn cstr_cmp(s1: *const i8, s2: *const i8) -> i32 {
     }
 }
 
-/// Safe replacement for libc `strncmp`. Compares at most `n` bytes.
-/// # Safety: both pointers must point to valid C strings (or at least `n` readable bytes).
-#[inline]
-pub unsafe fn cstr_ncmp(s1: *const i8, s2: *const i8, n: usize) -> i32 {
-    unsafe {
-        let a = std::slice::from_raw_parts(s1 as *const u8, n);
-        let b = std::slice::from_raw_parts(s2 as *const u8, n);
-        // Compare byte-by-byte, stopping at null like C strncmp
-        for i in 0..n {
-            if a[i] == 0 && b[i] == 0 {
-                return 0;
-            }
-            if a[i] != b[i] {
-                return a[i] as i32 - b[i] as i32;
-            }
-            if a[i] == 0 || b[i] == 0 {
-                return a[i] as i32 - b[i] as i32;
-            }
-        }
-        0
-    }
-}
-
 /// Stack buffer writer implementing `core::fmt::Write`.
 /// Used by the `xkb_logf!` and `rxkb_logf!` macros and `snprintf_args` to replace C `snprintf`.
 pub struct LogBuf<'a> {
