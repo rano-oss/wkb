@@ -73,7 +73,7 @@ pub use crate::xkb::shared_types::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-use crate::xkb::utils::cstr_cmp;
+use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::strdup_safe;
 pub unsafe fn xkb_rmlvo_builder_new(
@@ -219,7 +219,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
         }
         for prev in (*rmlvo).options.iter() {
             if prev.layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
-                && cstr_cmp(prev.option, option) == 0 as i32
+                && cstr_as_bytes(prev.option) == cstr_as_bytes(option)
             {
                 return true;
             }

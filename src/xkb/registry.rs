@@ -892,9 +892,7 @@ unsafe fn add_direct_subdirectories(
                         break;
                     }
                     let mut name: *const i8 = &raw mut (*entry).d_name as *mut i8;
-                    if cstr_cmp(name, b".\0".as_ptr() as *const i8) == 0 as i32
-                        || cstr_cmp(name, b"..\0".as_ptr() as *const i8) == 0 as i32
-                    {
+                    if cstr_as_bytes(name) == b"." || cstr_as_bytes(name) == b".." {
                         continue;
                     }
                     let (_, _trunc) = crate::xkb::utils::snprintf_args(
@@ -920,7 +918,7 @@ unsafe fn add_direct_subdirectories(
                         while i < versioned_count {
                             let prev_name: *const i8 =
                                 (extensions[i as usize]).offset(versioned_path_length as isize);
-                            if cstr_cmp(name, prev_name) == 0 as i32 {
+                            if cstr_as_bytes(name) == cstr_as_bytes(prev_name) {
                                 continue 's_62;
                             }
                             i = i.wrapping_add(1);

@@ -21804,7 +21804,7 @@ pub use self::keysym_names_h::{
 };
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_as_bytes, istrcmp, istrncmp};
-use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
+use crate::xkb::utils::{cstr_free, cstr_len};
 fn find_keysym_index(mut ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1 as i32 as isize;
@@ -21903,7 +21903,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                     (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
                         as *const name_keysym,
                 );
-                if cstr_cmp(name, s) == 0 as i32 {
+                if cstr_as_bytes(name) == cstr_as_bytes(s) {
                     return name_to_keysym[pos as usize].keysym;
                 }
             }
@@ -21971,7 +21971,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
             }
             return val;
         }
-        if cstr_ncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
+        if cstr_as_bytes(name).starts_with(b"XF86_")
             || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5 as usize) == 0 as i32
         {
             let mut ret: xkb_keysym_t = 0;

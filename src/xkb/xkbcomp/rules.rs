@@ -67,7 +67,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use crate::xkb::utils::{cstr_len, cstr_len_safe, cstr_ncmp, isempty};
+use crate::xkb::utils::{cstr_as_bytes, cstr_len, cstr_len_safe, isempty};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -5082,12 +5082,9 @@ unsafe fn extract_mapping_layout_index(
             < (std::mem::size_of::<[C2Rust_Unnamed_7; 4]>())
                 .wrapping_div(std::mem::size_of::<C2Rust_Unnamed_7>())
         {
-            if cstr_ncmp(
-                s.offset(1 as i32 as isize) as *const i8,
-                names[k as usize].name,
-                names[k as usize].length as usize,
-            ) == 0 as i32
-            {
+            if cstr_as_bytes(s.offset(1 as i32 as isize) as *const i8).starts_with(
+                &cstr_as_bytes(names[k as usize].name)[..names[k as usize].length as usize],
+            ) {
                 *out = names[k as usize].range as xkb_layout_index_t;
                 return names[k as usize].length + 1 as i32;
             }

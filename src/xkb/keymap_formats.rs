@@ -1,5 +1,5 @@
 use crate::xkb::shared_types::*;
-use crate::xkb::utils::cstr_cmp;
+use crate::xkb::utils::cstr_as_bytes;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct format_label {
@@ -69,7 +69,7 @@ pub unsafe fn xkb_keymap_parse_format(mut raw: *const i8) -> xkb_keymap_format {
                 < (std::mem::size_of::<[format_label; 4]>())
                     .wrapping_div(std::mem::size_of::<format_label>())
             {
-                if cstr_cmp(raw, keymap_formats_labels[k as usize].label) == 0 as i32 {
+                if cstr_as_bytes(raw) == cstr_as_bytes(keymap_formats_labels[k as usize].label) {
                     return keymap_formats_labels[k as usize].format;
                 }
                 k = k.wrapping_add(1);
