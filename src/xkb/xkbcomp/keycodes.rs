@@ -1,7 +1,7 @@
 use super::prelude::*;
 pub use crate::xkb::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
 pub use crate::xkb::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
-use crate::xkb::utils::{cstr_as_bytes, cstr_free};
+use crate::xkb::utils::cstr_free;
 use crate::xkb::xkbcomp::expr::ExprResolveInteger;
 #[derive(Clone)]
 pub struct KeyNamesInfo {
@@ -935,53 +935,48 @@ unsafe fn HandleAliasDef(
 }
 unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = std::ptr::null();
-        let mut field: *const i8 = std::ptr::null();
+        let mut elem: &[u8] = b"";
+        let mut field: &[u8] = b"";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
-            &raw mut elem,
-            &raw mut field,
+            &mut elem,
+            &mut field,
             &raw mut arrayNdx,
         ) {
             return false;
         }
-        if !elem.is_null() {
+        if !elem.is_empty() {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                crate::xkb::utils::CStrDisplay(elem),
-                crate::xkb::utils::CStrDisplay(elem),
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(elem),
+                crate::xkb::utils::ByteSliceDisplay(elem),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as u32
                 == 0;
         }
-        if !istreq(cstr_as_bytes(field), b"minimum") && !istreq(cstr_as_bytes(field), b"maximum") {
+        if !istreq(field, b"minimum") && !istreq(field, b"maximum") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as u32
                 == 0;
         }
         if !arrayNdx.is_null() {
-            ReportNotArray(
-                (*info).ctx,
-                b"keycodes\0".as_ptr() as *const i8,
-                field,
-                b"defaults\0".as_ptr() as *const i8,
-            );
+            ReportNotArray((*info).ctx, b"keycodes", field, b"defaults");
             return (*(*info).keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 == 0;
         }
@@ -993,10 +988,10 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
             ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"keycodes\0".as_ptr() as *const i8,
+                b"keycodes",
                 field,
-                b"defaults\0".as_ptr() as *const i8,
-                b"integer 0..0xfffffffe\0".as_ptr() as *const i8,
+                b"defaults",
+                b"integer 0..0xfffffffe",
             );
             return (*(*info).keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32
                 == 0;
@@ -1024,20 +1019,20 @@ unsafe fn HandleLedNameDef(
         }
         let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
         if !ExprResolveString((*info).ctx, (*def).name, &raw mut name) {
-            let mut buf: [i8; 20] = [0; 20];
-            crate::xkb::utils::snprintf_args(
-                &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 20]>(),
-                format_args!("{}", (*def).ndx),
-            );
+            let mut buf: [u8; 20] = [0; 20];
+            let buf_len = {
+                let mut w = crate::xkb::utils::LogBuf::new(&mut buf[..19]);
+                let _ = core::fmt::Write::write_fmt(&mut w, format_args!("{}", (*def).ndx));
+                w.pos
+            };
             (*info).errorCount += 1;
             return ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"indicator\0".as_ptr() as *const i8,
-                b"name\0".as_ptr() as *const i8,
-                &raw mut buf as *mut i8,
-                b"string\0".as_ptr() as *const i8,
+                b"indicator",
+                b"name",
+                &buf[..buf_len],
+                b"string",
             );
         }
         let mut ledi: LedNameInfo = LedNameInfo {

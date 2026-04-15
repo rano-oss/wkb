@@ -10,8 +10,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
-use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_as_bytes, istrneq, memdup};
+use crate::xkb::utils::{istrneq, memdup};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -1645,7 +1644,7 @@ static mut repeatEntries: [LookupEntry; 8] = [
 ];
 unsafe fn ExprResolveOverlayEntry(
     mut keymap_info: *const xkb_keymap_info,
-    mut field: *const i8,
+    field: &[u8],
     mut arrayNdx: *const ExprDef,
     mut expr: *const ExprDef,
     mut keyi: *mut KeyInfo,
@@ -1660,7 +1659,7 @@ unsafe fn ExprResolveOverlayEntry(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Overlay field \"{}\" in {} does not support array index; ignored\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
                 crate::xkb::utils::CStrDisplay(KeyNameText(
                     (*keymap_info).keymap.ctx,
                     (*keyi).name
@@ -1669,11 +1668,10 @@ unsafe fn ExprResolveOverlayEntry(
             return false;
         }
         let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize);
-        let len: usize = cstr_len(field.offset(prefix as isize)) as usize;
+        let suffix = &field[prefix..];
+        let len: usize = suffix.len();
         let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
-        let parse_slice =
-            std::slice::from_raw_parts(field.offset(prefix as isize) as *const u8, len);
-        let (val_parsed, parse_count) = crate::xkb::utils::parse_dec_u64(parse_slice);
+        let (val_parsed, parse_count) = crate::xkb::utils::parse_dec_u64(suffix);
         raw_overlay = val_parsed as i64;
         if parse_count != len as i32
             || raw_overlay < 1 as i64
@@ -1685,7 +1683,7 @@ unsafe fn ExprResolveOverlayEntry(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unsupported overlay index \"{}\" field for {}: expected 1..{}, got: {}; ignored\n",
                 XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
                 crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
                 (*keymap_info).features.max_overlays as i32,
                 raw_overlay,
@@ -1712,7 +1710,7 @@ unsafe fn ExprResolveOverlayEntry(
                             (*keymap_info).keymap.ctx,
                             (*expr).key_name.key_name
                         )),
-                        crate::xkb::utils::CStrDisplay(field),
+                        crate::xkb::utils::ByteSliceDisplay(field),
                         crate::xkb::utils::CStrDisplay(KeyNameText(
                             (*keymap_info).keymap.ctx,
                             (*keyi).name
@@ -1723,12 +1721,11 @@ unsafe fn ExprResolveOverlayEntry(
                 return true;
             }
             10 => {
-                let id: *const i8 =
-                    xkb_atom_text((*keymap_info).keymap.ctx, (*expr).ident.ident) as *const i8;
-                if !id.is_null() && istreq(cstr_as_bytes(id), b"none") {
+                let id: &[u8] = xkb_atom_text_bytes((*keymap_info).keymap.ctx, (*expr).ident.ident);
+                if !id.is_empty() && istreq(id, b"none") {
                     *key_rtrn = std::ptr::null();
                     return true;
-                } else if !id.is_null() && istreq(cstr_as_bytes(id), b"any") {
+                } else if !id.is_empty() && istreq(id, b"any") {
                     *key_rtrn = std::ptr::null();
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
@@ -1739,8 +1736,8 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in {}\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::CStrDisplay(id),
-                    crate::xkb::utils::CStrDisplay(field),
+                    crate::xkb::utils::ByteSliceDisplay(id),
+                    crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::CStrDisplay(KeyNameText(
                         (*keymap_info).keymap.ctx,
                         (*keyi).name
@@ -1756,7 +1753,7 @@ unsafe fn ExprResolveOverlayEntry(
                     "[XKB-{:03}] Expected {} for field \"{}\" in {}, got: {}\n",
                     XKB_ERROR_INVALID_VALUE as i32,
                     crate::xkb::utils::CStrDisplay(stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL)),
-                    crate::xkb::utils::CStrDisplay(field),
+                    crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::CStrDisplay(KeyNameText(
                         (*keymap_info).keymap.ctx,
                         (*keyi).name
@@ -1771,13 +1768,13 @@ unsafe fn ExprResolveOverlayEntry(
 unsafe fn SetSymbolsField(
     mut info: *mut SymbolsInfo,
     mut keyi: *mut KeyInfo,
-    mut field: *const i8,
+    field: &[u8],
     mut arrayNdx: *mut ExprDef,
     mut value_ptr: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(cstr_as_bytes(field), b"type") {
+        if istreq(field, b"type") {
             let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
@@ -1820,13 +1817,13 @@ unsafe fn SetSymbolsField(
                 let ref mut c2rust_fresh8 = (&mut (*keyi).groups)[ndx as usize].defined;
                 *c2rust_fresh8 = (*c2rust_fresh8 as u32 | GROUP_FIELD_TYPE as u32) as group_field;
             }
-        } else if istreq(cstr_as_bytes(field), b"symbols") {
+        } else if istreq(field, b"symbols") {
             return AddSymbolsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(cstr_as_bytes(field), b"actions") {
+        } else if istreq(field, b"actions") {
             return AddActionsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(cstr_as_bytes(field), b"vmods")
-            || istreq(cstr_as_bytes(field), b"virtualmods")
-            || istreq(cstr_as_bytes(field), b"virtualmodifiers")
+        } else if istreq(field, b"vmods")
+            || istreq(field, b"virtualmods")
+            || istreq(field, b"virtualmodifiers")
         {
             let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
             if !ExprResolveModMask(
@@ -1849,10 +1846,7 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).vmodmap = mask;
             (*keyi).defined = (*keyi).defined | KEY_FIELD_VMODMAP as i32 as key_field;
-        } else if istreq(cstr_as_bytes(field), b"locking")
-            || istreq(cstr_as_bytes(field), b"lock")
-            || istreq(cstr_as_bytes(field), b"locks")
-        {
+        } else if istreq(field, b"locking") || istreq(field, b"lock") || istreq(field, b"locks") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -1861,9 +1855,9 @@ unsafe fn SetSymbolsField(
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
-        } else if istreq(cstr_as_bytes(field), b"radiogroup")
-            || istreq(cstr_as_bytes(field), b"permanentradiogroup")
-            || istreq(cstr_as_bytes(field), b"allownone")
+        } else if istreq(field, b"radiogroup")
+            || istreq(field, b"permanentradiogroup")
+            || istreq(field, b"allownone")
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1875,7 +1869,7 @@ unsafe fn SetSymbolsField(
             );
         } else if istrneq(
             b"permanentoverlay",
-            cstr_as_bytes(field),
+            field,
             (std::mem::size_of::<[i8; 17]>()).wrapping_sub(1 as usize),
         ) {
             xkb_logf!(
@@ -1888,7 +1882,7 @@ unsafe fn SetSymbolsField(
             );
         } else if istrneq(
             b"overlay",
-            cstr_as_bytes(field),
+            field,
             (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
@@ -1983,9 +1977,9 @@ unsafe fn SetSymbolsField(
                     }
                 }
             }
-        } else if istreq(cstr_as_bytes(field), b"repeating")
-            || istreq(cstr_as_bytes(field), b"repeats")
-            || istreq(cstr_as_bytes(field), b"repeat")
+        } else if istreq(field, b"repeating")
+            || istreq(field, b"repeats")
+            || istreq(field, b"repeat")
         {
             let mut val_0: u32 = 0 as u32;
             if !ExprResolveEnum(
@@ -2006,9 +2000,7 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).repeat = val_0 as key_repeat as key_repeat;
             (*keyi).defined = (*keyi).defined | KEY_FIELD_REPEAT as i32 as key_field;
-        } else if istreq(cstr_as_bytes(field), b"groupswrap")
-            || istreq(cstr_as_bytes(field), b"wrapgroups")
-        {
+        } else if istreq(field, b"groupswrap") || istreq(field, b"wrapgroups") {
             let mut set: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
                 xkb_logf!(
@@ -2027,9 +2019,7 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_CLAMP
             };
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(cstr_as_bytes(field), b"groupsclamp")
-            || istreq(cstr_as_bytes(field), b"clampgroups")
-        {
+        } else if istreq(field, b"groupsclamp") || istreq(field, b"clampgroups") {
             let mut set_0: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
                 xkb_logf!(
@@ -2048,9 +2038,7 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
             };
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(cstr_as_bytes(field), b"groupsredirect")
-            || istreq(cstr_as_bytes(field), b"redirectgroups")
-        {
+        } else if istreq(field, b"groupsredirect") || istreq(field, b"redirectgroups") {
             let mut grp: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut pending: bool = false;
             if ExprResolveGroup(
@@ -2097,7 +2085,7 @@ unsafe fn SetSymbolsField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown field \"{}\" in a key; definition ignored\n",
                 XKB_ERROR_UNKNOWN_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32 & PARSER_NO_UNKNOWN_KEY_FIELDS as u32 == 0;
         }
@@ -2199,20 +2187,20 @@ unsafe fn SetGroupName(
 }
 unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = std::ptr::null();
-        let mut field: *const i8 = std::ptr::null();
+        let mut elem: &[u8] = b"";
+        let mut field: &[u8] = b"";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         let mut ret: bool = false;
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
-            &raw mut elem,
-            &raw mut field,
+            &mut elem,
+            &mut field,
             &raw mut arrayNdx,
         ) {
             return false;
         }
-        if !elem.is_null() && istreq(cstr_as_bytes(elem), b"key") {
+        if !elem.is_empty() && istreq(elem, b"key") {
             let mut temp: KeyInfo = {
                 let mut init = KeyInfo::new_zeroed();
                 init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
@@ -2231,13 +2219,9 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             };
             ret = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut (*stmt).value);
             MergeKeys(info, &raw mut (*info).default_key, &raw mut temp, true);
-        } else if elem.is_null()
-            && (istreq(cstr_as_bytes(field), b"name") || istreq(cstr_as_bytes(field), b"groupname"))
-        {
+        } else if elem.is_empty() && (istreq(field, b"name") || istreq(field, b"groupname")) {
             ret = SetGroupName(info, arrayNdx, (*stmt).value as *mut ExprDef, (*stmt).merge);
-        } else if elem.is_null()
-            && (istreq(cstr_as_bytes(field), b"groupswrap")
-                || istreq(cstr_as_bytes(field), b"wrapgroups"))
+        } else if elem.is_empty() && (istreq(field, b"groupswrap") || istreq(field, b"wrapgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2247,9 +2231,8 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_null()
-            && (istreq(cstr_as_bytes(field), b"groupsclamp")
-                || istreq(cstr_as_bytes(field), b"clampgroups"))
+        } else if elem.is_empty()
+            && (istreq(field, b"groupsclamp") || istreq(field, b"clampgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2259,9 +2242,8 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_null()
-            && (istreq(cstr_as_bytes(field), b"groupsredirect")
-                || istreq(cstr_as_bytes(field), b"redirectgroups"))
+        } else if elem.is_empty()
+            && (istreq(field, b"groupsredirect") || istreq(field, b"redirectgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2271,7 +2253,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_null() && istreq(cstr_as_bytes(field), b"allownone") {
+        } else if elem.is_empty() && istreq(field, b"allownone") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2280,7 +2262,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if !elem.is_null() {
+        } else if !elem.is_empty() {
             ret = SetDefaultActionField(
                 (*info).keymap_info,
                 &raw mut (*info).default_actions,
@@ -2299,7 +2281,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS as u32
@@ -2316,37 +2298,37 @@ unsafe fn HandleSymbolsBody(
     unsafe {
         let mut all_valid_entries: bool = true;
         while !def.is_null() {
-            let mut field: *const i8 = std::ptr::null();
+            let mut field: &[u8] = b"";
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
             if (*def).name.is_null() {
                 if (*def).value.is_null() as i64 != 0
                     || (*(*def).value).common.type_0 as u32 != STMT_EXPR_ACTION_LIST as u32
                 {
-                    field = b"symbols\0".as_ptr() as *const i8;
+                    field = b"symbols";
                 } else {
-                    field = b"actions\0".as_ptr() as *const i8;
+                    field = b"actions";
                 }
                 arrayNdx = std::ptr::null_mut();
             } else {
-                let mut elem: *const i8 = std::ptr::null();
+                let mut elem: &[u8] = b"";
                 ok = ExprResolveLhs(
                     (*info).ctx,
                     (*def).name,
-                    &raw mut elem,
-                    &raw mut field,
+                    &mut elem,
+                    &mut field,
                     &raw mut arrayNdx,
                 );
-                if ok as i32 != 0 && !elem.is_null() {
+                if ok as i32 != 0 && !elem.is_empty() {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                        crate::xkb::utils::CStrDisplay(elem),
-                        crate::xkb::utils::CStrDisplay(elem),
-                        crate::xkb::utils::CStrDisplay(field),
+                        crate::xkb::utils::ByteSliceDisplay(elem),
+                        crate::xkb::utils::ByteSliceDisplay(elem),
+                        crate::xkb::utils::ByteSliceDisplay(field),
                     );
                     ok = false;
                 }
@@ -2358,7 +2340,7 @@ unsafe fn HandleSymbolsBody(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Could not allocate the value of field \"{}\". Statement ignored.\n",
                     XKB_ERROR_ALLOCATION_ERROR as i32,
-                    crate::xkb::utils::CStrDisplay(field),
+                    crate::xkb::utils::ByteSliceDisplay(field),
                 );
                 ok = false;
             }
@@ -2458,8 +2440,8 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         let mut ndx: xkb_mod_index_t = 0;
         let mut ok: bool = false;
         let mut ctx: *mut xkb_context = (*info).ctx;
-        let mut modifier_name: *const i8 = xkb_atom_text(ctx, (*def).modifier);
-        if istreq(cstr_as_bytes(modifier_name), b"none") {
+        let modifier_name: &[u8] = xkb_atom_text_bytes(ctx, (*def).modifier);
+        if istreq(modifier_name, b"none") {
             ndx = XKB_MOD_NONE as xkb_mod_index_t;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);

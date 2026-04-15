@@ -1,7 +1,6 @@
 use super::prelude::*;
 pub use crate::xkb::keymap_priv::action_equal;
 use crate::xkb::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
-use crate::xkb::utils::{cstr_as_bytes, cstr_len};
 pub use crate::xkb::xkbcomp::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -226,7 +225,7 @@ static mut fieldStrings: [LookupEntry; 37] = [
         value: 0 as u32,
     },
 ];
-unsafe fn stringToActionType(mut str: *const i8, mut type_rtrn: *mut xkb_action_type) -> bool {
+unsafe fn stringToActionType(str: &[u8], mut type_rtrn: *mut xkb_action_type) -> bool {
     unsafe {
         let mut type_0: u32 = 0 as u32;
         let ret: bool = LookupString(
@@ -238,7 +237,7 @@ unsafe fn stringToActionType(mut str: *const i8, mut type_rtrn: *mut xkb_action_
         return ret;
     }
 }
-unsafe fn stringToField(mut str: *const i8, mut field_rtrn: *mut action_field) -> bool {
+unsafe fn stringToField(str: &[u8], mut field_rtrn: *mut action_field) -> bool {
     unsafe {
         let mut field: u32 = 0 as u32;
         let ret: bool = LookupString(
@@ -432,11 +431,9 @@ unsafe fn CheckModifierField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
         if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
-            let mut valStr: *const i8 = std::ptr::null();
-            valStr = xkb_atom_text(ctx, (*value).ident.ident);
-            if !valStr.is_null()
-                && (istreq(cstr_as_bytes(valStr), b"usemodmapmods")
-                    || istreq(cstr_as_bytes(valStr), b"modmapmods"))
+            let valStr: &[u8] = xkb_atom_text_bytes(ctx, (*value).ident.ident);
+            if !valStr.is_empty()
+                && (istreq(valStr, b"usemodmapmods") || istreq(valStr, b"modmapmods"))
             {
                 *mods_rtrn = 0 as xkb_mod_mask_t;
                 *flags_inout =
@@ -1218,8 +1215,8 @@ unsafe fn HandleRedirectKey(
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
             if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
-                let mut valStr: *const i8 = xkb_atom_text(ctx, (*value).ident.ident);
-                if !valStr.is_null() && istreq(cstr_as_bytes(valStr), b"auto") {
+                let valStr: &[u8] = xkb_atom_text_bytes(ctx, (*value).ident.ident);
+                if !valStr.is_empty() && istreq(valStr, b"auto") {
                     (*act).keycode = (*keymap_info).keymap.redirect_key_auto;
                     return PARSER_SUCCESS;
                 }
@@ -1372,8 +1369,8 @@ unsafe fn HandlePrivate(
                         (*keymap_info).strict,
                     );
                 }
-                let mut str: *const i8 = xkb_atom_text(ctx, val);
-                let mut len: usize = cstr_len(str);
+                let str_bytes: &[u8] = xkb_atom_text_bytes(ctx, val);
+                let mut len: usize = str_bytes.len();
                 if len < 1 as usize || len > std::mem::size_of::<[u8; 7]>() {
                     xkb_logf!(
                         ctx,
@@ -1397,7 +1394,7 @@ unsafe fn HandlePrivate(
                     1,
                 );
                 std::ptr::copy_nonoverlapping(
-                    str as *const u8,
+                    str_bytes.as_ptr(),
                     &raw mut (*act).data as *mut u8,
                     len,
                 );
@@ -1735,7 +1732,7 @@ pub unsafe fn HandleActionDef(
             );
             return PARSER_FATAL_ERROR;
         }
-        let mut action_name: *const i8 = xkb_atom_text(ctx, (*def).action.name);
+        let action_name: &[u8] = xkb_atom_text_bytes(ctx, (*def).action.name);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
             xkb_logf!(
@@ -1744,7 +1741,7 @@ pub unsafe fn HandleActionDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(action_name),
+                crate::xkb::utils::ByteSliceDisplay(action_name),
             );
             handler_type = ACTION_TYPE_UNKNOWN;
             if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as u32 != 0 {
@@ -1759,7 +1756,7 @@ pub unsafe fn HandleActionDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
                 XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
-                crate::xkb::utils::CStrDisplay(action_name),
+                crate::xkb::utils::ByteSliceDisplay(action_name),
             );
             (*action).type_0 = ACTION_TYPE_NONE;
         }
@@ -1770,8 +1767,8 @@ pub unsafe fn HandleActionDef(
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
             let mut field: *mut ExprDef = std::ptr::null_mut();
             let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
-            let mut elemRtrn: *const i8 = std::ptr::null();
-            let mut fieldRtrn: *const i8 = std::ptr::null();
+            let mut elemRtrn: &[u8] = b"";
+            let mut fieldRtrn: &[u8] = b"";
             if (*arg).common.type_0 as u32 == STMT_EXPR_ASSIGN as u32 {
                 field = (*arg).binary.left as *mut ExprDef;
                 value = (*arg).binary.right;
@@ -1788,21 +1785,21 @@ pub unsafe fn HandleActionDef(
             if !ExprResolveLhs(
                 ctx,
                 field,
-                &raw mut elemRtrn,
-                &raw mut fieldRtrn,
+                &mut elemRtrn,
+                &mut fieldRtrn,
                 &raw mut arrayRtrn,
             ) {
                 return PARSER_FATAL_ERROR;
             }
-            if !elemRtrn.is_null() {
+            if !elemRtrn.is_empty() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    crate::xkb::utils::CStrDisplay(elemRtrn),
-                    crate::xkb::utils::CStrDisplay(fieldRtrn),
+                    crate::xkb::utils::ByteSliceDisplay(elemRtrn),
+                    crate::xkb::utils::ByteSliceDisplay(fieldRtrn),
                 );
                 return PARSER_FATAL_ERROR;
             }
@@ -1814,7 +1811,7 @@ pub unsafe fn HandleActionDef(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                     XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                    crate::xkb::utils::CStrDisplay(fieldRtrn),
+                    crate::xkb::utils::ByteSliceDisplay(fieldRtrn),
                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
                 );
                 if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32 != 0 {
@@ -1851,8 +1848,8 @@ pub unsafe fn SetDefaultActionField(
     mut keymap_info: *const xkb_keymap_info,
     mut info: *mut ActionsInfo,
     mut mods: *mut xkb_mod_set,
-    mut elem: *const i8,
-    mut field: *const i8,
+    elem: &[u8],
+    field: &[u8],
     mut array_ndx: *mut ExprDef,
     mut value_ptr: *mut *mut ExprDef,
     mut merge: merge_mode,
@@ -1867,7 +1864,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(elem),
+                crate::xkb::utils::ByteSliceDisplay(elem),
             );
             return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION as u32 != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -1883,7 +1880,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action field \"{}\"\n",
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32 != 0 {
                 PARSER_FATAL_ERROR as i32

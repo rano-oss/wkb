@@ -44,37 +44,37 @@ static mut level_name_pattern: named_integer_pattern = named_integer_pattern {
     is_mask: false,
     error_id: 0 as xkb_message_code,
 };
-pub unsafe fn ExprResolveLhs(
+pub unsafe fn ExprResolveLhs<'a>(
     mut ctx: *mut xkb_context,
     mut expr: *const ExprDef,
-    mut elem_rtrn: *mut *const i8,
-    mut field_rtrn: *mut *const i8,
+    elem_rtrn: &mut &'a [u8],
+    field_rtrn: &mut &'a [u8],
     mut index_rtrn: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         match (*expr).common.type_0 as u32 {
             10 => {
-                *elem_rtrn = std::ptr::null();
-                *field_rtrn = xkb_atom_text(ctx, (*expr).ident.ident);
+                *elem_rtrn = b"";
+                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).ident.ident);
                 *index_rtrn = std::ptr::null_mut();
-                return !(*field_rtrn).is_null();
+                return !(*field_rtrn).is_empty();
             }
             12 => {
-                *elem_rtrn = xkb_atom_text(ctx, (*expr).field_ref.element);
-                *field_rtrn = xkb_atom_text(ctx, (*expr).field_ref.field);
+                *elem_rtrn = xkb_atom_text_bytes(ctx, (*expr).field_ref.element);
+                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).field_ref.field);
                 *index_rtrn = std::ptr::null_mut();
-                return !(*elem_rtrn).is_null() && !(*field_rtrn).is_null();
+                return !(*elem_rtrn).is_empty() && !(*field_rtrn).is_empty();
             }
             13 => {
-                *elem_rtrn = xkb_atom_text(ctx, (*expr).array_ref.element);
-                *field_rtrn = xkb_atom_text(ctx, (*expr).array_ref.field);
+                *elem_rtrn = xkb_atom_text_bytes(ctx, (*expr).array_ref.element);
+                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).array_ref.field);
                 *index_rtrn = (*expr).array_ref.entry as *mut ExprDef;
                 if (*expr).array_ref.element != XKB_ATOM_NONE as xkb_atom_t
-                    && (*elem_rtrn).is_null()
+                    && (*elem_rtrn).is_empty()
                 {
                     return false;
                 }
-                if (*field_rtrn).is_null() {
+                if (*field_rtrn).is_empty() {
                     return false;
                 }
                 return true;
@@ -103,10 +103,10 @@ unsafe fn SimpleLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE as xkb_atom_t {
             return false;
         }
-        let mut str: *const i8 = xkb_atom_text(ctx, field);
+        let str: &[u8] = xkb_atom_text_bytes(ctx, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(&(*entry).name).is_empty() {
-            if istreq(cstr_as_bytes(str), (*entry).name) {
+            if istreq(str, (*entry).name) {
                 *val_rtrn = (*entry).value;
                 return true;
             }
@@ -126,27 +126,18 @@ unsafe fn NamedIntegerPatternLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE as xkb_atom_t {
             return false;
         }
-        let str: *const i8 = xkb_atom_text(ctx, field) as *const i8;
+        let str_bytes: &[u8] = xkb_atom_text_bytes(ctx, field);
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
-        let count: i32 = if istrneq(
-            cstr_as_bytes(str),
-            cstr_as_bytes((*pattern).prefix),
-            (*pattern).prefix_length,
-        ) {
-            let s_ptr = str.offset((*pattern).prefix_length as isize);
-            let s_bytes = std::ffi::CStr::from_ptr(s_ptr).to_bytes();
-            let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(s_bytes);
+        let prefix_bytes = cstr_as_bytes((*pattern).prefix);
+        let count: i32 = if istrneq(str_bytes, prefix_bytes, (*pattern).prefix_length) {
+            let suffix = &str_bytes[(*pattern).prefix_length..];
+            let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(suffix);
             *(val_rtrn as *mut u32) = val_parsed;
             c
         } else {
             0 as i32
         };
-        if count > 0 as i32
-            && *str
-                .offset((*pattern).prefix_length as isize)
-                .offset(count as isize) as i32
-                == '\0' as i32
-        {
+        if count > 0 as i32 && (*pattern).prefix_length + count as usize == str_bytes.len() {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
                 xkb_logf!(
                     ctx,
@@ -204,15 +195,15 @@ unsafe fn LookupModMask(
     mut pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let mut str: *const i8 = xkb_atom_text(ctx, field);
-        if str.is_null() {
+        let str: &[u8] = xkb_atom_text_bytes(ctx, field);
+        if str.is_empty() {
             return false;
         }
-        if istreq(cstr_as_bytes(str), b"all") {
+        if istreq(str, b"all") {
             *val_rtrn = MOD_REAL_MASK_ALL;
             return true;
         }
-        if istreq(cstr_as_bytes(str), b"none") {
+        if istreq(str, b"none") {
             *val_rtrn = 0 as xkb_mod_mask_t;
             return true;
         }
@@ -234,7 +225,7 @@ pub unsafe fn ExprResolveBoolean(
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut ident: *const i8 = std::ptr::null();
+        let mut ident: &[u8] = b"";
         match (*expr).common.type_0 as u32 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
@@ -252,18 +243,15 @@ pub unsafe fn ExprResolveBoolean(
                 return false;
             }
             10 => {
-                ident = xkb_atom_text(ctx, (*expr).ident.ident);
-                if !ident.is_null() {
-                    if istreq(cstr_as_bytes(ident), b"true")
-                        || istreq(cstr_as_bytes(ident), b"yes")
-                        || istreq(cstr_as_bytes(ident), b"on")
-                    {
+                ident = xkb_atom_text_bytes(ctx, (*expr).ident.ident);
+                if !ident.is_empty() {
+                    if istreq(ident, b"true") || istreq(ident, b"yes") || istreq(ident, b"on") {
                         *set_rtrn = true;
                         return true;
-                    } else if istreq(cstr_as_bytes(ident), b"false")
-                        || istreq(cstr_as_bytes(ident), b"no")
-                        || istreq(cstr_as_bytes(ident), b"off")
-                    {
+                    } else if istreq(ident, b"false") {
+                        *set_rtrn = false;
+                        return true;
+                    } else if istreq(ident, b"no") || istreq(ident, b"off") {
                         *set_rtrn = false;
                         return true;
                     }
@@ -274,7 +262,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::CStrDisplay(ident),
+                    crate::xkb::utils::ByteSliceDisplay(ident),
                 );
                 return false;
             }

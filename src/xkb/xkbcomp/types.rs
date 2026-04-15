@@ -2,7 +2,6 @@ use super::prelude::*;
 use crate::xkb::context_priv::xkb_atom_intern;
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
-use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;
 #[derive(Clone)]
 pub struct KeyTypesInfo {
@@ -76,24 +75,19 @@ unsafe fn MapEntryTxt(
     }
 }
 #[inline]
-unsafe fn TypeTxt(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> *const i8 {
+unsafe fn TypeTxt<'a>(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> &'a [u8] {
     unsafe {
-        return xkb_atom_text((*info).ctx, (*type_0).name);
+        return xkb_atom_text_bytes((*info).ctx, (*type_0).name);
     }
 }
 #[inline]
 unsafe fn ReportTypeShouldBeArray(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
-    mut field: *const i8,
+    field: &[u8],
 ) -> bool {
     unsafe {
-        return ReportShouldBeArray(
-            (*info).ctx,
-            b"key type\0".as_ptr() as *const i8,
-            field,
-            TypeTxt(info, type_0),
-        );
+        return ReportShouldBeArray((*info).ctx, b"key type", field, TypeTxt(info, type_0));
     }
 }
 #[inline]
@@ -101,14 +95,14 @@ unsafe fn ReportTypeBadType(
     mut info: *mut KeyTypesInfo,
     mut code: xkb_message_code,
     mut type_0: *mut KeyTypeInfo,
-    mut field: *const i8,
-    mut wanted: *const i8,
+    field: &[u8],
+    wanted: &[u8],
 ) -> bool {
     unsafe {
         return ReportBadType(
             (*info).ctx,
             code,
-            b"key type\0".as_ptr() as *const i8,
+            b"key type",
             field,
             TypeTxt(info, type_0),
             wanted,
@@ -383,7 +377,7 @@ unsafe fn AddMapEntry(
                     "[XKB-{:03}] Multiple map entries for {} in {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
                     crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
-                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     (if clobber as i32 != 0 {
                         (*new).level
                     } else {
@@ -406,7 +400,7 @@ unsafe fn AddMapEntry(
                     XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
                     crate::xkb::utils::CStrDisplay(MapEntryTxt(info, new)),
                     (*new).level.wrapping_add(1 as xkb_level_index_t),
-                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 );
                 return true;
             }
@@ -438,7 +432,7 @@ unsafe fn SetMapEntry(
             preserve: xkb_mods { mods: 0, mask: 0 },
         };
         if arrayNdx.is_null() {
-            return ReportTypeShouldBeArray(info, type_0, b"map entry\0".as_ptr() as *const i8);
+            return ReportTypeShouldBeArray(info, type_0, b"map entry");
         }
         if !ExprResolveModMask(
             (*info).ctx,
@@ -451,8 +445,8 @@ unsafe fn SetMapEntry(
                 info,
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
                 type_0,
-                b"map entry\0".as_ptr() as *const i8,
-                b"modifier mask\0".as_ptr() as *const i8,
+                b"map entry",
+                b"modifier mask",
             );
         }
         if entry.mods.mods & !(*type_0).mods != 0 {
@@ -462,7 +456,7 @@ unsafe fn SetMapEntry(
                 XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Map entry for modifiers not used by type {}; Using {} instead of {}\n",
                 XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
@@ -521,7 +515,7 @@ unsafe fn AddPreserve(
                             &raw mut (*info).mods,
                             mods
                         )),
-                        crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                        crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     );
                     return true;
                 }
@@ -533,7 +527,7 @@ unsafe fn AddPreserve(
                     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
                         as i32,
                     crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
-                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     crate::xkb::utils::CStrDisplay(ModMaskText(
                         (*info).ctx,
                         MOD_BOTH,
@@ -566,11 +560,7 @@ unsafe fn SetPreserve(
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
-            return ReportTypeShouldBeArray(
-                info,
-                type_0,
-                b"preserve entry\0".as_ptr() as *const i8,
-            );
+            return ReportTypeShouldBeArray(info, type_0, b"preserve entry");
         }
         let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
         if !ExprResolveModMask(
@@ -584,8 +574,8 @@ unsafe fn SetPreserve(
                 info,
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
                 type_0,
-                b"preserve entry\0".as_ptr() as *const i8,
-                b"modifier mask\0".as_ptr() as *const i8,
+                b"preserve entry",
+                b"modifier mask",
             );
         }
         if mods & !(*type_0).mods != 0 {
@@ -600,7 +590,7 @@ unsafe fn SetPreserve(
                 XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Preserve entry for modifiers not used by the {} type; Index {} converted to {}\n",
                 XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(before),
                 crate::xkb::utils::CStrDisplay(after),
             );
@@ -620,7 +610,7 @@ unsafe fn SetPreserve(
                 "[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as i32,
                 crate::xkb::utils::CStrDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
-                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
             );
             return false;
         }
@@ -642,7 +632,7 @@ unsafe fn SetPreserve(
                     &raw mut (*info).mods,
                     mods
                 )),
-                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::CStrDisplay(before_0),
                 crate::xkb::utils::CStrDisplay(after_0),
             );
@@ -669,7 +659,7 @@ unsafe fn AddLevelName(
                     "[XKB-{:03}] Duplicate names for level {} of key type {}; Ignored\n",
                     XKB_WARNING_DUPLICATE_ENTRY as i32,
                     level.wrapping_add(1 as xkb_level_index_t),
-                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 );
                 return true;
             }
@@ -688,7 +678,7 @@ unsafe fn AddLevelName(
                     "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as i32,
                     level.wrapping_add(1 as xkb_level_index_t),
-                    crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 { new } else { old }),
                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 { old } else { new }),
                 );
@@ -709,7 +699,7 @@ unsafe fn SetLevelName(
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
-            return ReportTypeShouldBeArray(info, type_0, b"level name\0".as_ptr() as *const i8);
+            return ReportTypeShouldBeArray(info, type_0, b"level name");
         }
         let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
         if !ExprResolveLevel((*info).ctx, arrayNdx, &raw mut level) {
@@ -717,8 +707,8 @@ unsafe fn SetLevelName(
                 info,
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
                 type_0,
-                b"level name\0".as_ptr() as *const i8,
-                b"integer\0".as_ptr() as *const i8,
+                b"level name",
+                b"integer",
             );
         }
         let mut level_name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
@@ -740,25 +730,23 @@ unsafe fn SetLevelName(
 unsafe fn SetKeyTypeField(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
-    mut field: *const i8,
+    field: &[u8],
     mut arrayNdx: *mut ExprDef,
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
         let mut type_field: type_field = 0 as type_field;
-        if istreq(cstr_as_bytes(field), b"modifiers") {
+        if istreq(field, b"modifiers") {
             type_field = TYPE_FIELD_MASK;
             ok = SetModifiers(info, type_0, arrayNdx, value);
-        } else if istreq(cstr_as_bytes(field), b"map") {
+        } else if istreq(field, b"map") {
             type_field = TYPE_FIELD_MAP;
             ok = SetMapEntry(info, type_0, arrayNdx, value);
-        } else if istreq(cstr_as_bytes(field), b"preserve") {
+        } else if istreq(field, b"preserve") {
             type_field = TYPE_FIELD_PRESERVE;
             ok = SetPreserve(info, type_0, arrayNdx, value);
-        } else if istreq(cstr_as_bytes(field), b"levelname")
-            || istreq(cstr_as_bytes(field), b"level_name")
-        {
+        } else if istreq(field, b"levelname") || istreq(field, b"level_name") {
             type_field = TYPE_FIELD_LEVEL_NAME;
             ok = SetLevelName(info, type_0, arrayNdx, value);
         } else {
@@ -768,8 +756,8 @@ unsafe fn SetKeyTypeField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown field \"{}\" in key type \"{}\"; Definition ignored\n",
                 XKB_ERROR_UNKNOWN_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
-                crate::xkb::utils::CStrDisplay(TypeTxt(info, type_0)),
+                crate::xkb::utils::ByteSliceDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
             );
             ok = (*(*info).keymap_info).strict as u32 & PARSER_NO_UNKNOWN_TYPE_FIELDS as u32 == 0;
         }
@@ -784,28 +772,28 @@ unsafe fn HandleKeyTypeBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
-        let mut elem: *const i8 = std::ptr::null();
-        let mut field: *const i8 = std::ptr::null();
+        let mut elem: &[u8] = b"";
+        let mut field: &[u8] = b"";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         while !def.is_null() {
             if !ExprResolveLhs(
                 (*info).ctx,
                 (*def).name,
-                &raw mut elem,
-                &raw mut field,
+                &mut elem,
+                &mut field,
                 &raw mut arrayNdx,
             ) {
                 ok = false;
-            } else if !elem.is_null() {
-                if istreq(cstr_as_bytes(elem), b"type") {
+            } else if !elem.is_empty() {
+                if istreq(elem, b"type") {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
                         XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as i32,
-                        crate::xkb::utils::CStrDisplay(elem),
-                        crate::xkb::utils::CStrDisplay(field),
+                        crate::xkb::utils::ByteSliceDisplay(elem),
+                        crate::xkb::utils::ByteSliceDisplay(field),
                     );
                 } else {
                     xkb_logf!(
@@ -814,9 +802,9 @@ unsafe fn HandleKeyTypeBody(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                        crate::xkb::utils::CStrDisplay(elem),
-                        crate::xkb::utils::CStrDisplay(elem),
-                        crate::xkb::utils::CStrDisplay(field),
+                        crate::xkb::utils::ByteSliceDisplay(elem),
+                        crate::xkb::utils::ByteSliceDisplay(elem),
+                        crate::xkb::utils::ByteSliceDisplay(field),
                     );
                     ok = false;
                 }
@@ -831,18 +819,18 @@ unsafe fn HandleKeyTypeBody(
 }
 unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: *const i8 = std::ptr::null();
-        let mut field: *const i8 = std::ptr::null();
+        let mut elem: &[u8] = b"";
+        let mut field: &[u8] = b"";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
-            &raw mut elem,
-            &raw mut field,
+            &mut elem,
+            &mut field,
             &raw mut arrayNdx,
         ) {
             return false;
-        } else if !elem.is_null() && istreq(cstr_as_bytes(elem), b"type") {
+        } else if !elem.is_empty() && istreq(elem, b"type") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -851,26 +839,26 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
                 XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
             );
             return true;
-        } else if !elem.is_null() {
+        } else if !elem.is_empty() {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown element \"{}\"; Value for field \"{}.{}\" ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(elem),
-                crate::xkb::utils::CStrDisplay(elem),
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(elem),
+                crate::xkb::utils::ByteSliceDisplay(elem),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32 & PARSER_NO_UNKNOWN_STATEMENTS as u32 == 0;
-        } else if !field.is_null() {
+        } else if !field.is_empty() {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(field),
+                crate::xkb::utils::ByteSliceDisplay(field),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS as u32

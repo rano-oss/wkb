@@ -41,17 +41,16 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::utils::{cstr_as_bytes, istreq};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
-    mut string: *const i8,
+    string: &[u8],
     mut value_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        if string.is_null() {
+        if string.is_empty() {
             return false;
         }
-        let string_bytes = cstr_as_bytes(string);
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(&(*entry).name).is_empty() {
-            if istreq((*entry).name, string_bytes) {
+            if istreq((*entry).name, string) {
                 *value_rtrn = (*entry).value as u32;
                 return true;
             }
