@@ -78,151 +78,151 @@ pub unsafe fn InitActionsInfo(mut keymap: *const xkb_keymap, mut info: *mut Acti
 }
 static mut fieldStrings: [LookupEntry; 37] = [
     LookupEntry {
-        name: b"clearLocks\0".as_ptr() as *const i8,
+        name: b"clearLocks",
         value: ACTION_FIELD_CLEAR_LOCKS as u32,
     },
     LookupEntry {
-        name: b"latchToLock\0".as_ptr() as *const i8,
+        name: b"latchToLock",
         value: ACTION_FIELD_LATCH_TO_LOCK as u32,
     },
     LookupEntry {
-        name: b"genKeyEvent\0".as_ptr() as *const i8,
+        name: b"genKeyEvent",
         value: ACTION_FIELD_GEN_KEY_EVENT as u32,
     },
     LookupEntry {
-        name: b"generateKeyEvent\0".as_ptr() as *const i8,
+        name: b"generateKeyEvent",
         value: ACTION_FIELD_GEN_KEY_EVENT as u32,
     },
     LookupEntry {
-        name: b"report\0".as_ptr() as *const i8,
+        name: b"report",
         value: ACTION_FIELD_REPORT as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const i8,
+        name: b"default",
         value: ACTION_FIELD_DEFAULT as u32,
     },
     LookupEntry {
-        name: b"affect\0".as_ptr() as *const i8,
+        name: b"affect",
         value: ACTION_FIELD_AFFECT as u32,
     },
     LookupEntry {
-        name: b"increment\0".as_ptr() as *const i8,
+        name: b"increment",
         value: ACTION_FIELD_INCREMENT as u32,
     },
     LookupEntry {
-        name: b"modifiers\0".as_ptr() as *const i8,
+        name: b"modifiers",
         value: ACTION_FIELD_MODIFIERS as u32,
     },
     LookupEntry {
-        name: b"mods\0".as_ptr() as *const i8,
+        name: b"mods",
         value: ACTION_FIELD_MODIFIERS as u32,
     },
     LookupEntry {
-        name: b"group\0".as_ptr() as *const i8,
+        name: b"group",
         value: ACTION_FIELD_GROUP as u32,
     },
     LookupEntry {
-        name: b"x\0".as_ptr() as *const i8,
+        name: b"x",
         value: ACTION_FIELD_X as u32,
     },
     LookupEntry {
-        name: b"y\0".as_ptr() as *const i8,
+        name: b"y",
         value: ACTION_FIELD_Y as u32,
     },
     LookupEntry {
-        name: b"accel\0".as_ptr() as *const i8,
+        name: b"accel",
         value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
-        name: b"accelerate\0".as_ptr() as *const i8,
+        name: b"accelerate",
         value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
-        name: b"repeat\0".as_ptr() as *const i8,
+        name: b"repeat",
         value: ACTION_FIELD_ACCEL as u32,
     },
     LookupEntry {
-        name: b"button\0".as_ptr() as *const i8,
+        name: b"button",
         value: ACTION_FIELD_BUTTON as u32,
     },
     LookupEntry {
-        name: b"value\0".as_ptr() as *const i8,
+        name: b"value",
         value: ACTION_FIELD_VALUE as u32,
     },
     LookupEntry {
-        name: b"controls\0".as_ptr() as *const i8,
+        name: b"controls",
         value: ACTION_FIELD_CONTROLS as u32,
     },
     LookupEntry {
-        name: b"ctrls\0".as_ptr() as *const i8,
+        name: b"ctrls",
         value: ACTION_FIELD_CONTROLS as u32,
     },
     LookupEntry {
-        name: b"type\0".as_ptr() as *const i8,
+        name: b"type",
         value: ACTION_FIELD_TYPE as u32,
     },
     LookupEntry {
-        name: b"count\0".as_ptr() as *const i8,
+        name: b"count",
         value: ACTION_FIELD_COUNT as u32,
     },
     LookupEntry {
-        name: b"screen\0".as_ptr() as *const i8,
+        name: b"screen",
         value: ACTION_FIELD_SCREEN as u32,
     },
     LookupEntry {
-        name: b"same\0".as_ptr() as *const i8,
+        name: b"same",
         value: ACTION_FIELD_SAME as u32,
     },
     LookupEntry {
-        name: b"sameServer\0".as_ptr() as *const i8,
+        name: b"sameServer",
         value: ACTION_FIELD_SAME as u32,
     },
     LookupEntry {
-        name: b"data\0".as_ptr() as *const i8,
+        name: b"data",
         value: ACTION_FIELD_DATA as u32,
     },
     LookupEntry {
-        name: b"device\0".as_ptr() as *const i8,
+        name: b"device",
         value: ACTION_FIELD_DEVICE as u32,
     },
     LookupEntry {
-        name: b"dev\0".as_ptr() as *const i8,
+        name: b"dev",
         value: ACTION_FIELD_DEVICE as u32,
     },
     LookupEntry {
-        name: b"key\0".as_ptr() as *const i8,
+        name: b"key",
         value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
-        name: b"keycode\0".as_ptr() as *const i8,
+        name: b"keycode",
         value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
-        name: b"kc\0".as_ptr() as *const i8,
+        name: b"kc",
         value: ACTION_FIELD_KEYCODE as u32,
     },
     LookupEntry {
-        name: b"clearmods\0".as_ptr() as *const i8,
+        name: b"clearmods",
         value: ACTION_FIELD_MODS_TO_CLEAR as u32,
     },
     LookupEntry {
-        name: b"clearmodifiers\0".as_ptr() as *const i8,
+        name: b"clearmodifiers",
         value: ACTION_FIELD_MODS_TO_CLEAR as u32,
     },
     LookupEntry {
-        name: b"lockOnRelease\0".as_ptr() as *const i8,
+        name: b"lockOnRelease",
         value: ACTION_FIELD_LOCK_ON_RELEASE as u32,
     },
     LookupEntry {
-        name: b"unlockOnPress\0".as_ptr() as *const i8,
+        name: b"unlockOnPress",
         value: ACTION_FIELD_UNLOCK_ON_PRESS as u32,
     },
     LookupEntry {
-        name: b"latchOnPress\0".as_ptr() as *const i8,
+        name: b"latchOnPress",
         value: ACTION_FIELD_LATCH_ON_PRESS as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
@@ -250,7 +250,7 @@ unsafe fn stringToField(mut str: *const i8, mut field_rtrn: *mut action_field) -
         return ret;
     }
 }
-unsafe fn fieldText(mut field: action_field) -> *const i8 {
+unsafe fn fieldText(mut field: action_field) -> &'static [u8] {
     unsafe {
         return LookupValue(&raw const fieldStrings as *const LookupEntry, field as u32);
     }
@@ -271,9 +271,9 @@ unsafe fn ReportMismatch(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
             code as u32,
-            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
             crate::xkb::utils::CStrDisplay(type_0),
-            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -298,8 +298,8 @@ unsafe fn ReportFormatVersionMismatch(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
             XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
-            crate::xkb::utils::CStrDisplay(fieldText(field)),
-            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
             crate::xkb::utils::CStrDisplay(versions),
             format as u32,
         );
@@ -324,8 +324,8 @@ unsafe fn ReportIllegal(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            crate::xkb::utils::CStrDisplay(fieldText(field)),
-            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -348,8 +348,8 @@ unsafe fn ReportActionNotArray(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            crate::xkb::utils::CStrDisplay(fieldText(field)),
-            crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
         );
         return (if strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -374,8 +374,8 @@ unsafe fn HandleNoAction(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] The \"{}\" action takes no argument, but got \"{}\" field; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
-            crate::xkb::utils::CStrDisplay(fieldText(field)),
+            crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
+            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
         );
         return (if (*keymap_info).strict as u32 & PARSER_NO_ILLEGAL_ACTION_FIELDS as u32 != 0 {
             PARSER_FATAL_ERROR as i32
@@ -461,23 +461,23 @@ unsafe fn CheckModifierField(
 }
 static mut lockWhich: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"both\0".as_ptr() as *const i8,
+        name: b"both",
         value: 0 as u32,
     },
     LookupEntry {
-        name: b"lock\0".as_ptr() as *const i8,
+        name: b"lock",
         value: ACTION_LOCK_NO_UNLOCK as u32,
     },
     LookupEntry {
-        name: b"neither\0".as_ptr() as *const i8,
+        name: b"neither",
         value: (ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32,
     },
     LookupEntry {
-        name: b"unlock\0".as_ptr() as *const i8,
+        name: b"unlock",
         value: ACTION_LOCK_NO_LOCK as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
@@ -820,8 +820,8 @@ unsafe fn HandleMovePtr(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "The {} field in the {} action must be in range {}..{}, but got {}. Action definition ignored\n",
-                    crate::xkb::utils::CStrDisplay(fieldText(field)),
-                    crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
                     -32767 as i32 - 1 as i32,
                     32767 as i32,
                     val,
@@ -955,19 +955,19 @@ unsafe fn HandlePtrBtn(
 }
 static mut ptrDflts: [LookupEntry; 4] = [
     LookupEntry {
-        name: b"dfltbtn\0".as_ptr() as *const i8,
+        name: b"dfltbtn",
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"defaultbutton\0".as_ptr() as *const i8,
+        name: b"defaultbutton",
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"button\0".as_ptr() as *const i8,
+        name: b"button",
         value: 1 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
@@ -1241,7 +1241,7 @@ unsafe fn HandleRedirectKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "RedirectKey field {} cannot resolve {} to a valid key\n",
-                    crate::xkb::utils::CStrDisplay(fieldText(field)),
+                    crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
                     crate::xkb::utils::CStrDisplay(KeyNameText(ctx, (*value).key_name.key_name)),
                 );
                 return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_VALUE_MISMATCH as u32 != 0
@@ -1352,7 +1352,7 @@ unsafe fn HandlePrivate(
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Private actions of type {} are not supported; Ignored\n",
-                    crate::xkb::utils::CStrDisplay(ActionTypeText(type_0 as xkb_action_type)),
+                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText(type_0 as xkb_action_type)),
                 );
                 (*act).type_0 = ACTION_TYPE_NONE;
             } else {
@@ -1815,7 +1815,7 @@ pub unsafe fn HandleActionDef(
                     "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                     XKB_ERROR_INVALID_ACTION_FIELD as i32,
                     crate::xkb::utils::CStrDisplay(fieldRtrn),
-                    crate::xkb::utils::CStrDisplay(ActionTypeText((*action).type_0)),
+                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
                 );
                 if (*keymap_info).strict as u32 & PARSER_NO_UNKNOWN_ACTION_FIELDS as u32 != 0 {
                     return PARSER_FATAL_ERROR;
@@ -1914,8 +1914,8 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_VERBOSE as i32,
                 "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
-                crate::xkb::utils::CStrDisplay(fieldText(action_field)),
-                crate::xkb::utils::CStrDisplay(ActionTypeText(action)),
+                crate::xkb::utils::ByteSliceDisplay(fieldText(action_field)),
+                crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
                 crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
                     b"from\0".as_ptr() as *const i8
                 } else {

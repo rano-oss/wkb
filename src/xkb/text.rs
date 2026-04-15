@@ -2,16 +2,14 @@ use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct LookupEntry {
-    pub name: *const i8,
+    pub name: &'static [u8],
     pub value: u32,
 }
 pub type C2Rust_Unnamed_1 = u32;
 pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
 pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
-pub const GROUP_LAST_INDEX_NAME: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"last\0") };
+pub const GROUP_LAST_INDEX_NAME: &'static [u8] = b"last";
 #[inline]
 pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
@@ -53,8 +51,8 @@ pub unsafe fn LookupString(
         }
         let string_bytes = cstr_as_bytes(string);
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
-        while !(*entry).name.is_null() {
-            if istreq(cstr_as_bytes((*entry).name), string_bytes) {
+        while !(&(*entry).name).is_empty() {
+            if istreq((*entry).name, string_bytes) {
                 *value_rtrn = (*entry).value as u32;
                 return true;
             }
@@ -63,437 +61,437 @@ pub unsafe fn LookupString(
         return false;
     }
 }
-pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> *const i8 {
+pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> &'static [u8] {
     unsafe {
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
-        while !(*entry).name.is_null() {
+        while !(&(*entry).name).is_empty() {
             if (*entry).value == value as u32 {
                 return (*entry).name;
             }
             entry = entry.offset(1);
         }
-        return std::ptr::null();
+        return b"";
     }
 }
 pub static mut ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
-        name: b"Overlay3\0".as_ptr() as *const i8,
+        name: b"Overlay3",
         value: CONTROL_OVERLAY3 as u32,
     },
     LookupEntry {
-        name: b"Overlay4\0".as_ptr() as *const i8,
+        name: b"Overlay4",
         value: CONTROL_OVERLAY4 as u32,
     },
     LookupEntry {
-        name: b"Overlay5\0".as_ptr() as *const i8,
+        name: b"Overlay5",
         value: CONTROL_OVERLAY5 as u32,
     },
     LookupEntry {
-        name: b"Overlay6\0".as_ptr() as *const i8,
+        name: b"Overlay6",
         value: CONTROL_OVERLAY6 as u32,
     },
     LookupEntry {
-        name: b"Overlay7\0".as_ptr() as *const i8,
+        name: b"Overlay7",
         value: CONTROL_OVERLAY7 as u32,
     },
     LookupEntry {
-        name: b"Overlay8\0".as_ptr() as *const i8,
+        name: b"Overlay8",
         value: CONTROL_OVERLAY8 as u32,
     },
     LookupEntry {
-        name: b"all\0".as_ptr() as *const i8,
+        name: b"all",
         value: CONTROL_ALL_BOOLEAN as u32,
     },
     LookupEntry {
-        name: b"RepeatKeys\0".as_ptr() as *const i8,
+        name: b"RepeatKeys",
         value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
-        name: b"Repeat\0".as_ptr() as *const i8,
+        name: b"Repeat",
         value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
-        name: b"AutoRepeat\0".as_ptr() as *const i8,
+        name: b"AutoRepeat",
         value: CONTROL_REPEAT as u32,
     },
     LookupEntry {
-        name: b"SlowKeys\0".as_ptr() as *const i8,
+        name: b"SlowKeys",
         value: CONTROL_SLOW as u32,
     },
     LookupEntry {
-        name: b"BounceKeys\0".as_ptr() as *const i8,
+        name: b"BounceKeys",
         value: CONTROL_DEBOUNCE as u32,
     },
     LookupEntry {
-        name: b"StickyKeys\0".as_ptr() as *const i8,
+        name: b"StickyKeys",
         value: CONTROL_STICKY_KEYS as u32,
     },
     LookupEntry {
-        name: b"MouseKeys\0".as_ptr() as *const i8,
+        name: b"MouseKeys",
         value: CONTROL_MOUSE_KEYS as u32,
     },
     LookupEntry {
-        name: b"MouseKeysAccel\0".as_ptr() as *const i8,
+        name: b"MouseKeysAccel",
         value: CONTROL_MOUSE_KEYS_ACCEL as u32,
     },
     LookupEntry {
-        name: b"AccessXKeys\0".as_ptr() as *const i8,
+        name: b"AccessXKeys",
         value: CONTROL_AX as u32,
     },
     LookupEntry {
-        name: b"AccessXTimeout\0".as_ptr() as *const i8,
+        name: b"AccessXTimeout",
         value: CONTROL_AX_TIMEOUT as u32,
     },
     LookupEntry {
-        name: b"AccessXFeedback\0".as_ptr() as *const i8,
+        name: b"AccessXFeedback",
         value: CONTROL_AX_FEEDBACK as u32,
     },
     LookupEntry {
-        name: b"AudibleBell\0".as_ptr() as *const i8,
+        name: b"AudibleBell",
         value: CONTROL_BELL as u32,
     },
     LookupEntry {
-        name: b"IgnoreGroupLock\0".as_ptr() as *const i8,
+        name: b"IgnoreGroupLock",
         value: CONTROL_IGNORE_GROUP_LOCK as u32,
     },
     LookupEntry {
-        name: b"Overlay1\0".as_ptr() as *const i8,
+        name: b"Overlay1",
         value: CONTROL_OVERLAY1 as u32,
     },
     LookupEntry {
-        name: b"Overlay2\0".as_ptr() as *const i8,
+        name: b"Overlay2",
         value: CONTROL_OVERLAY2 as u32,
     },
     LookupEntry {
-        name: b"all\0".as_ptr() as *const i8,
+        name: b"all",
         value: CONTROL_ALL_BOOLEAN_V1 as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const i8,
+        name: b"none",
         value: 0 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"base\0".as_ptr() as *const i8,
+        name: b"base",
         value: XKB_STATE_MODS_DEPRESSED as u32,
     },
     LookupEntry {
-        name: b"latched\0".as_ptr() as *const i8,
+        name: b"latched",
         value: XKB_STATE_MODS_LATCHED as u32,
     },
     LookupEntry {
-        name: b"locked\0".as_ptr() as *const i8,
+        name: b"locked",
         value: XKB_STATE_MODS_LOCKED as u32,
     },
     LookupEntry {
-        name: b"effective\0".as_ptr() as *const i8,
+        name: b"effective",
         value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
-        name: b"compat\0".as_ptr() as *const i8,
+        name: b"compat",
         value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const i8,
+        name: b"any",
         value: XKB_STATE_MODS_EFFECTIVE as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const i8,
+        name: b"none",
         value: 0 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
-        name: b"base\0".as_ptr() as *const i8,
+        name: b"base",
         value: XKB_STATE_LAYOUT_DEPRESSED as u32,
     },
     LookupEntry {
-        name: b"latched\0".as_ptr() as *const i8,
+        name: b"latched",
         value: XKB_STATE_LAYOUT_LATCHED as u32,
     },
     LookupEntry {
-        name: b"locked\0".as_ptr() as *const i8,
+        name: b"locked",
         value: XKB_STATE_LAYOUT_LOCKED as u32,
     },
     LookupEntry {
-        name: b"effective\0".as_ptr() as *const i8,
+        name: b"effective",
         value: XKB_STATE_LAYOUT_EFFECTIVE as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const i8,
+        name: b"any",
         value: XKB_STATE_LAYOUT_EFFECTIVE as u32,
     },
     LookupEntry {
-        name: b"none\0".as_ptr() as *const i8,
+        name: b"none",
         value: 0 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
-    name: std::ptr::null(),
+    name: b"",
     value: 0,
 }; 3];
 pub static mut buttonNames: [LookupEntry; 7] = [
     LookupEntry {
-        name: b"Button1\0".as_ptr() as *const i8,
+        name: b"Button1",
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"Button2\0".as_ptr() as *const i8,
+        name: b"Button2",
         value: 2 as u32,
     },
     LookupEntry {
-        name: b"Button3\0".as_ptr() as *const i8,
+        name: b"Button3",
         value: 3 as u32,
     },
     LookupEntry {
-        name: b"Button4\0".as_ptr() as *const i8,
+        name: b"Button4",
         value: 4 as u32,
     },
     LookupEntry {
-        name: b"Button5\0".as_ptr() as *const i8,
+        name: b"Button5",
         value: 5 as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const i8,
+        name: b"default",
         value: 0 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"LevelOne\0".as_ptr() as *const i8,
+        name: b"LevelOne",
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"Level1\0".as_ptr() as *const i8,
+        name: b"Level1",
         value: 1 as u32,
     },
     LookupEntry {
-        name: b"AnyLevel\0".as_ptr() as *const i8,
+        name: b"AnyLevel",
         value: 0 as u32,
     },
     LookupEntry {
-        name: b"any\0".as_ptr() as *const i8,
+        name: b"any",
         value: 0 as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut actionTypeNames: [LookupEntry; 43] = [
     LookupEntry {
-        name: b"NoAction\0".as_ptr() as *const i8,
+        name: b"NoAction",
         value: ACTION_TYPE_NONE as u32,
     },
     LookupEntry {
-        name: b"VoidAction\0".as_ptr() as *const i8,
+        name: b"VoidAction",
         value: ACTION_TYPE_VOID as u32,
     },
     LookupEntry {
-        name: b"SetMods\0".as_ptr() as *const i8,
+        name: b"SetMods",
         value: ACTION_TYPE_MOD_SET as u32,
     },
     LookupEntry {
-        name: b"LatchMods\0".as_ptr() as *const i8,
+        name: b"LatchMods",
         value: ACTION_TYPE_MOD_LATCH as u32,
     },
     LookupEntry {
-        name: b"LockMods\0".as_ptr() as *const i8,
+        name: b"LockMods",
         value: ACTION_TYPE_MOD_LOCK as u32,
     },
     LookupEntry {
-        name: b"SetGroup\0".as_ptr() as *const i8,
+        name: b"SetGroup",
         value: ACTION_TYPE_GROUP_SET as u32,
     },
     LookupEntry {
-        name: b"LatchGroup\0".as_ptr() as *const i8,
+        name: b"LatchGroup",
         value: ACTION_TYPE_GROUP_LATCH as u32,
     },
     LookupEntry {
-        name: b"LockGroup\0".as_ptr() as *const i8,
+        name: b"LockGroup",
         value: ACTION_TYPE_GROUP_LOCK as u32,
     },
     LookupEntry {
-        name: b"MovePtr\0".as_ptr() as *const i8,
+        name: b"MovePtr",
         value: ACTION_TYPE_PTR_MOVE as u32,
     },
     LookupEntry {
-        name: b"MovePointer\0".as_ptr() as *const i8,
+        name: b"MovePointer",
         value: ACTION_TYPE_PTR_MOVE as u32,
     },
     LookupEntry {
-        name: b"PtrBtn\0".as_ptr() as *const i8,
+        name: b"PtrBtn",
         value: ACTION_TYPE_PTR_BUTTON as u32,
     },
     LookupEntry {
-        name: b"PointerButton\0".as_ptr() as *const i8,
+        name: b"PointerButton",
         value: ACTION_TYPE_PTR_BUTTON as u32,
     },
     LookupEntry {
-        name: b"LockPtrBtn\0".as_ptr() as *const i8,
+        name: b"LockPtrBtn",
         value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
-        name: b"LockPtrButton\0".as_ptr() as *const i8,
+        name: b"LockPtrButton",
         value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
-        name: b"LockPointerButton\0".as_ptr() as *const i8,
+        name: b"LockPointerButton",
         value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
-        name: b"LockPointerBtn\0".as_ptr() as *const i8,
+        name: b"LockPointerBtn",
         value: ACTION_TYPE_PTR_LOCK as u32,
     },
     LookupEntry {
-        name: b"SetPtrDflt\0".as_ptr() as *const i8,
+        name: b"SetPtrDflt",
         value: ACTION_TYPE_PTR_DEFAULT as u32,
     },
     LookupEntry {
-        name: b"SetPointerDefault\0".as_ptr() as *const i8,
+        name: b"SetPointerDefault",
         value: ACTION_TYPE_PTR_DEFAULT as u32,
     },
     LookupEntry {
-        name: b"Terminate\0".as_ptr() as *const i8,
+        name: b"Terminate",
         value: ACTION_TYPE_TERMINATE as u32,
     },
     LookupEntry {
-        name: b"TerminateServer\0".as_ptr() as *const i8,
+        name: b"TerminateServer",
         value: ACTION_TYPE_TERMINATE as u32,
     },
     LookupEntry {
-        name: b"SwitchScreen\0".as_ptr() as *const i8,
+        name: b"SwitchScreen",
         value: ACTION_TYPE_SWITCH_VT as u32,
     },
     LookupEntry {
-        name: b"SetControls\0".as_ptr() as *const i8,
+        name: b"SetControls",
         value: ACTION_TYPE_CTRL_SET as u32,
     },
     LookupEntry {
-        name: b"LockControls\0".as_ptr() as *const i8,
+        name: b"LockControls",
         value: ACTION_TYPE_CTRL_LOCK as u32,
     },
     LookupEntry {
-        name: b"RedirectKey\0".as_ptr() as *const i8,
+        name: b"RedirectKey",
         value: ACTION_TYPE_REDIRECT_KEY as u32,
     },
     LookupEntry {
-        name: b"Redirect\0".as_ptr() as *const i8,
+        name: b"Redirect",
         value: ACTION_TYPE_REDIRECT_KEY as u32,
     },
     LookupEntry {
-        name: b"Private\0".as_ptr() as *const i8,
+        name: b"Private",
         value: ACTION_TYPE_PRIVATE as u32,
     },
     LookupEntry {
-        name: b"ISOLock\0".as_ptr() as *const i8,
+        name: b"ISOLock",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"ActionMessage\0".as_ptr() as *const i8,
+        name: b"ActionMessage",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"MessageAction\0".as_ptr() as *const i8,
+        name: b"MessageAction",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"Message\0".as_ptr() as *const i8,
+        name: b"Message",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DeviceBtn\0".as_ptr() as *const i8,
+        name: b"DeviceBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DevBtn\0".as_ptr() as *const i8,
+        name: b"DevBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DevButton\0".as_ptr() as *const i8,
+        name: b"DevButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DeviceButton\0".as_ptr() as *const i8,
+        name: b"DeviceButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"LockDeviceBtn\0".as_ptr() as *const i8,
+        name: b"LockDeviceBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"LockDevBtn\0".as_ptr() as *const i8,
+        name: b"LockDevBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"LockDevButton\0".as_ptr() as *const i8,
+        name: b"LockDevButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"LockDeviceButton\0".as_ptr() as *const i8,
+        name: b"LockDeviceButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DeviceValuator\0".as_ptr() as *const i8,
+        name: b"DeviceValuator",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DevVal\0".as_ptr() as *const i8,
+        name: b"DevVal",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DeviceVal\0".as_ptr() as *const i8,
+        name: b"DeviceVal",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: b"DevValuator\0".as_ptr() as *const i8,
+        name: b"DevValuator",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
 pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
-        name: b"NoneOf\0".as_ptr() as *const i8,
+        name: b"NoneOf",
         value: MATCH_NONE as u32,
     },
     LookupEntry {
-        name: b"AnyOfOrNone\0".as_ptr() as *const i8,
+        name: b"AnyOfOrNone",
         value: MATCH_ANY_OR_NONE as u32,
     },
     LookupEntry {
-        name: b"AnyOf\0".as_ptr() as *const i8,
+        name: b"AnyOf",
         value: MATCH_ANY as u32,
     },
     LookupEntry {
-        name: b"AllOf\0".as_ptr() as *const i8,
+        name: b"AllOf",
         value: MATCH_ALL as u32,
     },
     LookupEntry {
-        name: b"Exactly\0".as_ptr() as *const i8,
+        name: b"Exactly",
         value: MATCH_EXACTLY as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];
@@ -515,17 +513,13 @@ pub unsafe fn ModIndexText(
         return xkb_atom_text(ctx, (*mods).mods[ndx as usize].name);
     }
 }
-pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> *const i8 {
+pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
     unsafe {
-        let mut name: *const i8 = LookupValue(
+        let name: &'static [u8] = LookupValue(
             &raw const actionTypeNames as *const LookupEntry,
             type_0 as u32,
         );
-        return if !name.is_null() {
-            name
-        } else {
-            b"Private\0".as_ptr() as *const i8
-        };
+        return if !name.is_empty() { name } else { b"Private" };
     }
 }
 pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *const i8 {
@@ -548,7 +542,7 @@ pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *c
         return buf;
     }
 }
-pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> *const i8 {
+pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> &'static [u8] {
     unsafe {
         return LookupValue(
             &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -656,15 +650,15 @@ unsafe fn c2rust_run_static_initializers() {
     unsafe {
         groupMaskNames = [
             LookupEntry {
-                name: b"none\0".as_ptr() as *const i8,
+                name: b"none",
                 value: 0 as u32,
             },
             LookupEntry {
-                name: b"all\0".as_ptr() as *const i8,
+                name: b"all",
                 value: XKB_ALL_GROUPS as u32,
             },
             LookupEntry {
-                name: std::ptr::null(),
+                name: b"",
                 value: 0 as u32,
             },
         ]

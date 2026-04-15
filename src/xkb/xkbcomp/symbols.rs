@@ -504,8 +504,8 @@ unsafe fn MergeGroups(
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as xkb_layout_index_t),
                                     crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
-                                    crate::xkb::utils::CStrDisplay(ActionTypeText((*use_1).type_0)),
-                                    crate::xkb::utils::CStrDisplay(ActionTypeText((*ignore_0).type_0)),
+                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_1).type_0)),
+                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_0).type_0)),
                                 );
                             }
                         }
@@ -1611,35 +1611,35 @@ unsafe fn AddActionsToKey(
 }
 static mut repeatEntries: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"true\0".as_ptr() as *const i8,
+        name: b"true",
         value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
-        name: b"yes\0".as_ptr() as *const i8,
+        name: b"yes",
         value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
-        name: b"on\0".as_ptr() as *const i8,
+        name: b"on",
         value: KEY_REPEAT_YES as u32,
     },
     LookupEntry {
-        name: b"false\0".as_ptr() as *const i8,
+        name: b"false",
         value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
-        name: b"no\0".as_ptr() as *const i8,
+        name: b"no",
         value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
-        name: b"off\0".as_ptr() as *const i8,
+        name: b"off",
         value: KEY_REPEAT_NO as u32,
     },
     LookupEntry {
-        name: b"default\0".as_ptr() as *const i8,
+        name: b"default",
         value: KEY_REPEAT_UNDEFINED as u32,
     },
     LookupEntry {
-        name: std::ptr::null(),
+        name: b"",
         value: 0 as u32,
     },
 ];

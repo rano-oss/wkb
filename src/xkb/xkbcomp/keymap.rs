@@ -360,19 +360,19 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                                     || group_action as i32 != 0
                                         && is_group_action(action2) as i32 != 0
                                 {
-                                    let type_0: *const i8 = if mod_action as i32 != 0 {
-                                        b"modifiers\0".as_ptr() as *const i8
+                                    let type_0: &[u8] = if mod_action as i32 != 0 {
+                                        b"modifiers"
                                     } else if group_action as i32 != 0 {
-                                        b"group\0".as_ptr() as *const i8
+                                        b"group"
                                     } else {
-                                        ActionTypeText((*action1).type_0) as *const i8
+                                        ActionTypeText((*action1).type_0)
                                     };
                                     xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
-                                        crate::xkb::utils::CStrDisplay(type_0),
+                                        crate::xkb::utils::ByteSliceDisplay(type_0),
                                         j as i32 + 1 as i32,
                                         crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                         g.wrapping_add(1 as xkb_layout_index_t),
@@ -643,11 +643,11 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 1 as xkb_layout_index_t
             };
             (*info).lookup.groupIndexNames[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
-                name: GROUP_LAST_INDEX_NAME.as_ptr(),
+                name: GROUP_LAST_INDEX_NAME,
                 value: num_groups as u32,
             };
             (*info).lookup.groupMaskNames[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
-                name: GROUP_LAST_INDEX_NAME.as_ptr(),
+                name: GROUP_LAST_INDEX_NAME,
                 value: (1 as u32) << num_groups.wrapping_sub(1 as xkb_layout_index_t),
             };
             let mut i: u32 = 0 as u32;
@@ -1002,40 +1002,40 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
             lookup: XkbcompLookup {
                 groupIndexNames: [
                     LookupEntry {
-                        name: b"first\0".as_ptr() as *const i8,
+                        name: b"first",
                         value: 1 as u32,
                     },
                     LookupEntry {
                         name: if (*keymap).num_groups != 0 {
-                            GROUP_LAST_INDEX_NAME.as_ptr()
+                            GROUP_LAST_INDEX_NAME
                         } else {
-                            std::ptr::null()
+                            b""
                         },
                         value: (*keymap).num_groups as u32,
                     },
                     LookupEntry {
-                        name: std::ptr::null(),
+                        name: b"",
                         value: 0 as u32,
                     },
                 ],
                 groupMaskNames: [
                     LookupEntry {
-                        name: b"none\0".as_ptr() as *const i8,
+                        name: b"none",
                         value: 0 as u32,
                     },
                     LookupEntry {
-                        name: b"first\0".as_ptr() as *const i8,
+                        name: b"first",
                         value: 0x1 as u32,
                     },
                     LookupEntry {
-                        name: b"all\0".as_ptr() as *const i8,
+                        name: b"all",
                         value: XKB_ALL_GROUPS as u32,
                     },
                     LookupEntry {
                         name: if (*keymap).num_groups != 0 {
-                            GROUP_LAST_INDEX_NAME.as_ptr()
+                            GROUP_LAST_INDEX_NAME
                         } else {
-                            std::ptr::null()
+                            b""
                         },
                         value: if (*keymap).num_groups != 0
                             && (*keymap).num_groups <= XKB_MAX_GROUPS as xkb_layout_index_t
@@ -1046,7 +1046,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, mut keymap: *mut xkb_keymap)
                         },
                     },
                     LookupEntry {
-                        name: std::ptr::null(),
+                        name: b"",
                         value: 0 as u32,
                     },
                 ],

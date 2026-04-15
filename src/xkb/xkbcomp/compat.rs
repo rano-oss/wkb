@@ -130,7 +130,7 @@ unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *cons
             format_args!(
                 "{}+{}({})",
                 crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*si).interp.sym)),
-                crate::xkb::utils::CStrDisplay(SIMatchText((*si).interp.match_0)),
+                crate::xkb::utils::ByteSliceDisplay(SIMatchText((*si).interp.match_0)),
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,

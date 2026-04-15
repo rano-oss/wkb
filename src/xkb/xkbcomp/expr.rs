@@ -105,8 +105,8 @@ unsafe fn SimpleLookup(
         }
         let mut str: *const i8 = xkb_atom_text(ctx, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
-        while !entry.is_null() && !(*entry).name.is_null() {
-            if istreq(cstr_as_bytes(str), cstr_as_bytes((*entry).name)) {
+        while !entry.is_null() && !(&(*entry).name).is_empty() {
+            if istreq(cstr_as_bytes(str), (*entry).name) {
                 *val_rtrn = (*entry).value;
                 return true;
             }
@@ -559,11 +559,11 @@ pub unsafe fn ExprResolveGroup(
     unsafe {
         static mut pendingGroupIndexNames: [LookupEntry; 2] = [
             LookupEntry {
-                name: GROUP_LAST_INDEX_NAME.as_ptr(),
+                name: GROUP_LAST_INDEX_NAME,
                 value: 0 as u32,
             },
             LookupEntry {
-                name: std::ptr::null(),
+                name: b"",
                 value: 0 as u32,
             },
         ];
@@ -792,14 +792,14 @@ pub unsafe fn ExprResolveEnum(
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
                 crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
             );
-            while !values.is_null() && !(*values).name.is_null() {
+            while !values.is_null() && !(&(*values).name).is_empty() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::CStrDisplay((*values).name),
+                    crate::xkb::utils::ByteSliceDisplay((*values).name),
                 );
                 values = values.offset(1);
             }
@@ -1118,11 +1118,11 @@ pub unsafe fn ExprResolveGroupMask(
     unsafe {
         static mut pendingGroupMaskNames: [LookupEntry; 2] = [
             LookupEntry {
-                name: GROUP_LAST_INDEX_NAME.as_ptr(),
+                name: GROUP_LAST_INDEX_NAME,
                 value: 0 as u32,
             },
             LookupEntry {
-                name: std::ptr::null(),
+                name: b"",
                 value: 0 as u32,
             },
         ];
