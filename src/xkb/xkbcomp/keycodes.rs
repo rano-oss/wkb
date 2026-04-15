@@ -1,7 +1,7 @@
 use super::prelude::*;
 pub use crate::xkb::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
 pub use crate::xkb::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
-use crate::xkb::utils::cstr_free;
+use crate::xkb::utils::{cstr_as_bytes, cstr_free};
 use crate::xkb::xkbcomp::expr::ExprResolveInteger;
 #[derive(Clone)]
 pub struct KeyNamesInfo {
@@ -947,9 +947,7 @@ unsafe fn HandleKeyNameVar(mut info: *mut KeyNamesInfo, mut stmt: *mut VarDef) -
                 & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS as u32
                 == 0;
         }
-        if !istreq(field, b"minimum\0".as_ptr() as *const i8)
-            && !istreq(field, b"maximum\0".as_ptr() as *const i8)
-        {
+        if !istreq(cstr_as_bytes(field), b"minimum") && !istreq(cstr_as_bytes(field), b"maximum") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,

@@ -11,7 +11,7 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{istrneq, memdup};
+use crate::xkb::utils::{cstr_as_bytes, istrneq, memdup};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -1716,10 +1716,10 @@ unsafe fn ExprResolveOverlayEntry(
             10 => {
                 let id: *const i8 =
                     xkb_atom_text((*keymap_info).keymap.ctx, (*expr).ident.ident) as *const i8;
-                if !id.is_null() && istreq(id, b"none\0".as_ptr() as *const i8) as i32 != 0 {
+                if !id.is_null() && istreq(cstr_as_bytes(id), b"none") {
                     *key_rtrn = std::ptr::null();
                     return true;
-                } else if !id.is_null() && istreq(id, b"any\0".as_ptr() as *const i8) as i32 != 0 {
+                } else if !id.is_null() && istreq(cstr_as_bytes(id), b"any") {
                     *key_rtrn = std::ptr::null();
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
@@ -1768,7 +1768,7 @@ unsafe fn SetSymbolsField(
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"type\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(field), b"type") {
             let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
@@ -1811,13 +1811,13 @@ unsafe fn SetSymbolsField(
                 let ref mut c2rust_fresh8 = (&mut (*keyi).groups)[ndx as usize].defined;
                 *c2rust_fresh8 = (*c2rust_fresh8 as u32 | GROUP_FIELD_TYPE as u32) as group_field;
             }
-        } else if istreq(field, b"symbols\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"symbols") {
             return AddSymbolsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"actions\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"actions") {
             return AddActionsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"vmods\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"virtualmods\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"virtualmodifiers\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"vmods")
+            || istreq(cstr_as_bytes(field), b"virtualmods")
+            || istreq(cstr_as_bytes(field), b"virtualmodifiers")
         {
             let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
             if !ExprResolveModMask(
@@ -1840,9 +1840,9 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).vmodmap = mask;
             (*keyi).defined = (*keyi).defined | KEY_FIELD_VMODMAP as i32 as key_field;
-        } else if istreq(field, b"locking\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"lock\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"locks\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"locking")
+            || istreq(cstr_as_bytes(field), b"lock")
+            || istreq(cstr_as_bytes(field), b"locks")
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1852,9 +1852,9 @@ unsafe fn SetSymbolsField(
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
-        } else if istreq(field, b"radiogroup\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"permanentradiogroup\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"allownone\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"radiogroup")
+            || istreq(cstr_as_bytes(field), b"permanentradiogroup")
+            || istreq(cstr_as_bytes(field), b"allownone")
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1865,8 +1865,8 @@ unsafe fn SetSymbolsField(
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
         } else if istrneq(
-            b"permanentoverlay\0".as_ptr() as *const i8,
-            field,
+            b"permanentoverlay",
+            cstr_as_bytes(field),
             (std::mem::size_of::<[i8; 17]>()).wrapping_sub(1 as usize),
         ) {
             xkb_logf!(
@@ -1878,8 +1878,8 @@ unsafe fn SetSymbolsField(
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
         } else if istrneq(
-            b"overlay\0".as_ptr() as *const i8,
-            field,
+            b"overlay",
+            cstr_as_bytes(field),
             (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
@@ -1974,9 +1974,9 @@ unsafe fn SetSymbolsField(
                     }
                 }
             }
-        } else if istreq(field, b"repeating\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"repeats\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"repeat\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"repeating")
+            || istreq(cstr_as_bytes(field), b"repeats")
+            || istreq(cstr_as_bytes(field), b"repeat")
         {
             let mut val_0: u32 = 0 as u32;
             if !ExprResolveEnum(
@@ -1997,8 +1997,8 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).repeat = val_0 as key_repeat as key_repeat;
             (*keyi).defined = (*keyi).defined | KEY_FIELD_REPEAT as i32 as key_field;
-        } else if istreq(field, b"groupswrap\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"groupswrap")
+            || istreq(cstr_as_bytes(field), b"wrapgroups")
         {
             let mut set: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
@@ -2018,8 +2018,8 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_CLAMP
             };
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"groupsclamp")
+            || istreq(cstr_as_bytes(field), b"clampgroups")
         {
             let mut set_0: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
@@ -2039,8 +2039,8 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
             };
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(field, b"groupsredirect\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"groupsredirect")
+            || istreq(cstr_as_bytes(field), b"redirectgroups")
         {
             let mut grp: xkb_layout_index_t = 0 as xkb_layout_index_t;
             let mut pending: bool = false;
@@ -2203,7 +2203,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
         ) {
             return false;
         }
-        if !elem.is_null() && istreq(elem, b"key\0".as_ptr() as *const i8) as i32 != 0 {
+        if !elem.is_null() && istreq(cstr_as_bytes(elem), b"key") {
             let mut temp: KeyInfo = {
                 let mut init = KeyInfo::new_zeroed();
                 init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
@@ -2223,13 +2223,12 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             ret = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut (*stmt).value);
             MergeKeys(info, &raw mut (*info).default_key, &raw mut temp, true);
         } else if elem.is_null()
-            && (istreq(field, b"name\0".as_ptr() as *const i8) as i32 != 0
-                || istreq(field, b"groupname\0".as_ptr() as *const i8) as i32 != 0)
+            && (istreq(cstr_as_bytes(field), b"name") || istreq(cstr_as_bytes(field), b"groupname"))
         {
             ret = SetGroupName(info, arrayNdx, (*stmt).value as *mut ExprDef, (*stmt).merge);
         } else if elem.is_null()
-            && (istreq(field, b"groupswrap\0".as_ptr() as *const i8) as i32 != 0
-                || istreq(field, b"wrapgroups\0".as_ptr() as *const i8) as i32 != 0)
+            && (istreq(cstr_as_bytes(field), b"groupswrap")
+                || istreq(cstr_as_bytes(field), b"wrapgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2240,8 +2239,8 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             );
             ret = true;
         } else if elem.is_null()
-            && (istreq(field, b"groupsclamp\0".as_ptr() as *const i8) as i32 != 0
-                || istreq(field, b"clampgroups\0".as_ptr() as *const i8) as i32 != 0)
+            && (istreq(cstr_as_bytes(field), b"groupsclamp")
+                || istreq(cstr_as_bytes(field), b"clampgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2252,8 +2251,8 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
             );
             ret = true;
         } else if elem.is_null()
-            && (istreq(field, b"groupsredirect\0".as_ptr() as *const i8) as i32 != 0
-                || istreq(field, b"redirectgroups\0".as_ptr() as *const i8) as i32 != 0)
+            && (istreq(cstr_as_bytes(field), b"groupsredirect")
+                || istreq(cstr_as_bytes(field), b"redirectgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -2263,8 +2262,7 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_null() && istreq(field, b"allownone\0".as_ptr() as *const i8) as i32 != 0
-        {
+        } else if elem.is_null() && istreq(cstr_as_bytes(field), b"allownone") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2452,7 +2450,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         let mut ok: bool = false;
         let mut ctx: *mut xkb_context = (*info).ctx;
         let mut modifier_name: *const i8 = xkb_atom_text(ctx, (*def).modifier);
-        if istreq(modifier_name, b"none\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(modifier_name), b"none") {
             ndx = XKB_MOD_NONE as xkb_mod_index_t;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);

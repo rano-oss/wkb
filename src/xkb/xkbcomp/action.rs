@@ -1,7 +1,7 @@
 use super::prelude::*;
 pub use crate::xkb::keymap_priv::action_equal;
 use crate::xkb::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
-use crate::xkb::utils::cstr_len;
+use crate::xkb::utils::{cstr_as_bytes, cstr_len};
 pub use crate::xkb::xkbcomp::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -435,8 +435,8 @@ unsafe fn CheckModifierField(
             let mut valStr: *const i8 = std::ptr::null();
             valStr = xkb_atom_text(ctx, (*value).ident.ident);
             if !valStr.is_null()
-                && (istreq(valStr, b"usemodmapmods\0".as_ptr() as *const i8) as i32 != 0
-                    || istreq(valStr, b"modmapmods\0".as_ptr() as *const i8) as i32 != 0)
+                && (istreq(cstr_as_bytes(valStr), b"usemodmapmods")
+                    || istreq(cstr_as_bytes(valStr), b"modmapmods"))
             {
                 *mods_rtrn = 0 as xkb_mod_mask_t;
                 *flags_inout =
@@ -1219,8 +1219,7 @@ unsafe fn HandleRedirectKey(
             }
             if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
                 let mut valStr: *const i8 = xkb_atom_text(ctx, (*value).ident.ident);
-                if !valStr.is_null() && istreq(valStr, b"auto\0".as_ptr() as *const i8) as i32 != 0
-                {
+                if !valStr.is_null() && istreq(cstr_as_bytes(valStr), b"auto") {
                     (*act).keycode = (*keymap_info).keymap.redirect_key_auto;
                     return PARSER_SUCCESS;
                 }

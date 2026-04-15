@@ -41,7 +41,7 @@ pub use crate::xkb::shared_types::{
     MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
 use crate::xkb::utils::cstr_len_safe;
-use crate::xkb::utils::{istreq, strempty};
+use crate::xkb::utils::{cstr_as_bytes, istreq, strempty};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,
@@ -51,9 +51,10 @@ pub unsafe fn LookupString(
         if string.is_null() {
             return false;
         }
+        let string_bytes = cstr_as_bytes(string);
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(*entry).name.is_null() {
-            if istreq((*entry).name, string) {
+            if istreq(cstr_as_bytes((*entry).name), string_bytes) {
                 *value_rtrn = (*entry).value as u32;
                 return true;
             }

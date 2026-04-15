@@ -6,7 +6,7 @@ extern "C" {
 pub use crate::xkb::keymap_priv::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
 pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
-use crate::xkb::utils::istrneq;
+use crate::xkb::utils::{cstr_as_bytes, istrneq};
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LookupModMaskPriv {
@@ -106,7 +106,7 @@ unsafe fn SimpleLookup(
         let mut str: *const i8 = xkb_atom_text(ctx, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(*entry).name.is_null() {
-            if istreq(str, (*entry).name) {
+            if istreq(cstr_as_bytes(str), cstr_as_bytes((*entry).name)) {
                 *val_rtrn = (*entry).value;
                 return true;
             }
@@ -128,7 +128,11 @@ unsafe fn NamedIntegerPatternLookup(
         }
         let str: *const i8 = xkb_atom_text(ctx, field) as *const i8;
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
-        let count: i32 = if istrneq(str, (*pattern).prefix, (*pattern).prefix_length) as i32 != 0 {
+        let count: i32 = if istrneq(
+            cstr_as_bytes(str),
+            cstr_as_bytes((*pattern).prefix),
+            (*pattern).prefix_length,
+        ) {
             let s_ptr = str.offset((*pattern).prefix_length as isize);
             let s_bytes = std::ffi::CStr::from_ptr(s_ptr).to_bytes();
             let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(s_bytes);
@@ -204,11 +208,11 @@ unsafe fn LookupModMask(
         if str.is_null() {
             return false;
         }
-        if istreq(str, b"all\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(str), b"all") {
             *val_rtrn = MOD_REAL_MASK_ALL;
             return true;
         }
-        if istreq(str, b"none\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(str), b"none") {
             *val_rtrn = 0 as xkb_mod_mask_t;
             return true;
         }
@@ -250,15 +254,15 @@ pub unsafe fn ExprResolveBoolean(
             10 => {
                 ident = xkb_atom_text(ctx, (*expr).ident.ident);
                 if !ident.is_null() {
-                    if istreq(ident, b"true\0".as_ptr() as *const i8) as i32 != 0
-                        || istreq(ident, b"yes\0".as_ptr() as *const i8) as i32 != 0
-                        || istreq(ident, b"on\0".as_ptr() as *const i8) as i32 != 0
+                    if istreq(cstr_as_bytes(ident), b"true")
+                        || istreq(cstr_as_bytes(ident), b"yes")
+                        || istreq(cstr_as_bytes(ident), b"on")
                     {
                         *set_rtrn = true;
                         return true;
-                    } else if istreq(ident, b"false\0".as_ptr() as *const i8) as i32 != 0
-                        || istreq(ident, b"no\0".as_ptr() as *const i8) as i32 != 0
-                        || istreq(ident, b"off\0".as_ptr() as *const i8) as i32 != 0
+                    } else if istreq(cstr_as_bytes(ident), b"false")
+                        || istreq(cstr_as_bytes(ident), b"no")
+                        || istreq(cstr_as_bytes(ident), b"off")
                     {
                         *set_rtrn = false;
                         return true;

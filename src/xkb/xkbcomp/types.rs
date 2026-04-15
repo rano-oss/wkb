@@ -2,7 +2,7 @@ use super::prelude::*;
 use crate::xkb::context_priv::xkb_atom_intern;
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
-use crate::xkb::utils::cstr_free;
+use crate::xkb::utils::{cstr_as_bytes, cstr_free};
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;
 #[derive(Clone)]
 pub struct KeyTypesInfo {
@@ -734,17 +734,17 @@ unsafe fn SetKeyTypeField(
     unsafe {
         let mut ok: bool = false;
         let mut type_field: type_field = 0 as type_field;
-        if istreq(field, b"modifiers\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(field), b"modifiers") {
             type_field = TYPE_FIELD_MASK;
             ok = SetModifiers(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"map\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"map") {
             type_field = TYPE_FIELD_MAP;
             ok = SetMapEntry(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"preserve\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"preserve") {
             type_field = TYPE_FIELD_PRESERVE;
             ok = SetPreserve(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"levelname\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"level_name\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"levelname")
+            || istreq(cstr_as_bytes(field), b"level_name")
         {
             type_field = TYPE_FIELD_LEVEL_NAME;
             ok = SetLevelName(info, type_0, arrayNdx, value);
@@ -784,7 +784,7 @@ unsafe fn HandleKeyTypeBody(
             ) {
                 ok = false;
             } else if !elem.is_null() {
-                if istreq(elem, b"type\0".as_ptr() as *const i8) {
+                if istreq(cstr_as_bytes(elem), b"type") {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -829,7 +829,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
             &raw mut arrayNdx,
         ) {
             return false;
-        } else if !elem.is_null() && istreq(elem, b"type\0".as_ptr() as *const i8) as i32 != 0 {
+        } else if !elem.is_null() && istreq(cstr_as_bytes(elem), b"type") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,

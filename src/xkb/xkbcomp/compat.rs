@@ -8,7 +8,7 @@ use crate::xkb::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
-use crate::xkb::utils::cstr_free;
+use crate::xkb::utils::{cstr_as_bytes, cstr_free};
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -435,9 +435,7 @@ unsafe fn ResolveStateAndPredicate(
             expr = (*expr).action.args as *mut ExprDef;
         } else if (*expr).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
             let mut pred_txt_0: *const i8 = xkb_atom_text((*info).ctx, (*expr).ident.ident);
-            if !pred_txt_0.is_null()
-                && istreq(pred_txt_0, b"any\0".as_ptr() as *const i8) as i32 != 0
-            {
+            if !pred_txt_0.is_null() && istreq(cstr_as_bytes(pred_txt_0), b"any") as i32 != 0 {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
                 return true;
@@ -701,7 +699,7 @@ unsafe fn SetInterpField(
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        if istreq(field, b"action\0".as_ptr() as *const i8) {
+        if istreq(cstr_as_bytes(field), b"action") {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
@@ -794,8 +792,8 @@ unsafe fn SetInterpField(
                 }
             }
             (*si).defined = ((*si).defined as u32 | SI_FIELD_ACTION as u32) as si_field;
-        } else if istreq(field, b"virtualmodifier\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"virtualmod\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"virtualmodifier") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"virtualmod") as i32 != 0
         {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -817,7 +815,7 @@ unsafe fn SetInterpField(
             }
             (*si).interp.virtual_mod = ndx;
             (*si).defined = ((*si).defined as u32 | SI_FIELD_VIRTUAL_MOD as u32) as si_field;
-        } else if istreq(field, b"repeat\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"repeat") {
             let mut set: bool = false;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -827,15 +825,15 @@ unsafe fn SetInterpField(
             }
             (*si).interp.repeat = set;
             (*si).defined = ((*si).defined as u32 | SI_FIELD_AUTO_REPEAT as u32) as si_field;
-        } else if istreq(field, b"locking\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"locking") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"locking\" field in symbol interpretation is unsupported; Ignored\n",
             );
-        } else if istreq(field, b"usemodmap\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"usemodmapmods\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"usemodmap") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"usemodmapmods") as i32 != 0
         {
             let mut val: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -879,8 +877,8 @@ unsafe fn SetLedMapField(
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"modifiers\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"mods\0".as_ptr() as *const i8) as i32 != 0
+        if istreq(cstr_as_bytes(field), b"modifiers") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"mods") as i32 != 0
         {
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -900,7 +898,7 @@ unsafe fn SetLedMapField(
                 );
             }
             (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_MODS as u32) as led_field;
-        } else if istreq(field, b"groups\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"groups") {
             let mut mask: xkb_layout_mask_t = 0 as xkb_layout_mask_t;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -931,8 +929,8 @@ unsafe fn SetLedMapField(
             }
             (*ledi).led.groups = mask;
             (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_GROUPS as u32) as led_field;
-        } else if istreq(field, b"controls\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"ctrls\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"controls") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"ctrls") as i32 != 0
         {
             let mut mask_0: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -954,15 +952,15 @@ unsafe fn SetLedMapField(
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined as u32 | LED_FIELD_CTRLS as u32) as led_field;
-        } else if istreq(field, b"allowexplicit\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"allowexplicit") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n",
             );
-        } else if istreq(field, b"whichmodstate\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"whichmodifierstate\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"whichmodstate") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"whichmodifierstate") as i32 != 0
         {
             let mut mask_1: u32 = 0 as u32;
             if !arrayNdx.is_null() {
@@ -982,7 +980,7 @@ unsafe fn SetLedMapField(
                 );
             }
             (*ledi).led.which_mods = mask_1 as xkb_state_component;
-        } else if istreq(field, b"whichgroupstate\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"whichgroupstate") {
             let mut mask_2: u32 = 0 as u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -1001,12 +999,12 @@ unsafe fn SetLedMapField(
                 );
             }
             (*ledi).led.which_groups = mask_2 as xkb_state_component;
-        } else if istreq(field, b"driveskbd\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"driveskeyboard\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"leddriveskbd\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"leddriveskeyboard\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"indicatordriveskbd\0".as_ptr() as *const i8) as i32 != 0
-            || istreq(field, b"indicatordriveskeyboard\0".as_ptr() as *const i8) as i32 != 0
+        } else if istreq(cstr_as_bytes(field), b"driveskbd") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"driveskeyboard") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"leddriveskbd") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"leddriveskeyboard") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"indicatordriveskbd") as i32 != 0
+            || istreq(cstr_as_bytes(field), b"indicatordriveskeyboard") as i32 != 0
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1015,7 +1013,7 @@ unsafe fn SetLedMapField(
                 "The \"{}\" field in indicator statements is unsupported; Ignored\n",
                 crate::xkb::utils::CStrDisplay(field),
             );
-        } else if istreq(field, b"index\0".as_ptr() as *const i8) {
+        } else if istreq(cstr_as_bytes(field), b"index") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1050,8 +1048,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
             &raw mut ndx,
         ) {
             ret = false;
-        } else if !elem.is_null() && istreq(elem, b"interpret\0".as_ptr() as *const i8) as i32 != 0
-        {
+        } else if !elem.is_null() && istreq(cstr_as_bytes(elem), b"interpret") as i32 != 0 {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
                 merge: MERGE_DEFAULT,
@@ -1087,8 +1084,7 @@ unsafe fn HandleGlobalVar(mut info: *mut CompatInfo, mut stmt: *mut VarDef) -> b
             if ret {
                 MergeInterp(info, &raw mut (*info).default_interp, &raw mut temp, true);
             }
-        } else if !elem.is_null() && istreq(elem, b"indicator\0".as_ptr() as *const i8) as i32 != 0
-        {
+        } else if !elem.is_null() && istreq(cstr_as_bytes(elem), b"indicator") as i32 != 0 {
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,

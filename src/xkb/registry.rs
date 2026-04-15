@@ -1,7 +1,7 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    __errno_location, _steal, check_eaccess, closedir, cstr_cmp, cstr_dup, cstr_free, cstr_len,
-    istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
+    __errno_location, _steal, check_eaccess, closedir, cstr_as_bytes, cstr_cmp, cstr_dup,
+    cstr_free, cstr_len, istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
 };
 use libc::{free, getenv, qsort};
 
@@ -584,42 +584,42 @@ unsafe fn log_level(mut level: *const i8) -> rxkb_log_level {
             }
         }
         if istrneq(
-            b"crit\0".as_ptr() as *const i8,
-            level,
+            b"crit",
+            cstr_as_bytes(level),
             (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_CRITICAL;
         }
         if istrneq(
-            b"err\0".as_ptr() as *const i8,
-            level,
+            b"err",
+            cstr_as_bytes(level),
             (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_ERROR;
         }
         if istrneq(
-            b"warn\0".as_ptr() as *const i8,
-            level,
+            b"warn",
+            cstr_as_bytes(level),
             (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_WARNING;
         }
         if istrneq(
-            b"info\0".as_ptr() as *const i8,
-            level,
+            b"info",
+            cstr_as_bytes(level),
             (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
         ) {
             return RXKB_LOG_LEVEL_INFO;
         }
         if istrneq(
-            b"debug\0".as_ptr() as *const i8,
-            level,
+            b"debug",
+            cstr_as_bytes(level),
             (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
         ) as i32
             != 0
             || istrneq(
-                b"dbg\0".as_ptr() as *const i8,
-                level,
+                b"dbg",
+                cstr_as_bytes(level),
                 (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
             ) as i32
                 != 0

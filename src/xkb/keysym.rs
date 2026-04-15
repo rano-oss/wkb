@@ -21803,8 +21803,8 @@ pub use self::keysym_names_h::{
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
 use crate::xkb::utils::cstr_dup;
+use crate::xkb::utils::{cstr_as_bytes, istrcmp, istrncmp};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len, cstr_ncmp};
-use crate::xkb::utils::{istrcmp, istrncmp};
 fn find_keysym_index(mut ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1 as i32 as isize;
@@ -21915,11 +21915,11 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
             while hi >= lo {
                 let mut mid: i32 = (lo + hi) / 2 as i32;
                 let mut cmp: i32 = istrcmp(
-                    name,
-                    get_name(
+                    cstr_as_bytes(name),
+                    cstr_as_bytes(get_name(
                         (&raw const name_to_keysym as *const name_keysym).offset(mid as isize)
                             as *const name_keysym,
-                    ),
+                    )),
                 );
                 if cmp > 0 as i32 {
                     lo = mid + 1 as i32;
@@ -21941,8 +21941,10 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                     )
                     .offset(-(1 as i32 as isize));
                 while entry < last
-                    && istrcmp(get_name(entry.offset(1 as i32 as isize)), get_name(entry))
-                        == 0 as i32
+                    && istrcmp(
+                        cstr_as_bytes(get_name(entry.offset(1 as i32 as isize))),
+                        cstr_as_bytes(get_name(entry)),
+                    ) == 0 as i32
                 {
                     entry = entry.offset(1);
                 }
@@ -21970,8 +21972,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
             return val;
         }
         if cstr_ncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
-            || icase as i32 != 0
-                && istrncmp(name, b"XF86_\0".as_ptr() as *const i8, 5 as usize) == 0 as i32
+            || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5 as usize) == 0 as i32
         {
             let mut ret: xkb_keysym_t = 0;
             tmp = cstr_dup(name);
