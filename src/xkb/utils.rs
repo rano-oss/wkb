@@ -482,14 +482,6 @@ pub unsafe fn memdup(
     p
 }
 
-#[inline]
-pub unsafe fn check_eaccess(path: *const i8, mode: i32) -> bool {
-    extern "C" {
-        fn eaccess(__name: *const i8, __type: i32) -> i32;
-    }
-    unsafe { eaccess(path, mode) == 0 }
-}
-
 pub unsafe fn is_absolute_path(path: *const i8) -> bool {
     !path.is_null() && *path == b'/' as i8
 }

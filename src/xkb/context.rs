@@ -62,10 +62,10 @@ use crate::xkb::utils::__errno_location;
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::isempty;
 use crate::xkb::utils::xkb_stat;
-use crate::xkb::utils::{check_eaccess, cstr_as_bytes, istrneq, strdup_safe};
 use crate::xkb::utils::{closedir, opendir, readdir, DIR};
+use crate::xkb::utils::{cstr_as_bytes, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
-use libc::{free, getenv, qsort};
+use libc::{getenv, qsort};
 
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
@@ -143,8 +143,6 @@ unsafe fn context_include_path_append(ctx: *mut xkb_context, mut path: *const i8
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
                 err = ENOTDIR;
-            } else if !check_eaccess(path, R_OK | X_OK) {
-                err = EACCES;
             } else {
                 (*ctx).includes.push(tmp);
                 xkb_logf!(
@@ -276,8 +274,6 @@ unsafe fn add_direct_subdirectories(
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
             err = ENOTDIR;
-        } else if !check_eaccess(path, R_OK | X_OK) {
-            err = EACCES;
         } else {
             dir = opendir(path);
             if dir.is_null() {

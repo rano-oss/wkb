@@ -1,7 +1,7 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    __errno_location, _steal, check_eaccess, closedir, cstr_as_bytes, cstr_cmp, cstr_dup,
-    cstr_free, cstr_len, istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
+    __errno_location, _steal, closedir, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len,
+    istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
 };
 use libc::{free, getenv, qsort};
 
@@ -767,8 +767,6 @@ pub unsafe fn rxkb_context_include_path_append(
                 err = *__errno_location();
             } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
                 err = ENOTDIR;
-            } else if !check_eaccess(path, R_OK | X_OK) {
-                err = EACCES;
             } else {
                 rules = [0; 4096];
                 let (_, _trunc) = crate::xkb::utils::snprintf_args(
@@ -870,8 +868,6 @@ unsafe fn add_direct_subdirectories(
             err = *__errno_location();
         } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
             err = ENOTDIR;
-        } else if !check_eaccess(path, R_OK | X_OK) {
-            err = EACCES;
         } else {
             dir = opendir(path);
             if dir.is_null() {
@@ -1612,9 +1608,6 @@ unsafe fn parse(
     mut popularity: rxkb_popularity,
 ) -> bool {
     unsafe {
-        if !check_eaccess(path, R_OK) {
-            return false;
-        }
         // Convert C path to Rust &str
         let path_cstr = std::ffi::CStr::from_ptr(path);
         let path_str = match path_cstr.to_str() {
