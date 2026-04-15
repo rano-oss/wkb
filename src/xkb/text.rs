@@ -1,4 +1,4 @@
-use crate::xkb::context::{xkb_atom_text, xkb_atom_text_bytes, xkb_context_get_buffer};
+use crate::xkb::context::{xkb_atom_text_bytes, xkb_context_get_buffer};
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
@@ -497,18 +497,18 @@ pub unsafe fn ModIndexText(
     mut ctx: *mut xkb_context,
     mut mods: *const xkb_mod_set,
     mut ndx: xkb_mod_index_t,
-) -> *const i8 {
+) -> &'static [u8] {
     unsafe {
         if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
-            return b"none\0".as_ptr() as *const i8;
+            return b"none";
         }
         if ndx == XKB_MOD_NONE as xkb_mod_index_t {
-            return b"None\0".as_ptr() as *const i8;
+            return b"None";
         }
         if ndx >= (*mods).num_mods {
-            return std::ptr::null();
+            return b"";
         }
-        return xkb_atom_text(ctx, (*mods).mods[ndx as usize].name);
+        return xkb_atom_text_bytes(ctx, (*mods).mods[ndx as usize].name);
     }
 }
 pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
@@ -520,25 +520,22 @@ pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
         return if !name.is_empty() { name } else { b"Private" };
     }
 }
-pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *const i8 {
+pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> &'static [u8] {
     unsafe {
         let mut buffer: *mut i8 = xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
-        return buffer;
+        return cstr_as_bytes(buffer);
     }
 }
-pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
+pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> &'static [u8] {
     unsafe {
-        let mut sname: *const i8 = xkb_atom_text(ctx, name);
-        let sname_str = if sname.is_null() {
-            ""
-        } else {
-            std::str::from_utf8(cstr_as_bytes(sname)).unwrap_or("")
-        };
+        let sname: &[u8] = xkb_atom_text_bytes(ctx, name);
+        let sname_str = std::str::from_utf8(sname).unwrap_or("");
         let mut len: usize = sname_str.len().wrapping_add(3 as usize);
         let mut buf: *mut i8 = xkb_context_get_buffer(ctx, len);
-        crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname_str));
-        return buf;
+        let (written, _) =
+            crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname_str));
+        return std::slice::from_raw_parts(buf as *const u8, written);
     }
 }
 pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> &'static [u8] {
@@ -554,53 +551,16 @@ pub unsafe fn ModMaskText(
     mut type_0: mod_type,
     mut mods: *const xkb_mod_set,
     mut mask: xkb_mod_mask_t,
-) -> *const i8 {
+) -> &'static [u8] {
     unsafe {
-        let mut buf: [i8; 1024] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ];
+        let mut buf: [i8; 1024] = [0; 1024];
         let mut pos: usize = 0 as usize;
         let mut mod_0: *const xkb_mod = std::ptr::null();
         if mask == 0 as xkb_mod_mask_t {
-            return b"none\0".as_ptr() as *const i8;
+            return b"none";
         }
         if mask == MOD_REAL_MASK_ALL {
-            return b"all\0".as_ptr() as *const i8;
+            return b"all";
         }
         if type_0 as u32 == MOD_REAL as u32 && mask & !MOD_REAL_MASK_ALL != 0
             || (mask as u64 & !((1 as u64) << (*mods).num_mods).wrapping_sub(1 as u64) != 0) as i32
@@ -641,10 +601,9 @@ pub unsafe fn ModMaskText(
                 mask >>= 1 as i32;
             }
         }
-        pos = pos.wrapping_add(1);
         let dst = xkb_context_get_buffer(ctx, pos);
         std::ptr::copy_nonoverlapping(&raw mut buf as *const u8, dst as *mut u8, pos);
-        return dst as *const i8;
+        return std::slice::from_raw_parts(dst as *const u8, pos);
     }
 }
 
@@ -670,6 +629,4 @@ use crate::xkb::keysym::xkb_keysym_get_name;
 use crate::xkb::shared_types::*;
 #[used]
 #[cfg_attr(target_os = "linux", link_section = ".init_array")]
-#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
-#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
 static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

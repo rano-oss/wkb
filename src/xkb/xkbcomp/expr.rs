@@ -238,7 +238,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Found {} where boolean was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -298,7 +298,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {} of boolean values not permitted\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
             }
             _ => {
@@ -342,7 +342,7 @@ unsafe fn ExprResolveIntegerLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Found {} where an int was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -478,9 +478,7 @@ unsafe fn ExprResolveIntegerLookup(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {} of integers not permitted\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            crate::xkb::utils::CStrDisplay(stmt_type_to_string(
-                                (*expr).common.type_0
-                            )),
+                            stmt_type_to_string((*expr).common.type_0),
                         );
                         return false;
                     }
@@ -710,7 +708,7 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Found {}, expected a string\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -753,7 +751,7 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {} of strings not permitted\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -785,7 +783,7 @@ pub unsafe fn ExprResolveEnum(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Found a {} where an enumerated value was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                stmt_type_to_string((*expr).common.type_0),
             );
             return false;
         }
@@ -865,7 +863,7 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Found {} where a mask was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -1109,7 +1107,7 @@ pub unsafe fn ExprResolveMod(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*def).common.type_0)),
+                stmt_type_to_string((*def).common.type_0),
             );
             return false;
         }

@@ -135,10 +135,10 @@ unsafe fn FindInterpForKey(
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key {}.\n",
                                         s + 1 as i32,
-                                        crate::xkb::utils::CStrDisplay(KeysymText((*keymap).ctx, *syms.offset(s as isize))),
+                                        crate::xkb::utils::ByteSliceDisplay(KeysymText((*keymap).ctx, *syms.offset(s as isize))),
                                         level.wrapping_add(1 as xkb_level_index_t),
                                         group.wrapping_add(1 as xkb_layout_index_t),
-                                        crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
+                                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                     );
                                     c2rust_current_block_34 = 2209838995503123840;
                                     break 's_26;
@@ -228,7 +228,7 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
-                                crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                 65535 as i32,
                                 actions.len() as u32,
                             );
@@ -374,7 +374,7 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                                         "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
                                         crate::xkb::utils::ByteSliceDisplay(type_0),
                                         j as i32 + 1 as i32,
-                                        crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*key).name)),
+                                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*key).name)),
                                         g.wrapping_add(1 as xkb_layout_index_t),
                                         l.wrapping_add(1 as xkb_level_index_t),
                                     );

@@ -904,66 +904,64 @@ pub unsafe fn xkb_file_type_to_string(mut type_0: xkb_file_type) -> *const i8 {
         return xkb_file_type_strings[type_0 as usize];
     }
 }
-static mut stmt_type_strings: [*const i8; 37] = [
-    b"unknown statement\0".as_ptr() as *const i8,
-    b"include statement\0".as_ptr() as *const i8,
-    b"key name definition\0".as_ptr() as *const i8,
-    b"key alias definition\0".as_ptr() as *const i8,
-    b"string literal expression\0".as_ptr() as *const i8,
-    b"integer literal expression\0".as_ptr() as *const i8,
-    b"float literal expression\0".as_ptr() as *const i8,
-    b"boolean literal expression\0".as_ptr() as *const i8,
-    b"key name expression\0".as_ptr() as *const i8,
-    b"keysym expression\0".as_ptr() as *const i8,
-    b"identifier expression\0".as_ptr() as *const i8,
-    b"action declaration expression\0".as_ptr() as *const i8,
-    b"field reference expression\0".as_ptr() as *const i8,
-    b"array reference expression\0".as_ptr() as *const i8,
-    b"empty list expression\0".as_ptr() as *const i8,
-    b"keysym list expression\0".as_ptr() as *const i8,
-    b"action list expression\0".as_ptr() as *const i8,
-    b"addition expression\0".as_ptr() as *const i8,
-    b"substraction expression\0".as_ptr() as *const i8,
-    b"multiplication expression\0".as_ptr() as *const i8,
-    b"division expression\0".as_ptr() as *const i8,
-    b"assignment expression\0".as_ptr() as *const i8,
-    b"logical negation expression\0".as_ptr() as *const i8,
-    b"arithmetic negation expression\0".as_ptr() as *const i8,
-    b"bitwise inversion expression\0".as_ptr() as *const i8,
-    b"unary plus expression\0".as_ptr() as *const i8,
-    b"variable definition\0".as_ptr() as *const i8,
-    b"key type definition\0".as_ptr() as *const i8,
-    b"symbol interpretation definition\0".as_ptr() as *const i8,
-    b"virtual modifiers definition\0".as_ptr() as *const i8,
-    b"key symbols definition\0".as_ptr() as *const i8,
-    b"modifier map declaration\0".as_ptr() as *const i8,
-    b"group declaration\0".as_ptr() as *const i8,
-    b"indicator map declaration\0".as_ptr() as *const i8,
-    b"indicator name declaration\0".as_ptr() as *const i8,
-    b"unknown declaration statement\0".as_ptr() as *const i8,
-    b"unknown compound statement\0".as_ptr() as *const i8,
+static stmt_type_strings: [&'static str; 37] = [
+    "unknown statement",
+    "include statement",
+    "key name definition",
+    "key alias definition",
+    "string literal expression",
+    "integer literal expression",
+    "float literal expression",
+    "boolean literal expression",
+    "key name expression",
+    "keysym expression",
+    "identifier expression",
+    "action declaration expression",
+    "field reference expression",
+    "array reference expression",
+    "empty list expression",
+    "keysym list expression",
+    "action list expression",
+    "addition expression",
+    "substraction expression",
+    "multiplication expression",
+    "division expression",
+    "assignment expression",
+    "logical negation expression",
+    "arithmetic negation expression",
+    "bitwise inversion expression",
+    "unary plus expression",
+    "variable definition",
+    "key type definition",
+    "symbol interpretation definition",
+    "virtual modifiers definition",
+    "key symbols definition",
+    "modifier map declaration",
+    "group declaration",
+    "indicator map declaration",
+    "indicator name declaration",
+    "unknown declaration statement",
+    "unknown compound statement",
 ];
 
-pub unsafe fn stmt_type_to_string(mut type_0: stmt_type) -> *const i8 {
-    unsafe {
-        if type_0 as u32 >= _STMT_NUM_VALUES as u32 {
-            return std::ptr::null();
-        }
-        return stmt_type_strings[type_0 as usize];
+pub fn stmt_type_to_string(type_0: u32) -> &'static str {
+    if type_0 >= _STMT_NUM_VALUES {
+        return "unknown";
     }
+    stmt_type_strings[type_0 as usize]
 }
 
-pub unsafe fn stmt_type_to_operator_char(mut type_0: stmt_type) -> i8 {
-    match type_0 as u32 {
-        17 => return '+' as i32 as i8,
-        18 => return '-' as i32 as i8,
-        19 => return '*' as i32 as i8,
-        20 => return '/' as i32 as i8,
-        22 => return '!' as i32 as i8,
-        23 => return '-' as i32 as i8,
-        24 => return '~' as i32 as i8,
-        25 => return '+' as i32 as i8,
-        _ => return '\0' as i32 as i8,
+pub fn stmt_type_to_operator_char(mut type_0: u32) -> char {
+    match type_0 {
+        17 => return '+',
+        18 => return '-',
+        19 => return '*',
+        20 => return '/',
+        22 => return '!',
+        23 => return '-',
+        24 => return '~',
+        25 => return '+',
+        _ => return '\0',
     };
 }
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;

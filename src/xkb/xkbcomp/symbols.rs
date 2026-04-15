@@ -292,7 +292,7 @@ unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
         ClearKeyInfo(&raw mut (*info).default_key);
     }
 }
-unsafe fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> *const i8 {
+unsafe fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> &'static [u8] {
     unsafe {
         return KeyNameText((*info).ctx, (*keyi).name);
     }
@@ -331,7 +331,7 @@ unsafe fn MergeGroups(
                             XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS
                                 as i32,
                             group.wrapping_add(1 as xkb_layout_index_t),
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                             crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
                             crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
                         );
@@ -408,7 +408,7 @@ unsafe fn MergeGroups(
                                 XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
                                 i.wrapping_add(1 as u32),
                                 group.wrapping_add(1 as xkb_layout_index_t),
-                                crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                     b"from\0".as_ptr() as *const i8
                                 } else {
@@ -472,7 +472,7 @@ unsafe fn MergeGroups(
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as xkb_layout_index_t),
-                                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                         b"Using from, ignoring to\0".as_ptr()
                                             as *const i8
@@ -502,7 +502,7 @@ unsafe fn MergeGroups(
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as xkb_layout_index_t),
-                                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_1).type_0)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_0).type_0)),
                                 );
@@ -1021,7 +1021,7 @@ unsafe fn MergeKeys(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Symbol map for key {} redefined; Using {} definition for conflicting fields\n",
                 XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-                crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*into).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*into).name)),
                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                     b"first\0".as_ptr() as *const i8
                 } else {
@@ -1097,9 +1097,9 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*new).u.keySym)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*new).u.keySym)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
                 );
             } else {
                 xkb_logf!(
@@ -1108,9 +1108,9 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Key \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*new).u.keyName)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*new).u.keyName)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
                 );
             }
             old.modifier = use_0;
@@ -1300,7 +1300,7 @@ unsafe fn GetGroupIndex(
                     "[XKB-{:03}] Too many groups of {} for key {} (max {}); Ignoring {} defined for extra groups\n",
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                     crate::xkb::utils::CStrDisplay(name),
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                     (*info).max_groups,
                     crate::xkb::utils::CStrDisplay(name),
                 );
@@ -1326,7 +1326,7 @@ unsafe fn GetGroupIndex(
                 "[XKB-{:03}] Illegal group index for {} of key {}\nDefinition with non-integer array index ignored\n",
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
                 crate::xkb::utils::CStrDisplay(name),
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
             return false;
         }
@@ -1360,9 +1360,9 @@ unsafe fn AddSymbolsToKey(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Expected a list of symbols, found {}; Ignoring symbols for group {} of {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*value).common.type_0)),
+                stmt_type_to_string((*value).common.type_0),
                 ndx.wrapping_add(1 as xkb_layout_index_t),
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
             return false;
         }
@@ -1373,7 +1373,7 @@ unsafe fn AddSymbolsToKey(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Symbols for key {}, group {} already defined; Ignoring duplicate definition\n",
                 XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 ndx.wrapping_add(1 as xkb_layout_index_t),
             );
             return false;
@@ -1407,7 +1407,7 @@ unsafe fn AddSymbolsToKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Key {} has too many keysyms for group {}, level {}; expected max {}, got: {}\n",
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                     ndx.wrapping_add(1 as xkb_layout_index_t),
                     level.wrapping_add(1 as xkb_level_index_t),
                     65535 as i32,
@@ -1470,7 +1470,7 @@ unsafe fn AddActionsToKey(
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                 (*value).common.type_0 as u32,
                 ndx,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
             return false;
         }
@@ -1481,7 +1481,7 @@ unsafe fn AddActionsToKey(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Actions for key {}, group {} already defined\n",
                 XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 ndx,
             );
             return false;
@@ -1515,7 +1515,7 @@ unsafe fn AddActionsToKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Key {} has too many actions for group {}, level {}; expected max {}, got: {}\n",
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                     ndx.wrapping_add(1 as xkb_layout_index_t),
                     level.wrapping_add(1 as xkb_level_index_t),
                     65535 as i32,
@@ -1547,7 +1547,7 @@ unsafe fn AddActionsToKey(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Illegal action definition for {}; Action for group {}/level {} ignored\n",
                         XKB_ERROR_INVALID_VALUE as i32,
-                        crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                        crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                         ndx.wrapping_add(1 as xkb_layout_index_t),
                         level.wrapping_add(1 as xkb_level_index_t),
                     );
@@ -1660,7 +1660,7 @@ unsafe fn ExprResolveOverlayEntry(
                 "[XKB-{:03}] Overlay field \"{}\" in {} does not support array index; ignored\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::CStrDisplay(KeyNameText(
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                     (*keymap_info).keymap.ctx,
                     (*keyi).name
                 )),
@@ -1684,7 +1684,7 @@ unsafe fn ExprResolveOverlayEntry(
                 "[XKB-{:03}] Unsupported overlay index \"{}\" field for {}: expected 1..{}, got: {}; ignored\n",
                 XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::CStrDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
                 (*keymap_info).features.max_overlays as i32,
                 raw_overlay,
             );
@@ -1711,7 +1711,7 @@ unsafe fn ExprResolveOverlayEntry(
                             (*expr).key_name.key_name
                         )),
                         crate::xkb::utils::ByteSliceDisplay(field),
-                        crate::xkb::utils::CStrDisplay(KeyNameText(
+                        crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                             (*keymap_info).keymap.ctx,
                             (*keyi).name
                         )),
@@ -1738,7 +1738,7 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_ERROR_INVALID_VALUE as i32,
                     crate::xkb::utils::ByteSliceDisplay(id),
                     crate::xkb::utils::ByteSliceDisplay(field),
-                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                         (*keymap_info).keymap.ctx,
                         (*keyi).name
                     )),
@@ -1752,13 +1752,13 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Expected {} for field \"{}\" in {}, got: {}\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL)),
+                    stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                     crate::xkb::utils::ByteSliceDisplay(field),
-                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                         (*keymap_info).keymap.ctx,
                         (*keyi).name
                     )),
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*expr).common.type_0)),
+                    stmt_type_to_string((*expr).common.type_0),
                 );
                 return false;
             }
@@ -1805,7 +1805,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal group index for type of key {}; Definition with non-integer array index ignored\n",
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             } else {
@@ -1839,8 +1839,8 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Expected a virtual modifier mask, found {}; Ignoring virtual modifiers definition for key {}\n",
                     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as i32,
-                    crate::xkb::utils::CStrDisplay(stmt_type_to_string((*value).common.type_0)),
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    stmt_type_to_string((*value).common.type_0),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             }
@@ -1853,7 +1853,7 @@ unsafe fn SetSymbolsField(
                 XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Key behaviors not supported; Ignoring locking specification for key {}\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         } else if istreq(field, b"radiogroup")
             || istreq(field, b"permanentradiogroup")
@@ -1865,7 +1865,7 @@ unsafe fn SetSymbolsField(
                 XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Radio groups not supported; Ignoring radio group specification for key {}\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         } else if istrneq(
             b"permanentoverlay",
@@ -1878,7 +1878,7 @@ unsafe fn SetSymbolsField(
                 XKB_LOG_VERBOSITY_BRIEF as i32,
                 "[XKB-{:03}] Permanent overlays not supported; Ignoring overlay specification for key {}\n",
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         } else if istrneq(
             b"overlay",
@@ -1907,7 +1907,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_BRIEF as i32,
                     "Cannot overlay a key to itself; Ignoring overlay {} specification for key {}\n",
                     overlay as i32 + 1 as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
             } else {
                 let mut prev: *const xkb_key = std::ptr::null();
@@ -1919,18 +1919,18 @@ unsafe fn SetSymbolsField(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Conflicting overlays defined in key {}; use overlay{}={}, ignore overlay{}={}\n",
                             XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-                            crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             overlay as i32 + 1 as i32,
-                            crate::xkb::utils::CStrDisplay(if !prev.is_null() {
+                            crate::xkb::utils::ByteSliceDisplay(if !prev.is_null() {
                                 KeyNameText((*info).ctx, (*prev).name)
                             } else {
-                                b"none\0".as_ptr() as *const i8
+                                b"none"
                             }),
                             overlay as i32 + 1 as i32,
-                            crate::xkb::utils::CStrDisplay(if !key.is_null() {
+                            crate::xkb::utils::ByteSliceDisplay(if !key.is_null() {
                                 KeyNameText((*info).ctx, (*key).name)
                             } else {
-                                b"none\0".as_ptr() as *const i8
+                                b"none"
                             }),
                         );
                     }
@@ -1961,14 +1961,14 @@ unsafe fn SetSymbolsField(
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] Overlapping overlays are not allowed in {}; use overlay{}={}, ignore overlay{}={}\n",
                                 XKB_ERROR_OVERLAPPING_OVERLAY as i32,
-                                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                                 (*keyi).overlays as i32,
-                                crate::xkb::utils::CStrDisplay(KeyNameText(
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                                     (*info).ctx,
                                     (*(*keyi).c2rust_unnamed.overlay_key).name,
                                 )),
                                 overlay as i32 + 1 as i32,
-                                crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*key).name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*key).name)),
                             );
                             return (*(*info).keymap_info).strict as u32
                                 & PARSER_NO_FIELD_VALUE_MISMATCH as u32
@@ -1994,7 +1994,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal repeat setting for {}; Non-boolean repeat setting ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             }
@@ -2009,7 +2009,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal groupsWrap setting for {}; Non-boolean value ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             }
@@ -2028,7 +2028,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal groupsClamp setting for {}; Non-boolean value ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             }
@@ -2057,7 +2057,7 @@ unsafe fn SetSymbolsField(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal group index for redirect of key {}; Definition with non-integer group ignored\n",
                     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
-                    crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
                 return false;
             }
@@ -2380,7 +2380,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE as i32,
                 (*info).name.as_deref().unwrap_or(""),
                 (*info).explicit_group.wrapping_add(1 as xkb_layout_index_t),
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         }
         vec_resize_zero(
@@ -2482,7 +2482,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Modmap entries may contain only key names or keysyms; Illegal definition for {} modifier ignored\n",
                     XKB_ERROR_INVALID_MODMAP_ENTRY as i32,
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, tmp.modifier)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, tmp.modifier)),
                 );
                 c2rust_current_block_19 = 13536709405535804910;
             }
@@ -2553,7 +2553,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Symbols files may not include other types; Ignoring {}\n",
                         XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
-                        crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
+                        stmt_type_to_string((*stmt).type_0),
                     );
                     ok = false;
                 }
@@ -2801,7 +2801,7 @@ unsafe fn FindTypeForGroup(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Couldn't find an automatic type for key '{}' group {} with {} levels; Using the default type\n",
                 XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
                 group.wrapping_add(1 as xkb_layout_index_t),
                 (*groupi).levels.len(),
             );
@@ -2822,7 +2822,7 @@ unsafe fn FindTypeForGroup(
                     "[XKB-{:03}] The type \"{}\" for key '{}' group {} was not previously defined; Using the default type\n",
                     XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, type_name)),
-                    crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
                     group.wrapping_add(1 as xkb_layout_index_t),
                 );
             } else {
@@ -2853,7 +2853,7 @@ unsafe fn CopySymbolsDefToKeymap(
                 XKB_LOG_VERBOSITY_DETAILED as i32,
                 "[XKB-{:03}] Key {} not found in keycodes; Symbols ignored\n",
                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
             return false;
         }
@@ -2928,7 +2928,7 @@ unsafe fn CopySymbolsDefToKeymap(
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
                             crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, (*type_0).name)),
                             (*type_0).num_levels,
-                            crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             (*groupi).levels.len(),
                         );
 
@@ -3121,8 +3121,8 @@ unsafe fn CopyModMapDefToKeymap(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Key {} not found in keycodes; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*entry).u.keyName)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*entry).u.keyName)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
                 return false;
             }
@@ -3135,8 +3135,8 @@ unsafe fn CopyModMapDefToKeymap(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
-                    crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*entry).u.keySym)),
-                    crate::xkb::utils::CStrDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
+                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*entry).u.keySym)),
+                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
                 return false;
             }
@@ -3191,7 +3191,10 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                             XKB_LOG_LEVEL_INFO,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "No symbols defined for {}\n",
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*key).name)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText(
+                                (*info).ctx,
+                                (*key).name
+                            )),
                         );
                     }
                 }

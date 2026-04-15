@@ -8,7 +8,6 @@ use crate::xkb::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
-use crate::xkb::utils::cstr_as_bytes;
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -118,20 +117,20 @@ pub struct collect {
     pub sym_interprets: Vec<xkb_sym_interpret>,
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
-unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *const i8 {
+unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> &'static [u8] {
     unsafe {
-        let mut buf: *mut i8 = xkb_context_get_buffer((*info).ctx, 128 as usize);
         if si == &raw mut (*info).default_interp {
-            return b"default\0".as_ptr() as *const i8;
+            return b"default";
         }
-        crate::xkb::utils::snprintf_args(
+        let mut buf: *mut i8 = xkb_context_get_buffer((*info).ctx, 128 as usize);
+        let (written, _) = crate::xkb::utils::snprintf_args(
             buf,
             128 as usize,
             format_args!(
                 "{}+{}({})",
-                crate::xkb::utils::CStrDisplay(KeysymText((*info).ctx, (*si).interp.sym)),
+                crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*si).interp.sym)),
                 crate::xkb::utils::ByteSliceDisplay(SIMatchText((*si).interp.match_0)),
-                crate::xkb::utils::CStrDisplay(ModMaskText(
+                crate::xkb::utils::ByteSliceDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
                     &raw mut (*info).mods,
@@ -139,7 +138,7 @@ unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> *cons
                 )),
             ),
         );
-        return buf;
+        return std::slice::from_raw_parts(buf as *const u8, written);
     }
 }
 #[inline]
@@ -153,7 +152,7 @@ unsafe fn ReportSINotArray(
             (*info).ctx,
             b"symbol interpretation",
             field,
-            cstr_as_bytes(siText(si, info)),
+            siText(si, info),
         );
     }
 }
@@ -170,17 +169,17 @@ unsafe fn ReportSIBadType(
             XKB_ERROR_WRONG_FIELD_TYPE,
             b"symbol interpretation",
             field,
-            cstr_as_bytes(siText(si, info)),
+            siText(si, info),
             wanted,
         );
     }
 }
-unsafe fn LEDText(mut info: *mut CompatInfo, mut ledi: *mut LedInfo) -> *const i8 {
+unsafe fn LEDText(mut info: *mut CompatInfo, mut ledi: *mut LedInfo) -> &'static [u8] {
     unsafe {
         if ledi == &raw mut (*info).default_led {
-            return b"default\0".as_ptr() as *const i8;
+            return b"default";
         } else {
-            return xkb_atom_text((*info).ctx, (*ledi).led.name);
+            return xkb_atom_text_bytes((*info).ctx, (*ledi).led.name);
         };
     }
 }
@@ -197,7 +196,7 @@ unsafe fn ReportLedBadType(
             XKB_ERROR_WRONG_FIELD_TYPE,
             b"indicator map",
             field,
-            cstr_as_bytes(LEDText(info, ledi)),
+            LEDText(info, ledi),
             wanted,
         );
     }
@@ -209,12 +208,7 @@ unsafe fn ReportLedNotArray(
     field: &[u8],
 ) -> bool {
     unsafe {
-        return ReportNotArray(
-            (*info).ctx,
-            b"indicator map",
-            field,
-            cstr_as_bytes(LEDText(info, ledi)),
-        );
+        return ReportNotArray((*info).ctx, b"indicator map", field, LEDText(info, ledi));
     }
 }
 #[inline]
@@ -295,7 +289,7 @@ unsafe fn MergeInterp(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
-                    crate::xkb::utils::CStrDisplay(siText(new, info)),
+                    crate::xkb::utils::ByteSliceDisplay(siText(new, info)),
                 );
             }
             *old = *new;
@@ -363,11 +357,11 @@ unsafe fn MergeInterp(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
-                crate::xkb::utils::CStrDisplay(siText(old, info)),
-                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                    b"last\0".as_ptr() as *const i8
+                crate::xkb::utils::ByteSliceDisplay(siText(old, info)),
+                crate::xkb::utils::ByteSliceDisplay(if clobber {
+                    b"last" as &[u8]
                 } else {
-                    b"first\0".as_ptr() as *const i8
+                    b"first"
                 }),
             );
         }
@@ -499,7 +493,7 @@ unsafe fn MergeLedMap(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Map for indicator {} redefined; Earlier definition ignored\n",
-                    crate::xkb::utils::CStrDisplay(LEDText(info, old)),
+                    crate::xkb::utils::ByteSliceDisplay(LEDText(info, old)),
                 );
             }
             *old = *new;
@@ -548,11 +542,11 @@ unsafe fn MergeLedMap(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Map for indicator {} redefined; Using {} definition for duplicate fields\n",
-                crate::xkb::utils::CStrDisplay(LEDText(info, old)),
-                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                    b"last\0".as_ptr() as *const i8
+                crate::xkb::utils::ByteSliceDisplay(LEDText(info, old)),
+                crate::xkb::utils::ByteSliceDisplay(if clobber {
+                    b"last" as &[u8]
                 } else {
-                    b"first\0".as_ptr() as *const i8
+                    b"first"
                 }),
             );
         }
@@ -722,7 +716,7 @@ unsafe fn SetInterpField(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Interpret {} has too many actions; expected max {}, got: {}\n",
-                        crate::xkb::utils::CStrDisplay(siText(si, info)),
+                        crate::xkb::utils::ByteSliceDisplay(siText(si, info)),
                         65535 as i32,
                         num_actions,
                     );
@@ -855,7 +849,7 @@ unsafe fn SetInterpField(
                 (*info).ctx,
                 b"symbol interpretation",
                 field,
-                cstr_as_bytes(siText(si, info)),
+                siText(si, info),
             );
             return (*(*info).keymap_info).strict as u32
                 & PARSER_NO_UNKNOWN_INTERPRET_FIELDS as u32
@@ -994,7 +988,7 @@ unsafe fn SetLedMapField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
                 crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
+                crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
             );
             return (*(*info).keymap_info).strict as u32 & PARSER_NO_UNKNOWN_LED_FIELDS as u32 == 0;
         }
@@ -1297,7 +1291,7 @@ unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile)
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Compat files may not include other types; Ignoring {}\n",
-                        crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
+                        stmt_type_to_string((*stmt).type_0),
                     );
                     ok = false;
                 }
@@ -1361,7 +1355,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
-                    crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
+                    crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
                 );
                 i = 0 as xkb_led_index_t;
                 led = &raw mut (*keymap).leds as *mut xkb_led;
@@ -1381,7 +1375,7 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
                             "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
                             (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8 as usize)
                                 as xkb_led_index_t,
-                            crate::xkb::utils::CStrDisplay(LEDText(info, ledi)),
+                            crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
                         );
                         c2rust_current_block_11 = 792017965103506125;
                     } else {

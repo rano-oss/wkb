@@ -1239,7 +1239,10 @@ unsafe fn HandleRedirectKey(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "RedirectKey field {} cannot resolve {} to a valid key\n",
                     crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
-                    crate::xkb::utils::CStrDisplay(KeyNameText(ctx, (*value).key_name.key_name)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
+                        ctx,
+                        (*value).key_name.key_name
+                    )),
                 );
                 return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_VALUE_MISMATCH as u32 != 0
                 {
@@ -1722,13 +1725,14 @@ pub unsafe fn HandleActionDef(
     unsafe {
         let ctx: *mut xkb_context = (*keymap_info).keymap.ctx;
         if (*def).common.type_0 as u32 != STMT_EXPR_ACTION_DECL as u32 {
-            xkb_logf!(
+            println!(
+                "{:?} {} {} {} {} {:?}",
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Expected an action definition, found {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                crate::xkb::utils::CStrDisplay(stmt_type_to_string((*def).common.type_0)),
+                stmt_type_to_string((*def).common.type_0)
             );
             return PARSER_FATAL_ERROR;
         }

@@ -6,7 +6,6 @@
 pub use crate::xkb_logf;
 
 // context
-pub use crate::xkb::context::xkb_atom_text;
 pub use crate::xkb::context::xkb_atom_text_bytes;
 pub use crate::xkb::context::xkb_context_get_log_verbosity;
 

@@ -85,8 +85,8 @@ pub unsafe fn MergeModSets(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*mod_0).name)),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, ignore)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, from, ignore)),
                     );
                     (*into).mods[vmod as usize].mapping = use_0;
                 }
@@ -155,8 +155,8 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
-                        crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, ignore)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, mods, ignore)),
                     );
                     (*mod_0).mapping = use_0;
                 }

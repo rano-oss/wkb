@@ -527,17 +527,9 @@ unsafe fn AddKeyName(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Key name {} already assigned to an alias; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
-                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                            b"key\0".as_ptr() as *const i8
-                        } else {
-                            b"alias\0".as_ptr() as *const i8
-                        }),
-                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                            b"alias\0".as_ptr() as *const i8
-                        } else {
-                            b"key\0".as_ptr() as *const i8
-                        }),
+                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, name)),
+                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"key" as &[u8] } else { b"alias" }),
+                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"alias" as &[u8] } else { b"key" }),
                     );
                 }
                 if clobber {
@@ -569,7 +561,7 @@ unsafe fn AddKeyName(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Key name {} assigned to multiple keys; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, name)),
                             use_0,
                             ignore,
                         );
@@ -602,7 +594,7 @@ unsafe fn AddKeyName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Multiple identical key name definitions; Later occurrences of \"{} = {}\" ignored\n",
-                        crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, old_name)),
+                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, old_name)),
                         kc,
                     );
                 }
@@ -610,26 +602,18 @@ unsafe fn AddKeyName(
             }
             let clobber_0: bool = merge as u32 != MERGE_AUGMENT as u32;
             if report {
-                let kname: *const i8 = KeyNameText((*info).ctx, name) as *const i8;
-                let old_kname: *const i8 = KeyNameText((*info).ctx, old_name) as *const i8;
-                let use_1: *const i8 = if clobber_0 as i32 != 0 {
-                    kname
-                } else {
-                    old_kname
-                };
-                let ignore_0: *const i8 = if clobber_0 as i32 != 0 {
-                    old_kname
-                } else {
-                    kname
-                };
+                let kname: &[u8] = KeyNameText((*info).ctx, name);
+                let old_kname: &[u8] = KeyNameText((*info).ctx, old_name);
+                let use_1: &[u8] = if clobber_0 { kname } else { old_kname };
+                let ignore_0: &[u8] = if clobber_0 { old_kname } else { kname };
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple names for keycode {}; Using {}, ignoring {}\n",
                     kc,
-                    crate::xkb::utils::CStrDisplay(use_1),
-                    crate::xkb::utils::CStrDisplay(ignore_0),
+                    crate::xkb::utils::ByteSliceDisplay(use_1),
+                    crate::xkb::utils::ByteSliceDisplay(ignore_0),
                 );
             }
             if clobber_0 {
@@ -867,8 +851,8 @@ unsafe fn HandleAliasDef(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Alias of {} for {} declared more than once; First definition ignored\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).real)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*def).alias)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*def).real)),
                         );
                     }
                 } else {
@@ -889,9 +873,9 @@ unsafe fn HandleAliasDef(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Multiple definitions for alias {}; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, use_0)),
-                            crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, ignore)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*def).alias)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, use_0)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, ignore)),
                         );
                     }
                     {
@@ -910,17 +894,9 @@ unsafe fn HandleAliasDef(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Alias name {} already assigned to a real key; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, (*def).alias)),
-                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                            b"alias\0".as_ptr() as *const i8
-                        } else {
-                            b"key\0".as_ptr() as *const i8
-                        }),
-                        crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                            b"key\0".as_ptr() as *const i8
-                        } else {
-                            b"alias\0".as_ptr() as *const i8
-                        }),
+                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*def).alias)),
+                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"alias" as &[u8] } else { b"key" }),
+                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"key" as &[u8] } else { b"alias" }),
                     );
                 }
                 if clobber {
@@ -1110,7 +1086,7 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Keycode files may define key and indicator names only; Ignoring {}\n",
-                        crate::xkb::utils::CStrDisplay(stmt_type_to_string((*stmt).type_0)),
+                        stmt_type_to_string((*stmt).type_0),
                     );
                     ok = false;
                 }
@@ -1211,8 +1187,8 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
                                     XKB_LOG_VERBOSITY_DETAILED as i32,
                                     "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
                                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                    crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, name)),
-                                    crate::xkb::utils::CStrDisplay(KeyNameText(
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, name)),
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                                         (*info).ctx,
                                         (*match_0).alias.real
                                     )),
