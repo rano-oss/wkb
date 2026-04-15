@@ -2,11 +2,11 @@ use super::prelude::*;
 use crate::xkb::context_priv::xkb_atom_intern;
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
-use crate::xkb::utils::{cstr_as_bytes, cstr_free};
+use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;
 #[derive(Clone)]
 pub struct KeyTypesInfo {
-    pub name: *mut i8,
+    pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub types: Vec<KeyTypeInfo>,
@@ -17,7 +17,7 @@ pub struct KeyTypesInfo {
 impl KeyTypesInfo {
     pub fn new_zeroed() -> Self {
         Self {
-            name: std::ptr::null_mut(),
+            name: None,
             errorCount: 0,
             include_depth: 0,
             types: Vec::new(),
@@ -122,7 +122,7 @@ unsafe fn InitKeyTypesInfo(
     mut mods: *const xkb_mod_set,
 ) {
     unsafe {
-        (*info).name = std::ptr::null_mut();
+        (*info).name = None;
         (*info).errorCount = 0;
         (*info).include_depth = 0;
         (*info).types = Vec::new();
@@ -141,7 +141,7 @@ unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
 }
 unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
     unsafe {
-        cstr_free((*info).name);
+        (*info).name = None;
         for type_0 in (*info).types.iter_mut() {
             ClearKeyTypeInfo(type_0 as *mut KeyTypeInfo);
         }
@@ -215,9 +215,8 @@ unsafe fn MergeIncludedKeyTypes(
             &raw mut (*from).mods,
             merge,
         );
-        if (*into).name.is_null() {
-            (*into).name =
-                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        if (*into).name.is_none() {
+            (*into).name = (*from).name.take();
         }
         if (*into).types.len() == 0 {
             (*into).types = std::mem::take(&mut (*from).types);
@@ -250,8 +249,19 @@ unsafe fn HandleIncludeKeyTypes(
             (*info).include_depth.wrapping_add(1 as u32),
             &raw mut (*info).mods,
         );
-        included.name =
-            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        included.name = {
+            let ptr = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *const i8;
+            if ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(ptr)
+                        .to_str()
+                        .unwrap_or("")
+                        .to_string(),
+                )
+            }
+        };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyTypesInfo = KeyTypesInfo::new_zeroed();
@@ -869,8 +879,19 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
 unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
-        cstr_free((*info).name);
-        (*info).name = strdup_safe((*file).name);
+        (*info).name = {
+            let ptr = (*file).name as *const i8;
+            if ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(ptr)
+                        .to_str()
+                        .unwrap_or("")
+                        .to_string(),
+                )
+            }
+        };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
             match (*stmt).type_0 as u32 {
@@ -1051,7 +1072,13 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 i = i.wrapping_add(1);
             }
         }
-        (*keymap).types_section_name = strdup_safe((*info).name);
+        (*keymap).types_section_name = match &(*info).name {
+            Some(s) => {
+                let cs = std::ffi::CString::new(s.as_str()).unwrap();
+                strdup_safe(cs.as_ptr())
+            }
+            None => std::ptr::null_mut(),
+        };
         XkbEscapeMapName((*keymap).types_section_name);
         (*keymap).num_types = num_types;
         (*keymap).types = types;

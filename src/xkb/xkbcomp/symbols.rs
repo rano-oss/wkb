@@ -18,7 +18,7 @@ pub use crate::xkb::xkbcomp::action::{
 use libc::{abort, realloc};
 #[derive(Clone)]
 pub struct SymbolsInfo {
-    pub name: *mut i8,
+    pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub explicit_group: xkb_layout_index_t,
@@ -118,7 +118,7 @@ impl KeyInfo {
 impl SymbolsInfo {
     pub fn new_zeroed() -> Self {
         Self {
-            name: std::ptr::null_mut(),
+            name: None,
             errorCount: 0,
             include_depth: 0,
             explicit_group: 0,
@@ -283,7 +283,7 @@ unsafe fn InitSymbolsInfo(
 }
 unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
     unsafe {
-        cstr_free((*info).name);
+        (*info).name = None;
         for keyi in (*info).keys.iter_mut() {
             ClearKeyInfo(keyi as *mut KeyInfo);
         }
@@ -1138,9 +1138,8 @@ unsafe fn MergeIncludedSymbols(
             &raw mut (*from).mods,
             merge,
         );
-        if (*into).name.is_null() {
-            (*into).name =
-                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        if (*into).name.is_none() {
+            (*into).name = (*from).name.take();
         }
         group_names_in_both = (if (&(*into).group_names).len() < (&(*from).group_names).len() {
             (&(*into).group_names).len()
@@ -1198,8 +1197,18 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
             (*info).include_depth.wrapping_add(1 as u32),
             &raw mut (*info).mods,
         );
-        included.name =
-            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        included.name = if (*include).stmt.is_null() {
+            None
+        } else {
+            let s = Some(String::from(
+                std::ffi::CStr::from_ptr((*include).stmt)
+                    .to_str()
+                    .unwrap_or(""),
+            ));
+            cstr_free((*include).stmt);
+            (*include).stmt = std::ptr::null_mut();
+            s
+        };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: SymbolsInfo = SymbolsInfo::new_zeroed();
@@ -2155,7 +2164,7 @@ unsafe fn SetGroupName(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] An explicit group was specified for the '{}' map, but it provides a name for a group other than Group1 ({}); Ignoring group name '{}'\n",
                 XKB_WARNING_NON_BASE_GROUP_NAME as i32,
-                crate::xkb::utils::CStrDisplay((*info).name),
+                (*info).name.as_deref().unwrap_or(""),
                 group,
                 crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, name)),
             );
@@ -2175,9 +2184,9 @@ unsafe fn SetGroupName(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
-                    group_to_use,
-                    crate::xkb::utils::CStrDisplay((*info).name),
+                "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
+                group_to_use,
+                (*info).name.as_deref().unwrap_or(""),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, use_0)),
                     crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, ignore)),
                 );
@@ -2387,7 +2396,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] For the map {} the explicit group {} is specified, but key {} has more than one group defined; All groups except first one will be ignored\n",
                 XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE as i32,
-                crate::xkb::utils::CStrDisplay((*info).name),
+                (*info).name.as_deref().unwrap_or(""),
                 (*info).explicit_group.wrapping_add(1 as xkb_layout_index_t),
                 crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
             );
@@ -2509,8 +2518,15 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
 unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
-        cstr_free((*info).name);
-        (*info).name = strdup_safe((*file).name);
+        (*info).name = if (*file).name.is_null() {
+            None
+        } else {
+            Some(String::from(
+                std::ffi::CStr::from_ptr((*file).name)
+                    .to_str()
+                    .unwrap_or(""),
+            ))
+        };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
             match (*stmt).type_0 as u32 {
@@ -3152,7 +3168,13 @@ unsafe fn CopyModMapDefToKeymap(
 }
 unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
     unsafe {
-        (*keymap).symbols_section_name = strdup_safe((*info).name);
+        (*keymap).symbols_section_name = match &(*info).name {
+            Some(s) => {
+                let cs = std::ffi::CString::new(s.as_str()).unwrap();
+                strdup_safe(cs.as_ptr())
+            }
+            None => std::ptr::null_mut(),
+        };
         XkbEscapeMapName((*keymap).symbols_section_name);
         (*keymap).mods = (*info).mods;
         (*keymap).num_group_names = (*info).group_names.len() as xkb_layout_index_t;

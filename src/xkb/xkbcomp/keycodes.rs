@@ -5,7 +5,7 @@ use crate::xkb::utils::{cstr_as_bytes, cstr_free};
 use crate::xkb::xkbcomp::expr::ExprResolveInteger;
 #[derive(Clone)]
 pub struct KeyNamesInfo {
-    pub name: *mut i8,
+    pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub keycodes: KeycodeStore,
@@ -17,7 +17,7 @@ pub struct KeyNamesInfo {
 impl KeyNamesInfo {
     pub fn new_zeroed() -> Self {
         Self {
-            name: std::ptr::null_mut(),
+            name: None,
             errorCount: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
@@ -483,9 +483,8 @@ unsafe fn AddLedName(
 }
 unsafe fn ClearKeyNamesInfo(mut info: *mut KeyNamesInfo) {
     unsafe {
-        cstr_free((*info).name);
+        (*info).name = None;
         let store = &raw mut (*info).keycodes;
-        (&mut (*store).low).clear();
         (&mut (*store).high).clear();
         (&mut (*store).names).clear();
     }
@@ -730,9 +729,8 @@ unsafe fn MergeIncludedKeycodes(
             (*into).errorCount += (*from).errorCount;
             return;
         }
-        if (*into).name.is_null() {
-            (*into).name =
-                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        if (*into).name.is_none() {
+            (*into).name = (*from).name.take();
         }
         MergeKeycodeStores(into, from, merge, report);
         if (*into).num_led_names == 0 as xkb_led_index_t {
@@ -772,8 +770,19 @@ unsafe fn HandleIncludeKeycodes(
             return false;
         }
         InitKeyNamesInfo(&raw mut included, (*info).keymap_info, 0 as u32);
-        included.name =
-            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        included.name = {
+            let ptr = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8;
+            if ptr.is_null() {
+                None
+            } else {
+                let s = std::ffi::CStr::from_ptr(ptr)
+                    .to_str()
+                    .unwrap_or("")
+                    .to_string();
+                cstr_free(ptr);
+                Some(s)
+            }
+        };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyNamesInfo = KeyNamesInfo::new_zeroed();
@@ -1044,8 +1053,19 @@ unsafe fn HandleKeycodesFile(mut info: *mut KeyNamesInfo, mut file: *mut XkbFile
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report_same_file: bool = verbosity > 0 as i32;
         let report_include: bool = verbosity > 7 as i32;
-        cstr_free((*info).name);
-        (*info).name = strdup_safe((*file).name);
+        (*info).name = {
+            let ptr = (*file).name;
+            if ptr.is_null() {
+                None
+            } else {
+                Some(
+                    std::ffi::CStr::from_ptr(ptr)
+                        .to_str()
+                        .unwrap_or("")
+                        .to_string(),
+                )
+            }
+        };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
             match (*stmt).type_0 as u32 {
@@ -1273,7 +1293,13 @@ unsafe fn CopyKeyNamesInfoToKeymap(
             }
             (*keymap).redirect_key_auto = keycode;
         }
-        (*keymap).keycodes_section_name = strdup_safe((*info).name);
+        (*keymap).keycodes_section_name = match &(*info).name {
+            Some(s) => {
+                let cs = std::ffi::CString::new(s.as_str()).unwrap();
+                strdup_safe(cs.as_ptr())
+            }
+            None => std::ptr::null_mut(),
+        };
         XkbEscapeMapName((*keymap).keycodes_section_name);
         return true;
     }

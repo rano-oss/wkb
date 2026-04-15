@@ -8,14 +8,14 @@ use crate::xkb::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
-use crate::xkb::utils::{cstr_as_bytes, cstr_free};
+use crate::xkb::utils::cstr_as_bytes;
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
 use crate::xkb::xkbcomp::expr::{ExprResolveGroupMask, ExprResolveMask, ExprResolveMod};
 #[derive(Clone)]
 pub struct CompatInfo {
-    pub name: *mut i8,
+    pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub default_interp: SymInterpInfo,
@@ -44,7 +44,7 @@ impl CompatInfo {
             },
         };
         Self {
-            name: std::ptr::null_mut(),
+            name: None,
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
@@ -252,7 +252,7 @@ unsafe fn InitCompatInfo(
 }
 unsafe fn ClearCompatInfo(mut info: *mut CompatInfo) {
     unsafe {
-        cstr_free((*info).name);
+        (*info).name = None;
         (*info).interps.clear();
     }
 }
@@ -603,9 +603,8 @@ unsafe fn MergeIncludedCompatMaps(
             &raw mut (*from).mods,
             merge,
         );
-        if (*into).name.is_null() {
-            (*into).name =
-                _steal(&raw mut (*from).name as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        if (*into).name.is_none() {
+            (*into).name = (*from).name.take();
         }
         if (*into).interps.is_empty() {
             (*into).interps = std::mem::take(&mut (*from).interps);
@@ -653,8 +652,15 @@ unsafe fn HandleIncludeCompatMap(mut info: *mut CompatInfo, mut include: *mut In
             (*info).include_depth.wrapping_add(1 as u32),
             &raw mut (*info).mods,
         );
-        included.name =
-            _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *mut i8 as *mut i8;
+        included.name = if (*include).stmt.is_null() {
+            None
+        } else {
+            Some(String::from(
+                std::ffi::CStr::from_ptr((*include).stmt)
+                    .to_str()
+                    .unwrap_or(""),
+            ))
+        };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: CompatInfo = CompatInfo::new_zeroed();
@@ -1269,8 +1275,15 @@ unsafe fn HandleLedMapDef(mut info: *mut CompatInfo, mut def: *mut LedMapDef) ->
 unsafe fn HandleCompatMapFile(mut info: *mut CompatInfo, mut file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
-        cstr_free((*info).name);
-        (*info).name = strdup_safe((*file).name);
+        (*info).name = if (*file).name.is_null() {
+            None
+        } else {
+            Some(String::from(
+                std::ffi::CStr::from_ptr((*file).name)
+                    .to_str()
+                    .unwrap_or(""),
+            ))
+        };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
             match (*stmt).type_0 as u32 {
@@ -1447,7 +1460,13 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
 }
 unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatInfo) -> bool {
     unsafe {
-        (*keymap).compat_section_name = strdup_safe((*info).name);
+        (*keymap).compat_section_name = match &(*info).name {
+            Some(s) => {
+                let cs = std::ffi::CString::new(s.as_str()).unwrap();
+                strdup_safe(cs.as_ptr())
+            }
+            None => std::ptr::null_mut(),
+        };
         XkbEscapeMapName((*keymap).compat_section_name);
         (*keymap).mods = (*info).mods;
         if !(*info).interps.is_empty() {
