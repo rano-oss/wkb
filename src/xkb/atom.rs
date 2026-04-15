@@ -69,6 +69,27 @@ pub unsafe fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
     }
 }
 
+/// Get text for an atom as a byte slice (safe alternative to atom_text)
+///
+/// Returns `b""` for `XKB_ATOM_NONE` or invalid atoms.
+/// The returned slice is valid as long as the atom table is alive.
+///
+/// # Safety
+/// `table` must point to a valid atom_table. The returned slice must not
+/// outlive the table.
+pub unsafe fn atom_text_bytes<'a>(table: *mut atom_table, atom: xkb_atom_t) -> &'a [u8] {
+    unsafe {
+        let t = &*table;
+        if (atom as usize) >= t.strings.len() {
+            return b"";
+        }
+        match &t.strings[atom as usize] {
+            Some(cstr) => cstr.as_bytes(),
+            None => b"",
+        }
+    }
+}
+
 /// Intern a string or look up existing atom
 ///
 /// If `add` is true, adds string to table if not found.

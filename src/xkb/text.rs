@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::{xkb_atom_text, xkb_context_get_buffer};
+use crate::xkb::context_priv::{xkb_atom_text, xkb_atom_text_bytes, xkb_context_get_buffer};
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
@@ -627,7 +627,10 @@ pub unsafe fn ModMaskText(
                         format_args!(
                             "{}{}",
                             if pos == 0 as usize { "" } else { "+" },
-                            crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                                ctx,
+                                (*mod_0).name
+                            )),
                         ),
                     );
                     if trunc || written == 0 {

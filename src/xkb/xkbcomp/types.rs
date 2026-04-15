@@ -173,7 +173,7 @@ unsafe fn AddKeyType(
                         "[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
                             as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*new).name)),
                     );
                 }
                 ClearKeyTypeInfo(old);
@@ -189,7 +189,7 @@ unsafe fn AddKeyType(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*new).name)),
                 );
             }
             ClearKeyTypeInfo(new);
@@ -335,7 +335,10 @@ unsafe fn SetModifiers(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
-                crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                    (*info).ctx,
+                    (*type_0).name
+                )),
                 crate::xkb::utils::CStrDisplay(ModMaskText(
                     (*info).ctx,
                     MOD_BOTH,
@@ -727,7 +730,7 @@ unsafe fn SetLevelName(
                 "[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 level.wrapping_add(1 as xkb_level_index_t),
-                crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*type_0).name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*type_0).name)),
             );
             return false;
         }

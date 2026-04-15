@@ -1,4 +1,4 @@
-use crate::xkb::atom::{atom_intern, atom_text};
+use crate::xkb::atom::{atom_intern, atom_text, atom_text_bytes};
 use crate::xkb::context::xkb_context_include_path_get_system_path;
 
 pub use crate::xkb::messages::{
@@ -148,6 +148,9 @@ pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> 
     unsafe {
         return atom_text((*ctx).atom_table, atom);
     }
+}
+pub unsafe fn xkb_atom_text_bytes<'a>(ctx: *mut xkb_context, atom: xkb_atom_t) -> &'a [u8] {
+    unsafe { atom_text_bytes((*ctx).atom_table, atom) }
 }
 pub unsafe fn xkb_log(
     mut ctx: *mut xkb_context,

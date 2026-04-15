@@ -413,7 +413,10 @@ unsafe fn AddLedName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                            (*info).ctx,
+                            (*new).name
+                        )),
                     );
                 }
                 return true;
@@ -434,7 +437,10 @@ unsafe fn AddLedName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple indicators named {}; Using {}, ignoring {}\n",
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, (*new).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        (*info).ctx,
+                        (*new).name
+                    )),
                     use_0,
                     ignore,
                 );
@@ -468,8 +474,8 @@ unsafe fn AddLedName(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple names for indicator {}; Using {}, ignoring {}\n",
                     new_idx.wrapping_add(1 as xkb_led_index_t),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, use_1)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, ignore_0)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_1)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore_0)),
                 );
             }
             if replace {

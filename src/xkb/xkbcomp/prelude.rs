@@ -8,6 +8,7 @@ pub use crate::xkb_logf;
 // context / context_priv
 pub use crate::xkb::context::xkb_context_get_log_verbosity;
 pub use crate::xkb::context_priv::xkb_atom_text;
+pub use crate::xkb::context_priv::xkb_atom_text_bytes;
 
 // keymap_priv
 pub use crate::xkb::keymap_priv::XkbEscapeMapName;

@@ -285,8 +285,14 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.element
+                    )),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.field
+                    )),
                 );
                 return false;
             }
@@ -369,7 +375,10 @@ unsafe fn ExprResolveIntegerLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                            ctx,
+                            (*expr).ident.ident
+                        )),
                     );
                 } else {
                     *val_rtrn = u as i64;
@@ -386,8 +395,14 @@ unsafe fn ExprResolveIntegerLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.element
+                    )),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.field
+                    )),
                 );
                 return false;
             }
@@ -718,7 +733,10 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).ident.ident
+                    )),
                 );
                 return false;
             }
@@ -729,8 +747,14 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.element
+                    )),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.field
+                    )),
                 );
                 return false;
             }
@@ -790,7 +814,7 @@ pub unsafe fn ExprResolveEnum(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*expr).ident.ident)),
             );
             while !values.is_null() && !(&(*values).name).is_empty() {
                 xkb_logf!(
@@ -872,7 +896,10 @@ unsafe fn ExprResolveMaskLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).ident.ident)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                            ctx,
+                            (*expr).ident.ident
+                        )),
                     );
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
@@ -887,8 +914,14 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.element)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*expr).field_ref.field)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.element
+                    )),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        ctx,
+                        (*expr).field_ref.field
+                    )),
                 );
                 return false;
             }
@@ -1101,7 +1134,7 @@ pub unsafe fn ExprResolveMod(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, name)),
             );
             return false;
         }

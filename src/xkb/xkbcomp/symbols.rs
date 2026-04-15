@@ -333,8 +333,8 @@ unsafe fn MergeGroups(
                                 as i32,
                             group.wrapping_add(1 as xkb_layout_index_t),
                             crate::xkb::utils::CStrDisplay(KeyNameText((*info).ctx, key_name)),
-                            crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, use_0)),
-                            crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, ignore)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
                         );
                     }
                     (*into).type_0 = use_0;
@@ -1708,7 +1708,7 @@ unsafe fn ExprResolveOverlayEntry(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in {}\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
                             (*keymap_info).keymap.ctx,
                             (*expr).key_name.key_name
                         )),
@@ -2166,7 +2166,7 @@ unsafe fn SetGroupName(
                 XKB_WARNING_NON_BASE_GROUP_NAME as i32,
                 (*info).name.as_deref().unwrap_or(""),
                 group,
-                crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, name)),
             );
             return false;
         }
@@ -2187,8 +2187,8 @@ unsafe fn SetGroupName(
                 "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
                 group_to_use,
                 (*info).name.as_deref().unwrap_or(""),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, use_0)),
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*info).ctx, ignore)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
                 );
                 name = use_0;
             }
@@ -2470,7 +2470,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
                     XKB_ERROR_INVALID_REAL_MODIFIER as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*def).modifier)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*def).modifier)),
                 );
                 return false;
             }
@@ -2839,7 +2839,7 @@ unsafe fn FindTypeForGroup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The type \"{}\" for key '{}' group {} was not previously defined; Using the default type\n",
                     XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text((*keymap).ctx, type_name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, type_name)),
                     crate::xkb::utils::CStrDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
                     group.wrapping_add(1 as xkb_layout_index_t),
                 );
@@ -2944,7 +2944,7 @@ unsafe fn CopySymbolsDefToKeymap(
                             XKB_LOG_VERBOSITY_BRIEF as i32,
                             "[XKB-{:03}] Type \"{}\" has {} levels, but {} has {} levels; Ignoring extra symbols\n",
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                            crate::xkb::utils::CStrDisplay(xkb_atom_text((*keymap).ctx, (*type_0).name)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, (*type_0).name)),
                             (*type_0).num_levels,
                             crate::xkb::utils::CStrDisplay(KeyInfoText(info, keyi)),
                             (*groupi).levels.len(),

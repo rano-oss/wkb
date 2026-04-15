@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_atom_text;
+use crate::xkb::context_priv::xkb_atom_text_bytes;
 use crate::xkb_logf;
 
 pub use crate::xkb::messages::{
@@ -84,7 +84,7 @@ pub unsafe fn MergeModSets(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*mod_0).name)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, from, ignore)),
                     );
@@ -111,7 +111,7 @@ pub unsafe fn HandleVModDef(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Declaration of {} ignored\n",
-                    crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
                 );
                 return false;
             }
@@ -128,7 +128,7 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*mod_0).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*mod_0).name)),
                     );
                     return false;
                 }
@@ -154,7 +154,7 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
                         crate::xkb::utils::CStrDisplay(ModMaskText(ctx, MOD_REAL, mods, ignore)),
                     );
@@ -172,7 +172,7 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-                crate::xkb::utils::CStrDisplay(xkb_atom_text(ctx, (*stmt).name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
                 (std::mem::size_of::<xkb_mod_mask_t>()).wrapping_mul(8 as usize) as xkb_mod_index_t,
             );
             return false;
