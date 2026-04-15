@@ -3,7 +3,7 @@ use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 extern "C" {
     pub fn imaxabs(__n: i64) -> i64;
 }
-pub use crate::xkb::keymap_priv::XkbModNameToIndex;
+pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
 pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
 use crate::xkb::utils::{cstr_as_bytes, istrneq};

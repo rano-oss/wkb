@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb::context::xkb_atom_intern;
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;

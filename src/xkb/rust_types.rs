@@ -750,10 +750,10 @@ impl ComposeTable {
             let locale_cstr = std::ffi::CString::new(locale).ok()?;
             let ctx_cast = ctx.as_ptr() as *mut crate::xkb::shared_types::xkb_context;
 
-            let ptr = super::compose_iter::xkb_compose_table_new_from_locale(
+            let ptr = super::compose::xkb_compose_table_new_from_locale(
                 ctx_cast,
                 locale_cstr.as_ptr(),
-                super::compose_iter::XKB_COMPOSE_COMPILE_NO_FLAGS,
+                super::compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
             );
 
             if ptr.is_null() {
@@ -775,7 +775,7 @@ impl ComposeTable {
 impl Drop for ComposeTable {
     fn drop(&mut self) {
         unsafe {
-            super::compose_iter::xkb_compose_table_unref(self.ptr as *mut _);
+            super::compose::xkb_compose_table_unref(self.ptr as *mut _);
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::xkb_logf;
 
 use crate::xkb::utils::{cstr_free, cstr_ndup};
 
-pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+pub use crate::xkb::keymap::XkbEscapeMapName;
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,

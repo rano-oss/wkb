@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb::context::xkb_atom_intern;
 use crate::xkb::shared_types::*;
 use crate::xkb_logf;
 

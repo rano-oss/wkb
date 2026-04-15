@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb::context::xkb_atom_intern;
 pub const XKB_KEY_VoidSymbol: i32 = 0xffffff as i32;
 pub const XKB_KEY_0: i32 = 0x30 as i32;
 pub const XKB_KEY_section: i32 = 0xa7 as i32;

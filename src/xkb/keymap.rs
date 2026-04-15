@@ -1,4 +1,6 @@
-use crate::xkb::context_priv::{xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names};
+use crate::xkb::context::{
+    xkb_atom_intern, xkb_atom_lookup, xkb_atom_text, xkb_context_sanitize_rule_names,
+};
 #[c2rust::header_src = "/usr/include/bits/types.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-intn.h:17"]
 #[c2rust::header_src = "/usr/include/bits/stdint-uintn.h:17"]
@@ -6,7 +8,6 @@ use crate::xkb::context_priv::{xkb_atom_lookup, xkb_atom_text, xkb_context_sanit
 #[c2rust::header_src = "/home/rano/Public/libxkbcommon/src/keymap.h:22"]
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
-pub use crate::xkb::keymap_priv::{xkb_keymap_new, XkbModNameToIndex, XkbWrapGroupIntoRange};
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -798,5 +799,331 @@ pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_ke
         return (*key).repeats as i32;
     }
 }
-use crate::xkb::context::xkb_context_unref;
+use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
 use crate::xkb::shared_types::*;
+
+// --- Merged from keymap_priv.rs ---
+
+pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
+    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
+pub const XKB_MOD_NAME_CAPS: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Lock\0") };
+pub const XKB_MOD_NAME_CTRL: [i8; 8] =
+    unsafe { ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"Control\0") };
+pub const XKB_MOD_NAME_MOD1: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod1\0") };
+pub const XKB_MOD_NAME_MOD2: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod2\0") };
+pub const XKB_MOD_NAME_MOD3: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod3\0") };
+pub const XKB_MOD_NAME_MOD4: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod4\0") };
+pub const XKB_MOD_NAME_MOD5: [i8; 5] =
+    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
+
+unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
+    unsafe {
+        static mut builtin_mods: [*const i8; 8] = [
+            XKB_MOD_NAME_SHIFT.as_ptr(),
+            XKB_MOD_NAME_CAPS.as_ptr(),
+            XKB_MOD_NAME_CTRL.as_ptr(),
+            XKB_MOD_NAME_MOD1.as_ptr(),
+            XKB_MOD_NAME_MOD2.as_ptr(),
+            XKB_MOD_NAME_MOD3.as_ptr(),
+            XKB_MOD_NAME_MOD4.as_ptr(),
+            XKB_MOD_NAME_MOD5.as_ptr(),
+        ];
+        let mut i: xkb_mod_index_t = 0 as xkb_mod_index_t;
+        while (i as usize)
+            < (std::mem::size_of::<[*const i8; 8]>()).wrapping_div(std::mem::size_of::<*const i8>())
+        {
+            (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
+                (*keymap).ctx,
+                builtin_mods[i as usize],
+                cstr_len(builtin_mods[i as usize]),
+            );
+            (*keymap).mods.mods[i as usize].type_0 = MOD_REAL;
+            (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as xkb_mod_mask_t;
+            i = i.wrapping_add(1);
+        }
+        (*keymap).mods.num_mods = (std::mem::size_of::<[*const i8; 8]>())
+            .wrapping_div(std::mem::size_of::<*const i8>())
+            as xkb_mod_index_t;
+        (*keymap).canonical_state_mask = MOD_REAL_MASK_ALL;
+    }
+}
+pub unsafe fn xkb_keymap_new(
+    mut ctx: *mut xkb_context,
+    mut func: *const i8,
+    mut format: xkb_keymap_format,
+    mut flags: xkb_keymap_compile_flags,
+) -> *mut xkb_keymap {
+    unsafe {
+        static mut XKB_KEYMAP_COMPILE_FLAGS: xkb_keymap_compile_flags =
+            XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as xkb_keymap_compile_flags;
+        if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
+            xkb_logf!(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "{}: unrecognized keymap compilation flags: 0x{:x}\n",
+                crate::xkb::utils::CStrDisplay(func),
+                flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32),
+            );
+            return std::ptr::null_mut();
+        }
+        let keymap: *mut xkb_keymap = Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap>()));
+        (*keymap).refcnt = 1 as i32;
+        (*keymap).ctx = xkb_context_ref(ctx);
+        (*keymap).format = format;
+        (*keymap).flags = flags;
+        update_builtin_keymap_fields(keymap);
+        return keymap;
+    }
+}
+pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
+    unsafe {
+        static mut legal: [u8; 32] = [
+            0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0,
+            0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
+        ];
+        if name.is_null() {
+            return;
+        }
+        while *name != 0 {
+            let mut c: ::core::ffi::c_uchar = *name as ::core::ffi::c_uchar;
+            if legal[(c as i32 / 8 as i32) as usize] as u32 & (1 as u32) << c as i32 % 8 as i32 == 0
+            {
+                *name = '_' as i32 as i8;
+            }
+            name = name.offset(1);
+        }
+    }
+}
+pub unsafe fn XkbModNameToIndex(
+    mut mods: *const xkb_mod_set,
+    mut name: xkb_atom_t,
+    mut type_0: mod_type,
+) -> xkb_mod_index_t {
+    unsafe {
+        let mut i: xkb_mod_index_t = 0;
+        let mut mod_0: *const xkb_mod = std::ptr::null();
+        i = 0 as xkb_mod_index_t;
+        mod_0 = &raw const (*mods).mods as *const xkb_mod;
+        while i < (*mods).num_mods {
+            if (*mod_0).type_0 as u32 & type_0 as u32 != 0 && name == (*mod_0).name {
+                return i;
+            }
+            i = i.wrapping_add(1);
+            mod_0 = mod_0.offset(1);
+        }
+        return XKB_MOD_INVALID as xkb_mod_index_t;
+    }
+}
+pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
+    unsafe {
+        if (*a).num_syms as i32 != (*b).num_syms as i32 {
+            return false;
+        }
+        if (*a).num_syms as i32 <= 1 as i32 {
+            return (*a).s.sym == (*b).s.sym;
+        }
+        {
+            let n = (std::mem::size_of::<xkb_keysym_t>()).wrapping_mul((*a).num_syms as usize);
+            return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
+                == std::slice::from_raw_parts((*b).s.syms as *const u8, n);
+        }
+    }
+}
+pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
+    unsafe {
+        if (*a).type_0 as u32 != (*b).type_0 as u32 {
+            return false;
+        }
+        match (*a).type_0 as u32 {
+            0 | 1 => return true,
+            2 | 3 | 4 => {
+                return (*a).mods.flags as u32 == (*b).mods.flags as u32
+                    && (*a).mods.mods.mask == (*b).mods.mods.mask
+                    && (*a).mods.mods.mods == (*b).mods.mods.mods;
+            }
+            5 | 6 | 7 => {
+                return (*a).group.flags as u32 == (*b).group.flags as u32
+                    && (*a).group.group == (*b).group.group;
+            }
+            8 => {
+                return (*a).ptr.flags as u32 == (*b).ptr.flags as u32
+                    && (*a).ptr.x as i32 == (*b).ptr.x as i32
+                    && (*a).ptr.y as i32 == (*b).ptr.y as i32;
+            }
+            9 | 10 => {
+                return (*a).btn.flags as u32 == (*b).btn.flags as u32
+                    && (*a).btn.button as i32 == (*b).btn.button as i32
+                    && (*a).btn.count as i32 == (*b).btn.count as i32;
+            }
+            11 => {
+                return (*a).dflt.flags as u32 == (*b).dflt.flags as u32
+                    && (*a).dflt.value as i32 == (*b).dflt.value as i32;
+            }
+            12 => return true,
+            13 => {
+                return (*a).screen.flags as u32 == (*b).screen.flags as u32
+                    && (*a).screen.screen as i32 == (*b).screen.screen as i32;
+            }
+            14 | 15 => {
+                return (*a).ctrls.flags as u32 == (*b).ctrls.flags as u32
+                    && (*a).ctrls.ctrls as u32 == (*b).ctrls.ctrls as u32;
+            }
+            16 => {
+                return (*a).redirect.keycode == (*b).redirect.keycode
+                    && (*a).redirect.affect == (*b).redirect.affect
+                    && (*a).redirect.mods == (*b).redirect.mods;
+            }
+            17 | 18 => return true,
+            20 => {
+                return (*a).internal.flags as u32 == (*b).internal.flags as u32
+                    && (*a).internal.c2rust_unnamed.clear_latched_mods
+                        == (*b).internal.c2rust_unnamed.clear_latched_mods;
+            }
+            _ => {
+                return std::slice::from_raw_parts(
+                    &raw const (*a).priv_0.data as *const u8,
+                    std::mem::size_of::<[u8; 7]>(),
+                ) == std::slice::from_raw_parts(
+                    &raw const (*b).priv_0.data as *const u8,
+                    std::mem::size_of::<[u8; 7]>(),
+                );
+            }
+        };
+    }
+}
+pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
+    unsafe {
+        if (*a).num_actions as i32 != (*b).num_actions as i32 {
+            return false;
+        }
+        if (*a).num_actions as i32 <= 1 as i32 {
+            return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
+        }
+        let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
+        while (k as i32) < (*a).num_actions as i32 {
+            if !action_equal(
+                (*a).a.actions.offset(k as isize) as *mut xkb_action,
+                (*b).a.actions.offset(k as isize) as *mut xkb_action,
+            ) {
+                return false;
+            }
+            k = k.wrapping_add(1);
+        }
+        return true;
+    }
+}
+pub unsafe fn XkbWrapGroupIntoRange(
+    mut group: i32,
+    mut num_groups: xkb_layout_index_t,
+    mut out_of_range_group_policy: xkb_layout_out_of_range_policy,
+    mut out_of_range_group_number: xkb_layout_index_t,
+) -> xkb_layout_index_t {
+    if num_groups == 0 as xkb_layout_index_t {
+        return XKB_LAYOUT_INVALID as xkb_layout_index_t;
+    }
+    if group >= 0 as i32 && (group as xkb_layout_index_t) < num_groups {
+        return group as xkb_layout_index_t;
+    }
+    match out_of_range_group_policy as u32 {
+        2 => {
+            if out_of_range_group_number >= num_groups {
+                return 0 as xkb_layout_index_t;
+            }
+            return out_of_range_group_number;
+        }
+        1 => {
+            if group < 0 as i32 {
+                return 0 as xkb_layout_index_t;
+            } else {
+                return num_groups.wrapping_sub(1 as xkb_layout_index_t);
+            }
+        }
+        0 | _ => {
+            let rem: i32 = group % num_groups as i32;
+            return (if rem >= 0 as i32 {
+                rem
+            } else {
+                rem + num_groups as i32
+            }) as xkb_layout_index_t;
+        }
+    };
+}
+pub unsafe fn xkb_keymap_key_get_actions_by_level(
+    mut keymap: *mut xkb_keymap,
+    mut key: *const xkb_key,
+    mut layout: xkb_layout_index_t,
+    mut level: xkb_level_index_t,
+    mut actions: *mut *const xkb_action,
+) -> xkb_action_count_t {
+    unsafe {
+        let mut count: xkb_action_count_t = 0;
+        let mut c2rust_current_block: u64;
+        if !key.is_null() {
+            layout = XkbWrapGroupIntoRange(
+                layout as i32,
+                (*key).num_groups,
+                (*key).out_of_range_group_policy,
+                (*key).out_of_range_group_number,
+            );
+            if !(layout == XKB_LAYOUT_INVALID as xkb_layout_index_t) {
+                if !(level >= XkbKeyNumLevels(key, layout)) {
+                    count = (*(*(*key).groups.offset(layout as isize))
+                        .levels
+                        .offset(level as isize))
+                    .num_actions;
+                    match count as i32 {
+                        0 => {}
+                        1 => {
+                            c2rust_current_block = 945040705843674513;
+                            match c2rust_current_block {
+                                15050610111240922756 => {
+                                    *actions = (*(*(*key).groups.offset(layout as isize))
+                                        .levels
+                                        .offset(level as isize))
+                                    .a
+                                    .actions;
+                                }
+                                _ => {
+                                    *actions = &raw mut (*(*(*key).groups.offset(layout as isize))
+                                        .levels
+                                        .offset(level as isize))
+                                    .a
+                                    .action;
+                                }
+                            }
+                            return count;
+                        }
+                        _ => {
+                            c2rust_current_block = 15050610111240922756;
+                            match c2rust_current_block {
+                                15050610111240922756 => {
+                                    *actions = (*(*(*key).groups.offset(layout as isize))
+                                        .levels
+                                        .offset(level as isize))
+                                    .a
+                                    .actions;
+                                }
+                                _ => {
+                                    *actions = &raw mut (*(*(*key).groups.offset(layout as isize))
+                                        .levels
+                                        .offset(level as isize))
+                                    .a
+                                    .action;
+                                }
+                            }
+                            return count;
+                        }
+                    }
+                }
+            }
+        }
+        *actions = std::ptr::null();
+        return 0 as xkb_action_count_t;
+    }
+}

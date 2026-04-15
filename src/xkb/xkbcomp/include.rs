@@ -1,9 +1,9 @@
+use crate::xkb::context::{
+    xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
+};
 use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
 use crate::xkb::context::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-};
-use crate::xkb::context_priv::{
-    xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
 };
 use crate::xkb_logf;
 

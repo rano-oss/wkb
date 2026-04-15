@@ -141,7 +141,7 @@ pub mod utf8_h {
 
 use self::utf8_h::is_valid_utf8;
 pub use crate::xkb::keymap::xkb_keymap_key_get_level;
-pub use crate::xkb::keymap_priv::{
+pub use crate::xkb::keymap::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
 pub use crate::xkb::messages::{

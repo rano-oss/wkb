@@ -1,7 +1,7 @@
 use super::prelude::*;
-use crate::xkb::context_priv::xkb_atom_intern;
+use crate::xkb::context::xkb_atom_intern;
 pub use crate::xkb::keymap::clear_level;
-pub use crate::xkb::keymap_priv::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
+pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};

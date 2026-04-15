@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::{xkb_atom_text, xkb_atom_text_bytes, xkb_context_get_buffer};
+use crate::xkb::context::{xkb_atom_text, xkb_atom_text_bytes, xkb_context_get_buffer};
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]

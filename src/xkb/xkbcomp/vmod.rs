@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_atom_text_bytes;
+use crate::xkb::context::xkb_atom_text_bytes;
 use crate::xkb_logf;
 
 pub use crate::xkb::messages::{

@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_context_sanitize_rule_names;
+use crate::xkb::context::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;

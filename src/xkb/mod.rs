@@ -25,11 +25,9 @@
 // Core XKB modules
 pub mod atom;
 pub mod context;
-pub mod context_priv;
 pub mod features;
 pub mod keymap;
 pub mod keymap_formats;
-pub mod keymap_priv;
 pub mod shared_ast_types;
 pub mod shared_types;
 pub mod state;
@@ -52,9 +50,9 @@ pub mod utils_paths;
 pub mod xkbcomp; // XKB compiler with all submodules
 
 // Compose support
-pub mod compose_iter;
-pub mod compose_parse;
-pub mod xkb_compose_map;
+pub mod compose;
+/// Backward-compatible alias (tests reference the old module name)
+pub use compose as compose_parse;
 
 // Rules and registry
 pub mod registry;
@@ -127,6 +125,33 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     layouts
 }
 
+/// Press the appropriate level modifier keys on `state` for the given level index.
+/// Level 0 = no modifiers, 1 = Shift, 2 = Level3, 3 = Level3+Shift, etc.
+fn press_level_modifiers(
+    state: &mut rust_types::State,
+    level: usize,
+    level2: Option<u32>,
+    level3: Option<u32>,
+    level5: Option<u32>,
+) {
+    // Level modifiers form a 3-bit field: bit0=Level2(Shift), bit1=Level3, bit2=Level5
+    if level & 4 != 0 {
+        if let Some(kc) = level5 {
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
+        }
+    }
+    if level & 2 != 0 {
+        if let Some(kc) = level3 {
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
+        }
+    }
+    if level & 1 != 0 {
+        if let Some(kc) = level2 {
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
+        }
+    }
+}
+
 /// Build WKB instance from an XKB keymap pointer
 /// This is the shared logic used by both new_from_names() and new_from_string()
 fn build_wkb_from_keymap(
@@ -190,101 +215,30 @@ fn build_wkb_from_keymap(
     // This ensures we get the correct behavior for keys whose types don't respond to certain modifiers
     // IMPORTANT: Create a fresh state for each level to avoid locking modifier issues
     {
-        // Get modifier keycodes from the modifiers we just built
         let level2_keycode = modifiers.level2_code().map(|(code, _)| code + evdev_offset);
         let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
         let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
         for level in 0..XKB_MAX_LEVELS {
-            // Create a FRESH state for this level to avoid locking modifier issues
             let mut state = match keymap.new_state() {
                 Some(s) => s,
                 None => continue,
             };
+            press_level_modifiers(
+                &mut state,
+                level,
+                level2_keycode,
+                level3_keycode,
+                level5_keycode,
+            );
 
-            // Set up modifiers for this level
-            match level {
-                0 => { /* No modifiers */ }
-                1 => {
-                    // Level2 (Shift)
-                    if let Some(kc) = level2_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                2 => {
-                    // Level3
-                    if let Some(kc) = level3_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                3 => {
-                    // Level3 + Level2 (order matters!)
-                    if let Some(kc) = level3_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                    if let Some(kc) = level2_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                4 => {
-                    // Level5
-                    if let Some(kc) = level5_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                5 => {
-                    // Level5 + Level2
-                    if let Some(kc) = level5_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                    if let Some(kc) = level2_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                6 => {
-                    // Level5 + Level3
-                    if let Some(kc) = level5_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                    if let Some(kc) = level3_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                7 => {
-                    // Level5 + Level3 + Level2
-                    if let Some(kc) = level5_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                    if let Some(kc) = level3_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                    if let Some(kc) = level2_keycode {
-                        state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                    }
-                }
-                _ => {
-                    // Beyond level 7
-                    continue;
-                }
-            }
-
-            // Query each key at this modifier combination
             for keycode in min_keycode..=max_keycode {
                 let evdev_code = keycode - evdev_offset;
-                let layout_idx = 0;
-
-                // Get the character at this state using safe wrapper
                 let s = state.key_get_utf8(keycode);
-
                 if let Some(ch) = s.chars().next() {
-                    // Use the character from state - it already handles fallback internally
                     state_keymap[level].insert(evdev_code, ch);
                 } else {
-                    // State returned nothing - this can happen for keys whose type doesn't respond
-                    // to these modifiers (e.g., numpad with Shift). Fall back to querying the
-                    // keymap directly at this level.
-                    let syms = keymap.key_get_syms_by_level(keycode, layout_idx, level as u32);
-
+                    let syms = keymap.key_get_syms_by_level(keycode, 0, level as u32);
                     if let Some(&keysym) = syms.first() {
                         if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
                             state_keymap[level].insert(evdev_code, ch);
@@ -292,240 +246,93 @@ fn build_wkb_from_keymap(
                     }
                 }
             }
-
-            // State is automatically cleaned up when it goes out of scope (Drop)
         }
     }
 
     // Now populate caps_lock_keymap: simulate Caps Lock being active with different modifiers
     {
-        // Get the actual Caps Lock keycode from the modifiers map
-        // In normal layouts this will be keycode 58 (XKB 66), but in special layouts like Neo
-        // the physical caps key might not be mapped to Lock modifier at all
         let caps_lock_xkb_keycode = modifiers
             .level_code(ModType::Caps)
             .map(|(code, _)| code + evdev_offset);
 
-        // Only build caps_lock_keymap if there actually is a caps lock key in this layout
         if let Some(caps_lock_keycode) = caps_lock_xkb_keycode {
-            // Get modifier keycodes
             let level2_keycode = modifiers.level2_code().map(|(code, _)| code + evdev_offset);
             let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
             let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
             for level in 0..XKB_MAX_LEVELS {
-                // Create a FRESH state for this caps+level combination
                 let mut caps_state = match keymap.new_state() {
                     Some(s) => s,
                     None => continue,
                 };
-
-                // IMPORTANT: Press level modifiers FIRST, then Caps Lock
-                // This order matters! (e.g., JP layout needs Shift pressed before Caps)
-                match level {
-                    0 => { /* Caps only - no other modifiers */ }
-                    1 => {
-                        // Level2 (Shift) + Caps
-                        if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    2 => {
-                        // Level3 + Caps
-                        if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    3 => {
-                        // Level3 + Level2 + Caps (order matters!)
-                        if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    4 => {
-                        // Level5 + Caps
-                        if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    5 => {
-                        // Level5 + Level2 + Caps
-                        if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    6 => {
-                        // Level5 + Level3 + Caps
-                        if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    7 => {
-                        // Level5 + Level3 + Level2 + Caps
-                        if let Some(kc) = level5_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level3_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            caps_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    _ => {
-                        // Beyond level 7
-                        continue;
-                    }
-                }
-
-                // NOW press Caps Lock (after level modifiers)
-                // Keep it pressed down - don't release!
-                // This is key: caps lock acts as a level shift key in some layouts.
+                // Press level modifiers FIRST, then Caps Lock
+                press_level_modifiers(
+                    &mut caps_state,
+                    level,
+                    level2_keycode,
+                    level3_keycode,
+                    level5_keycode,
+                );
                 caps_state.update_key(caps_lock_keycode, shared_types::XKB_KEY_DOWN);
 
-                // Test each key at this level with Caps Lock active
                 for keycode in min_keycode..=max_keycode {
                     let evdev_code = keycode - evdev_offset;
-
                     let s = caps_state.key_get_utf8(keycode);
-
                     if let Some(ch) = s.chars().next() {
-                        // Only store if it's different from the normal state_keymap
                         if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
                             caps_lock_keymap[level].insert(evdev_code, ch);
                         }
                     }
                 }
-
-                // State is automatically cleaned up when it goes out of scope (Drop)
             }
-        } // Close the if let Some(caps_lock_keycode)
+        }
     }
 
     // Populate num_lock_keys: simulate Num Lock being active with different modifiers
     {
-        // Get the actual Num Lock keycode from the modifiers map
         let num_lock_xkb_keycode = modifiers
             .level_code(ModType::Num)
             .map(|(code, _)| code + evdev_offset);
 
-        // Only build num_lock_keys if there actually is a num lock key in this layout
         if let Some(num_lock_keycode) = num_lock_xkb_keycode {
-            // Get modifier keycodes
             let level2_keycode = modifiers.level2_code().map(|(code, _)| code + evdev_offset);
             let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
             let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
             for level in 0..XKB_MAX_LEVELS {
-                // Create a FRESH state for this num+level combination
                 let mut num_state = match keymap.new_state() {
                     Some(s) => s,
                     None => continue,
                 };
-
-                // Activate Num Lock
+                // Toggle Num Lock first, then level modifiers
                 num_state.update_key(num_lock_keycode, shared_types::XKB_KEY_DOWN);
                 num_state.update_key(num_lock_keycode, shared_types::XKB_KEY_UP);
+                press_level_modifiers(
+                    &mut num_state,
+                    level,
+                    level2_keycode,
+                    level3_keycode,
+                    level5_keycode,
+                );
 
-                // Set up modifiers for this level
-                match level {
-                    0 => { /* Num only */ }
-                    1 => {
-                        // Num + Level2 (Shift)
-                        if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    2 => {
-                        // Num + Level3
-                        if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    3 => {
-                        // Num + Level3 + Level2 (order matters!)
-                        if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    4 => {
-                        // Num + Level5
-                        if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    5 => {
-                        // Num + Level5 + Level2
-                        if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    6 => {
-                        // Num + Level5 + Level3
-                        if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    7 => {
-                        // Num + Level5 + Level3 + Level2
-                        if let Some(kc) = level5_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level3_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                        if let Some(kc) = level2_keycode {
-                            num_state.update_key(kc, shared_types::XKB_KEY_DOWN);
-                        }
-                    }
-                    _ => {
-                        // Beyond level 7
-                        continue;
-                    }
-                }
-
-                // Test each key at this level with Num Lock active
                 for keycode in min_keycode..=max_keycode {
                     let evdev_code = keycode - evdev_offset;
-
                     let s = num_state.key_get_utf8(keycode);
-
                     if let Some(ch) = s.chars().next() {
-                        // Only store if it's different from the normal state_keymap
                         if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
                             num_lock_keys[level].insert(evdev_code, ch);
                         }
                     }
                 }
-
-                // State is automatically cleaned up when it goes out of scope (Drop)
             }
-        } // Close the if let Some(num_lock_keycode)
+        }
     }
 
     // Build composer from XKB compose table
     // NOTE: Compose table iteration has memory safety issues in some configurations
     // For now, we use an empty composer. The compose resolution logic is tested separately.
     let _compose_locale = match locale.as_ref() {
-        Some(loc) => match compose_parse::resolve_compose_file(loc) {
+        Some(loc) => match compose::resolve_compose_file(loc) {
             Some(path) => {
                 // Extract locale from path like "en_US.UTF-8/Compose"
                 path.strip_suffix("/Compose")
@@ -890,7 +697,7 @@ fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListCompo
     // Define callback function for compose table iteration
     // Note: This MUST be unsafe extern "C" for FFI compatibility
     unsafe fn collect_sequences(
-        entry: *mut compose_iter::xkb_compose_table_entry,
+        entry: *mut compose::xkb_compose_table_entry,
         data: *mut ::core::ffi::c_void,
     ) {
         // Safety checks
@@ -945,8 +752,8 @@ fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListCompo
 
     // Try to iterate through compose sequences, catching any errors
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-        let table_iter = compose_table.as_ptr() as *mut compose_iter::xkb_compose_table;
-        compose_iter::xkb_compose_table_for_each(
+        let table_iter = compose_table.as_ptr() as *mut compose::xkb_compose_table;
+        compose::xkb_compose_table_for_each(
             table_iter,
             Some(collect_sequences),
             &mut callback_data as *mut CallbackData as *mut ::core::ffi::c_void,

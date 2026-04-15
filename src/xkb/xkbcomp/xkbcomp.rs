@@ -1,4 +1,4 @@
-use crate::xkb::context_priv::xkb_context_get_buffer;
+use crate::xkb::context::xkb_context_get_buffer;
 use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;

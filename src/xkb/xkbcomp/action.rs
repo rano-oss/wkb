@@ -1,5 +1,5 @@
 use super::prelude::*;
-pub use crate::xkb::keymap_priv::action_equal;
+pub use crate::xkb::keymap::action_equal;
 use crate::xkb::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
 pub use crate::xkb::xkbcomp::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
 #[derive(Copy, Clone)]

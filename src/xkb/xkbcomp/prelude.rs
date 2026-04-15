@@ -5,13 +5,13 @@
 
 pub use crate::xkb_logf;
 
-// context / context_priv
+// context
+pub use crate::xkb::context::xkb_atom_text;
+pub use crate::xkb::context::xkb_atom_text_bytes;
 pub use crate::xkb::context::xkb_context_get_log_verbosity;
-pub use crate::xkb::context_priv::xkb_atom_text;
-pub use crate::xkb::context_priv::xkb_atom_text_bytes;
 
-// keymap_priv
-pub use crate::xkb::keymap_priv::XkbEscapeMapName;
+// keymap
+pub use crate::xkb::keymap::XkbEscapeMapName;
 
 // messages
 pub use crate::xkb::messages::{
