@@ -465,15 +465,6 @@ pub unsafe fn streq_not_null(s1: *const i8, s2: *const i8) -> bool {
 }
 
 #[inline]
-pub unsafe fn strempty(s: *const i8) -> *const i8 {
-    if !s.is_null() {
-        s
-    } else {
-        b"\0".as_ptr() as *const i8
-    }
-}
-
-#[inline]
 pub fn is_aligned(pointer: *const ::core::ffi::c_void, byte_count: usize) -> bool {
     (pointer as usize).wrapping_rem(byte_count) == 0
 }

@@ -38,8 +38,7 @@ pub use crate::xkb::shared_types::{
     MATCH_ALL, MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL,
     MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
-use crate::xkb::utils::cstr_len_safe;
-use crate::xkb::utils::{cstr_as_bytes, istreq, strempty};
+use crate::xkb::utils::{cstr_as_bytes, istreq};
 pub unsafe fn LookupString(
     mut tab: *const LookupEntry,
     mut string: *const i8,
@@ -532,13 +531,14 @@ pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> *c
 pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> *const i8 {
     unsafe {
         let mut sname: *const i8 = xkb_atom_text(ctx, name);
-        let mut len: usize = cstr_len_safe(sname).wrapping_add(3 as usize);
+        let sname_str = if sname.is_null() {
+            ""
+        } else {
+            std::str::from_utf8(cstr_as_bytes(sname)).unwrap_or("")
+        };
+        let mut len: usize = sname_str.len().wrapping_add(3 as usize);
         let mut buf: *mut i8 = xkb_context_get_buffer(ctx, len);
-        crate::xkb::utils::snprintf_args(
-            buf,
-            len,
-            format_args!("<{}>", crate::xkb::utils::CStrDisplay(strempty(sname))),
-        );
+        crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname_str));
         return buf;
     }
 }
